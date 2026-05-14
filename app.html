@@ -285,11 +285,21 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 .close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);line-height:1}
 
 /* Photo lightbox */
-.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px}
-.lightbox.open{display:flex}
-.lightbox img{max-width:95vw;max-height:80vh;border-radius:8px;object-fit:contain}
-.lightbox-caption{color:#fff;font-size:13px;text-align:center}
-.lightbox-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1}
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.93);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:0}
+.lightbox.open{display:flex;animation:fadeIn 0.2s ease}
+@keyframes fadeIn{from{opacity:0}to{opacity:1}}
+.lightbox img{max-width:95vw;max-height:75vh;border-radius:8px;object-fit:contain;transition:transform 0.2s;user-select:none}
+.lightbox-close{position:absolute;top:16px;right:16px;background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:22px;cursor:pointer;line-height:1;width:40px;height:40px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);z-index:10}
+.lightbox-close:active{background:rgba(255,255,255,0.3)}
+.lightbox-nav{position:absolute;top:50%;transform:translateY(-50%);background:rgba(255,255,255,0.15);border:none;color:#fff;font-size:32px;cursor:pointer;width:48px;height:48px;border-radius:50%;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(4px);transition:background 0.15s;z-index:10;line-height:1}
+.lightbox-nav:active{background:rgba(255,255,255,0.35)}
+.lightbox-prev{left:12px}
+.lightbox-next{right:12px}
+.lightbox-footer{display:flex;flex-direction:column;align-items:center;gap:8px;padding:14px 20px;width:100%}
+.lightbox-caption{color:rgba(255,255,255,0.8);font-size:13px;text-align:center}
+.lightbox-counter{color:rgba(255,255,255,0.5);font-size:12px}
+.lightbox-delete{background:rgba(192,57,43,0.8);border:none;color:#fff;padding:8px 20px;border-radius:20px;font-size:13px;cursor:pointer;font-family:'DM Sans',sans-serif;transition:background 0.15s}
+.lightbox-delete:active{background:rgba(192,57,43,1)}
 </style>
 </head>
 <body>
@@ -740,10 +750,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 
 <!-- Photo Lightbox -->
-<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+<div class="lightbox" id="lightbox">
   <button class="lightbox-close" onclick="closeLightbox()">✕</button>
-  <img id="lightbox-img" src="" alt="">
-  <div class="lightbox-caption" id="lightbox-caption"></div>
+  <button class="lightbox-nav lightbox-prev" onclick="lightboxNav(-1)">‹</button>
+  <button class="lightbox-nav lightbox-next" onclick="lightboxNav(1)">›</button>
+  <img id="lightbox-img" src="" alt="" onclick="event.stopPropagation()">
+  <div class="lightbox-footer">
+    <div class="lightbox-caption" id="lightbox-caption"></div>
+    <div class="lightbox-counter" id="lightbox-counter"></div>
+    <button class="lightbox-delete" onclick="deleteCurrentPhoto()" id="lightbox-delete-btn">🗑 Delete</button>
+  </div>
 </div>
 
 <div id="toast" class="toast"></div>
@@ -811,6 +827,8 @@ const LANGS = {
     stat_hives:'Hives',stat_healthy:'Healthy',stat_atrisk:'At Risk',wax_lbl:'Beeswax',
     priority_urgent:'Urgent',priority_week:'This week',priority_ready:'When ready',completed:'completed',
 
+    photo_deleted:'Photo deleted',
+
   },
   zh:{flag:'🇨🇳',code:'中',
     loading:'正在加载蜂箱...',saved:'已保存',saving:'保存中...',error_lbl:'错误',
@@ -871,6 +889,8 @@ const LANGS = {
 
     stat_hives:'蜂箱',stat_healthy:'健康',stat_atrisk:'有风险',wax_lbl:'蜂蜡',
     priority_urgent:'紧急',priority_week:'本周',priority_ready:'待处理',completed:'已完成',
+
+    photo_deleted:'照片已删除',
 
   },
   de:{flag:'🇩🇪',code:'DE',
@@ -933,6 +953,8 @@ const LANGS = {
     stat_hives:'Völker',stat_healthy:'Gesund',stat_atrisk:'Riskant',wax_lbl:'Bienenwachs',
     priority_urgent:'Dringend',priority_week:'Diese Woche',priority_ready:'Wenn möglich',completed:'erledigt',
 
+    photo_deleted:'Foto gelöscht',
+
   },
   fr:{flag:'🇫🇷',code:'FR',
     loading:'Chargement des ruches...',saved:'Enregistré',saving:'Enregistrement...',error_lbl:'Erreur',
@@ -993,6 +1015,8 @@ const LANGS = {
 
     stat_hives:'Ruches',stat_healthy:'Saines',stat_atrisk:'À risque',wax_lbl:'Cire d\'abeilles',
     priority_urgent:'Urgent',priority_week:'Cette semaine',priority_ready:'Quand possible',completed:'terminées',
+
+    photo_deleted:'Photo supprimée',
 
   },
   es:{flag:'🇪🇸',code:'ES',
@@ -1055,6 +1079,8 @@ const LANGS = {
     stat_hives:'Colmenas',stat_healthy:'Sanas',stat_atrisk:'En riesgo',wax_lbl:'Cera de abeja',
     priority_urgent:'Urgente',priority_week:'Esta semana',priority_ready:'Cuando sea posible',completed:'completadas',
 
+    photo_deleted:'Foto eliminada',
+
   },
   it:{flag:'🇮🇹',code:'IT',
     loading:'Caricamento arnie...',saved:'Salvato',saving:'Salvataggio...',error_lbl:'Errore',
@@ -1115,6 +1141,8 @@ const LANGS = {
 
     stat_hives:'Arnie',stat_healthy:'Sane',stat_atrisk:'A rischio',wax_lbl:'Cera d\'api',
     priority_urgent:'Urgente',priority_week:'Questa settimana',priority_ready:'Quando possibile',completed:'completate',
+
+    photo_deleted:'Foto eliminata',
 
   },
 };
@@ -1392,23 +1420,118 @@ async function handlePhotoUpload(files) {
 function renderInspectPhotos(){
   const grid=document.getElementById('inspect-photo-grid');
   const hivePending=pendingPhotos.filter(p=>p.hive_id===selectedHiveId);
-  const thumbs=hivePending.map(p=>`<img class="photo-thumb" src="${p.public_url}" alt="${p.caption||'Photo'}" onclick="openLightbox('${p.public_url}','${p.caption||''}')">`).join('');
+  const thumbs=hivePending.map((p,i)=>`
+    <div style="position:relative;aspect-ratio:1">
+      <img class="photo-thumb" src="${p.public_url}" alt="${p.caption||'Photo'}" onclick="openLightbox(${i},'pending','')">
+      <button onclick="event.stopPropagation();removePendingPhoto('${p.id}')"
+        style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
+    </div>`).join('');
   grid.innerHTML=thumbs+`<button class="photo-upload-btn" onclick="document.getElementById('photo-file-input').click()"><span class="photo-upload-icon">📷</span><span>Add Photo</span></button>`;
 }
 
 function renderHivePhotos(hiveId){
   const grid=document.getElementById('hive-photos-grid');
   const hivePhotoList=hivePhotos(hiveId);
-  if(hivePhotoList.length===0){grid.innerHTML='<div style="font-size:12px;color:var(--text-3);grid-column:1/-1;padding:8px 0">No photos yet — add some during an inspection</div>';return;}
-  grid.innerHTML=hivePhotoList.map(p=>`<img class="photo-thumb" src="${p.public_url}" alt="${p.caption||'Photo'}" onclick="openLightbox('${p.public_url}','${p.caption||''}')">`).join('');
+  if(hivePhotoList.length===0){grid.innerHTML='<div style="font-size:12px;color:var(--text-3);grid-column:1/-1;padding:8px 0">'+t('add_photos_during')+'</div>';return;}
+  grid.innerHTML=hivePhotoList.map((p,i)=>`
+    <div style="position:relative;aspect-ratio:1">
+      <img class="photo-thumb" src="${p.public_url}" alt="${p.caption||'Photo'}"
+        onclick="openLightbox(${i},'hive','${hiveId}')">
+      <button onclick="event.stopPropagation();confirmDeletePhoto('${p.id}','${hiveId}')"
+        style="position:absolute;top:4px;right:4px;background:rgba(0,0,0,0.55);border:none;color:#fff;border-radius:50%;width:24px;height:24px;font-size:13px;cursor:pointer;display:flex;align-items:center;justify-content:center;backdrop-filter:blur(2px)">✕</button>
+    </div>`).join('');
 }
 
-function openLightbox(url,caption){
-  document.getElementById('lightbox-img').src=url;
-  document.getElementById('lightbox-caption').textContent=caption;
+// Lightbox state
+let lbPhotos=[], lbIndex=0, lbContext='', lbHiveId='';
+// Swipe tracking
+let lbTouchX=0;
+
+function openLightbox(index, context, hiveId){
+  lbContext=context; lbHiveId=hiveId||'';
+  if(context==='hive') lbPhotos=hivePhotos(hiveId);
+  else if(context==='pending') lbPhotos=[...pendingPhotos.filter(p=>p.hive_id===selectedHiveId)];
+  else lbPhotos=[{public_url:index,caption:''}]; // legacy: url passed directly
+  lbIndex=typeof index==='number'?index:0;
+  lbRender();
   document.getElementById('lightbox').classList.add('open');
+  document.body.style.overflow='hidden';
 }
-function closeLightbox(){document.getElementById('lightbox').classList.remove('open')}
+
+function lbRender(){
+  const p=lbPhotos[lbIndex];
+  if(!p)return;
+  document.getElementById('lightbox-img').src=p.public_url||p;
+  document.getElementById('lightbox-caption').textContent=p.caption||'';
+  document.getElementById('lightbox-counter').textContent=lbPhotos.length>1?(lbIndex+1)+' / '+lbPhotos.length:'';
+  const prev=document.querySelector('.lightbox-prev');
+  const next=document.querySelector('.lightbox-next');
+  if(prev)prev.style.opacity=lbIndex>0?'1':'0.2';
+  if(next)next.style.opacity=lbIndex<lbPhotos.length-1?'1':'0.2';
+  const delBtn=document.getElementById('lightbox-delete-btn');
+  if(delBtn)delBtn.style.display=lbContext==='hive'&&p.id?'block':'none';
+}
+
+function lightboxNav(dir){
+  const newIdx=lbIndex+dir;
+  if(newIdx>=0&&newIdx<lbPhotos.length){lbIndex=newIdx;lbRender();}
+}
+
+function closeLightbox(){
+  document.getElementById('lightbox').classList.remove('open');
+  document.body.style.overflow='';
+}
+
+// Lightbox swipe & keyboard
+document.getElementById('lightbox').addEventListener('touchstart',e=>{lbTouchX=e.touches[0].clientX;},{passive:true});
+document.getElementById('lightbox').addEventListener('touchend',e=>{
+  const dx=e.changedTouches[0].clientX-lbTouchX;
+  if(Math.abs(dx)>50){lightboxNav(dx<0?1:-1);}
+  else if(Math.abs(dx)<5){closeLightbox();}
+},{passive:true});
+document.addEventListener('keydown',e=>{
+  if(!document.getElementById('lightbox').classList.contains('open'))return;
+  if(e.key==='ArrowLeft')lightboxNav(-1);
+  else if(e.key==='ArrowRight')lightboxNav(1);
+  else if(e.key==='Escape')closeLightbox();
+});
+
+function removePendingPhoto(photoId){
+  const idx=pendingPhotos.findIndex(p=>p.id===photoId);
+  if(idx>-1)pendingPhotos.splice(idx,1);
+  renderInspectPhotoGrid();
+}
+
+async function confirmDeletePhoto(photoId, hiveId){
+  if(!confirm('Delete this photo?'))return;
+  await deletePhoto(photoId, hiveId);
+}
+
+async function deleteCurrentPhoto(){
+  const p=lbPhotos[lbIndex];
+  if(!p||!p.id)return;
+  if(!confirm('Delete this photo?'))return;
+  await deletePhoto(p.id, lbHiveId);
+}
+
+async function deletePhoto(photoId, hiveId){
+  const p=photos.find(ph=>ph.id===photoId);
+  if(!p)return;
+  // Delete from Supabase Storage
+  if(p.storage_path){
+    await sb.storage.from('hive-photos').remove([p.storage_path]);
+  }
+  // Delete from DB
+  await sb.from('photos').delete().eq('id',photoId);
+  // Remove from local state
+  const idx=photos.findIndex(ph=>ph.id===photoId);
+  if(idx>-1)photos.splice(idx,1);
+  showToast(t('photo_deleted')||'Photo deleted','success');
+  // Close lightbox & refresh
+  closeLightbox();
+  if(hiveId){renderHivePhotos(hiveId);renderHiveDetailTimeline(hiveId);}
+  renderHome();
+}
 
 //  FEATURE 3: AI ANALYSIS 
 async function runAIAnalysis(hiveId){
@@ -1416,7 +1539,7 @@ async function runAIAnalysis(hiveId){
   if(!h){return;}
   const insps=hiveInspections(hiveId).slice(0,3);
   const q=queens.find(q=>q.hive_id===hiveId);
-  const treats=treatments.filter(t=>t.hive_id===hiveId).slice(0,3);
+  const treats=treatments.filter(tr=>tr.hive_id===hiveId).slice(0,3);
   const li=insps[0];
 
   if(!CLAUDE_API_KEY||CLAUDE_API_KEY===''){
@@ -1437,7 +1560,7 @@ RECENT INSPECTIONS: ${JSON.stringify(insps.map(i=>({
   miteCount:i.mite_count, layingWorkers:i.laying_workers,
   notes:i.notes
 })))}
-RECENT TREATMENTS: ${JSON.stringify(treats.map(t=>({product:t.product,date:t.start_date})))}
+RECENT TREATMENTS: ${JSON.stringify(treats.map(tr=>({product:tr.product,date:tr.start_date})))}
 SEASON: ${getSeason().label}
 
 Analyze this hive and respond in JSON only (no markdown):
@@ -1648,7 +1771,7 @@ function renderHome(){
   renderHiveGrid('home-hive-grid',false);
   const logs=[];
   inspections.forEach(i=>logs.push({date:i.date,hive:getHive(i.hive_id)?.name,type:t('inspection'),note:i.notes,score:i.score,cat:'insp'}));
-  treatments.forEach(t=>logs.push({date:t.start_date,hive:getHive(t.hive_id)?.name,type:t('treatment_lbl'),note:t.product,score:null,cat:'treat'}));
+  treatments.forEach(tr=>logs.push({date:tr.start_date,hive:getHive(tr.hive_id)?.name,type:t('treatment_lbl'),note:tr.product,score:null,cat:'treat'}));
   harvests.forEach(h=>logs.push({date:h.harvest_date,hive:getHive(h.hive_id)?.name,type:t('harvest_lbl'),note:`${h.honey_lbs} lbs ${h.honey_type||''}`,score:null,cat:'harv'}));
   logs.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
   document.getElementById('home-timeline').innerHTML=logs.length===0
@@ -1690,16 +1813,16 @@ function openHiveDetail(hiveId){
 function renderHiveDetailTimeline(hiveId){
   const el=document.getElementById('hive-detail-timeline');
   const insps=hiveInspections(hiveId);
-  const treats=treatments.filter(t=>t.hive_id===hiveId);
+  const treats=treatments.filter(tr=>tr.hive_id===hiveId);
   const harvs=harvests.filter(h=>h.hive_id===hiveId);
   const hivePics=hivePhotos(hiveId);
   const items=[];
-  insps.forEach(i=>items.push({date:i.date,type:'inspect',title:`Inspection — Score ${i.score}`,body:i.notes||'',icon:'📋',dotClass:'tl-dot-inspect'}));
-  treats.forEach(t=>items.push({date:t.start_date,type:'treat',title:`Treatment: ${t.product}`,body:`${t.amount||''} ${t.duration_days?'· '+t.duration_days+' days':''}`,icon:'💊',dotClass:'tl-dot-treat'}));
-  harvs.forEach(h=>items.push({date:h.harvest_date,type:'harvest',title:`Harvest: ${h.honey_lbs} lbs ${h.honey_type||''}`,body:h.note||'',icon:'🍯',dotClass:'tl-dot-harvest'}));
-  hivePics.forEach(p=>items.push({date:p.taken_at?.split('T')[0],type:'photo',title:'Photo added',body:`<img src="${p.public_url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:4px;cursor:pointer" onclick="openLightbox('${p.public_url}','')">`,icon:'📷',dotClass:'tl-dot-photo'}));
+  insps.forEach(i=>items.push({date:i.date,type:'inspect',title:t('inspection')+' — '+t('score')+' '+i.score,body:i.notes||'',icon:'📋',dotClass:'tl-dot-inspect'}));
+  treats.forEach(tr=>items.push({date:tr.start_date,type:'treat',title:t('treatment_lbl')+': '+tr.product,body:`${tr.amount||''} ${tr.duration_days?'· '+tr.duration_days+' days':''}`,icon:'💊',dotClass:'tl-dot-treat'}));
+  harvs.forEach(h=>items.push({date:h.harvest_date,type:'harvest',title:t('harvest_lbl')+': '+h.honey_lbs+' lbs '+(h.honey_type||''),body:h.note||'',icon:'🍯',dotClass:'tl-dot-harvest'}));
+  hivePics.forEach((p,i)=>items.push({date:p.taken_at?.split('T')[0],type:'photo',title:'Photo added',body:`<img src="${p.public_url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:4px;cursor:pointer" onclick="openLightbox(${i},'hive','${hiveId}')">`,icon:'📷',dotClass:'tl-dot-photo'}));
   items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  if(items.length===0){el.innerHTML='<div class="empty">No activity recorded yet</div>';return;}
+  if(items.length===0){el.innerHTML='<div class="empty">'+t('no_activity_recorded')+'</div>';return;}
   el.innerHTML=items.map((item,idx)=>`<div class="tl-entry">
     <div class="tl-dot-col">
       <div class="tl-dot ${item.dotClass}">${item.icon}</div>
@@ -1745,7 +1868,7 @@ function renderQueens(){
 function renderTreatments(){
   document.getElementById('treatment-list').innerHTML=treatments.length===0
     ?'<div class="empty"><div class="empty-icon">💊</div>No treatments logged</div>'
-    :treatments.map(t=>`<div class="card" style="display:flex;justify-content:space-between;align-items:flex-start">
+    :treatments.map(tr=>`<div class="card" style="display:flex;justify-content:space-between;align-items:flex-start">
       <div><div style="font-weight:600">${getHive(t.hive_id)?.name||'—'} · ${t.product}</div>
       <div style="font-size:12px;color:var(--text-2)">${t.amount||''} · ${t.start_date||''}${t.duration_days?` · ${t.duration_days} days`:''}</div>
       ${t.note?`<div style="font-size:11px;color:var(--text-3)">${t.note}</div>`:''}</div>
@@ -2043,7 +2166,7 @@ function selectHive(id,el){
   calcScore();
 }
 function toggleChip(el){el.classList.toggle('on')}
-function showActionTab(id,btn){['feeding','treatment','frames'].forEach(t=>{document.getElementById('action-'+t).style.display=t===id?'block':'none'});document.querySelectorAll('.tab-row .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+function showActionTab(id,btn){['feeding','treatment','frames'].forEach(tab=>{document.getElementById('action-'+tab).style.display=tab===id?'block':'none'});document.querySelectorAll('.tab-row .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 
 async function saveInspection(mode){
   if(!selectedHiveId){showToast(t('toast_select_hive'),'warning');return;}
@@ -2172,7 +2295,7 @@ async function exportHivePDF(){
   const apiary=getApiary(h.apiary_id);
   const queen=queens.find(q=>q.hive_id===h.id);
   const insps=hiveInspections(h.id);
-  const treats=treatments.filter(t=>t.hive_id===h.id);
+  const treats=treatments.filter(tr=>tr.hive_id===h.id);
   const harvs=harvests.filter(hv=>hv.hive_id===h.id);
   const doc=new jsPDF({unit:'mm',format:'a4'});
   const W=210,margin=18,contentW=W-margin*2;

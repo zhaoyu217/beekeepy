@@ -1298,7 +1298,7 @@ async function init() {
   if (!session) {
     // Save QR hive target so login page can redirect back
     const hiveParam=new URLSearchParams(location.search).get('hive');
-    if(hiveParam)try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}
+    if(hiveParam){try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}}
     window.location.href = 'index.html'; return;
   }
   currentUser = session.user;

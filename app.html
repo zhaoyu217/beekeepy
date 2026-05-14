@@ -1443,7 +1443,7 @@ function renderHivePhotos(hiveId){
 }
 
 // Lightbox state
-let lbPhotos=[], lbIndex=0, lbContext='', lbHiveId='';
+let lbPhotos=[], lbIndex=0, lbContext='', lbHiveId='', lbOpenTime=0;
 // Swipe tracking
 
 function openLightbox(index, context, hiveId){
@@ -1455,6 +1455,7 @@ function openLightbox(index, context, hiveId){
   lbRender();
   document.getElementById('lightbox').classList.add('open');
   document.body.style.overflow='hidden';
+  lbOpenTime=Date.now();
 }
 
 function lbRender(){
@@ -1490,6 +1491,7 @@ document.getElementById('lightbox').addEventListener('touchmove',e=>{
   if(Math.abs(e.touches[0].clientX-lbTouchStartX)>8||Math.abs(e.touches[0].clientY-lbTouchStartY)>8)lbTouchMoved=true;
 },{passive:true});
 document.getElementById('lightbox').addEventListener('touchend',e=>{
+  if(Date.now()-lbOpenTime<400)return; // ignore touch that opened lightbox
   if(!lbTouchMoved){if(e.target===document.getElementById('lightbox'))closeLightbox();return;}
   const dx=e.changedTouches[0].clientX-lbTouchStartX;
   const dy=Math.abs(e.changedTouches[0].clientY-lbTouchStartY);

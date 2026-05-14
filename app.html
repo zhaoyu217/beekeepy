@@ -10,7 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
   --honey:#E8930A;--honey-light:#FDF3E0;--honey-dark:#B36800;
@@ -764,7 +764,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div style="width:32px;height:32px;background:#E8930A;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🐝</div>
         <span style="font-family:'DM Serif Display',serif;font-size:18px;color:#1A1A14">Beekeepy</span>
       </div>
-      <canvas id="qr-canvas" style="border-radius:8px;margin-bottom:12px"></canvas>
+      <div id="qr-container" style="display:flex;justify-content:center;margin-bottom:12px;min-height:180px;align-items:center"></div>
       <div id="qr-hive-name" style="font-size:18px;font-weight:700;color:#1A1A14;margin-bottom:4px"></div>
       <div id="qr-apiary-name" style="font-size:13px;color:#5C5847;margin-bottom:4px"></div>
       <div id="qr-hive-meta" style="font-size:11px;color:#9A9280;margin-bottom:8px"></div>
@@ -2347,13 +2347,19 @@ async function showHiveQR(){
   ].filter(Boolean).join(' · ');
 
   // Generate QR code
-  const canvas=document.getElementById('qr-canvas');
+  const qrDiv=document.getElementById('qr-container');
+  qrDiv.innerHTML='';
   try{
-    await QRCode.toCanvas(canvas, url, {
+    // qrcodejs 使用 div 容器
+    const qrDiv=document.getElementById('qr-container');
+    qrDiv.innerHTML='';
+    new QRCode(qrDiv,{
+      text:url,
       width:180,
-      margin:2,
-      color:{dark:'#1A1A14',light:'#FFFFFF'},
-      errorCorrectionLevel:'M'
+      height:180,
+      colorDark:'#1A1A14',
+      colorLight:'#FFFFFF',
+      correctLevel:QRCode.CorrectLevel.M
     });
   }catch(e){console.error('QR error:',e);}
 
@@ -2368,7 +2374,7 @@ async function downloadQRLabel(){
   // Use html2canvas if available, otherwise use canvas directly
   try{
     // Fallback: draw label on canvas manually
-    const qrCanvas=document.getElementById('qr-canvas');
+    // qr image fetched below from qr-container
     const W=400,H=520;
     const out=document.createElement('canvas');
     out.width=W; out.height=H;

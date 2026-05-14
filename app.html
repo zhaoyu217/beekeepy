@@ -790,20 +790,20 @@ const LANGS = {
     season_winter_tip:'Minimal disturbance. Check weight monthly. OA treatment if broodless.',
     warn_no_brood:'No brood detected',warn_swarm:'Swarm risk',warn_supersedure:'Queen supersedure',
     warn_disease:'Disease signs',warn_mite:'Mite count',warn_laying:'Laying workers?',
-    needs_attention:'Needs Attention',no_apiaries:t('no_apiaries'),no_hives:t('no_hives'),no_activity:t('no_activity'),
+    needs_attention:'Needs Attention',no_apiaries:'No apiaries yet',no_hives:'No hives yet',no_activity:'No activity yet',
     inspection:'Inspection',harvest_lbl:'Harvest',treatment_lbl:'Treatment',
-    hive:'Hive',score:'Score',days_ago:'days ago',today:t('today'),yesterday:t('yesterday'),
+    hive:'Hive',score:'Score',days_ago:'days ago',today:'Today',yesterday:'Yesterday',
     humidity:'Humidity',wind:'Wind',photo:'photo',photos:'photos',
-    overdue:t('overdue'),never:'Never',this_week_tasks:"This Week's Tasks",
-    health_score:t('health_score'),mite_trend:t('mite_trend'),
-    monthly_honey:t('monthly_honey'),days_since:t('days_since'),
-    total_lbs:t('total_lbs'),wax_oz:t('wax_oz'),harvests_lbl:t('harvests_lbl'),by_hive:t('by_hive'),
-    bars_fill:t('bars_fill'),
-    treat_threshold:t('treat_threshold'),urgent:t('urgent'),
-    no_inspections_yet:t('no_inspections_yet'),no_hives_analyze:t('no_hives_analyze'),
+    overdue:'Overdue!',never:'Never',this_week_tasks:"This Week's Tasks",
+    health_score:'Health Score — All Hives',mite_trend:'Mite Count Trend (last 6 inspections)',
+    monthly_honey:'Monthly Honey Production (lbs)',days_since:'Days Since Last Inspection',
+    total_lbs:'Total lbs',wax_oz:'Wax oz',harvests_lbl:'Harvests',by_hive:'By Hive',
+    bars_fill:'Bars fill as inspection gap grows — red means overdue',
+    treat_threshold:'3% treat threshold',urgent:'6% urgent',
+    no_inspections_yet:'No inspections yet',no_hives_analyze:'No hives to analyze yet',
     inspections_count:'inspections',last_insp:'Last',
-    add_photos_during:t('add_photos_during'),
-    no_activity_recorded:t('no_activity_recorded'),
+    add_photos_during:'No photos yet — add some during an inspection',
+    no_activity_recorded:'No activity recorded yet',
     back:'← Back',map:'Map',
     account_info:'Your Account',email_lbl:'Email',
     settings_lbl:'Settings',
@@ -973,7 +973,7 @@ const LANGS = {
     monthly_honey:'Production mensuelle de miel (lbs)',days_since:'Jours depuis la dernière visite',
     total_lbs:'Total (lbs)',wax_oz:'Cire (oz)',harvests_lbl:'Récoltes',by_hive:'Par ruche',
     bars_fill:'Plus la barre est rouge, plus la visite est urgente',
-    treat_threshold:'Seuil traitement 3%',urgent:t('urgent'),
+    treat_threshold:'Seuil traitement 3%',urgent:'6% urgent',
     no_inspections_yet:'Aucune visite enregistrée',no_hives_analyze:'Aucune ruche à analyser',
     inspections_count:'visites',last_insp:'Dernière',
     add_photos_during:'Pas encore de photos — ajoutez-en lors d\'une visite',
@@ -1784,7 +1784,7 @@ function renderInsights(){
       const sc=li?.score||0;
       const col=sc>=60?'#4A7C2F':sc>=35?'#F5A623':'#C0392B';
       const days=daysSince(li?.date);
-      const daysLabel=days===0?t('today'):days===1?t('yesterday'):days+' '+t('days_ago');
+      const daysLabel=days===0?'Today':days===1?'Yesterday':days+' '+t('days_ago');
       html+=`<div style="margin-bottom:10px">
         <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
           <span style="font-size:13px;font-weight:600">${h.name}</span>
@@ -1901,7 +1901,7 @@ function renderInsights(){
     const threshold=rem?.reminder_days||10;
     const pct=Math.min(Math.round((days/30)*100),100);
     const col=days>=threshold+3?'var(--danger)':days>=threshold?'var(--amber)':'var(--forest-mid)';
-    const label=days>=999?'Never':days===0?t('today'):days+' days';
+    const label=days>=999?'Never':days===0?'Today':days+' days';
     html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
       <span style="font-size:12px;color:var(--text-2);width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.name}</span>
       ${mkBar(pct,100,col)}

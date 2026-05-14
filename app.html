@@ -495,7 +495,7 @@ textarea{resize:none}
 <div id="pg-hive-detail" class="page">
 <div class="scroll-content">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-    <button class="btn-outline btn-sm" onclick="showPage('home',null)" style="margin-top:0;padding:6px 12px">← Back</button>
+    <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px">← Back</button>
     <h2 id="hive-detail-name" style="font-size:18px"></h2>
   </div>
 
@@ -590,14 +590,6 @@ textarea{resize:none}
     <div style="font-size:12px;color:var(--text-3);margin-top:10px">Email: <strong id="remind-email-display"></strong></div>
   </div>
   <button class="btn btn-primary" onclick="saveReminderSettings()">Save Reminder Settings</button>
-</div>
-</div>
-
-<!-- ===== INSIGHTS ===== -->
-<div id="pg-insights" class="page">
-<div class="scroll-content">
-  <div class="section-hd">Colony Health Overview</div>
-  <div id="insights-content"></div>
 </div>
 </div>
 
@@ -807,7 +799,7 @@ function getSeason(){
 
 // ── FEATURE 1: WEATHER ─────────────────────────────────────
 async function fetchWeather() {
-  if(!OPENWEATHER_API_KEY||OPENWEATHER_API_KEY==='6224c11c5ee340327a054c579d1e37c0') {
+  if(!OPENWEATHER_API_KEY) {
     renderWeatherWidget(null); return;
   }
   navigator.geolocation?.getCurrentPosition(async pos=>{
@@ -1321,7 +1313,7 @@ function renderInsights(){
 function renderSettings(){
   document.getElementById('apiary-list-full').innerHTML=apiaries.map(a=>`<div class="apiary-item"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:12px;color:var(--text-3)">${a.location||''}${a.gps?' · GPS: '+a.gps:''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No apiaries yet</div>';
   document.getElementById('hive-list-full').innerHTML=hives.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div><div style="font-weight:600">${h.name} <span class="badge b-honey">${getApiary(h.apiary_id)?.name||''}</span></div><div style="font-size:12px;color:var(--text-3)">${h.type||''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hives yet</div>';
-  document.getElementById('equipment-section').innerHTML='<div class="card-title">Equipment Inventory</div><div style="font-size:13px;color:var(--text-3)">Equipment tracking coming soon</div>';
+  document.getElementById('equipment-section').innerHTML='<div style="font-size:13px;color:var(--text-3)">Equipment tracking coming soon</div>';
 }
 
 function renderAccount(){
@@ -1333,7 +1325,9 @@ function renderAccount(){
 function showPage(id,btn){
   document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
   document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
-  document.getElementById('pg-'+id).classList.add('active');
+  const pg=document.getElementById('pg-'+id);
+  if(!pg){console.warn('Page not found: pg-'+id);return;}
+  pg.classList.add('active');
   if(btn)btn.classList.add('active');
   if(id==='home')renderHome();
   if(id==='queens')renderQueens();
@@ -1409,6 +1403,7 @@ async function saveInspection(mode){
   document.getElementById('inspect-empty').style.display='block';
   document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
   selectedHiveId=null;pendingPhotos=[];
+  renderHome();
   checkReminders();
 }
 

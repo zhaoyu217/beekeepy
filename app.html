@@ -1295,7 +1295,12 @@ async function init() {
   try{const l=localStorage.getItem('bk_lang');if(l&&LANGS[l])currentLang=l;}catch(e){}
   applyLang();
   const { data: { session } } = await sb.auth.getSession();
-  if (!session) { window.location.href = 'index.html'; return; }
+  if (!session) {
+    // Save QR hive target so login page can redirect back
+    const hiveParam=new URLSearchParams(location.search).get('hive');
+    if(hiveParam)try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}
+    window.location.href = 'index.html'; return;
+  }
   currentUser = session.user;
   const initials = (currentUser.user_metadata?.full_name || currentUser.email || '?')[0].toUpperCase();
   document.getElementById('user-avatar').textContent = initials;

@@ -580,6 +580,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
   <!-- AI Analysis for this hive -->
   <div id="hive-ai-panel"></div>
+  
+  <!-- Smart Task Predictions -->
+  <div id="hive-tasks-panel" style="margin-bottom:10px"></div>
 
   <!-- Photo gallery -->
   <div class="card">
@@ -1711,6 +1714,41 @@ async function showHiveAIAnalysis(hiveId){
   </div>`;
 }
 
+
+// SMART TASK PREDICTIONS
+function addDays(dateStr,n){const d=new Date(dateStr);d.setDate(d.getDate()+n);return d.toISOString().split('T')[0];}
+function daysUntil(dateStr){const diff=new Date(dateStr)-new Date(new Date().toISOString().split('T')[0]);return Math.round(diff/(1000*60*60*24));}
+function generateSmartTasks(hiveId){
+  const h=getHive(hiveId);if(!h)return[];
+  const insps=hiveInspections(hiveId);const li=insps[0];
+  const q=queens.find(q=>q.hive_id===hiveId);
+  const treats=treatments.filter(tr=>tr.hive_id===hiveId);const lastTreat=treats[0];
+  const today=new Date().toISOString().split('T')[0];const tasks=[];
+  const rem=reminders.find(r=>r.hive_id===hiveId);const inspInterval=rem?.reminder_days||10;
+  const lastInspDate=li?.date||today;const nextInspDate=addDays(lastInspDate,inspInterval);
+  const inspDue=daysUntil(nextInspDate);
+  tasks.push({icon:'📋',title:'Routine inspection',due:nextInspDate,daysUntil:inspDue,urgency:inspDue<0?'overdue':inspDue<=2?'urgent':inspDue<=5?'soon':'ok',detail:`Every ${inspInterval} days · last inspected ${li?daysSince(li.date)+' days ago':'never'}`});
+  if(li&&(li.mite_count||0)>=3){const treatDue=addDays(li.date,3);tasks.push({icon:'💊',title:'Apply mite treatment',due:treatDue,daysUntil:daysUntil(treatDue),urgency:daysUntil(treatDue)<=0?'overdue':'urgent',detail:`Mite count ${li.mite_count}% — above 3% threshold`});}
+  if(lastTreat){const recountDate=addDays(lastTreat.start_date,42);const d=daysUntil(recountDate);if(d>-7&&d<60)tasks.push({icon:'🔬',title:'Mite recount after treatment',due:recountDate,daysUntil:d,urgency:d<0?'overdue':d<=7?'urgent':'soon',detail:`${lastTreat.product} started ${lastTreat.start_date} · recount at 6 weeks`});}
+  if(li&&(li.swarm_prep||li.queen_cells>0)){const swarmCheck=addDays(li.date,7);tasks.push({icon:'👑',title:'Check swarm cells',due:swarmCheck,daysUntil:daysUntil(swarmCheck),urgency:daysUntil(swarmCheck)<=0?'overdue':'urgent',detail:'Swarm preparations detected — inspect every 7 days until resolved'});}
+  if(q&&q.introduced_date){const ageDays=daysSince(q.introduced_date);if(ageDays>=700){const replaceBy=addDays(q.introduced_date,730);tasks.push({icon:'👸',title:'Consider queen replacement',due:replaceBy,daysUntil:daysUntil(replaceBy),urgency:ageDays>=730?'urgent':'soon',detail:`Queen is ${Math.floor(ageDays/365*10)/10} years old · optimal replacement at 2 years`});}}
+  const month=new Date().getMonth()+1;
+  if(month===3||month===4)tasks.push({icon:'🌸',title:'Spring feeding check',due:addDays(today,7),daysUntil:7,urgency:'soon',detail:'Spring buildup — verify adequate sugar syrup or pollen patty'});
+  else if(month===8||month===9)tasks.push({icon:'🍂',title:'Winter prep — honey stores',due:addDays(today,14),daysUntil:14,urgency:'soon',detail:'Pre-winter: ensure 60–80 lbs honey stores before cold sets in'});
+  else if(month===10||month===11)tasks.push({icon:'❄️',title:'Winterize hive',due:addDays(today,10),daysUntil:10,urgency:'soon',detail:'Reduce entrance, add moisture quilts, check ventilation'});
+  else if(month===6||month===7)tasks.push({icon:'☀️',title:'Summer honey super check',due:addDays(today,7),daysUntil:7,urgency:'soon',detail:'Peak nectar flow — check if supers need adding to prevent backfill'});
+  const order={overdue:0,urgent:1,soon:2,ok:3};
+  return tasks.sort((a,b)=>order[a.urgency]-order[b.urgency]||a.daysUntil-b.daysUntil).slice(0,5);
+}
+function renderSmartTasks(hiveId){
+  const panel=document.getElementById('hive-tasks-panel');if(!panel)return;
+  const tasks=generateSmartTasks(hiveId);if(!tasks.length){panel.innerHTML='';return;}
+  const urgencyStyle={overdue:'background:var(--danger-light);border-color:var(--danger)',urgent:'background:#FFF8E1;border-color:#FFD54F',soon:'background:var(--sky-light);border-color:#AED6F1',ok:'background:var(--forest-light);border-color:#A9DFBF'};
+  const urgencyLabel={overdue:'⚠️ Overdue',urgent:'🔴 Urgent',soon:'🔵 Upcoming',ok:'✅ On track'};
+  const dueLine=task=>{if(task.daysUntil<0)return Math.abs(task.daysUntil)+' days overdue';if(task.daysUntil===0)return'Due today';if(task.daysUntil===1)return'Due tomorrow';return'Due in '+task.daysUntil+' days · '+task.due;};
+  panel.innerHTML='<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px"><div style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;align-items:center;gap:6px">🗓 Next Tasks <span style="background:var(--honey-light);color:var(--honey-dark);border-radius:20px;padding:1px 8px;font-size:11px">'+tasks.length+' predicted</span></div>'+tasks.map(task=>'<div style="display:flex;gap:10px;margin-bottom:8px;padding:10px;border-radius:var(--radius-sm);border:1px solid transparent;'+urgencyStyle[task.urgency]+'"><div style="font-size:20px;flex-shrink:0;margin-top:1px">'+task.icon+'</div><div style="flex:1;min-width:0"><div style="display:flex;align-items:center;justify-content:space-between;gap:6px;margin-bottom:2px"><div style="font-weight:600;font-size:13px">'+task.title+'</div><span style="font-size:10px;font-weight:600;white-space:nowrap">'+urgencyLabel[task.urgency]+'</span></div><div style="font-size:11px;color:var(--text-2);margin-bottom:2px">'+task.detail+'</div><div style="font-size:11px;font-weight:500;color:var(--text-3)">'+dueLine(task)+'</div></div></div>').join('')+'</div>';
+}
+
 //  FEATURE 4: REMINDERS 
 function checkReminders(){
   const alerts=[];
@@ -1896,6 +1934,7 @@ function openHiveDetail(hiveId){
   renderHivePhotos(hiveId);
   renderHiveDetailTimeline(hiveId);
   showHiveAIAnalysis(hiveId);
+  renderSmartTasks(hiveId);
 }
 
 function renderHiveDetailTimeline(hiveId){

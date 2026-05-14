@@ -2,7 +2,9 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="theme-color" content="#E8930A">
 <title>Beekeepy · Sign In</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -15,84 +17,105 @@
   --text:#1A1A14;--text-2:#5C5847;--text-3:#9A9280;
   --radius:12px;--radius-sm:8px;
 }
-*{box-sizing:border-box;margin:0;padding:0}
-body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;display:flex;align-items:center;justify-content:center;padding:20px}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);min-height:100vh;min-height:100dvh;display:flex;align-items:center;justify-content:center;padding:20px;-webkit-font-smoothing:antialiased}
 h1,h2{font-family:'DM Serif Display',serif}
-
 .container{width:100%;max-width:400px}
 
+/* Lang picker */
+.lang-bar{display:flex;justify-content:center;gap:6px;margin-bottom:24px;flex-wrap:wrap}
+.lang-pill{padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;color:var(--text-2);transition:all 0.15s;font-family:'DM Sans',sans-serif}
+.lang-pill:active{transform:scale(0.95)}
+.lang-pill.active{background:var(--honey-light);border-color:var(--honey);color:var(--honey-dark);font-weight:600}
+
 /* Logo */
-.logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:32px}
-.logo-icon{width:48px;height:48px;background:var(--honey);border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:26px;box-shadow:0 4px 12px rgba(232,147,10,0.3)}
-.logo h1{font-size:28px;color:var(--text)}
-.tagline{text-align:center;font-size:13px;color:var(--text-3);margin-top:4px;margin-bottom:32px}
+.logo{display:flex;align-items:center;justify-content:center;gap:12px;margin-bottom:28px}
+.logo-icon{width:52px;height:52px;background:var(--honey);border-radius:16px;display:flex;align-items:center;justify-content:center;font-size:28px;box-shadow:0 4px 16px rgba(232,147,10,0.3)}
+.logo h1{font-size:30px;color:var(--text)}
+.tagline{text-align:center;font-size:13px;color:var(--text-3);margin-top:4px;margin-bottom:28px}
 
 /* Card */
 .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;box-shadow:0 2px 16px rgba(0,0,0,0.06)}
 
 /* Tabs */
 .tab-row{display:flex;background:var(--bg);border-radius:var(--radius-sm);padding:3px;margin-bottom:24px}
-.tab{flex:1;padding:9px;border:none;background:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--text-3);transition:all 0.15s}
+.tab{flex:1;padding:10px;border:none;background:none;border-radius:7px;cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;color:var(--text-3);transition:all 0.15s}
+.tab:active{opacity:0.7}
 .tab.active{background:var(--surface);color:var(--text);box-shadow:0 1px 3px rgba(0,0,0,0.08)}
 
 /* Form */
 .form-group{margin-bottom:16px}
-.form-label{font-size:12px;font-weight:500;color:var(--text-2);display:block;margin-bottom:5px}
-input[type=text],input[type=email],input[type=password]{width:100%;padding:11px 13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:14px;font-family:'DM Sans',sans-serif;transition:border-color 0.15s;outline:none}
-input:focus{border-color:var(--honey)}
+.form-label{font-size:13px;font-weight:500;color:var(--text-2);display:block;margin-bottom:6px}
+input[type=text],input[type=email],input[type=password]{width:100%;padding:13px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:16px;font-family:'DM Sans',sans-serif;transition:border-color 0.15s;outline:none;-webkit-appearance:none}
+input:focus{border-color:var(--honey);border-width:1.5px}
 
 /* Buttons */
-.btn{width:100%;padding:12px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.15s;margin-top:4px}
-.btn-primary{background:var(--honey);color:#fff}.btn-primary:hover{background:var(--honey-dark)}
+.btn{width:100%;padding:14px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:500;transition:all 0.15s;margin-top:4px}
+.btn:active{transform:scale(0.97)}
+.btn-primary{background:var(--honey);color:#fff}
+.btn-primary:active{background:var(--honey-dark)}
 .btn-google{background:var(--surface);color:var(--text);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;gap:10px;margin-top:12px}
-.btn-google:hover{background:var(--bg)}
-.google-icon{width:18px;height:18px}
+.btn-google:active{background:var(--bg)}
+.google-icon{width:18px;height:18px;flex-shrink:0}
 
 /* Divider */
 .divider{display:flex;align-items:center;gap:12px;margin:16px 0;color:var(--text-3);font-size:12px}
 .divider::before,.divider::after{content:'';flex:1;height:1px;background:var(--border)}
 
 /* Alert */
-.alert{padding:10px 13px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none}
+.alert{padding:11px 14px;border-radius:var(--radius-sm);font-size:13px;margin-bottom:14px;display:none}
 .alert-error{background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1}
 .alert-success{background:var(--forest-light);color:var(--forest);border:1px solid #A9D5A2}
 
 /* Free badge */
-.free-badge{background:var(--honey-light);border:1px solid var(--honey);border-radius:var(--radius-sm);padding:10px 14px;display:flex;align-items:center;gap:10px;margin-bottom:20px}
-.free-badge-icon{font-size:20px}
+.free-badge{background:var(--honey-light);border:1px solid var(--honey);border-radius:var(--radius-sm);padding:12px 14px;display:flex;align-items:center;gap:10px;margin-bottom:20px}
+.free-badge-icon{font-size:22px;flex-shrink:0}
 .free-badge-text{font-size:12px;color:var(--honey-dark)}
-.free-badge-text strong{display:block;font-size:13px;margin-bottom:1px}
+.free-badge-text strong{display:block;font-size:13px;margin-bottom:2px}
 
 /* Footer */
 .footer{text-align:center;margin-top:20px;font-size:11px;color:var(--text-3)}
+
+/* Forgot link */
+.forgot-link{font-size:13px;color:var(--text-3);text-decoration:none;display:block;text-align:center;margin-top:14px}
+.forgot-link:active{color:var(--honey)}
+.terms{text-align:center;margin-top:14px;font-size:11px;color:var(--text-3)}
 </style>
 </head>
 <body>
-
 <div class="container">
+
+  <!-- Language picker -->
+  <div class="lang-bar" id="lang-bar">
+    <button class="lang-pill active" onclick="setLang('en')">🇺🇸 EN</button>
+    <button class="lang-pill" onclick="setLang('de')">🇩🇪 DE</button>
+    <button class="lang-pill" onclick="setLang('fr')">🇫🇷 FR</button>
+    <button class="lang-pill" onclick="setLang('es')">🇪🇸 ES</button>
+    <button class="lang-pill" onclick="setLang('it')">🇮🇹 IT</button>
+    <button class="lang-pill" onclick="setLang('zh')">🇨🇳 中文</button>
+  </div>
+
   <!-- Logo -->
   <div class="logo">
     <div class="logo-icon">🐝</div>
-    <div>
-      <h1>Beekeepy</h1>
-    </div>
+    <h1>Beekeepy</h1>
   </div>
-  <div class="tagline">Free Beekeeping Journal · beekeepy.com</div>
+  <div class="tagline" id="tagline">Free Beekeeping Journal · beekeepy.com</div>
 
   <!-- Free plan badge -->
   <div class="free-badge">
     <div class="free-badge-icon">🎁</div>
     <div class="free-badge-text">
-      <strong>Free plan: 2 hives included</strong>
-      Track inspections, queens, treatments & harvests — no credit card needed
+      <strong id="badge-title">Free plan: 2 hives included</strong>
+      <span id="badge-sub">Track inspections, queens, treatments & harvests — no credit card needed</span>
     </div>
   </div>
 
   <div class="card">
     <!-- Tabs -->
     <div class="tab-row">
-      <button class="tab active" onclick="switchTab('signin')">Sign In</button>
-      <button class="tab" onclick="switchTab('signup')">Create Account</button>
+      <button class="tab active" id="tab-signin" onclick="switchTab('signin')">Sign In</button>
+      <button class="tab" id="tab-signup" onclick="switchTab('signup')">Create Account</button>
     </div>
 
     <!-- Alert -->
@@ -102,17 +125,15 @@ input:focus{border-color:var(--honey)}
     <!-- Sign In Form -->
     <div id="form-signin">
       <div class="form-group">
-        <label class="form-label">Email address</label>
+        <label class="form-label" id="lbl-email">Email address</label>
         <input type="email" id="signin-email" placeholder="you@example.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label class="form-label">Password</label>
+        <label class="form-label" id="lbl-password">Password</label>
         <input type="password" id="signin-password" placeholder="Your password" autocomplete="current-password">
       </div>
-      <button class="btn btn-primary" onclick="signIn()">Sign In →</button>
-
-      <div class="divider">or</div>
-
+      <button class="btn btn-primary" onclick="signIn()"><span id="btn-signin">Sign In →</span></button>
+      <div class="divider"><span id="lbl-or">or</span></div>
       <button class="btn btn-google" onclick="signInWithGoogle()">
         <svg class="google-icon" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -120,32 +141,27 @@ input:focus{border-color:var(--honey)}
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        Continue with Google
+        <span id="btn-google-signin">Continue with Google</span>
       </button>
-
-      <div style="text-align:center;margin-top:16px">
-        <a href="#" onclick="showForgotPassword()" style="font-size:12px;color:var(--text-3);text-decoration:none">Forgot password?</a>
-      </div>
+      <a href="#" class="forgot-link" onclick="showForgotPassword()" id="lbl-forgot">Forgot password?</a>
     </div>
 
     <!-- Sign Up Form -->
     <div id="form-signup" style="display:none">
       <div class="form-group">
-        <label class="form-label">Your name</label>
+        <label class="form-label" id="lbl-name">Your name</label>
         <input type="text" id="signup-name" placeholder="e.g. John Smith">
       </div>
       <div class="form-group">
-        <label class="form-label">Email address</label>
+        <label class="form-label" id="lbl-email2">Email address</label>
         <input type="email" id="signup-email" placeholder="you@example.com" autocomplete="email">
       </div>
       <div class="form-group">
-        <label class="form-label">Password (min 6 characters)</label>
+        <label class="form-label" id="lbl-password2">Password (min 6 characters)</label>
         <input type="password" id="signup-password" placeholder="Create a password" autocomplete="new-password">
       </div>
-      <button class="btn btn-primary" onclick="signUp()">Create Free Account →</button>
-
-      <div class="divider">or</div>
-
+      <button class="btn btn-primary" onclick="signUp()"><span id="btn-signup">Create Free Account →</span></button>
+      <div class="divider"><span id="lbl-or2">or</span></div>
       <button class="btn btn-google" onclick="signInWithGoogle()">
         <svg class="google-icon" viewBox="0 0 24 24">
           <path fill="#4285F4" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/>
@@ -153,35 +169,209 @@ input:focus{border-color:var(--honey)}
           <path fill="#FBBC05" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/>
           <path fill="#EA4335" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/>
         </svg>
-        Sign up with Google
+        <span id="btn-google-signup">Sign up with Google</span>
       </button>
-
-      <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text-3)">
-        By creating an account you agree to our Terms of Service
-      </div>
+      <div class="terms" id="lbl-terms">By creating an account you agree to our Terms of Service</div>
     </div>
   </div>
 
-  <div class="footer">🐝 Beekeepy · beekeepy.com · Free Beekeeping Journal</div>
+  <div class="footer">🐝 Beekeepy · beekeepy.com · <span id="footer-sub">Free Beekeeping Journal</span></div>
 </div>
 
 <script>
-// ── Supabase init ──────────────────────────────────────────
-// IMPORTANT: Replace these two values with your own from supabase.com
 const SUPABASE_URL = 'https://ydrawqnkwdvfhauansdf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_6VC3g90SrIM5s7bI-CIwZQ_tbmk_h4B';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
-// ── Tab switch ─────────────────────────────────────────────
-function switchTab(tab) {
-  document.getElementById('form-signin').style.display = tab === 'signin' ? 'block' : 'none';
-  document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
-  document.querySelectorAll('.tab').forEach((t, i) => t.classList.toggle('active', (i === 0) === (tab === 'signin')));
+const L = {
+  en:{
+    tagline:'Free Beekeeping Journal · beekeepy.com',
+    badge_title:'Free plan: 2 hives included',
+    badge_sub:'Track inspections, queens, treatments & harvests — no credit card needed',
+    tab_signin:'Sign In', tab_signup:'Create Account',
+    lbl_email:'Email address', lbl_password:'Password',
+    lbl_name:'Your name', lbl_password2:'Password (min 6 characters)',
+    btn_signin:'Sign In →', btn_signup:'Create Free Account →',
+    btn_google_signin:'Continue with Google', btn_google_signup:'Sign up with Google',
+    lbl_or:'or', lbl_forgot:'Forgot password?',
+    lbl_terms:'By creating an account you agree to our Terms of Service',
+    footer_sub:'Free Beekeeping Journal',
+    ph_email:'you@example.com', ph_password:'Your password',
+    ph_name:'e.g. John Smith', ph_password2:'Create a password',
+    err_fill_all:'Please fill in all fields.',
+    err_email_password:'Please enter your email and password.',
+    err_password_short:'Password must be at least 6 characters.',
+    err_email_first:'Enter your email address first, then click Forgot password.',
+    success_created:'Account created! Please check your email to confirm, then sign in.',
+    success_reset:'Password reset email sent! Check your inbox.',
+  },
+  zh:{
+    tagline:'免费养蜂日志 · beekeepy.com',
+    badge_title:'免费计划：包含2个蜂箱',
+    badge_sub:'记录检查、蜂王、治疗和采蜜 — 无需信用卡',
+    tab_signin:'登录', tab_signup:'创建账户',
+    lbl_email:'邮箱地址', lbl_password:'密码',
+    lbl_name:'您的姓名', lbl_password2:'密码（至少6位字符）',
+    btn_signin:'登录 →', btn_signup:'免费创建账户 →',
+    btn_google_signin:'使用 Google 登录', btn_google_signup:'使用 Google 注册',
+    lbl_or:'或', lbl_forgot:'忘记密码？',
+    lbl_terms:'创建账户即表示您同意我们的服务条款',
+    footer_sub:'免费养蜂日志',
+    ph_email:'您的邮箱', ph_password:'您的密码',
+    ph_name:'例如：张三', ph_password2:'创建密码',
+    err_fill_all:'请填写所有字段。',
+    err_email_password:'请输入您的邮箱和密码。',
+    err_password_short:'密码至少需要6位字符。',
+    err_email_first:'请先输入邮箱地址，然后点击忘记密码。',
+    success_created:'账户已创建！请查看邮箱确认，然后登录。',
+    success_reset:'密码重置邮件已发送！请查看您的收件箱。',
+  },
+  de:{
+    tagline:'Kostenloses Imker-Tagebuch · beekeepy.com',
+    badge_title:'Kostenloser Plan: 2 Völker inklusive',
+    badge_sub:'Kontrollen, Königinnen, Behandlungen & Ernten erfassen — keine Kreditkarte nötig',
+    tab_signin:'Anmelden', tab_signup:'Konto erstellen',
+    lbl_email:'E-Mail-Adresse', lbl_password:'Passwort',
+    lbl_name:'Ihr Name', lbl_password2:'Passwort (min. 6 Zeichen)',
+    btn_signin:'Anmelden →', btn_signup:'Kostenloses Konto erstellen →',
+    btn_google_signin:'Mit Google anmelden', btn_google_signup:'Mit Google registrieren',
+    lbl_or:'oder', lbl_forgot:'Passwort vergessen?',
+    lbl_terms:'Mit der Kontoerstellung stimmen Sie unseren Nutzungsbedingungen zu',
+    footer_sub:'Kostenloses Imker-Tagebuch',
+    ph_email:'Sie@beispiel.de', ph_password:'Ihr Passwort',
+    ph_name:'z.B. Hans Müller', ph_password2:'Passwort erstellen',
+    err_fill_all:'Bitte füllen Sie alle Felder aus.',
+    err_email_password:'Bitte geben Sie E-Mail und Passwort ein.',
+    err_password_short:'Das Passwort muss mindestens 6 Zeichen lang sein.',
+    err_email_first:'Bitte zuerst E-Mail eingeben, dann auf Passwort vergessen klicken.',
+    success_created:'Konto erstellt! Bitte bestätigen Sie Ihre E-Mail, dann anmelden.',
+    success_reset:'Passwort-Reset-E-Mail gesendet! Bitte überprüfen Sie Ihren Posteingang.',
+  },
+  fr:{
+    tagline:'Journal apicole gratuit · beekeepy.com',
+    badge_title:'Plan gratuit : 2 ruches incluses',
+    badge_sub:'Suivez visites, reines, traitements & récoltes — sans carte bancaire',
+    tab_signin:'Connexion', tab_signup:'Créer un compte',
+    lbl_email:'Adresse e-mail', lbl_password:'Mot de passe',
+    lbl_name:'Votre nom', lbl_password2:'Mot de passe (min. 6 caractères)',
+    btn_signin:'Se connecter →', btn_signup:'Créer un compte gratuit →',
+    btn_google_signin:'Continuer avec Google', btn_google_signup:'S\'inscrire avec Google',
+    lbl_or:'ou', lbl_forgot:'Mot de passe oublié ?',
+    lbl_terms:'En créant un compte, vous acceptez nos Conditions d\'utilisation',
+    footer_sub:'Journal apicole gratuit',
+    ph_email:'vous@exemple.fr', ph_password:'Votre mot de passe',
+    ph_name:'ex. Jean Dupont', ph_password2:'Créer un mot de passe',
+    err_fill_all:'Veuillez remplir tous les champs.',
+    err_email_password:'Veuillez entrer votre e-mail et mot de passe.',
+    err_password_short:'Le mot de passe doit contenir au moins 6 caractères.',
+    err_email_first:'Entrez d\'abord votre e-mail, puis cliquez sur mot de passe oublié.',
+    success_created:'Compte créé ! Vérifiez votre e-mail pour confirmer, puis connectez-vous.',
+    success_reset:'E-mail de réinitialisation envoyé ! Vérifiez votre boîte de réception.',
+  },
+  es:{
+    tagline:'Diario apícola gratuito · beekeepy.com',
+    badge_title:'Plan gratuito: 2 colmenas incluidas',
+    badge_sub:'Registra revisiones, reinas, tratamientos & cosechas — sin tarjeta de crédito',
+    tab_signin:'Iniciar sesión', tab_signup:'Crear cuenta',
+    lbl_email:'Correo electrónico', lbl_password:'Contraseña',
+    lbl_name:'Tu nombre', lbl_password2:'Contraseña (mín. 6 caracteres)',
+    btn_signin:'Iniciar sesión →', btn_signup:'Crear cuenta gratuita →',
+    btn_google_signin:'Continuar con Google', btn_google_signup:'Registrarse con Google',
+    lbl_or:'o', lbl_forgot:'¿Olvidaste tu contraseña?',
+    lbl_terms:'Al crear una cuenta aceptas nuestros Términos de Servicio',
+    footer_sub:'Diario apícola gratuito',
+    ph_email:'tu@ejemplo.es', ph_password:'Tu contraseña',
+    ph_name:'ej. Juan García', ph_password2:'Crear contraseña',
+    err_fill_all:'Por favor completa todos los campos.',
+    err_email_password:'Por favor ingresa tu correo y contraseña.',
+    err_password_short:'La contraseña debe tener al menos 6 caracteres.',
+    err_email_first:'Ingresa tu correo primero, luego haz clic en olvidé mi contraseña.',
+    success_created:'¡Cuenta creada! Revisa tu correo para confirmar, luego inicia sesión.',
+    success_reset:'¡Correo de restablecimiento enviado! Revisa tu bandeja de entrada.',
+  },
+  it:{
+    tagline:'Diario apicolo gratuito · beekeepy.com',
+    badge_title:'Piano gratuito: 2 arnie incluse',
+    badge_sub:'Registra ispezioni, regine, trattamenti & raccolte — senza carta di credito',
+    tab_signin:'Accedi', tab_signup:'Crea account',
+    lbl_email:'Indirizzo e-mail', lbl_password:'Password',
+    lbl_name:'Il tuo nome', lbl_password2:'Password (min. 6 caratteri)',
+    btn_signin:'Accedi →', btn_signup:'Crea account gratuito →',
+    btn_google_signin:'Continua con Google', btn_google_signup:'Registrati con Google',
+    lbl_or:'o', lbl_forgot:'Password dimenticata?',
+    lbl_terms:'Creando un account accetti i nostri Termini di Servizio',
+    footer_sub:'Diario apicolo gratuito',
+    ph_email:'tu@esempio.it', ph_password:'La tua password',
+    ph_name:'es. Mario Rossi', ph_password2:'Crea una password',
+    err_fill_all:'Per favore compila tutti i campi.',
+    err_email_password:'Per favore inserisci e-mail e password.',
+    err_password_short:'La password deve avere almeno 6 caratteri.',
+    err_email_first:'Inserisci prima la tua e-mail, poi clicca su password dimenticata.',
+    success_created:'Account creato! Controlla la tua e-mail per confermare, poi accedi.',
+    success_reset:'E-mail di reimpostazione inviata! Controlla la tua casella di posta.',
+  },
+};
+
+let currentLang = 'en';
+
+function t(key){ return (L[currentLang]||L.en)[key] || (L.en[key]||key); }
+
+function applyLang(){
+  const lang = currentLang;
+  document.documentElement.lang = lang;
+  document.getElementById('tagline').textContent = t('tagline');
+  document.getElementById('badge-title').textContent = t('badge_title');
+  document.getElementById('badge-sub').textContent = t('badge_sub');
+  document.getElementById('tab-signin').textContent = t('tab_signin');
+  document.getElementById('tab-signup').textContent = t('tab_signup');
+  document.getElementById('lbl-email').textContent = t('lbl_email');
+  document.getElementById('lbl-password').textContent = t('lbl_password');
+  document.getElementById('lbl-name').textContent = t('lbl_name');
+  document.getElementById('lbl-email2').textContent = t('lbl_email');
+  document.getElementById('lbl-password2').textContent = t('lbl_password2');
+  document.getElementById('btn-signin').textContent = t('btn_signin');
+  document.getElementById('btn-signup').textContent = t('btn_signup');
+  document.getElementById('btn-google-signin').textContent = t('btn_google_signin');
+  document.getElementById('btn-google-signup').textContent = t('btn_google_signup');
+  document.getElementById('lbl-or').textContent = t('lbl_or');
+  document.getElementById('lbl-or2').textContent = t('lbl_or');
+  document.getElementById('lbl-forgot').textContent = t('lbl_forgot');
+  document.getElementById('lbl-terms').textContent = t('lbl_terms');
+  document.getElementById('footer-sub').textContent = t('footer_sub');
+  document.getElementById('signin-email').placeholder = t('ph_email');
+  document.getElementById('signin-password').placeholder = t('ph_password');
+  document.getElementById('signup-name').placeholder = t('ph_name');
+  document.getElementById('signup-email').placeholder = t('ph_email');
+  document.getElementById('signup-password').placeholder = t('ph_password2');
+  // Update active pill
+  document.querySelectorAll('.lang-pill').forEach(btn => {
+    const btnLang = btn.getAttribute('onclick').match(/setLang\('(\w+)'\)/)?.[1];
+    btn.classList.toggle('active', btnLang === lang);
+  });
+}
+
+function setLang(lang){
+  currentLang = lang;
+  try{ localStorage.setItem('bk_lang', lang); }catch(e){}
+  applyLang();
   clearAlerts();
 }
 
-// ── Alerts ─────────────────────────────────────────────────
+// Load saved lang on page load
+try{
+  const saved = localStorage.getItem('bk_lang');
+  if(saved && L[saved]) currentLang = saved;
+}catch(e){}
+applyLang();
+
+function switchTab(tab) {
+  document.getElementById('form-signin').style.display = tab === 'signin' ? 'block' : 'none';
+  document.getElementById('form-signup').style.display = tab === 'signup' ? 'block' : 'none';
+  document.querySelectorAll('.tab').forEach((el, i) => el.classList.toggle('active', (i===0)===(tab==='signin')));
+  clearAlerts();
+}
+
 function showError(msg) {
   const el = document.getElementById('alert-error');
   el.textContent = msg; el.style.display = 'block';
@@ -197,32 +387,26 @@ function clearAlerts() {
   document.getElementById('alert-success').style.display = 'none';
 }
 
-// ── Sign In ────────────────────────────────────────────────
 async function signIn() {
   const email = document.getElementById('signin-email').value.trim();
   const password = document.getElementById('signin-password').value;
-  if (!email || !password) { showError('Please enter your email and password.'); return; }
+  if (!email || !password) { showError(t('err_email_password')); return; }
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) { showError(error.message); return; }
   window.location.href = 'app.html';
 }
 
-// ── Sign Up ────────────────────────────────────────────────
 async function signUp() {
   const name = document.getElementById('signup-name').value.trim();
   const email = document.getElementById('signup-email').value.trim();
   const password = document.getElementById('signup-password').value;
-  if (!name || !email || !password) { showError('Please fill in all fields.'); return; }
-  if (password.length < 6) { showError('Password must be at least 6 characters.'); return; }
-  const { error } = await sb.auth.signUp({
-    email, password,
-    options: { data: { full_name: name } }
-  });
+  if (!name || !email || !password) { showError(t('err_fill_all')); return; }
+  if (password.length < 6) { showError(t('err_password_short')); return; }
+  const { error } = await sb.auth.signUp({ email, password, options: { data: { full_name: name } } });
   if (error) { showError(error.message); return; }
-  showSuccess('Account created! Please check your email to confirm, then sign in.');
+  showSuccess(t('success_created'));
 }
 
-// ── Google Sign In ─────────────────────────────────────────
 async function signInWithGoogle() {
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
@@ -231,21 +415,18 @@ async function signInWithGoogle() {
   if (error) showError(error.message);
 }
 
-// ── Forgot password ────────────────────────────────────────
 async function showForgotPassword() {
   const email = document.getElementById('signin-email').value.trim();
-  if (!email) { showError('Enter your email address first, then click Forgot password.'); return; }
+  if (!email) { showError(t('err_email_first')); return; }
   const { error } = await sb.auth.resetPasswordForEmail(email);
   if (error) { showError(error.message); return; }
-  showSuccess('Password reset email sent! Check your inbox.');
+  showSuccess(t('success_reset'));
 }
 
-// ── Auto redirect if already logged in ────────────────────
 sb.auth.getSession().then(({ data: { session } }) => {
   if (session) window.location.href = 'app.html';
 });
 
-// ── Enter key support ──────────────────────────────────────
 document.addEventListener('keydown', e => {
   if (e.key === 'Enter') {
     const tab = document.getElementById('form-signup').style.display === 'none' ? 'signin' : 'signup';

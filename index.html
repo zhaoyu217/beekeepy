@@ -358,15 +358,6 @@ function setLang(lang){
   clearAlerts();
 }
 
-// Save QR hive target if came from QR scan
-try{
-  const ref=document.referrer||'';
-  // Check if redirected from app.html?hive=xxx
-  const appUrl=new URL(location.href);
-  // index.html 本身不会有 hive 参数，但 app.html 会跳过来
-  // 我们用 sessionStorage 来传递
-}catch(e){}
-
 // Load saved lang on page load
 try{
   const saved = localStorage.getItem('bk_lang');
@@ -402,8 +393,8 @@ async function signIn() {
   if (!email || !password) { showError(t('err_email_password')); return; }
   const { error } = await sb.auth.signInWithPassword({ email, password });
   if (error) { showError(error.message); return; }
-  const hiveTarget=sessionStorage.getItem('qr_hive');
-  sessionStorage.removeItem('qr_hive');
+  let hiveTarget='';
+  try{hiveTarget=sessionStorage.getItem('qr_hive')||'';sessionStorage.removeItem('qr_hive');}catch(e){}
   window.location.href='app.html'+(hiveTarget?'?hive='+hiveTarget:'');
 }
 
@@ -436,8 +427,8 @@ async function showForgotPassword() {
 
 sb.auth.getSession().then(({ data: { session } }) => {
   if(session){
-    const hiveTarget=sessionStorage.getItem('qr_hive');
-    sessionStorage.removeItem('qr_hive');
+    let hiveTarget='';
+    try{hiveTarget=sessionStorage.getItem('qr_hive')||'';sessionStorage.removeItem('qr_hive');}catch(e){}
     window.location.href='app.html'+(hiveTarget?'?hive='+hiveTarget:'');
   }
 });

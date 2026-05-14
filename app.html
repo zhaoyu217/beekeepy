@@ -595,6 +595,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <!-- Full timeline -->
   <div class="section-hd"><span data-i18n="hive_timeline">Hive Timeline</span></div>
   <div id="hive-detail-timeline"></div>
+
+  <!-- SkogHive subtle link -->
+  <div id="skoghive-hive-link" style="margin-top:16px;display:none">
+    <a id="skoghive-hive-anchor" href="https://www.skoghive.com/collections/all-hives" target="_blank"
+       style="display:flex;align-items:center;gap:10px;padding:11px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);text-decoration:none;color:var(--text-2)">
+      <span style="font-size:18px">🌲</span>
+      <div style="flex:1">
+        <div style="font-size:12px;font-weight:600;color:var(--text)" id="skoghive-link-title">Shop this hive on SkogHive</div>
+        <div style="font-size:11px;color:var(--text-3)">skoghive.com · Free shipping $99+</div>
+      </div>
+      <span style="font-size:12px;color:var(--honey-dark)">→</span>
+    </a>
+  </div>
 </div>
 </div>
 
@@ -771,10 +784,55 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="modal-bg" id="modal-hive">
   <div class="modal">
     <div class="modal-title"><h2 style="font-size:16px">Add Hive</h2><button class="close-btn" onclick="closeModal('modal-hive')">✕</button></div>
+
+    <!-- SkogHive Quick Select -->
+    <div style="background:linear-gradient(135deg,#FDF3E0,#EAF2E0);border:1.5px solid var(--honey);border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:14px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--honey-dark);display:flex;align-items:center;gap:5px">
+          🌲 SkogHive Quick Setup
+        </div>
+        <a href="https://www.skoghive.com/collections/all-hives" target="_blank" style="font-size:11px;color:var(--honey-dark);text-decoration:none;border:1px solid var(--honey);border-radius:20px;padding:2px 8px">Shop →</a>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px" id="skoghive-presets">
+        <button onclick="applySkogHivePreset(0)" style="text-align:left;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseenter="this.style.borderColor='var(--honey)'" onmouseleave="this.style.borderColor='var(--border)'">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">4-Frame Flow Hive</div>
+          <div style="font-size:10px;color:var(--text-3)">Beginner · Cedar · $299</div>
+        </button>
+        <button onclick="applySkogHivePreset(1)" style="text-align:left;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseenter="this.style.borderColor='var(--honey)'" onmouseleave="this.style.borderColor='var(--border)'">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">7-Frame Flow Hive</div>
+          <div style="font-size:10px;color:var(--text-3)">Standard · Cedar · $449</div>
+        </button>
+        <button onclick="applySkogHivePreset(2)" style="text-align:left;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseenter="this.style.borderColor='var(--honey)'" onmouseleave="this.style.borderColor='var(--border)'">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">10-Frame HDPE</div>
+          <div style="font-size:10px;color:var(--text-3)">Insulated · All-weather · $449</div>
+        </button>
+        <button onclick="applySkogHivePreset(3)" style="text-align:left;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.15s" onmouseenter="this.style.borderColor='var(--honey)'" onmouseleave="this.style.borderColor='var(--border)'">
+          <div style="font-size:11px;font-weight:600;color:var(--text)">Hexagon Observation</div>
+          <div style="font-size:10px;color:var(--text-3)">Clear view · Educational · $180</div>
+        </button>
+        <button onclick="applySkogHivePreset(4)" style="text-align:left;padding:8px 10px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;grid-column:1/-1;transition:all 0.15s;display:flex;align-items:center;justify-content:space-between" onmouseenter="this.style.borderColor='var(--honey)'" onmouseleave="this.style.borderColor='var(--border)'">
+          <div>
+            <div style="font-size:11px;font-weight:600;color:var(--text)">AI Smart Beehive</div>
+            <div style="font-size:10px;color:var(--text-3)">Cedar · Solar · IoT Monitoring · $480</div>
+          </div>
+          <span style="font-size:10px;background:var(--honey);color:#fff;border-radius:20px;padding:2px 7px;font-weight:600">NEW</span>
+        </button>
+      </div>
+    </div>
+
     <div class="form-group"><label class="form-label">Hive name</label><input type="text" id="hv-name" placeholder="e.g. Hive 1, Blue Box"></div>
     <div class="form-group"><label class="form-label">Apiary</label><select id="hv-apiary"></select></div>
     <div class="form-group"><label class="form-label">Hive type</label>
-      <select id="hv-type"><option>Langstroth 10-frame deep</option><option>Langstroth 8-frame medium</option><option>Langstroth 8-frame deep</option><option>Warré hive</option><option>Top-bar hive (TBH)</option><option>Flow Hive</option><option>Long / Layens hive</option><option>Other</option></select>
+      <select id="hv-type">
+        <option>Langstroth 10-frame deep</option>
+        <option>Langstroth 8-frame medium</option>
+        <option>Langstroth 8-frame deep</option>
+        <option>Warré hive</option>
+        <option>Top-bar hive (TBH)</option>
+        <option>Flow Hive</option>
+        <option>Long / Layens hive</option>
+        <option>Other</option>
+      </select>
     </div>
     <div class="form-group"><label class="form-label">Number of boxes</label><input type="number" id="hv-frames" placeholder="e.g. 2" min="1" max="10"></div>
     <div class="form-group"><label class="form-label">Installed date</label><input type="date" id="hv-date"></div>
@@ -1974,6 +2032,21 @@ function openHiveDetail(hiveId){
   renderHiveDetailTimeline(hiveId);
   showHiveAIAnalysis(hiveId);
   renderSmartTasks(hiveId);
+  // SkogHive link
+  const hv=getHive(hiveId);
+  const preset=SKOGHIVE_PRESETS.find(p=>hv&&hv.name&&hv.name.includes('SkogHive'));
+  const linkDiv=document.getElementById('skoghive-hive-link');
+  const linkAnchor=document.getElementById('skoghive-hive-anchor');
+  const linkTitle=document.getElementById('skoghive-link-title');
+  if(preset&&linkDiv){
+    linkDiv.style.display='block';
+    linkAnchor.href=preset.url;
+    linkTitle.textContent='Shop '+preset.name+' on SkogHive';
+  } else if(linkDiv){
+    linkDiv.style.display='block';
+    linkAnchor.href='https://www.skoghive.com/collections/all-hives';
+    linkTitle.textContent='Shop beehives on SkogHive';
+  }
 }
 
 function renderHiveDetailTimeline(hiveId){
@@ -2317,6 +2390,26 @@ function showPage(id,btn){
 function populateTreatHive(){document.getElementById('treat-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name} (${getApiary(h.apiary_id)?.name||''})</option>`).join('');const d=document.getElementById('treat-date');if(!d.value)d.value=new Date().toISOString().split('T')[0];}
 function populateHarvHive(){document.getElementById('harv-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name} (${getApiary(h.apiary_id)?.name||''})</option>`).join('');const d=document.getElementById('harv-date');if(!d.value)d.value=new Date().toISOString().split('T')[0];}
 function populateHiveApiary(){document.getElementById('hv-apiary').innerHTML=apiaries.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');}
+
+// SKOGHIVE PRESETS
+const SKOGHIVE_PRESETS = [
+  {name:'SkogHive 4-Frame Flow Hive',type:'Flow Hive',boxes:2,url:'https://www.skoghive.com/products/small-automatic-flow-hive-4-frame-cedar'},
+  {name:'SkogHive 7-Frame Flow Hive',type:'Flow Hive',boxes:2,url:'https://www.skoghive.com/products/automatic-flow-hive-kit-7-frame-cedar'},
+  {name:'SkogHive 10-Frame HDPE Insulated',type:'Langstroth 10-frame deep',boxes:2,url:'https://www.skoghive.com/products/skoghive-10-frame-insulated-plastic-beehive-hdpe'},
+  {name:'SkogHive Hexagon Observation',type:'Other',boxes:1,url:'https://www.skoghive.com/products/skoghive-wall-mounted-observation-hexagon-beehive'},
+  {name:'SkogHive AI Smart Beehive',type:'Flow Hive',boxes:2,url:'https://www.skoghive.com/products/ai-smart-beehive-cedar-bee-house-with-solar-power-iot-app-monitoring'},
+];
+function applySkogHivePreset(idx){
+  const p=SKOGHIVE_PRESETS[idx];
+  document.getElementById('hv-name').value=p.name;
+  document.getElementById('hv-type').value=p.type;
+  document.getElementById('hv-frames').value=p.boxes;
+  document.querySelectorAll('#skoghive-presets button').forEach((btn,i)=>{
+    btn.style.borderColor=i===idx?'var(--honey)':'var(--border)';
+    btn.style.background=i===idx?'var(--honey-light)':'var(--surface)';
+  });
+  showToast('🌲 '+p.name+' preset applied','success');
+}
 
 // BATCH MODE
 let batchMode=false;

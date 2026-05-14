@@ -1,0 +1,1641 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Beekeepy · Dashboard</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<style>
+:root{
+  --honey:#E8930A;--honey-light:#FDF3E0;--honey-dark:#B36800;
+  --forest:#2D5016;--forest-mid:#4A7C2F;--forest-light:#EAF2E0;
+  --amber:#F5A623;--danger:#C0392B;--danger-light:#FDECEA;
+  --sky:#2980B9;--sky-light:#EBF5FB;--purple:#7D3C98;--purple-light:#F5EEF8;
+  --bg:#FAFAF7;--surface:#FFFFFF;--border:#E8E4DC;--border-dark:#CEC8BB;
+  --text:#1A1A14;--text-2:#5C5847;--text-3:#9A9280;
+  --radius:12px;--radius-sm:8px;
+}
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh}
+h1,h2,h3{font-family:'DM Serif Display',serif}
+.shell{display:flex;flex-direction:column;min-height:100vh;max-width:480px;margin:0 auto;background:var(--surface);box-shadow:0 0 40px rgba(0,0,0,0.06)}
+
+/* Topbar */
+.topbar{background:var(--surface);border-bottom:1px solid var(--border);padding:12px 16px;display:flex;align-items:center;justify-content:space-between;position:sticky;top:0;z-index:50}
+.logo{display:flex;align-items:center;gap:8px}
+.logo-icon{width:30px;height:30px;background:var(--honey);border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:16px}
+.logo h1{font-size:17px}
+.topbar-right{display:flex;align-items:center;gap:6px}
+.user-avatar{width:30px;height:30px;border-radius:50%;background:var(--forest-light);border:1px solid var(--border);display:flex;align-items:center;justify-content:center;font-size:13px;color:var(--forest);font-weight:600;cursor:pointer}
+.icon-btn{width:30px;height:30px;border-radius:8px;border:1px solid var(--border);background:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:15px;color:var(--text-2)}
+.icon-btn:hover{background:var(--honey-light);border-color:var(--honey)}
+
+/* Loading */
+.loading-overlay{position:fixed;inset:0;background:rgba(250,250,247,0.95);z-index:300;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px}
+.spinner{width:32px;height:32px;border:3px solid var(--border);border-top-color:var(--honey);border-radius:50%;animation:spin 0.7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+
+/* Nav */
+.bottomnav{position:sticky;bottom:0;background:var(--surface);border-top:1px solid var(--border);display:flex;z-index:50}
+.nav-item{flex:1;padding:10px 4px 12px;border:none;background:none;cursor:pointer;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--text-3);font-size:10px;font-family:'DM Sans',sans-serif;transition:color 0.15s}
+.nav-item.active{color:var(--honey)}
+.nav-item .ni{font-size:20px}
+.nav-pip{width:4px;height:4px;border-radius:2px;background:var(--honey);margin-top:1px;display:none}
+.nav-item.active .nav-pip{display:block}
+
+/* Pages */
+.page{display:none;padding:16px;overflow-y:auto}
+.page.active{display:block}
+.scroll-content{padding-bottom:80px}
+
+/* Cards */
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px}
+.card-title{font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px}
+
+/* Stats */
+.stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;margin-bottom:14px}
+.stat{background:var(--honey-light);border-radius:var(--radius-sm);padding:12px;text-align:center}
+.stat-n{font-size:24px;font-family:'DM Serif Display',serif;color:var(--honey-dark)}
+.stat-l{font-size:11px;color:var(--text-2);margin-top:2px}
+.stat.forest{background:var(--forest-light)}.stat.forest .stat-n{color:var(--forest)}
+.stat.danger{background:var(--danger-light)}.stat.danger .stat-n{color:var(--danger)}
+
+.section-hd{font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin:14px 0 8px}
+
+/* Hive grid */
+.hive-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px}
+.hive-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px;cursor:pointer;transition:all 0.15s;position:relative}
+.hive-card:hover{border-color:var(--honey);box-shadow:0 2px 8px rgba(232,147,10,0.12)}
+.hive-card.selected{border-color:var(--honey);background:var(--honey-light)}
+.hive-card.status-warn{border-left:3px solid var(--amber)}
+.hive-card.status-danger{border-left:3px solid var(--danger)}
+.hive-card.status-ok{border-left:3px solid var(--forest-mid)}
+.hive-name{font-weight:600;font-size:14px;margin-bottom:2px}
+.hive-apiary{font-size:11px;color:var(--text-3);margin-bottom:6px}
+.score-row{display:flex;gap:2px;margin-bottom:4px}
+.pip{height:4px;flex:1;border-radius:2px;background:var(--border)}
+.pip.on-green{background:var(--forest-mid)}.pip.on-amber{background:var(--amber)}.pip.on-red{background:var(--danger)}
+.hive-meta{font-size:11px;color:var(--text-3)}
+.warning-tag{position:absolute;top:8px;right:8px;font-size:10px;padding:2px 6px;border-radius:20px;font-weight:500;background:#FFF3CD;color:#856404}
+.overdue-tag{background:var(--danger-light);color:var(--danger)}
+
+/* AI Analysis panel */
+.ai-panel{background:var(--purple-light);border:1px solid #C39BD3;border-radius:var(--radius);padding:14px;margin-bottom:10px}
+.ai-panel-title{font-size:12px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+.ai-alert{display:flex;align-items:flex-start;gap:8px;padding:7px 0;border-bottom:1px solid #D7BDE2}
+.ai-alert:last-child{border-bottom:none;padding-bottom:0}
+.ai-alert-icon{font-size:16px;flex-shrink:0;margin-top:1px}
+.ai-alert-text{font-size:12px;color:var(--text-2)}
+.ai-alert-title{font-weight:600;color:var(--text);font-size:13px;margin-bottom:1px}
+.ai-loading{display:flex;align-items:center;gap:8px;color:var(--text-3);font-size:13px}
+.ai-spinner{width:16px;height:16px;border:2px solid var(--border);border-top-color:var(--purple);border-radius:50%;animation:spin 0.7s linear infinite;flex-shrink:0}
+
+/* Risk badge */
+.risk-badge{font-size:11px;padding:3px 10px;border-radius:20px;font-weight:600;display:inline-block;margin-left:8px}
+.risk-low{background:var(--forest-light);color:var(--forest)}
+.risk-medium{background:#FFF3CD;color:#856404}
+.risk-high{background:var(--danger-light);color:var(--danger)}
+
+/* Weather card */
+.weather-card{background:linear-gradient(135deg,var(--sky-light),var(--forest-light));border:1px solid #AED6F1;border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;display:flex;align-items:center;gap:12px}
+.weather-icon{font-size:32px}
+.weather-temp{font-size:28px;font-family:'DM Serif Display',serif;color:var(--sky)}
+.weather-details{font-size:11px;color:var(--text-2)}
+.weather-loading{color:var(--text-3);font-size:13px;display:flex;align-items:center;gap:6px}
+
+/* Timeline (hive detail) */
+.hive-timeline{margin-bottom:14px}
+.tl-entry{display:flex;gap:10px;margin-bottom:12px}
+.tl-dot-col{display:flex;flex-direction:column;align-items:center;gap:0}
+.tl-dot{width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:13px;flex-shrink:0}
+.tl-dot-inspect{background:var(--honey-light);color:var(--honey-dark)}
+.tl-dot-photo{background:var(--sky-light);color:var(--sky)}
+.tl-dot-treat{background:var(--danger-light);color:var(--danger)}
+.tl-dot-harvest{background:#FFF3CD;color:#856404}
+.tl-line{flex:1;width:2px;background:var(--border);margin-top:4px}
+.tl-content{flex:1;padding-bottom:8px}
+.tl-date{font-size:11px;color:var(--text-3);margin-bottom:2px}
+.tl-title{font-weight:600;font-size:13px;margin-bottom:3px}
+.tl-body{font-size:12px;color:var(--text-2)}
+
+/* Photo grid */
+.photo-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:4px;margin-top:8px}
+.photo-thumb{aspect-ratio:1;border-radius:6px;object-fit:cover;width:100%;cursor:pointer;border:2px solid transparent;transition:border-color 0.15s}
+.photo-thumb:hover{border-color:var(--honey)}
+.photo-upload-btn{aspect-ratio:1;border-radius:6px;border:1.5px dashed var(--border-dark);display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;color:var(--honey);font-size:11px;gap:4px;background:none;transition:all 0.15s}
+.photo-upload-btn:hover{border-color:var(--honey);background:var(--honey-light)}
+.photo-upload-icon{font-size:22px}
+
+/* Reminder badge */
+.reminder-row{display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)}
+.reminder-row:last-child{border-bottom:none}
+.reminder-days{font-size:12px;color:var(--text-3)}
+.reminder-status{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500}
+.r-overdue{background:var(--danger-light);color:var(--danger)}
+.r-due{background:#FFF3CD;color:#856404}
+.r-ok{background:var(--forest-light);color:var(--forest)}
+
+/* Season banner */
+.season-banner{background:linear-gradient(135deg,var(--honey-light),var(--forest-light));border-radius:var(--radius);padding:12px 14px;margin-bottom:14px;display:flex;align-items:center;gap:10px}
+
+/* Warning panel */
+.warning-panel{background:#FFF8E1;border:1px solid #FFD54F;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px}
+.warning-panel .w-title{font-size:12px;font-weight:600;color:#856404;margin-bottom:4px}
+.warning-panel .w-item{font-size:12px;color:#6D5100;padding:2px 0}
+
+/* Mini chart */
+.mini-chart{display:flex;align-items:flex-end;gap:4px;height:60px;margin:8px 0}
+.bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px}
+.bar{width:100%;background:var(--honey);border-radius:3px 3px 0 0;min-height:4px}
+.bar-lbl{font-size:9px;color:var(--text-3)}
+
+/* Apiary */
+.apiary-item{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:13px 15px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.apiary-icon{width:40px;height:40px;border-radius:10px;background:var(--forest-light);display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0}
+
+/* Timeline global */
+.timeline{padding-left:16px;border-left:2px solid var(--border)}
+.tl-item{position:relative;margin-bottom:14px;padding-left:12px}
+.tl-item::before{content:'';width:10px;height:10px;border-radius:50%;background:var(--honey);position:absolute;left:-17px;top:3px;border:2px solid var(--surface)}
+.tl-hive{font-weight:600;font-size:13px}
+.tl-note{font-size:12px;color:var(--text-2);margin-top:1px}
+.tl-date-s{font-size:11px;color:var(--text-3);margin-top:2px}
+
+/* Badges */
+.badge{font-size:11px;padding:2px 8px;border-radius:20px;font-weight:500;display:inline-block}
+.b-green{background:var(--forest-light);color:var(--forest)}
+.b-amber{background:#FFF3CD;color:#856404}
+.b-red{background:var(--danger-light);color:var(--danger)}
+.b-sky{background:var(--sky-light);color:var(--sky)}
+.b-honey{background:var(--honey-light);color:var(--honey-dark)}
+.b-purple{background:var(--purple-light);color:var(--purple)}
+
+/* Forms */
+.form-group{margin-bottom:14px}
+.form-label{font-size:12px;font-weight:500;color:var(--text-2);display:block;margin-bottom:5px}
+.form-label .val{float:right;color:var(--text);font-weight:600}
+input[type=range]{width:100%;accent-color:var(--honey)}
+input[type=text],input[type=date],input[type=number],input[type=email],select,textarea{width:100%;padding:9px 11px;border:1px solid var(--border);border-radius:var(--radius-sm);background:var(--surface);color:var(--text);font-size:13px;font-family:'DM Sans',sans-serif;transition:border-color 0.15s}
+input:focus,select:focus,textarea:focus{outline:none;border-color:var(--honey)}
+textarea{resize:none}
+
+/* Toggles */
+.toggle-list .trow{display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)}
+.toggle-list .trow:last-child{border-bottom:none}
+.tog-label{font-size:13px;color:var(--text)}
+.tog{width:42px;height:24px;border-radius:12px;background:var(--border);cursor:pointer;border:none;position:relative;transition:background 0.2s;flex-shrink:0}
+.tog.on{background:var(--forest-mid)}
+.tog::after{content:'';width:18px;height:18px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:left 0.2s;box-shadow:0 1px 3px rgba(0,0,0,0.2)}
+.tog.on::after{left:21px}
+
+/* Chips */
+.chips{display:flex;flex-wrap:wrap;gap:6px}
+.chip{padding:5px 12px;border-radius:20px;border:1px solid var(--border);cursor:pointer;font-size:12px;background:var(--surface);color:var(--text-2);transition:all 0.15s}
+.chip.on{background:var(--honey-light);border-color:var(--honey);color:var(--honey-dark);font-weight:500}
+
+/* Buttons */
+.btn{padding:11px 20px;border-radius:var(--radius-sm);border:none;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500;width:100%;margin-top:6px;transition:all 0.15s}
+.btn-primary{background:var(--honey);color:#fff}.btn-primary:hover{background:var(--honey-dark)}
+.btn-outline{background:none;border:1px solid var(--border);color:var(--text-2)}.btn-outline:hover{background:var(--bg)}
+.btn-ai{background:var(--purple);color:#fff}.btn-ai:hover{background:#6C3483}
+.btn-sm{padding:7px 14px;font-size:12px;width:auto;margin-top:0}
+.btn-add{display:flex;align-items:center;justify-content:center;gap:6px;background:none;border:1px dashed var(--border-dark);border-radius:var(--radius-sm);padding:10px;width:100%;cursor:pointer;color:var(--honey);font-size:13px;margin-top:8px;font-family:'DM Sans',sans-serif}
+.btn-add:hover{border-color:var(--honey);background:var(--honey-light)}
+
+/* Score */
+.score-display{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:10px 0}
+.score-box{background:var(--bg);border-radius:var(--radius-sm);padding:10px;text-align:center}
+.score-num{font-size:22px;font-family:'DM Serif Display',serif}
+.score-lbl{font-size:10px;color:var(--text-3);margin-top:1px}
+.confidence{display:flex;align-items:center;gap:8px;margin-top:8px}
+.conf-bar{flex:1;height:4px;background:var(--border);border-radius:2px;overflow:hidden}
+.conf-fill{height:100%;background:var(--honey);border-radius:2px}
+.conf-lbl{font-size:11px;color:var(--text-3)}
+
+/* Trend */
+.trend-row{display:flex;align-items:center;gap:8px;padding:6px 0;border-bottom:1px solid var(--border)}
+.trend-row:last-child{border-bottom:none}
+.trend-bar-bg{flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden}
+.trend-bar-fill{height:100%;border-radius:3px}
+.trend-lbl{font-size:12px;color:var(--text-2);width:72px}
+.trend-val{font-size:12px;font-weight:600;width:28px;text-align:right}
+
+/* Tasks */
+.task-item{display:flex;align-items:flex-start;gap:10px;padding:7px 0;border-bottom:1px solid var(--border)}
+.task-item:last-child{border-bottom:none}
+.task-check{width:22px;height:22px;border-radius:5px;border:1.5px solid var(--border);cursor:pointer;flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all 0.15s;background:var(--surface);margin-top:1px;font-size:13px;user-select:none}
+.task-check.done{background:var(--forest-mid);border-color:var(--forest-mid);color:#fff}
+.task-text{font-size:13px;color:var(--text);flex:1}
+.task-text.done{color:var(--text-3);text-decoration:line-through}
+.task-priority{font-size:10px;padding:2px 6px;border-radius:10px;font-weight:500;margin-top:2px;display:inline-block}
+.task-high{background:var(--danger-light);color:var(--danger)}
+.task-med{background:#FFF3CD;color:#856404}
+.task-low{background:var(--forest-light);color:var(--forest)}
+/* Chart */
+.chart-legend{display:flex;gap:12px;flex-wrap:wrap;margin:6px 0}
+.legend-dot{width:8px;height:8px;border-radius:50%;flex-shrink:0;display:inline-block;margin-right:3px}
+/* Misc */
+.equip-row{display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)}
+.equip-row:last-child{border-bottom:none}
+.mite-result{background:var(--danger-light);border-radius:var(--radius-sm);padding:10px 12px;margin-top:8px}
+.mite-count-big{font-size:28px;font-family:'DM Serif Display',serif;color:var(--danger)}
+.tab-row{display:flex;gap:4px;background:var(--bg);border-radius:var(--radius-sm);padding:3px;margin-bottom:14px}
+.tab{flex:1;padding:7px;border:none;background:none;border-radius:7px;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-2);transition:all 0.15s}
+.tab.active{background:var(--surface);color:var(--text);font-weight:500;box-shadow:0 1px 3px rgba(0,0,0,0.08)}
+.empty{text-align:center;padding:40px 20px;color:var(--text-3)}
+.empty-icon{font-size:40px;margin-bottom:10px}
+.sync-dot{width:7px;height:7px;border-radius:50%;background:var(--forest-mid);display:inline-block;margin-right:4px}
+.sync-dot.syncing{background:var(--amber);animation:pulse 1s infinite}
+.sync-dot.error{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
+.brand-footer{text-align:center;padding:14px 0 6px;font-size:11px;color:var(--text-3);border-top:1px solid var(--border);margin-top:8px}
+
+/* Modal */
+.modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-end;justify-content:center}
+.modal-bg.open{display:flex}
+.modal{background:var(--surface);border-radius:var(--radius) var(--radius) 0 0;padding:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto}
+.modal-title{font-size:16px;margin-bottom:14px;display:flex;justify-content:space-between;align-items:center}
+.close-btn{background:none;border:none;font-size:20px;cursor:pointer;color:var(--text-3);line-height:1}
+
+/* Photo lightbox */
+.lightbox{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.9);z-index:500;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+.lightbox.open{display:flex}
+.lightbox img{max-width:95vw;max-height:80vh;border-radius:8px;object-fit:contain}
+.lightbox-caption{color:#fff;font-size:13px;text-align:center}
+.lightbox-close{position:absolute;top:16px;right:16px;background:none;border:none;color:#fff;font-size:28px;cursor:pointer;line-height:1}
+</style>
+</head>
+<body>
+
+<div class="loading-overlay" id="loading-overlay">
+  <div class="spinner"></div>
+  <div style="font-size:13px;color:var(--text-3)">Loading your hives...</div>
+</div>
+
+<div class="shell">
+
+<!-- Topbar -->
+<div class="topbar">
+  <div class="logo">
+    <div class="logo-icon">🐝</div>
+    <h1>Beekeepy</h1>
+  </div>
+  <div class="topbar-right">
+    <div style="display:flex;align-items:center;font-size:11px;color:var(--text-3)" id="sync-status">
+      <span class="sync-dot" id="sync-dot"></span>Saved
+    </div>
+    <div class="user-avatar" id="user-avatar" onclick="showPage('account',null)">?</div>
+    <button class="icon-btn" onclick="showPage('settings',null)">⚙️</button>
+  </div>
+</div>
+
+<!-- ===== HOME ===== -->
+<div id="pg-home" class="page active">
+<div class="scroll-content">
+  <div class="season-banner" id="season-banner"></div>
+
+  <!-- Weather widget -->
+  <div id="weather-widget"></div>
+
+  <!-- Reminders -->
+  <div id="reminder-alerts"></div>
+
+  <!-- Seasonal Tasks -->
+  <div id="seasonal-tasks-panel" class="card" style="margin-bottom:10px;display:none">
+    <div class="card-title">📅 This Week's Tasks</div>
+    <div id="seasonal-task-list"></div>
+    <div style="font-size:11px;color:var(--text-3);margin-top:6px;text-align:right" id="task-progress"></div>
+  </div>
+  <div id="warning-panel" class="warning-panel" style="display:none">
+    <div class="w-title">⚠️ Needs Attention</div>
+    <div id="warning-list"></div>
+  </div>
+
+  <div class="stat-row">
+    <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">Hives</div></div>
+    <div class="stat forest"><div class="stat-n" id="s-healthy">0</div><div class="stat-l">Healthy</div></div>
+    <div class="stat danger"><div class="stat-n" id="s-warn">0</div><div class="stat-l">At Risk</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title">Honey Harvest This Season</div>
+    <div class="mini-chart" id="harvest-chart"></div>
+    <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3)">
+      <span id="total-honey">Honey: --</span>
+      <span id="total-wax">Beeswax: --</span>
+    </div>
+  </div>
+
+  <div class="section-hd">Apiaries</div>
+  <div id="apiary-summary"></div>
+
+  <div class="section-hd">All Hives</div>
+  <div class="hive-grid" id="home-hive-grid"></div>
+
+  <div class="section-hd">Recent Activity</div>
+  <div class="timeline" id="home-timeline"></div>
+
+  <div class="brand-footer">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
+</div>
+</div>
+
+<!-- ===== INSPECT ===== -->
+<div id="pg-inspect" class="page">
+<div class="scroll-content">
+  <div class="section-hd">Select a Hive</div>
+  <div class="hive-grid" id="inspect-hive-grid"></div>
+
+  <div id="inspect-form" style="display:none">
+
+    <!-- Auto weather display -->
+    <div id="inspect-weather-display" class="weather-card" style="display:none">
+      <div class="weather-icon" id="iw-icon">🌤</div>
+      <div style="flex:1">
+        <div style="font-weight:600;font-size:15px"><span id="iw-temp">--</span>°F <span id="iw-cond" style="font-weight:400;font-size:13px;color:var(--text-2)"></span></div>
+        <div class="weather-details">Humidity: <span id="iw-hum">--</span>% · Wind: <span id="iw-wind">--</span> mph</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px">Auto-detected · <span id="iw-loc"></span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Inspection Details</div>
+      <div class="form-group"><label class="form-label">Date</label><input type="date" id="insp-date"></div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Colony Observations (0–10)</div>
+      <div class="form-group"><label class="form-label">Colony Strength <span class="val" id="str-val">6</span></label><input type="range" id="sl-str" min="0" max="10" value="6" step="1" oninput="document.getElementById('str-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label">Capped Brood <span class="val" id="cb-val">6</span></label><input type="range" id="sl-cb" min="0" max="10" value="6" step="1" oninput="document.getElementById('cb-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label">Uncapped Brood / Eggs <span class="val" id="ub-val">5</span></label><input type="range" id="sl-ub" min="0" max="10" value="5" step="1" oninput="document.getElementById('ub-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label">Honey Stores <span class="val" id="hs-val">5</span></label><input type="range" id="sl-hs" min="0" max="10" value="5" step="1" oninput="document.getElementById('hs-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label">Pollen / Bee Bread <span class="val" id="ps-val">4</span></label><input type="range" id="sl-ps" min="0" max="10" value="4" step="1" oninput="document.getElementById('ps-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label">Queen Cells <span class="val" id="qc-val">0</span></label><input type="range" id="sl-qc" min="0" max="10" value="0" step="1" oninput="document.getElementById('qc-val').textContent=this.value;calcScore();toggleQueenCells()"></div>
+      <div id="queen-cell-opts" style="display:none;margin-top:6px">
+        <div class="chips">
+          <button class="chip" id="chip-swarm" onclick="this.classList.toggle('on');calcScore()">Swarm Cells</button>
+          <button class="chip" id="chip-super" onclick="this.classList.toggle('on');calcScore()">Supersedure Cells</button>
+        </div>
+      </div>
+      <div class="form-group" style="margin-top:12px">
+        <label class="form-label">Temperament <span class="val" id="tmp-val">5</span></label>
+        <input type="range" id="sl-tmp" min="0" max="10" value="5" step="1" oninput="document.getElementById('tmp-val').textContent=this.value">
+        <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--text-3);margin-top:2px"><span>Aggressive</span><span>Calm</span></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Queen &amp; Colony Health</div>
+      <div class="toggle-list">
+        <div class="trow"><span class="tog-label">Queen spotted</span><button class="tog" id="tog-queen" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label">Eggs present (queen confirmed)</span><button class="tog on" id="tog-eggs" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label">Swarm preparations observed</span><button class="tog" id="tog-swarm" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label">Signs of disease (AFB, EFB, Nosema)</span><button class="tog" id="tog-disease" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label">Varroa mites visible on bees</span><button class="tog" id="tog-mite" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label">Laying workers suspected</span><button class="tog" id="tog-laying" onclick="this.classList.toggle('on')"></button></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Varroa Mite Count</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:10px">Alcohol wash or sugar roll — mites per 100 bees (≥3% = treat)</div>
+      <div class="form-group">
+        <label class="form-label">Mites per 100 bees <span class="val" id="mite-val">0</span></label>
+        <input type="range" id="sl-mite" min="0" max="20" value="0" step="1" oninput="document.getElementById('mite-val').textContent=this.value;updateMiteAlert()">
+      </div>
+      <div id="mite-alert" style="display:none" class="mite-result">
+        <div class="mite-count-big" id="mite-count-text">0%</div>
+        <div style="font-size:12px;color:var(--danger);font-weight:500">⚠️ Treatment threshold exceeded — consider mite treatment</div>
+      </div>
+    </div>
+
+    <!-- Photos section -->
+    <div class="card">
+      <div class="card-title">Photos</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:8px">Attach photos to this inspection — automatically saved to this hive</div>
+      <div class="photo-grid" id="inspect-photo-grid">
+        <button class="photo-upload-btn" onclick="document.getElementById('photo-file-input').click()">
+          <span class="photo-upload-icon">📷</span>
+          <span>Add Photo</span>
+        </button>
+      </div>
+      <input type="file" id="photo-file-input" accept="image/*" multiple style="display:none" onchange="handlePhotoUpload(this.files)">
+      <div id="photo-upload-progress" style="display:none;margin-top:8px;font-size:12px;color:var(--text-3)">
+        <div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></div>
+        Uploading photos...
+      </div>
+    </div>
+
+    <!-- Score -->
+    <div class="card" style="background:var(--forest-light);border-color:var(--forest-light)">
+      <div class="card-title" style="color:var(--forest)">Inspection Score</div>
+      <div class="score-display" id="score-display"></div>
+      <div class="confidence">
+        <span class="conf-lbl">Data completeness</span>
+        <div class="conf-bar"><div class="conf-fill" id="conf-fill" style="width:70%"></div></div>
+        <span class="conf-lbl" id="conf-pct">70%</span>
+      </div>
+    </div>
+
+    <!-- Actions -->
+    <div class="card">
+      <div class="card-title">Management Actions</div>
+      <div class="tab-row">
+        <button class="tab active" onclick="showActionTab('feeding',this)">Feeding</button>
+        <button class="tab" onclick="showActionTab('treatment',this)">Treatment</button>
+        <button class="tab" onclick="showActionTab('frames',this)">Frames</button>
+      </div>
+      <div id="action-feeding">
+        <div class="form-group"><label class="form-label">Feed type</label>
+          <select><option>Sugar syrup 1:1 (spring)</option><option>Sugar syrup 2:1 (fall)</option><option>Pollen patty</option><option>Fondant</option><option>Mann Lake Pollen Sub</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Amount (oz / lbs)</label><input type="number" placeholder="e.g. 32"></div>
+      </div>
+      <div id="action-treatment" style="display:none">
+        <div class="form-group"><label class="form-label">Treatment product</label>
+          <select><option>Apivar (amitraz strips)</option><option>Mite Away Quick Strips</option><option>ApiLife Var (thymol)</option><option>Oxalic acid vaporization</option><option>HopGuard</option><option>Terramycin</option><option>Other</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Dosage</label><input type="text" placeholder="e.g. 2 strips, 50ml"></div>
+      </div>
+      <div id="action-frames" style="display:none">
+        <div class="form-group"><label class="form-label">Action type</label>
+          <select><option>Add frames</option><option>Remove frames</option><option>Add super</option><option>Pull super</option><option>Split colony</option><option>Combine colonies</option></select>
+        </div>
+        <div class="form-group"><label class="form-label">Quantity</label><input type="number" placeholder="# of frames or supers"></div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title">Notes</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+        <button id="voice-btn" onclick="toggleVoice()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">
+          🎤 <span id="voice-btn-text">Tap to Dictate</span>
+        </button>
+        <span id="voice-status" style="font-size:12px;color:var(--text-3)"></span>
+      </div>
+      <div id="voice-recording-bar" style="display:none;align-items:center;gap:6px;padding:8px 12px;background:var(--danger-light);border-radius:var(--radius-sm);margin-bottom:8px;border:1px solid #F5B7B1">
+        <span style="font-size:12px;color:var(--danger);font-weight:500">🔴 Listening... speak now. Tap button to stop.</span>
+      </div>
+      <textarea rows="3" id="insp-notes" placeholder="Observations, follow-up tasks, next steps... or tap 🎤 to dictate"></textarea>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+      <button class="btn btn-outline" onclick="saveInspection('draft')">Save Draft</button>
+      <button class="btn btn-primary" onclick="saveInspection('done')">Complete ✓</button>
+    </div>
+  </div>
+
+  <div id="inspect-empty" style="margin-top:20px">
+    <div class="empty"><div class="empty-icon">👆</div>Tap a hive above to start recording</div>
+  </div>
+</div>
+</div>
+
+<!-- ===== HIVE DETAIL (Timeline) ===== -->
+<div id="pg-hive-detail" class="page">
+<div class="scroll-content">
+  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
+    <button class="btn-outline btn-sm" onclick="showPage('home',null)" style="margin-top:0;padding:6px 12px">← Back</button>
+    <h2 id="hive-detail-name" style="font-size:18px"></h2>
+  </div>
+
+  <!-- AI Analysis for this hive -->
+  <div id="hive-ai-panel"></div>
+
+  <!-- Photo gallery -->
+  <div class="card">
+    <div class="card-title">Photos</div>
+    <div class="photo-grid" id="hive-photos-grid">
+      <div style="font-size:12px;color:var(--text-3);grid-column:1/-1">No photos yet</div>
+    </div>
+  </div>
+
+  <!-- Full timeline -->
+  <div class="section-hd">Hive Timeline</div>
+  <div id="hive-detail-timeline"></div>
+</div>
+</div>
+
+<!-- ===== QUEENS ===== -->
+<div id="pg-queens" class="page">
+<div class="scroll-content">
+  <div class="section-hd">Queen Records</div>
+  <div id="queen-list"></div>
+  <button class="btn-add" onclick="openModal('modal-queen')">＋ Add / Replace Queen</button>
+</div>
+</div>
+
+<!-- ===== TREATMENT ===== -->
+<div id="pg-treatment" class="page">
+<div class="scroll-content">
+  <div class="card">
+    <div class="card-title">Log Treatment</div>
+    <div class="form-group"><label class="form-label">Hive</label><select id="treat-hive"></select></div>
+    <div class="form-group"><label class="form-label">Product</label>
+      <select id="treat-type"><option>Apivar (amitraz strips)</option><option>Mite Away Quick Strips</option><option>ApiLife Var (thymol)</option><option>Oxalic acid vaporization</option><option>OA dribble</option><option>HopGuard</option><option>Terramycin (AFB)</option><option>Fumagilin-B (Nosema)</option><option>Other</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Dosage</label><input type="text" id="treat-amount" placeholder="e.g. 2 strips, 50ml"></div>
+    <div class="form-group"><label class="form-label">Start date</label><input type="date" id="treat-date"></div>
+    <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" id="treat-days" placeholder="e.g. 42 for Apivar"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="treat-note" placeholder="Mite count before treatment..."></textarea></div>
+    <button class="btn btn-primary" onclick="addTreatment()">Log Treatment</button>
+  </div>
+  <div class="section-hd">Treatment History</div>
+  <div id="treatment-list"></div>
+</div>
+</div>
+
+<!-- ===== HARVEST ===== -->
+<div id="pg-harvest" class="page">
+<div class="scroll-content">
+  <div class="card">
+    <div class="card-title">Record Harvest</div>
+    <div class="form-group"><label class="form-label">Hive</label><select id="harv-hive"></select></div>
+    <div class="form-group"><label class="form-label">Honey (lbs) <span class="val" id="honey-val">8</span> lbs</label><input type="range" min="0" max="120" value="8" step="1" oninput="document.getElementById('honey-val').textContent=this.value"></div>
+    <div class="form-group"><label class="form-label">Beeswax (oz) <span class="val" id="wax-val">4</span> oz</label><input type="range" min="0" max="64" value="4" step="1" oninput="document.getElementById('wax-val').textContent=this.value"></div>
+    <div class="form-group"><label class="form-label">Honey type</label>
+      <select id="harv-type"><option>Clover</option><option>Wildflower</option><option>Orange Blossom</option><option>Sourwood</option><option>Buckwheat</option><option>Tupelo</option><option>Alfalfa</option><option>Blueberry</option><option>Mixed / Unknown</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Date</label><input type="date" id="harv-date"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="harv-note" placeholder="Color, flavor, extraction method..."></textarea></div>
+    <button class="btn btn-primary" onclick="addHarvest()">Record Harvest 🍯</button>
+  </div>
+  <div class="section-hd">Harvest Log</div>
+  <div id="harvest-list"></div>
+</div>
+</div>
+
+<!-- ===== INSIGHTS ===== -->
+<div id="pg-insights" class="page">
+<div class="scroll-content">
+  <div class="section-hd">Colony Health Overview</div>
+  <div id="insights-content"></div>
+</div>
+</div>
+
+<!-- ===== REMINDERS ===== -->
+<div id="pg-reminders" class="page">
+<div class="scroll-content">
+  <div class="card">
+    <div class="card-title">Inspection Reminder Settings</div>
+    <div style="font-size:13px;color:var(--text-2);margin-bottom:12px">Set how many days between inspections before Beekeepy reminds you</div>
+    <div id="reminder-settings-list"></div>
+  </div>
+  <div class="card">
+    <div class="card-title">Notification Preferences</div>
+    <div class="toggle-list">
+      <div class="trow"><span class="tog-label">Browser push notifications</span><button class="tog on" id="tog-push" onclick="togglePushNotifications(this)"></button></div>
+      <div class="trow"><span class="tog-label">Email reminders</span><button class="tog on" id="tog-email-remind" onclick="this.classList.toggle('on')"></button></div>
+    </div>
+    <div style="font-size:12px;color:var(--text-3);margin-top:10px">Email: <strong id="remind-email-display"></strong></div>
+  </div>
+  <button class="btn btn-primary" onclick="saveReminderSettings()">Save Reminder Settings</button>
+</div>
+</div>
+
+<!-- ===== INSIGHTS ===== -->
+<div id="pg-insights" class="page">
+<div class="scroll-content">
+  <div class="section-hd">Colony Health Overview</div>
+  <div id="insights-content"></div>
+</div>
+</div>
+
+<!-- ===== SETTINGS ===== -->
+<div id="pg-settings" class="page">
+<div class="scroll-content">
+  <div class="section-hd">Apiaries</div>
+  <div id="apiary-list-full"></div>
+  <button class="btn-add" onclick="openModal('modal-apiary')">＋ Add Apiary</button>
+  <div class="section-hd" style="margin-top:16px">Hives</div>
+  <div id="hive-list-full"></div>
+  <button class="btn-add" onclick="openModal('modal-hive')">＋ Add Hive</button>
+  <div class="section-hd" style="margin-top:16px">Equipment</div>
+  <div class="card" id="equipment-section"></div>
+  <div class="section-hd" style="margin-top:16px">Data</div>
+  <button class="btn btn-outline" onclick="exportData()">📤 Export All Data (JSON)</button>
+  <div class="brand-footer" style="margin-top:24px">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
+</div>
+</div>
+
+<!-- ===== ACCOUNT ===== -->
+<div id="pg-account" class="page">
+<div class="scroll-content">
+  <div class="card"><div class="card-title">Your Account</div><div id="account-info"></div></div>
+  <button class="btn btn-outline" onclick="signOut()">Sign Out</button>
+</div>
+</div>
+
+<!-- Bottom Nav -->
+<nav class="bottomnav">
+  <button class="nav-item active" onclick="showPage('home',this)"><span class="ni">🏠</span><span>Home</span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('inspect',this)"><span class="ni">📋</span><span>Inspect</span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('queens',this)"><span class="ni">👑</span><span>Queens</span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('harvest',this)"><span class="ni">🍯</span><span>Harvest</span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('insights',this)"><span class="ni">📊</span><span>Insights</span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('reminders',this)"><span class="ni">🔔</span><span>Remind</span><div class="nav-pip"></div></button>
+</nav>
+
+</div><!-- shell -->
+
+<!-- MODALS -->
+<div class="modal-bg" id="modal-queen">
+  <div class="modal">
+    <div class="modal-title"><h2 style="font-size:16px">Queen Information</h2><button class="close-btn" onclick="closeModal('modal-queen')">✕</button></div>
+    <div class="form-group"><label class="form-label">Hive</label><select id="qm-hive"></select></div>
+    <div class="form-group"><label class="form-label">Marking color</label>
+      <div class="chips" id="queen-color-chips">
+        <button class="chip on" onclick="selectQueenColor(this,'white')">⚪ White (0/5)</button>
+        <button class="chip" onclick="selectQueenColor(this,'yellow')">🟡 Yellow (1/6)</button>
+        <button class="chip" onclick="selectQueenColor(this,'red')">🔴 Red (2/7)</button>
+        <button class="chip" onclick="selectQueenColor(this,'green')">🟢 Green (3/8)</button>
+        <button class="chip" onclick="selectQueenColor(this,'blue')">🔵 Blue (4/9)</button>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Source</label>
+      <select id="qm-source"><option>Package queen</option><option>Nuc queen</option><option>Locally raised</option><option>Purchased mated queen</option><option>Swarm catch</option><option>Supersedure (natural)</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Breed</label>
+      <select id="qm-race"><option>Italian</option><option>Carniolan</option><option>Russian</option><option>Buckfast</option><option>VSH</option><option>Minnesota Hygienic</option><option>Local feral</option><option>Unknown</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Introduced date</label><input type="date" id="qm-date"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="qm-note"></textarea></div>
+    <button class="btn btn-primary" onclick="saveQueen()">Save Queen Record</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-apiary">
+  <div class="modal">
+    <div class="modal-title"><h2 style="font-size:16px">Add Apiary</h2><button class="close-btn" onclick="closeModal('modal-apiary')">✕</button></div>
+    <div class="form-group"><label class="form-label">Name</label><input type="text" id="ap-name" placeholder="e.g. Backyard Apiary"></div>
+    <div class="form-group"><label class="form-label">Location</label><input type="text" id="ap-loc" placeholder="City, State"></div>
+    <div class="form-group">
+      <label class="form-label">GPS coordinates</label>
+      <div style="display:flex;gap:6px">
+        <input type="text" id="ap-gps" placeholder="e.g. 39.9526, -75.1652" style="flex:1">
+        <button type="button" onclick="autoLocateApiary()" style="padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;flex-shrink:0">📍 Auto</button>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Primary forage</label><input type="text" id="ap-forage" placeholder="e.g. Clover, wildflower"></div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="ap-note"></textarea></div>
+    <button class="btn btn-primary" onclick="saveApiary()">Save Apiary</button>
+  </div>
+</div>
+
+<div class="modal-bg" id="modal-hive">
+  <div class="modal">
+    <div class="modal-title"><h2 style="font-size:16px">Add Hive</h2><button class="close-btn" onclick="closeModal('modal-hive')">✕</button></div>
+    <div class="form-group"><label class="form-label">Hive name</label><input type="text" id="hv-name" placeholder="e.g. Hive 1, Blue Box"></div>
+    <div class="form-group"><label class="form-label">Apiary</label><select id="hv-apiary"></select></div>
+    <div class="form-group"><label class="form-label">Hive type</label>
+      <select id="hv-type"><option>Langstroth 10-frame deep</option><option>Langstroth 8-frame medium</option><option>Langstroth 8-frame deep</option><option>Warré hive</option><option>Top-bar hive (TBH)</option><option>Flow Hive</option><option>Long / Layens hive</option><option>Other</option></select>
+    </div>
+    <div class="form-group"><label class="form-label">Number of boxes</label><input type="number" id="hv-frames" placeholder="e.g. 2" min="1" max="10"></div>
+    <div class="form-group"><label class="form-label">Installed date</label><input type="date" id="hv-date"></div>
+    <div class="form-group"><label class="form-label">Origin</label>
+      <select id="hv-origin"><option>Package bees</option><option>Nucleus colony (nuc)</option><option>Swarm catch</option><option>Split from existing hive</option><option>Overwintered colony</option></select>
+    </div>
+    <button class="btn btn-primary" onclick="saveHive()">Save Hive</button>
+  </div>
+</div>
+
+<!-- AI Analysis Modal -->
+<div class="modal-bg" id="modal-ai">
+  <div class="modal">
+    <div class="modal-title"><h2 style="font-size:16px">🤖 AI Hive Analysis</h2><button class="close-btn" onclick="closeModal('modal-ai')">✕</button></div>
+    <div id="ai-modal-content">
+      <div class="ai-loading"><div class="ai-spinner"></div>Analyzing your hive data...</div>
+    </div>
+  </div>
+</div>
+
+<!-- Photo Lightbox -->
+<div class="lightbox" id="lightbox" onclick="closeLightbox()">
+  <button class="lightbox-close" onclick="closeLightbox()">✕</button>
+  <img id="lightbox-img" src="" alt="">
+  <div class="lightbox-caption" id="lightbox-caption"></div>
+</div>
+
+<script>
+// ── Config ─────────────────────────────────────────────────
+const SUPABASE_URL = 'https://ydrawqnkwdvfhauansdf.supabase.co';
+const SUPABASE_ANON_KEY = 'sb_publishable_6VC3g90SrIM5s7bI-CIwZQ_tbmk_h4B';
+const CLAUDE_API_KEY = '';
+const OPENWEATHER_API_KEY = '6224c11c5ee340327a054c579d1e37c0';
+
+const { createClient } = supabase;
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+// ── State ──────────────────────────────────────────────────
+let currentUser = null;
+let apiaries=[], hives=[], queens=[], inspections=[], treatments=[], harvests=[], photos=[], reminders=[];
+let selectedHiveId=null, selectedQueenColor='white';
+let currentWeather=null, pendingPhotos=[];
+let currentDetailHiveId=null;
+
+// ── Init ───────────────────────────────────────────────────
+async function init() {
+  const { data: { session } } = await sb.auth.getSession();
+  if (!session) { window.location.href = 'index.html'; return; }
+  currentUser = session.user;
+  const initials = (currentUser.user_metadata?.full_name || currentUser.email || '?')[0].toUpperCase();
+  document.getElementById('user-avatar').textContent = initials;
+  document.getElementById('remind-email-display').textContent = currentUser.email;
+  await loadAll();
+  fetchWeather();
+  checkReminders();
+  requestPushPermission();
+  document.getElementById('loading-overlay').style.display = 'none';
+}
+
+async function signOut() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+
+// ── Sync ───────────────────────────────────────────────────
+function setSyncing(s) {
+  const dot=document.getElementById('sync-dot'), txt=document.getElementById('sync-status');
+  const states={syncing:'<span class="sync-dot syncing"></span>Saving...',error:'<span class="sync-dot error"></span>Error',saved:'<span class="sync-dot"></span>Saved'};
+  txt.innerHTML=states[s]||states.saved;
+}
+
+// ── Load ───────────────────────────────────────────────────
+async function loadAll() {
+  const uid=currentUser.id;
+  const [a,h,q,i,t,hv,ph,rem]=await Promise.all([
+    sb.from('apiaries').select('*').eq('user_id',uid).order('created_at'),
+    sb.from('hives').select('*').eq('user_id',uid).order('created_at'),
+    sb.from('queens').select('*').eq('user_id',uid),
+    sb.from('inspections').select('*').eq('user_id',uid).order('date',{ascending:false}),
+    sb.from('treatments').select('*').eq('user_id',uid).order('start_date',{ascending:false}),
+    sb.from('harvests').select('*').eq('user_id',uid).order('harvest_date',{ascending:false}),
+    sb.from('photos').select('*').eq('user_id',uid).order('taken_at',{ascending:false}),
+    sb.from('inspection_reminders').select('*').eq('user_id',uid),
+  ]);
+  apiaries=a.data||[]; hives=h.data||[]; queens=q.data||[];
+  inspections=i.data||[]; treatments=t.data||[]; harvests=hv.data||[];
+  photos=ph.data||[]; reminders=rem.data||[];
+  renderHome();
+}
+
+// ── Helpers ────────────────────────────────────────────────
+function getHive(id){return hives.find(h=>h.id===id)}
+function getApiary(id){return apiaries.find(a=>a.id===id)}
+function hiveInspections(id){return inspections.filter(i=>i.hive_id===id).sort((a,b)=>b.date.localeCompare(a.date))}
+function lastInsp(id){return hiveInspections(id)[0]}
+function hivePhotos(id){return photos.filter(p=>p.hive_id===id)}
+function queenColorHex(c){return{white:'#FFF',yellow:'#FFD700',red:'#E74C3C',green:'#27AE60',blue:'#2980B9'}[c]||'#ccc'}
+function scoreColor(s){return s>=60?'var(--forest)':s>=35?'var(--amber)':'var(--danger)'}
+function daysSince(dateStr){if(!dateStr)return 999;return Math.floor((Date.now()-new Date(dateStr).getTime())/86400000)}
+function hiveStatusClass(id){const li=lastInsp(id);if(!li)return 'status-warn';if(li.score>=60)return 'status-ok';if(li.score>=35)return 'status-warn';return 'status-danger'}
+function hiveWarnings(id){
+  const li=lastInsp(id);const ws=[];
+  if(!li)return ws;
+  if(li.capped_brood===0&&li.uncapped_brood===0)ws.push('No brood detected');
+  if(li.swarm_cells||li.swarm_prep)ws.push('Swarm risk');
+  if(li.supersedure_cells)ws.push('Queen supersedure');
+  if(li.disease_signs)ws.push('Disease signs');
+  if((li.mite_count||0)>=3)ws.push(`Mite count ${li.mite_count}%`);
+  if(li.laying_workers)ws.push('Laying workers?');
+  return ws;
+}
+function getSeason(){
+  const m=new Date().getMonth()+1;
+  if(m>=3&&m<=5)return{label:'Spring',icon:'🌸',tip:'Build-up season — check for swarm cells weekly. Add supers as needed.'};
+  if(m>=6&&m<=8)return{label:'Summer',icon:'☀️',tip:'Peak nectar flow. Monitor mite levels. Check honey stores.'};
+  if(m>=9&&m<=10)return{label:'Fall',icon:'🍂',tip:'Prepare for winter. Treat mites, check stores. Feed 2:1 syrup if needed.'};
+  return{label:'Winter',icon:'❄️',tip:'Minimal disturbance. Check weight monthly. OA treatment if broodless.'};
+}
+
+// ── FEATURE 1: WEATHER ─────────────────────────────────────
+async function fetchWeather() {
+  if(!OPENWEATHER_API_KEY||OPENWEATHER_API_KEY==='6224c11c5ee340327a054c579d1e37c0') {
+    renderWeatherWidget(null); return;
+  }
+  navigator.geolocation?.getCurrentPosition(async pos=>{
+    try {
+      const {latitude:lat,longitude:lon}=pos.coords;
+      const res=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=imperial`);
+      const d=await res.json();
+      currentWeather={
+        temp:Math.round(d.main.temp),
+        humidity:d.main.humidity,
+        wind:Math.round(d.wind.speed),
+        condition:d.weather[0].main,
+        description:d.weather[0].description,
+        icon:getWeatherEmoji(d.weather[0].main),
+        city:d.name
+      };
+      renderWeatherWidget(currentWeather);
+      populateInspectWeather(currentWeather);
+    } catch(e){ renderWeatherWidget(null); }
+  }, ()=>renderWeatherWidget(null));
+}
+
+function getWeatherEmoji(condition){
+  const map={Clear:'☀️',Clouds:'⛅',Rain:'🌧️',Drizzle:'🌦️',Thunderstorm:'⛈️',Snow:'❄️',Mist:'🌫️',Fog:'🌫️'};
+  return map[condition]||'🌤️';
+}
+
+function renderWeatherWidget(w){
+  const el=document.getElementById('weather-widget');
+  if(!w){el.innerHTML='';return;}
+  el.innerHTML=`<div class="weather-card">
+    <div class="weather-icon">${w.icon}</div>
+    <div style="flex:1">
+      <div style="font-weight:600;font-size:15px">${w.temp}°F <span style="font-weight:400;font-size:13px;color:var(--text-2)">${w.description}</span></div>
+      <div class="weather-details">Humidity: ${w.humidity}% · Wind: ${w.wind} mph</div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:2px">📍 ${w.city}</div>
+    </div>
+  </div>`;
+}
+
+function populateInspectWeather(w){
+  if(!w)return;
+  const d=document.getElementById('inspect-weather-display');
+  d.style.display='flex';
+  document.getElementById('iw-icon').textContent=w.icon;
+  document.getElementById('iw-temp').textContent=w.temp;
+  document.getElementById('iw-cond').textContent=w.description;
+  document.getElementById('iw-hum').textContent=w.humidity;
+  document.getElementById('iw-wind').textContent=w.wind;
+  document.getElementById('iw-loc').textContent=w.city;
+}
+
+// ── FEATURE 2: PHOTOS ──────────────────────────────────────
+async function handlePhotoUpload(files) {
+  if(!files||files.length===0)return;
+  if(!selectedHiveId){alert('Please select a hive first.');return;}
+  document.getElementById('photo-upload-progress').style.display='block';
+  setSyncing('syncing');
+  for(const file of files){
+    if(file.size>10*1024*1024){alert(`${file.name} is too large (max 10MB)`);continue;}
+    const ext=file.name.split('.').pop();
+    const path=`${currentUser.id}/${selectedHiveId}/${Date.now()}.${ext}`;
+    const{error:upErr}=await sb.storage.from('hive-photos').upload(path,file,{cacheControl:'3600',upsert:false});
+    if(upErr){console.error('Upload error',upErr);continue;}
+    const{data:urlData}=sb.storage.from('hive-photos').getPublicUrl(path);
+    const{data:photoRec,error:dbErr}=await sb.from('photos').insert({
+      user_id:currentUser.id, hive_id:selectedHiveId,
+      storage_path:path, public_url:urlData.publicUrl,
+      caption:'', taken_at:new Date().toISOString()
+    }).select().single();
+    if(!dbErr){photos.unshift(photoRec);pendingPhotos.push(photoRec);}
+  }
+  setSyncing('saved');
+  document.getElementById('photo-upload-progress').style.display='none';
+  renderInspectPhotos();
+  document.getElementById('photo-file-input').value='';
+}
+
+function renderInspectPhotos(){
+  const grid=document.getElementById('inspect-photo-grid');
+  const hivePending=pendingPhotos.filter(p=>p.hive_id===selectedHiveId);
+  const thumbs=hivePending.map(p=>`<img class="photo-thumb" src="${p.public_url}" alt="${p.caption||'Photo'}" onclick="openLightbox('${p.public_url}','${p.caption||''}')">`).join('');
+  grid.innerHTML=thumbs+`<button class="photo-upload-btn" onclick="document.getElementById('photo-file-input').click()"><span class="photo-upload-icon">📷</span><span>Add Photo</span></button>`;
+}
+
+function renderHivePhotos(hiveId){
+  const grid=document.getElementById('hive-photos-grid');
+  const hivePhotoList=hivePhotos(hiveId);
+  if(hivePhotoList.length===0){grid.innerHTML='<div style="font-size:12px;color:var(--text-3);grid-column:1/-1;padding:8px 0">No photos yet — add some during an inspection</div>';return;}
+  grid.innerHTML=hivePhotoList.map(p=>`<img class="photo-thumb" src="${p.public_url}" alt="${p.caption||'Photo'}" onclick="openLightbox('${p.public_url}','${p.caption||''}')">`).join('');
+}
+
+function openLightbox(url,caption){
+  document.getElementById('lightbox-img').src=url;
+  document.getElementById('lightbox-caption').textContent=caption;
+  document.getElementById('lightbox').classList.add('open');
+}
+function closeLightbox(){document.getElementById('lightbox').classList.remove('open')}
+
+// ── FEATURE 3: AI ANALYSIS ─────────────────────────────────
+async function runAIAnalysis(hiveId){
+  const h=getHive(hiveId);
+  if(!h){return;}
+  const insps=hiveInspections(hiveId).slice(0,3);
+  const q=queens.find(q=>q.hive_id===hiveId);
+  const treats=treatments.filter(t=>t.hive_id===hiveId).slice(0,3);
+  const li=insps[0];
+
+  if(!CLAUDE_API_KEY||CLAUDE_API_KEY===''){
+    return getMockAIAnalysis(h,li);
+  }
+
+  const prompt=`You are an expert beekeeper assistant analyzing hive data for a backyard beekeeper in the USA.
+
+HIVE: ${h.name} (${h.type||'Langstroth'})
+QUEEN: ${q?`${q.race}, introduced ${q.introduced_date}, color: ${q.color}`:'No queen record'}
+RECENT INSPECTIONS: ${JSON.stringify(insps.map(i=>({
+  date:i.date, score:i.score,
+  strength:i.colony_strength, cappedBrood:i.capped_brood,
+  uncappedBrood:i.uncapped_brood, honeyStores:i.honey_stores,
+  pollen:i.pollen, queenCells:i.queen_cells,
+  queenSeen:i.queen_seen, eggsPresent:i.eggs_present,
+  swarmPrep:i.swarm_prep, diseaseSign:i.disease_signs,
+  miteCount:i.mite_count, layingWorkers:i.laying_workers,
+  notes:i.notes
+})))}
+RECENT TREATMENTS: ${JSON.stringify(treats.map(t=>({product:t.product,date:t.start_date})))}
+SEASON: ${getSeason().label}
+
+Analyze this hive and respond in JSON only (no markdown):
+{
+  "riskLevel": "low|medium|high",
+  "summary": "2-3 sentence plain-English summary",
+  "alerts": [{"icon":"emoji","title":"short title","detail":"explanation"}],
+  "recommendations": ["action 1","action 2","action 3"]
+}
+
+Be specific and practical. Mention actual numbers from the data. Max 3 alerts, max 3 recommendations.`;
+
+  try {
+    const res=await fetch('https://api.anthropic.com/v1/messages',{
+      method:'POST',
+      headers:{'Content-Type':'application/json','x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
+      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})
+    });
+    const d=await res.json();
+    const text=d.content?.[0]?.text||'{}';
+    return JSON.parse(text.replace(/```json|```/g,'').trim());
+  } catch(e){
+    return getMockAIAnalysis(h,li);
+  }
+}
+
+function getMockAIAnalysis(h,li){
+  const mite=li?.mite_count||0;
+  const swarm=li?.swarm_prep||li?.queen_cells>0;
+  const noQueen=li&&!li.queen_seen&&!li.eggs_present;
+  let risk=mite>=6||noQueen?'high':swarm||mite>=3?'medium':'low';
+  const alerts=[];
+  if(mite>=3)alerts.push({icon:'🔴',title:'Varroa mite count elevated',detail:`Count of ${mite}% exceeds the 3% treatment threshold. Immediate treatment recommended.`});
+  if(swarm)alerts.push({icon:'🟡',title:'Swarm preparations detected',detail:'Queen cells or swarm behavior observed. Inspect again within 7 days and consider splitting.'});
+  if(noQueen)alerts.push({icon:'🔴',title:'Queen status uncertain',detail:'Queen not seen and no eggs confirmed in last inspection. Verify queen presence urgently.'});
+  if(alerts.length===0)alerts.push({icon:'🟢',title:'Colony looks healthy',detail:'No critical issues detected. Continue regular monitoring.'});
+  return{
+    riskLevel:risk,
+    summary:`${h.name} is showing ${risk} risk indicators based on recent inspection data. ${risk==='high'?'Immediate attention required.':risk==='medium'?'Monitor closely this week.':'Keep up the great work!'}`,
+    alerts,
+    recommendations:mite>=3?['Apply Apivar strips immediately','Re-test mite count in 6 weeks','Record treatment date and product']
+      :swarm?['Inspect for swarm cells every 7 days','Consider splitting the colony','Ensure adequate space in the hive']
+      :['Continue regular 7-10 day inspections','Monitor honey stores weekly','Check queen laying pattern next visit']
+  };
+}
+
+async function showHiveAIAnalysis(hiveId){
+  const panel=document.getElementById('hive-ai-panel');
+  panel.innerHTML=`<div class="ai-panel"><div class="ai-panel-title">🤖 AI Analysis</div><div class="ai-loading"><div class="ai-spinner"></div>Analyzing ${getHive(hiveId)?.name||'hive'}...</div></div>`;
+  const result=await runAIAnalysis(hiveId);
+  if(!result){panel.innerHTML='';return;}
+  const riskClass={low:'risk-low',medium:'risk-medium',high:'risk-high'}[result.riskLevel]||'risk-low';
+  const alertsHtml=(result.alerts||[]).map(a=>`<div class="ai-alert"><div class="ai-alert-icon">${a.icon}</div><div><div class="ai-alert-title">${a.title}</div><div class="ai-alert-text">${a.detail}</div></div></div>`).join('');
+  const recsHtml=(result.recommendations||[]).map(r=>`<div style="font-size:12px;color:var(--text-2);padding:4px 0;border-bottom:1px solid #D7BDE2;display:flex;gap:6px"><span>→</span><span>${r}</span></div>`).join('');
+  panel.innerHTML=`<div class="ai-panel">
+    <div class="ai-panel-title">🤖 AI Analysis <span class="risk-badge ${riskClass}">${result.riskLevel.toUpperCase()} RISK</span></div>
+    <div style="font-size:13px;color:var(--text-2);margin-bottom:10px">${result.summary}</div>
+    ${alertsHtml}
+    ${recsHtml?`<div style="margin-top:10px;font-size:11px;font-weight:600;color:var(--purple);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Recommendations</div>${recsHtml}`:''}
+  </div>`;
+}
+
+// ── FEATURE 4: REMINDERS ───────────────────────────────────
+function checkReminders(){
+  const alerts=[];
+  hives.forEach(h=>{
+    const li=lastInsp(h.id);
+    const days=daysSince(li?.date);
+    const rem=reminders.find(r=>r.hive_id===h.id);
+    const threshold=rem?.reminder_days||10;
+    if(days>=threshold){
+      const overdue=days>=threshold+3;
+      alerts.push({name:h.name,days,overdue,hiveId:h.id});
+    }
+  });
+  renderReminderAlerts(alerts);
+  // Schedule browser notifications
+  if(Notification.permission==='granted'){
+    alerts.filter(a=>a.overdue).forEach(a=>{
+      new Notification('Beekeepy — Inspection Overdue',{
+        body:`${a.name} hasn't been inspected in ${a.days} days`,
+        icon:'🐝'
+      });
+    });
+  }
+}
+
+function renderReminderAlerts(alerts){
+  const el=document.getElementById('reminder-alerts');
+  if(alerts.length===0){el.innerHTML='';return;}
+  el.innerHTML=`<div class="warning-panel" style="border-color:#F5A623;background:#FFFBF0">
+    <div class="w-title" style="color:#8B5E00">🔔 Inspection Reminders</div>
+    ${alerts.map(a=>`<div class="w-item" style="color:#8B5E00;cursor:pointer" onclick="selectHiveAndInspect('${a.hiveId}')">
+      🐝 <strong>${a.name}</strong>: ${a.days} days since last inspection ${a.overdue?'⚠️ Overdue!':'— due soon'}
+    </div>`).join('')}
+  </div>`;
+}
+
+function selectHiveAndInspect(hiveId){
+  showPage('inspect',document.querySelectorAll('.nav-item')[1]);
+  setTimeout(()=>{
+    const card=document.getElementById(`hcard-${hiveId}`);
+    if(card){card.click();card.scrollIntoView({behavior:'smooth'});}
+  },100);
+}
+
+async function requestPushPermission(){
+  if('Notification' in window && Notification.permission==='default'){
+    await Notification.requestPermission();
+  }
+}
+
+function togglePushNotifications(btn){
+  btn.classList.toggle('on');
+  if(btn.classList.contains('on') && Notification.permission!=='granted'){
+    Notification.requestPermission();
+  }
+}
+
+function renderReminderSettings(){
+  const el=document.getElementById('reminder-settings-list');
+  el.innerHTML=hives.map(h=>{
+    const rem=reminders.find(r=>r.hive_id===h.id);
+    const days=rem?.reminder_days||10;
+    const li=lastInsp(h.id);
+    const since=daysSince(li?.date);
+    const statusClass=since>=days+3?'r-overdue':since>=days?'r-due':'r-ok';
+    const statusText=since>=days+3?'Overdue':since>=days?'Due now':since===999?'Never inspected':`${days-since}d left`;
+    return `<div class="reminder-row">
+      <div>
+        <div style="font-weight:600;font-size:13px">${h.name}</div>
+        <div class="reminder-days">Remind every <input type="number" value="${days}" min="3" max="30" style="width:48px;padding:3px 6px;font-size:12px;border:1px solid var(--border);border-radius:5px;text-align:center" id="rem-days-${h.id}"> days</div>
+      </div>
+      <span class="reminder-status ${statusClass}">${statusText}</span>
+    </div>`;
+  }).join('')||'<div style="font-size:13px;color:var(--text-3)">Add hives first</div>';
+}
+
+async function saveReminderSettings(){
+  setSyncing('syncing');
+  for(const h of hives){
+    const inp=document.getElementById(`rem-days-${h.id}`);
+    if(!inp)continue;
+    const days=+inp.value||10;
+    const existing=reminders.find(r=>r.hive_id===h.id);
+    if(existing){
+      await sb.from('inspection_reminders').update({reminder_days:days}).eq('id',existing.id);
+      existing.reminder_days=days;
+    } else {
+      const{data}=await sb.from('inspection_reminders').insert({user_id:currentUser.id,hive_id:h.id,reminder_days:days,email_enabled:true,push_enabled:true}).select().single();
+      if(data)reminders.push(data);
+    }
+  }
+  setSyncing('saved');
+  alert('✅ Reminder settings saved!');
+  checkReminders();
+}
+
+// ── SCORE ──────────────────────────────────────────────────
+function calcScore(){
+  const str=+document.getElementById('sl-str').value,cb=+document.getElementById('sl-cb').value,ub=+document.getElementById('sl-ub').value,hs=+document.getElementById('sl-hs').value,ps=+document.getElementById('sl-ps').value,qc=+document.getElementById('sl-qc').value;
+  const swarm=document.getElementById('chip-swarm')?.classList.contains('on')||false,sup=document.getElementById('chip-super')?.classList.contains('on')||false;
+  const qSeen=document.getElementById('tog-queen').classList.contains('on'),eggs=document.getElementById('tog-eggs').classList.contains('on');
+  const pop=Math.round((str*2+cb+ub)/4*10),stores=Math.round((hs*2+ps)/3*10);
+  let qBase=(qSeen?10:0)+(eggs?20:0)+cb*2+ub*2;
+  if(qc>0){qBase-=(swarm?15:0)+(sup?10:0)}
+  const qScore=Math.min(100,Math.round(Math.max(0,qBase)/50*100));
+  const overall=Math.round((pop*2+stores+qScore)/4);
+  const conf=Math.round([str,cb,ub,hs,ps].filter(v=>v>0).length/5*100);
+  document.getElementById('score-display').innerHTML=`
+    <div class="score-box"><div class="score-num" style="color:${scoreColor(pop)}">${pop}</div><div class="score-lbl">Population</div></div>
+    <div class="score-box"><div class="score-num" style="color:${scoreColor(stores)}">${stores}</div><div class="score-lbl">Stores</div></div>
+    <div class="score-box"><div class="score-num" style="color:${scoreColor(qScore)}">${qScore}</div><div class="score-lbl">Queen</div></div>
+    <div class="score-box"><div class="score-num" style="color:${scoreColor(overall)}">${overall}</div><div class="score-lbl">Overall</div></div>`;
+  document.getElementById('conf-fill').style.width=conf+'%';
+  document.getElementById('conf-pct').textContent=conf+'%';
+  return overall;
+}
+function updateMiteAlert(){const v=+document.getElementById('sl-mite').value;document.getElementById('mite-count-text').textContent=v+'%';document.getElementById('mite-alert').style.display=v>=3?'block':'none'}
+function toggleQueenCells(){document.getElementById('queen-cell-opts').style.display=+document.getElementById('sl-qc').value>0?'block':'none'}
+
+// ── RENDER HOME ────────────────────────────────────────────
+function renderHome(){
+  const s=getSeason();
+  document.getElementById('season-banner').innerHTML=`<span style="font-size:26px">${s.icon}</span><div><div style="font-weight:600;font-size:14px">${s.label} Season</div><div style="font-size:12px;color:var(--text-2);margin-top:2px">${s.tip}</div></div>`;
+  renderSeasonalTasks();
+  const allWarn=[];
+  hives.forEach(h=>{hiveWarnings(h.id).forEach(w=>allWarn.push(`<div class="w-item">🐝 <strong>${h.name}</strong>: ${w}</div>`))});
+  const wp=document.getElementById('warning-panel');
+  if(allWarn.length===0){wp.style.display='none'}else{wp.style.display='block';document.getElementById('warning-list').innerHTML=allWarn.join('')}
+  const healthy=hives.filter(h=>{const li=lastInsp(h.id);return li&&li.score>=60}).length;
+  document.getElementById('s-total').textContent=hives.length;
+  document.getElementById('s-healthy').textContent=healthy;
+  document.getElementById('s-warn').textContent=hives.length-healthy;
+  const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+  const byMonth=new Array(12).fill(0);
+  harvests.forEach(h=>{if(h.harvest_date){const m=parseInt(h.harvest_date.split('-')[1])-1;byMonth[m]+=(h.honey_lbs||0)}});
+  const now=new Date().getMonth(),show=byMonth.slice(Math.max(0,now-4),now+1),showL=months.slice(Math.max(0,now-4),now+1),maxH=Math.max(...show,1);
+  document.getElementById('harvest-chart').innerHTML=show.map((v,i)=>`<div class="bar-wrap"><div class="bar" style="height:${Math.round(v/maxH*50)+4}px" title="${v} lbs"></div><div class="bar-lbl">${showL[i]}</div></div>`).join('');
+  const tH=harvests.reduce((s,h)=>s+(h.honey_lbs||0),0),tW=harvests.reduce((s,h)=>s+(h.wax_oz||0),0);
+  document.getElementById('total-honey').textContent=`Honey: ${tH.toFixed(1)} lbs`;
+  document.getElementById('total-wax').textContent=`Beeswax: ${tW.toFixed(1)} oz`;
+  document.getElementById('apiary-summary').innerHTML=apiaries.map(a=>{
+    const count=hives.filter(h=>h.apiary_id===a.id).length;
+    const hasGps=a.gps&&a.gps.includes(',');
+    return'<div class="apiary-item" style="cursor:'+(hasGps?'pointer':'default')+'" onclick="'+(hasGps?'loadLeafletThenMap(\''+a.id+'\')':'')+'"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">'+a.name+(hasGps?' <span style="font-size:11px;color:var(--sky)">📍 Map</span>':'')+'</div><div style="font-size:12px;color:var(--text-3)">'+(a.location||'')+' · '+count+' hive'+(count!==1?'s':'')+'</div>'+(a.forage?'<div style="font-size:11px;color:var(--honey-dark);margin-top:2px">🌸 '+a.forage+'</div>':'')+'</div></div>';
+  }).join('')||'<div class="empty" style="padding:16px">No apiaries yet</div>';
+  renderHiveGrid('home-hive-grid',false);
+  const logs=[];
+  inspections.forEach(i=>logs.push({date:i.date,hive:getHive(i.hive_id)?.name,type:'Inspection',note:i.notes,score:i.score,cat:'insp'}));
+  treatments.forEach(t=>logs.push({date:t.start_date,hive:getHive(t.hive_id)?.name,type:'Treatment',note:t.product,score:null,cat:'treat'}));
+  harvests.forEach(h=>logs.push({date:h.harvest_date,hive:getHive(h.hive_id)?.name,type:'Harvest',note:`${h.honey_lbs} lbs ${h.honey_type||''}`,score:null,cat:'harv'}));
+  logs.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  document.getElementById('home-timeline').innerHTML=logs.length===0
+    ?'<div class="empty" style="padding:16px">No activity yet</div>'
+    :logs.slice(0,8).map(l=>`<div class="tl-item"><div class="tl-hive">${l.hive||'—'} <span class="badge ${l.cat==='harv'?'b-honey':l.cat==='treat'?'b-sky':l.score>=60?'b-green':l.score>=35?'b-amber':'b-red'}">${l.type}</span>${l.score!=null?`<span style="float:right;font-size:12px;color:${scoreColor(l.score)};font-weight:600">${l.score}</span>`:''}</div><div class="tl-note">${l.note||''}</div><div class="tl-date-s">${l.date||''}</div></div>`).join('');
+}
+
+// ── HIVE GRID ──────────────────────────────────────────────
+function renderHiveGrid(containerId,selectable=false){
+  const el=document.getElementById(containerId);
+  if(hives.length===0){el.innerHTML='<div class="empty" style="grid-column:1/-1;padding:24px">No hives yet — add one in Settings</div>';return;}
+  el.innerHTML=hives.map(h=>{
+    const li=lastInsp(h.id),sc=li?li.score:null,cls=sc===null?'':sc>=60?'on-green':sc>=35?'on-amber':'on-red',ws=hiveWarnings(h.id);
+    const days=daysSince(li?.date),rem=reminders.find(r=>r.hive_id===h.id),threshold=rem?.reminder_days||10;
+    const overdue=days>=threshold+3;
+    const photoCount=hivePhotos(h.id).length;
+    return`<div class="hive-card ${hiveStatusClass(h.id)}" id="hcard-${h.id}" onclick="${selectable?`selectHive('${h.id}',this)`:`openHiveDetail('${h.id}')`}">
+      ${overdue?`<span class="warning-tag overdue-tag">Overdue!</span>`:ws.length?`<span class="warning-tag">${ws[0]}</span>`:''}
+      <div class="hive-name">${h.name}</div>
+      <div class="hive-apiary">${getApiary(h.apiary_id)?.name||''}</div>
+      <div class="score-row">${[1,2,3,4,5].map(i=>`<div class="pip ${sc!==null&&sc/10>=i*2?cls:''}"></div>`).join('')}</div>
+      <div class="hive-meta">${sc!==null?`Score: ${sc}`:''} ${li?'· '+li.date:''}</div>
+      ${photoCount>0?`<div style="font-size:10px;color:var(--text-3);margin-top:3px">📷 ${photoCount} photo${photoCount!==1?'s':''}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+// ── HIVE DETAIL ────────────────────────────────────────────
+function openHiveDetail(hiveId){
+  currentDetailHiveId=hiveId;
+  const h=getHive(hiveId);
+  document.getElementById('hive-detail-name').textContent=h?.name||'';
+  showPage('hive-detail',null);
+  renderHivePhotos(hiveId);
+  renderHiveDetailTimeline(hiveId);
+  showHiveAIAnalysis(hiveId);
+}
+
+function renderHiveDetailTimeline(hiveId){
+  const el=document.getElementById('hive-detail-timeline');
+  const insps=hiveInspections(hiveId);
+  const treats=treatments.filter(t=>t.hive_id===hiveId);
+  const harvs=harvests.filter(h=>h.hive_id===hiveId);
+  const hivePics=hivePhotos(hiveId);
+  const items=[];
+  insps.forEach(i=>items.push({date:i.date,type:'inspect',title:`Inspection — Score ${i.score}`,body:i.notes||'',icon:'📋',dotClass:'tl-dot-inspect'}));
+  treats.forEach(t=>items.push({date:t.start_date,type:'treat',title:`Treatment: ${t.product}`,body:`${t.amount||''} ${t.duration_days?'· '+t.duration_days+' days':''}`,icon:'💊',dotClass:'tl-dot-treat'}));
+  harvs.forEach(h=>items.push({date:h.harvest_date,type:'harvest',title:`Harvest: ${h.honey_lbs} lbs ${h.honey_type||''}`,body:h.note||'',icon:'🍯',dotClass:'tl-dot-harvest'}));
+  hivePics.forEach(p=>items.push({date:p.taken_at?.split('T')[0],type:'photo',title:'Photo added',body:`<img src="${p.public_url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:4px;cursor:pointer" onclick="openLightbox('${p.public_url}','')">`,icon:'📷',dotClass:'tl-dot-photo'}));
+  items.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
+  if(items.length===0){el.innerHTML='<div class="empty">No activity recorded yet</div>';return;}
+  el.innerHTML=items.map((item,idx)=>`<div class="tl-entry">
+    <div class="tl-dot-col">
+      <div class="tl-dot ${item.dotClass}">${item.icon}</div>
+      ${idx<items.length-1?'<div class="tl-line"></div>':''}
+    </div>
+    <div class="tl-content">
+      <div class="tl-date">${item.date||''}</div>
+      <div class="tl-title">${item.title}</div>
+      <div class="tl-body">${item.body}</div>
+    </div>
+  </div>`).join('');
+}
+
+// ── QUEENS ─────────────────────────────────────────────────
+function renderQueens(){
+  document.getElementById('queen-list').innerHTML=hives.map(h=>{
+    const q=queens.find(q=>q.hive_id===h.id),li=lastInsp(h.id);
+    const age=q?queenAge(q.introduced_date):null;
+    return`<div class="card" style="margin-bottom:10px">
+      <div style="display:flex;align-items:flex-start;gap:12px">
+        <div style="width:40px;height:40px;border-radius:50%;background:${q?queenColorHex(q.color):'#eee'};border:2px solid var(--border);flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:18px">${q?'👑':'?'}</div>
+        <div style="flex:1">
+          <div style="font-weight:600">${h.name} <span style="font-size:11px;color:var(--text-3)">${getApiary(h.apiary_id)?.name||''}</span></div>
+          ${q?`<div style="font-size:12px;color:var(--text-2)">${q.race||''} · ${q.source||''}</div>
+            <div style="font-size:12px;color:var(--text-2)">Introduced: ${q.introduced_date||'—'}</div>
+            ${age?`<div style="font-size:12px;color:${age.old?'var(--danger)':'var(--forest)'};font-weight:500">⏱ ${age.text}</div>`:''}
+            ${age?.old?`<div style="background:var(--danger-light);border-radius:6px;padding:5px 8px;margin-top:4px;font-size:11px;color:var(--danger)">⚠️ Over 2 years — consider replacement</div>`:''}
+            ${q.note?`<div style="font-size:11px;color:var(--text-3);margin-top:2px">${q.note}</div>`:''}
+          `:`<div style="font-size:12px;color:var(--danger)">No queen record</div>`}
+          <div style="display:flex;gap:6px;flex-wrap:wrap;margin-top:4px">
+            ${li&&!li.queen_seen?`<span class="badge b-red">Not seen last inspection</span>`:''}
+            ${li&&(li.mite_count||0)>=3?`<span class="badge b-amber">Mite count: ${li.mite_count}%</span>`:''}
+          </div>
+        </div>
+        <button class="btn btn-outline btn-sm" onclick="editQueen('${h.id}')">Edit</button>
+      </div>
+      ${queenTimeline(h.id)}
+    </div>`;
+  }).join('')||'<div class="empty">Add hives first</div>';
+}
+
+// ── TREATMENTS ─────────────────────────────────────────────
+function renderTreatments(){
+  document.getElementById('treatment-list').innerHTML=treatments.length===0
+    ?'<div class="empty"><div class="empty-icon">💊</div>No treatments logged</div>'
+    :treatments.map(t=>`<div class="card" style="display:flex;justify-content:space-between;align-items:flex-start">
+      <div><div style="font-weight:600">${getHive(t.hive_id)?.name||'—'} · ${t.product}</div>
+      <div style="font-size:12px;color:var(--text-2)">${t.amount||''} · ${t.start_date||''}${t.duration_days?` · ${t.duration_days} days`:''}</div>
+      ${t.note?`<div style="font-size:11px;color:var(--text-3)">${t.note}</div>`:''}</div>
+      <span class="badge b-sky">Done</span></div>`).join('');
+}
+
+// ── HARVESTS ───────────────────────────────────────────────
+function renderHarvests(){
+  document.getElementById('harvest-list').innerHTML=harvests.length===0
+    ?'<div class="empty"><div class="empty-icon">🍯</div>No harvests yet</div>'
+    :harvests.map(h=>`<div class="card" style="display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;background:var(--honey-light);border-radius:10px;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🍯</div>
+      <div style="flex:1"><div style="font-weight:600">${getHive(h.hive_id)?.name||'—'} · ${h.honey_type||''}</div>
+      <div style="font-size:12px;color:var(--text-2)">${h.honey_lbs} lbs honey · ${h.wax_oz} oz beeswax</div>
+      ${h.note?`<div style="font-size:11px;color:var(--text-3)">${h.note}</div>`:''}</div>
+      <div style="font-size:12px;color:var(--text-3)">${h.harvest_date||''}</div></div>`).join('');
+}
+
+// ── INSIGHTS ───────────────────────────────────────────────
+function renderInsights(){
+  const el = document.getElementById('insights-content');
+  if(!el) return;
+  el.innerHTML = hives.map(h => {
+    const insps = hiveInspections(h.id);
+    if(insps.length === 0) return '<div class="card"><div style="font-weight:600">'+h.name+'</div><div style="font-size:12px;color:var(--text-3)">No inspections yet</div></div>';
+    const li = insps[0];
+    const rev = insps.slice(0,6).reverse();
+    const W=280, H=70, P=6, n=rev.length;
+    const xStep = n>1 ? (W-P*2)/(n-1) : 0;
+    const series = [
+      {label:'Score', color:'#E8930A', fn:i=>i.score||0, max:100},
+      {label:'Strength', color:'#4A7C2F', fn:i=>i.colony_strength||0, max:10},
+      {label:'Mites', color:'#C0392B', fn:i=>i.mite_count||0, max:10},
+      {label:'Honey', color:'#2980B9', fn:i=>i.honey_stores||0, max:10},
+    ];
+    let svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:70px">';
+    svg += '<rect width="'+W+'" height="'+H+'" fill="transparent"/>';
+    series.forEach(s => {
+      const pts = rev.map((insp,i) => {
+        const v = s.fn(insp);
+        const x = P + i*xStep;
+        const y = H - P - ((v/s.max)*(H-P*2));
+        return x+','+y;
+      }).join(' ');
+      svg += '<polyline points="'+pts+'" fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
+      rev.forEach((insp,i) => {
+        const v = s.fn(insp);
+        const x = P + i*xStep;
+        const y = H - P - ((v/s.max)*(H-P*2));
+        svg += '<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+s.color+'" stroke="white" stroke-width="1.5"/>';
+      });
+    });
+    svg += '</svg>';
+    const dates = rev.map(i => (i.date||'').slice(5));
+    const dateRow = '<div style="display:flex;justify-content:space-between;margin-top:2px">'+dates.map(d=>'<span style="font-size:9px;color:var(--text-3);flex:1;text-align:center">'+d+'</span>').join('')+'</div>';
+    const legend = series.map(s => '<span><span class="legend-dot" style="background:'+s.color+'"></span><span style="font-size:11px;color:var(--text-2)">'+s.label+'</span></span>').join('');
+    const apName = getApiary(h.apiary_id) ? getApiary(h.apiary_id).name : '';
+    const bars = [{l:'Strength',v:li.colony_strength},{l:'Capped',v:li.capped_brood},{l:'Honey',v:li.honey_stores},{l:'Pollen',v:li.pollen}];
+    const barHtml = bars.map(b => {
+      const val = b.v||0;
+      const bg = val<=3?'var(--danger)':val<=6?'var(--amber)':'var(--forest-mid)';
+      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-2);width:70px">'+b.l+'</span><div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+(val*10)+'%;background:'+bg+';border-radius:3px"></div></div><span style="font-size:12px;font-weight:600;width:24px;text-align:right">'+val+'</span></div>';
+    }).join('');
+    return '<div class="card">'+
+      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
+        '<div style="font-weight:600">'+h.name+' <span style="font-size:11px;color:var(--text-3)">'+apName+'</span></div>'+
+        '<span style="font-size:20px;font-family:DM Serif Display,serif;color:'+scoreColor(li.score)+'">'+li.score+'</span>'+
+      '</div>'+
+      '<div class="chart-legend">'+legend+'</div>'+
+      svg+dateRow+
+      '<div style="margin-top:10px">'+barHtml+'</div>'+
+      '<div style="font-size:11px;color:var(--text-3);margin-top:6px">'+insps.length+' inspection'+(insps.length!==1?'s':'')+' · Last: '+li.date+'</div>'+
+    '</div>';
+  }).join('') || '<div class="empty">No hives to analyze yet</div>';
+}
+function renderSettings(){
+  document.getElementById('apiary-list-full').innerHTML=apiaries.map(a=>`<div class="apiary-item"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:12px;color:var(--text-3)">${a.location||''}${a.gps?' · GPS: '+a.gps:''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No apiaries yet</div>';
+  document.getElementById('hive-list-full').innerHTML=hives.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div><div style="font-weight:600">${h.name} <span class="badge b-honey">${getApiary(h.apiary_id)?.name||''}</span></div><div style="font-size:12px;color:var(--text-3)">${h.type||''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hives yet</div>';
+  document.getElementById('equipment-section').innerHTML='<div class="card-title">Equipment Inventory</div><div style="font-size:13px;color:var(--text-3)">Equipment tracking coming soon</div>';
+}
+
+function renderAccount(){
+  const name=currentUser.user_metadata?.full_name||'—',email=currentUser.email;
+  document.getElementById('account-info').innerHTML=`<div style="display:flex;align-items:center;gap:12px;margin-bottom:12px"><div style="width:48px;height:48px;border-radius:50%;background:var(--forest-light);display:flex;align-items:center;justify-content:center;font-size:22px;font-weight:600;color:var(--forest)">${name[0].toUpperCase()}</div><div><div style="font-weight:600;font-size:15px">${name}</div><div style="font-size:13px;color:var(--text-3)">${email}</div></div></div>`;
+}
+
+// ── PAGE NAV ───────────────────────────────────────────────
+function showPage(id,btn){
+  document.querySelectorAll('.page').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(b=>b.classList.remove('active'));
+  document.getElementById('pg-'+id).classList.add('active');
+  if(btn)btn.classList.add('active');
+  if(id==='home')renderHome();
+  if(id==='queens')renderQueens();
+  if(id==='treatment'){populateTreatHive();renderTreatments();}
+  if(id==='harvest'){populateHarvHive();renderHarvests();}
+  if(id==='insights')renderInsights();
+  if(id==='settings'){populateHiveApiary();renderSettings();}
+  if(id==='account')renderAccount();
+  if(id==='reminders')renderReminderSettings();
+  if(id==='inspect'){renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
+}
+
+// ── SELECTS ────────────────────────────────────────────────
+function populateTreatHive(){document.getElementById('treat-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name} (${getApiary(h.apiary_id)?.name||''})</option>`).join('');const d=document.getElementById('treat-date');if(!d.value)d.value=new Date().toISOString().split('T')[0];}
+function populateHarvHive(){document.getElementById('harv-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name} (${getApiary(h.apiary_id)?.name||''})</option>`).join('');const d=document.getElementById('harv-date');if(!d.value)d.value=new Date().toISOString().split('T')[0];}
+function populateHiveApiary(){document.getElementById('hv-apiary').innerHTML=apiaries.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');}
+
+// ── INSPECT ────────────────────────────────────────────────
+function selectHive(id,el){
+  document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
+  el.classList.add('selected');
+  selectedHiveId=id;
+  pendingPhotos=[];
+  document.getElementById('inspect-form').style.display='block';
+  document.getElementById('inspect-empty').style.display='none';
+  const d=document.getElementById('insp-date');if(!d.value)d.value=new Date().toISOString().split('T')[0];
+  if(currentWeather)populateInspectWeather(currentWeather);
+  renderInspectPhotos();
+  calcScore();
+}
+function toggleChip(el){el.classList.toggle('on')}
+function showActionTab(id,btn){['feeding','treatment','frames'].forEach(t=>{document.getElementById('action-'+t).style.display=t===id?'block':'none'});document.querySelectorAll('.tab-row .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+async function saveInspection(mode){
+  if(!selectedHiveId){alert('Please select a hive first.');return;}
+  const score=calcScore(),mc=+document.getElementById('sl-mite').value;
+  setSyncing('syncing');
+  const record={
+    user_id:currentUser.id,hive_id:selectedHiveId,
+    date:document.getElementById('insp-date').value||new Date().toISOString().split('T')[0],
+    status:mode,temp_f:currentWeather?.temp||null,
+    colony_strength:+document.getElementById('sl-str').value,
+    capped_brood:+document.getElementById('sl-cb').value,
+    uncapped_brood:+document.getElementById('sl-ub').value,
+    honey_stores:+document.getElementById('sl-hs').value,
+    pollen:+document.getElementById('sl-ps').value,
+    queen_cells:+document.getElementById('sl-qc').value,
+    temperament:+document.getElementById('sl-tmp').value,
+    queen_seen:document.getElementById('tog-queen').classList.contains('on'),
+    eggs_present:document.getElementById('tog-eggs').classList.contains('on'),
+    swarm_prep:document.getElementById('tog-swarm').classList.contains('on'),
+    disease_signs:document.getElementById('tog-disease').classList.contains('on'),
+    mites_visible:document.getElementById('tog-mite').classList.contains('on'),
+    laying_workers:document.getElementById('tog-laying').classList.contains('on'),
+    swarm_cells:document.getElementById('chip-swarm')?.classList.contains('on')||false,
+    supersedure_cells:document.getElementById('chip-super')?.classList.contains('on')||false,
+    mite_count:mc,score,
+    notes:document.getElementById('insp-notes').value
+  };
+  const{data,error}=await sb.from('inspections').insert(record).select().single();
+  if(error){setSyncing('error');alert('Error saving: '+error.message);return;}
+  inspections.unshift(data);
+  // Link pending photos to this inspection
+  if(pendingPhotos.length>0){
+    for(const p of pendingPhotos){
+      await sb.from('photos').update({inspection_id:data.id}).eq('id',p.id);
+      p.inspection_id=data.id;
+    }
+  }
+  setSyncing('saved');
+  alert(`✅ Inspection ${mode==='draft'?'saved as draft':'completed'}! Score: ${score}${mc>=3?' ⚠️ Mite count '+mc+'% — treatment recommended!':''}`);
+  document.getElementById('inspect-form').style.display='none';
+  document.getElementById('inspect-empty').style.display='block';
+  document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
+  selectedHiveId=null;pendingPhotos=[];
+  checkReminders();
+}
+
+// ── TREATMENT ──────────────────────────────────────────────
+async function addTreatment(){
+  setSyncing('syncing');
+  const{data,error}=await sb.from('treatments').insert({user_id:currentUser.id,hive_id:document.getElementById('treat-hive').value,product:document.getElementById('treat-type').value,amount:document.getElementById('treat-amount').value||'per label',start_date:document.getElementById('treat-date').value||new Date().toISOString().split('T')[0],duration_days:+document.getElementById('treat-days').value||null,note:document.getElementById('treat-note').value}).select().single();
+  if(error){setSyncing('error');alert('Error: '+error.message);return;}
+  treatments.unshift(data);setSyncing('saved');renderTreatments();
+  document.getElementById('treat-amount').value='';document.getElementById('treat-note').value='';
+  alert('✅ Treatment logged');
+}
+
+// ── HARVEST ────────────────────────────────────────────────
+async function addHarvest(){
+  setSyncing('syncing');
+  const{data,error}=await sb.from('harvests').insert({user_id:currentUser.id,hive_id:document.getElementById('harv-hive').value,honey_lbs:+document.getElementById('honey-val').textContent,wax_oz:+document.getElementById('wax-val').textContent,honey_type:document.getElementById('harv-type').value,harvest_date:document.getElementById('harv-date').value||new Date().toISOString().split('T')[0],note:document.getElementById('harv-note').value}).select().single();
+  if(error){setSyncing('error');alert('Error: '+error.message);return;}
+  harvests.unshift(data);setSyncing('saved');renderHarvests();
+  document.getElementById('harv-note').value='';
+  alert('✅ Harvest recorded!');
+}
+
+// ── QUEEN ──────────────────────────────────────────────────
+function editQueen(hiveId){
+  document.getElementById('qm-hive').innerHTML=hives.map(h=>`<option value="${h.id}"${h.id===hiveId?' selected':''}>${h.name}</option>`).join('');
+  const q=queens.find(q=>q.hive_id===hiveId);
+  if(q){document.getElementById('qm-source').value=q.source||'Package queen';document.getElementById('qm-race').value=q.race||'Italian';document.getElementById('qm-date').value=q.introduced_date||'';document.getElementById('qm-note').value=q.note||'';selectedQueenColor=q.color||'white';}
+  document.getElementById('qm-date').value=document.getElementById('qm-date').value||new Date().toISOString().split('T')[0];
+  openModal('modal-queen');
+}
+function selectQueenColor(el,color){selectedQueenColor=color;document.querySelectorAll('#queen-color-chips .chip').forEach(c=>c.classList.remove('on'));el.classList.add('on');}
+async function saveQueen(){
+  const hiveId=document.getElementById('qm-hive').value;setSyncing('syncing');
+  const record={user_id:currentUser.id,hive_id:hiveId,color:selectedQueenColor,source:document.getElementById('qm-source').value,race:document.getElementById('qm-race').value,introduced_date:document.getElementById('qm-date').value,note:document.getElementById('qm-note').value};
+  const existing=queens.find(q=>q.hive_id===hiveId);
+  let data,error;
+  if(existing){({data,error}=await sb.from('queens').update(record).eq('id',existing.id).select().single());if(!error){const idx=queens.findIndex(q=>q.id===existing.id);queens[idx]=data;}}
+  else{({data,error}=await sb.from('queens').insert(record).select().single());if(!error)queens.push(data);}
+  if(error){setSyncing('error');alert('Error: '+error.message);return;}
+  setSyncing('saved');closeModal('modal-queen');renderQueens();alert('✅ Queen record saved');
+}
+
+// ── APIARY ─────────────────────────────────────────────────
+async function saveApiary(){
+  setSyncing('syncing');
+  const{data,error}=await sb.from('apiaries').insert({user_id:currentUser.id,name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:document.getElementById('ap-forage').value,note:document.getElementById('ap-note').value}).select().single();
+  if(error){setSyncing('error');alert('Error: '+error.message);return;}
+  apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();alert('✅ Apiary added');
+}
+
+// ── HIVE ───────────────────────────────────────────────────
+async function saveHive(){
+  setSyncing('syncing');
+  const{data,error}=await sb.from('hives').insert({user_id:currentUser.id,apiary_id:document.getElementById('hv-apiary').value||null,name:document.getElementById('hv-name').value||'New Hive',type:document.getElementById('hv-type').value,boxes:+document.getElementById('hv-frames').value||2,installed:document.getElementById('hv-date').value,origin:document.getElementById('hv-origin').value,status:'ok'}).select().single();
+  if(error){setSyncing('error');alert('Error: '+error.message);return;}
+  hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();alert('✅ Hive added');
+}
+
+// ── MODALS ─────────────────────────────────────────────────
+function openModal(id){
+  if(id==='modal-queen'){document.getElementById('qm-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name}</option>`).join('');document.getElementById('qm-date').value=new Date().toISOString().split('T')[0];}
+  if(id==='modal-hive'){populateHiveApiary();document.getElementById('hv-date').value=new Date().toISOString().split('T')[0];}
+  document.getElementById(id).classList.add('open');
+}
+function closeModal(id){document.getElementById(id).classList.remove('open')}
+
+// ── EXPORT ─────────────────────────────────────────────────
+function exportData(){
+  const data={apiaries,hives,queens,inspections,treatments,harvests,photos:photos.map(p=>({...p,public_url:p.public_url})),exportedAt:new Date().toISOString(),user:currentUser.email};
+  const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='beekeepy-export.json';a.click();
+}
+
+// ── START ──────────────────────────────────────────────────
+init();
+
+// ── SEASONAL TASKS ─────────────────────────────────────────
+let taskStates={};
+function getWeekKey(){const d=new Date(),s=new Date(d.getFullYear(),0,1),w=Math.ceil(((d-s)/86400000+s.getDay()+1)/7);return d.getFullYear()+'W'+w;}
+function getSeasonalTasks(){
+  const m=new Date().getMonth()+1;
+  const season=m>=3&&m<=5?'spring':m>=6&&m<=8?'summer':m>=9&&m<=10?'fall':'winter';
+  const base={
+    spring:[{id:'sp1',text:'Check for swarm cells — inspect every 7 days',p:'high'},{id:'sp2',text:'Add supers as colony builds up',p:'high'},{id:'sp3',text:'Test Varroa mite levels (alcohol wash)',p:'high'},{id:'sp4',text:'Replace old dark brood comb',p:'med'},{id:'sp5',text:'Check queen is laying well',p:'med'},{id:'sp6',text:'Record first inspection of the season',p:'low'}],
+    summer:[{id:'su1',text:'Monitor mite count monthly — treat if 3%+',p:'high'},{id:'su2',text:'Check honey stores — add supers before they fill',p:'high'},{id:'su3',text:'Watch for swarm preparations',p:'med'},{id:'su4',text:'Harvest honey when frames are 80% capped',p:'med'},{id:'su5',text:'Ensure adequate ventilation in heat',p:'med'},{id:'su6',text:'Record inspection notes',p:'low'}],
+    fall:[{id:'fa1',text:'Treat Varroa mites before brood breaks',p:'high'},{id:'fa2',text:'Ensure 60-80 lbs honey stores for winter',p:'high'},{id:'fa3',text:'Feed 2:1 sugar syrup if stores are low',p:'high'},{id:'fa4',text:'Reduce entrance to prevent robbing',p:'med'},{id:'fa5',text:'Check queen is present and laying',p:'med'},{id:'fa6',text:'Install mouse guard',p:'low'}],
+    winter:[{id:'wi1',text:'OA vaporization treatment if broodless',p:'high'},{id:'wi2',text:'Check hive weight monthly',p:'high'},{id:'wi3',text:'Minimal disturbance — only open on warm days (50F+)',p:'med'},{id:'wi4',text:'Clear entrance of dead bees',p:'med'},{id:'wi5',text:'Order queens and packages for spring',p:'low'},{id:'wi6',text:'Review last season records and plan ahead',p:'low'}]
+  };
+  const dyn=[];
+  hives.forEach(h=>{
+    const li=lastInsp(h.id);if(!li)return;
+    if((li.mite_count||0)>=3)dyn.push({id:'dm_'+h.id,text:'Mite count '+li.mite_count+'% on '+h.name+' — treat now',p:'high'});
+    if((li.honey_stores||0)<=2)dyn.push({id:'dh_'+h.id,text:'Low honey stores on '+h.name+' — consider feeding',p:'high'});
+    if(!li.queen_seen&&!li.eggs_present)dyn.push({id:'dq_'+h.id,text:'Queen not confirmed on '+h.name+' — check urgently',p:'high'});
+    if(daysSince(li.date)>=14)dyn.push({id:'di_'+h.id,text:h.name+': '+daysSince(li.date)+' days since last inspection',p:'med'});
+  });
+  return[...dyn,...base[season]];
+}
+function renderSeasonalTasks(){
+  const panel=document.getElementById('seasonal-tasks-panel');
+  if(!panel)return;
+  const tasks=getSeasonalTasks();
+  const wk=getWeekKey();
+  try{const s=localStorage.getItem('bk_tasks');if(s){const p=JSON.parse(s);if(p._week===wk)taskStates=p;}}catch(e){}
+  if(taskStates._week!==wk)taskStates={_week:wk};
+  panel.style.display='block';
+  const done=tasks.filter(t=>taskStates[t.id]).length;
+  document.getElementById('task-progress').textContent=done+'/'+tasks.length+' completed';
+  document.getElementById('seasonal-task-list').innerHTML=tasks.map(t=>{
+    const isDone=!!taskStates[t.id];
+    const pc=t.p==='high'?'task-high':t.p==='med'?'task-med':'task-low';
+    const pl=t.p==='high'?'Urgent':t.p==='med'?'This week':'When ready';
+    return `<div class="task-item"><div class="task-check${isDone?' done':''}" onclick="toggleTask('${t.id}')">${isDone?'✓':''}</div><div style="flex:1"><div class="task-text${isDone?' done':''}">${t.text}</div><span class="task-priority ${pc}">${pl}</span></div></div>`;
+  }).join('');
+}
+function toggleTask(id){
+  taskStates[id]=!taskStates[id];
+  try{localStorage.setItem('bk_tasks',JSON.stringify(taskStates));}catch(e){}
+  renderSeasonalTasks();
+}
+
+// ── QUEEN TIMELINE ──────────────────────────────────────────
+function queenAge(d){
+  if(!d)return null;
+  const days=daysSince(d);
+  if(days<30)return{text:days+' days old',old:false};
+  if(days<365)return{text:Math.floor(days/30)+' months old',old:false};
+  return{text:(days/365).toFixed(1)+' years old',old:days>=730};
+}
+function queenTimeline(hiveId){
+  const insps=hiveInspections(hiveId).slice(0,6).reverse();
+  if(!insps.length)return'';
+  const dots=insps.map(i=>{
+    const s=i.queen_seen?'seen':i.eggs_present?'eggs':'missing';
+    const col={seen:'var(--forest-mid)',eggs:'var(--amber)',missing:'var(--danger)'}[s];
+    const lbl={seen:'👑',eggs:'🥚',missing:'❓'}[s];
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:26px;height:26px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:13px">'+lbl+'</div><div style="font-size:9px;color:var(--text-3)">'+(i.date||'').slice(5)+'</div></div>';
+  }).join('<div style="flex:1;height:2px;background:var(--border);margin-bottom:14px"></div>');
+  return '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Queen History</div><div style="display:flex;align-items:flex-end;gap:2px">'+dots+'</div><div style="font-size:10px;color:var(--text-3);margin-top:6px">👑 Seen &nbsp; 🥚 Eggs only &nbsp; ❓ Not confirmed</div></div>';
+}
+
+// ── MAP ──────────────────────────────────────────────────────
+let mapInstance=null;
+function loadLeafletThenMap(apiaryId){
+  if(window.L){openApiaryMap(apiaryId);return;}
+  const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(css);
+  const js=document.createElement('script');js.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';js.onload=()=>openApiaryMap(apiaryId);document.head.appendChild(js);
+}
+function openApiaryMap(apiaryId){
+  const a=getApiary(apiaryId);if(!a||!a.gps)return;
+  const parts=a.gps.split(',').map(s=>parseFloat(s.trim()));
+  if(parts.length!==2||isNaN(parts[0])||isNaN(parts[1]))return;
+  const[lat,lng]=parts;
+  document.getElementById('map-modal-title').textContent=a.name;
+  document.getElementById('map-modal-info').innerHTML='Location: '+(a.location||'')+' · GPS: '+a.gps;
+  openModal('modal-map');
+  setTimeout(()=>{
+    const el=document.getElementById('map-modal-container');
+    el.innerHTML='';
+    if(mapInstance){try{mapInstance.remove();}catch(e){}mapInstance=null;}
+    mapInstance=L.map(el).setView([lat,lng],13);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OpenStreetMap',maxZoom:19}).addTo(mapInstance);
+    const icon=L.divIcon({html:'<div style="background:#E8930A;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:16px;border:2px solid white;box-shadow:0 2px 6px rgba(0,0,0,0.3)">🐝</div>',className:'',iconSize:[28,28],iconAnchor:[14,14]});
+    L.marker([lat,lng],{icon}).addTo(mapInstance).bindPopup('<b>'+a.name+'</b>').openPopup();
+    mapInstance.invalidateSize();
+  },300);
+}
+function autoLocateApiary(){
+  navigator.geolocation?.getCurrentPosition(pos=>{
+    document.getElementById('ap-gps').value=pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
+    alert('Location detected!');
+  },()=>alert('Could not detect location. Please enter GPS manually.'));
+}
+
+// ── VOICE RECORDING ──────────────────────────────────────────
+let recognition=null,isRecording=false;
+function toggleVoice(){
+  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
+  if(!SR){alert('Voice not supported. Please use Chrome or Safari.');return;}
+  if(!isRecording){
+    recognition=new SR();
+    recognition.continuous=true;recognition.interimResults=true;recognition.lang='en-US';
+    recognition.onstart=()=>{
+      isRecording=true;
+      const btn=document.getElementById('voice-btn');
+      if(btn){btn.style.borderColor='var(--danger)';btn.style.background='var(--danger-light)';btn.style.color='var(--danger)';}
+      document.getElementById('voice-btn-text').textContent='Stop Recording';
+      document.getElementById('voice-recording-bar').style.display='flex';
+    };
+    recognition.onresult=e=>{
+      let final='';
+      for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)final+=e.results[i][0].transcript+' ';
+      if(final)document.getElementById('insp-notes').value+=final;
+    };
+    recognition.onerror=e=>{stopVoice();if(e.error==='not-allowed')alert('Microphone access denied.');};
+    recognition.onend=()=>stopVoice();
+    recognition.start();
+  } else {
+    if(recognition)recognition.stop();
+    stopVoice();
+  }
+}
+function stopVoice(){
+  isRecording=false;
+  const btn=document.getElementById('voice-btn');
+  if(!btn)return;
+  btn.style.borderColor='var(--border)';btn.style.background='var(--surface)';btn.style.color='var(--text-2)';
+  document.getElementById('voice-btn-text').textContent='Tap to Dictate';
+  document.getElementById('voice-recording-bar').style.display='none';
+  const st=document.getElementById('voice-status');
+  if(st){st.textContent='Done';setTimeout(()=>st.textContent='',2000);}
+}
+
+
+// ── START ──────────────────────────────────────────────────
+init();
+</script><!-- MAP MODAL -->
+<div class="modal-bg" id="modal-map">
+  <div class="modal">
+    <div class="modal-title">
+      <h2 style="font-size:16px" id="map-modal-title">Apiary Location</h2>
+      <button class="close-btn" onclick="closeModal('modal-map')">✕</button>
+    </div>
+    <div id="map-modal-container" style="height:280px;border-radius:8px;overflow:hidden;border:1px solid var(--border)"></div>
+    <div style="font-size:12px;color:var(--text-3);margin-top:8px" id="map-modal-info"></div>
+  </div>
+</div>
+</body>
+</html>

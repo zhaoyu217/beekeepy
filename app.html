@@ -1304,60 +1304,233 @@ function renderHarvests(){
 
 // ── INSIGHTS ───────────────────────────────────────────────
 function renderInsights(){
-  const el = document.getElementById('insights-content');
-  if(!el) return;
-  el.innerHTML = hives.map(h => {
-    const insps = hiveInspections(h.id);
-    if(insps.length === 0) return '<div class="card"><div style="font-weight:600">'+h.name+'</div><div style="font-size:12px;color:var(--text-3)">No inspections yet</div></div>';
-    const li = insps[0];
-    const rev = insps.slice(0,6).reverse();
-    const W=280, H=70, P=6, n=rev.length;
-    const xStep = n>1 ? (W-P*2)/(n-1) : 0;
-    const series = [
-      {label:'Score', color:'#E8930A', fn:i=>i.score||0, max:100},
-      {label:'Strength', color:'#4A7C2F', fn:i=>i.colony_strength||0, max:10},
-      {label:'Mites', color:'#C0392B', fn:i=>i.mite_count||0, max:10},
-      {label:'Honey', color:'#2980B9', fn:i=>i.honey_stores||0, max:10},
-    ];
-    let svg = '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:70px">';
-    svg += '<rect width="'+W+'" height="'+H+'" fill="transparent"/>';
-    series.forEach(s => {
-      const pts = rev.map((insp,i) => {
-        const v = s.fn(insp);
-        const x = P + i*xStep;
-        const y = H - P - ((v/s.max)*(H-P*2));
-        return x+','+y;
-      }).join(' ');
-      svg += '<polyline points="'+pts+'" fill="none" stroke="'+s.color+'" stroke-width="2" stroke-linejoin="round" stroke-linecap="round"/>';
-      rev.forEach((insp,i) => {
-        const v = s.fn(insp);
-        const x = P + i*xStep;
-        const y = H - P - ((v/s.max)*(H-P*2));
-        svg += '<circle cx="'+x+'" cy="'+y+'" r="3" fill="'+s.color+'" stroke="white" stroke-width="1.5"/>';
-      });
+  const el=document.getElementById('insights-content');
+  if(!el)return;
+  if(hives.length===0){el.innerHTML='<div class="empty"><div class="empty-icon">📊</div>Add hives and record inspections to see insights</div>';return;}
+
+  // ── helpers ──
+  const svgLine=(data,color,W,H,P,maxVal)=>{
+    const n=data.length;if(n<2)return'';
+    const xStep=(W-P*2)/(n-1);
+    const pts=data.map((v,i)=>(P+i*xStep)+','+(H-P-((v/maxVal)*(H-P*2)))).join(' ');
+    let s=`<polyline points="${pts}" fill="none" stroke="${color}" stroke-width="2.5" stroke-linejoin="round" stroke-linecap="round"/>`;
+    data.forEach((v,i)=>{
+      const x=P+i*xStep,y=H-P-((v/maxVal)*(H-P*2));
+      s+=`<circle cx="${x}" cy="${y}" r="3.5" fill="${color}" stroke="white" stroke-width="1.5"/>`;
     });
-    svg += '</svg>';
-    const dates = rev.map(i => (i.date||'').slice(5));
-    const dateRow = '<div style="display:flex;justify-content:space-between;margin-top:2px">'+dates.map(d=>'<span style="font-size:9px;color:var(--text-3);flex:1;text-align:center">'+d+'</span>').join('')+'</div>';
-    const legend = series.map(s => '<span><span class="legend-dot" style="background:'+s.color+'"></span><span style="font-size:11px;color:var(--text-2)">'+s.label+'</span></span>').join('');
-    const apName = getApiary(h.apiary_id) ? getApiary(h.apiary_id).name : '';
-    const bars = [{l:'Strength',v:li.colony_strength},{l:'Capped',v:li.capped_brood},{l:'Honey',v:li.honey_stores},{l:'Pollen',v:li.pollen}];
-    const barHtml = bars.map(b => {
-      const val = b.v||0;
-      const bg = val<=3?'var(--danger)':val<=6?'var(--amber)':'var(--forest-mid)';
-      return '<div style="display:flex;align-items:center;gap:8px;padding:5px 0;border-bottom:1px solid var(--border)"><span style="font-size:12px;color:var(--text-2);width:70px">'+b.l+'</span><div style="flex:1;height:6px;background:var(--border);border-radius:3px;overflow:hidden"><div style="height:100%;width:'+(val*10)+'%;background:'+bg+';border-radius:3px"></div></div><span style="font-size:12px;font-weight:600;width:24px;text-align:right">'+val+'</span></div>';
-    }).join('');
-    return '<div class="card">'+
-      '<div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">'+
-        '<div style="font-weight:600">'+h.name+' <span style="font-size:11px;color:var(--text-3)">'+apName+'</span></div>'+
-        '<span style="font-size:20px;font-family:DM Serif Display,serif;color:'+scoreColor(li.score)+'">'+li.score+'</span>'+
-      '</div>'+
-      '<div class="chart-legend">'+legend+'</div>'+
-      svg+dateRow+
-      '<div style="margin-top:10px">'+barHtml+'</div>'+
-      '<div style="font-size:11px;color:var(--text-3);margin-top:6px">'+insps.length+' inspection'+(insps.length!==1?'s':'')+' · Last: '+li.date+'</div>'+
-    '</div>';
-  }).join('') || '<div class="empty">No hives to analyze yet</div>';
+    return s;
+  };
+  const mkBar=(val,max,color)=>{
+    const pct=Math.round((val/max)*100);
+    return`<div style="flex:1;height:7px;background:var(--border);border-radius:4px;overflow:hidden"><div style="height:100%;width:${pct}%;background:${color};border-radius:4px;transition:width 0.6s ease"></div></div>`;
+  };
+
+  let html='';
+
+  // ── 1. FLEET OVERVIEW ──────────────────────────────────
+  html+=`<div class="section-hd">Fleet Overview</div>`;
+  const hivesWithInsps=hives.filter(h=>hiveInspections(h.id).length>0);
+  if(hivesWithInsps.length>0){
+    const maxScore=100;
+    const barH=36;
+    html+=`<div class="card">
+      <div class="card-title">Health Score — All Hives</div>`;
+    hivesWithInsps.forEach(h=>{
+      const li=lastInsp(h.id);
+      const sc=li?.score||0;
+      const col=sc>=60?'#4A7C2F':sc>=35?'#F5A623':'#C0392B';
+      const days=daysSince(li?.date);
+      const daysLabel=days===0?'Today':days===1?'Yesterday':days+' days ago';
+      html+=`<div style="margin-bottom:10px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+          <span style="font-size:13px;font-weight:600">${h.name}</span>
+          <div style="display:flex;align-items:center;gap:8px">
+            <span style="font-size:10px;color:var(--text-3)">${daysLabel}</span>
+            <span style="font-size:15px;font-family:'DM Serif Display',serif;color:${col};font-weight:600">${sc}</span>
+          </div>
+        </div>
+        <div style="display:flex;align-items:center;gap:8px">
+          ${mkBar(sc,maxScore,col)}
+        </div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // ── 2. MITE RISK TRACKER ───────────────────────────────
+  const hivesWithMites=hives.filter(h=>{
+    const insps=hiveInspections(h.id);
+    return insps.some(i=>i.mite_count!=null&&i.mite_count>0);
+  });
+  if(hivesWithMites.length>0){
+    html+=`<div class="section-hd">Varroa Mite Tracker</div><div class="card">
+      <div class="card-title">Mite Count Trend (last 6 inspections)</div>`;
+    hivesWithMites.forEach(h=>{
+      const insps=hiveInspections(h.id).slice(0,6).reverse();
+      const miteData=insps.map(i=>i.mite_count||0);
+      const latest=miteData[miteData.length-1]||0;
+      const risk=latest>=6?'HIGH':latest>=3?'TREAT':'OK';
+      const riskCol=latest>=6?'#C0392B':latest>=3?'#856404':'#2D5016';
+      const riskBg=latest>=6?'var(--danger-light)':latest>=3?'#FFF3CD':'var(--forest-light)';
+      const W=260,H=60,P=6;
+      html+=`<div style="margin-bottom:12px;padding-bottom:12px;border-bottom:1px solid var(--border)">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+          <span style="font-size:13px;font-weight:600">${h.name}</span>
+          <span style="font-size:11px;font-weight:600;padding:2px 8px;border-radius:10px;background:${riskBg};color:${riskCol}">${risk} ${latest>0?latest+'%':''}</span>
+        </div>
+        <svg viewBox="0 0 ${W} ${H}" style="width:100%;height:60px">
+          <line x1="${P}" y1="${H-P-((3/20)*(H-P*2))}" x2="${W-P}" y2="${H-P-((3/20)*(H-P*2))}" stroke="#F5A623" stroke-width="1" stroke-dasharray="4 3" opacity="0.6"/>
+          <line x1="${P}" y1="${H-P-((6/20)*(H-P*2))}" x2="${W-P}" y2="${H-P-((6/20)*(H-P*2))}" stroke="#C0392B" stroke-width="1" stroke-dasharray="4 3" opacity="0.5"/>
+          ${svgLine(miteData,latest>=6?'#C0392B':latest>=3?'#F5A623':'#4A7C2F',W,H,P,20)}
+        </svg>
+        <div style="display:flex;justify-content:space-between;font-size:9px;color:var(--text-3);margin-top:2px">
+          ${insps.map(i=>'<span>'+(i.date||'').slice(5)+'</span>').join('')}
+        </div>
+      </div>`;
+    });
+    html+=`<div style="display:flex;gap:12px;font-size:11px;color:var(--text-3);margin-top:4px">
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#F5A623;display:inline-block;border-radius:1px"></span>3% treat threshold</span>
+      <span style="display:flex;align-items:center;gap:4px"><span style="width:12px;height:2px;background:#C0392B;display:inline-block;border-radius:1px"></span>6% urgent</span>
+    </div></div>`;
+  }
+
+  // ── 3. HARVEST SUMMARY ─────────────────────────────────
+  if(harvests.length>0){
+    html+=`<div class="section-hd">Harvest Analytics</div><div class="card">
+      <div class="card-title">Monthly Honey Production (lbs)</div>`;
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const byMonth=new Array(12).fill(0);
+    harvests.forEach(hv=>{if(hv.harvest_date){const m=parseInt(hv.harvest_date.split('-')[1])-1;byMonth[m]+=(hv.honey_lbs||0);}});
+    const maxH=Math.max(...byMonth,1);
+    const totalHoney=harvests.reduce((s,hv)=>s+(hv.honey_lbs||0),0);
+    const totalWax=harvests.reduce((s,hv)=>s+(hv.wax_oz||0),0);
+    const topMonth=byMonth.indexOf(Math.max(...byMonth));
+    html+=`<div style="display:flex;gap:4px;align-items:flex-end;height:80px;margin-bottom:4px">`;
+    byMonth.forEach((v,i)=>{
+      const pct=Math.round((v/maxH)*100);
+      const isTop=i===topMonth&&v>0;
+      html+=`<div style="flex:1;display:flex;flex-direction:column;align-items:center;gap:2px">
+        <div style="width:100%;height:${Math.max(pct*0.68,v>0?6:2)}px;background:${isTop?'var(--honey)':v>0?'var(--honey-light)':'var(--border)'};border-radius:3px 3px 0 0;border:${v>0?'1px solid var(--honey)':'none'};transition:height 0.5s ease"></div>
+        <span style="font-size:8px;color:${isTop?'var(--honey-dark)':'var(--text-3)'};font-weight:${isTop?'600':'400'}">${months[i].slice(0,1)}</span>
+      </div>`;
+    });
+    html+=`</div>`;
+    html+=`<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:10px">
+      <div style="background:var(--honey-light);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-family:'DM Serif Display',serif;color:var(--honey-dark)">${totalHoney.toFixed(1)}</div>
+        <div style="font-size:10px;color:var(--text-2)">Total lbs</div>
+      </div>
+      <div style="background:var(--forest-light);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-family:'DM Serif Display',serif;color:var(--forest)">${totalWax.toFixed(0)}</div>
+        <div style="font-size:10px;color:var(--text-2)">Wax oz</div>
+      </div>
+      <div style="background:var(--sky-light);border-radius:8px;padding:10px;text-align:center">
+        <div style="font-size:18px;font-family:'DM Serif Display',serif;color:var(--sky)">${harvests.length}</div>
+        <div style="font-size:10px;color:var(--text-2)">Harvests</div>
+      </div>
+    </div>`;
+    // Per-hive breakdown
+    const hiveHarvest=hives.map(h=>({name:h.name,lbs:harvests.filter(hv=>hv.hive_id===h.id).reduce((s,hv)=>s+(hv.honey_lbs||0),0)})).filter(h=>h.lbs>0).sort((a,b)=>b.lbs-a.lbs);
+    if(hiveHarvest.length>1){
+      const maxLbs=hiveHarvest[0].lbs;
+      html+=`<div style="margin-top:12px"><div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">By Hive</div>`;
+      hiveHarvest.forEach(h=>{
+        html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+          <span style="font-size:12px;color:var(--text-2);width:80px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.name}</span>
+          ${mkBar(h.lbs,maxLbs,'var(--honey)')}
+          <span style="font-size:12px;font-weight:600;color:var(--honey-dark);width:36px;text-align:right">${h.lbs.toFixed(1)}</span>
+        </div>`;
+      });
+      html+=`</div>`;
+    }
+    html+=`</div>`;
+  }
+
+  // ── 4. INSPECTION FREQUENCY ───────────────────────────
+  html+=`<div class="section-hd">Inspection Activity</div><div class="card">
+    <div class="card-title">Days Since Last Inspection</div>`;
+  const sortedByGap=[...hives].sort((a,b)=>daysSince(lastInsp(b.id)?.date)-daysSince(lastInsp(a.id)?.date));
+  sortedByGap.forEach(h=>{
+    const li=lastInsp(h.id);
+    const days=daysSince(li?.date);
+    const rem=reminders.find(r=>r.hive_id===h.id);
+    const threshold=rem?.reminder_days||10;
+    const pct=Math.min(Math.round((days/30)*100),100);
+    const col=days>=threshold+3?'var(--danger)':days>=threshold?'var(--amber)':'var(--forest-mid)';
+    const label=days>=999?'Never':days===0?'Today':days+' days';
+    html+=`<div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <span style="font-size:12px;color:var(--text-2);width:72px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${h.name}</span>
+      ${mkBar(pct,100,col)}
+      <span style="font-size:11px;font-weight:600;color:${col};width:52px;text-align:right;white-space:nowrap">${label}</span>
+    </div>`;
+  });
+  html+=`<div style="font-size:11px;color:var(--text-3);margin-top:4px">Bars fill as inspection gap grows — red means overdue</div></div>`;
+
+  // ── 5. PER-HIVE TREND (enhanced) ──────────────────────
+  html+=`<div class="section-hd">Per-Hive Trends</div>`;
+  hives.forEach(h=>{
+    const insps=hiveInspections(h.id);
+    if(insps.length===0){
+      html+=`<div class="card" style="margin-bottom:8px"><div style="display:flex;justify-content:space-between"><span style="font-weight:600">${h.name}</span><span style="font-size:12px;color:var(--text-3)">No inspections yet</span></div></div>`;
+      return;
+    }
+    const li=insps[0];
+    const rev=insps.slice(0,8).reverse();
+    const W=300,H=80,P=8;
+    const n=rev.length;
+    const xStep=n>1?(W-P*2)/(n-1):0;
+    const series=[
+      {label:'Score',color:'#E8930A',fn:i=>i.score||0,max:100},
+      {label:'Strength',color:'#4A7C2F',fn:i=>(i.colony_strength||0)*10,max:100},
+      {label:'Mites',color:'#C0392B',fn:i=>(i.mite_count||0)*5,max:100},
+      {label:'Honey',color:'#2980B9',fn:i=>(i.honey_stores||0)*10,max:100},
+    ];
+    let svg=`<svg viewBox="0 0 ${W} ${H}" style="width:100%;height:80px">`;
+    // gridlines
+    [25,50,75].forEach(pct=>{
+      const gy=H-P-((pct/100)*(H-P*2));
+      svg+=`<line x1="${P}" y1="${gy}" x2="${W-P}" y2="${gy}" stroke="var(--border)" stroke-width="0.5"/>`;
+    });
+    series.forEach(s=>{
+      const data=rev.map(i=>s.fn(i));
+      svg+=svgLine(data,s.color,W,H,P,100);
+    });
+    svg+=`</svg>`;
+    const dates=rev.map(i=>'<span style="font-size:9px;color:var(--text-3);flex:1;text-align:center">'+(i.date||'').slice(5)+'</span>').join('');
+    const legend=series.map(s=>`<span style="display:flex;align-items:center;gap:3px"><span style="width:10px;height:3px;background:${s.color};border-radius:2px;display:inline-block"></span><span style="font-size:11px;color:var(--text-2)">${s.label}</span></span>`).join('');
+    const apName=getApiary(h.apiary_id)?.name||'';
+    // trend arrows
+    const scoreTrend=insps.length>=2?(li.score||0)-(insps[1].score||0):0;
+    const trendIcon=scoreTrend>3?'↑':scoreTrend<-3?'↓':'→';
+    const trendCol=scoreTrend>3?'var(--forest)':scoreTrend<-3?'var(--danger)':'var(--text-3)';
+    html+=`<div class="card" style="margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+        <div><span style="font-weight:600">${h.name}</span> <span style="font-size:11px;color:var(--text-3)">${apName}</span></div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <span style="font-size:14px;color:${trendCol};font-weight:600">${trendIcon}</span>
+          <span style="font-size:20px;font-family:'DM Serif Display',serif;color:${scoreColor(li.score||0)}">${li.score||0}</span>
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;gap:8px;margin-bottom:8px">${legend}</div>
+      ${svg}
+      <div style="display:flex;margin-top:3px">${dates}</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-top:10px">
+        ${[{l:'Strength',v:li.colony_strength,max:10},{l:'Capped Brood',v:li.capped_brood,max:10},{l:'Honey Stores',v:li.honey_stores,max:10},{l:'Pollen',v:li.pollen,max:10}].map(b=>{
+          const val=b.v||0;const col=val<=3?'var(--danger)':val<=6?'var(--amber)':'var(--forest-mid)';
+          return`<div style="background:var(--bg);border-radius:6px;padding:7px 8px">
+            <div style="font-size:10px;color:var(--text-3);margin-bottom:3px">${b.l}</div>
+            <div style="display:flex;align-items:center;gap:6px">
+              ${mkBar(val,b.max,col)}
+              <span style="font-size:12px;font-weight:600;color:${col}">${val}</span>
+            </div>
+          </div>`;
+        }).join('')}
+      </div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:8px">${insps.length} inspection${insps.length!==1?'s':''} · Last: ${li.date||'—'}${li.notes?` · "${li.notes.slice(0,40)}${li.notes.length>40?'…':''}"`:''}</div>
+    </div>`;
+  });
+
+  el.innerHTML=html;
 }
 function renderSettings(){
   document.getElementById('apiary-list-full').innerHTML=apiaries.map(a=>`<div class="apiary-item"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:12px;color:var(--text-3)">${a.location||''}${a.gps?' · GPS: '+a.gps:''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No apiaries yet</div>';

@@ -268,6 +268,15 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 @keyframes pulse{0%,100%{opacity:1}50%{opacity:0.4}}
 .brand-footer{text-align:center;padding:14px 0 6px;font-size:11px;color:var(--text-3);border-top:1px solid var(--border);margin-top:8px}
 
+/* Lang menu */
+.lang-menu{position:fixed;top:60px;right:8px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);box-shadow:0 8px 24px rgba(0,0,0,0.14);z-index:300;overflow:hidden;display:none;min-width:170px}
+.lang-menu.open{display:block;animation:pageIn 0.18s ease-out}
+.lang-opt{display:flex;align-items:center;gap:10px;padding:12px 16px;cursor:pointer;font-size:14px;color:var(--text);border-bottom:1px solid var(--border);transition:background 0.12s;-webkit-tap-highlight-color:transparent}
+.lang-opt:last-child{border-bottom:none}
+.lang-opt:active{background:var(--honey-light)}
+.lang-opt.active{background:var(--honey-light);color:var(--honey-dark);font-weight:600}
+.lang-flag{font-size:20px}
+
 /* Modal */
 .modal-bg{display:none;position:fixed;inset:0;background:rgba(0,0,0,0.45);z-index:200;align-items:flex-end;justify-content:center}
 .modal-bg.open{display:flex}
@@ -287,7 +296,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
-  <div style="font-size:13px;color:var(--text-3)">Loading your hives...</div>
+  <div style="font-size:13px;color:var(--text-3)"><span data-i18n="loading"></span></div>
 </div>
 
 <div class="shell">
@@ -300,8 +309,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
   <div class="topbar-right">
     <div style="display:flex;align-items:center;font-size:11px;color:var(--text-3)" id="sync-status">
-      <span class="sync-dot" id="sync-dot"></span>Saved
+      <span class="sync-dot" id="sync-dot"></span><span data-i18n="saved">Saved</span>
     </div>
+    <button class="icon-btn" id="lang-btn" onclick="toggleLangMenu()" style="font-size:12px;font-weight:700;letter-spacing:-0.5px" title="Language">EN</button>
     <div class="user-avatar" id="user-avatar" onclick="showPage('account',null)">?</div>
     <button class="icon-btn" onclick="showPage('settings',null)">⚙️</button>
   </div>
@@ -336,7 +346,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="card">
-    <div class="card-title">Honey Harvest This Season</div>
+    <div class="card-title"><span data-i18n="honey_harvest_season">Honey Harvest This Season</span></div>
     <div class="mini-chart" id="harvest-chart"></div>
     <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3)">
       <span id="total-honey">Honey: --</span>
@@ -344,13 +354,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 
-  <div class="section-hd">Apiaries</div>
+  <div class="section-hd"><span data-i18n="apiaries">Apiaries</span></div>
   <div id="apiary-summary"></div>
 
-  <div class="section-hd">All Hives</div>
+  <div class="section-hd"><span data-i18n="all_hives">All Hives</span></div>
   <div class="hive-grid" id="home-hive-grid"></div>
 
-  <div class="section-hd">Recent Activity</div>
+  <div class="section-hd"><span data-i18n="recent_activity">Recent Activity</span></div>
   <div class="timeline" id="home-timeline"></div>
 
   <div class="brand-footer">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
@@ -360,7 +370,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ===== INSPECT ===== -->
 <div id="pg-inspect" class="page">
 <div class="scroll-content">
-  <div class="section-hd">Select a Hive</div>
+  <div class="section-hd"><span data-i18n="select_hive">Select a Hive</span></div>
   <div class="hive-grid" id="inspect-hive-grid"></div>
 
   <div id="inspect-form" style="display:none">
@@ -376,18 +386,18 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
 
     <div class="card">
-      <div class="card-title">Inspection Details</div>
+      <div class="card-title"><span data-i18n="insp_details">Inspection Details</span></div>
       <div class="form-group"><label class="form-label">Date</label><input type="date" id="insp-date"></div>
     </div>
 
     <div class="card">
-      <div class="card-title">Colony Observations (0–10)</div>
-      <div class="form-group"><label class="form-label">Colony Strength <span class="val" id="str-val">6</span></label><input type="range" id="sl-str" min="0" max="10" value="6" step="1" oninput="document.getElementById('str-val').textContent=this.value;calcScore()"></div>
-      <div class="form-group"><label class="form-label">Capped Brood <span class="val" id="cb-val">6</span></label><input type="range" id="sl-cb" min="0" max="10" value="6" step="1" oninput="document.getElementById('cb-val').textContent=this.value;calcScore()"></div>
-      <div class="form-group"><label class="form-label">Uncapped Brood / Eggs <span class="val" id="ub-val">5</span></label><input type="range" id="sl-ub" min="0" max="10" value="5" step="1" oninput="document.getElementById('ub-val').textContent=this.value;calcScore()"></div>
-      <div class="form-group"><label class="form-label">Honey Stores <span class="val" id="hs-val">5</span></label><input type="range" id="sl-hs" min="0" max="10" value="5" step="1" oninput="document.getElementById('hs-val').textContent=this.value;calcScore()"></div>
-      <div class="form-group"><label class="form-label">Pollen / Bee Bread <span class="val" id="ps-val">4</span></label><input type="range" id="sl-ps" min="0" max="10" value="4" step="1" oninput="document.getElementById('ps-val').textContent=this.value;calcScore()"></div>
-      <div class="form-group"><label class="form-label">Queen Cells <span class="val" id="qc-val">0</span></label><input type="range" id="sl-qc" min="0" max="10" value="0" step="1" oninput="document.getElementById('qc-val').textContent=this.value;calcScore();toggleQueenCells()"></div>
+      <div class="card-title"><span data-i18n="colony_obs">Colony Observations (0–10)</span></div>
+      <div class="form-group"><label class="form-label"><span data-i18n="colony_strength">Colony Strength</span> <span class="val" id="str-val">6</span></label><input type="range" id="sl-str" min="0" max="10" value="6" step="1" oninput="document.getElementById('str-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label"><span data-i18n="capped_brood">Capped Brood</span> <span class="val" id="cb-val">6</span></label><input type="range" id="sl-cb" min="0" max="10" value="6" step="1" oninput="document.getElementById('cb-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label"><span data-i18n="uncapped_brood">Uncapped Brood / Eggs</span> <span class="val" id="ub-val">5</span></label><input type="range" id="sl-ub" min="0" max="10" value="5" step="1" oninput="document.getElementById('ub-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label"><span data-i18n="honey_stores">Honey Stores</span> <span class="val" id="hs-val">5</span></label><input type="range" id="sl-hs" min="0" max="10" value="5" step="1" oninput="document.getElementById('hs-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label"><span data-i18n="pollen">Pollen / Bee Bread</span> <span class="val" id="ps-val">4</span></label><input type="range" id="sl-ps" min="0" max="10" value="4" step="1" oninput="document.getElementById('ps-val').textContent=this.value;calcScore()"></div>
+      <div class="form-group"><label class="form-label"><span data-i18n="queen_cells">Queen Cells</span> <span class="val" id="qc-val">0</span></label><input type="range" id="sl-qc" min="0" max="10" value="0" step="1" oninput="document.getElementById('qc-val').textContent=this.value;calcScore();toggleQueenCells()"></div>
       <div id="queen-cell-opts" style="display:none;margin-top:6px">
         <div class="chips">
           <button class="chip" id="chip-swarm" onclick="this.classList.toggle('on');calcScore()">Swarm Cells</button>
@@ -402,19 +412,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
 
     <div class="card">
-      <div class="card-title">Queen &amp; Colony Health</div>
+      <div class="card-title"><span data-i18n="queen_health">Queen &amp; Colony Health</span></div>
       <div class="toggle-list">
-        <div class="trow"><span class="tog-label">Queen spotted</span><button class="tog" id="tog-queen" onclick="this.classList.toggle('on')"></button></div>
-        <div class="trow"><span class="tog-label">Eggs present (queen confirmed)</span><button class="tog on" id="tog-eggs" onclick="this.classList.toggle('on')"></button></div>
-        <div class="trow"><span class="tog-label">Swarm preparations observed</span><button class="tog" id="tog-swarm" onclick="this.classList.toggle('on')"></button></div>
-        <div class="trow"><span class="tog-label">Signs of disease (AFB, EFB, Nosema)</span><button class="tog" id="tog-disease" onclick="this.classList.toggle('on')"></button></div>
-        <div class="trow"><span class="tog-label">Varroa mites visible on bees</span><button class="tog" id="tog-mite" onclick="this.classList.toggle('on')"></button></div>
-        <div class="trow"><span class="tog-label">Laying workers suspected</span><button class="tog" id="tog-laying" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label"><span data-i18n="queen_spotted">Queen spotted</span></span><button class="tog" id="tog-queen" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label"><span data-i18n="eggs_present">Eggs present (queen confirmed)</span></span><button class="tog on" id="tog-eggs" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label"><span data-i18n="swarm_prep">Swarm preparations observed</span></span><button class="tog" id="tog-swarm" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label"><span data-i18n="disease_signs">Signs of disease (AFB, EFB, Nosema)</span></span><button class="tog" id="tog-disease" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label"><span data-i18n="mites_visible">Varroa mites visible on bees</span></span><button class="tog" id="tog-mite" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label"><span data-i18n="laying_workers">Laying workers suspected</span></span><button class="tog" id="tog-laying" onclick="this.classList.toggle('on')"></button></div>
       </div>
     </div>
 
     <div class="card">
-      <div class="card-title">Varroa Mite Count</div>
+      <div class="card-title"><span data-i18n="mite_count_title">Varroa Mite Count</span></div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:10px">Alcohol wash or sugar roll — mites per 100 bees (≥3% = treat)</div>
       <div class="form-group">
         <label class="form-label">Mites per 100 bees <span class="val" id="mite-val">0</span></label>
@@ -456,11 +466,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
     <!-- Actions -->
     <div class="card">
-      <div class="card-title">Management Actions</div>
+      <div class="card-title"><span data-i18n="mgmt_actions">Management Actions</span></div>
       <div class="tab-row">
-        <button class="tab active" onclick="showActionTab('feeding',this)">Feeding</button>
-        <button class="tab" onclick="showActionTab('treatment',this)">Treatment</button>
-        <button class="tab" onclick="showActionTab('frames',this)">Frames</button>
+        <button class="tab active" onclick="showActionTab('feeding',this)"><span data-i18n="feeding">Feeding</span></button>
+        <button class="tab" onclick="showActionTab('treatment',this)"><span data-i18n="treatment">Treatment</span></button>
+        <button class="tab" onclick="showActionTab('frames',this)"><span data-i18n="frames">Frames</span></button>
       </div>
       <div id="action-feeding">
         <div class="form-group"><label class="form-label">Feed type</label>
@@ -483,7 +493,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
 
     <div class="card">
-      <div class="card-title">Notes</div>
+      <div class="card-title"><span data-i18n="notes">Notes</span></div>
       <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
         <button id="voice-btn" onclick="toggleVoice()" style="display:flex;align-items:center;gap:6px;padding:8px 14px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">
           🎤 <span id="voice-btn-text">Tap to Dictate</span>
@@ -497,8 +507,8 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
 
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
-      <button class="btn btn-outline" onclick="saveInspection('draft')">Save Draft</button>
-      <button class="btn btn-primary" onclick="saveInspection('done')">Complete ✓</button>
+      <button class="btn btn-outline" onclick="saveInspection('draft')"><span data-i18n="save_draft">Save Draft</span></button>
+      <button class="btn btn-primary" onclick="saveInspection('done')"><span data-i18n="complete">Complete ✓</span></button>
     </div>
   </div>
 
@@ -529,7 +539,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <!-- Full timeline -->
-  <div class="section-hd">Hive Timeline</div>
+  <div class="section-hd"><span data-i18n="hive_timeline">Hive Timeline</span></div>
   <div id="hive-detail-timeline"></div>
 </div>
 </div>
@@ -537,9 +547,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ===== QUEENS ===== -->
 <div id="pg-queens" class="page">
 <div class="scroll-content">
-  <div class="section-hd">Queen Records</div>
+  <div class="section-hd"><span data-i18n="queen_records">Queen Records</span></div>
   <div id="queen-list"></div>
-  <button class="btn-add" onclick="openModal('modal-queen')">＋ Add / Replace Queen</button>
+  <button class="btn-add" onclick="openModal('modal-queen')">＋ <span data-i18n="add_queen">Add / Replace Queen</span></button>
 </div>
 </div>
 
@@ -547,7 +557,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div id="pg-treatment" class="page">
 <div class="scroll-content">
   <div class="card">
-    <div class="card-title">Log Treatment</div>
+    <div class="card-title"><span data-i18n="log_treatment">Log Treatment</span></div>
     <div class="form-group"><label class="form-label">Hive</label><select id="treat-hive"></select></div>
     <div class="form-group"><label class="form-label">Product</label>
       <select id="treat-type"><option>Apivar (amitraz strips)</option><option>Mite Away Quick Strips</option><option>ApiLife Var (thymol)</option><option>Oxalic acid vaporization</option><option>OA dribble</option><option>HopGuard</option><option>Terramycin (AFB)</option><option>Fumagilin-B (Nosema)</option><option>Other</option></select>
@@ -558,7 +568,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="treat-note" placeholder="Mite count before treatment..."></textarea></div>
     <button class="btn btn-primary" onclick="addTreatment()">Log Treatment</button>
   </div>
-  <div class="section-hd">Treatment History</div>
+  <div class="section-hd"><span data-i18n="treatment_history">Treatment History</span></div>
   <div id="treatment-list"></div>
 </div>
 </div>
@@ -567,7 +577,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div id="pg-harvest" class="page">
 <div class="scroll-content">
   <div class="card">
-    <div class="card-title">Record Harvest</div>
+    <div class="card-title"><span data-i18n="record_harvest">Record Harvest</span></div>
     <div class="form-group"><label class="form-label">Hive</label><select id="harv-hive"></select></div>
     <div class="form-group"><label class="form-label">Honey (lbs) <span class="val" id="honey-val">8</span> lbs</label><input type="range" min="0" max="120" value="8" step="1" oninput="document.getElementById('honey-val').textContent=this.value"></div>
     <div class="form-group"><label class="form-label">Beeswax (oz) <span class="val" id="wax-val">4</span> oz</label><input type="range" min="0" max="64" value="4" step="1" oninput="document.getElementById('wax-val').textContent=this.value"></div>
@@ -578,7 +588,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="harv-note" placeholder="Color, flavor, extraction method..."></textarea></div>
     <button class="btn btn-primary" onclick="addHarvest()">Record Harvest 🍯</button>
   </div>
-  <div class="section-hd">Harvest Log</div>
+  <div class="section-hd"><span data-i18n="harvest_log">Harvest Log</span></div>
   <div id="harvest-list"></div>
 </div>
 </div>
@@ -595,19 +605,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div id="pg-reminders" class="page">
 <div class="scroll-content">
   <div class="card">
-    <div class="card-title">Inspection Reminder Settings</div>
+    <div class="card-title"><span data-i18n="reminder_settings">Inspection Reminder Settings</span></div>
     <div style="font-size:13px;color:var(--text-2);margin-bottom:12px">Set how many days between inspections before Beekeepy reminds you</div>
     <div id="reminder-settings-list"></div>
   </div>
   <div class="card">
-    <div class="card-title">Notification Preferences</div>
+    <div class="card-title"><span data-i18n="notif_prefs">Notification Preferences</span></div>
     <div class="toggle-list">
-      <div class="trow"><span class="tog-label">Browser push notifications</span><button class="tog on" id="tog-push" onclick="togglePushNotifications(this)"></button></div>
-      <div class="trow"><span class="tog-label">Email reminders</span><button class="tog on" id="tog-email-remind" onclick="this.classList.toggle('on')"></button></div>
+      <div class="trow"><span class="tog-label"><span data-i18n="push_notif">Browser push notifications</span></span><button class="tog on" id="tog-push" onclick="togglePushNotifications(this)"></button></div>
+      <div class="trow"><span class="tog-label"><span data-i18n="email_remind">Email reminders</span></span><button class="tog on" id="tog-email-remind" onclick="this.classList.toggle('on')"></button></div>
     </div>
     <div style="font-size:12px;color:var(--text-3);margin-top:10px">Email: <strong id="remind-email-display"></strong></div>
   </div>
-  <button class="btn btn-primary" onclick="saveReminderSettings()">Save Reminder Settings</button>
+  <button class="btn btn-primary" onclick="saveReminderSettings()"><span data-i18n="save_reminders">Save Reminder Settings</span></button>
 </div>
 </div>
 
@@ -616,14 +626,14 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="scroll-content">
   <div class="section-hd">Apiaries</div>
   <div id="apiary-list-full"></div>
-  <button class="btn-add" onclick="openModal('modal-apiary')">＋ Add Apiary</button>
+  <button class="btn-add" onclick="openModal('modal-apiary')">＋ <span data-i18n="add_apiary">Add Apiary</span></button>
   <div class="section-hd" style="margin-top:16px">Hives</div>
   <div id="hive-list-full"></div>
-  <button class="btn-add" onclick="openModal('modal-hive')">＋ Add Hive</button>
-  <div class="section-hd" style="margin-top:16px">Equipment</div>
+  <button class="btn-add" onclick="openModal('modal-hive')">＋ <span data-i18n="add_hive">Add Hive</span></button>
+  <div class="section-hd" style="margin-top:16px"><span data-i18n="equipment">Equipment</span></div>
   <div class="card" id="equipment-section"></div>
-  <div class="section-hd" style="margin-top:16px">Data</div>
-  <button class="btn btn-outline" onclick="exportData()">📤 Export All Data (JSON)</button>
+  <div class="section-hd" style="margin-top:16px"><span data-i18n="data">Data</span></div>
+  <button class="btn btn-outline" onclick="exportData()">📤 <span data-i18n="export_data">Export All Data (JSON)</span></button>
   <div class="brand-footer" style="margin-top:24px">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
 </div>
 </div>
@@ -631,27 +641,37 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ===== ACCOUNT ===== -->
 <div id="pg-account" class="page">
 <div class="scroll-content">
-  <div class="card"><div class="card-title">Your Account</div><div id="account-info"></div></div>
-  <button class="btn btn-outline" onclick="signOut()">Sign Out</button>
+  <div class="card"><div class="card-title"><span data-i18n="your_account">Your Account</span></div><div id="account-info"></div></div>
+  <button class="btn btn-outline" onclick="signOut()"><span data-i18n="sign_out">Sign Out</span></button>
 </div>
 </div>
 
 <!-- Bottom Nav -->
 <nav class="bottomnav">
-  <button class="nav-item active" onclick="showPage('home',this)"><span class="ni">🏠</span><span>Home</span><div class="nav-pip"></div></button>
-  <button class="nav-item" onclick="showPage('inspect',this)"><span class="ni">📋</span><span>Inspect</span><div class="nav-pip"></div></button>
-  <button class="nav-item" onclick="showPage('queens',this)"><span class="ni">👑</span><span>Queens</span><div class="nav-pip"></div></button>
-  <button class="nav-item" onclick="showPage('harvest',this)"><span class="ni">🍯</span><span>Harvest</span><div class="nav-pip"></div></button>
-  <button class="nav-item" onclick="showPage('insights',this)"><span class="ni">📊</span><span>Insights</span><div class="nav-pip"></div></button>
-  <button class="nav-item" onclick="showPage('reminders',this)"><span class="ni">🔔</span><span>Remind</span><div class="nav-pip"></div></button>
+  <button class="nav-item active" onclick="showPage('home',this)"><span class="ni">🏠</span><span><span data-i18n="nav_home">Home</span></span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('inspect',this)"><span class="ni">📋</span><span><span data-i18n="nav_inspect">Inspect</span></span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('queens',this)"><span class="ni">👑</span><span><span data-i18n="nav_queens">Queens</span></span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('harvest',this)"><span class="ni">🍯</span><span><span data-i18n="nav_harvest">Harvest</span></span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('insights',this)"><span class="ni">📊</span><span><span data-i18n="nav_insights">Insights</span></span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('reminders',this)"><span class="ni">🔔</span><span><span data-i18n="nav_remind">Remind</span></span><div class="nav-pip"></div></button>
 </nav>
 
 </div><!-- shell -->
 
+<!-- Language Menu -->
+<div class="lang-menu" id="lang-menu">
+  <div class="lang-opt" onclick="setLang('en')"><span class="lang-flag">🇺🇸</span><span>English</span></div>
+  <div class="lang-opt" onclick="setLang('zh')"><span class="lang-flag">🇨🇳</span><span>中文</span></div>
+  <div class="lang-opt" onclick="setLang('de')"><span class="lang-flag">🇩🇪</span><span>Deutsch</span></div>
+  <div class="lang-opt" onclick="setLang('fr')"><span class="lang-flag">🇫🇷</span><span>Français</span></div>
+  <div class="lang-opt" onclick="setLang('es')"><span class="lang-flag">🇪🇸</span><span>Español</span></div>
+  <div class="lang-opt" onclick="setLang('it')"><span class="lang-flag">🇮🇹</span><span>Italiano</span></div>
+</div>
+
 <!-- MODALS -->
 <div class="modal-bg" id="modal-queen">
   <div class="modal">
-    <div class="modal-title"><h2 style="font-size:16px">Queen Information</h2><button class="close-btn" onclick="closeModal('modal-queen')">✕</button></div>
+    <div class="modal-title"><h2 style="font-size:16px"><span data-i18n="queen_info">Queen Information</span></h2><button class="close-btn" onclick="closeModal('modal-queen')">✕</button></div>
     <div class="form-group"><label class="form-label">Hive</label><select id="qm-hive"></select></div>
     <div class="form-group"><label class="form-label">Marking color</label>
       <div class="chips" id="queen-color-chips">
@@ -670,7 +690,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <div class="form-group"><label class="form-label">Introduced date</label><input type="date" id="qm-date"></div>
     <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="qm-note"></textarea></div>
-    <button class="btn btn-primary" onclick="saveQueen()">Save Queen Record</button>
+    <button class="btn btn-primary" onclick="saveQueen()"><span data-i18n="save_queen">Save Queen Record</span></button>
   </div>
 </div>
 
@@ -688,7 +708,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <div class="form-group"><label class="form-label">Primary forage</label><input type="text" id="ap-forage" placeholder="e.g. Clover, wildflower"></div>
     <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="ap-note"></textarea></div>
-    <button class="btn btn-primary" onclick="saveApiary()">Save Apiary</button>
+    <button class="btn btn-primary" onclick="saveApiary()"><span data-i18n="save_apiary">Save Apiary</span></button>
   </div>
 </div>
 
@@ -705,7 +725,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="form-group"><label class="form-label">Origin</label>
       <select id="hv-origin"><option>Package bees</option><option>Nucleus colony (nuc)</option><option>Swarm catch</option><option>Split from existing hive</option><option>Overwintered colony</option></select>
     </div>
-    <button class="btn btn-primary" onclick="saveHive()">Save Hive</button>
+    <button class="btn btn-primary" onclick="saveHive()"><span data-i18n="save_hive">Save Hive</span></button>
   </div>
 </div>
 
@@ -729,6 +749,263 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div id="toast" class="toast"></div>
 
 <script>
+// ── i18n ───────────────────────────────────────────────────
+const LANGS = {
+  en:{flag:'🇺🇸',code:'EN',
+    loading:'Loading your hives...',saved:'Saved',saving:'Saving...',error_lbl:'Error',
+    nav_home:'Home',nav_inspect:'Inspect',nav_queens:'Queens',nav_harvest:'Harvest',nav_insights:'Insights',nav_remind:'Remind',
+    honey_harvest_season:'Honey Harvest This Season',apiaries:'Apiaries',all_hives:'All Hives',recent_activity:'Recent Activity',
+    select_hive:'Select a Hive',insp_details:'Inspection Details',colony_obs:'Colony Observations (0–10)',
+    colony_strength:'Colony Strength',capped_brood:'Capped Brood',uncapped_brood:'Uncapped Brood / Eggs',
+    honey_stores:'Honey Stores',pollen:'Pollen / Bee Bread',queen_cells:'Queen Cells',
+    queen_health:'Queen & Colony Health',queen_spotted:'Queen spotted',eggs_present:'Eggs present (queen confirmed)',
+    swarm_prep:'Swarm preparations observed',disease_signs:'Signs of disease (AFB, EFB, Nosema)',
+    mites_visible:'Varroa mites visible on bees',laying_workers:'Laying workers suspected',
+    mite_count_title:'Varroa Mite Count',mgmt_actions:'Management Actions',
+    feeding:'Feeding',treatment:'Treatment',frames:'Frames',notes:'Notes',
+    save_draft:'Save Draft',complete:'Complete ✓',hive_timeline:'Hive Timeline',
+    queen_records:'Queen Records',add_queen:'Add / Replace Queen',
+    log_treatment:'Log Treatment',treatment_history:'Treatment History',
+    record_harvest:'Record Harvest',harvest_log:'Harvest Log',
+    equipment:'Equipment',data:'Data',export_data:'Export All Data (JSON)',
+    reminder_settings:'Inspection Reminder Settings',notif_prefs:'Notification Preferences',
+    push_notif:'Browser push notifications',email_remind:'Email reminders',save_reminders:'Save Reminder Settings',
+    queen_info:'Queen Information',add_apiary:'Add Apiary',add_hive:'Add Hive',
+    save_queen:'Save Queen Record',save_apiary:'Save Apiary',save_hive:'Save Hive',
+    fleet_overview:'Fleet Overview',mite_tracker:'Varroa Mite Tracker',harvest_analytics:'Harvest Analytics',
+    insp_activity:'Inspection Activity',per_hive_trends:'Per-Hive Trends',
+    your_account:'Your Account',sign_out:'Sign Out',
+    toast_select_hive:'Please select a hive first',toast_too_large:'is too large (max 10MB)',
+    toast_reminders_saved:'Reminder settings saved ✓',toast_treatment_saved:'Treatment logged ✓',
+    toast_harvest_saved:'Harvest recorded ✓',toast_queen_saved:'Queen record saved ✓',
+    toast_apiary_saved:'Apiary added ✓',toast_hive_saved:'Hive added ✓',
+    toast_location:'Location detected ✓',toast_no_location:'Could not detect location',
+    toast_voice_unsupported:'Voice not supported on this browser',toast_mic_denied:'Microphone access denied',
+    toast_insp_complete:'Inspection complete ✓ — Score:',toast_draft_saved:'Draft saved ✓ — Score:',
+    toast_mite_warn:'· Mite count',toast_no_hive:'No hive selected',toast_pdf_error:'PDF library not loaded',
+  },
+  zh:{flag:'🇨🇳',code:'中',
+    loading:'正在加载蜂箱...',saved:'已保存',saving:'保存中...',error_lbl:'错误',
+    nav_home:'首页',nav_inspect:'检查',nav_queens:'蜂王',nav_harvest:'采蜜',nav_insights:'分析',nav_remind:'提醒',
+    honey_harvest_season:'本季蜂蜜产量',apiaries:'蜂场',all_hives:'所有蜂箱',recent_activity:'最近活动',
+    select_hive:'选择蜂箱',insp_details:'检查详情',colony_obs:'蜂群观察（0–10）',
+    colony_strength:'蜂群强度',capped_brood:'封盖子',uncapped_brood:'未封盖子/卵',
+    honey_stores:'蜂蜜储量',pollen:'花粉/蜂粮',queen_cells:'王台',
+    queen_health:'蜂王与蜂群健康',queen_spotted:'发现蜂王',eggs_present:'发现卵（确认蜂王在位）',
+    swarm_prep:'观察到分蜂迹象',disease_signs:'疾病迹象（欧幼病/美幼病/微孢子虫）',
+    mites_visible:'蜜蜂身上可见瓦螨',laying_workers:'疑似工蜂产卵',
+    mite_count_title:'瓦螨计数',mgmt_actions:'管理操作',
+    feeding:'喂食',treatment:'治疗',frames:'巢框',notes:'备注',
+    save_draft:'保存草稿',complete:'完成 ✓',hive_timeline:'蜂箱时间线',
+    queen_records:'蜂王记录',add_queen:'添加/更换蜂王',
+    log_treatment:'记录治疗',treatment_history:'治疗历史',
+    record_harvest:'记录采蜜',harvest_log:'采蜜记录',
+    equipment:'设备',data:'数据',export_data:'导出所有数据（JSON）',
+    reminder_settings:'检查提醒设置',notif_prefs:'通知偏好',
+    push_notif:'浏览器推送通知',email_remind:'邮件提醒',save_reminders:'保存提醒设置',
+    queen_info:'蜂王信息',add_apiary:'添加蜂场',add_hive:'添加蜂箱',
+    save_queen:'保存蜂王记录',save_apiary:'保存蜂场',save_hive:'保存蜂箱',
+    fleet_overview:'蜂箱总览',mite_tracker:'瓦螨追踪',harvest_analytics:'采蜜分析',
+    insp_activity:'检查活动',per_hive_trends:'各蜂箱趋势',
+    your_account:'我的账户',sign_out:'退出登录',
+    toast_select_hive:'请先选择蜂箱',toast_too_large:'文件过大（最大10MB）',
+    toast_reminders_saved:'提醒设置已保存 ✓',toast_treatment_saved:'治疗记录已保存 ✓',
+    toast_harvest_saved:'采蜜记录已保存 ✓',toast_queen_saved:'蜂王记录已保存 ✓',
+    toast_apiary_saved:'蜂场已添加 ✓',toast_hive_saved:'蜂箱已添加 ✓',
+    toast_location:'已获取位置 ✓',toast_no_location:'无法获取位置',
+    toast_voice_unsupported:'此浏览器不支持语音输入',toast_mic_denied:'麦克风访问被拒绝',
+    toast_insp_complete:'检查完成 ✓ — 评分:',toast_draft_saved:'草稿已保存 ✓ — 评分:',
+    toast_mite_warn:'· 螨虫计数',toast_no_hive:'未选择蜂箱',toast_pdf_error:'PDF库未加载',
+  },
+  de:{flag:'🇩🇪',code:'DE',
+    loading:'Völker werden geladen...',saved:'Gespeichert',saving:'Speichern...',error_lbl:'Fehler',
+    nav_home:'Start',nav_inspect:'Kontrolle',nav_queens:'Königin',nav_harvest:'Ernte',nav_insights:'Analyse',nav_remind:'Erinnerung',
+    honey_harvest_season:'Honigernte dieser Saison',apiaries:'Standorte',all_hives:'Alle Völker',recent_activity:'Letzte Aktivitäten',
+    select_hive:'Volk auswählen',insp_details:'Kontrolldetails',colony_obs:'Beobachtungen (0–10)',
+    colony_strength:'Volksstärke',capped_brood:'Verdeckelte Brut',uncapped_brood:'Offene Brut / Eier',
+    honey_stores:'Honigvorräte',pollen:'Pollen / Bienenbrot',queen_cells:'Weiselzellen',
+    queen_health:'Königin & Volksgesundheit',queen_spotted:'Königin gesichtet',eggs_present:'Eier vorhanden (Königin bestätigt)',
+    swarm_prep:'Schwarmvorbereitungen beobachtet',disease_signs:'Krankheitszeichen (AFB, EFB, Nosema)',
+    mites_visible:'Varroamilben sichtbar',laying_workers:'Legearbeiterinnen vermutet',
+    mite_count_title:'Varroabefall',mgmt_actions:'Maßnahmen',
+    feeding:'Fütterung',treatment:'Behandlung',frames:'Rähmchen',notes:'Notizen',
+    save_draft:'Entwurf speichern',complete:'Abschließen ✓',hive_timeline:'Volk-Chronik',
+    queen_records:'Königin-Aufzeichnungen',add_queen:'Königin hinzufügen / ersetzen',
+    log_treatment:'Behandlung erfassen',treatment_history:'Behandlungshistorie',
+    record_harvest:'Ernte erfassen',harvest_log:'Ernteprotokoll',
+    equipment:'Ausrüstung',data:'Daten',export_data:'Alle Daten exportieren (JSON)',
+    reminder_settings:'Kontrollerinnerungen',notif_prefs:'Benachrichtigungen',
+    push_notif:'Browser-Benachrichtigungen',email_remind:'E-Mail-Erinnerungen',save_reminders:'Erinnerungen speichern',
+    queen_info:'Königin-Informationen',add_apiary:'Standort hinzufügen',add_hive:'Volk hinzufügen',
+    save_queen:'Königin-Datensatz speichern',save_apiary:'Standort speichern',save_hive:'Volk speichern',
+    fleet_overview:'Gesamtübersicht',mite_tracker:'Varroabefall-Tracker',harvest_analytics:'Ernte-Analyse',
+    insp_activity:'Kontrollaktivität',per_hive_trends:'Trends pro Volk',
+    your_account:'Mein Konto',sign_out:'Abmelden',
+    toast_select_hive:'Bitte zuerst ein Volk auswählen',toast_too_large:'zu groß (max 10MB)',
+    toast_reminders_saved:'Erinnerungen gespeichert ✓',toast_treatment_saved:'Behandlung gespeichert ✓',
+    toast_harvest_saved:'Ernte gespeichert ✓',toast_queen_saved:'Königin gespeichert ✓',
+    toast_apiary_saved:'Standort hinzugefügt ✓',toast_hive_saved:'Volk hinzugefügt ✓',
+    toast_location:'Standort erkannt ✓',toast_no_location:'Standort nicht erkannt',
+    toast_voice_unsupported:'Sprache nicht unterstützt',toast_mic_denied:'Mikrofon verweigert',
+    toast_insp_complete:'Kontrolle abgeschlossen ✓ — Bewertung:',toast_draft_saved:'Entwurf gespeichert ✓ — Bewertung:',
+    toast_mite_warn:'· Varroabefall',toast_no_hive:'Kein Volk ausgewählt',toast_pdf_error:'PDF-Bibliothek nicht geladen',
+  },
+  fr:{flag:'🇫🇷',code:'FR',
+    loading:'Chargement des ruches...',saved:'Enregistré',saving:'Enregistrement...',error_lbl:'Erreur',
+    nav_home:'Accueil',nav_inspect:'Visite',nav_queens:'Reines',nav_harvest:'Récolte',nav_insights:'Analyses',nav_remind:'Rappels',
+    honey_harvest_season:'Récolte de miel cette saison',apiaries:'Ruchers',all_hives:'Toutes les ruches',recent_activity:'Activité récente',
+    select_hive:'Sélectionner une ruche',insp_details:'Détails de la visite',colony_obs:'Observations (0–10)',
+    colony_strength:'Force de la colonie',capped_brood:'Couvain operculé',uncapped_brood:'Couvain ouvert / Œufs',
+    honey_stores:'Réserves de miel',pollen:'Pollen / Pain d\'abeilles',queen_cells:'Cellules royales',
+    queen_health:'Reine & santé de la colonie',queen_spotted:'Reine aperçue',eggs_present:'Œufs présents (reine confirmée)',
+    swarm_prep:'Préparations d\'essaimage observées',disease_signs:'Signes de maladie (loque, nosémose)',
+    mites_visible:'Varroas visibles sur les abeilles',laying_workers:'Ouvrières pondeuses suspectées',
+    mite_count_title:'Comptage Varroa',mgmt_actions:'Actions de gestion',
+    feeding:'Nourrissement',treatment:'Traitement',frames:'Cadres',notes:'Notes',
+    save_draft:'Enregistrer brouillon',complete:'Terminer ✓',hive_timeline:'Historique de la ruche',
+    queen_records:'Dossiers des reines',add_queen:'Ajouter / Remplacer reine',
+    log_treatment:'Enregistrer traitement',treatment_history:'Historique des traitements',
+    record_harvest:'Enregistrer récolte',harvest_log:'Journal des récoltes',
+    equipment:'Équipement',data:'Données',export_data:'Exporter toutes les données (JSON)',
+    reminder_settings:'Paramètres de rappel',notif_prefs:'Préférences de notification',
+    push_notif:'Notifications navigateur',email_remind:'Rappels par e-mail',save_reminders:'Sauvegarder les rappels',
+    queen_info:'Informations sur la reine',add_apiary:'Ajouter un rucher',add_hive:'Ajouter une ruche',
+    save_queen:'Enregistrer la reine',save_apiary:'Enregistrer le rucher',save_hive:'Enregistrer la ruche',
+    fleet_overview:'Vue d\'ensemble',mite_tracker:'Suivi Varroa',harvest_analytics:'Analyse des récoltes',
+    insp_activity:'Activité d\'inspection',per_hive_trends:'Tendances par ruche',
+    your_account:'Mon compte',sign_out:'Se déconnecter',
+    toast_select_hive:'Veuillez d\'abord sélectionner une ruche',toast_too_large:'est trop grand (max 10Mo)',
+    toast_reminders_saved:'Rappels enregistrés ✓',toast_treatment_saved:'Traitement enregistré ✓',
+    toast_harvest_saved:'Récolte enregistrée ✓',toast_queen_saved:'Reine enregistrée ✓',
+    toast_apiary_saved:'Rucher ajouté ✓',toast_hive_saved:'Ruche ajoutée ✓',
+    toast_location:'Position détectée ✓',toast_no_location:'Position non détectée',
+    toast_voice_unsupported:'Voix non supportée',toast_mic_denied:'Microphone refusé',
+    toast_insp_complete:'Visite terminée ✓ — Score:',toast_draft_saved:'Brouillon sauvegardé ✓ — Score:',
+    toast_mite_warn:'· Varroa',toast_no_hive:'Aucune ruche sélectionnée',toast_pdf_error:'Bibliothèque PDF non chargée',
+  },
+  es:{flag:'🇪🇸',code:'ES',
+    loading:'Cargando colmenas...',saved:'Guardado',saving:'Guardando...',error_lbl:'Error',
+    nav_home:'Inicio',nav_inspect:'Revisión',nav_queens:'Reinas',nav_harvest:'Cosecha',nav_insights:'Análisis',nav_remind:'Recordar',
+    honey_harvest_season:'Cosecha de miel esta temporada',apiaries:'Colmenares',all_hives:'Todas las colmenas',recent_activity:'Actividad reciente',
+    select_hive:'Seleccionar colmena',insp_details:'Detalles de revisión',colony_obs:'Observaciones (0–10)',
+    colony_strength:'Fuerza de la colonia',capped_brood:'Cría operculada',uncapped_brood:'Cría abierta / Huevos',
+    honey_stores:'Reservas de miel',pollen:'Polen / Pan de abejas',queen_cells:'Celdas reales',
+    queen_health:'Reina y salud de la colonia',queen_spotted:'Reina avistada',eggs_present:'Huevos presentes (reina confirmada)',
+    swarm_prep:'Preparativos de enjambre observados',disease_signs:'Signos de enfermedad (loque, nosema)',
+    mites_visible:'Varroa visible en abejas',laying_workers:'Obreras ponedoras sospechadas',
+    mite_count_title:'Recuento de Varroa',mgmt_actions:'Acciones de manejo',
+    feeding:'Alimentación',treatment:'Tratamiento',frames:'Cuadros',notes:'Notas',
+    save_draft:'Guardar borrador',complete:'Completar ✓',hive_timeline:'Historial de colmena',
+    queen_records:'Registros de reinas',add_queen:'Añadir / Reemplazar reina',
+    log_treatment:'Registrar tratamiento',treatment_history:'Historial de tratamientos',
+    record_harvest:'Registrar cosecha',harvest_log:'Registro de cosechas',
+    equipment:'Equipamiento',data:'Datos',export_data:'Exportar todos los datos (JSON)',
+    reminder_settings:'Configuración de recordatorios',notif_prefs:'Preferencias de notificación',
+    push_notif:'Notificaciones del navegador',email_remind:'Recordatorios por correo',save_reminders:'Guardar recordatorios',
+    queen_info:'Información de la reina',add_apiary:'Añadir colmenar',add_hive:'Añadir colmena',
+    save_queen:'Guardar registro de reina',save_apiary:'Guardar colmenar',save_hive:'Guardar colmena',
+    fleet_overview:'Resumen general',mite_tracker:'Seguimiento de Varroa',harvest_analytics:'Análisis de cosecha',
+    insp_activity:'Actividad de revisión',per_hive_trends:'Tendencias por colmena',
+    your_account:'Mi cuenta',sign_out:'Cerrar sesión',
+    toast_select_hive:'Por favor selecciona una colmena',toast_too_large:'es demasiado grande (máx 10MB)',
+    toast_reminders_saved:'Recordatorios guardados ✓',toast_treatment_saved:'Tratamiento guardado ✓',
+    toast_harvest_saved:'Cosecha registrada ✓',toast_queen_saved:'Reina guardada ✓',
+    toast_apiary_saved:'Colmenar añadido ✓',toast_hive_saved:'Colmena añadida ✓',
+    toast_location:'Ubicación detectada ✓',toast_no_location:'No se pudo detectar la ubicación',
+    toast_voice_unsupported:'Voz no soportada en este navegador',toast_mic_denied:'Micrófono denegado',
+    toast_insp_complete:'Revisión completada ✓ — Puntuación:',toast_draft_saved:'Borrador guardado ✓ — Puntuación:',
+    toast_mite_warn:'· Varroa',toast_no_hive:'Ninguna colmena seleccionada',toast_pdf_error:'Biblioteca PDF no cargada',
+  },
+  it:{flag:'🇮🇹',code:'IT',
+    loading:'Caricamento arnie...',saved:'Salvato',saving:'Salvataggio...',error_lbl:'Errore',
+    nav_home:'Home',nav_inspect:'Ispezione',nav_queens:'Regine',nav_harvest:'Raccolta',nav_insights:'Analisi',nav_remind:'Promemoria',
+    honey_harvest_season:'Raccolta di miele questa stagione',apiaries:'Apiari',all_hives:'Tutte le arnie',recent_activity:'Attività recente',
+    select_hive:'Seleziona arnia',insp_details:'Dettagli ispezione',colony_obs:'Osservazioni (0–10)',
+    colony_strength:'Forza della colonia',capped_brood:'Covata opercolata',uncapped_brood:'Covata aperta / Uova',
+    honey_stores:'Riserve di miele',pollen:'Polline / Pane delle api',queen_cells:'Celle reali',
+    queen_health:'Regina e salute della colonia',queen_spotted:'Regina avvistata',eggs_present:'Uova presenti (regina confermata)',
+    swarm_prep:'Preparativi sciamatura osservati',disease_signs:'Segni di malattia (peste, nosema)',
+    mites_visible:'Varroa visibile sulle api',laying_workers:'Operaie depostrici sospettate',
+    mite_count_title:'Conteggio Varroa',mgmt_actions:'Azioni di gestione',
+    feeding:'Alimentazione',treatment:'Trattamento',frames:'Favi',notes:'Note',
+    save_draft:'Salva bozza',complete:'Completa ✓',hive_timeline:'Cronologia arnia',
+    queen_records:'Registri delle regine',add_queen:'Aggiungi / Sostituisci regina',
+    log_treatment:'Registra trattamento',treatment_history:'Storico trattamenti',
+    record_harvest:'Registra raccolta',harvest_log:'Registro raccolte',
+    equipment:'Attrezzatura',data:'Dati',export_data:'Esporta tutti i dati (JSON)',
+    reminder_settings:'Impostazioni promemoria',notif_prefs:'Preferenze notifiche',
+    push_notif:'Notifiche browser',email_remind:'Promemoria e-mail',save_reminders:'Salva promemoria',
+    queen_info:'Informazioni regina',add_apiary:'Aggiungi apiario',add_hive:'Aggiungi arnia',
+    save_queen:'Salva scheda regina',save_apiary:'Salva apiario',save_hive:'Salva arnia',
+    fleet_overview:'Panoramica',mite_tracker:'Monitoraggio Varroa',harvest_analytics:'Analisi raccolta',
+    insp_activity:'Attività ispezioni',per_hive_trends:'Tendenze per arnia',
+    your_account:'Il mio account',sign_out:'Esci',
+    toast_select_hive:'Seleziona prima un\'arnia',toast_too_large:'è troppo grande (max 10MB)',
+    toast_reminders_saved:'Promemoria salvati ✓',toast_treatment_saved:'Trattamento salvato ✓',
+    toast_harvest_saved:'Raccolta salvata ✓',toast_queen_saved:'Regina salvata ✓',
+    toast_apiary_saved:'Apiario aggiunto ✓',toast_hive_saved:'Arnia aggiunta ✓',
+    toast_location:'Posizione rilevata ✓',toast_no_location:'Posizione non rilevata',
+    toast_voice_unsupported:'Voce non supportata',toast_mic_denied:'Microfono negato',
+    toast_insp_complete:'Ispezione completata ✓ — Punteggio:',toast_draft_saved:'Bozza salvata ✓ — Punteggio:',
+    toast_mite_warn:'· Varroa',toast_no_hive:'Nessuna arnia selezionata',toast_pdf_error:'Libreria PDF non caricata',
+  },
+};
+
+let currentLang='en';
+
+function t(key){return(LANGS[currentLang]||LANGS.en)[key]||(LANGS.en[key]||key);}
+
+function applyLang(){
+  const L=LANGS[currentLang]||LANGS.en;
+  // Update all data-i18n elements
+  document.querySelectorAll('[data-i18n]').forEach(el=>{
+    const key=el.getAttribute('data-i18n');
+    if(L[key]!==undefined)el.textContent=L[key];
+  });
+  // Update lang button
+  const btn=document.getElementById('lang-btn');
+  if(btn)btn.textContent=L.code;
+  // Update lang menu active state
+  document.querySelectorAll('.lang-opt').forEach(opt=>{
+    const lang=opt.getAttribute('onclick').match(/setLang\('(\w+)'\)/)?.[1];
+    opt.classList.toggle('active',lang===currentLang);
+  });
+  // Update html lang attribute
+  document.documentElement.lang=currentLang;
+  // Update placeholders dynamically
+  const phMap={
+    'insp-notes': {en:'Observations, follow-up tasks, next steps...',zh:'观察记录、后续任务、下一步计划...',de:'Beobachtungen, Aufgaben, nächste Schritte...',fr:'Observations, tâches, prochaines étapes...',es:'Observaciones, tareas, próximos pasos...',it:'Osservazioni, compiti, prossimi passi...'},
+    'ap-name':    {en:'e.g. Backyard Apiary',zh:'例：后院蜂场',de:'z.B. Hausgarten-Bienenstand',fr:'ex. Rucher du jardin',es:'ej. Colmenar del jardín',it:'es. Apiario del giardino'},
+    'hv-name':    {en:'e.g. Hive 1, Blue Box',zh:'例：蜂箱1，蓝箱',de:'z.B. Volk 1, Blaue Beute',fr:'ex. Ruche 1, Boîte bleue',es:'ej. Colmena 1, Caja azul',it:'es. Arnia 1, Cassetta blu'},
+  };
+  Object.entries(phMap).forEach(([id,vals])=>{
+    const el=document.getElementById(id);
+    if(el)el.placeholder=vals[currentLang]||vals.en;
+  });
+}
+
+function setLang(lang){
+  currentLang=lang;
+  try{localStorage.setItem('bk_lang',lang);}catch(e){}
+  applyLang();
+  closeLangMenu();
+  showToast((LANGS[lang]||LANGS.en).saved,'success',1500);
+}
+
+function toggleLangMenu(){
+  const menu=document.getElementById('lang-menu');
+  menu.classList.toggle('open');
+}
+function closeLangMenu(){
+  document.getElementById('lang-menu')?.classList.remove('open');
+}
+// Close lang menu on outside tap
+document.addEventListener('click',e=>{
+  if(!e.target.closest('#lang-menu')&&!e.target.closest('#lang-btn')){
+    closeLangMenu();
+  }
+},{passive:true});
+
 // ── Toast ──────────────────────────────────────────────────
 let toastTimer=null;
 function showToast(msg,type='success',duration=2800){
@@ -776,6 +1053,9 @@ let currentDetailHiveId=null;
 
 // ── Init ───────────────────────────────────────────────────
 async function init() {
+  // Load saved language
+  try{const l=localStorage.getItem('bk_lang');if(l&&LANGS[l])currentLang=l;}catch(e){}
+  applyLang();
   const { data: { session } } = await sb.auth.getSession();
   if (!session) { window.location.href = 'index.html'; return; }
   currentUser = session.user;
@@ -904,11 +1184,11 @@ function populateInspectWeather(w){
 // ── FEATURE 2: PHOTOS ──────────────────────────────────────
 async function handlePhotoUpload(files) {
   if(!files||files.length===0)return;
-  if(!selectedHiveId){showToast('Please select a hive first','warning');return;}
+  if(!selectedHiveId){showToast(t('toast_select_hive'),'warning');return;}
   document.getElementById('photo-upload-progress').style.display='block';
   setSyncing('syncing');
   for(const file of files){
-    if(file.size>10*1024*1024){showToast(file.name+' is too large (max 10MB)','error');continue;}
+    if(file.size>10*1024*1024){showToast(file.name+' '+t('toast_too_large'),'error');continue;}
     const ext=file.name.split('.').pop();
     const path=`${currentUser.id}/${selectedHiveId}/${Date.now()}.${ext}`;
     const{error:upErr}=await sb.storage.from('hive-photos').upload(path,file,{cacheControl:'3600',upsert:false});
@@ -1130,7 +1410,7 @@ async function saveReminderSettings(){
     }
   }
   setSyncing('saved');
-  showToast('Reminder settings saved ✓');
+  showToast(t('toast_reminders_saved'));
   checkReminders();
 }
 
@@ -1328,7 +1608,7 @@ function renderInsights(){
   let html='';
 
   // ── 1. FLEET OVERVIEW ──────────────────────────────────
-  html+=`<div class="section-hd">Fleet Overview</div>`;
+  html+=`<div class="section-hd"><span data-i18n="fleet_overview">Fleet Overview</span></div>`;
   const hivesWithInsps=hives.filter(h=>hiveInspections(h.id).length>0);
   if(hivesWithInsps.length>0){
     const maxScore=100;
@@ -1363,7 +1643,7 @@ function renderInsights(){
     return insps.some(i=>i.mite_count!=null&&i.mite_count>0);
   });
   if(hivesWithMites.length>0){
-    html+=`<div class="section-hd">Varroa Mite Tracker</div><div class="card">
+    html+=`<div class="section-hd"><span data-i18n="mite_tracker">Varroa Mite Tracker</span></div><div class="card">
       <div class="card-title">Mite Count Trend (last 6 inspections)</div>`;
     hivesWithMites.forEach(h=>{
       const insps=hiveInspections(h.id).slice(0,6).reverse();
@@ -1396,7 +1676,7 @@ function renderInsights(){
 
   // ── 3. HARVEST SUMMARY ─────────────────────────────────
   if(harvests.length>0){
-    html+=`<div class="section-hd">Harvest Analytics</div><div class="card">
+    html+=`<div class="section-hd"><span data-i18n="harvest_analytics">Harvest Analytics</span></div><div class="card">
       <div class="card-title">Monthly Honey Production (lbs)</div>`;
     const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
     const byMonth=new Array(12).fill(0);
@@ -1447,7 +1727,7 @@ function renderInsights(){
   }
 
   // ── 4. INSPECTION FREQUENCY ───────────────────────────
-  html+=`<div class="section-hd">Inspection Activity</div><div class="card">
+  html+=`<div class="section-hd"><span data-i18n="insp_activity">Inspection Activity</span></div><div class="card">
     <div class="card-title">Days Since Last Inspection</div>`;
   const sortedByGap=[...hives].sort((a,b)=>daysSince(lastInsp(b.id)?.date)-daysSince(lastInsp(a.id)?.date));
   sortedByGap.forEach(h=>{
@@ -1467,7 +1747,7 @@ function renderInsights(){
   html+=`<div style="font-size:11px;color:var(--text-3);margin-top:4px">Bars fill as inspection gap grows — red means overdue</div></div>`;
 
   // ── 5. PER-HIVE TREND (enhanced) ──────────────────────
-  html+=`<div class="section-hd">Per-Hive Trends</div>`;
+  html+=`<div class="section-hd"><span data-i18n="per_hive_trends">Per-Hive Trends</span></div>`;
   hives.forEach(h=>{
     const insps=hiveInspections(h.id);
     if(insps.length===0){
@@ -1584,7 +1864,7 @@ function toggleChip(el){el.classList.toggle('on')}
 function showActionTab(id,btn){['feeding','treatment','frames'].forEach(t=>{document.getElementById('action-'+t).style.display=t===id?'block':'none'});document.querySelectorAll('.tab-row .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 
 async function saveInspection(mode){
-  if(!selectedHiveId){showToast('Please select a hive first','warning');return;}
+  if(!selectedHiveId){showToast(t('toast_select_hive'),'warning');return;}
   const score=calcScore(),mc=+document.getElementById('sl-mite').value;
   setSyncing('syncing');
   const record={
@@ -1610,7 +1890,7 @@ async function saveInspection(mode){
     notes:document.getElementById('insp-notes').value
   };
   const{data,error}=await sb.from('inspections').insert(record).select().single();
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
   inspections.unshift(data);
   // Link pending photos to this inspection
   if(pendingPhotos.length>0){
@@ -1620,7 +1900,7 @@ async function saveInspection(mode){
     }
   }
   setSyncing('saved');
-  showToast((mode==='draft'?'Draft saved':'Inspection complete ✓')+' — Score: '+score+(mc>=3?' · Mite count '+mc+'%!':''), mc>=3?'warning':'success');
+  showToast((mode==='draft'?t('toast_draft_saved'):t('toast_insp_complete'))+' '+score+(mc>=3?' '+t('toast_mite_warn')+' '+mc+'%!':''), mc>=3?'warning':'success');
   document.getElementById('inspect-form').style.display='none';
   document.getElementById('inspect-empty').style.display='block';
   document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
@@ -1633,20 +1913,20 @@ async function saveInspection(mode){
 async function addTreatment(){
   setSyncing('syncing');
   const{data,error}=await sb.from('treatments').insert({user_id:currentUser.id,hive_id:document.getElementById('treat-hive').value,product:document.getElementById('treat-type').value,amount:document.getElementById('treat-amount').value||'per label',start_date:document.getElementById('treat-date').value||new Date().toISOString().split('T')[0],duration_days:+document.getElementById('treat-days').value||null,note:document.getElementById('treat-note').value}).select().single();
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
   treatments.unshift(data);setSyncing('saved');renderTreatments();
   document.getElementById('treat-amount').value='';document.getElementById('treat-note').value='';
-  showToast('Treatment logged ✓');
+  showToast(t('toast_treatment_saved'));
 }
 
 // ── HARVEST ────────────────────────────────────────────────
 async function addHarvest(){
   setSyncing('syncing');
   const{data,error}=await sb.from('harvests').insert({user_id:currentUser.id,hive_id:document.getElementById('harv-hive').value,honey_lbs:+document.getElementById('honey-val').textContent,wax_oz:+document.getElementById('wax-val').textContent,honey_type:document.getElementById('harv-type').value,harvest_date:document.getElementById('harv-date').value||new Date().toISOString().split('T')[0],note:document.getElementById('harv-note').value}).select().single();
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
   harvests.unshift(data);setSyncing('saved');renderHarvests();
   document.getElementById('harv-note').value='';
-  showToast('Harvest recorded ✓');
+  showToast(t('toast_harvest_saved'));
 }
 
 // ── QUEEN ──────────────────────────────────────────────────
@@ -1665,24 +1945,24 @@ async function saveQueen(){
   let data,error;
   if(existing){({data,error}=await sb.from('queens').update(record).eq('id',existing.id).select().single());if(!error){const idx=queens.findIndex(q=>q.id===existing.id);queens[idx]=data;}}
   else{({data,error}=await sb.from('queens').insert(record).select().single());if(!error)queens.push(data);}
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
-  setSyncing('saved');closeModal('modal-queen');renderQueens();showToast('Queen record saved ✓');
+  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+  setSyncing('saved');closeModal('modal-queen');renderQueens();showToast(t('toast_queen_saved'));
 }
 
 // ── APIARY ─────────────────────────────────────────────────
 async function saveApiary(){
   setSyncing('syncing');
   const{data,error}=await sb.from('apiaries').insert({user_id:currentUser.id,name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:document.getElementById('ap-forage').value,note:document.getElementById('ap-note').value}).select().single();
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
-  apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();showToast('Apiary added ✓');
+  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+  apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();showToast(t('toast_apiary_saved'));
 }
 
 // ── HIVE ───────────────────────────────────────────────────
 async function saveHive(){
   setSyncing('syncing');
   const{data,error}=await sb.from('hives').insert({user_id:currentUser.id,apiary_id:document.getElementById('hv-apiary').value||null,name:document.getElementById('hv-name').value||'New Hive',type:document.getElementById('hv-type').value,boxes:+document.getElementById('hv-frames').value||2,installed:document.getElementById('hv-date').value,origin:document.getElementById('hv-origin').value,status:'ok'}).select().single();
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
-  hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();showToast('Hive added ✓');
+  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+  hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();showToast(t('toast_hive_saved'));
 }
 
 // ── MODALS ─────────────────────────────────────────────────
@@ -1702,9 +1982,9 @@ function exportData(){
 
 // ── PDF EXPORT ─────────────────────────────────────────────
 async function exportHivePDF(){
-  if(!currentDetailHiveId){showToast('No hive selected','warning');return;}
+  if(!currentDetailHiveId){showToast(t('toast_no_hive'),'warning');return;}
   const {jsPDF}=window.jspdf;
-  if(!jsPDF){showToast('PDF library not loaded, please retry','error');return;}
+  if(!jsPDF){showToast(t('toast_pdf_error'),'error');return;}
   const h=getHive(currentDetailHiveId);
   if(!h){return;}
   const apiary=getApiary(h.apiary_id);
@@ -1947,15 +2227,15 @@ function openApiaryMap(apiaryId){
 function autoLocateApiary(){
   navigator.geolocation?.getCurrentPosition(pos=>{
     document.getElementById('ap-gps').value=pos.coords.latitude.toFixed(6)+', '+pos.coords.longitude.toFixed(6);
-    showToast('Location detected ✓');
-  },()=>showToast('Could not detect location','warning'));
+    showToast(t('toast_location'));
+  },()=>showToast(t('toast_no_location'),'warning'));
 }
 
 // ── VOICE RECORDING ──────────────────────────────────────────
 let recognition=null,isRecording=false;
 function toggleVoice(){
   const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
-  if(!SR){showToast('Voice not supported on this browser','warning');return;}
+  if(!SR){showToast(t('toast_voice_unsupported'),'warning');return;}
   if(!isRecording){
     recognition=new SR();
     recognition.continuous=true;recognition.interimResults=true;recognition.lang='en-US';
@@ -1971,7 +2251,7 @@ function toggleVoice(){
       for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)final+=e.results[i][0].transcript+' ';
       if(final)document.getElementById('insp-notes').value+=final;
     };
-    recognition.onerror=e=>{stopVoice();if(e.error==='not-allowed')showToast('Microphone access denied','error');};
+    recognition.onerror=e=>{stopVoice();if(e.error==='not-allowed')showToast(t('toast_mic_denied'),'error');};
     recognition.onend=()=>stopVoice();
     recognition.start();
   } else {

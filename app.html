@@ -2345,13 +2345,13 @@ function renderSeasonalTasks(){
   try{const s=localStorage.getItem('bk_tasks');if(s){const p=JSON.parse(s);if(p._week===wk)taskStates=p;}}catch(e){}
   if(taskStates._week!==wk)taskStates={_week:wk};
   panel.style.display='block';
-  const done=tasks.filter(t=>taskStates[t.id]).length;
+  const done=tasks.filter(task=>taskStates[task.id]).length;
   document.getElementById('task-progress').textContent=done+'/'+tasks.length+' '+t('completed');
-  document.getElementById('seasonal-task-list').innerHTML=tasks.map(t=>{
-    const isDone=!!taskStates[t.id];
-    const pc=t.p==='high'?'task-high':t.p==='med'?'task-med':'task-low';
-    const pl=t.p==='high'?t('priority_urgent'):t.p==='med'?t('priority_week'):t('priority_ready');
-    return `<div class="task-item"><div class="task-check${isDone?' done':''}" onclick="toggleTask('${t.id}')">${isDone?'✓':''}</div><div style="flex:1"><div class="task-text${isDone?' done':''}">${t.text}</div><span class="task-priority ${pc}">${pl}</span></div></div>`;
+  document.getElementById('seasonal-task-list').innerHTML=tasks.map(task=>{
+    const isDone=!!taskStates[task.id];
+    const pc=task.p==='high'?'task-high':task.p==='med'?'task-med':'task-low';
+    const pl=task.p==='high'?t('priority_urgent'):task.p==='med'?t('priority_week'):t('priority_ready');
+    return `<div class="task-item"><div class="task-check${isDone?' done':''}" onclick="toggleTask('${task.id}')">${isDone?'✓':''}</div><div style="flex:1"><div class="task-text${isDone?' done':''}">${task.text}</div><span class="task-priority ${pc}">${pl}</span></div></div>`;
   }).join('');
 }
 function toggleTask(id){

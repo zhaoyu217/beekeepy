@@ -10,6 +10,7 @@
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/qrcode@1.5.3/build/qrcode.min.js"></script>
 <style>
 :root{
   --honey:#E8930A;--honey-light:#FDF3E0;--honey-dark:#B36800;
@@ -535,6 +536,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px"><span data-i18n="back">← Back</span></button>
     <h2 id="hive-detail-name" style="font-size:18px;flex:1"></h2>
     <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 Export PDF</button>
+    <button class="btn-sm" onclick="showHiveQR()" style="margin-top:0;padding:6px 12px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🏷️ Label</button>
   </div>
 
   <!-- AI Analysis for this hive -->
@@ -745,6 +747,32 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="modal-title"><h2 style="font-size:16px">🤖 AI Hive Analysis</h2><button class="close-btn" onclick="closeModal('modal-ai')">✕</button></div>
     <div id="ai-modal-content">
       <div class="ai-loading"><div class="ai-spinner"></div>Analyzing your hive data...</div>
+    </div>
+  </div>
+</div>
+
+<!-- QR Label Modal -->
+<div class="modal-bg" id="modal-qr" onclick="if(event.target===this)closeModal('modal-qr')">
+  <div class="modal" style="max-width:340px">
+    <div class="modal-title">
+      <h2 style="font-size:16px">🏷️ Hive Label</h2>
+      <button class="close-btn" onclick="closeModal('modal-qr')">✕</button>
+    </div>
+    <!-- Printable label card -->
+    <div id="qr-label-card" style="background:#fff;border:2px solid #E8930A;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px">
+      <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px">
+        <div style="width:32px;height:32px;background:#E8930A;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🐝</div>
+        <span style="font-family:'DM Serif Display',serif;font-size:18px;color:#1A1A14">Beekeepy</span>
+      </div>
+      <canvas id="qr-canvas" style="border-radius:8px;margin-bottom:12px"></canvas>
+      <div id="qr-hive-name" style="font-size:18px;font-weight:700;color:#1A1A14;margin-bottom:4px"></div>
+      <div id="qr-apiary-name" style="font-size:13px;color:#5C5847;margin-bottom:4px"></div>
+      <div id="qr-hive-meta" style="font-size:11px;color:#9A9280;margin-bottom:8px"></div>
+      <div style="font-size:10px;color:#9A9280;border-top:1px solid #E8E4DC;padding-top:8px">beekeepy.com · Scan to view hive details</div>
+    </div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" onclick="downloadQRLabel()" style="margin-top:0">⬇️ Download Image</button>
+      <button class="btn btn-outline" onclick="printQRLabel()" style="margin-top:0">🖨️ Print</button>
     </div>
   </div>
 </div>
@@ -1277,6 +1305,13 @@ async function init() {
   checkReminders();
   requestPushPermission();
   document.getElementById('loading-overlay').style.display = 'none';
+  // Handle QR scan — auto open hive
+  const urlParams=new URLSearchParams(location.search);
+  const qrHiveId=urlParams.get('hive');
+  if(qrHiveId){
+    const target=hives.find(h=>h.id===qrHiveId);
+    if(target){setTimeout(()=>{openHiveDetail(qrHiveId);showToast('🐝 '+target.name);},300);}
+  }
 }
 
 async function signOut() { await sb.auth.signOut(); window.location.href = 'index.html'; }
@@ -2291,6 +2326,145 @@ function exportData(){
   const data={apiaries,hives,queens,inspections,treatments,harvests,photos:photos.map(p=>({...p,public_url:p.public_url})),exportedAt:new Date().toISOString(),user:currentUser.email};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='beekeepy-export.json';a.click();
+}
+
+// QR LABEL
+async function showHiveQR(){
+  if(!currentDetailHiveId)return;
+  const h=getHive(currentDetailHiveId);
+  if(!h)return;
+  const apiary=getApiary(h.apiary_id);
+  const li=lastInsp(currentDetailHiveId);
+  const url=`${location.origin}/app.html?hive=${currentDetailHiveId}`;
+
+  // Fill label info
+  document.getElementById('qr-hive-name').textContent=h.name;
+  document.getElementById('qr-apiary-name').textContent=apiary?'📍 '+apiary.name:'';
+  document.getElementById('qr-hive-meta').textContent=[
+    h.type||'Langstroth',
+    h.installed?'Since '+h.installed:'',
+    li?'Last check: '+li.date:'No inspections yet'
+  ].filter(Boolean).join(' · ');
+
+  // Generate QR code
+  const canvas=document.getElementById('qr-canvas');
+  try{
+    await QRCode.toCanvas(canvas, url, {
+      width:180,
+      margin:2,
+      color:{dark:'#1A1A14',light:'#FFFFFF'},
+      errorCorrectionLevel:'M'
+    });
+  }catch(e){console.error('QR error:',e);}
+
+  openModal('modal-qr');
+}
+
+async function downloadQRLabel(){
+  const card=document.getElementById('qr-label-card');
+  const h=getHive(currentDetailHiveId);
+  if(!h)return;
+
+  // Use html2canvas if available, otherwise use canvas directly
+  try{
+    // Fallback: draw label on canvas manually
+    const qrCanvas=document.getElementById('qr-canvas');
+    const W=400,H=520;
+    const out=document.createElement('canvas');
+    out.width=W; out.height=H;
+    const ctx=out.getContext('2d');
+
+    // Background
+    ctx.fillStyle='#FFFFFF';
+    ctx.fillRect(0,0,W,H);
+
+    // Honey border
+    ctx.strokeStyle='#E8930A';
+    ctx.lineWidth=6;
+    ctx.beginPath();
+    ctx.roundRect(3,3,W-6,H-6,16);
+    ctx.stroke();
+
+    // Bee logo circle
+    ctx.fillStyle='#E8930A';
+    ctx.beginPath();
+    ctx.roundRect(W/2-24,24,48,48,10);
+    ctx.fill();
+    ctx.font='26px serif';
+    ctx.textAlign='center';
+    ctx.fillText('🐝',W/2,56);
+
+    // Beekeepy title
+    ctx.fillStyle='#1A1A14';
+    ctx.font='bold 22px serif';
+    ctx.fillText('Beekeepy',W/2,90);
+
+    // QR code
+    const qrSize=180;
+    ctx.drawImage(qrCanvas,(W-qrSize)/2,110,qrSize,qrSize);
+
+    // Hive name
+    ctx.fillStyle='#1A1A14';
+    ctx.font='bold 24px sans-serif';
+    ctx.fillText(h.name,W/2,320);
+
+    // Apiary
+    const apiary=getApiary(h.apiary_id);
+    if(apiary){
+      ctx.fillStyle='#5C5847';
+      ctx.font='16px sans-serif';
+      ctx.fillText('📍 '+apiary.name,W/2,348);
+    }
+
+    // Meta
+    const li=lastInsp(currentDetailHiveId);
+    ctx.fillStyle='#9A9280';
+    ctx.font='13px sans-serif';
+    ctx.fillText((h.type||'Langstroth')+(li?' · Last: '+li.date:''),W/2,372);
+
+    // Divider
+    ctx.strokeStyle='#E8E4DC';
+    ctx.lineWidth=1;
+    ctx.beginPath();
+    ctx.moveTo(40,395);ctx.lineTo(W-40,395);
+    ctx.stroke();
+
+    // Footer
+    ctx.fillStyle='#9A9280';
+    ctx.font='12px sans-serif';
+    ctx.fillText('beekeepy.com · Scan to view hive details',W/2,418);
+
+    // URL tiny
+    ctx.fillStyle='#C0B8A8';
+    ctx.font='10px sans-serif';
+    ctx.fillText(`beekeepy.com/app.html?hive=${currentDetailHiveId.slice(0,8)}...`,W/2,438);
+
+    // Download
+    const link=document.createElement('a');
+    link.download=`Beekeepy-${h.name.replace(/\s+/g,'-')}-label.png`;
+    link.href=out.toDataURL('image/png');
+    link.click();
+    showToast('Label downloaded ✓');
+  }catch(e){
+    showToast('Download failed: '+e.message,'error');
+  }
+}
+
+function printQRLabel(){
+  const card=document.getElementById('qr-label-card');
+  const win=window.open('','_blank','width=400,height=600');
+  win.document.write(`
+    <html><head><title>Hive Label</title>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display&family=DM+Sans:wght@400;600&display=swap" rel="stylesheet">
+    <style>
+      body{margin:0;display:flex;align-items:center;justify-content:center;min-height:100vh;background:#f5f5f0}
+      .card{${card.style.cssText}font-family:'DM Sans',sans-serif}
+      @media print{body{background:#fff}.card{border:2px solid #E8930A}}
+    </style></head>
+    <body><div class="card">${card.innerHTML}</div>
+    <script>window.onload=()=>{window.print();}<\/script>
+    </body></html>`);
+  win.document.close();
 }
 
 // PDF EXPORT 

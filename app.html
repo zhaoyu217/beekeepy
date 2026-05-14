@@ -6,6 +6,7 @@
 <title>Beekeepy · Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
 <style>
 :root{
   --honey:#E8930A;--honey-light:#FDF3E0;--honey-dark:#B36800;
@@ -496,7 +497,8 @@ textarea{resize:none}
 <div class="scroll-content">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
     <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px">← Back</button>
-    <h2 id="hive-detail-name" style="font-size:18px"></h2>
+    <h2 id="hive-detail-name" style="font-size:18px;flex:1"></h2>
+    <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 Export PDF</button>
   </div>
 
   <!-- AI Analysis for this hive -->
@@ -1476,6 +1478,156 @@ function exportData(){
   const data={apiaries,hives,queens,inspections,treatments,harvests,photos:photos.map(p=>({...p,public_url:p.public_url})),exportedAt:new Date().toISOString(),user:currentUser.email};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='beekeepy-export.json';a.click();
+}
+
+// ── PDF EXPORT ─────────────────────────────────────────────
+async function exportHivePDF(){
+  if(!currentDetailHiveId){alert('No hive selected.');return;}
+  const {jsPDF}=window.jspdf;
+  if(!jsPDF){alert('PDF library not loaded. Please try again.');return;}
+  const h=getHive(currentDetailHiveId);
+  if(!h){return;}
+  const apiary=getApiary(h.apiary_id);
+  const queen=queens.find(q=>q.hive_id===h.id);
+  const insps=hiveInspections(h.id);
+  const treats=treatments.filter(t=>t.hive_id===h.id);
+  const harvs=harvests.filter(hv=>hv.hive_id===h.id);
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210,margin=18,contentW=W-margin*2;
+  let y=margin;
+  const setFont=(style,size,color=[26,26,20])=>{doc.setFont('helvetica',style);doc.setFontSize(size);doc.setTextColor(...color);};
+  const checkPage=(needed=10)=>{if(y+needed>285){doc.addPage();y=margin;}};
+  const drawLine=(color=[232,228,220])=>{doc.setDrawColor(...color);doc.setLineWidth(0.3);doc.line(margin,y,W-margin,y);y+=4;};
+  const sectionHeader=(text)=>{
+    checkPage(12);
+    doc.setFillColor(253,243,224);doc.roundedRect(margin,y,contentW,8,2,2,'F');
+    setFont('bold',9,[179,104,0]);doc.text(text.toUpperCase(),margin+4,y+5.5);y+=12;
+  };
+  const pill=(text,x,py,bgR,bgG,bgB,txtR,txtG,txtB)=>{
+    const w=doc.getTextWidth(text)+6;
+    doc.setFillColor(bgR,bgG,bgB);doc.roundedRect(x,py-3.5,w,5,1.5,1.5,'F');
+    doc.setTextColor(txtR,txtG,txtB);doc.setFontSize(7);doc.text(text,x+3,py);return w+3;
+  };
+  // Cover banner
+  doc.setFillColor(232,147,10);doc.rect(0,0,W,28,'F');
+  setFont('bold',20,[255,255,255]);doc.text('Beekeepy',margin,12);
+  setFont('normal',9,[255,220,150]);doc.text('Hive Inspection Report  ·  beekeepy.com',margin,19);
+  setFont('normal',8,[255,220,150]);doc.text('Generated '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),margin,25);
+  y=36;
+  // Hive title
+  setFont('bold',22,[26,26,20]);doc.text(h.name,margin,y);y+=7;
+  if(apiary){setFont('normal',10,[92,88,71]);doc.text('Apiary: '+apiary.name+(apiary.location?' · '+apiary.location:''),margin,y);y+=6;}
+  setFont('normal',9,[154,146,128]);doc.text((h.type||'Langstroth')+(h.installed?' · Installed: '+h.installed:''),margin,y);y+=10;
+  drawLine();
+  // Stats row
+  const li=insps[0];
+  const totalHoney=harvs.reduce((s,hv)=>s+(hv.honey_lbs||0),0);
+  const stats=[{label:'Inspections',value:String(insps.length)},{label:'Latest Score',value:li?String(li.score):'—'},{label:'Treatments',value:String(treats.length)},{label:'Honey (lbs)',value:totalHoney>0?totalHoney.toFixed(1):'—'}];
+  const boxW=(contentW-9)/4;
+  stats.forEach((s,i)=>{
+    const bx=margin+i*(boxW+3);
+    doc.setFillColor(250,250,247);doc.setDrawColor(232,228,220);doc.setLineWidth(0.3);doc.roundedRect(bx,y,boxW,18,2,2,'FD');
+    const scoreCol=s.label==='Latest Score'&&li?(li.score>=60?[39,108,47]:li.score>=35?[133,100,4]:[192,57,43]):[232,147,10];
+    setFont('bold',14,scoreCol);doc.text(s.value,bx+boxW/2,y+10,{align:'center'});
+    setFont('normal',7,[92,88,71]);doc.text(s.label,bx+boxW/2,y+15,{align:'center'});
+  });
+  y+=24;
+  // Queen
+  if(queen){
+    sectionHeader('Queen Information');
+    const qAge=queenAge(queen.introduced_date);
+    const pairs=[['Breed',queen.race||'—'],['Source',queen.source||'—'],['Introduced',queen.introduced_date||'—'],['Age',qAge?qAge.text:'—'],['Marking color',queen.color||'—']];
+    const colW=contentW/2-4;
+    pairs.forEach((p,i)=>{
+      const col=i%2===0?margin:margin+colW+8;
+      if(i%2===0&&i>0){y+=6;checkPage(8);}
+      setFont('bold',8,[92,88,71]);doc.text(p[0]+':',col,y);
+      setFont('normal',8,[26,26,20]);doc.text(String(p[1]),col+30,y);
+    });
+    y+=10;
+    if(queen.note){setFont('italic',8,[92,88,71]);const lines=doc.splitTextToSize('Note: '+queen.note,contentW);doc.text(lines,margin,y);y+=lines.length*4+4;}
+  }
+  // Inspections
+  if(insps.length>0){
+    checkPage(16);sectionHeader('Inspection Records ('+insps.length+')');
+    insps.forEach((insp,idx)=>{
+      checkPage(32);
+      const sc=insp.score||0;
+      const scFill=sc>=60?[234,242,224]:sc>=35?[255,243,205]:[253,236,234];
+      const scTxt=sc>=60?[39,108,47]:sc>=35?[133,100,4]:[192,57,43];
+      doc.setFillColor(...scFill);doc.roundedRect(margin,y,contentW,7,1.5,1.5,'F');
+      setFont('bold',9,scTxt);doc.text('Score '+String(sc),margin+3,y+5);
+      setFont('normal',8,[92,88,71]);doc.text(insp.date||'',W-margin-3,y+5,{align:'right'});
+      y+=10;
+      const metrics=[['Strength',insp.colony_strength],['Capped Brood',insp.capped_brood],['Uncapped',insp.uncapped_brood],['Honey',insp.honey_stores],['Pollen',insp.pollen],['Mites',insp.mite_count!=null?insp.mite_count+'%':'—']];
+      const mW=contentW/3-2;
+      metrics.forEach((m,i)=>{
+        const col=margin+(i%3)*(mW+3);
+        if(i%3===0&&i>0)y+=6;
+        setFont('normal',7,[154,146,128]);doc.text(m[0],col,y);
+        setFont('bold',8,[26,26,20]);doc.text(String(m[1]??'—'),col,y+4);
+      });
+      y+=8;
+      const flags=[];
+      if(insp.queen_seen)flags.push({t:'Queen seen',ok:true});
+      if(insp.eggs_present)flags.push({t:'Eggs present',ok:true});
+      if(insp.swarm_prep)flags.push({t:'Swarm prep',ok:false});
+      if(insp.disease_signs)flags.push({t:'Disease signs',ok:false});
+      if(insp.mites_visible)flags.push({t:'Mites visible',ok:false});
+      if(flags.length>0){
+        let px=margin;
+        flags.forEach(f=>{
+          const bg=f.ok?[234,242,224]:[253,236,234];
+          const tc=f.ok?[39,108,47]:[192,57,43];
+          const w=pill(f.t,px,y,...bg,...tc);px+=w;
+          if(px>W-margin-20){px=margin;y+=6;}
+        });
+        y+=7;
+      }
+      if(insp.notes){checkPage(8);setFont('italic',8,[92,88,71]);const lines=doc.splitTextToSize(insp.notes,contentW-4);doc.text(lines,margin+2,y);y+=lines.length*4+2;}
+      if(idx<insps.length-1){y+=2;drawLine([240,236,228]);y-=2;}
+      y+=6;
+    });
+  }
+  // Treatments
+  if(treats.length>0){
+    checkPage(16);sectionHeader('Treatment Records ('+treats.length+')');
+    treats.forEach((t,idx)=>{
+      checkPage(14);
+      setFont('bold',9,[26,26,20]);doc.text(t.product||'—',margin,y);
+      setFont('normal',8,[92,88,71]);
+      const detail=[(t.amount||''),(t.start_date||''),(t.duration_days?t.duration_days+' days':'')].filter(Boolean).join(' · ');
+      doc.text(detail,margin,y+5);
+      if(t.note){setFont('italic',7,[154,146,128]);doc.text(t.note,margin,y+10);y+=4;}
+      pill('Treatment',W-margin-28,y+1,235,245,251,25,95,165);
+      y+=idx<treats.length-1?14:10;
+    });
+  }
+  // Harvests
+  if(harvs.length>0){
+    checkPage(16);sectionHeader('Harvest Records ('+harvs.length+')');
+    harvs.forEach((hv,idx)=>{
+      checkPage(14);
+      setFont('bold',9,[26,26,20]);doc.text((hv.honey_type||'Honey')+' — '+hv.honey_lbs+' lbs  ·  Wax: '+hv.wax_oz+' oz',margin,y);
+      setFont('normal',8,[92,88,71]);doc.text(hv.harvest_date||'',margin,y+5);
+      if(hv.note){setFont('italic',7,[154,146,128]);doc.text(hv.note,margin,y+10);y+=4;}
+      pill('Harvest',W-margin-20,y+1,253,243,224,179,104,0);
+      y+=idx<harvs.length-1?14:10;
+    });
+  }
+  // Footer on every page
+  const totalPages=doc.getNumberOfPages();
+  for(let p=1;p<=totalPages;p++){
+    doc.setPage(p);
+    doc.setFillColor(250,250,247);doc.rect(0,288,W,10,'F');
+    doc.setDrawColor(232,228,220);doc.setLineWidth(0.3);doc.line(0,288,W,288);
+    setFont('normal',7,[154,146,128]);
+    doc.text('Beekeepy · beekeepy.com',margin,294);
+    doc.text('Page '+p+' of '+totalPages,W-margin,294,{align:'right'});
+    doc.text(h.name+' · '+new Date().toLocaleDateString(),W/2,294,{align:'center'});
+  }
+  const filename='Beekeepy-'+h.name.replace(/\s+/g,'-')+'-'+new Date().toISOString().split('T')[0]+'.pdf';
+  doc.save(filename);
 }
 
 // ── START ──────────────────────────────────────────────────

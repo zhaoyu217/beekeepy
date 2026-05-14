@@ -380,7 +380,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="weather-icon" id="iw-icon">🌤</div>
       <div style="flex:1">
         <div style="font-weight:600;font-size:15px"><span id="iw-temp">--</span>°F <span id="iw-cond" style="font-weight:400;font-size:13px;color:var(--text-2)"></span></div>
-        <div class="weather-details">Humidity: <span id="iw-hum">--</span>% · Wind: <span id="iw-wind">--</span> mph</div>
+        <div class="weather-details"><span data-i18n="humidity">Humidity</span>: <span id="iw-hum">--</span>% · <span data-i18n="wind">Wind</span>: <span id="iw-wind">--</span> mph</div>
         <div style="font-size:10px;color:var(--text-3);margin-top:2px">Auto-detected · <span id="iw-loc"></span></div>
       </div>
     </div>
@@ -1144,7 +1144,7 @@ function setLang(lang){
   const activeNav=document.querySelector('.nav-item.active');
   if(active){
     const id=active.id.replace('pg-','');
-    if(id==='home')renderHome();
+    if(id==='home'){renderHome();if(currentWeather)renderWeatherWidget(currentWeather);}
     else if(id==='queens')renderQueens();
     else if(id==='insights')renderInsights();
     else if(id==='reminders')renderReminderSettings();

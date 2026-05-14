@@ -340,9 +340,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="stat-row">
-    <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l">Hives</div></div>
-    <div class="stat forest"><div class="stat-n" id="s-healthy">0</div><div class="stat-l">Healthy</div></div>
-    <div class="stat danger"><div class="stat-n" id="s-warn">0</div><div class="stat-l">At Risk</div></div>
+    <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l" data-i18n="stat_hives">Hives</div></div>
+    <div class="stat forest"><div class="stat-n" id="s-healthy">0</div><div class="stat-l" data-i18n="stat_healthy">Healthy</div></div>
+    <div class="stat danger"><div class="stat-n" id="s-warn">0</div><div class="stat-l" data-i18n="stat_atrisk">At Risk</div></div>
   </div>
 
   <div class="card">
@@ -522,7 +522,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div id="pg-hive-detail" class="page">
 <div class="scroll-content">
   <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-    <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px">← Back</button>
+    <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px"><span data-i18n="back">← Back</span</button>
     <h2 id="hive-detail-name" style="font-size:18px;flex:1"></h2>
     <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 Export PDF</button>
   </div>
@@ -795,7 +795,7 @@ const LANGS = {
     hive:'Hive',score:'Score',days_ago:'days ago',today:'Today',yesterday:'Yesterday',
     humidity:'Humidity',wind:'Wind',photo:'photo',photos:'photos',
     overdue:'Overdue!',never:'Never',this_week_tasks:"This Week's Tasks",
-    health_score:'Health Score — All Hives',mite_trend:'Mite Count Trend (last 6 inspections)',
+    health_score:t('health_score'),mite_trend:'Mite Count Trend (last 6 inspections)',
     monthly_honey:'Monthly Honey Production (lbs)',days_since:'Days Since Last Inspection',
     total_lbs:'Total lbs',wax_oz:'Wax oz',harvests_lbl:'Harvests',by_hive:'By Hive',
     bars_fill:'Bars fill as inspection gap grows — red means overdue',
@@ -807,6 +807,9 @@ const LANGS = {
     back:'← Back',map:'Map',
     account_info:'Your Account',email_lbl:'Email',
     settings_lbl:'Settings',
+
+    stat_hives:'Hives',stat_healthy:'Healthy',stat_atrisk:'At Risk',wax_lbl:'Beeswax',
+    priority_urgent:'Urgent',priority_week:'This week',priority_ready:'When ready',completed:'completed',
 
   },
   zh:{flag:'🇨🇳',code:'中',
@@ -866,6 +869,9 @@ const LANGS = {
     account_info:'我的账户',email_lbl:'邮箱',
     settings_lbl:'设置',
 
+    stat_hives:'蜂箱',stat_healthy:'健康',stat_atrisk:'有风险',wax_lbl:'蜂蜡',
+    priority_urgent:'紧急',priority_week:'本周',priority_ready:'待处理',completed:'已完成',
+
   },
   de:{flag:'🇩🇪',code:'DE',
     loading:'Völker werden geladen...',saved:'Gespeichert',saving:'Speichern...',error_lbl:'Fehler',
@@ -923,6 +929,9 @@ const LANGS = {
     back:'← Zurück',map:'Karte',
     account_info:'Mein Konto',email_lbl:'E-Mail',
     settings_lbl:'Einstellungen',
+
+    stat_hives:'Völker',stat_healthy:'Gesund',stat_atrisk:'Riskant',wax_lbl:'Bienenwachs',
+    priority_urgent:'Dringend',priority_week:'Diese Woche',priority_ready:'Wenn möglich',completed:'erledigt',
 
   },
   fr:{flag:'🇫🇷',code:'FR',
@@ -982,6 +991,9 @@ const LANGS = {
     account_info:'Mon compte',email_lbl:'E-mail',
     settings_lbl:'Paramètres',
 
+    stat_hives:'Ruches',stat_healthy:'Saines',stat_atrisk:'À risque',wax_lbl:'Cire d\'abeilles',
+    priority_urgent:'Urgent',priority_week:'Cette semaine',priority_ready:'Quand possible',completed:'terminées',
+
   },
   es:{flag:'🇪🇸',code:'ES',
     loading:'Cargando colmenas...',saved:'Guardado',saving:'Guardando...',error_lbl:'Error',
@@ -1040,6 +1052,9 @@ const LANGS = {
     account_info:'Mi cuenta',email_lbl:'Correo',
     settings_lbl:'Configuración',
 
+    stat_hives:'Colmenas',stat_healthy:'Sanas',stat_atrisk:'En riesgo',wax_lbl:'Cera de abeja',
+    priority_urgent:'Urgente',priority_week:'Esta semana',priority_ready:'Cuando sea posible',completed:'completadas',
+
   },
   it:{flag:'🇮🇹',code:'IT',
     loading:'Caricamento arnie...',saved:'Salvato',saving:'Salvataggio...',error_lbl:'Errore',
@@ -1097,6 +1112,9 @@ const LANGS = {
     back:'← Indietro',map:'Mappa',
     account_info:'Il mio account',email_lbl:'Email',
     settings_lbl:'Impostazioni',
+
+    stat_hives:'Arnie',stat_healthy:'Sane',stat_atrisk:'A rischio',wax_lbl:'Cera d\'api',
+    priority_urgent:'Urgente',priority_week:'Questa settimana',priority_ready:'Quando possibile',completed:'completate',
 
   },
 };
@@ -1604,7 +1622,7 @@ function toggleQueenCells(){document.getElementById('queen-cell-opts').style.dis
 // RENDER HOME 
 function renderHome(){
   const s=getSeason();
-  document.getElementById('season-banner').innerHTML=`<span style="font-size:26px">${s.icon}</span><div><div style="font-weight:600;font-size:14px">${s.label} Season</div><div style="font-size:12px;color:var(--text-2);margin-top:2px">${s.tip}</div></div>`;
+  document.getElementById('season-banner').innerHTML=`<span style="font-size:26px">${s.icon}</span><div><div style="font-weight:600;font-size:14px">${s.label}</div><div style="font-size:12px;color:var(--text-2);margin-top:2px">${s.tip}</div></div>`;
   renderSeasonalTasks();
   const allWarn=[];
   hives.forEach(h=>{hiveWarnings(h.id).forEach(w=>allWarn.push(`<div class="w-item">🐝 <strong>${h.name}</strong>: ${w}</div>`))});
@@ -1620,8 +1638,8 @@ function renderHome(){
   const now=new Date().getMonth(),show=byMonth.slice(Math.max(0,now-4),now+1),showL=months.slice(Math.max(0,now-4),now+1),maxH=Math.max(...show,1);
   document.getElementById('harvest-chart').innerHTML=show.map((v,i)=>`<div class="bar-wrap"><div class="bar" style="height:${Math.round(v/maxH*50)+4}px" title="${v} lbs"></div><div class="bar-lbl">${showL[i]}</div></div>`).join('');
   const tH=harvests.reduce((s,h)=>s+(h.honey_lbs||0),0),tW=harvests.reduce((s,h)=>s+(h.wax_oz||0),0);
-  document.getElementById('total-honey').textContent=`Honey: ${tH.toFixed(1)} lbs`;
-  document.getElementById('total-wax').textContent=`Beeswax: ${tW.toFixed(1)} oz`;
+  document.getElementById('total-honey').textContent=t('honey_stores')+': '+tH.toFixed(1)+' lbs';
+  document.getElementById('total-wax').textContent=t('wax_lbl')+': '+tW.toFixed(1)+' oz';
   document.getElementById('apiary-summary').innerHTML=apiaries.map(a=>{
     const count=hives.filter(h=>h.apiary_id===a.id).length;
     const hasGps=a.gps&&a.gps.includes(',');
@@ -2328,11 +2346,11 @@ function renderSeasonalTasks(){
   if(taskStates._week!==wk)taskStates={_week:wk};
   panel.style.display='block';
   const done=tasks.filter(t=>taskStates[t.id]).length;
-  document.getElementById('task-progress').textContent=done+'/'+tasks.length+' completed';
+  document.getElementById('task-progress').textContent=done+'/'+tasks.length+' '+t('completed');
   document.getElementById('seasonal-task-list').innerHTML=tasks.map(t=>{
     const isDone=!!taskStates[t.id];
     const pc=t.p==='high'?'task-high':t.p==='med'?'task-med':'task-low';
-    const pl=t.p==='high'?'Urgent':t.p==='med'?'This week':'When ready';
+    const pl=t.p==='high'?t('priority_urgent'):t.p==='med'?t('priority_week'):t('priority_ready');
     return `<div class="task-item"><div class="task-check${isDone?' done':''}" onclick="toggleTask('${t.id}')">${isDone?'✓':''}</div><div style="flex:1"><div class="task-text${isDone?' done':''}">${t.text}</div><span class="task-priority ${pc}">${pl}</span></div></div>`;
   }).join('');
 }

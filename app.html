@@ -381,8 +381,32 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ===== INSPECT ===== -->
 <div id="pg-inspect" class="page">
 <div class="scroll-content">
-  <div class="section-hd"><span data-i18n="select_hive">Select a Hive</span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+    <div class="section-hd" style="margin:0"><span data-i18n="select_hive">Select a Hive</span></div>
+    <button id="batch-mode-btn" onclick="toggleBatchMode()" style="display:flex;align-items:center;gap:5px;padding:6px 12px;border-radius:20px;border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-2);font-weight:500;transition:all 0.2s">
+      <span style="font-size:14px">☰</span> Batch Mode
+    </button>
+  </div>
+
+  <!-- Batch mode banner -->
+  <div id="batch-banner" style="display:none;background:var(--honey-light);border:1.5px solid var(--honey);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:10px;display:none">
+    <div style="display:flex;align-items:center;justify-content:space-between">
+      <div>
+        <div style="font-size:13px;font-weight:600;color:var(--honey-dark)">🐝 Batch Inspection Mode</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">Select multiple hives below, then fill one form to save for all</div>
+      </div>
+      <div id="batch-count" style="background:var(--honey);color:#fff;border-radius:20px;padding:4px 10px;font-size:13px;font-weight:600;min-width:28px;text-align:center">0</div>
+    </div>
+    <div style="display:flex;gap:6px;margin-top:8px">
+      <button onclick="selectAllHives()" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid var(--honey);background:var(--surface);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--honey-dark);font-weight:500">Select All</button>
+      <button onclick="clearHiveSelection()" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;color:var(--text-2)">Clear</button>
+    </div>
+  </div>
+
   <div class="hive-grid" id="inspect-hive-grid"></div>
+
+  <!-- Batch selected list -->
+  <div id="batch-selected-list" style="display:none;margin-bottom:10px"></div>
 
   <div id="inspect-form" style="display:none">
 
@@ -517,9 +541,24 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <textarea rows="3" id="insp-notes" placeholder="Observations, follow-up tasks, next steps... or tap 🎤 to dictate"></textarea>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
+    <!-- Single hive buttons -->
+    <div id="single-save-btns" style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px">
       <button class="btn btn-outline" onclick="saveInspection('draft')"><span data-i18n="save_draft">Save Draft</span></button>
       <button class="btn btn-primary" onclick="saveInspection('done')"><span data-i18n="complete">Complete ✓</span></button>
+    </div>
+
+    <!-- Batch save button -->
+    <div id="batch-save-btns" style="display:none;margin-top:4px">
+      <div id="batch-progress-bar" style="display:none;background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 14px;margin-bottom:8px">
+        <div style="font-size:12px;font-weight:600;color:var(--honey-dark);margin-bottom:6px">Saving inspections... <span id="batch-progress-text">0/0</span></div>
+        <div style="background:var(--border);border-radius:4px;height:6px;overflow:hidden">
+          <div id="batch-progress-fill" style="background:var(--honey);height:100%;border-radius:4px;width:0%;transition:width 0.3s ease"></div>
+        </div>
+      </div>
+      <button class="btn btn-primary" onclick="saveBatchInspection()" style="background:var(--forest)">
+        🐝 Save for All Selected Hives
+        <span id="batch-save-count" style="background:rgba(255,255,255,0.25);border-radius:20px;padding:2px 8px;font-size:12px;margin-left:6px">0</span>
+      </button>
     </div>
   </div>
 
@@ -646,6 +685,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="card" id="equipment-section"></div>
   <div class="section-hd" style="margin-top:16px"><span data-i18n="data">Data</span></div>
   <button class="btn btn-outline" onclick="exportData()">📤 <span data-i18n="export_data">Export All Data (JSON)</span></button>
+  <button class="btn btn-outline" onclick="exportCSV()" style="margin-top:8px">📊 Export CSV (Excel / Sheets)</button>
   <div class="brand-footer" style="margin-top:24px">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
 </div>
 </div>
@@ -2192,7 +2232,7 @@ function showPage(id,btn){
   if(id==='settings'){populateHiveApiary();renderSettings();}
   if(id==='account')renderAccount();
   if(id==='reminders')renderReminderSettings();
-  if(id==='inspect'){renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
+  if(id==='inspect'){if(batchMode)toggleBatchMode();renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
 }
 
 // SELECTS 
@@ -2200,8 +2240,125 @@ function populateTreatHive(){document.getElementById('treat-hive').innerHTML=hiv
 function populateHarvHive(){document.getElementById('harv-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name} (${getApiary(h.apiary_id)?.name||''})</option>`).join('');const d=document.getElementById('harv-date');if(!d.value)d.value=new Date().toISOString().split('T')[0];}
 function populateHiveApiary(){document.getElementById('hv-apiary').innerHTML=apiaries.map(a=>`<option value="${a.id}">${a.name}</option>`).join('');}
 
+// BATCH MODE
+let batchMode=false;
+let selectedHiveIds=new Set();
+
+function toggleBatchMode(){
+  batchMode=!batchMode;
+  selectedHiveIds.clear();
+  selectedHiveId=null;
+  const btn=document.getElementById('batch-mode-btn');
+  const banner=document.getElementById('batch-banner');
+  const singleBtns=document.getElementById('single-save-btns');
+  const batchBtns=document.getElementById('batch-save-btns');
+  const batchSelectedList=document.getElementById('batch-selected-list');
+  if(batchMode){
+    btn.style.background='var(--honey)';btn.style.color='#fff';btn.style.borderColor='var(--honey)';
+    banner.style.display='block';
+    batchSelectedList.style.display='block';
+    document.getElementById('inspect-form').style.display='block';
+    document.getElementById('inspect-empty').style.display='none';
+    if(singleBtns)singleBtns.style.display='none';
+    if(batchBtns)batchBtns.style.display='block';
+    const d=document.getElementById('insp-date');if(!d.value)d.value=new Date().toISOString().split('T')[0];
+    if(currentWeather)populateInspectWeather(currentWeather);
+    calcScore();
+  } else {
+    btn.style.background='var(--surface)';btn.style.color='var(--text-2)';btn.style.borderColor='var(--border)';
+    banner.style.display='none';
+    batchSelectedList.style.display='none';
+    document.getElementById('inspect-form').style.display='none';
+    document.getElementById('inspect-empty').style.display='block';
+    if(singleBtns)singleBtns.style.display='grid';
+    if(batchBtns)batchBtns.style.display='none';
+  }
+  renderHiveGrid('inspect-hive-grid',true);
+  updateBatchUI();
+}
+
+function selectAllHives(){
+  hives.forEach(h=>selectedHiveIds.add(h.id));
+  document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.add('selected'));
+  updateBatchUI();
+}
+function clearHiveSelection(){
+  selectedHiveIds.clear();
+  document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
+  updateBatchUI();
+}
+function updateBatchUI(){
+  const count=selectedHiveIds.size;
+  document.getElementById('batch-count').textContent=count;
+  const saveCount=document.getElementById('batch-save-count');
+  if(saveCount)saveCount.textContent=count;
+  const list=document.getElementById('batch-selected-list');
+  if(!list)return;
+  if(count===0){list.innerHTML='<div style="font-size:12px;color:var(--text-3);text-align:center;padding:8px">No hives selected yet — tap hives above</div>';return;}
+  list.innerHTML='<div style="display:flex;flex-wrap:wrap;gap:6px;padding:4px 0">'+
+    [...selectedHiveIds].map(id=>{const h=getHive(id);return h?`<span style="background:var(--honey-light);border:1px solid var(--honey);border-radius:20px;padding:4px 10px;font-size:12px;color:var(--honey-dark);font-weight:500">🐝 ${h.name}</span>`:''}).join('')+
+  '</div>';
+}
+
+async function saveBatchInspection(){
+  if(selectedHiveIds.size===0){showToast('Please select at least one hive','warning');return;}
+  const score=calcScore(),mc=+document.getElementById('sl-mite').value;
+  const date=document.getElementById('insp-date').value||new Date().toISOString().split('T')[0];
+  const notes=document.getElementById('insp-notes').value;
+  const hiveArr=[...selectedHiveIds];
+  const total=hiveArr.length;
+  let done=0;
+  const progressBar=document.getElementById('batch-progress-bar');
+  const progressText=document.getElementById('batch-progress-text');
+  const progressFill=document.getElementById('batch-progress-fill');
+  progressBar.style.display='block';
+  setSyncing('syncing');
+  for(const hiveId of hiveArr){
+    const record={
+      user_id:currentUser.id,hive_id:hiveId,date,status:'done',
+      temp_f:currentWeather?.temp||null,
+      colony_strength:+document.getElementById('sl-str').value,
+      capped_brood:+document.getElementById('sl-cb').value,
+      uncapped_brood:+document.getElementById('sl-ub').value,
+      honey_stores:+document.getElementById('sl-hs').value,
+      pollen:+document.getElementById('sl-ps').value,
+      queen_cells:+document.getElementById('sl-qc').value,
+      temperament:+document.getElementById('sl-tmp').value,
+      queen_seen:document.getElementById('tog-queen').classList.contains('on'),
+      eggs_present:document.getElementById('tog-eggs').classList.contains('on'),
+      swarm_prep:document.getElementById('tog-swarm').classList.contains('on'),
+      disease_signs:document.getElementById('tog-disease').classList.contains('on'),
+      mites_visible:document.getElementById('tog-mite').classList.contains('on'),
+      laying_workers:document.getElementById('tog-laying').classList.contains('on'),
+      swarm_cells:document.getElementById('chip-swarm')?.classList.contains('on')||false,
+      supersedure_cells:document.getElementById('chip-super')?.classList.contains('on')||false,
+      mite_count:mc,score,notes
+    };
+    const{data,error}=await sb.from('inspections').insert(record).select().single();
+    if(!error&&data)inspections.unshift(data);
+    done++;
+    progressText.textContent=done+'/'+total;
+    progressFill.style.width=Math.round((done/total)*100)+'%';
+  }
+  setSyncing('saved');
+  showToast('✅ Saved '+done+' inspections'+(mc>=3?' · Mite count '+mc+'% — check treatment!':''), mc>=3?'warning':'success');
+  progressBar.style.display='none';
+  selectedHiveIds.clear();
+  updateBatchUI();
+  document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
+  document.getElementById('insp-notes').value='';
+  renderHome();
+  checkReminders();
+}
+
 // INSPECT 
 function selectHive(id,el){
+  if(batchMode){
+    if(selectedHiveIds.has(id)){selectedHiveIds.delete(id);el.classList.remove('selected');}
+    else{selectedHiveIds.add(id);el.classList.add('selected');}
+    updateBatchUI();
+    return;
+  }
   document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
   el.classList.add('selected');
   selectedHiveId=id;
@@ -2331,6 +2488,49 @@ function exportData(){
   const data={apiaries,hives,queens,inspections,treatments,harvests,photos:photos.map(p=>({...p,public_url:p.public_url})),exportedAt:new Date().toISOString(),user:currentUser.email};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='beekeepy-export.json';a.click();
+}
+
+function exportCSV(){
+  const BOM='\uFEFF';
+  function toCSV(headers,rows){
+    const esc=v=>{
+      if(v==null)return'';
+      const s=String(v);
+      return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s;
+    };
+    return[headers.join(','),...rows.map(r=>headers.map(h=>esc(r[h])).join(','))].join('\r\n');
+  }
+  const inspRows=inspections.map(i=>({
+    Date:i.date,Hive:getHive(i.hive_id)?.name||'',
+    Apiary:getApiary(getHive(i.hive_id)?.apiary_id)?.name||'',
+    Score:i.score,Status:i.status,
+    Colony_Strength:i.colony_strength,Capped_Brood:i.capped_brood,
+    Uncapped_Brood:i.uncapped_brood,Honey_Stores:i.honey_stores,
+    Pollen:i.pollen,Queen_Cells:i.queen_cells,Temperament:i.temperament,
+    Queen_Seen:i.queen_seen?'Yes':'No',Eggs_Present:i.eggs_present?'Yes':'No',
+    Swarm_Prep:i.swarm_prep?'Yes':'No',Disease_Signs:i.disease_signs?'Yes':'No',
+    Mites_Visible:i.mites_visible?'Yes':'No',Mite_Count_Pct:i.mite_count,
+    Temp_F:i.temp_f,Notes:i.notes
+  }));
+  const harvRows=harvests.map(h=>({
+    Date:h.harvest_date,Hive:getHive(h.hive_id)?.name||'',
+    Apiary:getApiary(getHive(h.hive_id)?.apiary_id)?.name||'',
+    Honey_lbs:h.honey_lbs,Wax_oz:h.wax_oz,Honey_Type:h.honey_type,Notes:h.note
+  }));
+  const treatRows=treatments.map(tr=>({
+    Start_Date:tr.start_date,Hive:getHive(tr.hive_id)?.name||'',
+    Apiary:getApiary(getHive(tr.hive_id)?.apiary_id)?.name||'',
+    Product:tr.product,Amount:tr.amount,Duration_Days:tr.duration_days,Notes:tr.note
+  }));
+  const date=new Date().toISOString().split('T')[0];
+  const dl=(content,filename)=>{
+    const blob=new Blob([BOM+content],{type:'text/csv;charset=utf-8'});
+    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+  };
+  dl(toCSV(['Date','Hive','Apiary','Score','Status','Colony_Strength','Capped_Brood','Uncapped_Brood','Honey_Stores','Pollen','Queen_Cells','Temperament','Queen_Seen','Eggs_Present','Swarm_Prep','Disease_Signs','Mites_Visible','Mite_Count_Pct','Temp_F','Notes'],inspRows),`beekeepy-inspections-${date}.csv`);
+  setTimeout(()=>dl(toCSV(['Date','Hive','Apiary','Honey_lbs','Wax_oz','Honey_Type','Notes'],harvRows),`beekeepy-harvests-${date}.csv`),300);
+  setTimeout(()=>dl(toCSV(['Start_Date','Hive','Apiary','Product','Amount','Duration_Days','Notes'],treatRows),`beekeepy-treatments-${date}.csv`),600);
+  showToast('3 CSV files downloaded — open in Excel or Google Sheets','success');
 }
 
 // QR LABEL

@@ -5,7 +5,12 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="Beekeepy">
 <meta name="theme-color" content="#E8930A">
+<meta name="description" content="Smart beehive tracking for modern beekeepers">
+<link rel="manifest" href="/manifest.json">
+<link rel="apple-touch-icon" href="/apple-touch-icon.png">
+<link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
 <title>Beekeepy · Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
@@ -513,6 +518,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <div class="spinner" style="width:14px;height:14px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:6px"></div>
         Uploading photos...
       </div>
+      <!-- AI Vision Analysis Button -->
+      <div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+        <button onclick="openAIVisionAnalysis()" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1.5px solid #C39BD3;background:var(--purple-light);color:var(--purple);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
+          🔬 AI Pest & Disease Analysis
+        </button>
+        <div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:4px">Take or upload a photo of your frames for instant AI analysis</div>
+      </div>
     </div>
 
     <!-- Score -->
@@ -602,6 +614,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px"><span data-i18n="back">← Back</span></button>
     <h2 id="hive-detail-name" style="font-size:18px;flex:1"></h2>
     <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 Export PDF</button>
+    <button class="btn-sm" onclick="shareHiveReport()" style="margin-top:0;padding:6px 12px;background:var(--sky);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🔗 Share</button>
     <button class="btn-sm" onclick="showHiveQR()" style="margin-top:0;padding:6px 12px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🏷️ Label</button>
     <button onclick="confirmDeleteHive(currentDetailHiveId)" style="margin-top:0;padding:6px 10px;background:var(--danger-light);color:var(--danger);border:1.5px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;white-space:nowrap">🗑</button>
   </div>
@@ -1807,6 +1820,7 @@ async function init() {
   checkReminders();
   requestPushPermission();
   document.getElementById('loading-overlay').style.display = 'none';
+  checkShareParam();
   // Handle QR scan — auto open hive
   const urlParams=new URLSearchParams(location.search);
   const qrHiveId=urlParams.get('hive');
@@ -2824,6 +2838,240 @@ async function deletePhoto(photoId, hiveId){
 }
 
 //  FEATURE 3: AI ANALYSIS 
+// ============================================================
+// AI VISION — Pest & Disease Photo Analysis
+// ============================================================
+
+function openAIVisionAnalysis() {
+  const modal = document.createElement('div');
+  modal.id = 'modal-ai-vision';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:36px;margin-bottom:8px">🔬</div>
+        <div style="font-weight:700;font-size:16px">AI Pest & Disease Analysis</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:4px;line-height:1.5">
+          Take a clear photo of your frames.<br>AI will detect Varroa mites, queen cells, disease signs.
+        </div>
+      </div>
+
+      <!-- Photo preview area -->
+      <div id="vision-preview" style="background:var(--bg);border:2px dashed var(--border);border-radius:var(--radius);min-height:160px;display:flex;align-items:center;justify-content:center;margin-bottom:14px;overflow:hidden;cursor:pointer" onclick="document.getElementById('vision-file-input').click()">
+        <div style="text-align:center;color:var(--text-3);padding:20px">
+          <div style="font-size:40px;margin-bottom:8px">📷</div>
+          <div style="font-size:13px;font-weight:500">Tap to take or upload photo</div>
+          <div style="font-size:11px;margin-top:4px">Best: close-up of frames with bees</div>
+        </div>
+      </div>
+      <input type="file" id="vision-file-input" accept="image/*" capture="environment" style="display:none" onchange="previewVisionPhoto(this)">
+
+      <!-- Tips -->
+      <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:11px;color:var(--honey-dark)">
+        📌 Tips for best results: good lighting, hold phone steady, focus on bee bodies or brood cells
+      </div>
+
+      <!-- Analyze button -->
+      <button id="vision-analyze-btn" onclick="runVisionAnalysis()" disabled style="width:100%;padding:13px;border-radius:var(--radius-sm);border:none;background:var(--border);color:var(--text-3);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:not-allowed;margin-bottom:8px">
+        🔬 Analyze Photo
+      </button>
+      <button onclick="document.getElementById('modal-ai-vision').remove()" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">
+        Cancel
+      </button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+let visionImageBase64 = null;
+
+function previewVisionPhoto(input) {
+  const file = input.files[0];
+  if(!file) return;
+  const reader = new FileReader();
+  reader.onload = e => {
+    visionImageBase64 = e.target.result.split(',')[1]; // base64 only
+    const preview = document.getElementById('vision-preview');
+    preview.innerHTML = `<img src="${e.target.result}" style="width:100%;height:220px;object-fit:cover;border-radius:var(--radius)">`;
+    const btn = document.getElementById('vision-analyze-btn');
+    btn.disabled = false;
+    btn.style.background = 'var(--purple)';
+    btn.style.color = '#fff';
+    btn.style.cursor = 'pointer';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function runVisionAnalysis() {
+  if(!visionImageBase64) return;
+  const btn = document.getElementById('vision-analyze-btn');
+  btn.disabled = true;
+  btn.innerHTML = '<div class="spinner" style="width:16px;height:16px;border-width:2px;display:inline-block;vertical-align:middle;margin-right:8px;border-color:rgba(255,255,255,0.3);border-top-color:#fff"></div>Analyzing...';
+  btn.style.background = 'var(--purple)';
+
+  try {
+    const prompt = `You are an expert apiarist analyzing a beehive frame photo. Examine this image carefully and provide a structured assessment.
+
+Focus on detecting:
+1. VARROA MITES: Look for small reddish-brown oval dots on bee bodies (especially on the abdomen between segments). Estimate infestation rate if visible.
+2. QUEEN CELLS: Look for elongated peanut-shaped wax structures, often on frame edges or bottom. Count if visible.
+3. BROOD HEALTH: Look for capped brood pattern (should be uniform, sunken or perforated caps = disease sign), larvae appearance.
+4. DISEASE SIGNS: Chalk brood (white/grey mummified larvae), European/American foulbrood (brown/black sunken caps, bad smell mentioned), sacbrood.
+5. COLONY STRENGTH: Estimate frame coverage, bee density.
+
+Respond ONLY in this exact JSON format (no markdown, no explanation outside JSON):
+{
+  "varroa": {
+    "detected": true/false,
+    "severity": "none/low/moderate/high",
+    "estimate": "e.g. <1%, 1-3%, 3-5%, >5% or 'not visible'",
+    "detail": "what you see"
+  },
+  "queenCells": {
+    "detected": true/false,
+    "count": 0,
+    "type": "none/swarm/supersedure/emergency",
+    "detail": "what you see"
+  },
+  "broodHealth": {
+    "pattern": "excellent/good/irregular/concerning",
+    "detail": "what you see"
+  },
+  "diseaseRisk": {
+    "level": "none/low/moderate/high",
+    "signs": ["list any disease signs or empty array"],
+    "detail": "what you see"
+  },
+  "colonyStrength": {
+    "coverage": "light/moderate/heavy",
+    "detail": "what you see"
+  },
+  "overallRisk": "low/medium/high",
+  "urgentAction": "most important action to take, or 'Continue regular monitoring'",
+  "confidence": "low/medium/high"
+}`;
+
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_API_KEY,
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image',
+              source: {
+                type: 'base64',
+                media_type: 'image/jpeg',
+                data: visionImageBase64
+              }
+            },
+            { type: 'text', text: prompt }
+          ]
+        }]
+      })
+    });
+
+    const d = await res.json();
+    const text = d.content?.[0]?.text || '{}';
+    const result = JSON.parse(text.replace(/```json|```/g,'').trim());
+    showVisionResult(result);
+
+  } catch(e) {
+    console.warn('Vision analysis error:', e);
+    showVisionError();
+  }
+}
+
+function showVisionResult(r) {
+  const modal = document.getElementById('modal-ai-vision');
+  if(!modal) return;
+
+  const riskColor = {low:'var(--forest)',medium:'#F39C12',high:'var(--danger)'}[r.overallRisk]||'var(--text-3)';
+  const riskBg = {low:'var(--forest-light)',medium:'#FFF3CD',high:'var(--danger-light)'}[r.overallRisk]||'var(--bg)';
+  const sevColor = {none:'var(--forest)',low:'var(--forest)',moderate:'#F39C12',high:'var(--danger)'}[r.varroa?.severity]||'var(--text-3)';
+
+  const content = modal.querySelector('div');
+  content.innerHTML = `
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:16px">
+      <div style="font-weight:700;font-size:16px">🔬 Analysis Result</div>
+      <span style="font-size:11px;color:var(--text-3)">Confidence: ${r.confidence||'medium'}</span>
+    </div>
+
+    <!-- Overall risk -->
+    <div style="background:${riskBg};border:1.5px solid ${riskColor};border-radius:var(--radius);padding:14px;margin-bottom:12px;display:flex;gap:12px;align-items:center">
+      <div style="font-size:28px">${{low:'✅',medium:'⚠️',high:'🚨'}[r.overallRisk]||'🔍'}</div>
+      <div>
+        <div style="font-weight:700;font-size:14px;color:${riskColor}">${r.overallRisk?.toUpperCase()||'UNKNOWN'} RISK</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:2px">${r.urgentAction||'Continue regular monitoring'}</div>
+      </div>
+    </div>
+
+    <!-- Varroa -->
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:4px">
+        <div style="font-weight:600;font-size:13px">🕷️ Varroa Mites</div>
+        <span style="font-size:11px;font-weight:600;color:${sevColor};background:${riskBg};padding:2px 8px;border-radius:20px">${r.varroa?.severity?.toUpperCase()||'—'}</span>
+      </div>
+      <div style="font-size:12px;color:var(--text-2)">Estimated: <strong>${r.varroa?.estimate||'Not visible'}</strong></div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:3px">${r.varroa?.detail||''}</div>
+    </div>
+
+    <!-- Queen cells -->
+    ${r.queenCells?.detected ? `
+    <div style="background:#FFF3CD;border:1px solid #FFD54F;border-radius:var(--radius-sm);padding:12px;margin-bottom:8px">
+      <div style="font-weight:600;font-size:13px;margin-bottom:4px">👑 Queen Cells Detected</div>
+      <div style="font-size:12px;color:var(--text-2)">Count: <strong>${r.queenCells.count}</strong> · Type: ${r.queenCells.type}</div>
+      <div style="font-size:11px;color:var(--text-3);margin-top:3px">${r.queenCells.detail||''}</div>
+    </div>` : ''}
+
+    <!-- Brood & Disease -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Brood Pattern</div>
+        <div style="font-size:12px;font-weight:600">${r.broodHealth?.pattern||'—'}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px">${(r.broodHealth?.detail||'').slice(0,50)}</div>
+      </div>
+      <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px">
+        <div style="font-size:10px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:4px">Disease Risk</div>
+        <div style="font-size:12px;font-weight:600;color:${riskColor}">${r.diseaseRisk?.level||'—'}</div>
+        <div style="font-size:10px;color:var(--text-3);margin-top:2px">${(r.diseaseRisk?.signs||[]).join(', ')||'None detected'}</div>
+      </div>
+    </div>
+
+    <!-- Colony strength -->
+    <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:14px">
+      Colony coverage: <strong>${r.colonyStrength?.coverage||'—'}</strong> · ${r.colonyStrength?.detail||''}
+    </div>
+
+    <!-- Disclaimer -->
+    <div style="font-size:10px;color:var(--text-3);background:var(--bg);border-radius:var(--radius-sm);padding:8px 10px;margin-bottom:12px;line-height:1.5">
+      ⚠️ AI analysis is a visual guide only. Always confirm with manual mite wash (alcohol roll) for treatment decisions.
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <button onclick="document.getElementById('modal-ai-vision').remove()" style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+      <button onclick="document.getElementById('modal-ai-vision').remove();document.getElementById('vision-file-input') && (visionImageBase64=null);openAIVisionAnalysis();" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--purple);color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">🔄 New Photo</button>
+    </div>`;
+}
+
+function showVisionError() {
+  const btn = document.getElementById('vision-analyze-btn');
+  if(btn) {
+    btn.disabled = false;
+    btn.innerHTML = '🔬 Analyze Photo';
+    btn.style.background = 'var(--purple)';
+    btn.style.color = '#fff';
+    btn.style.cursor = 'pointer';
+  }
+  showToast('Analysis failed — check connection and try again', 'error');
+}
+
 async function runAIAnalysis(hiveId){
   const h=getHive(hiveId);
   if(!h){return;}
@@ -4699,6 +4947,167 @@ function renderHomeEmptyState() {
         <button onclick="event.stopPropagation();openModal('modal-hive')" style="padding:10px 18px;border-radius:var(--radius-sm);border:1px solid var(--honey);background:var(--surface);color:var(--honey-dark);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer">+ Add Hive</button>
       </div>
     </div>`;
+}
+
+// ============================================================
+// SHARE HIVE REPORT
+// ============================================================
+
+async function shareHiveReport() {
+  if(!currentDetailHiveId) return;
+  const h = getHive(currentDetailHiveId);
+  if(!h) return;
+
+  const insps = hiveInspections(currentDetailHiveId);
+  const li = insps[0];
+  const q = queens.find(q=>q.hive_id===currentDetailHiveId);
+  const harvs = harvests.filter(hv=>hv.hive_id===currentDetailHiveId);
+  const totalHoney = harvs.reduce((s,hv)=>s+(hv.honey_lbs||0),0);
+  const apiary = getApiary(h.apiary_id);
+
+  // Build share payload
+  const payload = {
+    n: h.name,
+    t: h.type||'',
+    a: apiary?.name||'',
+    s: li?.score||0,
+    d: li?.date||'',
+    q: q ? `${q.race||''} · ${q.introduced_date||''}` : '',
+    i: insps.length,
+    h: totalHoney.toFixed(1),
+    v: '1'
+  };
+
+  // Encode as base64 URL param
+  const encoded = btoa(JSON.stringify(payload)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  const shareUrl = `${location.origin}/app.html?share=${encoded}`;
+
+  // Show share modal
+  const modal = document.createElement('div');
+  modal.id = 'modal-share';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:600;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(24px + env(safe-area-inset-bottom))">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:36px;margin-bottom:8px">🐝</div>
+        <div style="font-weight:700;font-size:16px">${h.name}</div>
+        <div style="font-size:12px;color:var(--text-3);margin-top:2px">${apiary?.name||''} · ${insps.length} inspections · ${totalHoney.toFixed(1)} lbs honey</div>
+      </div>
+
+      <!-- Share link -->
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;display:flex;gap:8px;align-items:center">
+        <div style="font-size:11px;color:var(--text-3);flex:1;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${shareUrl}</div>
+        <button onclick="copyShareLink('${shareUrl}')" style="padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;flex-shrink:0">Copy</button>
+      </div>
+
+      <!-- Share options -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">
+        <button onclick="nativeShare('${shareUrl}','${h.name}')" style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          📤 Share via...
+        </button>
+        <button onclick="exportHivePDF();document.getElementById('modal-share').remove();" style="padding:12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:6px">
+          📄 Export PDF
+        </button>
+      </div>
+
+      <div style="font-size:11px;color:var(--text-3);text-align:center;margin-bottom:14px">
+        Anyone with this link can view a summary of this hive — no login required
+      </div>
+
+      <button onclick="document.getElementById('modal-share').remove()" style="width:100%;padding:12px;border-radius:var(--radius-sm);border:none;background:var(--bg);color:var(--text-2);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function copyShareLink(url) {
+  navigator.clipboard?.writeText(url).then(()=>{
+    showToast('Link copied ✓');
+  }).catch(()=>{
+    // Fallback
+    const ta = document.createElement('textarea');
+    ta.value = url;
+    document.body.appendChild(ta);
+    ta.select();
+    document.execCommand('copy');
+    document.body.removeChild(ta);
+    showToast('Link copied ✓');
+  });
+}
+
+function nativeShare(url, title) {
+  if(navigator.share) {
+    navigator.share({
+      title: `Beekeepy — ${title}`,
+      text: `Check out my hive "${title}" on Beekeepy 🐝`,
+      url
+    }).catch(()=>{});
+  } else {
+    copyShareLink(url);
+    showToast('Link copied (share not supported on this browser)');
+  }
+}
+
+// Handle incoming share link on page load
+function checkShareParam() {
+  const params = new URLSearchParams(location.search);
+  const share = params.get('share');
+  if(!share) return;
+  try {
+    const padded = share.replace(/-/g,'+').replace(/_/g,'/') + '=='.slice(0,(4-share.length%4)%4);
+    const data = JSON.parse(atob(padded));
+    showSharedHiveView(data);
+  } catch(e) { console.warn('Invalid share link'); }
+}
+
+function showSharedHiveView(data) {
+  // Show a read-only overlay with hive summary
+  const scoreColor = data.s>=60?'#27AE60':data.s>=35?'#F39C12':'#E74C3C';
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:var(--surface);z-index:9999;overflow-y:auto;font-family:"DM Sans",sans-serif';
+  modal.innerHTML = `
+    <div style="max-width:480px;margin:0 auto;padding:24px 20px">
+      <!-- Header -->
+      <div style="text-align:center;padding:20px 0 24px">
+        <div style="font-size:32px;margin-bottom:6px">🐝</div>
+        <div style="font-size:13px;color:var(--text-3);font-weight:500">Beekeepy · Shared Hive Report</div>
+      </div>
+
+      <!-- Hive card -->
+      <div style="background:var(--honey-light);border:1.5px solid var(--honey);border-radius:var(--radius);padding:20px;margin-bottom:16px">
+        <div style="font-size:22px;font-weight:700;color:var(--text);margin-bottom:4px">${data.n}</div>
+        <div style="font-size:13px;color:var(--text-2)">${data.t}${data.a?' · '+data.a:''}</div>
+      </div>
+
+      <!-- Stats -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center">
+          <div style="font-size:32px;font-weight:700;color:${scoreColor};font-family:'DM Serif Display',serif">${data.s}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px">Health Score</div>
+          <div style="font-size:10px;color:var(--text-3)">${data.d||'—'}</div>
+        </div>
+        <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:16px;text-align:center">
+          <div style="font-size:32px;font-weight:700;color:var(--honey-dark);font-family:'DM Serif Display',serif">${data.h}</div>
+          <div style="font-size:11px;color:var(--text-3);margin-top:4px">Honey (lbs)</div>
+          <div style="font-size:10px;color:var(--text-3)">${data.i} inspection${data.i!==1?'s':''}</div>
+        </div>
+      </div>
+
+      ${data.q?`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:4px">Queen</div>
+        <div style="font-size:14px;font-weight:500">👑 ${data.q}</div>
+      </div>`:''}
+
+      <!-- CTA -->
+      <div style="background:var(--honey-light);border-radius:var(--radius);padding:16px;text-align:center;margin-top:8px">
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:10px">Track your own hives with Beekeepy</div>
+        <a href="https://beekeepy.com" style="display:inline-block;padding:10px 24px;background:var(--honey);color:#fff;border-radius:var(--radius-sm);font-weight:600;font-size:14px;text-decoration:none">Get Started Free →</a>
+      </div>
+
+      <div style="text-align:center;margin-top:16px;font-size:11px;color:var(--text-3)">
+        🐝 Beekeepy · beekeepy.com
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 async function exportAnnualPDF(){

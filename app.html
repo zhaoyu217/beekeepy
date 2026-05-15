@@ -832,13 +832,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
     <!-- Photo upload -->
     <div class="form-group">
-      <label class="form-label">Photo (optional)</label>
-      <div style="display:flex;gap:8px;align-items:center">
-        <button onclick="document.getElementById('comm-photo-input').click()" style="padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">📷 Choose photo</button>
-        <span id="comm-photo-name" style="font-size:12px;color:var(--text-3)">No photo selected</span>
+      <label class="form-label">Photo / Video (optional)</label>
+      <div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:6px">
+        <button onclick="document.getElementById('comm-photo-input').click()" style="padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">📷 Photo</button>
+        <button onclick="document.getElementById('comm-video-input').click()" style="padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">🎥 Video <span style="font-size:10px;color:var(--text-3)">≤30s/50MB</span></button>
+        <span id="comm-photo-name" style="font-size:12px;color:var(--text-3);align-self:center">No file selected</span>
       </div>
-      <input type="file" id="comm-photo-input" accept="image/*" style="display:none" onchange="handleCommPhoto(this)">
-      <img id="comm-photo-preview" style="display:none;width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-sm);margin-top:8px">
+      <input type="file" id="comm-photo-input" accept="image/*" style="display:none" onchange="handleCommMedia(this,'photo')">
+      <input type="file" id="comm-video-input" accept="video/*" style="display:none" onchange="handleCommMedia(this,'video')">
+      <img id="comm-photo-preview" style="display:none;width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-sm);margin-top:4px">
+      <video id="comm-video-preview" style="display:none;width:100%;max-height:200px;border-radius:var(--radius-sm);margin-top:4px" controls playsinline muted></video>
+      <div id="comm-video-warn" style="display:none;background:var(--danger-light);border-radius:var(--radius-sm);padding:6px 10px;margin-top:4px;font-size:11px;color:var(--danger)"></div>
     </div>
 
     <button class="btn btn-primary" onclick="submitCommunityPost()">Post to Community</button>
@@ -3932,8 +3936,11 @@ function openNewPostModal(){
   postCategory='clinic';commPhotoFile=null;commPhotoUrl=null;
   document.getElementById('comm-title').value='';
   document.getElementById('comm-content').value='';
-  document.getElementById('comm-photo-name').textContent='No photo selected';
+  document.getElementById('comm-photo-name').textContent='No file selected';
   document.getElementById('comm-photo-preview').style.display='none';
+  const vprev=document.getElementById('comm-video-preview');if(vprev)vprev.style.display='none';
+  const vw=document.getElementById('comm-video-warn');if(vw)vw.style.display='none';
+  commVideoFile=null;
   document.getElementById('comm-local-group-field').style.display='none';
   document.querySelectorAll('.comm-cat-btn').forEach((b,i)=>{
     if(i===0){b.style.border='2px solid var(--honey)';b.style.background='var(--honey-light)';b.style.color='var(--honey-dark)';b.style.fontWeight='600';}
@@ -3942,6 +3949,41 @@ function openNewPostModal(){
   openModal('modal-community-post');
 }
 
+let commVideoFile=null;
+function handleCommMedia(input,type){
+  const file=input.files[0];if(!file)return;
+  const warn=document.getElementById('comm-video-warn');
+  const nameEl=document.getElementById('comm-photo-name');
+  if(type==='video'){
+    if(file.size>50*1024*1024){showToast('Video too large (max 50MB)','error');input.value='';return;}
+    const tempUrl=URL.createObjectURL(file);
+    const tempVid=document.createElement('video');
+    tempVid.src=tempUrl;
+    tempVid.onloadedmetadata=()=>{
+      URL.revokeObjectURL(tempUrl);
+      if(tempVid.duration>30){
+        if(warn){warn.style.display='block';warn.textContent='Video is '+Math.round(tempVid.duration)+'s — max 30 seconds';}
+        showToast('Video too long (max 30s)','error');input.value='';commVideoFile=null;
+        document.getElementById('comm-video-preview').style.display='none';return;
+      }
+      if(warn)warn.style.display='none';
+      commVideoFile=file;commPhotoFile=null;
+      nameEl.textContent='Video: '+file.name+' ('+Math.round(tempVid.duration)+'s)';
+      const prev=document.getElementById('comm-video-preview');
+      document.getElementById('comm-photo-preview').style.display='none';
+      prev.src=URL.createObjectURL(file);prev.style.display='block';
+    };
+  } else {
+    if(file.size>10*1024*1024){showToast('Photo too large (max 10MB)','error');input.value='';return;}
+    commPhotoFile=file;commVideoFile=null;
+    nameEl.textContent='Photo: '+file.name;
+    document.getElementById('comm-video-preview').style.display='none';
+    if(warn)warn.style.display='none';
+    const reader=new FileReader();
+    reader.onload=e=>{const prev=document.getElementById('comm-photo-preview');prev.src=e.target.result;prev.style.display='block';};
+    reader.readAsDataURL(file);
+  }
+}
 function handleCommPhoto(input){
   const file=input.files[0];if(!file)return;
   if(file.size>10*1024*1024){showToast('Photo too large (max 10MB)','error');return;}
@@ -3960,17 +4002,23 @@ async function submitCommunityPost(){
   const content=document.getElementById('comm-content').value.trim();
   if(!title){showToast('Please add a title','warning');return;}
   setSyncing('syncing');
-  let photoUrl=null;
-  if(commPhotoFile){
-    const ext=commPhotoFile.name.split('.').pop();
-    const path=`community/${currentUser.id}/${Date.now()}.${ext}`;
-    const{error:upErr}=await sb.storage.from('photos').upload(path,commPhotoFile);
-    if(!upErr){const{data:urlData}=sb.storage.from('photos').getPublicUrl(path);photoUrl=urlData.publicUrl;}
+  let photoUrl=null,videoUrl=null;
+  const mediaFile=commVideoFile||commPhotoFile;
+  if(mediaFile){
+    const isVideo=!!commVideoFile;
+    const ext=mediaFile.name.split('.').pop();
+    const path=(isVideo?'community-videos':'community')+'/'+currentUser.id+'/'+Date.now()+'.'+ext;
+    const{error:upErr}=await sb.storage.from('photos').upload(path,mediaFile);
+    if(upErr){setSyncing('error');showToast('Upload failed: '+upErr.message,'error');return;}
+    const{data:urlData}=sb.storage.from('photos').getPublicUrl(path);
+    if(isVideo)videoUrl=urlData.publicUrl;else photoUrl=urlData.publicUrl;
+  }
+  if(false){
   }
   const localGroup=postCategory==='local'?document.getElementById('comm-local-group').value:null;
   const{data,error}=await sb.from('community_posts').insert({
     user_id:currentUser.id,category:postCategory,
-    title,content,photo_url:photoUrl,local_group:localGroup
+    title,content,photo_url:photoUrl,video_url:videoUrl,local_group:localGroup
   }).select().single();
   if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
   communityPosts.unshift(data);
@@ -4007,7 +4055,7 @@ function renderCommunityPosts(){
         <div style="flex:1;min-width:0">
           <div style="font-weight:600;font-size:13px;margin-bottom:3px">${p.title}</div>
           ${p.content?`<div style="font-size:12px;color:var(--text-2);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.content}</div>`:''}
-          ${p.photo_url?`<img src="${p.photo_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:6px">`:''}
+          ${p.photo_url?`<img src="${p.photo_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:6px">`:''}${p.video_url?`<video src="${p.video_url}" style="width:100%;max-height:180px;border-radius:var(--radius-sm);margin-bottom:6px" controls playsinline preload="metadata"></video>`:''}
           ${p.local_group?`<div style="font-size:11px;color:var(--sky);margin-bottom:4px">📍 ${p.local_group}</div>`:''}
           <div style="display:flex;align-items:center;justify-content:space-between">
             <div style="font-size:11px;color:var(--text-3)">${agoText}</div>
@@ -4030,7 +4078,7 @@ async function openPostDetail(postId){
   const catIcon={clinic:'🩺',showcase:'🐝',map:'🗺️',local:'📍'};
   document.getElementById('comm-detail-body').innerHTML=`
     <div style="margin-bottom:12px">
-      ${post.photo_url?`<img src="${post.photo_url}" style="width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:10px">`:''}
+      ${post.photo_url?`<img src="${post.photo_url}" style="width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:10px">`:''}${post.video_url?`<video src="${post.video_url}" style="width:100%;border-radius:var(--radius-sm);margin-bottom:10px" controls playsinline></video>`:'}
       ${post.content?`<div style="font-size:13px;color:var(--text-2);line-height:1.5">${post.content}</div>`:''}
       ${post.local_group?`<div style="font-size:11px;color:var(--sky);margin-top:6px">📍 ${post.local_group}</div>`:''}
     </div>`;

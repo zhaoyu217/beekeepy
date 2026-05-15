@@ -722,7 +722,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div id="pg-account" class="page">
 <div class="scroll-content">
   <div class="card"><div class="card-title"><span data-i18n="your_account">Your Account</span></div><div id="account-info"></div></div>
-  <button class="btn btn-outline" onclick="signOut()"><span data-i18n="sign_out">Sign Out</span></button>
+
+  <!-- Badges Panel -->
+  <div class="card" style="margin-top:10px">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+      <div class="card-title" style="margin:0">🏅 My Achievements</div>
+      <div id="badge-count" style="background:var(--honey-light);color:var(--honey-dark);border-radius:20px;padding:3px 10px;font-size:12px;font-weight:600">0 earned</div>
+    </div>
+    <div id="badges-grid" style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px"></div>
+  </div>
+
+  <button class="btn btn-outline" onclick="signOut()" style="margin-top:10px"><span data-i18n="sign_out">Sign Out</span></button>
 </div>
 </div>
 
@@ -1538,6 +1548,8 @@ function setLang(lang){
     else if(id==='insights')renderInsights();
     else if(id==='reminders')renderReminderSettings();
     else if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
+    else if(id==='account'){renderBadges();}
+    else if(id==='account'){renderBadges();}
     else if(id==='settings')renderSettings();
     else if(id==='treatment'){renderTreatments();}
     else if(id==='harvest'){renderHarvests();}
@@ -1680,6 +1692,7 @@ async function loadAll() {
   try{localStorage.setItem('bk_cache_'+uid,JSON.stringify({apiaries,hives,queens,inspections,treatments,harvests,photos,reminders}));}catch(e){}
   await loadOfflineQueue();
   renderHome();
+  await checkAndAwardBadges();
 }
 
 // Helpers 
@@ -2682,6 +2695,7 @@ function showPage(id,btn){
   if(id==='account')renderAccount();
   if(id==='reminders')renderReminderSettings();
   if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
+  if(id==='account'){renderBadges();}
   if(id==='inspect'){if(batchMode)toggleBatchMode();renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
 }
 
@@ -2819,6 +2833,7 @@ async function saveBatchInspection(){
   document.getElementById('insp-notes').value='';
   renderHome();
   checkReminders();
+  checkAndAwardBadges();
 }
 
 // INSPECT 
@@ -3758,6 +3773,129 @@ function stopVoice(){
 
 
 
+
+
+// ============================================================
+// BADGES & ACHIEVEMENTS SYSTEM
+// ============================================================
+let earnedBadges = new Set();
+
+const BADGE_DEFS = [
+  // Inspection
+  {id:'first_insp',icon:'🐣',name:'First Inspection',desc:'Complete your first inspection',cat:'Inspection',skoghive:false},
+  {id:'insp_10',icon:'📋',name:'Dedicated Inspector',desc:'Complete 10 inspections',cat:'Inspection',skoghive:false},
+  {id:'insp_50',icon:'🏆',name:'Master Inspector',desc:'Complete 50 inspections',cat:'Inspection',skoghive:false},
+  {id:'mite_fighter',icon:'🔬',name:'Mite Fighter',desc:'Record mite counts 3+ times',cat:'Inspection',skoghive:false},
+  {id:'consistent',icon:'📅',name:'Consistent Keeper',desc:'Inspect within 10 days 5 times',cat:'Inspection',skoghive:false},
+  // Honey
+  {id:'first_harvest',icon:'🍯',name:'First Harvest',desc:'Record your first honey harvest',cat:'Harvest',skoghive:false},
+  {id:'honey_100',icon:'💯',name:'Honey Master',desc:'Harvest 100+ lbs total',cat:'Harvest',skoghive:false},
+  {id:'golden_harvest',icon:'🌟',name:'Golden Harvest',desc:'Harvest 50+ lbs in one go',cat:'Harvest',skoghive:false},
+  // Hive
+  {id:'first_hive',icon:'🐝',name:'Hive Builder',desc:'Add your first hive',cat:'Hive',skoghive:false},
+  {id:'three_hives',icon:'🏘️',name:'Apiary Manager',desc:'Manage 3+ hives',cat:'Hive',skoghive:false},
+  {id:'queen_keeper',icon:'👑',name:'Queen Keeper',desc:'Record 5 queen entries',cat:'Hive',skoghive:false},
+  // Health
+  {id:'disease_fighter',icon:'💊',name:'Disease Fighter',desc:'Log 5+ treatments',cat:'Health',skoghive:false},
+  {id:'healthy_colony',icon:'✅',name:'Healthy Colony',desc:'Score 80+ on an inspection',cat:'Health',skoghive:false},
+  // Community
+  {id:'map_pioneer',icon:'🗺️',name:'Map Pioneer',desc:'Add your first forage marker',cat:'Community',skoghive:false},
+  {id:'community_helper',icon:'🤝',name:'Community Helper',desc:'Reply to 10 community posts',cat:'Community',skoghive:false},
+  // SkogHive
+  {id:'skoghive_owner',icon:'🌲',name:'SkogHive Owner',desc:'Add a SkogHive preset hive',cat:'SkogHive',skoghive:true},
+  {id:'skoghive_expert',icon:'⭐',name:'SkogHive Expert',desc:'Own 2+ SkogHive hives',cat:'SkogHive',skoghive:true},
+  {id:'skoghive_discount',icon:'🎁',name:'Pro Beekeeper',desc:'Earn 10+ badges — unlock 5% discount at skoghive.com',cat:'SkogHive',skoghive:true},
+];
+
+async function loadBadges(){
+  const{data}=await sb.from('user_badges').select('badge_id').eq('user_id',currentUser.id);
+  earnedBadges=new Set((data||[]).map(b=>b.badge_id));
+}
+
+async function awardBadge(badgeId){
+  if(earnedBadges.has(badgeId))return;
+  const{error}=await sb.from('user_badges').insert({user_id:currentUser.id,badge_id:badgeId});
+  if(error)return;
+  earnedBadges.add(badgeId);
+  const badge=BADGE_DEFS.find(b=>b.id===badgeId);
+  if(badge){
+    showToast(`🏅 Badge unlocked: ${badge.icon} ${badge.name}!`,'success');
+    // SkogHive discount badge special notification
+    if(badge.skoghive&&badgeId==='skoghive_discount'){
+      setTimeout(()=>{
+        showToast('🎁 You unlocked 5% off at skoghive.com — check your profile!','success');
+      },2000);
+    }
+  }
+}
+
+async function checkAndAwardBadges(){
+  await loadBadges();
+  const inspCount=inspections.length;
+  const miteCount=inspections.filter(i=>(i.mite_count||0)>0).length;
+  const totalHoney=harvests.reduce((s,h)=>s+(h.honey_lbs||0),0);
+  const maxSingleHarvest=harvests.length?Math.max(...harvests.map(h=>h.honey_lbs||0)):0;
+  const queenCount=queens.length;
+  const treatCount=treatments.length;
+  const skoghiveHives=hives.filter(h=>h.name&&h.name.includes('SkogHive'));
+  const maxScore=inspections.length?Math.max(...inspections.map(i=>i.score||0)):0;
+
+  // Inspection badges
+  if(inspCount>=1)await awardBadge('first_insp');
+  if(inspCount>=10)await awardBadge('insp_10');
+  if(inspCount>=50)await awardBadge('insp_50');
+  if(miteCount>=3)await awardBadge('mite_fighter');
+  // Consistent: check if user has inspected at least 5 times within short intervals
+  if(inspCount>=5){
+    const sorted=inspections.slice().sort((a,b)=>a.date.localeCompare(b.date));
+    let consistentCount=0;
+    for(let i=1;i<sorted.length;i++){
+      const diff=daysSince(sorted[i-1].date)-daysSince(sorted[i].date);
+      if(Math.abs(diff)<=10)consistentCount++;
+    }
+    if(consistentCount>=5)await awardBadge('consistent');
+  }
+  // Harvest badges
+  if(harvests.length>=1)await awardBadge('first_harvest');
+  if(totalHoney>=100)await awardBadge('honey_100');
+  if(maxSingleHarvest>=50)await awardBadge('golden_harvest');
+  // Hive badges
+  if(hives.length>=1)await awardBadge('first_hive');
+  if(hives.length>=3)await awardBadge('three_hives');
+  if(queenCount>=5)await awardBadge('queen_keeper');
+  // Health badges
+  if(treatCount>=5)await awardBadge('disease_fighter');
+  if(maxScore>=80)await awardBadge('healthy_colony');
+  // SkogHive badges
+  if(skoghiveHives.length>=1)await awardBadge('skoghive_owner');
+  if(skoghiveHives.length>=2)await awardBadge('skoghive_expert');
+  // Pro beekeeper (10+ badges)
+  if(earnedBadges.size>=10)await awardBadge('skoghive_discount');
+}
+
+function renderBadges(){
+  const grid=document.getElementById('badges-grid');
+  const countEl=document.getElementById('badge-count');
+  if(!grid)return;
+  const earned=earnedBadges.size;
+  if(countEl)countEl.textContent=earned+' / '+BADGE_DEFS.length+' earned';
+  // Group by category
+  const cats=[...new Set(BADGE_DEFS.map(b=>b.cat))];
+  let html='';
+  cats.forEach(cat=>{
+    const catBadges=BADGE_DEFS.filter(b=>b.cat===cat);
+    html+=`<div style="grid-column:1/-1;font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin-top:8px;margin-bottom:4px">${cat}</div>`;
+    catBadges.forEach(b=>{
+      const isEarned=earnedBadges.has(b.id);
+      html+=`<div style="border-radius:var(--radius-sm);border:1px solid ${isEarned?'var(--honey)':'var(--border)'};background:${isEarned?'var(--honey-light)':'var(--bg)'};padding:10px 6px;text-align:center;opacity:${isEarned?1:0.45}" title="${b.desc}">
+        <div style="font-size:24px;margin-bottom:4px">${b.icon}</div>
+        <div style="font-size:10px;font-weight:600;color:${isEarned?'var(--honey-dark)':'var(--text-3)'};line-height:1.2">${b.name}</div>
+        ${isEarned&&b.skoghive&&b.id==='skoghive_discount'?`<a href="https://www.skoghive.com" target="_blank" style="font-size:9px;color:var(--honey-dark);text-decoration:none;margin-top:2px;display:block">→ Claim 5% off</a>`:''}
+      </div>`;
+    });
+  });
+  grid.innerHTML=html;
+}
 
 // ============================================================
 // COMMUNITY

@@ -4090,7 +4090,7 @@ async function openPostDetail(postId){
   const catIcon={clinic:'🩺',showcase:'🐝',map:'🗺️',local:'📍'};
   document.getElementById('comm-detail-body').innerHTML=`
     <div style="margin-bottom:12px">
-      ${post.photo_url?`<img src="${post.photo_url}" style="width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:10px">`:''}${post.video_url?`<video src="${post.video_url}" style="width:100%;border-radius:var(--radius-sm);margin-bottom:10px" controls playsinline></video>`:'}
+      ${post.photo_url?`<img src="${post.photo_url}" style="width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:10px">`:''}${post.video_url?`<video src="${post.video_url}" style="width:100%;border-radius:var(--radius-sm);margin-bottom:10px" controls playsinline></video>`:''}
       ${post.content?`<div style="font-size:13px;color:var(--text-2);line-height:1.5">${post.content}</div>`:''}
       ${post.local_group?`<div style="font-size:11px;color:var(--sky);margin-top:6px">📍 ${post.local_group}</div>`:''}
     </div>`;

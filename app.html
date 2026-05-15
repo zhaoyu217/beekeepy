@@ -3492,7 +3492,11 @@ function toggleVoice(){
   if(!SR){showToast(t('toast_voice_unsupported'),'warning');return;}
   if(!isRecording){
     recognition=new SR();
-    recognition.continuous=true;recognition.interimResults=true;recognition.lang='en-US';
+    recognition.continuous=true;
+    recognition.interimResults=true;
+    // Match UI language
+    const langMap={en:'en-US',de:'de-DE',fr:'fr-FR',it:'it-IT',pt:'pt-BR',ro:'ro-RO',tr:'tr-TR'};
+    recognition.lang=langMap[currentLang]||'en-US';
     recognition.onstart=()=>{
       isRecording=true;
       const btn=document.getElementById('voice-btn');
@@ -3501,15 +3505,30 @@ function toggleVoice(){
       document.getElementById('voice-recording-bar').style.display='flex';
     };
     recognition.onresult=e=>{
-      let final='';
-      for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)final+=e.results[i][0].transcript+' ';
-      if(final)document.getElementById('insp-notes').value+=final;
+      let final='',interim='';
+      for(let i=e.resultIndex;i<e.results.length;i++){
+        if(e.results[i].isFinal) final+=e.results[i][0].transcript+' ';
+        else interim+=e.results[i][0].transcript;
+      }
+      if(final){
+        const notes=document.getElementById('insp-notes');
+        notes.value=(notes.value+final).trim()+' ';
+      }
+      const st=document.getElementById('voice-status');
+      if(st&&interim)st.textContent=interim;
     };
-    recognition.onerror=e=>{stopVoice();if(e.error==='not-allowed')showToast(t('toast_mic_denied'),'error');};
-    recognition.onend=()=>stopVoice();
-    recognition.start();
+    recognition.onerror=e=>{
+      stopVoice();
+      if(e.error==='not-allowed')showToast(t('toast_mic_denied'),'error');
+      else if(e.error==='network')showToast('Voice requires internet connection','error');
+      else if(e.error==='no-speech')showToast('No speech detected — try again','warning');
+      else showToast('Voice error: '+e.error,'error');
+    };
+    recognition.onend=()=>{if(isRecording)stopVoice();};
+    try{recognition.start();}
+    catch(e){stopVoice();showToast('Could not start microphone','error');}
   } else {
-    if(recognition)recognition.stop();
+    if(recognition){try{recognition.stop();}catch(e){}}
     stopVoice();
   }
 }

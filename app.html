@@ -305,6 +305,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </head>
 <body>
 
+<!-- Offline banner -->
+<div id="offline-banner" style="display:none;position:fixed;top:0;left:0;right:0;z-index:99999;background:#C0392B;color:#fff;text-align:center;padding:8px 16px;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500">
+  📵 You're offline — changes will sync when connection is restored
+</div>
+
 <div class="loading-overlay" id="loading-overlay">
   <div class="spinner"></div>
   <div style="font-size:13px;color:var(--text-3)"><span data-i18n="loading"></span></div>
@@ -1472,6 +1477,22 @@ function setSyncing(s) {
 // Load 
 async function loadAll() {
   const uid=currentUser.id;
+  if(!isOnline){
+    // Offline — use cached data from localStorage
+    try{
+      const cached=localStorage.getItem('bk_cache_'+uid);
+      if(cached){
+        const d=JSON.parse(cached);
+        apiaries=d.apiaries||[];hives=d.hives||[];queens=d.queens||[];
+        inspections=d.inspections||[];treatments=d.treatments||[];harvests=d.harvests||[];
+        photos=d.photos||[];reminders=d.reminders||[];
+        renderHome();
+        showToast('📵 Showing cached data — offline mode','warning');
+        return;
+      }
+    }catch(e){}
+    renderHome();return;
+  }
   const [a,h,q,i,t,hv,ph,rem]=await Promise.all([
     sb.from('apiaries').select('*').eq('user_id',uid).order('created_at'),
     sb.from('hives').select('*').eq('user_id',uid).order('created_at'),
@@ -1482,9 +1503,12 @@ async function loadAll() {
     sb.from('photos').select('*').eq('user_id',uid).order('taken_at',{ascending:false}),
     sb.from('inspection_reminders').select('*').eq('user_id',uid),
   ]);
-  apiaries=a.data||[]; hives=h.data||[]; queens=q.data||[];
-  inspections=i.data||[]; treatments=t.data||[]; harvests=hv.data||[];
-  photos=ph.data||[]; reminders=rem.data||[];
+  apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
+  inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];
+  photos=ph.data||[];reminders=rem.data||[];
+  // Cache data for offline use
+  try{localStorage.setItem('bk_cache_'+uid,JSON.stringify({apiaries,hives,queens,inspections,treatments,harvests,photos,reminders}));}catch(e){}
+  await loadOfflineQueue();
   renderHome();
 }
 
@@ -3502,6 +3526,96 @@ function stopVoice(){
 
 
 // START 
+
+// ============================================================
+// OFFLINE SUPPORT
+// ============================================================
+const OFFLINE_DB = 'beekeepy-offline';
+const OFFLINE_STORE = 'pending-ops';
+let offlineQueue = [];
+let isOnline = navigator.onLine;
+
+// Offline banner
+function updateOnlineStatus(){
+  isOnline = navigator.onLine;
+  const banner = document.getElementById('offline-banner');
+  if(banner) banner.style.display = isOnline ? 'none' : 'block';
+  if(isOnline && offlineQueue.length > 0) flushOfflineQueue();
+}
+window.addEventListener('online', updateOnlineStatus);
+window.addEventListener('offline', updateOnlineStatus);
+updateOnlineStatus();
+
+// IndexedDB for offline queue
+function openOfflineDB(){
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(OFFLINE_DB, 1);
+    req.onupgradeneeded = e => e.target.result.createObjectStore(OFFLINE_STORE, {keyPath:'id', autoIncrement:true});
+    req.onsuccess = e => resolve(e.target.result);
+    req.onerror = () => reject(req.error);
+  });
+}
+
+async function saveOfflineOp(op){
+  try {
+    const db = await openOfflineDB();
+    const tx = db.transaction(OFFLINE_STORE, 'readwrite');
+    tx.objectStore(OFFLINE_STORE).add(op);
+    offlineQueue.push(op);
+    showToast('📵 Saved offline — will sync when online', 'warning');
+  } catch(e) {
+    console.warn('Offline DB error:', e);
+  }
+}
+
+async function loadOfflineQueue(){
+  try {
+    const db = await openOfflineDB();
+    const tx = db.transaction(OFFLINE_STORE, 'readonly');
+    const req = tx.objectStore(OFFLINE_STORE).getAll();
+    req.onsuccess = () => { offlineQueue = req.result || []; };
+  } catch(e) {}
+}
+
+async function flushOfflineQueue(){
+  if(!isOnline || offlineQueue.length === 0) return;
+  const db = await openOfflineDB();
+  let synced = 0;
+  for(const op of [...offlineQueue]){
+    try {
+      let res;
+      if(op.type === 'insert') res = await sb.from(op.table).insert(op.data).select().single();
+      else if(op.type === 'update') res = await sb.from(op.table).update(op.data).eq('id', op.id);
+      else if(op.type === 'delete') res = await sb.from(op.table).delete().eq('id', op.id);
+      if(!res?.error){
+        // Remove from IndexedDB
+        const tx = db.transaction(OFFLINE_STORE, 'readwrite');
+        if(op.dbId) tx.objectStore(OFFLINE_STORE).delete(op.dbId);
+        offlineQueue = offlineQueue.filter(o => o !== op);
+        synced++;
+      }
+    } catch(e) {}
+  }
+  if(synced > 0){
+    showToast(`✅ ${synced} offline record${synced>1?'s':''} synced`, 'success');
+    await loadAll();
+  }
+}
+
+// Register Service Worker
+if('serviceWorker' in navigator){
+  navigator.serviceWorker.register('/sw.js').then(reg => {
+    reg.addEventListener('updatefound', () => {
+      const newSW = reg.installing;
+      newSW.addEventListener('statechange', () => {
+        if(newSW.state === 'installed' && navigator.serviceWorker.controller){
+          showToast('🔄 App updated — refresh to get latest version', 'success');
+        }
+      });
+    });
+  }).catch(()=>{});
+}
+
 init();
 </script><!-- MAP MODAL -->
 <div class="modal-bg" id="modal-map">

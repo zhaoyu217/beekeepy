@@ -2144,7 +2144,10 @@ function renderQueens(){
             ${li&&(li.mite_count||0)>=3?`<span class="badge b-amber">Mite count: ${li.mite_count}%</span>`:''}
           </div>
         </div>
-        <button class="btn btn-outline btn-sm" onclick="editQueen('${h.id}')">Edit</button>
+        <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+          <button class="btn btn-outline btn-sm" onclick="editQueen('${h.id}')">Edit</button>
+          ${q?`<button onclick="confirmDeleteQueen('${q.id}')" style="padding:4px 8px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif">🗑</button>`:''}
+        </div>
       </div>
       ${queenTimeline(h.id)}
     </div>`;
@@ -2155,11 +2158,14 @@ function renderQueens(){
 function renderTreatments(){
   document.getElementById('treatment-list').innerHTML=treatments.length===0
     ?'<div class="empty"><div class="empty-icon">💊</div>No treatments logged</div>'
-    :treatments.map(tr=>`<div class="card" style="display:flex;justify-content:space-between;align-items:flex-start">
-      <div><div style="font-weight:600">${getHive(t.hive_id)?.name||'—'} · ${t.product}</div>
-      <div style="font-size:12px;color:var(--text-2)">${t.amount||''} · ${t.start_date||''}${t.duration_days?` · ${t.duration_days} days`:''}</div>
-      ${t.note?`<div style="font-size:11px;color:var(--text-3)">${t.note}</div>`:''}</div>
-      <span class="badge b-sky">Done</span></div>`).join('');
+    :treatments.map(tr=>`<div class="card" style="display:flex;justify-content:space-between;align-items:flex-start;gap:8px">
+      <div style="flex:1"><div style="font-weight:600">${getHive(tr.hive_id)?.name||'—'} · ${tr.product}</div>
+      <div style="font-size:12px;color:var(--text-2)">${tr.amount||''} · ${tr.start_date||''}${tr.duration_days?` · ${tr.duration_days} days`:''}</div>
+      ${tr.note?`<div style="font-size:11px;color:var(--text-3)">${tr.note}</div>`:''}</div>
+      <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
+        <span class="badge b-sky">Done</span>
+        <button onclick="confirmDeleteTreatment('${tr.id}')" style="padding:4px 8px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:12px">🗑</button>
+      </div></div>`).join('');
 }
 
 // HARVESTS 
@@ -2171,7 +2177,10 @@ function renderHarvests(){
       <div style="flex:1"><div style="font-weight:600">${getHive(h.hive_id)?.name||'—'} · ${h.honey_type||''}</div>
       <div style="font-size:12px;color:var(--text-2)">${h.honey_lbs} lbs honey · ${h.wax_oz} oz beeswax</div>
       ${h.note?`<div style="font-size:11px;color:var(--text-3)">${h.note}</div>`:''}</div>
-      <div style="font-size:12px;color:var(--text-3)">${h.harvest_date||''}</div></div>`).join('');
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
+        <div style="font-size:12px;color:var(--text-3)">${h.harvest_date||''}</div>
+        <button onclick="confirmDeleteHarvest('${h.id}')" style="padding:4px 8px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:12px">🗑</button>
+      </div></div>`).join('');
 }
 
 // INSIGHTS 
@@ -2786,6 +2795,55 @@ function closeModal(id){document.getElementById(id).classList.remove('open')}
 
 // EXPORT 
 
+
+
+function confirmDeleteTreatment(id){
+  const modal=document.createElement('div');
+  modal.id='modal-del-treat';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div class="modal" style="max-width:300px;padding:24px"><div style="text-align:center;margin-bottom:16px"><div style="font-size:32px">🗑️</div><div style="font-size:15px;font-weight:600;margin-bottom:6px">Delete treatment?</div><div style="font-size:13px;color:var(--text-2)">This cannot be undone.</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="document.getElementById('modal-del-treat').remove()" class="btn btn-outline" style="margin-top:0">Cancel</button><button onclick="deleteTreatment('${id}')" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500">Delete</button></div></div>`;
+  document.body.appendChild(modal);
+}
+async function deleteTreatment(id){
+  document.getElementById('modal-del-treat')?.remove();
+  setSyncing('syncing');
+  const{error}=await sb.from('treatments').delete().eq('id',id);
+  if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
+  treatments=treatments.filter(t=>t.id!==id);
+  setSyncing('saved');showToast('🗑 Treatment deleted','success');renderTreatments();
+}
+
+function confirmDeleteHarvest(id){
+  const modal=document.createElement('div');
+  modal.id='modal-del-harv';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div class="modal" style="max-width:300px;padding:24px"><div style="text-align:center;margin-bottom:16px"><div style="font-size:32px">🗑️</div><div style="font-size:15px;font-weight:600;margin-bottom:6px">Delete harvest record?</div><div style="font-size:13px;color:var(--text-2)">This cannot be undone.</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="document.getElementById('modal-del-harv').remove()" class="btn btn-outline" style="margin-top:0">Cancel</button><button onclick="deleteHarvest('${id}')" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500">Delete</button></div></div>`;
+  document.body.appendChild(modal);
+}
+async function deleteHarvest(id){
+  document.getElementById('modal-del-harv')?.remove();
+  setSyncing('syncing');
+  const{error}=await sb.from('harvests').delete().eq('id',id);
+  if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
+  harvests=harvests.filter(h=>h.id!==id);
+  setSyncing('saved');showToast('🗑 Harvest deleted','success');renderHarvests();renderHome();
+}
+
+function confirmDeleteQueen(id){
+  const modal=document.createElement('div');
+  modal.id='modal-del-queen';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div class="modal" style="max-width:300px;padding:24px"><div style="text-align:center;margin-bottom:16px"><div style="font-size:32px">🗑️</div><div style="font-size:15px;font-weight:600;margin-bottom:6px">Delete queen record?</div><div style="font-size:13px;color:var(--text-2)">This cannot be undone.</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="document.getElementById('modal-del-queen').remove()" class="btn btn-outline" style="margin-top:0">Cancel</button><button onclick="deleteQueen('${id}')" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500">Delete</button></div></div>`;
+  document.body.appendChild(modal);
+}
+async function deleteQueen(id){
+  document.getElementById('modal-del-queen')?.remove();
+  setSyncing('syncing');
+  const{error}=await sb.from('queens').delete().eq('id',id);
+  if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
+  queens=queens.filter(q=>q.id!==id);
+  setSyncing('saved');showToast('🗑 Queen record deleted','success');renderQueens();
+}
 
 function confirmDeleteInspection(inspId){
   const modal=document.createElement('div');

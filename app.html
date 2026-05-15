@@ -1865,6 +1865,32 @@ async function fetchWeather() {
   if(!OPENWEATHER_API_KEY) {
     renderWeatherWidget(null); return;
   }
+  // 优先使用蜂场GPS坐标，没有时才用设备GPS
+  const apiaryWithGps = apiaries && apiaries.find(a => a.gps && a.gps.trim());
+  if(apiaryWithGps) {
+    try {
+      const parts = apiaryWithGps.gps.split(',').map(s=>s.trim());
+      const lat = parseFloat(parts[0]);
+      const lon = parseFloat(parts[1]);
+      if(!isNaN(lat) && !isNaN(lon)) {
+        const res=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=imperial`);
+        const d=await res.json();
+        currentWeather={
+          temp:Math.round(d.main.temp),
+          humidity:d.main.humidity,
+          wind:Math.round(d.wind.speed),
+          condition:d.weather[0].main,
+          description:d.weather[0].description,
+          icon:getWeatherEmoji(d.weather[0].main),
+          city:apiaryWithGps.name || d.name
+        };
+        renderWeatherWidget(currentWeather);
+        populateInspectWeather(currentWeather);
+        return;
+      }
+    } catch(e){ renderWeatherWidget(null); return; }
+  }
+  // 没有蜂场GPS时，回退到设备GPS
   navigator.geolocation?.getCurrentPosition(async pos=>{
     try {
       const {latitude:lat,longitude:lon}=pos.coords;

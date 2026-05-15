@@ -2104,7 +2104,7 @@ function renderHiveDetailTimeline(hiveId){
   const harvs=harvests.filter(h=>h.hive_id===hiveId);
   const hivePics=hivePhotos(hiveId);
   const items=[];
-  insps.forEach(i=>items.push({date:i.date,type:'inspect',title:t('inspection')+' — '+t('score')+' '+i.score,body:i.notes||'',icon:'📋',dotClass:'tl-dot-inspect',extra:`<button onclick="confirmDeleteInspection('${i.id}')" style="margin-left:6px;padding:2px 7px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:20px;cursor:pointer;font-size:11px">🗑</button>`}));
+  insps.forEach(i=>items.push({date:i.date,type:'inspect',title:t('inspection')+' — '+t('score')+' '+i.score,body:i.notes||'',icon:'📋',dotClass:'tl-dot-inspect',extra:`<span style="display:inline-flex;gap:4px"><button onclick="openEditInspection('${i.id}')" style="padding:2px 7px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:20px;cursor:pointer;font-size:11px">✏️</button><button onclick="confirmDeleteInspection('${i.id}')" style="padding:2px 7px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:20px;cursor:pointer;font-size:11px">🗑</button></span>`}));
   treats.forEach(tr=>items.push({date:tr.start_date,type:'treat',title:t('treatment_lbl')+': '+tr.product,body:`${tr.amount||''} ${tr.duration_days?'· '+tr.duration_days+' days':''}`,icon:'💊',dotClass:'tl-dot-treat'}));
   harvs.forEach(h=>items.push({date:h.harvest_date,type:'harvest',title:t('harvest_lbl')+': '+h.honey_lbs+' lbs '+(h.honey_type||''),body:h.note||'',icon:'🍯',dotClass:'tl-dot-harvest'}));
   hivePics.forEach((p,i)=>items.push({date:p.taken_at?.split('T')[0],type:'photo',title:'Photo added',body:`<img src="${p.public_url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:4px;cursor:pointer" onclick="openLightbox(${i},'hive','${hiveId}')">`,icon:'📷',dotClass:'tl-dot-photo'}));
@@ -2167,6 +2167,7 @@ function renderTreatments(){
       ${tr.note?`<div style="font-size:11px;color:var(--text-3)">${tr.note}</div>`:''}</div>
       <div style="display:flex;align-items:center;gap:6px;flex-shrink:0">
         <span class="badge b-sky">Done</span>
+        <button onclick="openEditTreatment('${tr.id}')" style="padding:4px 8px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:var(--radius-sm);cursor:pointer;font-size:12px">✏️</button>
         <button onclick="confirmDeleteTreatment('${tr.id}')" style="padding:4px 8px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:12px">🗑</button>
       </div></div>`).join('');
 }
@@ -2182,6 +2183,7 @@ function renderHarvests(){
       ${h.note?`<div style="font-size:11px;color:var(--text-3)">${h.note}</div>`:''}</div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0">
         <div style="font-size:12px;color:var(--text-3)">${h.harvest_date||''}</div>
+        <button onclick="openEditHarvest('${h.id}')" style="padding:4px 8px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:var(--radius-sm);cursor:pointer;font-size:12px">✏️</button>
         <button onclick="confirmDeleteHarvest('${h.id}')" style="padding:4px 8px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:12px">🗑</button>
       </div></div>`).join('');
 }
@@ -2604,6 +2606,50 @@ function selectHive(id,el){
 function toggleChip(el){el.classList.toggle('on')}
 function showActionTab(id,btn){['feeding','treatment','frames'].forEach(tab=>{document.getElementById('action-'+tab).style.display=tab===id?'block':'none'});document.querySelectorAll('.tab-row .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
 
+let editingInspectionId=null;
+function openEditInspection(id){
+  const insp=inspections.find(i=>i.id===id);if(!insp)return;
+  editingInspectionId=id;
+  selectedHiveId=insp.hive_id;
+  // Select hive in grid
+  document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>{
+    if(c.dataset.hiveId===insp.hive_id)c.classList.add('selected');
+    else c.classList.remove('selected');
+  });
+  document.getElementById('inspect-form').style.display='block';
+  document.getElementById('inspect-empty').style.display='none';
+  // Fill form fields
+  document.getElementById('insp-date').value=insp.date||'';
+  document.getElementById('sl-str').value=insp.colony_strength||5;
+  document.getElementById('sl-cb').value=insp.capped_brood||5;
+  document.getElementById('sl-ub').value=insp.uncapped_brood||5;
+  document.getElementById('sl-hs').value=insp.honey_stores||5;
+  document.getElementById('sl-ps').value=insp.pollen||5;
+  document.getElementById('sl-qc').value=insp.queen_cells||0;
+  document.getElementById('sl-tmp').value=insp.temperament||5;
+  document.getElementById('sl-mite').value=insp.mite_count||0;
+  document.getElementById('insp-notes').value=insp.notes||'';
+  // Update slider displays
+  document.querySelectorAll('#inspect-form input[type=range]').forEach(s=>{
+    const display=document.getElementById(s.id.replace('sl-','val-'));
+    if(display)display.textContent=s.value;
+  });
+  // Toggles
+  const setTog=(id,val)=>{const el=document.getElementById(id);if(el){val?el.classList.add('on'):el.classList.remove('on');}};
+  setTog('tog-queen',insp.queen_seen);
+  setTog('tog-eggs',insp.eggs_present);
+  setTog('tog-swarm',insp.swarm_prep);
+  setTog('tog-disease',insp.disease_signs);
+  setTog('tog-mite',insp.mites_visible);
+  setTog('tog-laying',insp.laying_workers);
+  // Update buttons
+  document.getElementById('single-save-btns').innerHTML=`
+    <button class="btn btn-outline" onclick="saveInspection('draft')">Update Draft</button>
+    <button class="btn btn-primary" onclick="saveInspection('done')">Update ✓</button>`;
+  calcScore();
+  showPage('inspect',document.querySelectorAll('.nav-item')[1]);
+}
+
 async function saveInspection(mode){
   if(!selectedHiveId){showToast(t('toast_select_hive'),'warning');return;}
   const score=calcScore(),mc=+document.getElementById('sl-mite').value;
@@ -2630,9 +2676,16 @@ async function saveInspection(mode){
     mite_count:mc,score,
     notes:document.getElementById('insp-notes').value
   };
-  const{data,error}=await sb.from('inspections').insert(record).select().single();
-  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
-  inspections.unshift(data);
+  let data,error;
+  if(editingInspectionId){
+    ({data,error}=await sb.from('inspections').update(record).eq('id',editingInspectionId).select().single());
+    if(!error&&data){const idx=inspections.findIndex(i=>i.id===editingInspectionId);if(idx>=0)inspections[idx]={...inspections[idx],...data};}
+    editingInspectionId=null;
+    document.getElementById('single-save-btns').innerHTML=`<button class="btn btn-outline" onclick="saveInspection('draft')" ><span data-i18n="save_draft">Save Draft</span></button><button class="btn btn-primary" onclick="saveInspection('done')"><span data-i18n="complete">Complete ✓</span></button>`;
+  } else {
+    ({data,error}=await sb.from('inspections').insert(record).select().single());
+    if(!error&&data)inspections.unshift(data);
+  }
   // Link pending photos to this inspection
   if(pendingPhotos.length>0){
     for(const p of pendingPhotos){
@@ -2651,23 +2704,76 @@ async function saveInspection(mode){
 }
 
 // TREATMENT 
+let editingTreatId=null;
+function openEditTreatment(id){
+  const tr=treatments.find(t=>t.id===id);if(!tr)return;
+  editingTreatId=id;
+  document.getElementById('treat-hive').value=tr.hive_id||'';
+  document.getElementById('treat-type').value=tr.product||'';
+  document.getElementById('treat-amount').value=tr.amount||'';
+  document.getElementById('treat-date').value=tr.start_date||'';
+  document.getElementById('treat-days').value=tr.duration_days||'';
+  document.getElementById('treat-note').value=tr.note||'';
+  document.querySelector('#pg-treatment .btn-primary').textContent='Update Treatment';
+  document.querySelector('#pg-treatment .card-title span').textContent='Edit Treatment';
+  document.querySelector('#pg-treatment .card-title span').scrollIntoView({behavior:'smooth'});
+}
 async function addTreatment(){
   setSyncing('syncing');
-  const{data,error}=await sb.from('treatments').insert({user_id:currentUser.id,hive_id:document.getElementById('treat-hive').value,product:document.getElementById('treat-type').value,amount:document.getElementById('treat-amount').value||'per label',start_date:document.getElementById('treat-date').value||new Date().toISOString().split('T')[0],duration_days:+document.getElementById('treat-days').value||null,note:document.getElementById('treat-note').value}).select().single();
-  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
-  treatments.unshift(data);setSyncing('saved');renderTreatments();
+  const payload={hive_id:document.getElementById('treat-hive').value,product:document.getElementById('treat-type').value,amount:document.getElementById('treat-amount').value||'per label',start_date:document.getElementById('treat-date').value||new Date().toISOString().split('T')[0],duration_days:+document.getElementById('treat-days').value||null,note:document.getElementById('treat-note').value};
+  if(editingTreatId){
+    const{data,error}=await sb.from('treatments').update(payload).eq('id',editingTreatId).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    const idx=treatments.findIndex(t=>t.id===editingTreatId);
+    if(idx>=0)treatments[idx]={...treatments[idx],...data};
+    editingTreatId=null;
+    document.querySelector('#pg-treatment .btn-primary').textContent='Log Treatment';
+    document.querySelector('#pg-treatment .card-title span').textContent='Log Treatment';
+    setSyncing('saved');renderTreatments();showToast('Treatment updated ✓');
+  } else {
+    const{data,error}=await sb.from('treatments').insert({user_id:currentUser.id,...payload}).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    treatments.unshift(data);setSyncing('saved');renderTreatments();
+    showToast(t('toast_treatment_saved'));
+  }
   document.getElementById('treat-amount').value='';document.getElementById('treat-note').value='';
-  showToast(t('toast_treatment_saved'));
 }
 
 // HARVEST 
+let editingHarvestId=null;
+function openEditHarvest(id){
+  const h=harvests.find(h=>h.id===id);if(!h)return;
+  editingHarvestId=id;
+  document.getElementById('harv-hive').value=h.hive_id||'';
+  const honeySlider=document.querySelector('#pg-harvest input[type=range]:first-of-type');
+  if(honeySlider){honeySlider.value=h.honey_lbs||8;document.getElementById('honey-val').textContent=h.honey_lbs||8;}
+  const waxSlider=document.querySelectorAll('#pg-harvest input[type=range]')[1];
+  if(waxSlider){waxSlider.value=h.wax_oz||4;document.getElementById('wax-val').textContent=h.wax_oz||4;}
+  document.getElementById('harv-type').value=h.honey_type||'Wildflower';
+  document.getElementById('harv-date').value=h.harvest_date||'';
+  document.getElementById('harv-note').value=h.note||'';
+  document.querySelector('#pg-harvest .btn-primary').textContent='Update Harvest 🍯';
+  document.querySelector('#pg-harvest .card-title span').textContent='Edit Harvest';
+  document.querySelector('#pg-harvest .card-title span').scrollIntoView({behavior:'smooth'});
+}
 async function addHarvest(){
   setSyncing('syncing');
-  const{data,error}=await sb.from('harvests').insert({user_id:currentUser.id,hive_id:document.getElementById('harv-hive').value,honey_lbs:+document.getElementById('honey-val').textContent,wax_oz:+document.getElementById('wax-val').textContent,honey_type:document.getElementById('harv-type').value,harvest_date:document.getElementById('harv-date').value||new Date().toISOString().split('T')[0],note:document.getElementById('harv-note').value}).select().single();
-  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
-  harvests.unshift(data);setSyncing('saved');renderHarvests();
-  document.getElementById('harv-note').value='';
-  showToast(t('toast_harvest_saved'));
+  const payload={hive_id:document.getElementById('harv-hive').value,honey_lbs:+document.getElementById('honey-val').textContent,wax_oz:+document.getElementById('wax-val').textContent,honey_type:document.getElementById('harv-type').value,harvest_date:document.getElementById('harv-date').value||new Date().toISOString().split('T')[0],note:document.getElementById('harv-note').value};
+  if(editingHarvestId){
+    const{data,error}=await sb.from('harvests').update(payload).eq('id',editingHarvestId).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    const idx=harvests.findIndex(h=>h.id===editingHarvestId);
+    if(idx>=0)harvests[idx]={...harvests[idx],...data};
+    editingHarvestId=null;
+    document.querySelector('#pg-harvest .btn-primary').textContent='Record Harvest 🍯';
+    document.querySelector('#pg-harvest .card-title span').textContent='Record Harvest';
+    setSyncing('saved');renderHarvests();renderHome();showToast('Harvest updated ✓');
+  } else {
+    const{data,error}=await sb.from('harvests').insert({user_id:currentUser.id,...payload}).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    harvests.unshift(data);setSyncing('saved');renderHarvests();showToast(t('toast_harvest_saved'));
+  }
+  document.getElementById('harv-note').value='';renderHome();
 }
 
 // QUEEN 

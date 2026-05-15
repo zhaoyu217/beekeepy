@@ -725,8 +725,36 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="section-hd" style="margin-top:16px">Hives</div>
   <div id="hive-list-full"></div>
   <button class="btn-add" onclick="openModal('modal-hive')">＋ <span data-i18n="add_hive">Add Hive</span></button>
-  <div class="section-hd" style="margin-top:16px"><span data-i18n="equipment">Equipment</span></div>
-  <div class="card" id="equipment-section"></div>
+  <!-- EQUIPMENT -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:8px">
+    <div class="section-hd" style="margin:0"><span data-i18n="equipment">Equipment</span></div>
+    <button onclick="openAddEquipmentModal()" style="padding:5px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500">+ Add</button>
+  </div>
+
+  <!-- Equipment filter tabs -->
+  <div style="display:flex;gap:6px;margin-bottom:8px;overflow-x:auto;padding-bottom:2px">
+    <button onclick="setEquipFilter('all',this)" class="equip-tab" style="padding:5px 12px;border-radius:20px;border:1px solid var(--honey);background:var(--honey-light);color:var(--honey-dark);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap;font-weight:500">All</button>
+    <button onclick="setEquipFilter('hive_parts',this)" class="equip-tab" style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">🪣 Hive Parts</button>
+    <button onclick="setEquipFilter('tools',this)" class="equip-tab" style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">🧰 Tools</button>
+    <button onclick="setEquipFilter('treatments',this)" class="equip-tab" style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">💊 Treatments</button>
+    <button onclick="setEquipFilter('maintenance',this)" class="equip-tab" style="padding:5px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;white-space:nowrap">🔧 Maintenance</button>
+  </div>
+
+  <div id="equipment-list"></div>
+
+  <!-- Low stock alert -->
+  <div id="equip-low-stock" style="display:none;background:var(--danger-light);border:1px solid var(--danger);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
+    <div style="font-size:12px;font-weight:600;color:var(--danger);margin-bottom:4px">⚠️ Low Stock Alert</div>
+    <div id="equip-low-list" style="font-size:12px;color:var(--text-2)"></div>
+    <a href="https://www.skoghive.com/collections/all" target="_blank" style="display:inline-block;margin-top:8px;font-size:12px;color:var(--honey-dark);font-weight:500">🌲 Restock at SkogHive →</a>
+  </div>
+
+  <!-- Maintenance section -->
+  <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:8px">
+    <div class="section-hd" style="margin:0">🔧 Maintenance Log</div>
+    <button onclick="openAddMaintenanceModal()" style="padding:5px 12px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500">+ Log</button>
+  </div>
+  <div id="maintenance-list"></div>
   <div class="section-hd" style="margin-top:16px"><span data-i18n="data">Data</span></div>
   <button class="btn btn-outline" onclick="exportData()">📤 <span data-i18n="export_data">Export All Data (JSON)</span></button>
   <button class="btn btn-outline" onclick="exportCSV()" style="margin-top:8px">📊 Export CSV (Excel / Sheets)</button>
@@ -929,6 +957,95 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="btn btn-primary" onclick="saveForageMarker()">Submit Report</button>
   </div>
 </div>
+
+<!-- Add Equipment Modal -->
+<div class="modal-bg" id="modal-equipment">
+  <div class="modal">
+    <div class="modal-title">
+      <h2 style="font-size:16px" id="equip-modal-title">Add Equipment</h2>
+      <button class="close-btn" onclick="closeModal('modal-equipment')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Name</label>
+      <input type="text" id="eq-name" placeholder="e.g. Super box, Hive tool, Apivar">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Category</label>
+      <select id="eq-category">
+        <option value="hive_parts">🪣 Hive Parts (boxes, frames, queen excluder)</option>
+        <option value="tools">🧰 Tools (hive tool, smoker, veil)</option>
+        <option value="treatments">💊 Treatments (oxalic acid, Apivar, etc.)</option>
+        <option value="maintenance">🔧 Maintenance (paint, wood sealer, etc.)</option>
+        <option value="other">📦 Other</option>
+      </select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="form-group">
+        <label class="form-label">Quantity</label>
+        <input type="number" id="eq-qty" placeholder="e.g. 5" min="0">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Min Stock Alert</label>
+        <input type="number" id="eq-min-qty" placeholder="e.g. 2" min="0">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Link to Hive (optional)</label>
+      <select id="eq-hive"><option value="">— Not linked —</option></select>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+      <div class="form-group">
+        <label class="form-label">Purchase Date</label>
+        <input type="date" id="eq-purchase-date">
+      </div>
+      <div class="form-group">
+        <label class="form-label">Expiry Date</label>
+        <input type="date" id="eq-expiry-date">
+      </div>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Notes</label>
+      <textarea rows="2" id="eq-notes" placeholder="Brand, batch number, etc."></textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+      <label class="form-label" style="margin:0">🌲 SkogHive product</label>
+      <button class="tog" id="tog-skoghive" onclick="this.classList.toggle('on')"></button>
+    </div>
+    <button class="btn btn-primary" onclick="saveEquipment()">Save Equipment</button>
+  </div>
+</div>
+
+<!-- Add Maintenance Modal -->
+<div class="modal-bg" id="modal-maintenance">
+  <div class="modal">
+    <div class="modal-title">
+      <h2 style="font-size:16px">Log Maintenance</h2>
+      <button class="close-btn" onclick="closeModal('modal-maintenance')">✕</button>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Hive</label>
+      <select id="maint-hive"></select>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Date</label>
+      <input type="date" id="maint-date">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea rows="2" id="maint-desc" placeholder="e.g. Replaced bottom board, repainted exterior"></textarea>
+    </div>
+    <div class="form-group">
+      <label class="form-label">Parts Used</label>
+      <input type="text" id="maint-parts" placeholder="e.g. Bottom board, 2x wood screws">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Cost ($)</label>
+      <input type="number" id="maint-cost" placeholder="0.00" step="0.01" min="0">
+    </div>
+    <button class="btn btn-primary" onclick="saveMaintenance()">Save Log</button>
+  </div>
+</div>
+
 </div><!-- shell -->
 
 <!-- Language Menu -->
@@ -2689,7 +2806,7 @@ function renderInsights(){
 function renderSettings(){
   document.getElementById('apiary-list-full').innerHTML=apiaries.map(a=>`<div class="apiary-item"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:12px;color:var(--text-3)">${a.location||''}${a.gps?' · GPS: '+a.gps:''}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button onclick="openEditApiary('${a.id}')" style="padding:5px 9px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:var(--radius-sm);cursor:pointer;font-size:13px">✏️</button><button onclick="confirmDeleteApiary('${a.id}')" style="padding:5px 9px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px">🗑</button></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No apiaries yet</div>';
   document.getElementById('hive-list-full').innerHTML=hives.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600">${h.name} <span class="badge b-honey">${getApiary(h.apiary_id)?.name||''}</span></div><div style="font-size:12px;color:var(--text-3)">${h.type||''}</div></div><div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px"><button onclick="openEditHive('${h.id}')" style="padding:5px 9px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:var(--radius-sm);cursor:pointer;font-size:13px">✏️</button><button onclick="confirmDeleteHive('${h.id}')" style="padding:5px 9px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px">🗑</button></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hives yet</div>';
-  document.getElementById('equipment-section').innerHTML='<div style="font-size:13px;color:var(--text-3)">Equipment tracking coming soon</div>';
+  loadEquipment();
 }
 
 function renderAccount(){
@@ -3793,6 +3910,240 @@ function stopVoice(){
 
 
 
+
+
+// ============================================================
+// EQUIPMENT & MAINTENANCE TRACKING
+// ============================================================
+let equipmentItems=[], maintenanceLogs=[], equipFilter='all', editingEquipId=null;
+
+const EQUIP_ICONS={hive_parts:'🪣',tools:'🧰',treatments:'💊',maintenance:'🔧',other:'📦'};
+const EQUIP_LABELS={hive_parts:'Hive Parts',tools:'Tools',treatments:'Treatments',maintenance:'Maintenance',other:'Other'};
+
+async function loadEquipment(){
+  const[eq,ml]=await Promise.all([
+    sb.from('equipment').select('*').eq('user_id',currentUser.id).order('category'),
+    sb.from('maintenance_logs').select('*').eq('user_id',currentUser.id).order('date',{ascending:false})
+  ]);
+  equipmentItems=eq.data||[];
+  maintenanceLogs=ml.data||[];
+  renderEquipment();
+  renderMaintenanceLogs();
+  checkLowStock();
+}
+
+function setEquipFilter(filter,btn){
+  equipFilter=filter;
+  document.querySelectorAll('.equip-tab').forEach(b=>{
+    b.style.borderColor='var(--border)';b.style.background='var(--surface)';b.style.color='var(--text-2)';b.style.fontWeight='';
+  });
+  btn.style.borderColor='var(--honey)';btn.style.background='var(--honey-light)';btn.style.color='var(--honey-dark)';btn.style.fontWeight='500';
+  renderEquipment();
+}
+
+function renderEquipment(){
+  const list=document.getElementById('equipment-list');
+  if(!list)return;
+  const filtered=equipFilter==='all'?equipmentItems:equipmentItems.filter(e=>e.category===equipFilter);
+  if(filtered.length===0){
+    list.innerHTML='<div class="empty" style="padding:20px">No equipment added yet — tap + Add to get started</div>';
+    return;
+  }
+  const today=new Date().toISOString().split('T')[0];
+  list.innerHTML=filtered.map(e=>{
+    const isLow=e.min_quantity>0&&e.quantity<=e.min_quantity;
+    const isExpired=e.expiry_date&&e.expiry_date<today;
+    const expiringSoon=e.expiry_date&&!isExpired&&daysSince(e.expiry_date)<-14; // expires in 14 days
+    const hive=e.hive_id?getHive(e.hive_id):null;
+    return`<div style="background:var(--surface);border:1px solid ${isLow||isExpired?'var(--danger)':'var(--border)'};border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:24px;flex-shrink:0">${EQUIP_ICONS[e.category]||'📦'}</div>
+      <div style="flex:1;min-width:0">
+        <div style="display:flex;align-items:center;gap:6px;margin-bottom:2px">
+          <div style="font-weight:600;font-size:13px">${e.name}</div>
+          ${e.skoghive_product?'<span style="font-size:10px;background:var(--forest-light);color:var(--forest);border-radius:20px;padding:1px 6px">🌲 SkogHive</span>':''}
+        </div>
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:3px">${EQUIP_LABELS[e.category]||e.category}${hive?' · '+hive.name:''}</div>
+        <div style="display:flex;align-items:center;gap:8px;flex-wrap:wrap">
+          <div style="font-size:13px;font-weight:600;color:${isLow?'var(--danger)':'var(--text)'}">Qty: ${e.quantity}${isLow?' ⚠️ Low':''}</div>
+          ${isExpired?'<span style="font-size:11px;color:var(--danger);font-weight:500">❌ Expired: '+e.expiry_date+'</span>':expiringSoon?'<span style="font-size:11px;color:var(--amber)">⏰ Expires: '+e.expiry_date+'</span>':e.expiry_date?'<span style="font-size:11px;color:var(--text-3)">Exp: '+e.expiry_date+'</span>':''}
+        </div>
+        ${e.notes?`<div style="font-size:11px;color:var(--text-3);margin-top:2px">${e.notes}</div>`:''}
+      </div>
+      <div style="display:flex;flex-direction:column;gap:4px;flex-shrink:0">
+        <button onclick="adjustQty('${e.id}',-1)" style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px">−</button>
+        <button onclick="adjustQty('${e.id}',1)" style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:14px">＋</button>
+        <button onclick="openEditEquipment('${e.id}')" style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid var(--honey);background:var(--honey-light);cursor:pointer;font-size:12px">✏️</button>
+        <button onclick="deleteEquipment('${e.id}')" style="padding:4px 8px;border-radius:var(--radius-sm);border:1px solid #F5B7B1;background:var(--danger-light);cursor:pointer;font-size:12px">🗑</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function checkLowStock(){
+  const lowItems=equipmentItems.filter(e=>e.min_quantity>0&&e.quantity<=e.min_quantity);
+  const today=new Date().toISOString().split('T')[0];
+  const expiredItems=equipmentItems.filter(e=>e.expiry_date&&e.expiry_date<today);
+  const alertDiv=document.getElementById('equip-low-stock');
+  const alertList=document.getElementById('equip-low-list');
+  if(!alertDiv)return;
+  const allAlerts=[...lowItems.map(e=>`Low stock: ${e.name} (${e.quantity} left)`), ...expiredItems.map(e=>`Expired: ${e.name} (${e.expiry_date})`)];
+  if(allAlerts.length>0){
+    alertDiv.style.display='block';
+    alertList.innerHTML=allAlerts.map(a=>`<div>· ${a}</div>`).join('');
+  } else {
+    alertDiv.style.display='none';
+  }
+}
+
+async function adjustQty(id, delta){
+  const item=equipmentItems.find(e=>e.id===id);if(!item)return;
+  const newQty=Math.max(0,(item.quantity||0)+delta);
+  const{error}=await sb.from('equipment').update({quantity:newQty}).eq('id',id);
+  if(error){showToast('Error: '+error.message,'error');return;}
+  item.quantity=newQty;
+  renderEquipment();checkLowStock();
+  // Low stock notification
+  if(item.min_quantity>0&&newQty<=item.min_quantity){
+    showToast('⚠️ Low stock: '+item.name+' — consider restocking at SkogHive','warning');
+  }
+}
+
+function openAddEquipmentModal(){
+  editingEquipId=null;
+  document.getElementById('equip-modal-title').textContent='Add Equipment';
+  document.getElementById('eq-name').value='';
+  document.getElementById('eq-category').value='hive_parts';
+  document.getElementById('eq-qty').value='';
+  document.getElementById('eq-min-qty').value='';
+  document.getElementById('eq-notes').value='';
+  document.getElementById('eq-purchase-date').value='';
+  document.getElementById('eq-expiry-date').value='';
+  document.getElementById('tog-skoghive').classList.remove('on');
+  // Populate hive select
+  document.getElementById('eq-hive').innerHTML='<option value="">— Not linked —</option>'+
+    hives.map(h=>'<option value="'+h.id+'">'+h.name+'</option>').join('');
+  openModal('modal-equipment');
+}
+
+function openEditEquipment(id){
+  const e=equipmentItems.find(e=>e.id===id);if(!e)return;
+  editingEquipId=id;
+  document.getElementById('equip-modal-title').textContent='Edit Equipment';
+  document.getElementById('eq-name').value=e.name||'';
+  document.getElementById('eq-category').value=e.category||'hive_parts';
+  document.getElementById('eq-qty').value=e.quantity||'';
+  document.getElementById('eq-min-qty').value=e.min_quantity||'';
+  document.getElementById('eq-notes').value=e.notes||'';
+  document.getElementById('eq-purchase-date').value=e.purchase_date||'';
+  document.getElementById('eq-expiry-date').value=e.expiry_date||'';
+  if(e.skoghive_product)document.getElementById('tog-skoghive').classList.add('on');
+  else document.getElementById('tog-skoghive').classList.remove('on');
+  document.getElementById('eq-hive').innerHTML='<option value="">— Not linked —</option>'+
+    hives.map(h=>'<option value="'+h.id+'"'+(h.id===e.hive_id?' selected':'')+'>'+h.name+'</option>').join('');
+  openModal('modal-equipment');
+}
+
+async function saveEquipment(){
+  const name=document.getElementById('eq-name').value.trim();
+  if(!name){showToast('Please enter a name','warning');return;}
+  setSyncing('syncing');
+  const payload={
+    name,
+    category:document.getElementById('eq-category').value,
+    quantity:+document.getElementById('eq-qty').value||0,
+    min_quantity:+document.getElementById('eq-min-qty').value||0,
+    hive_id:document.getElementById('eq-hive').value||null,
+    purchase_date:document.getElementById('eq-purchase-date').value||null,
+    expiry_date:document.getElementById('eq-expiry-date').value||null,
+    notes:document.getElementById('eq-notes').value,
+    skoghive_product:document.getElementById('tog-skoghive').classList.contains('on')
+  };
+  if(editingEquipId){
+    const{data,error}=await sb.from('equipment').update(payload).eq('id',editingEquipId).select().single();
+    if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+    const idx=equipmentItems.findIndex(e=>e.id===editingEquipId);
+    if(idx>=0)equipmentItems[idx]={...equipmentItems[idx],...data};
+    showToast('Equipment updated ✓','success');
+  } else {
+    const{data,error}=await sb.from('equipment').insert({user_id:currentUser.id,...payload}).select().single();
+    if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+    equipmentItems.push(data);
+    showToast('Equipment added ✓','success');
+    // Badge check
+    checkAndAwardBadges();
+  }
+  setSyncing('saved');
+  closeModal('modal-equipment');
+  renderEquipment();checkLowStock();
+}
+
+async function deleteEquipment(id){
+  if(!confirm('Delete this equipment?'))return;
+  await sb.from('equipment').delete().eq('id',id);
+  equipmentItems=equipmentItems.filter(e=>e.id!==id);
+  renderEquipment();checkLowStock();
+  showToast('🗑 Equipment deleted','success');
+}
+
+// MAINTENANCE LOGS
+function renderMaintenanceLogs(){
+  const list=document.getElementById('maintenance-list');
+  if(!list)return;
+  if(maintenanceLogs.length===0){
+    list.innerHTML='<div class="empty" style="padding:20px">No maintenance logged yet</div>';return;
+  }
+  list.innerHTML=maintenanceLogs.slice(0,10).map(m=>{
+    const hive=m.hive_id?getHive(m.hive_id):null;
+    return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+        <div style="font-weight:600;font-size:13px">${hive?'🐝 '+hive.name:'All hives'}</div>
+        <div style="display:flex;align-items:center;gap:6px">
+          <div style="font-size:11px;color:var(--text-3)">${m.date}</div>
+          <button onclick="deleteMaintenance('${m.id}')" style="padding:3px 7px;border-radius:20px;border:1px solid #F5B7B1;background:var(--danger-light);cursor:pointer;font-size:11px;color:var(--danger)">🗑</button>
+        </div>
+      </div>
+      <div style="font-size:12px;color:var(--text-2)">${m.description}</div>
+      ${m.parts_used?`<div style="font-size:11px;color:var(--text-3);margin-top:2px">Parts: ${m.parts_used}</div>`:''}
+      ${m.cost?`<div style="font-size:11px;color:var(--text-3)">Cost: $${m.cost}</div>`:''}
+    </div>`;
+  }).join('');
+}
+
+function openAddMaintenanceModal(){
+  document.getElementById('maint-hive').innerHTML='<option value="">— All hives —</option>'+
+    hives.map(h=>'<option value="'+h.id+'">'+h.name+'</option>').join('');
+  document.getElementById('maint-date').value=new Date().toISOString().split('T')[0];
+  document.getElementById('maint-desc').value='';
+  document.getElementById('maint-parts').value='';
+  document.getElementById('maint-cost').value='';
+  openModal('modal-maintenance');
+}
+
+async function saveMaintenance(){
+  const desc=document.getElementById('maint-desc').value.trim();
+  if(!desc){showToast('Please add a description','warning');return;}
+  setSyncing('syncing');
+  const{data,error}=await sb.from('maintenance_logs').insert({
+    user_id:currentUser.id,
+    hive_id:document.getElementById('maint-hive').value||null,
+    date:document.getElementById('maint-date').value,
+    description:desc,
+    parts_used:document.getElementById('maint-parts').value,
+    cost:+document.getElementById('maint-cost').value||null
+  }).select().single();
+  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  maintenanceLogs.unshift(data);
+  setSyncing('saved');closeModal('modal-maintenance');
+  renderMaintenanceLogs();
+  showToast('Maintenance logged ✓','success');
+}
+
+async function deleteMaintenance(id){
+  await sb.from('maintenance_logs').delete().eq('id',id);
+  maintenanceLogs=maintenanceLogs.filter(m=>m.id!==id);
+  renderMaintenanceLogs();
+  showToast('🗑 Log deleted','success');
+}
 
 // ============================================================
 // BRIGHT MODE (High Contrast for Outdoor Use)

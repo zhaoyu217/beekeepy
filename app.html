@@ -1072,7 +1072,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 
 <!-- Language Menu -->
 <div class="lang-menu" id="lang-menu">
-  <div class="lang-opt" onclick="setLang('en')"><span class="lang-flag">🇺🇸</span><span>English</span></div>
+  <div class="lang-opt" onclick="setLang('en')"><span class="lang-flag">🇺🇸</span><span>English (US)</span></div>
+  <div class="lang-opt" onclick="setLang('en-gb')"><span class="lang-flag">🇬🇧</span><span>English (UK)</span></div>
+  <div class="lang-opt" onclick="setLang('en-au')"><span class="lang-flag">🇦🇺</span><span>English (AU)</span></div>
+  <div class="lang-opt" onclick="setLang('en-nz')"><span class="lang-flag">🇳🇿</span><span>English (NZ)</span></div>
   <div class="lang-opt" onclick="setLang('de')"><span class="lang-flag">🇩🇪</span><span>Deutsch</span></div>
   <div class="lang-opt" onclick="setLang('fr')"><span class="lang-flag">🇫🇷</span><span>Français</span></div>
   <div class="lang-opt" onclick="setLang('it')"><span class="lang-flag">🇮🇹</span><span>Italiano</span></div>
@@ -1241,7 +1244,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <script>
 // i18n 
 const LANGS = {
-  en:{flag:'🇺🇸',code:'EN',
+  en:{flag:'🇺🇸',code:'US',
     loading:'Loading your hives...',saved:'Saved',saving:'Saving...',error_lbl:'Error',
     nav_home:'Home',nav_inspect:'Inspect',nav_queens:'Queens',nav_harvest:'Harvest',nav_insights:'Insights',nav_remind:'Remind',
     honey_harvest_season:'Honey Harvest This Season',apiaries:'Apiaries',all_hives:'All Hives',recent_activity:'Recent Activity',
@@ -1304,6 +1307,9 @@ const LANGS = {
     photo_deleted:'Photo deleted',
 
   },
+  'en-gb':{flag:'🇬🇧',code:'UK'},
+  'en-au':{flag:'🇦🇺',code:'AU'},
+  'en-nz':{flag:'🇳🇿',code:'NZ'},
   de:{flag:'🇩🇪',code:'DE',
     loading:'Völker werden geladen...',saved:'Gespeichert',saving:'Speichern...',error_lbl:'Fehler',
     nav_home:'Start',nav_inspect:'Kontrolle',nav_queens:'Königin',nav_harvest:'Ernte',nav_insights:'Analyse',nav_remind:'Erinnerung',
@@ -1661,7 +1667,7 @@ const LANGS = {
 
 let currentLang='en';
 
-function t(key){return(LANGS[currentLang]||LANGS.en)[key]||(LANGS.en[key]||key);}
+function t(key){const base=currentLang.startsWith('en-')?LANGS.en:LANGS[currentLang];return(base||LANGS.en)[key]||(LANGS.en[key]||key);}
 
 function applyLang(){
   const L=LANGS[currentLang]||LANGS.en;
@@ -1672,7 +1678,9 @@ function applyLang(){
   });
   // Update lang button
   const btn=document.getElementById('lang-btn');
-  if(btn)btn.textContent=L.code;
+  const L=LANGS[currentLang]||(currentLang.startsWith('en-')?LANGS.en:LANGS.en);
+  const langEntry=LANGS[currentLang]||{};
+  if(btn)btn.textContent=langEntry.code||(LANGS[currentLang.startsWith('en-')?currentLang:'en']?.code)||'EN';
   // Update lang menu active state
   document.querySelectorAll('.lang-opt').forEach(opt=>{
     const lang=opt.getAttribute('onclick').match(/setLang\('(\w+)'\)/)?.[1];
@@ -1934,6 +1942,8 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
   renderWeatherWidget(currentWeather);
   populateInspectWeather(currentWeather);
   renderWeatherAlerts();
+  // 触发花期预报（异步，不阻塞天气显示）
+  computeBloomForecast(lat, lon).catch(()=>{});
 }
 
 async function fetchWeather() {
@@ -2082,6 +2092,480 @@ function syncWeatherTasksToReminders(alerts) {
   if(!panel) return;
   // 由renderAllTasks统一处理，这里触发刷新
   if(currentReminderTab === 'tasks') renderAllTasks();
+}
+
+// ============================================================
+// BLOOM FORECAST — GDD积温花期预报模块
+// ============================================================
+
+// 蜜源植物规则库（支持北美/欧洲/南半球）
+// 蜜源植物规则库 — 按国家/语言区分
+// langs: 适用语言列表（对应App的7种语言：en/de/fr/it/pt/ro/tr）
+// 名称按语言本地化
+const NECTAR_PLANTS = [
+
+  // ── 🇺🇸 美国 (en) ────────────────────────────────────────────────
+  {id:'dandelion_us',    langs:['en'],
+   name:{en:'Dandelion'},
+   emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
+  {id:'clover_us',       langs:['en'],
+   name:{en:'Clover'},
+   emoji:'🍀', base:10, gddOpen:200, gddPeak:400, monthsN:[5,6,7,8], monthsS:[], peak:true},
+  {id:'alfalfa',         langs:['en'],
+   name:{en:'Alfalfa'},
+   emoji:'🌿', base:10, gddOpen:350, gddPeak:550, monthsN:[6,7,8],   monthsS:[], peak:true},
+  {id:'tupelo',          langs:['en'],
+   name:{en:'Tupelo'},
+   emoji:'🌿', base:12, gddOpen:300, gddPeak:450, monthsN:[4,5],     monthsS:[], peak:true},
+  {id:'locust_us',       langs:['en'],
+   name:{en:'Black Locust'},
+   emoji:'🌸', base:10, gddOpen:280, gddPeak:420, monthsN:[5,6],     monthsS:[], peak:true},
+  {id:'linden_us',       langs:['en'],
+   name:{en:'Linden / Basswood'},
+   emoji:'🌳', base:10, gddOpen:450, gddPeak:600, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'sunflower_us',    langs:['en'],
+   name:{en:'Sunflower'},
+   emoji:'🌻', base:10, gddOpen:600, gddPeak:800, monthsN:[7,8,9],   monthsS:[], peak:true},
+  {id:'goldenrod',       langs:['en'],
+   name:{en:'Goldenrod'},
+   emoji:'🌼', base:10, gddOpen:700, gddPeak:900, monthsN:[8,9,10],  monthsS:[], peak:false},
+  {id:'wildflower_us',   langs:['en'],
+   name:{en:'Wildflower Mix'},
+   emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
+
+  // ── 🇬🇧 英国 (en-gb) ──────────────────────────────────────────────
+  {id:'dandelion_gb',    langs:['en-gb'],
+   name:{en:'Dandelion'},
+   emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
+  {id:'rapeseed_gb',     langs:['en-gb'],
+   name:{en:'Oilseed Rape'},
+   emoji:'🟡', base:5,  gddOpen:80,  gddPeak:180, monthsN:[4,5],     monthsS:[], peak:true},
+  {id:'hawthorn',        langs:['en-gb'],
+   name:{en:'Hawthorn'},
+   emoji:'🌸', base:5,  gddOpen:100, gddPeak:200, monthsN:[5],       monthsS:[], peak:false},
+  {id:'clover_gb',       langs:['en-gb'],
+   name:{en:'Clover'},
+   emoji:'🍀', base:10, gddOpen:200, gddPeak:400, monthsN:[6,7,8],   monthsS:[], peak:true},
+  {id:'bramble',         langs:['en-gb'],
+   name:{en:'Bramble / Blackberry'},
+   emoji:'🫐', base:10, gddOpen:250, gddPeak:400, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'heather',         langs:['en-gb'],
+   name:{en:'Heather'},
+   emoji:'💜', base:10, gddOpen:500, gddPeak:700, monthsN:[8,9],     monthsS:[], peak:true},
+  {id:'borage',          langs:['en-gb'],
+   name:{en:'Borage'},
+   emoji:'🔵', base:10, gddOpen:200, gddPeak:380, monthsN:[6,7,8,9], monthsS:[], peak:false},
+  {id:'wildflower_gb',   langs:['en-gb'],
+   name:{en:'Wildflower Mix'},
+   emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
+
+  // ── 🇦🇺 澳大利亚 (en-au, 南半球) ─────────────────────────────────
+  {id:'eucalyptus_au',   langs:['en-au'],
+   name:{en:'Eucalyptus'},
+   emoji:'🌿', base:10, gddOpen:80,  gddPeak:200, monthsN:[1,2,3,4,5,6,7,8,9,10,11,12], monthsS:[1,2,3,4,5,6,7,8,9,10,11,12], peak:true},
+  {id:'canola_au',       langs:['en-au'],
+   name:{en:'Canola'},
+   emoji:'🟡', base:5,  gddOpen:80,  gddPeak:180, monthsN:[], monthsS:[9,10],   peak:true},
+  {id:'clover_au',       langs:['en-au'],
+   name:{en:'Clover'},
+   emoji:'🍀', base:10, gddOpen:200, gddPeak:400, monthsN:[], monthsS:[11,12,1,2], peak:true},
+  {id:'leatherwood',     langs:['en-au'],
+   name:{en:'Leatherwood'},
+   emoji:'🌳', base:12, gddOpen:150, gddPeak:280, monthsN:[], monthsS:[1,2,3],  peak:true},
+  {id:'manuka_au',       langs:['en-au'],
+   name:{en:'Manuka'},
+   emoji:'🌸', base:10, gddOpen:180, gddPeak:320, monthsN:[], monthsS:[11,12,1], peak:true},
+  {id:'salvation_jane',  langs:['en-au'],
+   name:{en:'Salvation Jane'},
+   emoji:'💜', base:8,  gddOpen:100, gddPeak:220, monthsN:[], monthsS:[9,10,11], peak:false},
+  {id:'wildflower_au',   langs:['en-au'],
+   name:{en:'Wildflower Mix'},
+   emoji:'🌺', base:8,  gddOpen:100, gddPeak:250, monthsN:[], monthsS:[9,10,11,12,1,2], peak:false},
+
+  // ── 🇳🇿 新西兰 (en-nz, 南半球) ───────────────────────────────────
+  {id:'manuka_nz',       langs:['en-nz'],
+   name:{en:'Mānuka'},
+   emoji:'🌸', base:10, gddOpen:150, gddPeak:300, monthsN:[], monthsS:[11,12,1], peak:true},
+  {id:'kanuka',          langs:['en-nz'],
+   name:{en:'Kānuka'},
+   emoji:'🌼', base:10, gddOpen:200, gddPeak:380, monthsN:[], monthsS:[12,1,2],  peak:true},
+  {id:'clover_nz',       langs:['en-nz'],
+   name:{en:'Clover'},
+   emoji:'🍀', base:10, gddOpen:200, gddPeak:400, monthsN:[], monthsS:[11,12,1,2], peak:true},
+  {id:'pohutukawa',      langs:['en-nz'],
+   name:{en:'Pōhutukawa'},
+   emoji:'🌺', base:12, gddOpen:180, gddPeak:320, monthsN:[], monthsS:[12,1],    peak:true},
+  {id:'rewarewa',        langs:['en-nz'],
+   name:{en:'Rewarewa'},
+   emoji:'🌿', base:10, gddOpen:150, gddPeak:280, monthsN:[], monthsS:[10,11,12], peak:true},
+  {id:'rata',            langs:['en-nz'],
+   name:{en:'Rātā'},
+   emoji:'🌳', base:12, gddOpen:200, gddPeak:360, monthsN:[], monthsS:[12,1,2],  peak:true},
+  {id:'wildflower_nz',   langs:['en-nz'],
+   name:{en:'Wildflower Mix'},
+   emoji:'🌺', base:8,  gddOpen:100, gddPeak:250, monthsN:[], monthsS:[10,11,12,1,2,3], peak:false},
+
+  // ── 🇩🇪 德国 (de) ─────────────────────────────────────────────────
+  {id:'dandelion_de',    langs:['de'],
+   name:{de:'Löwenzahn'},
+   emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
+  {id:'rapeseed_de',     langs:['de'],
+   name:{de:'Raps'},
+   emoji:'🟡', base:5,  gddOpen:80,  gddPeak:180, monthsN:[4,5],     monthsS:[], peak:true},
+  {id:'apple_de',        langs:['de'],
+   name:{de:'Apfelblüte'},
+   emoji:'🍎', base:5,  gddOpen:100, gddPeak:200, monthsN:[4,5],     monthsS:[], peak:false},
+  {id:'phacelia',        langs:['de'],
+   name:{de:'Phacelia'},
+   emoji:'💜', base:8,  gddOpen:120, gddPeak:250, monthsN:[5,6,7],   monthsS:[], peak:false},
+  {id:'clover_de',       langs:['de'],
+   name:{de:'Klee'},
+   emoji:'🍀', base:10, gddOpen:220, gddPeak:420, monthsN:[5,6,7,8], monthsS:[], peak:true},
+  {id:'locust_de',       langs:['de'],
+   name:{de:'Robinie'},
+   emoji:'🌸', base:10, gddOpen:280, gddPeak:420, monthsN:[5,6],     monthsS:[], peak:true},
+  {id:'linden_de',       langs:['de'],
+   name:{de:'Linde'},
+   emoji:'🌳', base:10, gddOpen:450, gddPeak:600, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'buckwheat_de',    langs:['de'],
+   name:{de:'Buchweizen'},
+   emoji:'🌾', base:10, gddOpen:400, gddPeak:550, monthsN:[7,8,9],   monthsS:[], peak:false},
+  {id:'wildflower_de',   langs:['de'],
+   name:{de:'Wildblumen'},
+   emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
+
+  // ── 🇫🇷 法国 (fr) ─────────────────────────────────────────────────
+  {id:'dandelion_fr',    langs:['fr'],
+   name:{fr:'Pissenlit'},
+   emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
+  {id:'rapeseed_fr',     langs:['fr'],
+   name:{fr:'Colza'},
+   emoji:'🟡', base:5,  gddOpen:80,  gddPeak:180, monthsN:[4,5],     monthsS:[], peak:true},
+  {id:'locust_fr',       langs:['fr'],
+   name:{fr:'Robinier / Acacia'},
+   emoji:'🌸', base:10, gddOpen:280, gddPeak:420, monthsN:[5,6],     monthsS:[], peak:true},
+  {id:'clover_fr',       langs:['fr'],
+   name:{fr:'Trèfle'},
+   emoji:'🍀', base:10, gddOpen:200, gddPeak:400, monthsN:[5,6,7,8], monthsS:[], peak:true},
+  {id:'chestnut_fr',     langs:['fr'],
+   name:{fr:'Châtaignier'},
+   emoji:'🌰', base:10, gddOpen:400, gddPeak:580, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'linden_fr',       langs:['fr'],
+   name:{fr:'Tilleul'},
+   emoji:'🌳', base:10, gddOpen:450, gddPeak:600, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'lavender_fr',     langs:['fr'],
+   name:{fr:'Lavande'},
+   emoji:'💜', base:10, gddOpen:350, gddPeak:520, monthsN:[6,7,8],   monthsS:[], peak:true},
+  {id:'sunflower_fr',    langs:['fr'],
+   name:{fr:'Tournesol'},
+   emoji:'🌻', base:10, gddOpen:580, gddPeak:780, monthsN:[7,8],     monthsS:[], peak:true},
+  {id:'buckwheat_fr',    langs:['fr'],
+   name:{fr:'Sarrasin'},
+   emoji:'🌾', base:10, gddOpen:400, gddPeak:550, monthsN:[7,8,9],   monthsS:[], peak:false},
+  {id:'wildflower_fr',   langs:['fr'],
+   name:{fr:'Fleurs sauvages'},
+   emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
+
+  // ── 🇮🇹 意大利 (it) ────────────────────────────────────────────────
+  {id:'dandelion_it',    langs:['it'],
+   name:{it:'Tarassaco'},
+   emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
+  {id:'citrus_it',       langs:['it'],
+   name:{it:'Agrumi'},
+   emoji:'🍊', base:12, gddOpen:150, gddPeak:280, monthsN:[3,4,5],   monthsS:[], peak:true},
+  {id:'sulla',           langs:['it'],
+   name:{it:'Sulla'},
+   emoji:'🌸', base:10, gddOpen:180, gddPeak:320, monthsN:[4,5,6],   monthsS:[], peak:true},
+  {id:'locust_it',       langs:['it'],
+   name:{it:'Robinia / Acacia'},
+   emoji:'🌸', base:10, gddOpen:280, gddPeak:420, monthsN:[5,6],     monthsS:[], peak:true},
+  {id:'chestnut_it',     langs:['it'],
+   name:{it:'Castagno'},
+   emoji:'🌰', base:10, gddOpen:400, gddPeak:580, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'linden_it',       langs:['it'],
+   name:{it:'Tiglio'},
+   emoji:'🌳', base:10, gddOpen:450, gddPeak:600, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'lavender_it',     langs:['it'],
+   name:{it:'Lavanda'},
+   emoji:'💜', base:10, gddOpen:350, gddPeak:520, monthsN:[6,7,8],   monthsS:[], peak:true},
+  {id:'sunflower_it',    langs:['it'],
+   name:{it:'Girasole'},
+   emoji:'🌻', base:10, gddOpen:580, gddPeak:780, monthsN:[7,8],     monthsS:[], peak:true},
+  {id:'eucalyptus_it',   langs:['it'],
+   name:{it:'Eucalipto'},
+   emoji:'🌿', base:12, gddOpen:200, gddPeak:380, monthsN:[5,6,7,8,9], monthsS:[], peak:true},
+  {id:'wildflower_it',   langs:['it'],
+   name:{it:'Fiori selvatici'},
+   emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
+
+  // ── 🇧🇷 巴西 (pt) ─────────────────────────────────────────────────
+  {id:'eucalyptus_br',   langs:['pt'],
+   name:{pt:'Eucalipto'},
+   emoji:'🌿', base:12, gddOpen:100, gddPeak:250, monthsN:[1,2,3,4,5,6,7,8,9,10,11,12], monthsS:[1,2,3,4,5,6,7,8,9,10,11,12], peak:true},
+  {id:'orange_br',       langs:['pt'],
+   name:{pt:'Laranjeira'},
+   emoji:'🍊', base:12, gddOpen:80,  gddPeak:200, monthsN:[8,9,10],  monthsS:[8,9,10], peak:true},
+  {id:'coffee',          langs:['pt'],
+   name:{pt:'Café'},
+   emoji:'☕', base:15, gddOpen:120, gddPeak:260, monthsN:[9,10,11], monthsS:[9,10,11], peak:true},
+  {id:'bracatinga',      langs:['pt'],
+   name:{pt:'Bracatinga'},
+   emoji:'🌳', base:12, gddOpen:100, gddPeak:220, monthsN:[6,7,8],   monthsS:[6,7,8],  peak:true},
+  {id:'wildflower_br',   langs:['pt'],
+   name:{pt:'Flores silvestres'},
+   emoji:'🌺', base:10, gddOpen:80,  gddPeak:200, monthsN:[1,2,3,4,5,6,7,8,9,10,11,12], monthsS:[1,2,3,4,5,6,7,8,9,10,11,12], peak:false},
+
+  // ── 🇷🇴 罗马尼亚 (ro) ──────────────────────────────────────────────
+  {id:'dandelion_ro',    langs:['ro'],
+   name:{ro:'Păpădie'},
+   emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
+  {id:'locust_ro',       langs:['ro'],
+   name:{ro:'Salcâm'},
+   emoji:'🌸', base:10, gddOpen:280, gddPeak:420, monthsN:[5,6],     monthsS:[], peak:true},
+  {id:'clover_ro',       langs:['ro'],
+   name:{ro:'Trifoi'},
+   emoji:'🍀', base:10, gddOpen:200, gddPeak:400, monthsN:[5,6,7,8], monthsS:[], peak:true},
+  {id:'linden_ro',       langs:['ro'],
+   name:{ro:'Tei'},
+   emoji:'🌳', base:10, gddOpen:450, gddPeak:600, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'sunflower_ro',    langs:['ro'],
+   name:{ro:'Floarea-soarelui'},
+   emoji:'🌻', base:10, gddOpen:580, gddPeak:780, monthsN:[7,8],     monthsS:[], peak:true},
+  {id:'coriander_ro',    langs:['ro'],
+   name:{ro:'Coriandru'},
+   emoji:'🌿', base:8,  gddOpen:250, gddPeak:400, monthsN:[6,7],     monthsS:[], peak:false},
+  {id:'wildflower_ro',   langs:['ro'],
+   name:{ro:'Flori de câmp'},
+   emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
+
+  // ── 🇹🇷 土耳其 (tr) ────────────────────────────────────────────────
+  {id:'dandelion_tr',    langs:['tr'],
+   name:{tr:'Karahindiba'},
+   emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
+  {id:'citrus_tr',       langs:['tr'],
+   name:{tr:'Narenciye'},
+   emoji:'🍊', base:12, gddOpen:150, gddPeak:280, monthsN:[3,4,5],   monthsS:[], peak:true},
+  {id:'clover_tr',       langs:['tr'],
+   name:{tr:'Yonca'},
+   emoji:'🍀', base:10, gddOpen:200, gddPeak:400, monthsN:[5,6,7,8], monthsS:[], peak:true},
+  {id:'thyme',           langs:['tr'],
+   name:{tr:'Kekik'},
+   emoji:'🌿', base:10, gddOpen:300, gddPeak:480, monthsN:[5,6,7],   monthsS:[], peak:true},
+  {id:'linden_tr',       langs:['tr'],
+   name:{tr:'Ihlamur'},
+   emoji:'🌳', base:10, gddOpen:450, gddPeak:600, monthsN:[6,7],     monthsS:[], peak:true},
+  {id:'sunflower_tr',    langs:['tr'],
+   name:{tr:'Ayçiçeği'},
+   emoji:'🌻', base:10, gddOpen:580, gddPeak:780, monthsN:[7,8,9],   monthsS:[], peak:true},
+  {id:'pine_honey',      langs:['tr'],
+   name:{tr:'Çam balı'},
+   emoji:'🌲', base:12, gddOpen:400, gddPeak:600, monthsN:[6,7,8],   monthsS:[], peak:true},
+  {id:'cotton',          langs:['tr'],
+   name:{tr:'Pamuk'},
+   emoji:'🌸', base:15, gddOpen:500, gddPeak:700, monthsN:[7,8,9],   monthsS:[], peak:false},
+  {id:'wildflower_tr',   langs:['tr'],
+   name:{tr:'Yabani çiçekler'},
+   emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
+
+];
+let currentGDD = 0;          // 今年累计GDD
+let bloomForecast = [];       // 当前花期预报结果
+let bloomFeedback = {};       // 用户反馈校准 {plantId: offsetGDD}
+
+// 从localStorage读取用户反馈校准数据
+function loadBloomFeedback() {
+  try { bloomFeedback = JSON.parse(localStorage.getItem('bk_bloom_feedback')||'{}'); } catch(e){}
+}
+
+// 保存用户反馈
+function saveBloomFeedback(plantId, correct) {
+  if(correct) {
+    // 用户确认开花，不调整
+    bloomFeedback[plantId] = (bloomFeedback[plantId]||0);
+  } else {
+    // 用户说还没开，下次需要更多GDD才触发（+30）
+    bloomFeedback[plantId] = (bloomFeedback[plantId]||0) + 30;
+  }
+  try { localStorage.setItem('bk_bloom_feedback', JSON.stringify(bloomFeedback)); } catch(e){}
+  // 关闭弹窗
+  const modal = document.getElementById('bloom-feedback-modal');
+  if(modal) modal.remove();
+  showToast('Thanks for the feedback! 🌸');
+}
+
+// 判断是否南半球
+function isSouthernHemisphere(lat) { return lat < 0; }
+
+// 从Open-Meteo获取今年历史每日气温，计算GDD
+async function fetchGDDFromOpenMeteo(lat, lon) {
+  const today = new Date();
+  const startOfYear = today.getFullYear() + '-01-01';
+  const todayStr = today.toISOString().split('T')[0];
+  try {
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,temperature_2m_min&start_date=${startOfYear}&end_date=${todayStr}&timezone=auto`;
+    const res = await fetch(url);
+    const d = await res.json();
+    if(!d.daily) return null;
+    // 计算累计GDD（基准温度5°C，用于早春植物）
+    let gdd5=0, gdd10=0;
+    d.daily.temperature_2m_max.forEach((tmax,i)=>{
+      const tmin = d.daily.temperature_2m_min[i];
+      const avg = (tmax+tmin)/2;
+      gdd5  += Math.max(0, avg-5);
+      gdd10 += Math.max(0, avg-10);
+    });
+    return { gdd5: Math.round(gdd5), gdd10: Math.round(gdd10), days: d.daily.time.length };
+  } catch(e){ return null; }
+}
+
+// 主函数：计算花期预报
+async function computeBloomForecast(lat, lon) {
+  loadBloomFeedback();
+  const gddData = await fetchGDDFromOpenMeteo(lat, lon);
+  if(!gddData) return;
+
+  const month = new Date().getMonth() + 1;
+  const southern = isSouthernHemisphere(lat);
+  const lang = (typeof currentLang !== 'undefined' ? currentLang : 'en');
+  const results = [];
+
+  // 过滤：只显示当前语言对应的植物
+  const filtered = NECTAR_PLANTS.filter(p => p.langs.includes(lang));
+
+  filtered.forEach(plant => {
+    const months = southern ? plant.monthsS : plant.monthsN;
+    if(!months || !months.includes(month)) return; // 月份窗口过滤
+
+    const gdd = plant.base <= 7 ? gddData.gdd5 : gddData.gdd10;
+    const feedback = bloomFeedback[plant.id] || 0;
+    const adjustedOpen = plant.gddOpen + feedback;
+    const adjustedPeak = plant.gddPeak + feedback;
+
+    let status = null;
+    if(gdd >= adjustedPeak) status = 'peak';
+    else if(gdd >= adjustedOpen) status = 'blooming';
+    else if(gdd >= adjustedOpen * 0.75) status = 'soon';
+
+    if(status) {
+      // 本地化植物名称
+      const localName = (plant.name && plant.name[lang]) || plant.name[Object.keys(plant.name)[0]];
+      const progress = Math.min(100, Math.round((gdd - adjustedOpen) / (adjustedPeak - adjustedOpen) * 100));
+      results.push({ ...plant, localName, status, progress: Math.max(0, progress), gdd, adjustedOpen, adjustedPeak });
+    }
+  });
+
+  bloomForecast = results;
+  renderBloomForecast();
+  checkSuperAlert(results, lat, lon);
+}
+
+// 推送继箱提醒
+function checkSuperAlert(results, lat, lon) {
+  const peakSoon = results.filter(p => p.status === 'soon' && p.peak);
+  const peakNow  = results.filter(p => p.status === 'peak'  && p.peak);
+
+  if(peakSoon.length > 0 || peakNow.length > 0) {
+    const plant = peakNow[0] || peakSoon[0];
+    const msg = peakNow.length > 0
+      ? `🍯 ${plant.name} is at PEAK nectar flow! Is your super on?`
+      : `⚠️ ${plant.name} peak nectar flow coming soon! Prepare your super.`;
+
+    // 浏览器推送通知
+    if(Notification.permission === 'granted') {
+      new Notification('Beekeepy — Nectar Flow Alert 🍯', {
+        body: msg,
+        icon: '🐝'
+      });
+    }
+    // App内横幅
+    showSuperAlert(plant, peakNow.length > 0);
+  }
+}
+
+// 显示继箱提醒横幅
+function showSuperAlert(plant, isNow) {
+  let el = document.getElementById('super-alert-banner');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'super-alert-banner';
+    const ww = document.getElementById('weather-widget');
+    ww && ww.parentNode.insertBefore(el, ww.nextSibling);
+  }
+  const color = isNow ? '#E74C3C' : '#F39C12';
+  const bg    = isNow ? '#FDECEA' : '#FFF8E1';
+  el.innerHTML = `
+    <div style="background:${bg};border:1.5px solid ${color};border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+      <div style="font-size:24px">🍯</div>
+      <div style="flex:1">
+        <div style="font-weight:700;font-size:13px;color:${color}">${isNow?'PEAK NECTAR FLOW NOW':'NECTAR FLOW INCOMING'}</div>
+        <div style="font-size:12px;color:var(--text-2);margin:3px 0">${plant.emoji} ${plant.name} — ${isNow?'peak bloom active':'approaching peak bloom'}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">Is your Super (继箱) ready? 🪣</div>
+        <div style="display:flex;gap:6px;margin-top:8px">
+          <button onclick="this.closest('#super-alert-banner').remove()" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid ${color};background:${color};color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600">✅ Super is ready</button>
+          <button onclick="showPage('inspect',document.querySelectorAll('.nav-item')[1])" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">📋 Log inspection</button>
+        </div>
+      </div>
+    </div>`;
+}
+
+// 渲染花期预报卡片（首页天气下方）
+function renderBloomForecast() {
+  let el = document.getElementById('bloom-forecast-panel');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'bloom-forecast-panel';
+    const weatherEl = document.getElementById('weather-alerts-panel') || document.getElementById('weather-widget');
+    weatherEl && weatherEl.parentNode.insertBefore(el, weatherEl.nextSibling);
+  }
+  if(!bloomForecast.length) { el.innerHTML=''; return; }
+
+  const statusLabel = { peak:'🌸 Peak bloom', blooming:'🌱 Blooming', soon:'⏳ Coming soon' };
+  const statusColor = { peak:'var(--forest)', blooming:'var(--honey-dark)', soon:'var(--text-3)' };
+
+  el.innerHTML = `
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:14px 16px;margin-bottom:10px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:12px;display:flex;align-items:center;justify-content:space-between">
+        <span>🌸 Bloom Forecast</span>
+        <span style="font-size:10px;font-weight:400;color:var(--text-3)">GDD-based · tap to confirm</span>
+      </div>
+      ${bloomForecast.map(p=>`
+        <div style="display:flex;align-items:center;gap:10px;margin-bottom:10px" onclick="showBloomFeedback('${p.id}','${p.localName||p.id}','${p.emoji}')">
+          <div style="font-size:22px">${p.emoji}</div>
+          <div style="flex:1;min-width:0">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:3px">
+              <div style="font-weight:600;font-size:13px">${p.localName||p.id}</div>
+              <div style="font-size:11px;font-weight:600;color:${statusColor[p.status]}">${statusLabel[p.status]}</div>
+            </div>
+            <div style="height:5px;background:var(--border);border-radius:3px;overflow:hidden">
+              <div style="height:100%;width:${p.status==='peak'?100:p.progress}%;background:${p.status==='peak'?'var(--forest)':p.status==='blooming'?'var(--honey)':'var(--border-dark)'};border-radius:3px;transition:width 0.5s"></div>
+            </div>
+            <div style="font-size:10px;color:var(--text-3);margin-top:2px">GDD: ${p.gdd} / ${p.adjustedPeak} · tap to confirm ✓</div>
+          </div>
+        </div>`).join('')}
+    </div>`;
+}
+
+// 用户反馈弹窗
+function showBloomFeedback(plantId, plantName, emoji) {
+  const existing = document.getElementById('bloom-feedback-modal');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'bloom-feedback-modal';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:500;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:16px 16px 0 0;padding:24px 20px;width:100%;max-width:480px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:36px;margin-bottom:8px">${emoji}</div>
+        <div style="font-weight:700;font-size:15px">${plantName}</div>
+        <div style="font-size:13px;color:var(--text-2);margin-top:4px">We predicted this is blooming near you.<br>Is that correct?</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="saveBloomFeedback('${plantId}',true)" style="padding:13px;border-radius:var(--radius-sm);border:none;background:var(--forest);color:#fff;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">✅ Yes, blooming!</button>
+        <button onclick="saveBloomFeedback('${plantId}',false)" style="padding:13px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:14px;font-family:'DM Sans',sans-serif;cursor:pointer">❌ Not yet</button>
+      </div>
+      <button onclick="document.getElementById('bloom-feedback-modal').remove()" style="width:100%;margin-top:8px;padding:10px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;cursor:pointer">Skip</button>
+    </div>`;
+  document.body.appendChild(modal);
 }
 
 function getWeatherEmoji(condition){
@@ -4212,7 +4696,7 @@ function toggleVoice(){
     recognition.continuous=true;
     recognition.interimResults=true;
     // Match UI language
-    const langMap={en:'en-US',de:'de-DE',fr:'fr-FR',it:'it-IT',pt:'pt-BR',ro:'ro-RO',tr:'tr-TR'};
+    const langMap={en:'en-US','en-gb':'en-GB','en-au':'en-AU','en-nz':'en-NZ',de:'de-DE',fr:'fr-FR',it:'it-IT',pt:'pt-BR',ro:'ro-RO',tr:'tr-TR'};
     recognition.lang=langMap[currentLang]||'en-US';
     recognition.onstart=()=>{
       isRecording=true;

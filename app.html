@@ -356,13 +356,19 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="stat-row">
-    <div class="stat"><div class="stat-n" id="s-total">0</div><div class="stat-l" data-i18n="stat_hives">Hives</div></div>
-    <div class="stat forest"><div class="stat-n" id="s-healthy">0</div><div class="stat-l" data-i18n="stat_healthy">Healthy</div></div>
-    <div class="stat danger"><div class="stat-n" id="s-warn">0</div><div class="stat-l" data-i18n="stat_atrisk">At Risk</div></div>
+    <div class="stat" style="cursor:pointer" onclick="showPage('settings',null);setTimeout(()=>document.getElementById('hive-list-full')?.scrollIntoView({behavior:'smooth'}),200)"><div class="stat-n" id="s-total">0</div><div class="stat-l" data-i18n="stat_hives">Hives</div></div>
+    <div class="stat forest" style="cursor:pointer" onclick="filterHivesByHealth('healthy')"><div class="stat-n" id="s-healthy">0</div><div class="stat-l" data-i18n="stat_healthy">Healthy</div></div>
+    <div class="stat danger" style="cursor:pointer" onclick="filterHivesByHealth('atrisk')"><div class="stat-n" id="s-warn">0</div><div class="stat-l" data-i18n="stat_atrisk">At Risk</div></div>
   </div>
 
   <div class="card">
-    <div class="card-title"><span data-i18n="honey_harvest_season">Honey Harvest This Season</span></div>
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">
+      <div class="card-title" style="margin:0"><span data-i18n="honey_harvest_season">Honey Harvest This Season</span></div>
+      <div style="text-align:right">
+        <div id="season-total-honey" style="font-size:20px;font-weight:700;color:var(--honey-dark);line-height:1">0.0 lbs</div>
+        <div style="font-size:10px;color:var(--text-3)">this season</div>
+      </div>
+    </div>
     <div class="mini-chart" id="harvest-chart"></div>
     <div style="display:flex;justify-content:space-between;font-size:12px;color:var(--text-3)">
       <span id="total-honey">Honey: --</span>
@@ -2058,6 +2064,11 @@ function renderHome(){
   const tH=harvests.reduce((s,h)=>s+(h.honey_lbs||0),0),tW=harvests.reduce((s,h)=>s+(h.wax_oz||0),0);
   document.getElementById('total-honey').textContent=t('honey_stores')+': '+tH.toFixed(1)+' lbs';
   document.getElementById('total-wax').textContent=t('wax_lbl')+': '+tW.toFixed(1)+' oz';
+  // Season total (current year)
+  const thisYear=new Date().getFullYear();
+  const seasonHoney=harvests.filter(h=>h.harvest_date&&h.harvest_date.startsWith(thisYear)).reduce((s,h)=>s+(h.honey_lbs||0),0);
+  const stEl=document.getElementById('season-total-honey');
+  if(stEl)stEl.textContent=seasonHoney.toFixed(1)+' lbs';
   document.getElementById('apiary-summary').innerHTML=apiaries.map(a=>{
     const count=hives.filter(h=>h.apiary_id===a.id).length;
     const hasGps=a.gps&&a.gps.includes(',');
@@ -2069,9 +2080,42 @@ function renderHome(){
   treatments.forEach(tr=>logs.push({date:tr.start_date,hive:getHive(tr.hive_id)?.name,type:t('treatment_lbl'),note:tr.product,score:null,cat:'treat'}));
   harvests.forEach(h=>logs.push({date:h.harvest_date,hive:getHive(h.hive_id)?.name,type:t('harvest_lbl'),note:`${h.honey_lbs} lbs ${h.honey_type||''}`,score:null,cat:'harv'}));
   logs.sort((a,b)=>(b.date||'').localeCompare(a.date||''));
-  document.getElementById('home-timeline').innerHTML=logs.length===0
+  // Deduplicate: keep one per hive+type+date combo
+  const seen=new Set();
+  const dedupedLogs=logs.filter(l=>{
+    const key=`${l.hive}|${l.cat}|${l.date}`;
+    if(seen.has(key))return false;
+    seen.add(key);return true;
+  });
+  document.getElementById('home-timeline').innerHTML=dedupedLogs.length===0
     ?'<div class="empty" style="padding:16px">No activity yet</div>'
-    :logs.slice(0,8).map(l=>`<div class="tl-item"><div class="tl-hive">${l.hive||'—'} <span class="badge ${l.cat==='harv'?'b-honey':l.cat==='treat'?'b-sky':l.score>=60?'b-green':l.score>=35?'b-amber':'b-red'}">${l.type}</span>${l.score!=null?`<span style="float:right;font-size:12px;color:${scoreColor(l.score)};font-weight:600">${l.score}</span>`:''}</div><div class="tl-note">${l.note||''}</div><div class="tl-date-s">${l.date||''}</div></div>`).join('');
+    :dedupedLogs.slice(0,8).map(l=>`<div class="tl-item"><div class="tl-hive">${l.hive||'—'} <span class="badge ${l.cat==='harv'?'b-honey':l.cat==='treat'?'b-sky':l.score>=60?'b-green':l.score>=35?'b-amber':'b-red'}">${l.type}</span>${l.score!=null?`<span style="float:right;font-size:12px;color:${scoreColor(l.score)};font-weight:600">${l.score}</span>`:''}</div><div class="tl-note">${l.note||''}</div><div class="tl-date-s">${l.date||''}</div></div>`).join('');
+}
+
+
+function filterHivesByHealth(type){
+  // Scroll to hive grid and highlight matching hives
+  const grid = document.getElementById('home-hive-grid');
+  if(grid) grid.scrollIntoView({behavior:'smooth'});
+  setTimeout(()=>{
+    document.querySelectorAll('#home-hive-grid .hive-card').forEach(card=>{
+      const hiveId = card.id.replace('hcard-','');
+      const li = lastInsp(hiveId);
+      const sc = li?.score??null;
+      const isHealthy = sc!==null && sc>=60;
+      const isAtRisk = sc===null || sc<60;
+      const match = type==='healthy'?isHealthy:isAtRisk;
+      card.style.opacity = match ? '1' : '0.35';
+      card.style.transform = match ? 'scale(1)' : 'scale(0.97)';
+      card.style.transition = 'all 0.3s';
+    });
+    // Reset after 3 seconds
+    setTimeout(()=>{
+      document.querySelectorAll('#home-hive-grid .hive-card').forEach(card=>{
+        card.style.opacity='1';card.style.transform='scale(1)';
+      });
+    },3000);
+  },400);
 }
 
 // HIVE GRID 
@@ -2088,7 +2132,8 @@ function renderHiveGrid(containerId,selectable=false){
       <div class="hive-name">${h.name}</div>
       <div class="hive-apiary">${getApiary(h.apiary_id)?.name||''}</div>
       <div class="score-row">${[1,2,3,4,5].map(i=>`<div class="pip ${sc!==null&&sc/10>=i*2?cls:''}"></div>`).join('')}</div>
-      <div class="hive-meta">${sc!==null?`Score: ${sc}`:''} ${li?'· '+li.date:''}</div>
+      <div class="hive-meta">${sc!==null?`Score: ${sc}`:''}</div>
+      <div style="font-size:10px;color:${days===999?'var(--danger)':days>=threshold?'var(--amber)':'var(--text-3)'};margin-top:2px">${li?(days===0?'Today':days===1?'Yesterday':days+' days ago'):'Never inspected'}</div>
       ${photoCount>0?`<div style="font-size:10px;color:var(--text-3);margin-top:3px">📷 ${photoCount} photo${photoCount!==1?'s':''}</div>`:''}
     </div>`;
   }).join('');

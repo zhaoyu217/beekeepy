@@ -21,6 +21,21 @@
   --text:#1A1A14;--text-2:#5C5847;--text-3:#9A9280;
   --radius:12px;--radius-sm:8px;
 }
+[data-theme="bright"]{
+  --honey:#C07000;--honey-light:#FFE9B0;--honey-dark:#7A4500;
+  --forest:#1A3A08;--forest-mid:#2D6015;--forest-light:#C8E8B0;
+  --amber:#B07000;--danger:#A00000;--danger-light:#FFD0D0;
+  --sky:#0050A0;--sky-light:#C0D8F8;--purple:#500080;--purple-light:#E8C8FF;
+  --bg:#FFFFFF;--surface:#FFFFFF;--border:#808080;--border-dark:#404040;
+  --text:#000000;--text-2:#202020;--text-3:#404040;
+  --radius:12px;--radius-sm:8px;
+  font-size:15px;
+}
+[data-theme="bright"] body{font-size:15px}
+[data-theme="bright"] .card{border-width:2px}
+[data-theme="bright"] .btn{font-weight:700;border-width:2px}
+[data-theme="bright"] .nav-item{font-size:11px;font-weight:600}
+[data-theme="bright"] input,[data-theme="bright"] select,[data-theme="bright"] textarea{border:2px solid #404040!important;font-size:15px!important}
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
 body{font-family:'DM Sans',sans-serif;background:var(--bg);color:var(--text);font-size:14px;line-height:1.5;min-height:100vh;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
 h1,h2,h3{font-family:'DM Serif Display',serif}
@@ -329,6 +344,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <button class="icon-btn" id="lang-btn" onclick="toggleLangMenu()" style="font-size:12px;font-weight:700;letter-spacing:-0.5px" title="Language">EN</button>
     <div class="user-avatar" id="user-avatar" onclick="showPage('account',null)">?</div>
+    <button class="icon-btn" id="dark-toggle-btn" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
     <button class="icon-btn" onclick="showPage('settings',null)">⚙️</button>
   </div>
 </div>
@@ -3776,6 +3792,32 @@ function stopVoice(){
 
 
 
+
+
+// ============================================================
+// BRIGHT MODE (High Contrast for Outdoor Use)
+// ============================================================
+let brightMode = localStorage.getItem('bk_bright') === '1';
+
+function applyBrightMode(){
+  document.documentElement.setAttribute('data-theme', brightMode ? 'bright' : '');
+  const btn = document.getElementById('dark-toggle-btn');
+  if(btn){
+    btn.textContent = brightMode ? '🔆' : '☀️';
+    btn.title = brightMode ? 'Normal mode' : 'Bright mode (outdoor)';
+    btn.style.background = brightMode ? 'var(--honey-light)' : '';
+    btn.style.borderColor = brightMode ? 'var(--honey)' : '';
+  }
+  localStorage.setItem('bk_bright', brightMode ? '1' : '0');
+}
+
+function toggleDarkMode(){
+  brightMode = !brightMode;
+  applyBrightMode();
+}
+
+// Apply on load
+applyBrightMode();
 
 // ============================================================
 // BADGES & ACHIEVEMENTS SYSTEM

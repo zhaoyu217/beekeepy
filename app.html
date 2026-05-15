@@ -1781,6 +1781,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 // State 
 let currentUser = null;
 let apiaries=[], hives=[], queens=[], inspections=[], treatments=[], harvests=[], photos=[], reminders=[];
+let queenHistory={}; // {hive_id: [{race,introduced_date,replaced_date,...}]}
 let selectedHiveId=null, selectedQueenColor='white';
 let currentWeather=null, pendingPhotos=[];
 let currentDetailHiveId=null;
@@ -1861,6 +1862,8 @@ async function loadAll() {
   await loadOfflineQueue();
   renderHome();
   checkShowOnboarding();
+  // Load queen history for all hives
+  hives.forEach(h=>loadQueenHistory(h.id));
   await checkAndAwardBadges();
 }
 
@@ -3624,6 +3627,73 @@ function renderInsights(){
       html+=`</div>`;
     }
     html+=`</div>`;
+
+    // 3b. QUARTERLY COMPARISON
+    const allYears=[...new Set(harvests.map(hv=>hv.harvest_date?.slice(0,4)).filter(Boolean))].sort();
+    if(allYears.length>0){
+      html+=`<div class="section-hd">📊 Quarterly Honey Comparison</div><div class="card">
+        <div class="card-title">Q1–Q4 Production by Year (lbs)</div>`;
+      const qLabels=['Q1 Jan–Mar','Q2 Apr–Jun','Q3 Jul–Sep','Q4 Oct–Dec'];
+      const qColors=['#AED6F1','#85C1E9','#5DADE2','#2E86C1'];
+      // Build data: {year: [q1,q2,q3,q4]}
+      const qData={};
+      allYears.forEach(y=>{ qData[y]=[0,0,0,0]; });
+      harvests.forEach(hv=>{
+        if(!hv.harvest_date)return;
+        const y=hv.harvest_date.slice(0,4);
+        const m=parseInt(hv.harvest_date.slice(5,7))-1; // 0-11
+        const q=Math.floor(m/3); // 0-3
+        if(qData[y])qData[y][q]+=(hv.honey_lbs||0);
+      });
+      const maxQ=Math.max(...Object.values(qData).flat(),1);
+      const barW=Math.min(44, Math.floor(160/Math.max(allYears.length,1)));
+
+      // Grouped bar chart
+      html+=`<div style="display:flex;gap:16px;align-items:flex-end;height:100px;margin-bottom:8px;padding:0 4px">`;
+      allYears.forEach(y=>{
+        html+=`<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">
+          <div style="display:flex;gap:2px;align-items:flex-end;height:80px">`;
+        qData[y].forEach((val,qi)=>{
+          const h=Math.max(val>0?Math.round((val/maxQ)*72):0, val>0?4:0);
+          html+=`<div title="${qLabels[qi]}: ${val.toFixed(1)} lbs" style="width:${barW}px;height:${h}px;background:${qColors[qi]};border-radius:2px 2px 0 0;transition:height 0.5s;flex-shrink:0"></div>`;
+        });
+        html+=`</div>
+          <div style="font-size:10px;color:var(--text-3);font-weight:600">${y}</div>
+          <div style="font-size:10px;color:var(--honey-dark);font-weight:700">${qData[y].reduce((a,b)=>a+b,0).toFixed(1)}</div>
+        </div>`;
+      });
+      html+=`</div>`;
+
+      // Legend
+      html+=`<div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:4px">`;
+      qLabels.forEach((l,i)=>{
+        html+=`<div style="display:flex;align-items:center;gap:4px">
+          <div style="width:10px;height:10px;border-radius:2px;background:${qColors[i]}"></div>
+          <span style="font-size:10px;color:var(--text-3)">${l}</span>
+        </div>`;
+      });
+      html+=`</div>`;
+
+      // Quarterly table
+      if(allYears.length>0){
+        html+=`<div style="margin-top:12px;overflow-x:auto"><table style="width:100%;font-size:11px;border-collapse:collapse">
+          <tr style="color:var(--text-3);font-weight:600">
+            <td style="padding:4px 6px">Year</td>
+            ${qLabels.map(q=>`<td style="padding:4px 6px;text-align:right">${q.slice(0,2)}</td>`).join('')}
+            <td style="padding:4px 6px;text-align:right;color:var(--honey-dark)">Total</td>
+          </tr>`;
+        allYears.forEach(y=>{
+          const total=qData[y].reduce((a,b)=>a+b,0);
+          html+=`<tr style="border-top:1px solid var(--border)">
+            <td style="padding:4px 6px;font-weight:600;color:var(--text)">${y}</td>
+            ${qData[y].map(v=>`<td style="padding:4px 6px;text-align:right;color:var(--text-2)">${v>0?v.toFixed(1):'—'}</td>`).join('')}
+            <td style="padding:4px 6px;text-align:right;font-weight:700;color:var(--honey-dark)">${total.toFixed(1)}</td>
+          </tr>`;
+        });
+        html+=`</table></div>`;
+      }
+      html+=`</div>`;
+    }
   }
 
   //  4. INSPECTION FREQUENCY 
@@ -4086,9 +4156,26 @@ async function saveQueen(){
   const record={user_id:currentUser.id,hive_id:hiveId,color:selectedQueenColor,source:document.getElementById('qm-source').value,race:document.getElementById('qm-race').value,introduced_date:document.getElementById('qm-date').value,note:document.getElementById('qm-note').value};
   const existing=queens.find(q=>q.hive_id===hiveId);
   let data,error;
-  if(existing){({data,error}=await sb.from('queens').update(record).eq('id',existing.id).select().single());if(!error){const idx=queens.findIndex(q=>q.id===existing.id);queens[idx]=data;}}
-  else{({data,error}=await sb.from('queens').insert(record).select().single());if(!error)queens.push(data);}
+  if(existing){
+    // Archive old queen to history before replacing
+    const replacedDate=document.getElementById('qm-date').value;
+    const historyEntry={
+      hive_id:hiveId, user_id:currentUser.id,
+      race:existing.race||'Unknown', source:existing.source||'',
+      color:existing.color||'', introduced_date:existing.introduced_date||'',
+      replaced_date:replacedDate, note:existing.note||''
+    };
+    // Save to queen_history table (create if needed)
+    await sb.from('queen_history').insert(historyEntry).then(()=>{});
+    ({data,error}=await sb.from('queens').update(record).eq('id',existing.id).select().single());
+    if(!error){const idx=queens.findIndex(q=>q.id===existing.id);queens[idx]=data;}
+  } else {
+    ({data,error}=await sb.from('queens').insert(record).select().single());
+    if(!error)queens.push(data);
+  }
   if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+  // Refresh queen history cache
+  await loadQueenHistory(hiveId);
   setSyncing('saved');closeModal('modal-queen');renderQueens();showToast(t('toast_queen_saved'));
 }
 
@@ -5017,16 +5104,60 @@ function queenAge(d){
   if(days<365)return{text:Math.floor(days/30)+' months old',old:false};
   return{text:(days/365).toFixed(1)+' years old',old:days>=730};
 }
+async function loadQueenHistory(hiveId){
+  try {
+    const {data}=await sb.from('queen_history').select('*').eq('hive_id',hiveId).order('replaced_date',{ascending:false});
+    if(data) queenHistory[hiveId]=data;
+  } catch(e){}
+}
+
 function queenTimeline(hiveId){
   const insps=hiveInspections(hiveId).slice(0,6).reverse();
-  if(!insps.length)return'';
-  const dots=insps.map(i=>{
-    const s=i.queen_seen?'seen':i.eggs_present?'eggs':'missing';
-    const col={seen:'var(--forest-mid)',eggs:'var(--amber)',missing:'var(--danger)'}[s];
-    const lbl={seen:'👑',eggs:'🥚',missing:'❓'}[s];
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:26px;height:26px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:13px">'+lbl+'</div><div style="font-size:9px;color:var(--text-3)">'+(i.date||'').slice(5)+'</div></div>';
-  }).join('<div style="flex:1;height:2px;background:var(--border);margin-bottom:14px"></div>');
-  return '<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)"><div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Queen History</div><div style="display:flex;align-items:flex-end;gap:2px">'+dots+'</div><div style="font-size:10px;color:var(--text-3);margin-top:6px">👑 Seen &nbsp; 🥚 Eggs only &nbsp; ❓ Not confirmed</div></div>';
+  const history=queenHistory[hiveId]||[];
+
+  let html='';
+
+  // Queen replacement history
+  if(history.length>0){
+    html+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">👑 Queen Replacement History</div>`;
+    history.forEach((h,i)=>{
+      const duration=h.introduced_date&&h.replaced_date
+        ? Math.round((new Date(h.replaced_date)-new Date(h.introduced_date))/86400000)
+        : null;
+      html+=`<div style="display:flex;gap:10px;margin-bottom:8px;padding:8px;background:var(--bg);border-radius:var(--radius-sm);border-left:3px solid ${queenColorHex(h.color)||'var(--honey)'}">
+        <div style="font-size:20px">👑</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:12px">${h.race||'Unknown'} · ${h.source||'—'}</div>
+          <div style="font-size:11px;color:var(--text-2)">
+            Introduced: ${h.introduced_date||'—'}
+            ${h.replaced_date?` → Replaced: ${h.replaced_date}`:''}
+            ${duration?` <span style="color:var(--text-3)">(${Math.floor(duration/30)}mo)</span>`:''}
+          </div>
+          ${h.note?`<div style="font-size:11px;color:var(--text-3);margin-top:2px">${h.note}</div>`:''}
+        </div>
+        <div style="font-size:10px;color:var(--text-3);white-space:nowrap">#${history.length-i}</div>
+      </div>`;
+    });
+    html+=`</div>`;
+  }
+
+  // Inspection queen status timeline
+  if(insps.length>0){
+    const dots=insps.map(i=>{
+      const s=i.queen_seen?'seen':i.eggs_present?'eggs':'missing';
+      const col={seen:'var(--forest-mid)',eggs:'var(--amber)',missing:'var(--danger)'}[s];
+      const lbl={seen:'👑',eggs:'🥚',missing:'❓'}[s];
+      return '<div style="display:flex;flex-direction:column;align-items:center;gap:2px"><div style="width:26px;height:26px;border-radius:50%;background:'+col+';display:flex;align-items:center;justify-content:center;font-size:13px">'+lbl+'</div><div style="font-size:9px;color:var(--text-3)">'+(i.date||'').slice(5)+'</div></div>';
+    }).join('<div style="flex:1;height:2px;background:var(--border);margin-bottom:14px"></div>');
+    html+=`<div style="margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">
+      <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Queen Status per Inspection</div>
+      <div style="display:flex;align-items:flex-end;gap:2px">${dots}</div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:6px">👑 Seen &nbsp; 🥚 Eggs only &nbsp; ❓ Not confirmed</div>
+    </div>`;
+  }
+
+  return html;
 }
 
 // MAP 

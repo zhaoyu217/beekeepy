@@ -576,6 +576,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <h2 id="hive-detail-name" style="font-size:18px;flex:1"></h2>
     <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 Export PDF</button>
     <button class="btn-sm" onclick="showHiveQR()" style="margin-top:0;padding:6px 12px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🏷️ Label</button>
+    <button onclick="confirmDeleteHive(currentDetailHiveId)" style="margin-top:0;padding:6px 10px;background:var(--danger-light);color:var(--danger);border:1.5px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;white-space:nowrap">🗑</button>
   </div>
 
   <!-- AI Analysis for this hive -->
@@ -2358,7 +2359,7 @@ function renderInsights(){
 }
 function renderSettings(){
   document.getElementById('apiary-list-full').innerHTML=apiaries.map(a=>`<div class="apiary-item"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:12px;color:var(--text-3)">${a.location||''}${a.gps?' · GPS: '+a.gps:''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No apiaries yet</div>';
-  document.getElementById('hive-list-full').innerHTML=hives.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div><div style="font-weight:600">${h.name} <span class="badge b-honey">${getApiary(h.apiary_id)?.name||''}</span></div><div style="font-size:12px;color:var(--text-3)">${h.type||''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hives yet</div>';
+  document.getElementById('hive-list-full').innerHTML=hives.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600">${h.name} <span class="badge b-honey">${getApiary(h.apiary_id)?.name||''}</span></div><div style="font-size:12px;color:var(--text-3)">${h.type||''}</div></div><button onclick="confirmDeleteHive('${h.id}')" style="padding:5px 9px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;flex-shrink:0;margin-left:8px">🗑</button></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hives yet</div>';
   document.getElementById('equipment-section').innerHTML='<div style="font-size:13px;color:var(--text-3)">Equipment tracking coming soon</div>';
 }
 
@@ -2655,6 +2656,51 @@ function openModal(id){
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 
 // EXPORT 
+
+function confirmDeleteHive(hiveId){
+  const h=getHive(hiveId);if(!h)return;
+  const inspecCount=inspections.filter(i=>i.hive_id===hiveId).length;
+  const modal=document.createElement('div');
+  modal.className='modal-bg';modal.id='modal-delete-hive';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`
+    <div class="modal" style="max-width:320px;padding:24px">
+      <div style="text-align:center;margin-bottom:16px">
+        <div style="font-size:32px;margin-bottom:8px">🗑️</div>
+        <div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Delete "${h.name}"?</div>
+        <div style="font-size:13px;color:var(--text-2)">This will permanently delete this hive${inspecCount>0?' and its '+inspecCount+' inspection record'+(inspecCount>1?'s':''):''}. This cannot be undone.</div>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="document.getElementById('modal-delete-hive').remove()" class="btn btn-outline" style="margin-top:0">Cancel</button>
+        <button onclick="deleteHive('${hiveId}')" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500">Delete</button>
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+async function deleteHive(hiveId){
+  document.getElementById('modal-delete-hive')?.remove();
+  setSyncing('syncing');
+  await sb.from('inspections').delete().eq('hive_id',hiveId);
+  await sb.from('inspection_reminders').delete().eq('hive_id',hiveId);
+  await sb.from('treatments').delete().eq('hive_id',hiveId);
+  await sb.from('harvests').delete().eq('hive_id',hiveId);
+  await sb.from('queens').delete().eq('hive_id',hiveId);
+  const{error}=await sb.from('hives').delete().eq('id',hiveId);
+  if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
+  hives=hives.filter(h=>h.id!==hiveId);
+  inspections=inspections.filter(i=>i.hive_id!==hiveId);
+  treatments=treatments.filter(t=>t.hive_id!==hiveId);
+  harvests=harvests.filter(h=>h.hive_id!==hiveId);
+  queens=queens.filter(q=>q.hive_id!==hiveId);
+  setSyncing('saved');
+  showToast('🗑 Hive deleted','success');
+  if(document.getElementById('pg-hive-detail').classList.contains('active')){
+    showPage('home',document.querySelector('.nav-item'));
+  }
+  renderHome();renderSettings();
+}
+
 function exportData(){
   const data={apiaries,hives,queens,inspections,treatments,harvests,photos:photos.map(p=>({...p,public_url:p.public_url})),exportedAt:new Date().toISOString(),user:currentUser.email};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});

@@ -734,8 +734,171 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <button class="nav-item" onclick="showPage('harvest',this)"><span class="ni">🍯</span><span><span data-i18n="nav_harvest">Harvest</span></span><div class="nav-pip"></div></button>
   <button class="nav-item" onclick="showPage('insights',this)"><span class="ni">📊</span><span><span data-i18n="nav_insights">Insights</span></span><div class="nav-pip"></div></button>
   <button class="nav-item" onclick="showPage('reminders',this)"><span class="ni">🔔</span><span><span data-i18n="nav_remind">Remind</span></span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('community',this)"><span class="ni">🌐</span><span>Community</span><div class="nav-pip"></div></button>
 </nav>
 
+
+<!-- ===== COMMUNITY ===== -->
+<div id="pg-community" class="page">
+<div class="scroll-content" style="padding:0">
+
+  <!-- Header -->
+  <div style="padding:14px 16px 0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+      <div>
+        <div style="font-size:16px;font-weight:600">🌐 Community</div>
+        <div style="font-size:11px;color:var(--text-3)">Beekeepers helping beekeepers</div>
+      </div>
+      <button onclick="openNewPostModal()" style="padding:7px 14px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500">+ Post</button>
+    </div>
+    <!-- Tabs -->
+    <div style="display:flex;gap:0;border-bottom:none">
+      <button onclick="setCommunityTab('clinic',this)" id="ctab-clinic" class="ctab ctab-active" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--honey);font-weight:600;border-bottom:2px solid var(--honey)">🩺 Clinic</button>
+      <button onclick="setCommunityTab('showcase',this)" id="ctab-showcase" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent">🐝 Showcase</button>
+      <button onclick="setCommunityTab('map',this)" id="ctab-map" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent">🗺️ Map</button>
+      <button onclick="setCommunityTab('local',this)" id="ctab-local" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent">📍 Local</button>
+    </div>
+  </div>
+
+  <!-- Tab content -->
+  <div id="community-content" style="padding:12px 16px"></div>
+
+  <!-- Map tab special container -->
+  <div id="community-map-wrap" style="display:none">
+    <div id="community-map" style="height:300px"></div>
+    <div style="padding:12px 16px" id="community-map-list"></div>
+  </div>
+
+</div>
+</div>
+
+<!-- New Post Modal -->
+<div class="modal-bg" id="modal-community-post">
+  <div class="modal">
+    <div class="modal-title">
+      <h2 style="font-size:16px" id="comm-modal-title">New Post</h2>
+      <button class="close-btn" onclick="closeModal('modal-community-post')">✕</button>
+    </div>
+
+    <div id="comm-category-row" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
+      <button onclick="setPostCategory('clinic',this)" class="comm-cat-btn active-cat" style="padding:8px;border-radius:var(--radius-sm);border:2px solid var(--honey);background:var(--honey-light);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--honey-dark);font-weight:600">🩺 Clinic</button>
+      <button onclick="setPostCategory('showcase',this)" class="comm-cat-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">🐝 Showcase</button>
+      <button onclick="setPostCategory('map',this)" class="comm-cat-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">🗺️ Forage Map</button>
+      <button onclick="setPostCategory('local',this)" class="comm-cat-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">📍 Local Group</button>
+    </div>
+
+    <div class="form-group">
+      <label class="form-label">Title</label>
+      <input type="text" id="comm-title" placeholder="e.g. Is this Varroa? Need help!">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Description</label>
+      <textarea rows="3" id="comm-content" placeholder="Describe your question or post..."></textarea>
+    </div>
+
+    <!-- Attach hive data (Clinic only) -->
+    <div class="form-group" id="comm-hive-attach-field">
+      <label class="form-label">Attach hive data (optional)</label>
+      <select id="comm-attach-hive">
+        <option value="">— Don't attach —</option>
+      </select>
+      <div id="comm-hive-preview" style="display:none;background:var(--honey-light);border-radius:var(--radius-sm);padding:8px 10px;margin-top:6px;font-size:12px;color:var(--honey-dark)"></div>
+    </div>
+
+    <!-- Local group selector -->
+    <div class="form-group" id="comm-local-group-field" style="display:none">
+      <label class="form-label">Local Group</label>
+      <select id="comm-local-group">
+        <option>California, USA</option><option>Texas, USA</option><option>Florida, USA</option>
+        <option>New York, USA</option><option>Pacific Northwest, USA</option>
+        <option>Midwest, USA</option><option>Southeast, USA</option>
+        <option>Ontario, Canada</option><option>Quebec, Canada</option>
+        <option>New South Wales, Australia</option><option>Victoria, Australia</option>
+        <option>Queensland, Australia</option><option>Bavaria, Germany</option>
+        <option>Île-de-France, France</option><option>Tuscany, Italy</option>
+        <option>São Paulo, Brazil</option><option>Other</option>
+      </select>
+    </div>
+
+    <!-- Photo upload -->
+    <div class="form-group">
+      <label class="form-label">Photo (optional)</label>
+      <div style="display:flex;gap:8px;align-items:center">
+        <button onclick="document.getElementById('comm-photo-input').click()" style="padding:8px 14px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">📷 Choose photo</button>
+        <span id="comm-photo-name" style="font-size:12px;color:var(--text-3)">No photo selected</span>
+      </div>
+      <input type="file" id="comm-photo-input" accept="image/*" style="display:none" onchange="handleCommPhoto(this)">
+      <img id="comm-photo-preview" style="display:none;width:100%;max-height:160px;object-fit:cover;border-radius:var(--radius-sm);margin-top:8px">
+    </div>
+
+    <button class="btn btn-primary" onclick="submitCommunityPost()">Post to Community</button>
+  </div>
+</div>
+
+<!-- Post Detail Modal -->
+<div class="modal-bg" id="modal-comm-detail" onclick="if(event.target===this)closeModal('modal-comm-detail')">
+  <div class="modal" style="max-height:80vh;overflow-y:auto">
+    <div class="modal-title">
+      <h2 style="font-size:15px" id="comm-detail-title">Post</h2>
+      <button class="close-btn" onclick="closeModal('modal-comm-detail')">✕</button>
+    </div>
+    <div id="comm-detail-body"></div>
+    <div style="border-top:1px solid var(--border);padding-top:12px;margin-top:12px">
+      <div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px">Replies</div>
+      <div id="comm-replies-list"></div>
+      <div style="display:flex;gap:8px;margin-top:10px">
+        <input type="text" id="comm-reply-input" placeholder="Write a reply..." style="flex:1">
+        <button onclick="submitReply()" style="padding:8px 14px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif">Send</button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- Forage Map Modal (from map tab) -->
+<div class="modal-bg" id="modal-formap">
+  <div class="modal">
+    <div class="modal-title">
+      <h2 style="font-size:16px">Add Map Report</h2>
+      <button class="close-btn" onclick="closeModal('modal-formap')">✕</button>
+    </div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:14px">
+      <button onclick="setMarkerType('forage',this)" id="mtype-forage" style="padding:10px;border-radius:var(--radius-sm);border:2px solid var(--honey);background:var(--honey-light);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;font-weight:500;color:var(--honey-dark)">🌸 Forage Source</button>
+      <button onclick="setMarkerType('alert',this)" id="mtype-alert" style="padding:10px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:13px;color:var(--text-2)">⚠️ Pesticide Alert</button>
+    </div>
+    <div id="forage-fields">
+      <div class="form-group"><label class="form-label">Plant type</label>
+        <select id="fm-plant"><option>Clover</option><option>Alfalfa</option><option>Wildflower</option><option>Sunflower</option><option>Lavender</option><option>Apple Blossom</option><option>Dandelion</option><option>Buckwheat</option><option>Basswood / Linden</option><option>Black Locust</option><option>Goldenrod</option><option>Aster</option><option>Other</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Bloom status</label>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:6px">
+          <button onclick="setBloom('early',this)" class="bloom-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">🌱 Early bloom</button>
+          <button onclick="setBloom('peak',this)" class="bloom-btn" style="padding:8px;border-radius:var(--radius-sm);border:2px solid var(--forest);background:var(--forest-light);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--forest);font-weight:600">🌸 Peak bloom</button>
+          <button onclick="setBloom('late',this)" class="bloom-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">🍂 Late bloom</button>
+          <button onclick="setBloom('none',this)" class="bloom-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">❌ No longer blooming</button>
+        </div>
+      </div>
+    </div>
+    <div id="alert-fields" style="display:none">
+      <div class="form-group"><label class="form-label">Severity</label>
+        <select id="fm-severity"><option value="low">Low — minor concern</option><option value="medium" selected>Medium — avoid area</option><option value="high">High — immediate danger</option></select>
+      </div>
+      <div class="form-group"><label class="form-label">Description</label>
+        <textarea rows="2" id="fm-desc" placeholder="e.g. Crop spraying observed, dead bees found..."></textarea>
+      </div>
+    </div>
+    <div class="form-group"><label class="form-label">Notes (optional)</label>
+      <textarea rows="2" id="fm-notes" placeholder="Additional details..."></textarea>
+    </div>
+    <div class="form-group" style="display:flex;align-items:center;justify-content:space-between">
+      <label class="form-label" style="margin:0">Post anonymously</label>
+      <button class="tog" id="tog-anon" onclick="this.classList.toggle('on')"></button>
+    </div>
+    <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--honey-dark)">
+      📍 Tap on the map to place marker, or will use your GPS location.
+    </div>
+    <button class="btn btn-primary" onclick="saveForageMarker()">Submit Report</button>
+  </div>
+</div>
 </div><!-- shell -->
 
 <!-- Language Menu -->
@@ -1374,6 +1537,7 @@ function setLang(lang){
     else if(id==='queens')renderQueens();
     else if(id==='insights')renderInsights();
     else if(id==='reminders')renderReminderSettings();
+    else if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
     else if(id==='settings')renderSettings();
     else if(id==='treatment'){renderTreatments();}
     else if(id==='harvest'){renderHarvests();}
@@ -2517,6 +2681,7 @@ function showPage(id,btn){
   if(id==='settings'){populateHiveApiary();renderSettings();}
   if(id==='account')renderAccount();
   if(id==='reminders')renderReminderSettings();
+  if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
   if(id==='inspect'){if(batchMode)toggleBatchMode();renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
 }
 
@@ -3591,6 +3756,548 @@ function stopVoice(){
   if(st){st.textContent='Done';setTimeout(()=>st.textContent='',2000);}
 }
 
+
+
+
+// ============================================================
+// COMMUNITY
+// ============================================================
+let communityPosts=[], communityTab='clinic', currentPostId=null;
+let commPhotoFile=null, commPhotoUrl=null, postCategory='clinic';
+let communityMapInited=false, communityMapObj=null, commMapLayers=[];
+
+function setCommunityTab(tab, btn){
+  communityTab=tab;
+  document.querySelectorAll('.ctab').forEach(b=>{
+    b.style.color='var(--text-3)';b.style.borderBottom='2px solid transparent';b.style.fontWeight='';
+  });
+  btn.style.color='var(--honey)';btn.style.borderBottom='2px solid var(--honey)';btn.style.fontWeight='600';
+  const mapWrap=document.getElementById('community-map-wrap');
+  const content=document.getElementById('community-content');
+  if(tab==='map'){
+    mapWrap.style.display='block';content.style.display='none';
+    initCommunityMap();loadForageData();
+  } else {
+    mapWrap.style.display='none';content.style.display='block';
+    renderCommunityPosts();
+  }
+}
+
+function setPostCategory(cat, btn){
+  postCategory=cat;
+  document.querySelectorAll('.comm-cat-btn').forEach(b=>{
+    b.style.border='1px solid var(--border)';b.style.background='var(--surface)';b.style.color='var(--text-2)';b.style.fontWeight='';
+  });
+  btn.style.border='2px solid var(--honey)';btn.style.background='var(--honey-light)';btn.style.color='var(--honey-dark)';btn.style.fontWeight='600';
+  document.getElementById('comm-local-group-field').style.display=cat==='local'?'block':'none';
+}
+
+function openNewPostModal(){
+  postCategory='clinic';commPhotoFile=null;commPhotoUrl=null;
+  document.getElementById('comm-title').value='';
+  document.getElementById('comm-content').value='';
+  document.getElementById('comm-photo-name').textContent='No photo selected';
+  document.getElementById('comm-photo-preview').style.display='none';
+  document.getElementById('comm-local-group-field').style.display='none';
+  document.querySelectorAll('.comm-cat-btn').forEach((b,i)=>{
+    if(i===0){b.style.border='2px solid var(--honey)';b.style.background='var(--honey-light)';b.style.color='var(--honey-dark)';b.style.fontWeight='600';}
+    else{b.style.border='1px solid var(--border)';b.style.background='var(--surface)';b.style.color='var(--text-2)';b.style.fontWeight='';}
+  });
+  openModal('modal-community-post');
+}
+
+function handleCommPhoto(input){
+  const file=input.files[0];if(!file)return;
+  if(file.size>10*1024*1024){showToast('Photo too large (max 10MB)','error');return;}
+  commPhotoFile=file;
+  document.getElementById('comm-photo-name').textContent=file.name;
+  const reader=new FileReader();
+  reader.onload=e=>{
+    const prev=document.getElementById('comm-photo-preview');
+    prev.src=e.target.result;prev.style.display='block';
+  };
+  reader.readAsDataURL(file);
+}
+
+async function submitCommunityPost(){
+  const title=document.getElementById('comm-title').value.trim();
+  const content=document.getElementById('comm-content').value.trim();
+  if(!title){showToast('Please add a title','warning');return;}
+  setSyncing('syncing');
+  let photoUrl=null;
+  if(commPhotoFile){
+    const ext=commPhotoFile.name.split('.').pop();
+    const path=`community/${currentUser.id}/${Date.now()}.${ext}`;
+    const{error:upErr}=await sb.storage.from('photos').upload(path,commPhotoFile);
+    if(!upErr){const{data:urlData}=sb.storage.from('photos').getPublicUrl(path);photoUrl=urlData.publicUrl;}
+  }
+  const localGroup=postCategory==='local'?document.getElementById('comm-local-group').value:null;
+  const{data,error}=await sb.from('community_posts').insert({
+    user_id:currentUser.id,category:postCategory,
+    title,content,photo_url:photoUrl,local_group:localGroup
+  }).select().single();
+  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  communityPosts.unshift(data);
+  setSyncing('saved');closeModal('modal-community-post');
+  showToast('✅ Posted to community!','success');
+  renderCommunityPosts();
+}
+
+async function loadCommunityPosts(){
+  const{data}=await sb.from('community_posts').select('*').order('created_at',{ascending:false}).limit(50);
+  communityPosts=data||[];
+  renderCommunityPosts();
+}
+
+function renderCommunityPosts(){
+  const el=document.getElementById('community-content');
+  if(!el)return;
+  const filtered=communityTab==='local'
+    ?communityPosts.filter(p=>p.category==='local')
+    :communityPosts.filter(p=>p.category===communityTab);
+  if(filtered.length===0){
+    const emptyMsg={clinic:'No questions yet — ask the first one! 🩺',showcase:'No hive showcases yet — share yours! 🐝',local:'No local posts yet — start the conversation! 📍'};
+    el.innerHTML=`<div class="empty" style="padding:40px 16px"><div class="empty-icon">${communityTab==='clinic'?'🩺':communityTab==='showcase'?'🐝':'📍'}</div>${emptyMsg[communityTab]||'No posts yet'}</div>`;
+    return;
+  }
+  const catIcon={clinic:'🩺',showcase:'🐝',map:'🗺️',local:'📍'};
+  el.innerHTML=filtered.map(p=>{
+    const ago=daysSince(p.created_at?.split('T')[0]);
+    const agoText=ago===0?'Today':ago===1?'Yesterday':ago+' days ago';
+    const isOwn=p.user_id===currentUser.id;
+    return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;cursor:pointer" onclick="openPostDetail('${p.id}')">
+      <div style="display:flex;align-items:flex-start;gap:8px">
+        <div style="width:36px;height:36px;border-radius:50%;background:var(--honey-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${catIcon[p.category]||'🐝'}</div>
+        <div style="flex:1;min-width:0">
+          <div style="font-weight:600;font-size:13px;margin-bottom:3px">${p.title}</div>
+          ${p.content?`<div style="font-size:12px;color:var(--text-2);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.content}</div>`:''}
+          ${p.photo_url?`<img src="${p.photo_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:6px">`:''}
+          ${p.local_group?`<div style="font-size:11px;color:var(--sky);margin-bottom:4px">📍 ${p.local_group}</div>`:''}
+          <div style="display:flex;align-items:center;justify-content:space-between">
+            <div style="font-size:11px;color:var(--text-3)">${agoText}</div>
+            <div style="display:flex;gap:6px;align-items:center">
+              <button onclick="event.stopPropagation();toggleLike('${p.id}')" style="padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;color:var(--text-2)">❤️ ${p.likes||0}</button>
+              ${!isOwn?`<button onclick="event.stopPropagation();reportPost('${p.id}')" style="padding:3px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:11px;color:var(--text-3)" title="Report post">🚩</button>`:''}
+              ${isOwn?`<button onclick="event.stopPropagation();deleteCommunityPost('${p.id}')" style="padding:3px 8px;border-radius:20px;border:1px solid #F5B7B1;background:var(--danger-light);cursor:pointer;font-size:11px;color:var(--danger)">🗑</button>`:''}
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+async function openPostDetail(postId){
+  currentPostId=postId;
+  const post=communityPosts.find(p=>p.id===postId);if(!post)return;
+  document.getElementById('comm-detail-title').textContent=post.title;
+  const catIcon={clinic:'🩺',showcase:'🐝',map:'🗺️',local:'📍'};
+  document.getElementById('comm-detail-body').innerHTML=`
+    <div style="margin-bottom:12px">
+      ${post.photo_url?`<img src="${post.photo_url}" style="width:100%;max-height:200px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:10px">`:''}
+      ${post.content?`<div style="font-size:13px;color:var(--text-2);line-height:1.5">${post.content}</div>`:''}
+      ${post.local_group?`<div style="font-size:11px;color:var(--sky);margin-top:6px">📍 ${post.local_group}</div>`:''}
+    </div>`;
+  // Load replies
+  const{data:replies}=await sb.from('community_replies').select('*').eq('post_id',postId).order('created_at');
+  const repliesList=document.getElementById('comm-replies-list');
+  repliesList.innerHTML=replies?.length?replies.map(r=>`
+    <div style="padding:8px 10px;background:${r.is_expert?'var(--honey-light)':'var(--bg)'};border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid ${r.is_expert?'var(--honey)':'var(--border)'}">
+      ${r.is_expert?'<div style="font-size:10px;font-weight:600;color:var(--honey-dark);margin-bottom:3px">⭐ Expert Reply</div>':''}
+      <div style="font-size:13px">${r.content}</div>
+      <div style="font-size:10px;color:var(--text-3);margin-top:4px">${daysSince(r.created_at?.split('T')[0])===0?'Today':daysSince(r.created_at?.split('T')[0])+' days ago'}</div>
+    </div>`).join(''):'<div style="font-size:12px;color:var(--text-3);padding:8px 0">No replies yet — be the first!</div>';
+  openModal('modal-comm-detail');
+}
+
+async function submitReply(){
+  const content=document.getElementById('comm-reply-input').value.trim();
+  if(!content||!currentPostId)return;
+  const{data,error}=await sb.from('community_replies').insert({
+    post_id:currentPostId,user_id:currentUser.id,content
+  }).select().single();
+  if(error){showToast('Error: '+error.message,'error');return;}
+  document.getElementById('comm-reply-input').value='';
+  // Refresh replies
+  await openPostDetail(currentPostId);
+  showToast('Reply posted ✓','success');
+}
+
+async function toggleLike(postId){
+  const{data:existing}=await sb.from('community_likes').select('id').eq('post_id',postId).eq('user_id',currentUser.id).single();
+  if(existing){
+    await sb.from('community_likes').delete().eq('id',existing.id);
+    await sb.from('community_posts').update({likes:Math.max(0,(communityPosts.find(p=>p.id===postId)?.likes||1)-1)}).eq('id',postId);
+    const p=communityPosts.find(p=>p.id===postId);if(p)p.likes=Math.max(0,(p.likes||1)-1);
+  } else {
+    await sb.from('community_likes').insert({post_id:postId,user_id:currentUser.id});
+    await sb.from('community_posts').update({likes:(communityPosts.find(p=>p.id===postId)?.likes||0)+1}).eq('id',postId);
+    const p=communityPosts.find(p=>p.id===postId);if(p)p.likes=(p.likes||0)+1;
+  }
+  renderCommunityPosts();
+}
+
+async function deleteCommunityPost(postId){
+  if(!confirm('Delete this post?'))return;
+  await sb.from('community_posts').delete().eq('id',postId);
+  communityPosts=communityPosts.filter(p=>p.id!==postId);
+  renderCommunityPosts();showToast('🗑 Post deleted','success');
+}
+
+// Community Map (reuses forage map logic)
+function initCommunityMap(){
+  if(communityMapInited)return;
+  if(!window.L){
+    const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(css);
+    const js=document.createElement('script');js.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.onload=()=>initCommunityMap();document.head.appendChild(js);return;
+  }
+  communityMapInited=true;
+  let center=[39.5,-98.35],zoom=4;
+  const fa=apiaries.find(a=>a.gps&&a.gps.includes(','));
+  if(fa){const[lat,lng]=fa.gps.split(',').map(Number);if(!isNaN(lat)){center=[lat,lng];zoom=11;}}
+  communityMapObj=L.map('community-map').setView(center,zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OpenStreetMap',maxZoom:19}).addTo(communityMapObj);
+  communityMapObj.on('click',e=>{window._clickedLat=e.latlng.lat;window._clickedLng=e.latlng.lng;openModal('modal-formap');});
+  setTimeout(()=>communityMapObj.invalidateSize(),300);
+  renderCommunityMapMarkers();
+}
+
+function renderCommunityMapMarkers(){
+  if(!communityMapObj)return;
+  commMapLayers.forEach(l=>communityMapObj.removeLayer(l));commMapLayers=[];
+  const bloomColor={early:'#f39c12',peak:'#27ae60',late:'#e67e22',none:'#95a5a6'};
+  (forageMarkers||[]).forEach(m=>{
+    const c=L.circleMarker([m.lat,m.lng],{radius:10,fillColor:bloomColor[m.bloom_status]||'#27ae60',color:'#fff',weight:2,fillOpacity:0.85});
+    c.bindPopup(`<b>${m.plant_type}</b><br>${m.bloom_status} bloom${m.notes?'<br>'+m.notes:''}`);
+    c.addTo(communityMapObj);commMapLayers.push(c);
+  });
+  (pesticideAlerts||[]).forEach(a=>{
+    const c=L.circleMarker([a.lat,a.lng],{radius:12,fillColor:'#e74c3c',color:'#fff',weight:2,fillOpacity:0.85});
+    c.bindPopup(`<b>⚠️ Pesticide Alert</b><br>Severity: ${a.severity}${a.description?'<br>'+a.description:''}`);
+    c.addTo(communityMapObj);commMapLayers.push(c);
+  });
+  apiaries.forEach(a=>{
+    if(!a.gps||!a.gps.includes(','))return;
+    const[lat,lng]=a.gps.split(',').map(Number);if(isNaN(lat))return;
+    const m=L.marker([lat,lng]);m.bindPopup(`<b>🐝 ${a.name}</b>`);
+    m.addTo(communityMapObj);commMapLayers.push(m);
+  });
+  // Update map list
+  const ml=document.getElementById('community-map-list');
+  if(!ml)return;
+  const all=[...(forageMarkers||[]).map(m=>({type:'forage',data:m})),...(pesticideAlerts||[]).map(a=>({type:'alert',data:a}))];
+  ml.innerHTML=all.length?`<div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px">${all.length} reports near you</div>`+
+    all.slice(0,5).map(item=>`<div style="padding:8px 0;border-bottom:1px solid var(--border);font-size:13px">${item.type==='forage'?'🌸 '+item.data.plant_type+' ('+item.data.bloom_status+')':'⚠️ Pesticide Alert — '+item.data.severity}</div>`).join('')+
+    `<button onclick="openModal('modal-formap')" style="width:100%;margin-top:10px;padding:10px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-weight:500">+ Add Report</button>`
+    :'<div class="empty">No reports yet — tap map to add one</div>';
+}
+
+
+// ============================================================
+// COMMUNITY EXTRAS: Report, Hive Data Attach
+// ============================================================
+
+// 举报帖子
+async function reportPost(postId){
+  const reason = prompt('Why are you reporting this post?\n\n1. Spam / Advertisement\n2. Inappropriate content\n3. Misinformation\n4. Other\n\nEnter reason:');
+  if(!reason)return;
+  const{error}=await sb.from('community_reports').insert({
+    post_id:postId, user_id:currentUser.id, reason
+  });
+  if(error&&error.code==='23505'){showToast('You already reported this post','warning');return;}
+  if(error){showToast('Error: '+error.message,'error');return;}
+  showToast('🚩 Report submitted — thank you','success');
+}
+
+// 蜂箱数据附加 — 在 Clinic tab 打开弹窗时填充蜂箱选择
+function populateHiveAttach(){
+  const sel=document.getElementById('comm-attach-hive');
+  if(!sel)return;
+  sel.innerHTML='<option value="">— Don\'t attach —</option>'+
+    hives.map(h=>{
+      const li=lastInsp(h.id);
+      return`<option value="${h.id}">${h.name}${li?' (Score: '+li.score+', '+daysSince(li.date)+'d ago)':''}`;
+    }).join('');
+  sel.onchange=()=>previewHiveData(sel.value);
+}
+
+function previewHiveData(hiveId){
+  const prev=document.getElementById('comm-hive-preview');
+  if(!prev)return;
+  if(!hiveId){prev.style.display='none';return;}
+  const h=getHive(hiveId);
+  const li=lastInsp(hiveId);
+  if(!h||!li){prev.style.display='none';return;}
+  prev.style.display='block';
+  prev.innerHTML=`<div style="font-weight:600;margin-bottom:4px">📋 ${h.name} — Last inspection ${daysSince(li.date)} days ago</div>
+    <div>Score: <strong>${li.score}</strong> · Strength: ${li.colony_strength}/10 · Honey: ${li.honey_stores}/10</div>
+    ${li.mite_count>0?`<div style="color:var(--danger);margin-top:2px">⚠️ Mite count: ${li.mite_count}%</div>`:''}
+    ${li.disease_signs?'<div style="color:var(--danger)">⚠️ Disease signs observed</div>':''}
+    ${li.notes?`<div style="margin-top:2px;color:var(--honey-dark)">Notes: ${li.notes}</div>`:''}`;
+}
+
+// Update openNewPostModal to populate hive attach
+const _origOpenNewPostModal = openNewPostModal;
+function openNewPostModal(){
+  _origOpenNewPostModal();
+  populateHiveAttach();
+  // Show/hide hive attach based on category
+  const field=document.getElementById('comm-hive-attach-field');
+  if(field)field.style.display='block';
+}
+
+// Update setPostCategory to show/hide hive attach
+const _origSetPostCategory = setPostCategory;
+function setPostCategory(cat, btn){
+  _origSetPostCategory(cat, btn);
+  const field=document.getElementById('comm-hive-attach-field');
+  if(field)field.style.display=cat==='clinic'?'block':'none';
+  const prev=document.getElementById('comm-hive-preview');
+  if(prev&&cat!=='clinic')prev.style.display='none';
+}
+
+// Update submitCommunityPost to include hive data in content
+const _origSubmitCommunityPost = submitCommunityPost;
+async function submitCommunityPost(){
+  const hiveId=document.getElementById('comm-attach-hive')?.value;
+  if(hiveId&&postCategory==='clinic'){
+    const h=getHive(hiveId);const li=lastInsp(hiveId);
+    if(h&&li){
+      const existing=document.getElementById('comm-content').value;
+      const hiveData=`\n\n---\n📋 Hive data: ${h.name} · Score ${li.score} · Inspected ${daysSince(li.date)} days ago · Colony strength ${li.colony_strength}/10 · Honey stores ${li.honey_stores}/10${li.mite_count>0?' · Mite count '+li.mite_count+'%':''}${li.disease_signs?' · Disease signs observed':''}`;
+      document.getElementById('comm-content').value=existing+hiveData;
+    }
+  }
+  await _origSubmitCommunityPost();
+}
+
+// ============================================================
+// FORAGE MAP
+// ============================================================
+let forageMap=null, forageMarkers=[], pesticideAlerts=[], forageLayers=[], currentFilter='all';
+let selectedBloom='peak', selectedMarkerType='forage';
+let forageMapInitialized=false;
+
+function setForageFilter(type,btn){
+  currentFilter=type;
+  document.querySelectorAll('.formap-tab').forEach(b=>{
+    b.style.borderColor='var(--border)';b.style.background='var(--surface)';b.style.color='var(--text-2)';b.style.fontWeight='';
+  });
+  btn.style.borderColor='var(--honey)';btn.style.background='var(--honey-light)';btn.style.color='var(--honey-dark)';btn.style.fontWeight='500';
+  renderForageList();
+  if(forageMap)renderForageMapMarkers();
+}
+
+function setBloom(val,btn){
+  selectedBloom=val;
+  document.querySelectorAll('.bloom-btn').forEach(b=>{
+    b.style.border='1px solid var(--border)';b.style.background='var(--surface)';b.style.color='var(--text-2)';b.style.fontWeight='';
+  });
+  btn.style.border='2px solid var(--forest)';btn.style.background='var(--forest-light)';btn.style.color='var(--forest)';btn.style.fontWeight='600';
+}
+
+function setMarkerType(type,btn){
+  selectedMarkerType=type;
+  document.getElementById('forage-fields').style.display=type==='forage'?'block':'none';
+  document.getElementById('alert-fields').style.display=type==='alert'?'block':'none';
+  ['mtype-forage','mtype-alert'].forEach(id=>{
+    const el=document.getElementById(id);
+    if(el){el.style.border='1px solid var(--border)';el.style.background='var(--surface)';el.style.color='var(--text-2)';}
+  });
+  btn.style.border='2px solid var(--honey)';btn.style.background='var(--honey-light)';btn.style.color='var(--honey-dark)';
+}
+
+function openAddMarkerModal(){
+  selectedBloom='peak';selectedMarkerType='forage';
+  document.getElementById('forage-fields').style.display='block';
+  document.getElementById('alert-fields').style.display='none';
+  openModal('modal-formap');
+}
+
+async function loadForageData(){
+  const[fm,pa]=await Promise.all([
+    sb.from('forage_markers').select('*').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}),
+    sb.from('pesticide_alerts').select('*').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false})
+  ]);
+  forageMarkers=fm.data||[];
+  pesticideAlerts=pa.data||[];
+  renderForageList();
+  if(forageMap)renderForageMapMarkers();
+}
+
+function renderForageList(){
+  const list=document.getElementById('formap-list');
+  if(!list)return;
+  let items=[];
+  if(currentFilter!=='alert'){
+    const fm=currentFilter==='mine'?forageMarkers.filter(m=>m.user_id===currentUser.id):forageMarkers;
+    fm.forEach(m=>items.push({type:'forage',data:m}));
+  }
+  if(currentFilter!=='forage'){
+    const pa=currentFilter==='mine'?pesticideAlerts.filter(a=>a.user_id===currentUser.id):pesticideAlerts;
+    pa.forEach(a=>items.push({type:'alert',data:a}));
+  }
+  items.sort((a,b)=>new Date(b.data.created_at)-new Date(a.data.created_at));
+  document.getElementById('formap-count').textContent=items.length;
+  if(items.length===0){list.innerHTML='<div class="empty">No reports in this area yet — be the first to add one!</div>';return;}
+  const bloomIcon={early:'🌱',peak:'🌸',late:'🍂',none:'❌'};
+  const severityColor={low:'var(--forest)',medium:'var(--amber)',high:'var(--danger)'};
+  list.innerHTML=items.map(item=>{
+    const d=item.data;
+    const ago=daysSince(d.created_at?.split('T')[0]);
+    const agoText=ago===0?'Today':ago===1?'Yesterday':ago+' days ago';
+    const isOwn=d.user_id===currentUser.id;
+    if(item.type==='forage'){
+      return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:24px;flex-shrink:0">${bloomIcon[d.bloom_status]||'🌸'}</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px">${d.plant_type}</div>
+          <div style="font-size:12px;color:var(--text-2);margin-top:2px">${d.bloom_status==='peak'?'<span style="color:var(--forest);font-weight:500">Peak bloom</span>':d.bloom_status==='early'?'Early bloom':d.bloom_status==='late'?'Late bloom':'No longer blooming'}</div>
+          ${d.notes?`<div style="font-size:11px;color:var(--text-3);margin-top:2px">${d.notes}</div>`:''}
+          <div style="font-size:10px;color:var(--text-3);margin-top:4px">${d.anonymous?'Anonymous':'Community'} · ${agoText}</div>
+        </div>
+        ${isOwn?`<button onclick="deleteForageMarker('${d.id}')" style="padding:4px 8px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:12px">🗑</button>`:''}
+      </div>`;
+    } else {
+      return`<div style="background:var(--danger-light);border:1px solid #F5B7B1;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
+        <div style="font-size:24px;flex-shrink:0">⚠️</div>
+        <div style="flex:1">
+          <div style="font-weight:600;font-size:13px;color:var(--danger)">Pesticide Alert · <span style="color:${severityColor[d.severity]}">${d.severity.toUpperCase()}</span></div>
+          ${d.description?`<div style="font-size:12px;color:var(--text-2);margin-top:2px">${d.description}</div>`:''}
+          <div style="font-size:10px;color:var(--text-3);margin-top:4px">${d.anonymous?'Anonymous':'Community'} · ${agoText}</div>
+        </div>
+        ${isOwn?`<button onclick="deletePesticideAlert('${d.id}')" style="padding:4px 8px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:12px">🗑</button>`:''}
+      </div>`;
+    }
+  }).join('');
+}
+
+function renderForageMapMarkers(){
+  if(!forageMap)return;
+  forageLayers.forEach(l=>forageMap.removeLayer(l));forageLayers=[];
+  const bloomColor={early:'#f39c12',peak:'#27ae60',late:'#e67e22',none:'#95a5a6'};
+  forageMarkers.forEach(m=>{
+    if(currentFilter==='alert')return;
+    if(currentFilter==='mine'&&m.user_id!==currentUser.id)return;
+    const circle=L.circleMarker([m.lat,m.lng],{radius:10,fillColor:bloomColor[m.bloom_status]||'#27ae60',color:'#fff',weight:2,opacity:1,fillOpacity:0.85});
+    circle.bindPopup(`<b>${m.plant_type}</b><br>${m.bloom_status} bloom${m.notes?'<br><i>'+m.notes+'</i>':''}`);
+    circle.addTo(forageMap);forageLayers.push(circle);
+  });
+  pesticideAlerts.forEach(a=>{
+    if(currentFilter==='forage')return;
+    if(currentFilter==='mine'&&a.user_id!==currentUser.id)return;
+    const circle=L.circleMarker([a.lat,a.lng],{radius:12,fillColor:'#e74c3c',color:'#fff',weight:2,opacity:1,fillOpacity:0.85});
+    circle.bindPopup(`<b>⚠️ Pesticide Alert</b><br>Severity: ${a.severity}${a.description?'<br>'+a.description:''}`);
+    circle.addTo(forageMap);forageLayers.push(circle);
+  });
+  // Apiaries as blue markers
+  apiaries.forEach(a=>{
+    if(!a.gps||!a.gps.includes(','))return;
+    const [lat,lng]=a.gps.split(',').map(Number);
+    if(isNaN(lat)||isNaN(lng))return;
+    const marker=L.marker([lat,lng]);
+    marker.bindPopup(`<b>🐝 ${a.name}</b>`);
+    marker.addTo(forageMap);forageLayers.push(marker);
+  });
+}
+
+function initForageMap(){
+  if(forageMapInitialized)return;
+  const loading=document.getElementById('forage-map-loading');
+  // Load Leaflet
+  if(!window.L){
+    const css=document.createElement('link');css.rel='stylesheet';css.href='https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';document.head.appendChild(css);
+    const js=document.createElement('script');js.src='https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.onload=()=>{initForageMap();};document.head.appendChild(js);return;
+  }
+  forageMapInitialized=true;
+  if(loading)loading.style.display='none';
+  // Center on first apiary or user location
+  let center=[39.5,-98.35],zoom=4;
+  const firstApiary=apiaries.find(a=>a.gps&&a.gps.includes(','));
+  if(firstApiary){const[lat,lng]=firstApiary.gps.split(',').map(Number);if(!isNaN(lat)&&!isNaN(lng)){center=[lat,lng];zoom=11;}}
+  forageMap=L.map('forage-map').setView(center,zoom);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{attribution:'OpenStreetMap',maxZoom:19}).addTo(forageMap);
+  // Click to add marker
+  forageMap.on('click',e=>{
+    window._clickedLat=e.latlng.lat;window._clickedLng=e.latlng.lng;
+    openAddMarkerModal();
+  });
+  loadForageData();
+  renderForageMapMarkers();
+  setTimeout(()=>forageMap.invalidateSize(),300);
+}
+
+async function saveForageMarker(){
+  setSyncing('syncing');
+  const anon=document.getElementById('tog-anon').classList.contains('on');
+  let lat,lng;
+  if(window._clickedLat){lat=window._clickedLat;lng=window._clickedLng;window._clickedLat=null;}
+  else{
+    try{
+      const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000}));
+      lat=pos.coords.latitude;lng=pos.coords.longitude;
+    }catch(e){setSyncing('saved');showToast('Location access denied — tap on map to place marker','error');return;}
+  }
+  // Privacy: blur coordinates by ±0.008° (~900m)
+  const blur=()=>(Math.random()-0.5)*0.016;
+  const blurLat=lat+blur(), blurLng=lng+blur();
+  if(selectedMarkerType==='forage'){
+    const{error}=await sb.from('forage_markers').insert({
+      user_id:currentUser.id,lat:blurLat,lng:blurLng,
+      plant_type:document.getElementById('fm-plant').value,
+      bloom_status:selectedBloom,
+      notes:document.getElementById('fm-notes').value,
+      anonymous:anon
+    });
+    if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  } else {
+    const{error}=await sb.from('pesticide_alerts').insert({
+      user_id:currentUser.id,lat:blurLat,lng:blurLng,
+      severity:document.getElementById('fm-severity').value,
+      description:document.getElementById('fm-desc').value,
+      notes:document.getElementById('fm-notes').value,
+      anonymous:anon
+    });
+    if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+    // Notify nearby users via push
+    checkNearbyPesticideAlerts(lat,lng);
+  }
+  setSyncing('saved');
+  closeModal('modal-formap');
+  showToast('✅ Report submitted — thank you!','success');
+  await loadForageData();
+}
+
+async function deleteForageMarker(id){
+  await sb.from('forage_markers').delete().eq('id',id);
+  forageMarkers=forageMarkers.filter(m=>m.id!==id);
+  renderForageList();if(forageMap)renderForageMapMarkers();
+  showToast('🗑 Marker removed','success');
+}
+async function deletePesticideAlert(id){
+  await sb.from('pesticide_alerts').delete().eq('id',id);
+  pesticideAlerts=pesticideAlerts.filter(a=>a.id!==id);
+  renderForageList();if(forageMap)renderForageMapMarkers();
+  showToast('🗑 Alert removed','success');
+}
+
+function checkNearbyPesticideAlerts(lat,lng){
+  // Check if any of user's apiaries are within 5km
+  apiaries.forEach(a=>{
+    if(!a.gps||!a.gps.includes(','))return;
+    const[aLat,aLng]=a.gps.split(',').map(Number);
+    if(isNaN(aLat))return;
+    const dist=Math.sqrt(Math.pow(aLat-lat,2)+Math.pow(aLng-lng,2))*111;
+    if(dist<=5&&Notification.permission==='granted'){
+      new Notification('⚠️ Beekeepy — Pesticide Alert Near '+a.name,{
+        body:'A pesticide alert was reported within 5km of '+a.name+'. Check the Forage Map for details.',
+        icon:'https://www.beekeepy.com/favicon.ico'
+      });
+    }
+  });
+}
 
 // START 
 

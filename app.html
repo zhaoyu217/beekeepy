@@ -356,7 +356,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   </div>
 
   <div class="stat-row">
-    <div class="stat" style="cursor:pointer" onclick="showPage('settings',null);setTimeout(()=>document.getElementById('hive-list-full')?.scrollIntoView({behavior:'smooth'}),200)"><div class="stat-n" id="s-total">0</div><div class="stat-l" data-i18n="stat_hives">Hives</div></div>
+    <div class="stat" style="cursor:pointer" onclick="showPage('settings',document.querySelectorAll('.nav-item')[5]);setTimeout(()=>document.getElementById('hive-list-full')?.scrollIntoView({behavior:'smooth'}),300)"><div class="stat-n" id="s-total">0</div><div class="stat-l" data-i18n="stat_hives">Hives</div></div>
     <div class="stat forest" style="cursor:pointer" onclick="filterHivesByHealth('healthy')"><div class="stat-n" id="s-healthy">0</div><div class="stat-l" data-i18n="stat_healthy">Healthy</div></div>
     <div class="stat danger" style="cursor:pointer" onclick="filterHivesByHealth('atrisk')"><div class="stat-n" id="s-warn">0</div><div class="stat-l" data-i18n="stat_atrisk">At Risk</div></div>
   </div>
@@ -2097,6 +2097,10 @@ function filterHivesByHealth(type){
   // Scroll to hive grid and highlight matching hives
   const grid = document.getElementById('home-hive-grid');
   if(grid) grid.scrollIntoView({behavior:'smooth'});
+  // Clear any previous highlight first
+  document.querySelectorAll('#home-hive-grid .hive-card').forEach(card=>{
+    card.style.opacity='1';card.style.transform='scale(1)';card.style.transition='';
+  });
   setTimeout(()=>{
     document.querySelectorAll('#home-hive-grid .hive-card').forEach(card=>{
       const hiveId = card.id.replace('hcard-','');
@@ -2106,16 +2110,15 @@ function filterHivesByHealth(type){
       const isAtRisk = sc===null || sc<60;
       const match = type==='healthy'?isHealthy:isAtRisk;
       card.style.opacity = match ? '1' : '0.35';
-      card.style.transform = match ? 'scale(1)' : 'scale(0.97)';
+      card.style.transform = match ? 'scale(1.02)' : 'scale(0.97)';
       card.style.transition = 'all 0.3s';
     });
-    // Reset after 3 seconds
     setTimeout(()=>{
       document.querySelectorAll('#home-hive-grid .hive-card').forEach(card=>{
-        card.style.opacity='1';card.style.transform='scale(1)';
+        card.style.opacity='1';card.style.transform='scale(1)';card.style.transition='all 0.3s';
       });
     },3000);
-  },400);
+  },100);
 }
 
 // HIVE GRID 

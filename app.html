@@ -4020,9 +4020,9 @@ async function submitCommunityPost(){
     const isVideo=!!commVideoFile;
     const ext=mediaFile.name.split('.').pop();
     const path=(isVideo?'community-videos':'community')+'/'+currentUser.id+'/'+Date.now()+'.'+ext;
-    const{error:upErr}=await sb.storage.from('photos').upload(path,mediaFile);
+    const{error:upErr}=await sb.storage.from('community').upload(path,mediaFile);
     if(upErr){setSyncing('error');showToast('Upload failed: '+upErr.message,'error');return;}
-    const{data:urlData}=sb.storage.from('photos').getPublicUrl(path);
+    const{data:urlData}=sb.storage.from('community').getPublicUrl(path);
     if(isVideo)videoUrl=urlData.publicUrl;else photoUrl=urlData.publicUrl;
   }
   if(false){

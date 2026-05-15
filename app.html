@@ -1883,54 +1883,205 @@ function getSeason(){
 }
 
 //  FEATURE 1: WEATHER 
+let currentForecast=null; // 5天预报数据
+
+async function fetchWeatherByCoords(lat, lon, cityName) {
+  // 同时请求当前天气 + 5天预报
+  const [curRes, fcastRes] = await Promise.all([
+    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`),
+    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric&cnt=40`)
+  ]);
+  const cur = await curRes.json();
+  const fcast = await fcastRes.json();
+
+  // 摄氏转华氏
+  const toF = c => Math.round(c * 9/5 + 32);
+  const tempC = Math.round(cur.main.temp);
+
+  currentWeather = {
+    temp: toF(tempC),
+    tempC,
+    humidity: cur.main.humidity,
+    wind: Math.round(cur.wind.speed * 3.6), // m/s → km/h
+    windMph: Math.round(cur.wind.speed * 2.237),
+    condition: cur.weather[0].main,
+    description: cur.weather[0].description,
+    icon: getWeatherEmoji(cur.weather[0].main),
+    city: cityName || cur.name
+  };
+
+  // 处理5天预报，提取每天最高/最低温和天气
+  const dailyMap = {};
+  (fcast.list || []).forEach(item => {
+    const date = item.dt_txt.split(' ')[0];
+    if (!dailyMap[date]) dailyMap[date] = {temps:[], conditions:[], winds:[]};
+    dailyMap[date].temps.push(item.main.temp);
+    dailyMap[date].conditions.push(item.weather[0].main);
+    dailyMap[date].winds.push(item.wind.speed * 3.6);
+  });
+  currentForecast = Object.entries(dailyMap).slice(0,5).map(([date, v]) => ({
+    date,
+    minC: Math.round(Math.min(...v.temps)),
+    maxC: Math.round(Math.max(...v.temps)),
+    minF: toF(Math.min(...v.temps)),
+    maxF: toF(Math.max(...v.temps)),
+    condition: v.conditions[Math.floor(v.conditions.length/2)],
+    maxWind: Math.round(Math.max(...v.winds)),
+    hasThunder: v.conditions.includes('Thunderstorm'),
+    hasSnow: v.conditions.includes('Snow')
+  }));
+
+  renderWeatherWidget(currentWeather);
+  populateInspectWeather(currentWeather);
+  renderWeatherAlerts();
+}
+
 async function fetchWeather() {
-  if(!OPENWEATHER_API_KEY) {
-    renderWeatherWidget(null); return;
-  }
-  // 优先使用蜂场GPS坐标，没有时才用设备GPS
+  if(!OPENWEATHER_API_KEY) { renderWeatherWidget(null); return; }
   const apiaryWithGps = apiaries && apiaries.find(a => a.gps && a.gps.trim());
   if(apiaryWithGps) {
     try {
       const parts = apiaryWithGps.gps.split(',').map(s=>s.trim());
-      const lat = parseFloat(parts[0]);
-      const lon = parseFloat(parts[1]);
-      if(!isNaN(lat) && !isNaN(lon)) {
-        const res=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=imperial`);
-        const d=await res.json();
-        currentWeather={
-          temp:Math.round(d.main.temp),
-          humidity:d.main.humidity,
-          wind:Math.round(d.wind.speed),
-          condition:d.weather[0].main,
-          description:d.weather[0].description,
-          icon:getWeatherEmoji(d.weather[0].main),
-          city:apiaryWithGps.name || d.name
-        };
-        renderWeatherWidget(currentWeather);
-        populateInspectWeather(currentWeather);
-        return;
-      }
+      const lat = parseFloat(parts[0]), lon = parseFloat(parts[1]);
+      if(!isNaN(lat) && !isNaN(lon)) { await fetchWeatherByCoords(lat, lon, apiaryWithGps.name); return; }
     } catch(e){ renderWeatherWidget(null); return; }
   }
-  // 没有蜂场GPS时，回退到设备GPS
   navigator.geolocation?.getCurrentPosition(async pos=>{
-    try {
-      const {latitude:lat,longitude:lon}=pos.coords;
-      const res=await fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=imperial`);
-      const d=await res.json();
-      currentWeather={
-        temp:Math.round(d.main.temp),
-        humidity:d.main.humidity,
-        wind:Math.round(d.wind.speed),
-        condition:d.weather[0].main,
-        description:d.weather[0].description,
-        icon:getWeatherEmoji(d.weather[0].main),
-        city:d.name
-      };
-      renderWeatherWidget(currentWeather);
-      populateInspectWeather(currentWeather);
-    } catch(e){ renderWeatherWidget(null); }
+    try { await fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude, null); }
+    catch(e){ renderWeatherWidget(null); }
   }, ()=>renderWeatherWidget(null));
+}
+
+function analyzeWeatherAlerts() {
+  if(!currentForecast || !currentForecast.length) return [];
+  const alerts = [];
+  const today = new Date().toISOString().split('T')[0];
+
+  currentForecast.forEach((day, i) => {
+    const label = i===0?'Today': i===1?'Tomorrow': new Date(day.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
+
+    // 极端高温 >35°C
+    if(day.maxC >= 35) alerts.push({
+      icon:'🌡️', level:'danger',
+      title:`Extreme heat ${label} — ${day.maxC}°C (${day.maxF}°F)`,
+      detail:'Risk of overheating. Ensure shade, ventilation, and water near hives.',
+      action:'Add ventilation / shade cloth'
+    });
+    // 高温检查适宜性 30-35°C
+    else if(day.maxC >= 30) alerts.push({
+      icon:'☀️', level:'warning',
+      title:`High heat ${label} — ${day.maxC}°C`,
+      detail:'Inspect early morning. Bees may beard outside the hive.',
+      action:'Inspect before 9am'
+    });
+
+    // 极端低温 <4°C
+    if(day.minC <= 4 && day.minC > 0) alerts.push({
+      icon:'🥶', level:'warning',
+      title:`Cold snap ${label} — low ${day.minC}°C (${day.minF}°F)`,
+      detail:'Cluster may tighten. Check honey stores are accessible.',
+      action:'Check winter stores'
+    });
+    // 冰点以下
+    if(day.minC <= 0) alerts.push({
+      icon:'❄️', level:'danger',
+      title:`Freezing ${label} — low ${day.minC}°C (${day.minF}°F)`,
+      detail:'Bees cannot fly. Ensure hive is insulated and dry. Do not open.',
+      action:'Do NOT inspect — insulate hive'
+    });
+
+    // 暴风雨
+    if(day.hasThunder) alerts.push({
+      icon:'⛈️', level:'warning',
+      title:`Thunderstorm ${label}`,
+      detail:'Bees become defensive before storms. Avoid inspections.',
+      action:'Postpone inspection'
+    });
+
+    // 强风 >40km/h
+    if(day.maxWind >= 40) alerts.push({
+      icon:'💨', level:'warning',
+      title:`Strong wind ${label} — ${day.maxWind} km/h`,
+      detail:'Secure hive lids and entrances. Foragers may struggle to return.',
+      action:'Secure hive lids'
+    });
+
+    // 降雪
+    if(day.hasSnow) alerts.push({
+      icon:'🌨️', level:'warning',
+      title:`Snow forecast ${label}`,
+      detail:'Clear entrance after snowfall to prevent suffocation.',
+      action:'Clear entrance after snow'
+    });
+
+    // 最佳检查日
+    if(day.maxC >= 18 && day.maxC < 30 && !day.hasThunder && day.maxWind < 25 &&
+       (day.condition==='Clear'||day.condition==='Clouds')) {
+      alerts.push({
+        icon:'✅', level:'good',
+        title:`Good inspection day — ${label}`,
+        detail:`${day.maxC}°C, calm winds — ideal conditions for opening hives.`,
+        action:'Schedule your inspection'
+      });
+    }
+  });
+
+  // 连续3天低于0°C → 越冬预警
+  const freezeDays = currentForecast.filter(d=>d.minC<=0).length;
+  if(freezeDays >= 3) alerts.unshift({
+    icon:'🧊', level:'danger',
+    title:`Extended freeze — ${freezeDays} days below 0°C`,
+    detail:'Winter cluster risk. Ensure adequate honey stores and hive insulation.',
+    action:'Check winter prep now'
+  });
+
+  return alerts;
+}
+
+function renderWeatherAlerts() {
+  const alerts = analyzeWeatherAlerts();
+  // 找weather-widget后面插入预警，或用单独容器
+  let el = document.getElementById('weather-alerts-panel');
+  if(!el) {
+    el = document.createElement('div');
+    el.id = 'weather-alerts-panel';
+    const ww = document.getElementById('weather-widget');
+    ww && ww.parentNode.insertBefore(el, ww.nextSibling);
+  }
+  if(!alerts.length) { el.innerHTML=''; return; }
+
+  const levelStyle = {
+    danger: 'background:#FDECEA;border-color:#E74C3C;',
+    warning: 'background:#FFF8E1;border-color:#FFD54F;',
+    good: 'background:var(--forest-light);border-color:#A9DFBF;'
+  };
+  const levelDot = { danger:'#E74C3C', warning:'#F39C12', good:'#27AE60' };
+
+  // 最多显示3条，好天气提示只在没有危险警报时显示
+  const dangerous = alerts.filter(a=>a.level!=='good');
+  const good = alerts.filter(a=>a.level==='good');
+  const shown = dangerous.length ? dangerous.slice(0,3) : good.slice(0,1);
+
+  el.innerHTML = shown.map(a=>`
+    <div style="display:flex;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid;${levelStyle[a.level]}margin-bottom:6px">
+      <div style="font-size:20px;flex-shrink:0">${a.icon}</div>
+      <div style="flex:1;min-width:0">
+        <div style="font-weight:600;font-size:12px;margin-bottom:1px">${a.title}</div>
+        <div style="font-size:11px;color:var(--text-2);margin-bottom:3px">${a.detail}</div>
+        <div style="font-size:11px;font-weight:600;color:${levelDot[a.level]}">→ ${a.action}</div>
+      </div>
+    </div>`).join('');
+
+  // 同步到任务提醒页
+  syncWeatherTasksToReminders(shown);
+}
+
+function syncWeatherTasksToReminders(alerts) {
+  // 把天气预警注入到任务页（如果当前在提醒页）
+  const panel = document.getElementById('all-tasks-list');
+  if(!panel) return;
+  // 由renderAllTasks统一处理，这里触发刷新
+  if(currentReminderTab === 'tasks') renderAllTasks();
 }
 
 function getWeatherEmoji(condition){
@@ -1941,14 +2092,16 @@ function getWeatherEmoji(condition){
 function renderWeatherWidget(w){
   const el=document.getElementById('weather-widget');
   if(!w){el.innerHTML='';return;}
-  el.innerHTML=`<div class="weather-card">
-    <div class="weather-icon">${w.icon}</div>
-    <div style="flex:1">
-      <div style="font-weight:600;font-size:15px">${w.temp}°F <span style="font-weight:400;font-size:13px;color:var(--text-2)">${w.description}</span></div>
-      <div class="weather-details">${t('humidity')}: ${w.humidity}% · ${t('wind')}: ${w.wind} mph</div>
-      <div style="font-size:10px;color:var(--text-3);margin-top:2px">📍 ${w.city}</div>
-    </div>
-  </div>`;
+  let forecastHtml='';
+  if(currentForecast&&currentForecast.length>1){
+    forecastHtml='<div style="display:flex;gap:4px;margin-top:10px;padding-top:10px;border-top:1px solid var(--border)">';
+    currentForecast.slice(0,5).forEach((day,i)=>{
+      const label=i===0?'Today':new Date(day.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short'});
+      forecastHtml+='<div style="flex:1;text-align:center"><div style="font-size:9px;color:var(--text-3);margin-bottom:2px">'+label+'</div><div style="font-size:14px">'+getWeatherEmoji(day.condition)+'</div><div style="font-size:10px;font-weight:600;color:var(--text)">'+day.maxC+'°</div><div style="font-size:9px;color:var(--text-3)">'+day.minC+'°</div></div>';
+    });
+    forecastHtml+='</div>';
+  }
+  el.innerHTML='<div class="weather-card" style="flex-direction:column;align-items:stretch"><div style="display:flex;align-items:center;gap:12px"><div class="weather-icon">'+w.icon+'</div><div style="flex:1"><div style="font-weight:600;font-size:15px">'+w.tempC+'°C <span style="font-size:12px;color:var(--text-3)">'+w.temp+'°F</span> <span style="font-weight:400;font-size:12px;color:var(--text-2)">'+w.description+'</span></div><div class="weather-details">💧 '+w.humidity+'% · 💨 '+w.wind+' km/h</div><div style="font-size:10px;color:var(--text-3);margin-top:2px">📍 '+w.city+'</div></div></div>'+forecastHtml+'</div>';
 }
 
 function populateInspectWeather(w){
@@ -2377,8 +2530,14 @@ function generateAllTasks(){
       }
     }
   });
+  // 天气预警注入任务列表
+  const weatherAlerts = analyzeWeatherAlerts();
+  const today = new Date().toISOString().split('T')[0];
+  weatherAlerts.filter(a=>a.level!=='good').forEach(a=>{
+    all.unshift({icon:a.icon,title:a.title,due:today,daysUntil:0,urgency:a.level==='danger'?'urgent':'soon',detail:a.detail,hiveName:'All Hives',hiveId:null,action:a.action,isWeather:true});
+  });
   const order={overdue:0,urgent:1,soon:2,ok:3};
-  return all.sort((a,b)=>order[a.urgency]-order[b.urgency]||a.daysUntil-b.daysUntil);
+  return all.sort((a,b)=>{if(a.isWeather&&!b.isWeather)return -1;if(!a.isWeather&&b.isWeather)return 1;return order[a.urgency]-order[b.urgency]||a.daysUntil-b.daysUntil;});
 }
 
 function renderAllTasks(){

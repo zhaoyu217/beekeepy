@@ -1548,8 +1548,7 @@ function setLang(lang){
     else if(id==='insights')renderInsights();
     else if(id==='reminders')renderReminderSettings();
     else if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
-    else if(id==='account'){renderBadges();}
-    else if(id==='account'){renderBadges();}
+    else if(id==='account'){renderAccount();renderBadges();}
     else if(id==='settings')renderSettings();
     else if(id==='treatment'){renderTreatments();}
     else if(id==='harvest'){renderHarvests();}
@@ -2692,10 +2691,9 @@ function showPage(id,btn){
   if(id==='harvest'){populateHarvHive();renderHarvests();}
   if(id==='insights')renderInsights();
   if(id==='settings'){populateHiveApiary();renderSettings();}
-  if(id==='account')renderAccount();
+  if(id==='account'){renderAccount();renderBadges();}
   if(id==='reminders')renderReminderSettings();
   if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
-  if(id==='account'){renderBadges();}
   if(id==='inspect'){if(batchMode)toggleBatchMode();renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
 }
 

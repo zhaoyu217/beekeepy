@@ -1670,7 +1670,7 @@ let currentLang='en';
 function t(key){const base=currentLang.startsWith('en-')?LANGS.en:LANGS[currentLang];return(base||LANGS.en)[key]||(LANGS.en[key]||key);}
 
 function applyLang(){
-  const L=LANGS[currentLang]||LANGS.en;
+  const L=currentLang.startsWith('en-')?(LANGS.en):(LANGS[currentLang]||LANGS.en);
   // Update all data-i18n elements
   document.querySelectorAll('[data-i18n]').forEach(el=>{
     const key=el.getAttribute('data-i18n');
@@ -1678,9 +1678,8 @@ function applyLang(){
   });
   // Update lang button
   const btn=document.getElementById('lang-btn');
-  const L=LANGS[currentLang]||(currentLang.startsWith('en-')?LANGS.en:LANGS.en);
   const langEntry=LANGS[currentLang]||{};
-  if(btn)btn.textContent=langEntry.code||(LANGS[currentLang.startsWith('en-')?currentLang:'en']?.code)||'EN';
+  if(btn)btn.textContent=langEntry.code||'EN';
   // Update lang menu active state
   document.querySelectorAll('.lang-opt').forEach(opt=>{
     const lang=opt.getAttribute('onclick').match(/setLang\('(\w+)'\)/)?.[1];
@@ -1891,10 +1890,10 @@ function getSeason(){
 }
 
 //  FEATURE 1: WEATHER 
-let currentForecast=null; // 5天预报数据
+let currentForecast=null; // 5-day forecast data
 
 async function fetchWeatherByCoords(lat, lon, cityName) {
-  // 同时请求当前天气 + 5天预报
+  // Fetch current weather + 5-day forecast simultaneously
   const [curRes, fcastRes] = await Promise.all([
     fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`),
     fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric&cnt=40`)
@@ -1902,7 +1901,7 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
   const cur = await curRes.json();
   const fcast = await fcastRes.json();
 
-  // 摄氏转华氏
+  // Celsius to Fahrenheit
   const toF = c => Math.round(c * 9/5 + 32);
   const tempC = Math.round(cur.main.temp);
 
@@ -1918,7 +1917,7 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
     city: cityName || cur.name
   };
 
-  // 处理5天预报，提取每天最高/最低温和天气
+  // Process 5-day forecast, extract daily high/low temps
   const dailyMap = {};
   (fcast.list || []).forEach(item => {
     const date = item.dt_txt.split(' ')[0];
@@ -1942,7 +1941,7 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
   renderWeatherWidget(currentWeather);
   populateInspectWeather(currentWeather);
   renderWeatherAlerts();
-  // 触发花期预报（异步，不阻塞天气显示）
+  // Trigger bloom forecast asynchronously
   computeBloomForecast(lat, lon).catch(()=>{});
 }
 
@@ -1970,14 +1969,14 @@ function analyzeWeatherAlerts() {
   currentForecast.forEach((day, i) => {
     const label = i===0?'Today': i===1?'Tomorrow': new Date(day.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 
-    // 极端高温 >35°C
+    // Extreme heat >35°C
     if(day.maxC >= 35) alerts.push({
       icon:'🌡️', level:'danger',
       title:`Extreme heat ${label} — ${day.maxC}°C (${day.maxF}°F)`,
       detail:'Risk of overheating. Ensure shade, ventilation, and water near hives.',
       action:'Add ventilation / shade cloth'
     });
-    // 高温检查适宜性 30-35°C
+    // High heat warning 30-35°C
     else if(day.maxC >= 30) alerts.push({
       icon:'☀️', level:'warning',
       title:`High heat ${label} — ${day.maxC}°C`,
@@ -1985,14 +1984,14 @@ function analyzeWeatherAlerts() {
       action:'Inspect before 9am'
     });
 
-    // 极端低温 <4°C
+    // Cold snap <4°C
     if(day.minC <= 4 && day.minC > 0) alerts.push({
       icon:'🥶', level:'warning',
       title:`Cold snap ${label} — low ${day.minC}°C (${day.minF}°F)`,
       detail:'Cluster may tighten. Check honey stores are accessible.',
       action:'Check winter stores'
     });
-    // 冰点以下
+    // Below freezing
     if(day.minC <= 0) alerts.push({
       icon:'❄️', level:'danger',
       title:`Freezing ${label} — low ${day.minC}°C (${day.minF}°F)`,
@@ -2000,7 +1999,7 @@ function analyzeWeatherAlerts() {
       action:'Do NOT inspect — insulate hive'
     });
 
-    // 暴风雨
+    // Thunderstorm
     if(day.hasThunder) alerts.push({
       icon:'⛈️', level:'warning',
       title:`Thunderstorm ${label}`,
@@ -2008,7 +2007,7 @@ function analyzeWeatherAlerts() {
       action:'Postpone inspection'
     });
 
-    // 强风 >40km/h
+    // Strong wind >40km/h
     if(day.maxWind >= 40) alerts.push({
       icon:'💨', level:'warning',
       title:`Strong wind ${label} — ${day.maxWind} km/h`,
@@ -2016,7 +2015,7 @@ function analyzeWeatherAlerts() {
       action:'Secure hive lids'
     });
 
-    // 降雪
+    // Snowfall
     if(day.hasSnow) alerts.push({
       icon:'🌨️', level:'warning',
       title:`Snow forecast ${label}`,
@@ -2024,7 +2023,7 @@ function analyzeWeatherAlerts() {
       action:'Clear entrance after snow'
     });
 
-    // 最佳检查日
+    // Good inspection day
     if(day.maxC >= 18 && day.maxC < 30 && !day.hasThunder && day.maxWind < 25 &&
        (day.condition==='Clear'||day.condition==='Clouds')) {
       alerts.push({
@@ -2036,7 +2035,7 @@ function analyzeWeatherAlerts() {
     }
   });
 
-  // 连续3天低于0°C → 越冬预警
+  // 3+ consecutive days below 0°C → winter cluster warning
   const freezeDays = currentForecast.filter(d=>d.minC<=0).length;
   if(freezeDays >= 3) alerts.unshift({
     icon:'🧊', level:'danger',
@@ -2050,7 +2049,7 @@ function analyzeWeatherAlerts() {
 
 function renderWeatherAlerts() {
   const alerts = analyzeWeatherAlerts();
-  // 找weather-widget后面插入预警，或用单独容器
+  // Insert alert panel after weather widget
   let el = document.getElementById('weather-alerts-panel');
   if(!el) {
     el = document.createElement('div');
@@ -2067,7 +2066,7 @@ function renderWeatherAlerts() {
   };
   const levelDot = { danger:'#E74C3C', warning:'#F39C12', good:'#27AE60' };
 
-  // 最多显示3条，好天气提示只在没有危险警报时显示
+  // Show max 3 alerts; good-weather tips only when no danger alerts
   const dangerous = alerts.filter(a=>a.level!=='good');
   const good = alerts.filter(a=>a.level==='good');
   const shown = dangerous.length ? dangerous.slice(0,3) : good.slice(0,1);
@@ -2082,29 +2081,29 @@ function renderWeatherAlerts() {
       </div>
     </div>`).join('');
 
-  // 同步到任务提醒页
+  // Sync to reminders task page
   syncWeatherTasksToReminders(shown);
 }
 
 function syncWeatherTasksToReminders(alerts) {
-  // 把天气预警注入到任务页（如果当前在提醒页）
+  // Inject weather alerts into task list if on reminders page
   const panel = document.getElementById('all-tasks-list');
   if(!panel) return;
-  // 由renderAllTasks统一处理，这里触发刷新
+  // Handled by renderAllTasks; trigger refresh here
   if(currentReminderTab === 'tasks') renderAllTasks();
 }
 
 // ============================================================
-// BLOOM FORECAST — GDD积温花期预报模块
+// BLOOM FORECAST — GDD-based nectar plant phenology module
 // ============================================================
 
-// 蜜源植物规则库（支持北美/欧洲/南半球）
-// 蜜源植物规则库 — 按国家/语言区分
-// langs: 适用语言列表（对应App的7种语言：en/de/fr/it/pt/ro/tr）
-// 名称按语言本地化
+// Nectar plant rule library (North America / Europe / Southern Hemisphere)
+// Nectar plant rule library — organized by country/language
+// langs: applicable language codes for this plant
+// Names localized per language
 const NECTAR_PLANTS = [
 
-  // ── 🇺🇸 美国 (en) ────────────────────────────────────────────────
+  // ── 🇺🇸 USA (en) ──────────────────────────────────────────────────
   {id:'dandelion_us',    langs:['en'],
    name:{en:'Dandelion'},
    emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
@@ -2133,7 +2132,7 @@ const NECTAR_PLANTS = [
    name:{en:'Wildflower Mix'},
    emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
 
-  // ── 🇬🇧 英国 (en-gb) ──────────────────────────────────────────────
+  // ── 🇬🇧 UK (en-gb) ────────────────────────────────────────────────
   {id:'dandelion_gb',    langs:['en-gb'],
    name:{en:'Dandelion'},
    emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
@@ -2159,7 +2158,7 @@ const NECTAR_PLANTS = [
    name:{en:'Wildflower Mix'},
    emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
 
-  // ── 🇦🇺 澳大利亚 (en-au, 南半球) ─────────────────────────────────
+  // ── 🇦🇺 Australia (en-au, Southern Hemisphere) ─────────────────────
   {id:'eucalyptus_au',   langs:['en-au'],
    name:{en:'Eucalyptus'},
    emoji:'🌿', base:10, gddOpen:80,  gddPeak:200, monthsN:[1,2,3,4,5,6,7,8,9,10,11,12], monthsS:[1,2,3,4,5,6,7,8,9,10,11,12], peak:true},
@@ -2182,7 +2181,7 @@ const NECTAR_PLANTS = [
    name:{en:'Wildflower Mix'},
    emoji:'🌺', base:8,  gddOpen:100, gddPeak:250, monthsN:[], monthsS:[9,10,11,12,1,2], peak:false},
 
-  // ── 🇳🇿 新西兰 (en-nz, 南半球) ───────────────────────────────────
+  // ── 🇳🇿 New Zealand (en-nz, Southern Hemisphere) ──────────────────
   {id:'manuka_nz',       langs:['en-nz'],
    name:{en:'Mānuka'},
    emoji:'🌸', base:10, gddOpen:150, gddPeak:300, monthsN:[], monthsS:[11,12,1], peak:true},
@@ -2205,7 +2204,7 @@ const NECTAR_PLANTS = [
    name:{en:'Wildflower Mix'},
    emoji:'🌺', base:8,  gddOpen:100, gddPeak:250, monthsN:[], monthsS:[10,11,12,1,2,3], peak:false},
 
-  // ── 🇩🇪 德国 (de) ─────────────────────────────────────────────────
+  // ── 🇩🇪 Germany (de) ──────────────────────────────────────────────
   {id:'dandelion_de',    langs:['de'],
    name:{de:'Löwenzahn'},
    emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
@@ -2234,7 +2233,7 @@ const NECTAR_PLANTS = [
    name:{de:'Wildblumen'},
    emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
 
-  // ── 🇫🇷 法国 (fr) ─────────────────────────────────────────────────
+  // ── 🇫🇷 France (fr) ───────────────────────────────────────────────
   {id:'dandelion_fr',    langs:['fr'],
    name:{fr:'Pissenlit'},
    emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
@@ -2266,7 +2265,7 @@ const NECTAR_PLANTS = [
    name:{fr:'Fleurs sauvages'},
    emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
 
-  // ── 🇮🇹 意大利 (it) ────────────────────────────────────────────────
+  // ── 🇮🇹 Italy (it) ────────────────────────────────────────────────
   {id:'dandelion_it',    langs:['it'],
    name:{it:'Tarassaco'},
    emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
@@ -2298,7 +2297,7 @@ const NECTAR_PLANTS = [
    name:{it:'Fiori selvatici'},
    emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
 
-  // ── 🇧🇷 巴西 (pt) ─────────────────────────────────────────────────
+  // ── 🇧🇷 Brazil (pt) ───────────────────────────────────────────────
   {id:'eucalyptus_br',   langs:['pt'],
    name:{pt:'Eucalipto'},
    emoji:'🌿', base:12, gddOpen:100, gddPeak:250, monthsN:[1,2,3,4,5,6,7,8,9,10,11,12], monthsS:[1,2,3,4,5,6,7,8,9,10,11,12], peak:true},
@@ -2315,7 +2314,7 @@ const NECTAR_PLANTS = [
    name:{pt:'Flores silvestres'},
    emoji:'🌺', base:10, gddOpen:80,  gddPeak:200, monthsN:[1,2,3,4,5,6,7,8,9,10,11,12], monthsS:[1,2,3,4,5,6,7,8,9,10,11,12], peak:false},
 
-  // ── 🇷🇴 罗马尼亚 (ro) ──────────────────────────────────────────────
+  // ── 🇷🇴 Romania (ro) ──────────────────────────────────────────────
   {id:'dandelion_ro',    langs:['ro'],
    name:{ro:'Păpădie'},
    emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
@@ -2338,7 +2337,7 @@ const NECTAR_PLANTS = [
    name:{ro:'Flori de câmp'},
    emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
 
-  // ── 🇹🇷 土耳其 (tr) ────────────────────────────────────────────────
+  // ── 🇹🇷 Turkey (tr) ───────────────────────────────────────────────
   {id:'dandelion_tr',    langs:['tr'],
    name:{tr:'Karahindiba'},
    emoji:'🌼', base:5,  gddOpen:50,  gddPeak:120, monthsN:[3,4,5],   monthsS:[], peak:false},
@@ -2368,35 +2367,35 @@ const NECTAR_PLANTS = [
    emoji:'🌺', base:8,  gddOpen:150, gddPeak:300, monthsN:[5,6,7,8], monthsS:[], peak:false},
 
 ];
-let currentGDD = 0;          // 今年累计GDD
-let bloomForecast = [];       // 当前花期预报结果
-let bloomFeedback = {};       // 用户反馈校准 {plantId: offsetGDD}
+let currentGDD = 0;          // Cumulative GDD for this year
+let bloomForecast = [];       // Current bloom forecast results
+let bloomFeedback = {};       // User feedback calibration {plantId: offsetGDD}
 
-// 从localStorage读取用户反馈校准数据
+// Load user feedback calibration from localStorage
 function loadBloomFeedback() {
   try { bloomFeedback = JSON.parse(localStorage.getItem('bk_bloom_feedback')||'{}'); } catch(e){}
 }
 
-// 保存用户反馈
+// Save user feedback
 function saveBloomFeedback(plantId, correct) {
   if(correct) {
-    // 用户确认开花，不调整
+    // User confirmed blooming — no adjustment needed
     bloomFeedback[plantId] = (bloomFeedback[plantId]||0);
   } else {
-    // 用户说还没开，下次需要更多GDD才触发（+30）
+    // User said not yet — raise GDD threshold by 30
     bloomFeedback[plantId] = (bloomFeedback[plantId]||0) + 30;
   }
   try { localStorage.setItem('bk_bloom_feedback', JSON.stringify(bloomFeedback)); } catch(e){}
-  // 关闭弹窗
+  // Close modal
   const modal = document.getElementById('bloom-feedback-modal');
   if(modal) modal.remove();
   showToast('Thanks for the feedback! 🌸');
 }
 
-// 判断是否南半球
+// Determine if southern hemisphere
 function isSouthernHemisphere(lat) { return lat < 0; }
 
-// 从Open-Meteo获取今年历史每日气温，计算GDD
+// Fetch historical daily temps from Open-Meteo to compute GDD
 async function fetchGDDFromOpenMeteo(lat, lon) {
   const today = new Date();
   const startOfYear = today.getFullYear() + '-01-01';
@@ -2406,7 +2405,7 @@ async function fetchGDDFromOpenMeteo(lat, lon) {
     const res = await fetch(url);
     const d = await res.json();
     if(!d.daily) return null;
-    // 计算累计GDD（基准温度5°C，用于早春植物）
+    // Accumulate GDD (base 5°C for early-spring plants, 10°C for others)
     let gdd5=0, gdd10=0;
     d.daily.temperature_2m_max.forEach((tmax,i)=>{
       const tmin = d.daily.temperature_2m_min[i];
@@ -2418,7 +2417,7 @@ async function fetchGDDFromOpenMeteo(lat, lon) {
   } catch(e){ return null; }
 }
 
-// 主函数：计算花期预报
+// Main function: compute bloom forecast
 async function computeBloomForecast(lat, lon) {
   loadBloomFeedback();
   const gddData = await fetchGDDFromOpenMeteo(lat, lon);
@@ -2429,12 +2428,12 @@ async function computeBloomForecast(lat, lon) {
   const lang = (typeof currentLang !== 'undefined' ? currentLang : 'en');
   const results = [];
 
-  // 过滤：只显示当前语言对应的植物
+  // Filter: show only plants for current language/country
   const filtered = NECTAR_PLANTS.filter(p => p.langs.includes(lang));
 
   filtered.forEach(plant => {
     const months = southern ? plant.monthsS : plant.monthsN;
-    if(!months || !months.includes(month)) return; // 月份窗口过滤
+    if(!months || !months.includes(month)) return; // Month window filter
 
     const gdd = plant.base <= 7 ? gddData.gdd5 : gddData.gdd10;
     const feedback = bloomFeedback[plant.id] || 0;
@@ -2447,7 +2446,7 @@ async function computeBloomForecast(lat, lon) {
     else if(gdd >= adjustedOpen * 0.75) status = 'soon';
 
     if(status) {
-      // 本地化植物名称
+      // Localize plant name
       const localName = (plant.name && plant.name[lang]) || plant.name[Object.keys(plant.name)[0]];
       const progress = Math.min(100, Math.round((gdd - adjustedOpen) / (adjustedPeak - adjustedOpen) * 100));
       results.push({ ...plant, localName, status, progress: Math.max(0, progress), gdd, adjustedOpen, adjustedPeak });
@@ -2459,7 +2458,7 @@ async function computeBloomForecast(lat, lon) {
   checkSuperAlert(results, lat, lon);
 }
 
-// 推送继箱提醒
+// Push super (honey super) alert
 function checkSuperAlert(results, lat, lon) {
   const peakSoon = results.filter(p => p.status === 'soon' && p.peak);
   const peakNow  = results.filter(p => p.status === 'peak'  && p.peak);
@@ -2470,19 +2469,19 @@ function checkSuperAlert(results, lat, lon) {
       ? `🍯 ${plant.name} is at PEAK nectar flow! Is your super on?`
       : `⚠️ ${plant.name} peak nectar flow coming soon! Prepare your super.`;
 
-    // 浏览器推送通知
+    // Browser push notification
     if(Notification.permission === 'granted') {
       new Notification('Beekeepy — Nectar Flow Alert 🍯', {
         body: msg,
         icon: '🐝'
       });
     }
-    // App内横幅
+    // In-app banner
     showSuperAlert(plant, peakNow.length > 0);
   }
 }
 
-// 显示继箱提醒横幅
+// Show honey super alert banner
 function showSuperAlert(plant, isNow) {
   let el = document.getElementById('super-alert-banner');
   if(!el) {
@@ -2508,7 +2507,7 @@ function showSuperAlert(plant, isNow) {
     </div>`;
 }
 
-// 渲染花期预报卡片（首页天气下方）
+// Render bloom forecast card below weather widget on home screen
 function renderBloomForecast() {
   let el = document.getElementById('bloom-forecast-panel');
   if(!el) {
@@ -2545,7 +2544,7 @@ function renderBloomForecast() {
     </div>`;
 }
 
-// 用户反馈弹窗
+// User feedback modal
 function showBloomFeedback(plantId, plantName, emoji) {
   const existing = document.getElementById('bloom-feedback-modal');
   if(existing) existing.remove();
@@ -3014,7 +3013,7 @@ function generateAllTasks(){
       }
     }
   });
-  // 天气预警注入任务列表
+  // Inject weather alerts into task list
   const weatherAlerts = analyzeWeatherAlerts();
   const today = new Date().toISOString().split('T')[0];
   weatherAlerts.filter(a=>a.level!=='good').forEach(a=>{
@@ -4312,7 +4311,7 @@ async function showHiveQR(){
   const qrDiv=document.getElementById('qr-container');
   qrDiv.innerHTML='';
   try{
-    // qrcodejs 使用 div 容器
+    // qrcodejs requires a div container
     const qrDiv=document.getElementById('qr-container');
     qrDiv.innerHTML='';
     new QRCode(qrDiv,{
@@ -5425,7 +5424,7 @@ function renderCommunityMapMarkers(){
 // COMMUNITY EXTRAS: Report, Hive Data Attach
 // ============================================================
 
-// 举报帖子
+// Report post
 async function reportPost(postId){
   const reason = prompt('Why are you reporting this post?\n\n1. Spam / Advertisement\n2. Inappropriate content\n3. Misinformation\n4. Other\n\nEnter reason:');
   if(!reason)return;
@@ -5437,7 +5436,7 @@ async function reportPost(postId){
   showToast('🚩 Report submitted — thank you','success');
 }
 
-// 蜂箱数据附加 — 在 Clinic tab 打开弹窗时填充蜂箱选择
+// Hive data injection — populate hive selector when Clinic tab opens
 function populateHiveAttach(){
   const sel=document.getElementById('comm-attach-hive');
   if(!sel)return;

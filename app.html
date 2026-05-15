@@ -1897,56 +1897,75 @@ function getSeason(){
 let currentForecast=null; // 5-day forecast data
 
 async function fetchWeatherByCoords(lat, lon, cityName) {
-  // Fetch current weather + 5-day forecast simultaneously
-  const [curRes, fcastRes] = await Promise.all([
-    fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`),
-    fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric&cnt=40`)
-  ]);
-  const cur = await curRes.json();
-  const fcast = await fcastRes.json();
+  try {
+    // Fetch current weather + 5-day forecast simultaneously
+    const [curRes, fcastRes] = await Promise.all([
+      fetch(`https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric`),
+      fetch(`https://api.openweathermap.org/data/2.5/forecast?lat=${lat}&lon=${lon}&appid=${OPENWEATHER_API_KEY}&units=metric&cnt=40`)
+    ]);
+    const cur = await curRes.json();
+    const fcast = await fcastRes.json();
 
-  // Celsius to Fahrenheit
-  const toF = c => Math.round(c * 9/5 + 32);
-  const tempC = Math.round(cur.main.temp);
+    // Validate response
+    if(!cur || !cur.main || !cur.weather || !cur.weather[0]) {
+      console.warn('Weather API invalid response:', cur);
+      renderWeatherWidget(null);
+      renderWeatherAlerts();
+      computeBloomForecast(lat, lon).catch(e=>console.warn('Bloom forecast error:',e));
+      return;
+    }
 
-  currentWeather = {
-    temp: toF(tempC),
-    tempC,
-    humidity: cur.main.humidity,
-    wind: Math.round(cur.wind.speed * 3.6), // m/s → km/h
-    windMph: Math.round(cur.wind.speed * 2.237),
-    condition: cur.weather[0].main,
-    description: cur.weather[0].description,
-    icon: getWeatherEmoji(cur.weather[0].main),
-    city: cityName || cur.name
-  };
+    // Celsius to Fahrenheit
+    const toF = c => Math.round(c * 9/5 + 32);
+    const tempC = Math.round(cur.main.temp);
 
-  // Process 5-day forecast, extract daily high/low temps
-  const dailyMap = {};
-  (fcast.list || []).forEach(item => {
-    const date = item.dt_txt.split(' ')[0];
-    if (!dailyMap[date]) dailyMap[date] = {temps:[], conditions:[], winds:[]};
-    dailyMap[date].temps.push(item.main.temp);
-    dailyMap[date].conditions.push(item.weather[0].main);
-    dailyMap[date].winds.push(item.wind.speed * 3.6);
-  });
-  currentForecast = Object.entries(dailyMap).slice(0,5).map(([date, v]) => ({
-    date,
-    minC: Math.round(Math.min(...v.temps)),
-    maxC: Math.round(Math.max(...v.temps)),
-    minF: toF(Math.min(...v.temps)),
-    maxF: toF(Math.max(...v.temps)),
-    condition: v.conditions[Math.floor(v.conditions.length/2)],
-    maxWind: Math.round(Math.max(...v.winds)),
-    hasThunder: v.conditions.includes('Thunderstorm'),
-    hasSnow: v.conditions.includes('Snow')
-  }));
+    currentWeather = {
+      temp: toF(tempC),
+      tempC,
+      humidity: cur.main.humidity,
+      wind: Math.round(cur.wind.speed * 3.6), // m/s → km/h
+      windMph: Math.round(cur.wind.speed * 2.237),
+      condition: cur.weather[0].main,
+      description: cur.weather[0].description,
+      icon: getWeatherEmoji(cur.weather[0].main),
+      city: cityName || cur.name
+    };
 
-  renderWeatherWidget(currentWeather);
-  populateInspectWeather(currentWeather);
-  renderWeatherAlerts();
-  // Trigger bloom forecast asynchronously
-  computeBloomForecast(lat, lon).catch(e=>console.warn('Bloom forecast error:',e));
+    // Process 5-day forecast, extract daily high/low temps
+    const dailyMap = {};
+    (fcast.list || []).forEach(item => {
+      if(!item.main || !item.weather || !item.weather[0]) return;
+      const date = item.dt_txt.split(' ')[0];
+      if (!dailyMap[date]) dailyMap[date] = {temps:[], conditions:[], winds:[]};
+      dailyMap[date].temps.push(item.main.temp);
+      dailyMap[date].conditions.push(item.weather[0].main);
+      dailyMap[date].winds.push(item.wind.speed * 3.6);
+    });
+    currentForecast = Object.entries(dailyMap).slice(0,5).map(([date, v]) => ({
+      date,
+      minC: Math.round(Math.min(...v.temps)),
+      maxC: Math.round(Math.max(...v.temps)),
+      minF: toF(Math.min(...v.temps)),
+      maxF: toF(Math.max(...v.temps)),
+      condition: v.conditions[Math.floor(v.conditions.length/2)],
+      maxWind: Math.round(Math.max(...v.winds)),
+      hasThunder: v.conditions.includes('Thunderstorm'),
+      hasSnow: v.conditions.includes('Snow')
+    }));
+
+    renderWeatherWidget(currentWeather);
+    populateInspectWeather(currentWeather);
+    renderWeatherAlerts();
+    // Trigger bloom forecast asynchronously
+    computeBloomForecast(lat, lon).catch(e=>console.warn('Bloom forecast error:',e));
+
+  } catch(e) {
+    console.warn('Weather fetch error:', e);
+    renderWeatherWidget(null);
+    // Still try bloom forecast even if weather fails
+    renderWeatherAlerts();
+    computeBloomForecast(lat, lon).catch(e2=>console.warn('Bloom forecast error:',e2));
+  }
 }
 
 async function fetchWeather() {
@@ -1957,12 +1976,20 @@ async function fetchWeather() {
       const parts = apiaryWithGps.gps.split(',').map(s=>s.trim());
       const lat = parseFloat(parts[0]), lon = parseFloat(parts[1]);
       if(!isNaN(lat) && !isNaN(lon)) { await fetchWeatherByCoords(lat, lon, apiaryWithGps.name); return; }
-    } catch(e){ renderWeatherWidget(null); return; }
+    } catch(e){ console.warn('Apiary weather error:', e); }
   }
-  navigator.geolocation?.getCurrentPosition(async pos=>{
-    try { await fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude, null); }
-    catch(e){ renderWeatherWidget(null); }
-  }, ()=>renderWeatherWidget(null));
+  // Fall back to device GPS
+  if(navigator.geolocation) {
+    navigator.geolocation.getCurrentPosition(
+      async pos => {
+        try { await fetchWeatherByCoords(pos.coords.latitude, pos.coords.longitude, null); }
+        catch(e){ console.warn('GPS weather error:', e); renderWeatherWidget(null); }
+      },
+      () => { renderWeatherWidget(null); }
+    );
+  } else {
+    renderWeatherWidget(null);
+  }
 }
 
 function analyzeWeatherAlerts() {
@@ -2404,6 +2431,7 @@ async function fetchGDDFromOpenMeteo(lat, lon) {
   const today = new Date();
   const startOfYear = today.getFullYear() + '-01-01';
   const todayStr = today.toISOString().split('T')[0];
+  const dayOfYear = Math.floor((today - new Date(today.getFullYear(),0,0)) / 86400000);
 
   // Try archive API first (full year history)
   const tryUrls = [
@@ -2424,20 +2452,33 @@ async function fetchGDDFromOpenMeteo(lat, lon) {
         gdd5  += Math.max(0, avg-5);
         gdd10 += Math.max(0, avg-10);
       });
-      return { gdd5: Math.round(gdd5), gdd10: Math.round(gdd10), days: d.daily.time.length };
+      return { gdd5: Math.round(gdd5), gdd10: Math.round(gdd10), days: d.daily.time.length, source:'api' };
     } catch(e){ continue; }
   }
 
-  // Fallback: estimate GDD from current weather + day of year
-  if(currentWeather && currentWeather.tempC !== undefined) {
-    const dayOfYear = Math.floor((today - new Date(today.getFullYear(),0,0)) / 86400000);
-    const avgTempC = currentWeather.tempC;
-    // Rough estimate: assume current temp represents seasonal average
-    const estimatedGDD5  = Math.max(0, avgTempC - 5)  * dayOfYear * 0.6;
-    const estimatedGDD10 = Math.max(0, avgTempC - 10) * dayOfYear * 0.6;
-    return { gdd5: Math.round(estimatedGDD5), gdd10: Math.round(estimatedGDD10), days: dayOfYear, estimated: true };
+  // Fallback: use current weather temp to back-calculate seasonal GDD
+  // Current temp + day of year + sinusoidal season model
+  const absLat = Math.abs(lat);
+  const isSouth = lat < 0;
+  const amplitude = Math.min(18, absLat * 0.38);
+  const month0 = today.getMonth();
+  const offset = isSouth ? 6 : 0;
+  // Back-calculate annual mean from observed current temp
+  const seasonFactor = Math.cos(Math.PI * ((month0 + offset) % 12 - 6) / 6);
+  const observedTemp = currentWeather && currentWeather.tempC !== undefined ? currentWeather.tempC : null;
+  // Annual mean: if we have observed temp, solve: observedTemp = mean + amplitude*seasonFactor
+  const annualMean = observedTemp !== null
+    ? Math.max(-5, observedTemp - amplitude * seasonFactor)
+    : Math.max(-5, 27 - absLat * 0.5);
+  let gdd5=0, gdd10=0;
+  for(let d=0; d<dayOfYear; d++){
+    const dm = Math.floor(d/30.5);
+    const t = annualMean + amplitude * Math.cos(Math.PI * ((dm+offset)%12 - 6) / 6);
+    gdd5  += Math.max(0, t-5);
+    gdd10 += Math.max(0, t-10);
   }
-  return null;
+  const src = observedTemp !== null ? 'weather_estimate' : 'climate_estimate';
+  return { gdd5: Math.round(gdd5), gdd10: Math.round(gdd10), days: dayOfYear, source: src };
 }
 
 // Main function: compute bloom forecast
@@ -2478,6 +2519,13 @@ async function computeBloomForecast(lat, lon) {
 
   bloomForecast = results;
   renderBloomForecast();
+  if(results.length===0) {
+    // Show why no results (for debugging)
+    let el = document.getElementById('bloom-forecast-panel');
+    if(!el){el=document.createElement('div');el.id='bloom-forecast-panel';const w=document.getElementById('weather-alerts-panel')||document.getElementById('weather-widget');w&&w.parentNode.insertBefore(el,w.nextSibling);}
+    const src = gddData.source||'api';
+    el.innerHTML=`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 16px;margin-bottom:10px;font-size:11px;color:var(--text-3)">🌸 Bloom Forecast — GDD${gddData.gdd10} (${src}) · No plants in bloom window for month ${new Date().getMonth()+1}</div>`;
+  }
   checkSuperAlert(results, lat, lon);
 }
 

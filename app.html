@@ -1897,11 +1897,58 @@ async function requestPushPermission(){
   }
 }
 
-function togglePushNotifications(btn){
-  btn.classList.toggle('on');
-  if(btn.classList.contains('on') && Notification.permission!=='granted'){
-    Notification.requestPermission();
+async function togglePushNotifications(btn){
+  if(btn.classList.contains('on')){
+    // Turn off
+    btn.classList.remove('on');
+    showToast('Push notifications disabled','success');
+    return;
   }
+  if(!('Notification' in window)){
+    showToast('Browser notifications not supported','error');return;
+  }
+  if(Notification.permission==='denied'){
+    showToast('Notifications blocked — please enable in browser settings','error');return;
+  }
+  const permission=await Notification.requestPermission();
+  if(permission==='granted'){
+    btn.classList.add('on');
+    // Send a test notification
+    new Notification('🐝 Beekeepy',{
+      body:'Push notifications enabled! You will be reminded to inspect your hives.',
+      icon:'https://www.beekeepy.com/favicon.ico'
+    });
+    showToast('Push notifications enabled ✓','success');
+    // Schedule daily check via Service Worker if available
+    if('serviceWorker' in navigator && navigator.serviceWorker.controller){
+      navigator.serviceWorker.controller.postMessage({type:'ENABLE_PUSH'});
+    }
+  } else {
+    showToast('Notification permission denied','error');
+  }
+}
+
+function sendPushReminder(hiveName, daysSince){
+  if(Notification.permission!=='granted')return;
+  new Notification('🐝 Beekeepy — Inspection Due',{
+    body:`${hiveName} hasn't been inspected in ${daysSince} days. Time to check your bees!`,
+    icon:'https://www.beekeepy.com/favicon.ico',
+    tag:'beekeepy-reminder'
+  });
+}
+
+function checkAndPushReminders(){
+  if(Notification.permission!=='granted')return;
+  hives.forEach(h=>{
+    const rem=reminders.find(r=>r.hive_id===h.id);
+    if(!rem||!rem.email_enabled)return;
+    const li=lastInsp(h.id);
+    if(!li)return;
+    const days=daysSince(li.date);
+    if(days>=rem.reminder_days){
+      sendPushReminder(h.name,days);
+    }
+  });
 }
 
 function renderReminderSettings(){
@@ -2057,7 +2104,7 @@ function renderHiveDetailTimeline(hiveId){
   const harvs=harvests.filter(h=>h.hive_id===hiveId);
   const hivePics=hivePhotos(hiveId);
   const items=[];
-  insps.forEach(i=>items.push({date:i.date,type:'inspect',title:t('inspection')+' — '+t('score')+' '+i.score,body:i.notes||'',icon:'📋',dotClass:'tl-dot-inspect'}));
+  insps.forEach(i=>items.push({date:i.date,type:'inspect',title:t('inspection')+' — '+t('score')+' '+i.score,body:i.notes||'',icon:'📋',dotClass:'tl-dot-inspect',extra:`<button onclick="confirmDeleteInspection('${i.id}')" style="margin-left:6px;padding:2px 7px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:20px;cursor:pointer;font-size:11px">🗑</button>`}));
   treats.forEach(tr=>items.push({date:tr.start_date,type:'treat',title:t('treatment_lbl')+': '+tr.product,body:`${tr.amount||''} ${tr.duration_days?'· '+tr.duration_days+' days':''}`,icon:'💊',dotClass:'tl-dot-treat'}));
   harvs.forEach(h=>items.push({date:h.harvest_date,type:'harvest',title:t('harvest_lbl')+': '+h.honey_lbs+' lbs '+(h.honey_type||''),body:h.note||'',icon:'🍯',dotClass:'tl-dot-harvest'}));
   hivePics.forEach((p,i)=>items.push({date:p.taken_at?.split('T')[0],type:'photo',title:'Photo added',body:`<img src="${p.public_url}" style="width:60px;height:60px;object-fit:cover;border-radius:6px;margin-top:4px;cursor:pointer" onclick="openLightbox(${i},'hive','${hiveId}')">`,icon:'📷',dotClass:'tl-dot-photo'}));
@@ -2358,8 +2405,8 @@ function renderInsights(){
   el.innerHTML=html;
 }
 function renderSettings(){
-  document.getElementById('apiary-list-full').innerHTML=apiaries.map(a=>`<div class="apiary-item"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:12px;color:var(--text-3)">${a.location||''}${a.gps?' · GPS: '+a.gps:''}</div></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No apiaries yet</div>';
-  document.getElementById('hive-list-full').innerHTML=hives.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600">${h.name} <span class="badge b-honey">${getApiary(h.apiary_id)?.name||''}</span></div><div style="font-size:12px;color:var(--text-3)">${h.type||''}</div></div><button onclick="confirmDeleteHive('${h.id}')" style="padding:5px 9px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;flex-shrink:0;margin-left:8px">🗑</button></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hives yet</div>';
+  document.getElementById('apiary-list-full').innerHTML=apiaries.map(a=>`<div class="apiary-item"><div class="apiary-icon">🌿</div><div style="flex:1"><div style="font-weight:600">${a.name}</div><div style="font-size:12px;color:var(--text-3)">${a.location||''}${a.gps?' · GPS: '+a.gps:''}</div></div><div style="display:flex;gap:6px;flex-shrink:0"><button onclick="openEditApiary('${a.id}')" style="padding:5px 9px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:var(--radius-sm);cursor:pointer;font-size:13px">✏️</button><button onclick="confirmDeleteApiary('${a.id}')" style="padding:5px 9px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px">🗑</button></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No apiaries yet</div>';
+  document.getElementById('hive-list-full').innerHTML=hives.map(h=>`<div style="display:flex;align-items:center;justify-content:space-between;padding:9px 0;border-bottom:1px solid var(--border)"><div style="flex:1"><div style="font-weight:600">${h.name} <span class="badge b-honey">${getApiary(h.apiary_id)?.name||''}</span></div><div style="font-size:12px;color:var(--text-3)">${h.type||''}</div></div><div style="display:flex;gap:6px;flex-shrink:0;margin-left:8px"><button onclick="openEditHive('${h.id}')" style="padding:5px 9px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:var(--radius-sm);cursor:pointer;font-size:13px">✏️</button><button onclick="confirmDeleteHive('${h.id}')" style="padding:5px 9px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px">🗑</button></div></div>`).join('')||'<div style="font-size:13px;color:var(--text-3);padding:8px 0">No hives yet</div>';
   document.getElementById('equipment-section').innerHTML='<div style="font-size:13px;color:var(--text-3)">Equipment tracking coming soon</div>';
 }
 
@@ -2632,30 +2679,131 @@ async function saveQueen(){
 }
 
 // APIARY 
+let editingApiaryId=null;
+function openEditApiary(apiaryId){
+  const a=getApiary(apiaryId);if(!a)return;
+  editingApiaryId=apiaryId;
+  document.getElementById('ap-name').value=a.name||'';
+  document.getElementById('ap-loc').value=a.location||'';
+  document.getElementById('ap-gps').value=a.gps||'';
+  document.getElementById('ap-forage').value=a.forage||'';
+  document.getElementById('ap-note').value=a.note||'';
+  document.querySelector('#modal-apiary .modal-title h2').textContent='Edit Apiary';
+  document.getElementById('modal-apiary').classList.add('open');
+}
+function confirmDeleteApiary(apiaryId){
+  const a=getApiary(apiaryId);if(!a)return;
+  const hiveCount=hives.filter(h=>h.apiary_id===apiaryId).length;
+  const modal=document.createElement('div');
+  modal.className='modal-bg';modal.id='modal-delete-apiary';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div class="modal" style="max-width:320px;padding:24px"><div style="text-align:center;margin-bottom:16px"><div style="font-size:32px;margin-bottom:8px">🗑️</div><div style="font-size:16px;font-weight:600;color:var(--text);margin-bottom:6px">Delete "${a.name}"?</div><div style="font-size:13px;color:var(--text-2)">${hiveCount>0?'This apiary has '+hiveCount+' hive'+(hiveCount>1?'s':'')+'. Hives will be unlinked but not deleted.':'This will permanently delete this apiary.'}</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="document.getElementById('modal-delete-apiary').remove()" class="btn btn-outline" style="margin-top:0">Cancel</button><button onclick="deleteApiary('${apiaryId}')" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500">Delete</button></div></div>`;
+  document.body.appendChild(modal);
+}
+async function deleteApiary(apiaryId){
+  document.getElementById('modal-delete-apiary')?.remove();
+  setSyncing('syncing');
+  await sb.from('hives').update({apiary_id:null}).eq('apiary_id',apiaryId);
+  const{error}=await sb.from('apiaries').delete().eq('id',apiaryId);
+  if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
+  apiaries=apiaries.filter(a=>a.id!==apiaryId);
+  hives=hives.map(h=>h.apiary_id===apiaryId?{...h,apiary_id:null}:h);
+  setSyncing('saved');showToast('🗑 Apiary deleted','success');renderSettings();renderHome();
+}
 async function saveApiary(){
   setSyncing('syncing');
-  const{data,error}=await sb.from('apiaries').insert({user_id:currentUser.id,name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:document.getElementById('ap-forage').value,note:document.getElementById('ap-note').value}).select().single();
-  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
-  apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();showToast(t('toast_apiary_saved'));
+  const payload={name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:document.getElementById('ap-forage').value,note:document.getElementById('ap-note').value};
+  if(editingApiaryId){
+    const{data,error}=await sb.from('apiaries').update(payload).eq('id',editingApiaryId).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    const idx=apiaries.findIndex(a=>a.id===editingApiaryId);
+    if(idx>=0)apiaries[idx]={...apiaries[idx],...data};
+    editingApiaryId=null;
+    setSyncing('saved');closeModal('modal-apiary');renderSettings();renderHome();showToast('Apiary updated ✓');
+  } else {
+    const{data,error}=await sb.from('apiaries').insert({user_id:currentUser.id,...payload}).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();showToast(t('toast_apiary_saved'));
+  }
 }
 
 // HIVE 
+let editingHiveId=null;
+function openEditHive(hiveId){
+  const h=getHive(hiveId);if(!h)return;
+  editingHiveId=hiveId;
+  populateHiveApiary();
+  document.getElementById('hv-name').value=h.name||'';
+  document.getElementById('hv-apiary').value=h.apiary_id||'';
+  document.getElementById('hv-type').value=h.type||'Langstroth 10-frame deep';
+  document.getElementById('hv-frames').value=h.boxes||2;
+  document.getElementById('hv-date').value=h.installed||'';
+  document.getElementById('hv-origin').value=h.origin||'Package bees';
+  document.querySelector('#modal-hive .modal-title h2').textContent='Edit Hive';
+  document.getElementById('modal-hive').classList.add('open');
+}
 async function saveHive(){
   setSyncing('syncing');
-  const{data,error}=await sb.from('hives').insert({user_id:currentUser.id,apiary_id:document.getElementById('hv-apiary').value||null,name:document.getElementById('hv-name').value||'New Hive',type:document.getElementById('hv-type').value,boxes:+document.getElementById('hv-frames').value||2,installed:document.getElementById('hv-date').value,origin:document.getElementById('hv-origin').value,status:'ok'}).select().single();
-  if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
-  hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();showToast(t('toast_hive_saved'));
+  const payload={apiary_id:document.getElementById('hv-apiary').value||null,name:document.getElementById('hv-name').value||'New Hive',type:document.getElementById('hv-type').value,boxes:+document.getElementById('hv-frames').value||2,installed:document.getElementById('hv-date').value,origin:document.getElementById('hv-origin').value};
+  if(editingHiveId){
+    const{data,error}=await sb.from('hives').update(payload).eq('id',editingHiveId).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    const idx=hives.findIndex(h=>h.id===editingHiveId);
+    if(idx>=0)hives[idx]={...hives[idx],...data};
+    editingHiveId=null;
+    setSyncing('saved');closeModal('modal-hive');renderSettings();renderHome();showToast('Hive updated ✓');
+  } else {
+    const{data,error}=await sb.from('hives').insert({user_id:currentUser.id,...payload,status:'ok'}).select().single();
+    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();showToast(t('toast_hive_saved'));
+  }
 }
 
 // MODALS 
 function openModal(id){
   if(id==='modal-queen'){document.getElementById('qm-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name}</option>`).join('');document.getElementById('qm-date').value=new Date().toISOString().split('T')[0];}
-  if(id==='modal-hive'){populateHiveApiary();document.getElementById('hv-date').value=new Date().toISOString().split('T')[0];}
+  if(id==='modal-hive'){
+    editingHiveId=null;
+    populateHiveApiary();
+    document.getElementById('hv-date').value=new Date().toISOString().split('T')[0];
+    document.getElementById('hv-name').value='';
+    document.getElementById('hv-frames').value='';
+    document.querySelector('#modal-hive .modal-title h2').textContent='Add Hive';
+    document.querySelectorAll('#skoghive-presets button').forEach(btn=>{btn.style.borderColor='var(--border)';btn.style.background='var(--surface)';});
+  }
+  if(id==='modal-apiary'){
+    editingApiaryId=null;
+    document.getElementById('ap-name').value='';
+    document.getElementById('ap-loc').value='';
+    document.getElementById('ap-gps').value='';
+    document.getElementById('ap-forage').value='';
+    document.getElementById('ap-note').value='';
+    document.querySelector('#modal-apiary .modal-title h2').textContent='Add Apiary';
+  }
   document.getElementById(id).classList.add('open');
 }
 function closeModal(id){document.getElementById(id).classList.remove('open')}
 
 // EXPORT 
+
+
+function confirmDeleteInspection(inspId){
+  const modal=document.createElement('div');
+  modal.id='modal-delete-insp';
+  modal.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:9999;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML=`<div class="modal" style="max-width:300px;padding:24px"><div style="text-align:center;margin-bottom:16px"><div style="font-size:32px;margin-bottom:8px">🗑️</div><div style="font-size:15px;font-weight:600;color:var(--text);margin-bottom:6px">Delete this inspection?</div><div style="font-size:13px;color:var(--text-2)">This cannot be undone.</div></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:8px"><button onclick="document.getElementById('modal-delete-insp').remove()" class="btn btn-outline" style="margin-top:0">Cancel</button><button onclick="deleteInspection('${inspId}')" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--danger);color:#fff;cursor:pointer;font-size:14px;font-family:'DM Sans',sans-serif;font-weight:500">Delete</button></div></div>`;
+  document.body.appendChild(modal);
+}
+async function deleteInspection(inspId){
+  document.getElementById('modal-delete-insp')?.remove();
+  setSyncing('syncing');
+  const{error}=await sb.from('inspections').delete().eq('id',inspId);
+  if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
+  inspections=inspections.filter(i=>i.id!==inspId);
+  setSyncing('saved');showToast('🗑 Inspection deleted','success');
+  if(currentDetailHiveId)renderHiveDetailTimeline(currentDetailHiveId);
+  renderHome();
+}
 
 function confirmDeleteHive(hiveId){
   const h=getHive(hiveId);if(!h)return;

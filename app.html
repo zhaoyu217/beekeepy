@@ -2116,7 +2116,10 @@ function renderHiveDetailTimeline(hiveId){
       ${idx<items.length-1?'<div class="tl-line"></div>':''}
     </div>
     <div class="tl-content">
-      <div class="tl-date">${item.date||''}</div>
+      <div style="display:flex;align-items:center;justify-content:space-between;gap:6px">
+        <div class="tl-date">${item.date||''}</div>
+        ${item.extra||''}
+      </div>
       <div class="tl-title">${item.title}</div>
       <div class="tl-body">${item.body}</div>
     </div>

@@ -5319,13 +5319,21 @@ async function loadUserPoints() {
 }
 
 function updatePointsBadge() {
+  const bal = userPoints.balance||0;
   const badge = document.getElementById('points-badge');
-  if(!badge) return;
-  if(userPoints.balance > 0) {
-    badge.style.display = 'block';
-    badge.textContent = userPoints.balance;
-  } else {
-    badge.style.display = 'none';
+  if(badge) {
+    if(bal > 0) { badge.style.display='block'; badge.textContent=bal; }
+    else { badge.style.display='none'; }
+  }
+  // Also update points page if visible
+  const balEl = document.getElementById('pts-balance');
+  if(balEl) balEl.textContent = bal;
+  const barEl = document.getElementById('pts-progress-bar');
+  if(barEl) barEl.style.width = Math.min(100, Math.round(bal/200*100))+'%';
+  const labelEl = document.getElementById('pts-progress-label');
+  if(labelEl) {
+    const rem = Math.max(0, 200-bal);
+    labelEl.textContent = rem>0?`${rem} more points to unlock rewards`:'Rewards ready to claim!';
   }
 }
 

@@ -832,7 +832,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div id="maintenance-list"></div>
   <div class="section-hd" style="margin-top:16px"><span data-i18n="data">Data</span></div>
   <button class="btn btn-outline" onclick="exportData()">📤 <span data-i18n="export_data">Export All Data (JSON)</span></button>
-  <button class="btn btn-outline" onclick="exportCSV()" style="margin-top:8px">📊 Export CSV (Excel / Sheets)</button>
+  <button class="btn btn-outline" onclick="showExportPanel()" style="margin-top:8px">📊 Export Data (CSV / Excel)</button>
   <div class="brand-footer" style="margin-top:24px">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
 </div>
 </div>
@@ -4924,47 +4924,214 @@ function exportData(){
   const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='beekeepy-export.json';a.click();
 }
 
-function exportCSV(){
-  const BOM='\uFEFF';
-  function toCSV(headers,rows){
-    const esc=v=>{
-      if(v==null)return'';
-      const s=String(v);
-      return(s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s;
-    };
-    return[headers.join(','),...rows.map(r=>headers.map(h=>esc(r[h])).join(','))].join('\r\n');
-  }
-  const inspRows=inspections.map(i=>({
-    Date:i.date,Hive:getHive(i.hive_id)?.name||'',
-    Apiary:getApiary(getHive(i.hive_id)?.apiary_id)?.name||'',
-    Score:i.score,Status:i.status,
-    Colony_Strength:i.colony_strength,Capped_Brood:i.capped_brood,
-    Uncapped_Brood:i.uncapped_brood,Honey_Stores:i.honey_stores,
-    Pollen:i.pollen,Queen_Cells:i.queen_cells,Temperament:i.temperament,
-    Queen_Seen:i.queen_seen?'Yes':'No',Eggs_Present:i.eggs_present?'Yes':'No',
-    Swarm_Prep:i.swarm_prep?'Yes':'No',Disease_Signs:i.disease_signs?'Yes':'No',
-    Mites_Visible:i.mites_visible?'Yes':'No',Mite_Count_Pct:i.mite_count,
-    Temp_F:i.temp_f,Notes:i.notes
-  }));
-  const harvRows=harvests.map(h=>({
-    Date:h.harvest_date,Hive:getHive(h.hive_id)?.name||'',
-    Apiary:getApiary(getHive(h.hive_id)?.apiary_id)?.name||'',
-    Honey_lbs:h.honey_lbs,Wax_oz:h.wax_oz,Honey_Type:h.honey_type,Notes:h.note
-  }));
-  const treatRows=treatments.map(tr=>({
-    Start_Date:tr.start_date,Hive:getHive(tr.hive_id)?.name||'',
-    Apiary:getApiary(getHive(tr.hive_id)?.apiary_id)?.name||'',
-    Product:tr.product,Amount:tr.amount,Duration_Days:tr.duration_days,Notes:tr.note
-  }));
-  const date=new Date().toISOString().split('T')[0];
-  const dl=(content,filename)=>{
-    const blob=new Blob([BOM+content],{type:'text/csv;charset=utf-8'});
-    const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download=filename;a.click();
+function showExportPanel() {
+  const existing = document.getElementById('modal-export');
+  if(existing) existing.remove();
+
+  const years = [...new Set([
+    ...inspections.map(i=>i.date?.slice(0,4)),
+    ...harvests.map(h=>h.harvest_date?.slice(0,4)),
+    ...treatments.map(t=>t.start_date?.slice(0,4))
+  ].filter(Boolean))].sort().reverse();
+
+  const hiveOptions = hives.map(h=>`<option value="${h.id}">${h.name}</option>`).join('');
+  const yearOptions = ['All years',...years].map((y,i)=>`<option value="${i===0?'all':y}">${y}</option>`).join('');
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-export';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:flex-end;justify-content:center';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+      <div style="font-weight:700;font-size:16px;margin-bottom:16px">📊 Export Data</div>
+
+      <!-- Filters -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:16px">
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Hive</label>
+          <select id="export-hive" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface)">
+            <option value="all">All hives</option>
+            ${hiveOptions}
+          </select>
+        </div>
+        <div>
+          <label style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;display:block;margin-bottom:6px">Year</label>
+          <select id="export-year" style="width:100%;padding:8px 10px;border:1px solid var(--border);border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;background:var(--surface)">
+            ${yearOptions}
+          </select>
+        </div>
+      </div>
+
+      <!-- What to include -->
+      <div style="font-size:11px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">Include</div>
+      <div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="exp-inspections" checked style="width:16px;height:16px;accent-color:var(--honey)"> Inspection logs (${inspections.length} records)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="exp-harvests" checked style="width:16px;height:16px;accent-color:var(--honey)"> Harvest records (${harvests.length} records)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="exp-treatments" checked style="width:16px;height:16px;accent-color:var(--honey)"> Treatment records (${treatments.length} records)
+        </label>
+        <label style="display:flex;align-items:center;gap:10px;font-size:13px;cursor:pointer">
+          <input type="checkbox" id="exp-queens" checked style="width:16px;height:16px;accent-color:var(--honey)"> Queen records (${queens.length} records)
+        </label>
+      </div>
+
+      <!-- Export buttons -->
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:10px">
+        <button onclick="runExport('csv')" style="padding:13px;border-radius:var(--radius-sm);border:1.5px solid var(--honey);background:var(--honey-light);color:var(--honey-dark);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">
+          📄 Download CSV
+          <div style="font-size:10px;font-weight:400;margin-top:2px;opacity:0.7">Opens in Excel & Sheets</div>
+        </button>
+        <button onclick="runExport('excel')" style="padding:13px;border-radius:var(--radius-sm);border:1.5px solid var(--forest);background:var(--forest-light);color:var(--forest);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">
+          📊 Download Excel
+          <div style="font-size:10px;font-weight:400;margin-top:2px;opacity:0.7">Multi-sheet .xlsx file</div>
+        </button>
+      </div>
+      <button onclick="document.getElementById('modal-export').remove()" style="width:100%;padding:11px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Cancel</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function getExportData() {
+  const hiveFilter = document.getElementById('export-hive')?.value || 'all';
+  const yearFilter = document.getElementById('export-year')?.value || 'all';
+
+  const filterFn = (hive_id, date) => {
+    if(hiveFilter !== 'all' && hive_id !== hiveFilter) return false;
+    if(yearFilter !== 'all' && date && !date.startsWith(yearFilter)) return false;
+    return true;
   };
-  dl(toCSV(['Date','Hive','Apiary','Score','Status','Colony_Strength','Capped_Brood','Uncapped_Brood','Honey_Stores','Pollen','Queen_Cells','Temperament','Queen_Seen','Eggs_Present','Swarm_Prep','Disease_Signs','Mites_Visible','Mite_Count_Pct','Temp_F','Notes'],inspRows),`beekeepy-inspections-${date}.csv`);
-  setTimeout(()=>dl(toCSV(['Date','Hive','Apiary','Honey_lbs','Wax_oz','Honey_Type','Notes'],harvRows),`beekeepy-harvests-${date}.csv`),300);
-  setTimeout(()=>dl(toCSV(['Start_Date','Hive','Apiary','Product','Amount','Duration_Days','Notes'],treatRows),`beekeepy-treatments-${date}.csv`),600);
-  showToast('3 CSV files downloaded — open in Excel or Google Sheets','success');
+
+  const inclInsp  = document.getElementById('exp-inspections')?.checked;
+  const inclHarv  = document.getElementById('exp-harvests')?.checked;
+  const inclTreat = document.getElementById('exp-treatments')?.checked;
+  const inclQueen = document.getElementById('exp-queens')?.checked;
+
+  const inspRows = inclInsp ? inspections.filter(i=>filterFn(i.hive_id, i.date)).map(i=>({
+    Date:i.date, Hive:getHive(i.hive_id)?.name||'', Apiary:getApiary(getHive(i.hive_id)?.apiary_id)?.name||'',
+    Score:i.score, Status:i.status, Colony_Strength:i.colony_strength,
+    Capped_Brood:i.capped_brood, Uncapped_Brood:i.uncapped_brood,
+    Honey_Stores:i.honey_stores, Pollen:i.pollen, Queen_Cells:i.queen_cells,
+    Temperament:i.temperament, Queen_Seen:i.queen_seen?'Yes':'No',
+    Eggs_Present:i.eggs_present?'Yes':'No', Swarm_Prep:i.swarm_prep?'Yes':'No',
+    Disease_Signs:i.disease_signs?'Yes':'No', Mites_Visible:i.mites_visible?'Yes':'No',
+    Mite_Count_Pct:i.mite_count, Temp_F:i.temp_f, Notes:i.notes
+  })) : [];
+
+  const harvRows = inclHarv ? harvests.filter(h=>filterFn(h.hive_id, h.harvest_date)).map(h=>({
+    Date:h.harvest_date, Hive:getHive(h.hive_id)?.name||'',
+    Apiary:getApiary(getHive(h.hive_id)?.apiary_id)?.name||'',
+    Honey_lbs:h.honey_lbs, Wax_oz:h.wax_oz, Honey_Type:h.honey_type, Notes:h.note
+  })) : [];
+
+  const treatRows = inclTreat ? treatments.filter(t=>filterFn(t.hive_id, t.start_date)).map(t=>({
+    Start_Date:t.start_date, Hive:getHive(t.hive_id)?.name||'',
+    Apiary:getApiary(getHive(t.hive_id)?.apiary_id)?.name||'',
+    Product:t.product, Amount:t.amount, Duration_Days:t.duration_days,
+    Batch_Number:t.batch_number||'', Withdrawal_Period:t.withdrawal_period||'',
+    Applicator:t.applicator||'', Reason:t.reason||'', Notes:t.note
+  })) : [];
+
+  const queenRows = inclQueen ? queens.filter(q=>hiveFilter==='all'||q.hive_id===hiveFilter).map(q=>({
+    Hive:getHive(q.hive_id)?.name||'', Race:q.race||'', Source:q.source||'',
+    Color:q.color||'', Introduced_Date:q.introduced_date||'', Note:q.note||''
+  })) : [];
+
+  return { inspRows, harvRows, treatRows, queenRows };
+}
+
+function runExport(format) {
+  const { inspRows, harvRows, treatRows, queenRows } = getExportData();
+  const date = new Date().toISOString().split('T')[0];
+  const total = inspRows.length + harvRows.length + treatRows.length + queenRows.length;
+
+  if(total === 0) { showToast('No data to export with current filters','warning'); return; }
+
+  if(format === 'csv') {
+    const BOM = '\uFEFF';
+    const toCSV = (headers, rows) => {
+      const esc = v => { if(v==null) return ''; const s=String(v); return (s.includes(',')||s.includes('"')||s.includes('\n'))?'"'+s.replace(/"/g,'""')+'"':s; };
+      return [headers.join(','), ...rows.map(r=>headers.map(h=>esc(r[h])).join(','))].join('\r\n');
+    };
+    const dl = (content, filename) => {
+      const blob = new Blob([BOM+content], {type:'text/csv;charset=utf-8'});
+      const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
+    };
+    let delay = 0;
+    if(inspRows.length)  { setTimeout(()=>dl(toCSV(Object.keys(inspRows[0]),  inspRows),  `beekeepy-inspections-${date}.csv`),  delay); delay+=300; }
+    if(harvRows.length)  { setTimeout(()=>dl(toCSV(Object.keys(harvRows[0]),  harvRows),  `beekeepy-harvests-${date}.csv`),     delay); delay+=300; }
+    if(treatRows.length) { setTimeout(()=>dl(toCSV(Object.keys(treatRows[0]), treatRows), `beekeepy-treatments-${date}.csv`),   delay); delay+=300; }
+    if(queenRows.length) { setTimeout(()=>dl(toCSV(Object.keys(queenRows[0]), queenRows), `beekeepy-queens-${date}.csv`),       delay); }
+    showToast(`✅ ${[inspRows.length&&'Inspections', harvRows.length&&'Harvests', treatRows.length&&'Treatments', queenRows.length&&'Queens'].filter(Boolean).join(', ')} exported as CSV`,'success');
+    document.getElementById('modal-export').remove();
+
+  } else {
+    // Excel — build multi-sheet xlsx via SheetJS CDN
+    exportExcel(date, inspRows, harvRows, treatRows, queenRows);
+  }
+}
+
+async function exportExcel(date, inspRows, harvRows, treatRows, queenRows) {
+  showToast('Generating Excel file...','success');
+  try {
+    // Load SheetJS if not already loaded
+    if(!window.XLSX) {
+      await new Promise((resolve, reject) => {
+        const s = document.createElement('script');
+        s.src = 'https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js';
+        s.onload = resolve; s.onerror = reject;
+        document.head.appendChild(s);
+      });
+    }
+
+    const wb = XLSX.utils.book_new();
+
+    const addSheet = (name, rows) => {
+      if(!rows.length) return;
+      const ws = XLSX.utils.json_to_sheet(rows);
+      // Style header row width
+      const cols = Object.keys(rows[0]).map(k=>({wch: Math.max(k.length, 12)}));
+      ws['!cols'] = cols;
+      XLSX.utils.book_append_sheet(wb, ws, name);
+    };
+
+    addSheet('Inspections', inspRows);
+    addSheet('Harvests', harvRows);
+    addSheet('Treatments', treatRows);
+    addSheet('Queens', queenRows);
+
+    // Summary sheet
+    const summaryRows = hives.map(h => {
+      const hInsps  = inspections.filter(i=>i.hive_id===h.id);
+      const hHarvs  = harvests.filter(hv=>hv.hive_id===h.id);
+      const hTreats = treatments.filter(t=>t.hive_id===h.id);
+      const lastInsp = hInsps.sort((a,b)=>b.date?.localeCompare(a.date))[0];
+      return {
+        Hive: h.name,
+        Apiary: getApiary(h.apiary_id)?.name||'',
+        Total_Inspections: hInsps.length,
+        Last_Inspection: lastInsp?.date||'',
+        Last_Score: lastInsp?.score||'',
+        Total_Honey_lbs: hHarvs.reduce((s,hv)=>s+(hv.honey_lbs||0),0).toFixed(1),
+        Total_Treatments: hTreats.length,
+      };
+    });
+    if(summaryRows.length) addSheet('Summary', summaryRows);
+
+    XLSX.writeFile(wb, `beekeepy-data-${date}.xlsx`);
+    showToast(`✅ Excel file downloaded — ${wb.SheetNames.length} sheets`, 'success');
+    document.getElementById('modal-export').remove();
+
+  } catch(e) {
+    console.error('Excel export error:', e);
+    showToast('Excel export failed — try CSV instead', 'error');
+  }
+}
+
+function exportCSV(){
+  showExportPanel();
 }
 
 // QR LABEL

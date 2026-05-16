@@ -4210,6 +4210,7 @@ function showPage(id,btn){
   if(id==='settings'){populateHiveApiary();renderSettings();}
   if(id==='account'){renderAccount();renderBadges();}
   if(id==='reminders')renderReminderSettings();
+  if(id==='points'){renderPointsPage();}
   if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
   if(id==='inspect'){if(batchMode)toggleBatchMode();renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
 }

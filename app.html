@@ -979,6 +979,28 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div id="community-map-wrap" style="display:none">
     <div id="community-map" style="height:300px"></div>
     <div style="padding:12px 16px" id="community-map-list"></div>
+
+    <!-- Nectar Source Leaderboard -->
+    <div style="padding:0 16px 16px">
+      <!-- Filters -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
+        <div style="font-size:13px;font-weight:700;color:var(--text)">🏆 Nectar Leaderboard</div>
+        <div style="display:flex;gap:6px">
+          <select id="lb-radius" onchange="renderLeaderboard()" style="font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-family:'DM Sans',sans-serif">
+            <option value="5">5 km</option>
+            <option value="20">20 km</option>
+            <option value="50" selected>50 km</option>
+          </select>
+          <select id="lb-mode" onchange="renderLeaderboard()" style="font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-family:'DM Sans',sans-serif">
+            <option value="now">Now</option>
+            <option value="soon">Coming Soon</option>
+          </select>
+        </div>
+      </div>
+
+      <!-- Leaderboard list -->
+      <div id="leaderboard-list"></div>
+    </div>
   </div>
 
 </div>
@@ -7105,6 +7127,180 @@ function openAddMarkerModal(){
   openModal('modal-formap');
 }
 
+// ============================================================
+// NECTAR SOURCE LEADERBOARD
+// ============================================================
+
+let forageMarkersCache = [];
+
+function renderLeaderboard() {
+  const el = document.getElementById('leaderboard-list');
+  if(!el) return;
+
+  const radiusKm = parseInt(document.getElementById('lb-radius')?.value||50);
+  const mode = document.getElementById('lb-mode')?.value||'now';
+
+  // Get user position (apiary GPS or device)
+  let userLat = null, userLng = null;
+  const apiaryWithGps = apiaries.find(a=>a.gps&&a.gps.trim());
+  if(apiaryWithGps) {
+    const parts = apiaryWithGps.gps.split(',').map(s=>parseFloat(s.trim()));
+    if(!isNaN(parts[0])) { userLat=parts[0]; userLng=parts[1]; }
+  }
+
+  if(mode === 'soon') {
+    renderSoonLeaderboard(el);
+    return;
+  }
+
+  // Filter markers within radius
+  const cutoff = new Date(Date.now()-3*365*86400000).toISOString();
+  const nearby = forageMarkersCache.filter(m => {
+    if(!m.lat||!m.lng||m.created_at<cutoff) return false;
+    if(userLat===null) return true;
+    return haversineKm(userLat, userLng, m.lat, m.lng) <= radiusKm;
+  });
+
+  if(!nearby.length) {
+    el.innerHTML = `
+      <div style="background:var(--honey-light);border:1.5px dashed var(--honey);border-radius:var(--radius);padding:18px;text-align:center">
+        <div style="font-size:28px;margin-bottom:8px">🗺️</div>
+        <div style="font-weight:600;font-size:13px;margin-bottom:6px">No data in this area yet</div>
+        <div style="font-size:12px;color:var(--text-2);margin-bottom:12px">Be the first scout! Report local bloom data and earn <strong>+10 pts</strong> toward your SkogHive discount.</div>
+        <button onclick="openModal('modal-formap')" style="padding:10px 20px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">🌸 Report Bloom Now</button>
+      </div>`;
+    return;
+  }
+
+  // Aggregate by plant type
+  const plantMap = {};
+  nearby.forEach(m => {
+    const plant = m.plant_type||'Unknown';
+    if(!plantMap[plant]) plantMap[plant] = {count:0, recent:[], users:new Set()};
+    plantMap[plant].count++;
+    plantMap[plant].recent.push(m.created_at);
+    if(m.user_id) plantMap[plant].users.add(m.user_id);
+  });
+
+  // Sort by count
+  const ranked = Object.entries(plantMap)
+    .sort((a,b)=>b[1].count-a[1].count)
+    .slice(0,5);
+
+  const medals = ['🥇','🥈','🥉','4️⃣','5️⃣'];
+  const statusColor = {peak:'#27AE60', early:'#F39C12', ending:'#E74C3C'};
+  const statusLabel = {peak:'Peak Flow 🟢', early:'Early Flow 🟡', ending:'Ending 🔴'};
+
+  el.innerHTML = ranked.map(([plant, data], i) => {
+    // Determine status from bloom forecast
+    const bloomData = bloomForecast.find(b=>b.localName===plant||b.id?.includes(plant.toLowerCase().replace(/\s/g,'_')));
+    const status = bloomData?.status==='peak'?'peak':bloomData?.status==='blooming'?'early':'ending';
+    const lastReport = data.recent.sort().reverse()[0];
+    const daysAgo = Math.floor((Date.now()-new Date(lastReport))/86400000);
+    const timeLabel = daysAgo===0?'Today':daysAgo===1?'Yesterday':`${daysAgo}d ago`;
+    const flowIndex = Math.min(5, Math.round(data.count/2));
+
+    return `
+      <div style="display:flex;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px;cursor:pointer" onclick="filterMapByPlant('${plant}')">
+        <div style="font-size:22px;flex-shrink:0;margin-top:2px">${medals[i]}</div>
+        <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">
+            <div style="font-weight:700;font-size:14px">${plant}</div>
+            <div style="font-size:10px;font-weight:600;color:${statusColor[status]||'var(--text-3)'}">${statusLabel[status]||''}</div>
+          </div>
+          <!-- Flow index stars -->
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <div>${'⭐'.repeat(flowIndex)}${'☆'.repeat(5-flowIndex)}</div>
+            <div style="font-size:10px;color:var(--text-3)">Flow Index</div>
+          </div>
+          <div style="display:flex;gap:12px;font-size:11px;color:var(--text-3)">
+            <span>📍 ${data.count} report${data.count!==1?'s':''}</span>
+            <span>👥 ${data.users.size} scout${data.users.size!==1?'s':''}</span>
+            <span>🕐 ${timeLabel}</span>
+          </div>
+          ${bloomData ? `<div style="font-size:10px;color:var(--honey-dark);margin-top:3px">GDD: ${bloomData.gdd}/${bloomData.adjustedPeak} · ${Math.max(0,bloomData.adjustedPeak-bloomData.gdd)} GDD to peak</div>` : ''}
+        </div>
+      </div>`;
+  }).join('') + `
+    <div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:8px;padding:8px">
+      Tap any plant to highlight on map · Data from last 3 years · ${nearby.length} total reports in ${radiusKm}km
+    </div>`;
+}
+
+function renderSoonLeaderboard(el) {
+  // Use bloom forecast GDD model for "Coming Soon"
+  const month = new Date().getMonth()+1;
+  const lang = currentLang.startsWith('en-')?'en':currentLang;
+
+  // Get plants that are "soon" status from bloomForecast
+  const soonPlants = bloomForecast.filter(p=>p.status==='soon');
+
+  // Also get plants not yet in bloom window but close
+  const upcomingFromRules = NECTAR_PLANTS.filter(p => {
+    if(!p.langs.includes(lang)) return false;
+    const months = currentLang.includes('au')||currentLang.includes('nz')
+      ? p.monthsS : p.monthsN;
+    return months.includes(month+1)||months.includes(month+2);
+  }).slice(0,5);
+
+  const allSoon = [...soonPlants, ...upcomingFromRules].slice(0,3);
+
+  if(!allSoon.length) {
+    el.innerHTML = `<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">No upcoming bloom predictions for your area</div>`;
+    return;
+  }
+
+  const medals = ['🥇','🥈','🥉'];
+  el.innerHTML = `
+    <div style="background:var(--sky-light);border:1px solid #AED6F1;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px;font-size:11px;color:var(--sky)">
+      📡 Based on GDD accumulation model · Updated daily
+    </div>` +
+    allSoon.map((p, i) => {
+      const name = p.localName || (p.name?.[lang]) || p.name?.en || p.id;
+      const gddLeft = p.adjustedPeak ? Math.max(0, p.adjustedPeak - (p.gdd||0)) : '?';
+      const daysEst = typeof gddLeft==='number' ? Math.round(gddLeft/5) : '?';
+      return `
+        <div style="display:flex;gap:12px;padding:12px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:8px">
+          <div style="font-size:22px;flex-shrink:0">${medals[i]||'🌸'}</div>
+          <div style="flex:1">
+            <div style="font-weight:700;font-size:14px;margin-bottom:4px">${p.emoji||'🌸'} ${name}</div>
+            <div style="display:flex;gap:2px;margin-bottom:4px">
+              <div style="height:6px;background:var(--honey);border-radius:3px;width:${Math.min(100,Math.round(((p.gdd||0)/(p.adjustedPeak||200))*100))}%;max-width:120px;transition:width 0.5s"></div>
+              <div style="height:6px;background:var(--border);border-radius:3px;flex:1"></div>
+            </div>
+            <div style="font-size:11px;color:var(--text-3)">
+              Est. peak in ~${daysEst} days · GDD needed: ${gddLeft}
+            </div>
+            <div style="font-size:11px;font-weight:600;color:var(--honey-dark);margin-top:3px">
+              ⏰ Prepare supers & frames now
+            </div>
+          </div>
+        </div>`;
+    }).join('') + `
+    <div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:4px;padding:6px">
+      GDD model · ${new Date().toLocaleDateString('en-US',{month:'long',year:'numeric'})}
+    </div>`;
+}
+
+function filterMapByPlant(plantName) {
+  // Highlight markers for this plant on the map
+  if(!communityMapObj) return;
+  communityMapObj.eachLayer(layer => {
+    if(layer._forageData) {
+      const match = layer._forageData.plant_type === plantName;
+      layer.setOpacity(match ? 1 : 0.2);
+    }
+  });
+  showToast(`Showing ${plantName} markers on map`);
+  // Reset after 3 seconds
+  setTimeout(()=>{
+    if(!communityMapObj) return;
+    communityMapObj.eachLayer(layer => {
+      if(layer._forageData) layer.setOpacity(1);
+    });
+  }, 3000);
+}
+
 async function loadForageData(){
   const[fm,pa]=await Promise.all([
     sb.from('forage_markers').select('*').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}),
@@ -7112,8 +7308,12 @@ async function loadForageData(){
   ]);
   forageMarkers=fm.data||[];
   pesticideAlerts=pa.data||[];
+  // Cache all markers for leaderboard (including expired ones for 3-year history)
+  const allFm = await sb.from('forage_markers').select('*').order('created_at',{ascending:false}).limit(500);
+  forageMarkersCache = allFm.data||forageMarkers;
   renderForageList();
   if(forageMap)renderForageMapMarkers();
+  renderLeaderboard();
 }
 
 function renderForageList(){

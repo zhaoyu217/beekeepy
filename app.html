@@ -554,9 +554,26 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div id="action-treatment" style="display:none">
         <div class="form-group"><label class="form-label">Treatment product</label>
-          <select><option>Apivar (amitraz strips)</option><option>Mite Away Quick Strips</option><option>ApiLife Var (thymol)</option><option>Oxalic acid vaporization</option><option>HopGuard</option><option>Terramycin</option><option>Other</option></select>
+          <select id="insp-treat-type"><option>Apivar (amitraz strips)</option><option>Mite Away Quick Strips</option><option>ApiLife Var (thymol)</option><option>Oxalic acid vaporization</option><option>OA dribble</option><option>HopGuard</option><option>Terramycin (AFB)</option><option>Fumagilin-B (Nosema)</option><option>Other</option></select>
         </div>
-        <div class="form-group"><label class="form-label">Dosage</label><input type="text" placeholder="e.g. 2 strips, 50ml"></div>
+        <div class="form-group"><label class="form-label">Dosage / Amount</label><input type="text" id="insp-treat-amount" placeholder="e.g. 2 strips, 50ml, 2g OA"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label class="form-label">Start date</label><input type="date" id="insp-treat-date"></div>
+          <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" id="insp-treat-days" placeholder="e.g. 42"></div>
+        </div>
+        <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px">
+          <div style="font-size:11px;font-weight:600;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">📋 Compliance Fields (USDA / EU)</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+            <div class="form-group" style="margin:0"><label class="form-label">Batch / Lot Number</label><input type="text" id="insp-treat-batch" placeholder="e.g. LOT2024A"></div>
+            <div class="form-group" style="margin:0"><label class="form-label">Withdrawal Period</label><input type="text" id="insp-treat-withdrawal" placeholder="e.g. 6 weeks"></div>
+          </div>
+          <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">Applicator Name</label><input type="text" id="insp-treat-applicator" placeholder="Person who applied treatment"></div>
+          <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">Reason / Diagnosis</label><input type="text" id="insp-treat-reason" placeholder="e.g. Varroa count 4.2% — threshold exceeded"></div>
+        </div>
+        <div style="display:flex;gap:8px">
+          <button class="btn btn-primary" style="flex:1" onclick="saveInspectionTreatment()">Log Treatment</button>
+          <button class="btn btn-outline" style="flex:1" onclick="exportCompliancePDF()">📋 Compliance PDF</button>
+        </div>
       </div>
       <div id="action-frames" style="display:none">
         <div class="form-group"><label class="form-label">Action type</label>
@@ -4237,6 +4254,36 @@ function selectHive(id,el){
 }
 function toggleChip(el){el.classList.toggle('on')}
 function showActionTab(id,btn){['feeding','treatment','frames'].forEach(tab=>{document.getElementById('action-'+tab).style.display=tab===id?'block':'none'});document.querySelectorAll('.tab-row .tab').forEach(b=>b.classList.remove('active'));btn.classList.add('active');}
+
+async function saveInspectionTreatment(){
+  const hiveId = selectedInspectHive || currentDetailHiveId;
+  if(!hiveId){showToast('Please select a hive first','error');return;}
+  const product = document.getElementById('insp-treat-type')?.value;
+  if(!product){showToast('Please select a product','error');return;}
+  setSyncing('syncing');
+  const payload = {
+    user_id: currentUser.id,
+    hive_id: hiveId,
+    product,
+    amount: document.getElementById('insp-treat-amount')?.value||'per label',
+    start_date: document.getElementById('insp-treat-date')?.value||new Date().toISOString().split('T')[0],
+    duration_days: +document.getElementById('insp-treat-days')?.value||null,
+    batch_number: document.getElementById('insp-treat-batch')?.value||null,
+    withdrawal_period: document.getElementById('insp-treat-withdrawal')?.value||null,
+    applicator: document.getElementById('insp-treat-applicator')?.value||null,
+    reason: document.getElementById('insp-treat-reason')?.value||null,
+    note: '',
+  };
+  const{data,error}=await sb.from('treatments').insert(payload).select().single();
+  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  treatments.unshift(data);
+  setSyncing('saved');
+  showToast('Treatment logged ✓','success');
+  // Clear fields
+  ['insp-treat-amount','insp-treat-date','insp-treat-days','insp-treat-batch','insp-treat-withdrawal','insp-treat-applicator','insp-treat-reason'].forEach(id=>{
+    const el=document.getElementById(id);if(el)el.value='';
+  });
+}
 
 let editingInspectionId=null;
 function openEditInspection(id){

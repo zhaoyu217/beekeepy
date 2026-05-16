@@ -633,6 +633,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 Export PDF</button>
     <button class="btn-sm" onclick="shareHiveReport()" style="margin-top:0;padding:6px 12px;background:var(--sky);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🔗 Share</button>
     <button class="btn-sm" onclick="showHiveQR()" style="margin-top:0;padding:6px 12px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🏷️ Label</button>
+    <button class="btn-sm" onclick="showNFCWrite()" style="margin-top:0;padding:6px 12px;background:#6C3483;color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📡 NFC</button>
     <button onclick="confirmDeleteHive(currentDetailHiveId)" style="margin-top:0;padding:6px 10px;background:var(--danger-light);color:var(--danger);border:1.5px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;white-space:nowrap">🗑</button>
   </div>
 
@@ -1964,6 +1965,7 @@ async function init() {
   requestPushPermission();
   document.getElementById('loading-overlay').style.display = 'none';
   checkShareParam();
+  checkHiveParam();
   // Handle QR scan — auto open hive
   const urlParams=new URLSearchParams(location.search);
   const qrHiveId=urlParams.get('hive');
@@ -4962,6 +4964,181 @@ function exportCSV(){
 }
 
 // QR LABEL
+// ============================================================
+// NFC WRITE — Write hive URL to blank NFC tag
+// ============================================================
+
+function showNFCWrite() {
+  if(!currentDetailHiveId) return;
+  const h = getHive(currentDetailHiveId);
+  if(!h) return;
+
+  const existing = document.getElementById('modal-nfc');
+  if(existing) existing.remove();
+
+  const isAndroid = /Android/i.test(navigator.userAgent);
+  const hasNFC = 'NDEFReader' in window;
+  const hiveUrl = `${location.origin}/app.html?hive=${currentDetailHiveId}`;
+
+  const modal = document.createElement('div');
+  modal.id = 'modal-nfc';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:flex-end;justify-content:center';
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+
+      <!-- Header -->
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:44px;margin-bottom:10px">📡</div>
+        <div style="font-weight:700;font-size:17px;margin-bottom:6px">Write NFC Tag</div>
+        <div style="font-size:13px;color:var(--text-2)">${h.name}</div>
+      </div>
+
+      <!-- How it works -->
+      <div style="background:var(--honey-light);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:700;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">📖 How it works</div>
+        <div style="display:flex;flex-direction:column;gap:8px">
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:20px;height:20px;border-radius:50%;background:var(--honey);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
+            <div style="font-size:12px;color:var(--text-2)"><strong>Get a blank NFC tag</strong> — NTAG213/215/216 stickers work best. Available at SkogHive or Amazon.</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:20px;height:20px;border-radius:50%;background:var(--honey);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
+            <div style="font-size:12px;color:var(--text-2)"><strong>Tap "Write Tag" below</strong> — then hold your phone's NFC area to the blank tag until you hear a success sound.</div>
+          </div>
+          <div style="display:flex;gap:10px;align-items:flex-start">
+            <div style="width:20px;height:20px;border-radius:50%;background:var(--honey);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
+            <div style="font-size:12px;color:var(--text-2)"><strong>Stick the tag on your hive</strong> — anyone can now tap the tag to instantly open this hive's page. Works on all phones.</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- URL preview -->
+      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px">
+        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600">URL to be written</div>
+        <div style="font-size:11px;color:var(--text-2);word-break:break-all;font-family:monospace">${hiveUrl}</div>
+      </div>
+
+      ${!isAndroid ? `
+      <!-- iOS notice -->
+      <div style="background:#EBF5FB;border:1px solid #AED6F1;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px">
+        <div style="font-size:12px;color:#1A5276;font-weight:600;margin-bottom:4px">📱 iPhone users</div>
+        <div style="font-size:12px;color:#2471A3;line-height:1.5">NFC writing requires Android. On iPhone, use a <strong>third-party NFC writer app</strong> (e.g. NFC Tools) to write the URL above, or use the QR Label instead.</div>
+        <button onclick="showHiveQR();document.getElementById('modal-nfc').remove()" style="margin-top:10px;width:100%;padding:10px;background:#2980B9;color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">🏷️ Use QR Label instead</button>
+      </div>
+      ` : ''}
+
+      ${!hasNFC && isAndroid ? `
+      <!-- NFC not available -->
+      <div style="background:var(--danger-light);border:1px solid #F5B7B1;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px">
+        <div style="font-size:12px;color:var(--danger);font-weight:600">NFC not available on this browser</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:4px">Please use Chrome on Android to write NFC tags.</div>
+      </div>
+      ` : ''}
+
+      <!-- Write button -->
+      ${hasNFC ? `
+      <button id="nfc-write-btn" onclick="writeNFCTag('${currentDetailHiveId}','${hiveUrl}')" style="width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:#6C3483;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;margin-bottom:8px">
+        📡 Write Tag — Hold phone to tag
+      </button>` : `
+      <button disabled style="width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:var(--border);color:var(--text-3);font-size:15px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:not-allowed;margin-bottom:8px">
+        📡 NFC not supported on this browser
+      </button>`}
+
+      <div id="nfc-status" style="text-align:center;font-size:13px;color:var(--text-3);min-height:20px;margin-bottom:12px"></div>
+
+      <button onclick="document.getElementById('modal-nfc').remove()" style="width:100%;padding:11px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">
+        Close
+      </button>
+
+      <!-- Compatible tags note -->
+      <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--text-3)">
+        Compatible tags: NTAG213 (144 bytes) · NTAG215 (504 bytes) · NTAG216 (888 bytes)<br>
+        Written tags can be scanned on any iPhone (iOS 13+) or Android device
+      </div>
+    </div>`;
+
+  document.body.appendChild(modal);
+}
+
+async function writeNFCTag(hiveId, hiveUrl) {
+  const btn = document.getElementById('nfc-write-btn');
+  const status = document.getElementById('nfc-status');
+  if(!btn || !status) return;
+
+  if(!('NDEFReader' in window)) {
+    status.textContent = '❌ NFC not supported on this browser';
+    status.style.color = 'var(--danger)';
+    return;
+  }
+
+  btn.disabled = true;
+  btn.innerHTML = '📡 Waiting — hold phone to blank tag...';
+  btn.style.background = '#9B59B6';
+  status.textContent = '📡 Ready to write — hold your phone\'s back to the NFC tag now';
+  status.style.color = 'var(--text-2)';
+
+  try {
+    const ndef = new NDEFReader();
+    await ndef.write({
+      records: [{
+        recordType: 'url',
+        data: hiveUrl
+      }]
+    });
+
+    // Success
+    btn.innerHTML = '✅ Tag written successfully!';
+    btn.style.background = 'var(--forest)';
+    status.textContent = '🎉 Stick the tag on your hive — anyone can now tap to open this page';
+    status.style.color = 'var(--forest)';
+    showToast('NFC tag written ✓ — ' + getHive(hiveId)?.name, 'success');
+
+    // Reset after 3 seconds
+    setTimeout(() => {
+      btn.disabled = false;
+      btn.innerHTML = '📡 Write another tag';
+      btn.style.background = '#6C3483';
+      btn.onclick = () => writeNFCTag(hiveId, hiveUrl);
+    }, 3000);
+
+  } catch(e) {
+    console.warn('NFC write error:', e);
+    btn.disabled = false;
+    btn.innerHTML = '📡 Write Tag — Hold phone to tag';
+    btn.style.background = '#6C3483';
+
+    if(e.name === 'NotAllowedError') {
+      status.textContent = '❌ NFC permission denied — please allow NFC access and try again';
+    } else if(e.name === 'NotSupportedError') {
+      status.textContent = '❌ NFC not supported on this device';
+    } else if(e.name === 'AbortError') {
+      status.textContent = '⚠️ Write cancelled — try again';
+    } else {
+      status.textContent = '❌ Write failed: ' + (e.message || 'unknown error');
+    }
+    status.style.color = 'var(--danger)';
+  }
+}
+
+// Handle incoming NFC/hive URL param on page load
+function checkHiveParam() {
+  const params = new URLSearchParams(location.search);
+  const hiveId = params.get('hive');
+  if(!hiveId) return;
+  // Wait for data to load then open hive
+  const tryOpen = () => {
+    const h = getHive(hiveId);
+    if(h) {
+      openHiveDetail(hiveId);
+      showToast('📡 Opened via NFC tag — ' + h.name);
+    } else {
+      setTimeout(tryOpen, 500);
+    }
+  };
+  setTimeout(tryOpen, 1000);
+}
+
 async function showHiveQR(){
   if(!currentDetailHiveId)return;
   const h=getHive(currentDetailHiveId);

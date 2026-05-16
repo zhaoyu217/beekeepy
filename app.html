@@ -4464,7 +4464,7 @@ async function saveInspection(mode){
   setSyncing('saved');
   showToast((mode==='draft'?t('toast_draft_saved'):t('toast_insp_complete'))+' '+score+(mc>=3?' '+t('toast_mite_warn')+' '+mc+'%!':''), mc>=3?'warning':'success');
   // Award points for first inspection
-  if(!editingInspectionId && inspections.length === 1) {
+  if(!editingInspectionId) {
     setTimeout(()=>awardPoints('first_inspection'), 1000);
   }
   document.getElementById('inspect-form').style.display='none';
@@ -5330,14 +5330,14 @@ function updatePointsBadge() {
 }
 
 async function awardPoints(ruleId, metadata={}) {
-  if(!currentUser) return;
+  if(!currentUser) { console.warn('awardPoints: no user'); return; }
   const rule = POINT_RULES.find(r=>r.id===ruleId);
-  if(!rule) return;
+  if(!rule) { console.warn('awardPoints: rule not found', ruleId); return; }
 
   // Check once-only rules
   if(rule.once) {
     const already = pointEvents.find(e=>e.rule_id===ruleId);
-    if(already) return;
+    if(already) { console.log('awardPoints: already earned', ruleId); return; }
   }
 
   // Check weekly cooldown for weekly_report
@@ -5345,33 +5345,44 @@ async function awardPoints(ruleId, metadata={}) {
     const lastWeek = pointEvents.find(e=>e.rule_id==='weekly_report');
     if(lastWeek) {
       const daysSince = Math.floor((Date.now()-new Date(lastWeek.created_at))/86400000);
-      if(daysSince < 7) return;
+      if(daysSince < 7) { console.log('awardPoints: weekly cooldown', daysSince, 'days'); return; }
     }
   }
 
   try {
     // Insert event
-    const{data:evt} = await sb.from('point_events').insert({
+    const{data:evt, error:evtErr} = await sb.from('point_events').insert({
       user_id: currentUser.id,
       rule_id: ruleId,
       points: rule.pts,
       label: rule.label,
       metadata: JSON.stringify(metadata)
     }).select().single();
+    if(evtErr) { console.error('awardPoints event insert error:', evtErr); return; }
     if(evt) pointEvents.unshift(evt);
 
-    // Update balance
+    // Update balance — try upsert first, fallback to update
     const newBalance = (userPoints.balance||0) + rule.pts;
     const newTotal   = (userPoints.total_earned||0) + rule.pts;
 
-    const upsertData = {
+    // Try insert first, then update on conflict
+    const{error:insErr} = await sb.from('user_points').insert({
       user_id: currentUser.id,
       balance: newBalance,
       total_earned: newTotal,
       updated_at: new Date().toISOString()
-    };
+    });
 
-    await sb.from('user_points').upsert(upsertData, {onConflict:'user_id'});
+    if(insErr) {
+      // Record exists — do update
+      const{error:updErr} = await sb.from('user_points').update({
+        balance: newBalance,
+        total_earned: newTotal,
+        updated_at: new Date().toISOString()
+      }).eq('user_id', currentUser.id);
+      if(updErr) { console.error('awardPoints update error:', updErr); return; }
+    }
+
     userPoints.balance = newBalance;
     userPoints.total_earned = newTotal;
 
@@ -5382,7 +5393,7 @@ async function awardPoints(ruleId, metadata={}) {
     if(newBalance >= REDEEM_THRESHOLD) {
       await autoRedeem();
     }
-  } catch(e) { console.warn('Points error:', e); }
+  } catch(e) { console.error('awardPoints exception:', e); }
 }
 
 async function autoRedeem() {

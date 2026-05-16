@@ -5414,14 +5414,7 @@ async function awardPoints(ruleId, metadata={}) {
     if(already) { console.log('awardPoints: already earned', ruleId); return; }
   }
 
-  // Check weekly cooldown for weekly_report
-  if(ruleId==='weekly_report') {
-    const lastWeek = pointEvents.find(e=>e.rule_id==='weekly_report');
-    if(lastWeek) {
-      const daysSince = Math.floor((Date.now()-new Date(lastWeek.created_at))/86400000);
-      if(daysSince < 7) { console.log('awardPoints: weekly cooldown', daysSince, 'days'); return; }
-    }
-  }
+  // weekly_report cooldown is handled by validateAndAwardBloomPoints (anti-cheat)
 
   try {
     // Insert event
@@ -7226,6 +7219,98 @@ function initForageMap(){
   setTimeout(()=>forageMap.invalidateSize(),300);
 }
 
+// ── Anti-cheat: Haversine distance (km) ───────────────────
+function haversineKm(lat1, lon1, lat2, lon2) {
+  const R = 6371;
+  const dLat = (lat2-lat1) * Math.PI/180;
+  const dLon = (lon2-lon1) * Math.PI/180;
+  const a = Math.sin(dLat/2)**2 +
+    Math.cos(lat1*Math.PI/180) * Math.cos(lat2*Math.PI/180) * Math.sin(dLon/2)**2;
+  return R * 2 * Math.atan2(Math.sqrt(a), Math.sqrt(1-a));
+}
+
+// ── Anti-cheat: validate bloom report before awarding points ─
+async function validateAndAwardBloomPoints(userLat, userLng, plantType) {
+  // 1. GPS check — must be within 30km of a registered apiary
+  const nearbyApiary = apiaries.find(a => {
+    if(!a.gps) return false;
+    const parts = a.gps.split(',').map(s=>parseFloat(s.trim()));
+    if(parts.length < 2 || isNaN(parts[0])) return false;
+    return haversineKm(userLat, userLng, parts[0], parts[1]) <= 30;
+  });
+
+  if(!nearbyApiary) {
+    console.log('Anti-cheat: user not within 30km of any registered apiary');
+    showToast('Report submitted ✓ (points require being near your apiary)', 'success');
+    return;
+  }
+
+  // 2. Daily cap check — max 20pts/day from bloom reports
+  const today = new Date().toISOString().split('T')[0];
+  const todayEvents = pointEvents.filter(e =>
+    e.rule_id === 'weekly_report' &&
+    e.created_at && e.created_at.startsWith(today)
+  );
+  const todayPts = todayEvents.reduce((s,e)=>s+(e.points||0), 0);
+  if(todayPts >= 20) {
+    console.log('Anti-cheat: daily cap reached (20pts)');
+    showToast('Report submitted ✓ (daily points cap reached — come back tomorrow)', 'success');
+    return;
+  }
+
+  // 3. Same apiary + same plant 24h dedup
+  const yesterday = new Date(Date.now()-86400000).toISOString();
+  const dupEvent = pointEvents.find(e =>
+    e.rule_id === 'weekly_report' &&
+    e.metadata && e.created_at > yesterday
+  );
+  if(dupEvent) {
+    try {
+      const meta = JSON.parse(dupEvent.metadata||'{}');
+      if(meta.plant_type === plantType && meta.apiary_id === nearbyApiary.id) {
+        console.log('Anti-cheat: duplicate plant+apiary within 24h');
+        showToast('Report submitted ✓ (already reported this plant today)', 'success');
+        return;
+      }
+    } catch(e) {}
+  }
+
+  // All checks passed — award points
+  await awardPoints('weekly_report', {
+    apiary_id: nearbyApiary.id,
+    apiary_name: nearbyApiary.name,
+    plant_type: plantType,
+    lat: userLat.toFixed(4),
+    lng: userLng.toFixed(4)
+  });
+
+  // 4. Peer review check — 3 independent reports → bonus
+  await checkPeerReviewBonus(userLat, userLng, plantType);
+}
+
+// ── Peer review: 3 reports same area+plant → bonus ────────
+async function checkPeerReviewBonus(lat, lng, plantType) {
+  try {
+    // Check recent forage markers with same plant within 50km
+    const{data} = await sb.from('forage_markers')
+      .select('user_id, lat, lng')
+      .eq('plant_type', plantType)
+      .gte('created_at', new Date(Date.now()-7*86400000).toISOString());
+
+    if(!data) return;
+    // Filter to within 50km
+    const nearby = data.filter(m =>
+      m.user_id !== currentUser.id &&
+      haversineKm(lat, lng, m.lat, m.lng) <= 50
+    );
+    // Count unique users
+    const uniqueUsers = new Set(nearby.map(m=>m.user_id));
+    if(uniqueUsers.size >= 2) { // 2 others + current user = 3 total
+      await awardPoints('forage_confirmed', {plant_type: plantType});
+    }
+  } catch(e) {}
+}
+
 async function saveForageMarker(){
   setSyncing('syncing');
   const anon=document.getElementById('tog-anon').classList.contains('on');
@@ -7249,8 +7334,12 @@ async function saveForageMarker(){
       anonymous:anon
     });
     if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
-    // Award points for first forage marker
-    setTimeout(()=>awardPoints('first_forage'), 800);
+    // Award points with anti-cheat validation
+    const plantType = document.getElementById('fm-plant').value;
+    setTimeout(()=>{
+      awardPoints('first_forage', {plant_type: plantType});
+      validateAndAwardBloomPoints(lat, lng, plantType);
+    }, 800);
   } else {
     const{error}=await sb.from('pesticide_alerts').insert({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,

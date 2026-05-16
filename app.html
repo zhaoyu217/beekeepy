@@ -4978,8 +4978,9 @@ async function shareHiveReport() {
     v: '1'
   };
 
-  // Encode as base64 URL param
-  const encoded = btoa(JSON.stringify(payload)).replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
+  // Encode as base64 URL param — handle unicode/Chinese characters
+  const encoded = btoa(unescape(encodeURIComponent(JSON.stringify(payload))))
+    .replace(/=/g,'').replace(/\+/g,'-').replace(/\//g,'_');
   const shareUrl = `${location.origin}/app.html?share=${encoded}`;
 
   // Show share modal
@@ -5054,7 +5055,7 @@ function checkShareParam() {
   if(!share) return;
   try {
     const padded = share.replace(/-/g,'+').replace(/_/g,'/') + '=='.slice(0,(4-share.length%4)%4);
-    const data = JSON.parse(atob(padded));
+    const data = JSON.parse(decodeURIComponent(escape(atob(padded))));
     showSharedHiveView(data);
   } catch(e) { console.warn('Invalid share link'); }
 }

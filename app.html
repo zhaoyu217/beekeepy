@@ -2843,6 +2843,9 @@ async function deletePhoto(photoId, hiveId){
 // ============================================================
 
 function openAIVisionAnalysis() {
+  const existing = document.getElementById('modal-ai-vision');
+  if(existing) existing.remove();
+  visionImageBase64 = null;
   const modal = document.createElement('div');
   modal.id = 'modal-ai-vision';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:flex-end;justify-content:center';
@@ -4957,6 +4960,9 @@ async function shareHiveReport() {
   if(!currentDetailHiveId) return;
   const h = getHive(currentDetailHiveId);
   if(!h) return;
+  // Remove any existing share modal first
+  const existing = document.getElementById('modal-share');
+  if(existing) existing.remove();
 
   const insps = hiveInspections(currentDetailHiveId);
   const li = insps[0];

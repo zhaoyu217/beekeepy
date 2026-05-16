@@ -4993,7 +4993,7 @@ function showNFCWrite() {
   const existing = document.getElementById('modal-nfc');
   if(existing) existing.remove();
 
-  const isAndroid = /Android/i.test(navigator.userAgent);
+  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const hasNFC = 'NDEFReader' in window;
   const hiveUrl = `${location.origin}/app.html?hive=${currentDetailHiveId}`;
 
@@ -5001,79 +5001,112 @@ function showNFCWrite() {
   modal.id = 'modal-nfc';
   modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:flex-end;justify-content:center';
 
-  modal.innerHTML = `
-    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+  if(isIOS) {
+    // iPhone version — clear and simple
+    modal.innerHTML = `
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:44px;margin-bottom:10px">📡</div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px">Bind NFC Tag to This Hive</div>
+          <div style="font-size:13px;color:var(--text-2)">${h.name}</div>
+        </div>
 
-      <!-- Header -->
-      <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:44px;margin-bottom:10px">📡</div>
-        <div style="font-weight:700;font-size:17px;margin-bottom:6px">Write NFC Tag</div>
-        <div style="font-size:13px;color:var(--text-2)">${h.name}</div>
-      </div>
-
-      <!-- How it works -->
-      <div style="background:var(--honey-light);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px">
-        <div style="font-size:11px;font-weight:700;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">📖 How it works</div>
-        <div style="display:flex;flex-direction:column;gap:8px">
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <div style="width:20px;height:20px;border-radius:50%;background:var(--honey);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">1</div>
-            <div style="font-size:12px;color:var(--text-2)"><strong>Get a blank NFC tag</strong> — NTAG213/215/216 stickers work best. Available at SkogHive or Amazon.</div>
-          </div>
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <div style="width:20px;height:20px;border-radius:50%;background:var(--honey);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">2</div>
-            <div style="font-size:12px;color:var(--text-2)"><strong>Tap "Write Tag" below</strong> — then hold your phone's NFC area to the blank tag until you hear a success sound.</div>
-          </div>
-          <div style="display:flex;gap:10px;align-items:flex-start">
-            <div style="width:20px;height:20px;border-radius:50%;background:var(--honey);color:#fff;font-size:11px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px">3</div>
-            <div style="font-size:12px;color:var(--text-2)"><strong>Stick the tag on your hive</strong> — anyone can now tap the tag to instantly open this hive's page. Works on all phones.</div>
+        <div style="background:var(--honey-light);border-radius:var(--radius);padding:16px;margin-bottom:14px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:12px">How to bind on iPhone:</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+              <div style="font-size:13px;color:var(--text-2)">Download <strong>NFC Tools</strong> from the App Store (free)</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+              <div style="font-size:13px;color:var(--text-2)">Open NFC Tools → tap <strong>Write</strong> → <strong>Add a record</strong> → <strong>URL</strong></div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+              <div style="font-size:13px;color:var(--text-2)">Paste the link below, tap <strong>Write</strong>, hold phone to blank tag</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:flex-start">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">4</div>
+              <div style="font-size:13px;color:var(--text-2)">Stick tag on hive — done! Tap tag anytime to open this hive</div>
+            </div>
           </div>
         </div>
-      </div>
 
-      <!-- URL preview -->
-      <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px">
-        <div style="font-size:10px;color:var(--text-3);margin-bottom:4px;text-transform:uppercase;letter-spacing:0.05em;font-weight:600">URL to be written</div>
-        <div style="font-size:11px;color:var(--text-2);word-break:break-all;font-family:monospace">${hiveUrl}</div>
-      </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;font-weight:600">📋 Copy this link into NFC Tools:</div>
+          <div style="font-size:12px;color:var(--text);word-break:break-all;margin-bottom:8px">${hiveUrl}</div>
+          <button onclick="navigator.clipboard?.writeText('${hiveUrl}').then(()=>showToast('Link copied ✓'))" style="width:100%;padding:9px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">📋 Copy Link</button>
+        </div>
 
-      ${!isAndroid ? `
-      <!-- iOS notice -->
-      <div style="background:#EBF5FB;border:1px solid #AED6F1;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px">
-        <div style="font-size:12px;color:#1A5276;font-weight:600;margin-bottom:4px">📱 iPhone users</div>
-        <div style="font-size:12px;color:#2471A3;line-height:1.5">NFC writing requires Android. On iPhone, use a <strong>third-party NFC writer app</strong> (e.g. NFC Tools) to write the URL above, or use the QR Label instead.</div>
-        <button onclick="showHiveQR();document.getElementById('modal-nfc').remove()" style="margin-top:10px;width:100%;padding:10px;background:#2980B9;color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">🏷️ Use QR Label instead</button>
-      </div>
-      ` : ''}
+        <div style="font-size:12px;color:var(--text-3);text-align:center;margin-bottom:14px">
+          Or use a QR code label instead — works the same way
+        </div>
 
-      ${!hasNFC && isAndroid ? `
-      <!-- NFC not available -->
-      <div style="background:var(--danger-light);border:1px solid #F5B7B1;border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:16px">
-        <div style="font-size:12px;color:var(--danger);font-weight:600">NFC not available on this browser</div>
-        <div style="font-size:12px;color:var(--text-2);margin-top:4px">Please use Chrome on Android to write NFC tags.</div>
-      </div>
-      ` : ''}
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button onclick="showHiveQR();document.getElementById('modal-nfc').remove()" style="padding:12px;border-radius:var(--radius-sm);border:1.5px solid var(--forest);background:var(--surface);color:var(--forest);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">🏷️ QR Label</button>
+          <button onclick="document.getElementById('modal-nfc').remove()" style="padding:12px;border-radius:var(--radius-sm);border:none;background:var(--bg);color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+        </div>
+      </div>`;
 
-      <!-- Write button -->
-      ${hasNFC ? `
-      <button id="nfc-write-btn" onclick="writeNFCTag('${currentDetailHiveId}','${hiveUrl}')" style="width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:#6C3483;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;margin-bottom:8px">
-        📡 Write Tag — Hold phone to tag
-      </button>` : `
-      <button disabled style="width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:var(--border);color:var(--text-3);font-size:15px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:not-allowed;margin-bottom:8px">
-        📡 NFC not supported on this browser
-      </button>`}
+  } else if(hasNFC) {
+    // Android with NFC support — one tap write
+    modal.innerHTML = `
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:44px;margin-bottom:10px">📡</div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px">Bind NFC Tag to This Hive</div>
+          <div style="font-size:13px;color:var(--text-2)">${h.name}</div>
+        </div>
 
-      <div id="nfc-status" style="text-align:center;font-size:13px;color:var(--text-3);min-height:20px;margin-bottom:12px"></div>
+        <div style="background:var(--honey-light);border-radius:var(--radius);padding:16px;margin-bottom:14px">
+          <div style="font-weight:700;font-size:13px;margin-bottom:12px">3 simple steps:</div>
+          <div style="display:flex;flex-direction:column;gap:10px">
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">1</div>
+              <div style="font-size:13px;color:var(--text-2)">Get a blank NFC sticker (any NTAG213/215/216)</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">2</div>
+              <div style="font-size:13px;color:var(--text-2)">Tap <strong>Write Tag</strong> below, hold phone to the sticker</div>
+            </div>
+            <div style="display:flex;gap:12px;align-items:center">
+              <div style="width:24px;height:24px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">3</div>
+              <div style="font-size:13px;color:var(--text-2)">Stick on hive — anyone can tap to open this hive instantly</div>
+            </div>
+          </div>
+        </div>
 
-      <button onclick="document.getElementById('modal-nfc').remove()" style="width:100%;padding:11px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">
-        Close
-      </button>
+        <button id="nfc-write-btn" onclick="writeNFCTag('${currentDetailHiveId}','${hiveUrl}')" style="width:100%;padding:16px;border-radius:var(--radius-sm);border:none;background:#6C3483;color:#fff;font-size:16px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;margin-bottom:8px">
+          📡 Write Tag Now
+        </button>
+        <div id="nfc-status" style="text-align:center;font-size:13px;color:var(--text-3);min-height:20px;margin-bottom:12px"></div>
+        <button onclick="document.getElementById('modal-nfc').remove()" style="width:100%;padding:11px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+        <div style="text-align:center;margin-top:10px;font-size:10px;color:var(--text-3)">Written tags work on all phones — iPhone and Android</div>
+      </div>`;
 
-      <!-- Compatible tags note -->
-      <div style="text-align:center;margin-top:12px;font-size:10px;color:var(--text-3)">
-        Compatible tags: NTAG213 (144 bytes) · NTAG215 (504 bytes) · NTAG216 (888 bytes)<br>
-        Written tags can be scanned on any iPhone (iOS 13+) or Android device
-      </div>
-    </div>`;
+  } else {
+    // Android without NFC (non-Chrome)
+    modal.innerHTML = `
+      <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+        <div style="text-align:center;margin-bottom:20px">
+          <div style="font-size:44px;margin-bottom:10px">📡</div>
+          <div style="font-weight:700;font-size:17px;margin-bottom:4px">Bind NFC Tag to This Hive</div>
+          <div style="font-size:13px;color:var(--text-2)">${h.name}</div>
+        </div>
+        <div style="background:#FEF9E7;border:1px solid #F9E79F;border-radius:var(--radius);padding:16px;margin-bottom:14px;text-align:center">
+          <div style="font-size:28px;margin-bottom:8px">💡</div>
+          <div style="font-weight:600;font-size:14px;margin-bottom:6px">Open in Chrome to write NFC tags</div>
+          <div style="font-size:13px;color:var(--text-2)">NFC writing works in Chrome on Android. Copy the link below and open it in Chrome.</div>
+        </div>
+        <div style="background:var(--bg);border:1px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px">
+          <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;font-weight:600">Your hive link:</div>
+          <div style="font-size:12px;color:var(--text);word-break:break-all;margin-bottom:8px">${hiveUrl}</div>
+          <button onclick="navigator.clipboard?.writeText('${hiveUrl}').then(()=>showToast('Link copied ✓'))" style="width:100%;padding:9px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">📋 Copy Link</button>
+        </div>
+        <button onclick="document.getElementById('modal-nfc').remove()" style="width:100%;padding:12px;border-radius:var(--radius-sm);border:none;background:var(--bg);color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+      </div>`;
+  }
 
   document.body.appendChild(modal);
 }

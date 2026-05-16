@@ -858,9 +858,70 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <button class="nav-item" onclick="showPage('harvest',this)"><span class="ni">🍯</span><span><span data-i18n="nav_harvest">Harvest</span></span><div class="nav-pip"></div></button>
   <button class="nav-item" onclick="showPage('insights',this)"><span class="ni">📊</span><span><span data-i18n="nav_insights">Insights</span></span><div class="nav-pip"></div></button>
   <button class="nav-item" onclick="showPage('reminders',this)"><span class="ni">🔔</span><span><span data-i18n="nav_remind">Remind</span></span><div class="nav-pip"></div></button>
+  <button class="nav-item" id="nav-points" onclick="showPage('points',this)"><span class="ni">🏆</span><span>Points</span><div class="nav-pip"></div><div id="points-badge" style="display:none;position:absolute;top:6px;right:50%;transform:translateX(50%);background:var(--honey);color:#fff;font-size:9px;font-weight:700;padding:1px 5px;border-radius:10px;min-width:18px;text-align:center"></div></button>
   <button class="nav-item" onclick="showPage('community',this)"><span class="ni">🌐</span><span>Community</span><div class="nav-pip"></div></button>
 </nav>
 
+
+<!-- ===== POINTS ===== -->
+<div id="pg-points" class="page">
+<div class="scroll-content">
+
+  <!-- Header card -->
+  <div style="background:linear-gradient(135deg,#E8930A,#C97A08);border-radius:var(--radius);padding:20px;margin-bottom:14px;color:#fff">
+    <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;margin-bottom:6px">Your Points Balance</div>
+    <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:12px">
+      <div id="pts-balance" style="font-size:48px;font-family:'DM Serif Display',serif;font-weight:700;line-height:1">0</div>
+      <div style="font-size:14px;opacity:0.8;margin-bottom:8px">/ 200 pts</div>
+    </div>
+    <!-- Progress bar -->
+    <div style="background:rgba(255,255,255,0.25);border-radius:4px;height:8px;margin-bottom:8px">
+      <div id="pts-progress-bar" style="background:#fff;border-radius:4px;height:8px;width:0%;transition:width 0.8s ease"></div>
+    </div>
+    <div id="pts-progress-label" style="font-size:11px;opacity:0.8">Earn 200 points to unlock rewards</div>
+  </div>
+
+  <!-- Rewards -->
+  <div class="section-hd">🎁 Rewards at 200 Points</div>
+  <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:14px">
+    <div style="background:var(--surface);border:1.5px solid var(--honey);border-radius:var(--radius);padding:14px;text-align:center">
+      <div style="font-size:28px;margin-bottom:6px">⚡</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px">+30 Days Pro</div>
+      <div style="font-size:11px;color:var(--text-3)">Full Pro access — all premium features unlocked</div>
+    </div>
+    <div style="background:var(--surface);border:1.5px solid var(--honey);border-radius:var(--radius);padding:14px;text-align:center">
+      <div style="font-size:28px;margin-bottom:6px">🛒</div>
+      <div style="font-weight:700;font-size:13px;margin-bottom:4px">10% Off SkogHive</div>
+      <div style="font-size:11px;color:var(--text-3)">Discount code for skoghive.com hardware</div>
+    </div>
+  </div>
+
+  <!-- Active discount code (shown after redemption) -->
+  <div id="pts-discount-section" style="display:none">
+    <div class="section-hd">🎟️ Your Discount Code</div>
+    <div style="background:var(--forest-light);border:1.5px solid var(--forest);border-radius:var(--radius);padding:16px;margin-bottom:14px">
+      <div style="font-size:11px;color:var(--forest);font-weight:600;margin-bottom:6px">10% OFF — Valid at skoghive.com</div>
+      <div style="display:flex;align-items:center;gap:8px">
+        <div id="pts-discount-code" style="font-size:18px;font-weight:700;font-family:monospace;letter-spacing:0.1em;flex:1;background:#fff;padding:8px 12px;border-radius:var(--radius-sm);border:1px dashed var(--forest)"></div>
+        <button onclick="copyDiscountCode()" style="padding:8px 14px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);font-size:12px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">Copy</button>
+      </div>
+      <div id="pts-discount-expiry" style="font-size:10px;color:var(--text-3);margin-top:6px"></div>
+      <a id="pts-skoghive-link" href="https://skoghive.com" target="_blank" style="display:block;text-align:center;margin-top:10px;padding:10px;background:var(--forest);color:#fff;border-radius:var(--radius-sm);font-size:13px;font-weight:600;text-decoration:none">Shop at SkogHive →</a>
+    </div>
+  </div>
+
+  <!-- How to earn -->
+  <div class="section-hd">⚡ How to Earn Points</div>
+  <div class="card" style="margin-bottom:14px">
+    <div id="pts-earn-list"></div>
+  </div>
+
+  <!-- History -->
+  <div class="section-hd">📜 Points History</div>
+  <div id="pts-history-list" class="card"></div>
+
+</div>
+</div>
 
 <!-- ===== COMMUNITY ===== -->
 <div id="pg-community" class="page">
@@ -1761,6 +1822,7 @@ function setLang(lang){
     else if(id==='queens')renderQueens();
     else if(id==='insights')renderInsights();
     else if(id==='reminders')renderReminderSettings();
+    else if(id==='points'){renderPointsPage();}
     else if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
     else if(id==='account'){renderAccount();renderBadges();}
     else if(id==='settings')renderSettings();
@@ -1910,6 +1972,7 @@ async function loadAll() {
   checkShowOnboarding();
   // Load queen history for all hives
   hives.forEach(h=>loadQueenHistory(h.id));
+  loadUserPoints();
   await checkAndAwardBadges();
 }
 
@@ -4374,6 +4437,10 @@ async function saveInspection(mode){
   }
   setSyncing('saved');
   showToast((mode==='draft'?t('toast_draft_saved'):t('toast_insp_complete'))+' '+score+(mc>=3?' '+t('toast_mite_warn')+' '+mc+'%!':''), mc>=3?'warning':'success');
+  // Award points for first inspection
+  if(!editingInspectionId && inspections.length === 1) {
+    setTimeout(()=>awardPoints('first_inspection'), 1000);
+  }
   document.getElementById('inspect-form').style.display='none';
   document.getElementById('inspect-empty').style.display='block';
   document.querySelectorAll('#inspect-hive-grid .hive-card').forEach(c=>c.classList.remove('selected'));
@@ -5193,6 +5260,247 @@ function showSharedHiveView(data) {
       </div>
     </div>`;
   document.body.appendChild(modal);
+}
+
+// ============================================================
+// POINTS SYSTEM
+// ============================================================
+
+let userPoints = { balance: 0, total_earned: 0, pro_expires: null };
+let pointEvents = [];
+
+const POINT_RULES = [
+  { id:'first_inspection', icon:'📋', label:'Log your first inspection', pts:10, once:true },
+  { id:'first_forage',     icon:'🗺️', label:'Add first forage marker on map', pts:50, once:true },
+  { id:'forage_confirmed', icon:'✅', label:'Your marker confirmed by 3 users', pts:30, once:false },
+  { id:'weekly_report',    icon:'🌸', label:'Report local bloom data (weekly)', pts:20, once:false },
+  { id:'streak_3weeks',    icon:'🔥', label:'3-week reporting streak bonus', pts:60, once:false },
+];
+
+const REDEEM_THRESHOLD = 200;
+
+async function loadUserPoints() {
+  if(!currentUser) return;
+  try {
+    const [ptsRes, evtRes] = await Promise.all([
+      sb.from('user_points').select('*').eq('user_id', currentUser.id).single(),
+      sb.from('point_events').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false}).limit(20)
+    ]);
+    if(ptsRes.data) userPoints = ptsRes.data;
+    if(evtRes.data) pointEvents = evtRes.data;
+    updatePointsBadge();
+  } catch(e) {}
+}
+
+function updatePointsBadge() {
+  const badge = document.getElementById('points-badge');
+  if(!badge) return;
+  if(userPoints.balance > 0) {
+    badge.style.display = 'block';
+    badge.textContent = userPoints.balance;
+  } else {
+    badge.style.display = 'none';
+  }
+}
+
+async function awardPoints(ruleId, metadata={}) {
+  if(!currentUser) return;
+  const rule = POINT_RULES.find(r=>r.id===ruleId);
+  if(!rule) return;
+
+  // Check once-only rules
+  if(rule.once) {
+    const already = pointEvents.find(e=>e.rule_id===ruleId);
+    if(already) return;
+  }
+
+  // Check weekly cooldown for weekly_report
+  if(ruleId==='weekly_report') {
+    const lastWeek = pointEvents.find(e=>e.rule_id==='weekly_report');
+    if(lastWeek) {
+      const daysSince = Math.floor((Date.now()-new Date(lastWeek.created_at))/86400000);
+      if(daysSince < 7) return;
+    }
+  }
+
+  try {
+    // Insert event
+    const{data:evt} = await sb.from('point_events').insert({
+      user_id: currentUser.id,
+      rule_id: ruleId,
+      points: rule.pts,
+      label: rule.label,
+      metadata: JSON.stringify(metadata)
+    }).select().single();
+    if(evt) pointEvents.unshift(evt);
+
+    // Update balance
+    const newBalance = (userPoints.balance||0) + rule.pts;
+    const newTotal   = (userPoints.total_earned||0) + rule.pts;
+
+    const upsertData = {
+      user_id: currentUser.id,
+      balance: newBalance,
+      total_earned: newTotal,
+      updated_at: new Date().toISOString()
+    };
+
+    await sb.from('user_points').upsert(upsertData, {onConflict:'user_id'});
+    userPoints.balance = newBalance;
+    userPoints.total_earned = newTotal;
+
+    updatePointsBadge();
+    showToast(`+${rule.pts} pts — ${rule.label} 🏆`, 'success');
+
+    // Auto-redeem if threshold reached
+    if(newBalance >= REDEEM_THRESHOLD) {
+      await autoRedeem();
+    }
+  } catch(e) { console.warn('Points error:', e); }
+}
+
+async function autoRedeem() {
+  try {
+    // Get a discount code from pool
+    const{data:code} = await sb.from('discount_codes')
+      .select('*').eq('used',false).limit(1).single();
+
+    const proExpiry = new Date();
+    proExpiry.setDate(proExpiry.getDate()+30);
+
+    const updates = {
+      balance: (userPoints.balance||0) - REDEEM_THRESHOLD,
+      pro_expires: proExpiry.toISOString(),
+      last_redeemed: new Date().toISOString()
+    };
+
+    await sb.from('user_points').update(updates).eq('user_id', currentUser.id);
+    userPoints.balance = updates.balance;
+    userPoints.pro_expires = updates.pro_expires;
+
+    // Mark code as used
+    if(code) {
+      await sb.from('discount_codes').update({
+        used: true,
+        used_by: currentUser.id,
+        used_at: new Date().toISOString()
+      }).eq('id', code.id);
+      userPoints.discount_code = code.code;
+    }
+
+    // Log redemption event
+    await sb.from('point_events').insert({
+      user_id: currentUser.id,
+      rule_id: 'redemption',
+      points: -REDEEM_THRESHOLD,
+      label: 'Redeemed: +30 days Pro + 10% SkogHive discount',
+      metadata: JSON.stringify({code: code?.code, pro_until: proExpiry.toISOString()})
+    });
+
+    updatePointsBadge();
+    showRedemptionCelebration(code?.code, proExpiry);
+  } catch(e) { console.warn('Redeem error:', e); }
+}
+
+function showRedemptionCelebration(code, proExpiry) {
+  const modal = document.createElement('div');
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px';
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px;width:100%;max-width:380px;padding:28px 24px;text-align:center">
+      <div style="font-size:52px;margin-bottom:12px">🎉</div>
+      <div style="font-weight:700;font-size:20px;margin-bottom:6px">200 Points Reached!</div>
+      <div style="font-size:14px;color:var(--text-2);margin-bottom:20px">You've unlocked two rewards:</div>
+
+      <div style="background:var(--honey-light);border:1.5px solid var(--honey);border-radius:var(--radius);padding:14px;margin-bottom:12px">
+        <div style="font-size:24px;margin-bottom:4px">⚡</div>
+        <div style="font-weight:700;font-size:15px">+30 Days Pro Unlocked!</div>
+        <div style="font-size:12px;color:var(--text-2);margin-top:4px">Pro access until ${new Date(proExpiry).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}</div>
+      </div>
+
+      ${code ? `
+      <div style="background:var(--forest-light);border:1.5px solid var(--forest);border-radius:var(--radius);padding:14px;margin-bottom:20px">
+        <div style="font-size:24px;margin-bottom:4px">🛒</div>
+        <div style="font-weight:700;font-size:15px">10% Off SkogHive</div>
+        <div style="font-size:18px;font-weight:700;font-family:monospace;letter-spacing:0.12em;background:#fff;padding:8px;border-radius:var(--radius-sm);margin:8px 0;border:1px dashed var(--forest)">${code}</div>
+        <button onclick="navigator.clipboard?.writeText('${code}');showToast('Code copied!')" style="width:100%;padding:8px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">Copy Code</button>
+      </div>` : ''}
+
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:13px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:15px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer">Awesome! 🐝</button>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
+function copyDiscountCode() {
+  const code = document.getElementById('pts-discount-code')?.textContent;
+  if(!code) return;
+  navigator.clipboard?.writeText(code).then(()=>showToast('Code copied!')).catch(()=>{});
+}
+
+function renderPointsPage() {
+  const bal = userPoints.balance||0;
+  const pct = Math.min(100, Math.round(bal/REDEEM_THRESHOLD*100));
+
+  // Update balance display
+  const balEl = document.getElementById('pts-balance');
+  if(balEl) balEl.textContent = bal;
+  const barEl = document.getElementById('pts-progress-bar');
+  if(barEl) setTimeout(()=>barEl.style.width=pct+'%', 100);
+  const labelEl = document.getElementById('pts-progress-label');
+  if(labelEl) {
+    const remaining = Math.max(0, REDEEM_THRESHOLD-bal);
+    labelEl.textContent = remaining > 0
+      ? `${remaining} more points to unlock rewards`
+      : 'Rewards ready to claim!';
+  }
+
+  // Show discount code if available
+  const discountSection = document.getElementById('pts-discount-section');
+  if(userPoints.discount_code && discountSection) {
+    discountSection.style.display = 'block';
+    document.getElementById('pts-discount-code').textContent = userPoints.discount_code;
+    if(userPoints.pro_expires) {
+      document.getElementById('pts-discount-expiry').textContent =
+        `Pro active until: ${new Date(userPoints.pro_expires).toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'})}`;
+    }
+  }
+
+  // Earn list
+  const earnEl = document.getElementById('pts-earn-list');
+  if(earnEl) {
+    earnEl.innerHTML = POINT_RULES.map(rule => {
+      const done = rule.once && pointEvents.find(e=>e.rule_id===rule.id);
+      return `<div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:22px">${rule.icon}</div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:500;${done?'text-decoration:line-through;color:var(--text-3)':''}">${rule.label}</div>
+          <div style="font-size:11px;color:var(--text-3)">${rule.once?'One time':'Repeatable'}</div>
+        </div>
+        <div style="font-size:14px;font-weight:700;color:${done?'var(--text-3)':'var(--honey-dark)'};white-space:nowrap">
+          ${done?'✅ Done':'+'+rule.pts+' pts'}
+        </div>
+      </div>`;
+    }).join('');
+  }
+
+  // History
+  const histEl = document.getElementById('pts-history-list');
+  if(histEl) {
+    if(!pointEvents.length) {
+      histEl.innerHTML = '<div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">No points earned yet — start exploring the map! 🗺️</div>';
+    } else {
+      histEl.innerHTML = pointEvents.map(e=>{
+        const isPos = e.points > 0;
+        return `<div style="display:flex;align-items:center;gap:10px;padding:10px 0;border-bottom:1px solid var(--border)">
+          <div style="font-size:20px">${isPos?'⬆️':'⬇️'}</div>
+          <div style="flex:1">
+            <div style="font-size:12px;font-weight:500">${e.label||e.rule_id}</div>
+            <div style="font-size:10px;color:var(--text-3)">${new Date(e.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}</div>
+          </div>
+          <div style="font-size:14px;font-weight:700;color:${isPos?'var(--forest)':'var(--danger)'}">${isPos?'+':''}${e.points}</div>
+        </div>`;
+      }).join('');
+    }
+  }
 }
 
 async function exportCompliancePDF(){
@@ -6820,6 +7128,8 @@ async function saveForageMarker(){
       anonymous:anon
     });
     if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+    // Award points for first forage marker
+    setTimeout(()=>awardPoints('first_forage'), 800);
   } else {
     const{error}=await sb.from('pesticide_alerts').insert({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,

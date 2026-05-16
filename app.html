@@ -4990,7 +4990,7 @@ async function shareHiveReport() {
   modal.innerHTML = `
     <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:24px 20px;padding-bottom:calc(24px + env(safe-area-inset-bottom))">
       <div style="text-align:center;margin-bottom:20px">
-        <div style="font-size:36px;margin-bottom:8px">🐝</div>
+        <img src="/icon-192.png" style="width:64px;height:64px;border-radius:16px;margin-bottom:8px">
         <div style="font-weight:700;font-size:16px">${h.name}</div>
         <div style="font-size:12px;color:var(--text-3);margin-top:2px">${apiary?.name||''} · ${insps.length} inspections · ${totalHoney.toFixed(1)} lbs honey</div>
       </div>
@@ -5069,7 +5069,7 @@ function showSharedHiveView(data) {
     <div style="max-width:480px;margin:0 auto;padding:24px 20px">
       <!-- Header -->
       <div style="text-align:center;padding:20px 0 24px">
-        <div style="font-size:32px;margin-bottom:6px">🐝</div>
+        <img src="/icon-192.png" style="width:56px;height:56px;border-radius:14px;margin-bottom:6px">
         <div style="font-size:13px;color:var(--text-3);font-weight:500">Beekeepy · Shared Hive Report</div>
       </div>
 

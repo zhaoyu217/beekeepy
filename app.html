@@ -1848,7 +1848,7 @@ function setLang(lang){
     else if(id==='queens')renderQueens();
     else if(id==='insights')renderInsights();
     else if(id==='reminders')renderReminderSettings();
-    else if(id==='points'){renderPointsPage();}
+    else if(id==='points'){loadUserPoints().then(()=>renderPointsPage());}
     else if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
     else if(id==='account'){renderAccount();renderBadges();}
     else if(id==='settings')renderSettings();

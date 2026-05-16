@@ -670,11 +670,26 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="form-group"><label class="form-label">Product</label>
       <select id="treat-type"><option>Apivar (amitraz strips)</option><option>Mite Away Quick Strips</option><option>ApiLife Var (thymol)</option><option>Oxalic acid vaporization</option><option>OA dribble</option><option>HopGuard</option><option>Terramycin (AFB)</option><option>Fumagilin-B (Nosema)</option><option>Other</option></select>
     </div>
-    <div class="form-group"><label class="form-label">Dosage</label><input type="text" id="treat-amount" placeholder="e.g. 2 strips, 50ml"></div>
-    <div class="form-group"><label class="form-label">Start date</label><input type="date" id="treat-date"></div>
-    <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" id="treat-days" placeholder="e.g. 42 for Apivar"></div>
-    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="treat-note" placeholder="Mite count before treatment..."></textarea></div>
-    <button class="btn btn-primary" onclick="addTreatment()">Log Treatment</button>
+    <div class="form-group"><label class="form-label">Dosage / Amount</label><input type="text" id="treat-amount" placeholder="e.g. 2 strips, 50ml, 2g OA"></div>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+      <div class="form-group"><label class="form-label">Start date</label><input type="date" id="treat-date"></div>
+      <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" id="treat-days" placeholder="e.g. 42"></div>
+    </div>
+    <!-- Compliance fields -->
+    <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px">
+      <div style="font-size:11px;font-weight:600;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.05em;margin-bottom:8px">📋 Compliance Fields (USDA / EU)</div>
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+        <div class="form-group" style="margin:0"><label class="form-label">Batch / Lot Number</label><input type="text" id="treat-batch" placeholder="e.g. LOT2024A"></div>
+        <div class="form-group" style="margin:0"><label class="form-label">Withdrawal Period</label><input type="text" id="treat-withdrawal" placeholder="e.g. 6 weeks"></div>
+      </div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">Applicator Name</label><input type="text" id="treat-applicator" placeholder="Person who applied treatment"></div>
+      <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">Reason / Diagnosis</label><input type="text" id="treat-reason" placeholder="e.g. Varroa count 4.2% — threshold exceeded"></div>
+    </div>
+    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="treat-note" placeholder="Mite count before/after treatment..."></textarea></div>
+    <div style="display:flex;gap:8px">
+      <button class="btn btn-primary" style="flex:1" onclick="addTreatment()">Log Treatment</button>
+      <button class="btn btn-outline" onclick="exportCompliancePDF()" style="flex:1;white-space:nowrap">📋 Export Compliance PDF</button>
+    </div>
   </div>
   <div class="section-hd"><span data-i18n="treatment_history">Treatment History</span></div>
   <div id="treatment-list"></div>
@@ -4337,7 +4352,18 @@ function openEditTreatment(id){
 }
 async function addTreatment(){
   setSyncing('syncing');
-  const payload={hive_id:document.getElementById('treat-hive').value,product:document.getElementById('treat-type').value,amount:document.getElementById('treat-amount').value||'per label',start_date:document.getElementById('treat-date').value||new Date().toISOString().split('T')[0],duration_days:+document.getElementById('treat-days').value||null,note:document.getElementById('treat-note').value};
+  const payload={
+    hive_id:document.getElementById('treat-hive').value,
+    product:document.getElementById('treat-type').value,
+    amount:document.getElementById('treat-amount').value||'per label',
+    start_date:document.getElementById('treat-date').value||new Date().toISOString().split('T')[0],
+    duration_days:+document.getElementById('treat-days').value||null,
+    note:document.getElementById('treat-note').value,
+    batch_number:document.getElementById('treat-batch').value||null,
+    withdrawal_period:document.getElementById('treat-withdrawal').value||null,
+    applicator:document.getElementById('treat-applicator').value||null,
+    reason:document.getElementById('treat-reason').value||null,
+  };
   if(editingTreatId){
     const{data,error}=await sb.from('treatments').update(payload).eq('id',editingTreatId).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
@@ -4353,7 +4379,12 @@ async function addTreatment(){
     treatments.unshift(data);setSyncing('saved');renderTreatments();
     showToast(t('toast_treatment_saved'));
   }
-  document.getElementById('treat-amount').value='';document.getElementById('treat-note').value='';
+  document.getElementById('treat-amount').value='';
+  document.getElementById('treat-note').value='';
+  document.getElementById('treat-batch').value='';
+  document.getElementById('treat-withdrawal').value='';
+  document.getElementById('treat-applicator').value='';
+  document.getElementById('treat-reason').value='';
 }
 
 // HARVEST 
@@ -5115,6 +5146,171 @@ function showSharedHiveView(data) {
       </div>
     </div>`;
   document.body.appendChild(modal);
+}
+
+async function exportCompliancePDF(){
+  const{jsPDF}=window.jspdf;
+  if(!jsPDF){showToast(t('toast_pdf_error'),'error');return;}
+  if(!treatments.length){showToast('No treatment records to export','warning');return;}
+
+  showToast('Generating compliance report...','success');
+  const doc=new jsPDF({unit:'mm',format:'a4'});
+  const W=210, margin=18, contentW=W-margin*2;
+  let y=margin;
+  const year=new Date().getFullYear();
+
+  const sf=(style,size,color=[26,26,20])=>{doc.setFont('helvetica',style);doc.setFontSize(size);doc.setTextColor(...color);};
+  const checkPage=(n=10)=>{if(y+n>282){doc.addPage();y=margin;}};
+  const line=(color=[220,215,205])=>{doc.setDrawColor(...color);doc.setLineWidth(0.3);doc.line(margin,y,W-margin,y);y+=4;};
+
+  // ── Cover header ──────────────────────────────────────────
+  doc.setFillColor(232,147,10);doc.rect(0,0,W,28,'F');
+  sf('bold',18,[255,255,255]);doc.text('Beekeepy',margin,12);
+  sf('bold',10,[255,220,150]);doc.text('Veterinary Medicine & Treatment Compliance Record',margin,20);
+  sf('normal',8,[255,220,150]);
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}  ·  beekeepy.com`,margin,26);
+  y=36;
+
+  // ── Beekeeper info ────────────────────────────────────────
+  doc.setFillColor(253,243,224);doc.roundedRect(margin,y,contentW,22,2,2,'F');
+  sf('bold',9,[179,104,0]);doc.text('BEEKEEPER INFORMATION',margin+4,y+6);
+  sf('normal',9,[26,26,20]);
+  const user=currentUser;
+  const beekeeperName=user?.user_metadata?.full_name||user?.email||'—';
+  doc.text(`Name: ${beekeeperName}`,margin+4,y+13);
+  doc.text(`Email: ${user?.email||'—'}`,margin+4,y+19);
+  doc.text(`Total hives: ${hives.length}`,margin+contentW/2,y+13);
+  doc.text(`Total apiaries: ${apiaries.length}`,margin+contentW/2,y+19);
+  y+=28;
+
+  // ── Regulatory header ─────────────────────────────────────
+  doc.setFillColor(232,228,220);doc.roundedRect(margin,y,contentW,8,2,2,'F');
+  sf('bold',8,[92,88,71]);
+  doc.text('This record is intended to comply with: EU Regulation 2018/848 (Organic Beekeeping) · USDA NOP 205.603 · UK Veterinary Medicines Regulations 2013',margin+4,y+5.5);
+  y+=14;
+
+  // ── Treatment records ─────────────────────────────────────
+  sf('bold',12,[26,26,20]);doc.text('Treatment Records',margin,y);y+=8;
+
+  // Table header
+  const cols=[
+    {label:'Date',       x:margin,        w:22},
+    {label:'Hive',       x:margin+22,     w:30},
+    {label:'Product',    x:margin+52,     w:38},
+    {label:'Dosage',     x:margin+90,     w:28},
+    {label:'Duration',   x:margin+118,    w:20},
+    {label:'Withdrawal', x:margin+138,    w:24},
+    {label:'Applicator', x:margin+162,    w:contentW-144},
+  ];
+  const rowH=7;
+
+  // Header row
+  doc.setFillColor(55,71,79);
+  doc.rect(margin,y,contentW,rowH,'F');
+  cols.forEach(c=>{
+    sf('bold',7,[255,255,255]);
+    doc.text(c.label,c.x+1,y+5);
+  });
+  y+=rowH;
+
+  // Data rows
+  treatments.forEach((tr,idx)=>{
+    checkPage(rowH+2);
+    const hive=getHive(tr.hive_id);
+    const isEven=idx%2===0;
+    if(isEven){doc.setFillColor(250,248,244);doc.rect(margin,y,contentW,rowH,'F');}
+
+    const endDate=tr.start_date&&tr.duration_days
+      ? new Date(new Date(tr.start_date).getTime()+tr.duration_days*86400000).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})
+      : '—';
+
+    const vals=[
+      tr.start_date||'—',
+      (hive?.name||'—').slice(0,14),
+      (tr.product||'—').slice(0,18),
+      (tr.amount||'—').slice(0,13),
+      tr.duration_days?tr.duration_days+'d':'—',
+      (tr.withdrawal_period||'—').slice(0,11),
+      (tr.applicator||'—').slice(0,14),
+    ];
+    cols.forEach((c,i)=>{
+      sf('normal',7,[26,26,20]);
+      doc.text(vals[i],c.x+1,y+5);
+    });
+
+    // Batch number in small text below if present
+    if(tr.batch_number||tr.reason){
+      doc.setFillColor(isEven?248:255,isEven?246:255,isEven?240:255);
+      doc.rect(margin,y+rowH,contentW,5,'F');
+      sf('italic',6,[120,110,90]);
+      const subText=[];
+      if(tr.batch_number)subText.push(`Batch: ${tr.batch_number}`);
+      if(tr.reason)subText.push(`Reason: ${tr.reason.slice(0,60)}`);
+      doc.text(subText.join('  ·  '),margin+2,y+rowH+3.5);
+      y+=5;
+    }
+
+    // Thin border
+    doc.setDrawColor(220,215,205);doc.setLineWidth(0.2);
+    doc.line(margin,y+rowH,W-margin,y+rowH);
+    y+=rowH;
+  });
+
+  y+=6;
+
+  // ── Per-hive summary ──────────────────────────────────────
+  checkPage(20);
+  doc.setFillColor(232,228,220);doc.roundedRect(margin,y,contentW,8,2,2,'F');
+  sf('bold',9,[55,71,79]);doc.text('PER-HIVE TREATMENT SUMMARY',margin+4,y+5.5);
+  y+=13;
+
+  hives.forEach(h=>{
+    const hiveTreats=treatments.filter(tr=>tr.hive_id===h.id);
+    if(!hiveTreats.length)return;
+    checkPage(10);
+    sf('bold',9,[26,26,20]);doc.text(h.name,margin,y);
+    sf('normal',8,[92,88,71]);doc.text(`${hiveTreats.length} treatment${hiveTreats.length!==1?'s':''} recorded`,margin+60,y);
+    y+=5;
+    const products=[...new Set(hiveTreats.map(tr=>tr.product))];
+    sf('normal',8,[120,110,90]);doc.text(`Products used: ${products.join(', ')}`,margin+4,y);
+    y+=5;
+    line([235,230,220]);
+  });
+
+  // ── Signature block ───────────────────────────────────────
+  checkPage(40);
+  y+=4;
+  doc.setFillColor(248,244,236);doc.roundedRect(margin,y,contentW,36,2,2,'F');
+  sf('bold',9,[55,71,79]);doc.text('DECLARATION',margin+4,y+7);
+  sf('normal',8,[92,88,71]);
+  const declaration=[
+    'I confirm that all treatments listed in this record have been applied in accordance with the',
+    'product label instructions, applicable veterinary regulations, and good beekeeping practice.',
+    'Records are accurate and complete to the best of my knowledge.'
+  ];
+  declaration.forEach((line_,i)=>{doc.text(line_,margin+4,y+14+i*5);});
+
+  // Signature lines
+  const sigY=y+30;
+  doc.setDrawColor(100,100,100);doc.setLineWidth(0.4);
+  doc.line(margin+4,sigY,margin+70,sigY);
+  doc.line(margin+90,sigY,margin+140,sigY);
+  sf('normal',7,[150,150,150]);
+  doc.text('Signature',margin+4,sigY+4);
+  doc.text('Date',margin+90,sigY+4);
+  y+=40;
+
+  // ── Footer ────────────────────────────────────────────────
+  const pages=doc.getNumberOfPages();
+  for(let p=1;p<=pages;p++){
+    doc.setPage(p);
+    doc.setFillColor(248,244,236);doc.rect(0,285,W,12,'F');
+    sf('normal',7,[154,146,128]);
+    doc.text(`Beekeepy Treatment Compliance Record · ${year} · Page ${p} of ${pages} · beekeepy.com`,W/2,291,{align:'center'});
+  }
+
+  doc.save(`beekeepy-compliance-${year}.pdf`);
+  showToast('Compliance PDF downloaded ✓','success');
 }
 
 async function exportAnnualPDF(){

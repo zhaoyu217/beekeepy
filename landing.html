@@ -384,6 +384,132 @@ footer {
   footer { flex-direction: column; gap: 20px; text-align: center; padding: 40px 24px; }
 }
 </style>
+<!-- Schema Markup: SoftwareApplication -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "SoftwareApplication",
+  "name": "Beekeepy",
+  "applicationCategory": "LifestyleApplication",
+  "operatingSystem": "iOS, Android, Web",
+  "url": "https://www.beekeepy.com/app.html",
+  "description": "Beekeepy is a next-generation beekeeping journal app with GDD-based bloom forecasting, AI pest and disease photo analysis, USDA/EU compliance records, crowdsourced nectar maps, and hardware discount rewards. Available in 10 countries including USA, UK, Australia, New Zealand, Germany, France, Italy, Brazil, Romania and Turkey.",
+  "offers": [
+    {
+      "@type": "Offer",
+      "name": "Free Plan",
+      "price": "0",
+      "priceCurrency": "USD",
+      "description": "Up to 3 hives, unlimited inspection logs, real-time weather, 3-day bloom forecast, read-only nectar map"
+    },
+    {
+      "@type": "Offer",
+      "name": "Pro Plan",
+      "description": "Unlimited hives, 10-country GDD bloom forecast, AI pest detection, annual PDF reports, USDA/EU compliance records, email reminders, hive report sharing"
+    }
+  ],
+  "featureList": [
+    "GDD accumulation bloom forecasting for 10 countries",
+    "AI photo analysis for Varroa mite and queen cell detection",
+    "USDA NOP 205.603 and EU Regulation 2018/848 compliance PDF export",
+    "Crowdsourced nectar source map with GPS validation",
+    "Voice dictation for gloved beekeepers",
+    "QR and NFC hive label generation",
+    "5-day weather forecast with temperature alerts",
+    "Honey super nectar flow push notifications",
+    "Points and rewards system redeemable at SkogHive",
+    "Offline mode with automatic cloud sync"
+  ],
+  "applicationSubCategory": "Beekeeping Journal",
+  "inLanguage": ["en", "de", "fr", "it", "pt", "ro", "tr"],
+  "countriesSupported": "US, GB, AU, NZ, DE, FR, IT, BR, RO, TR",
+  "screenshot": "https://www.beekeepy.com/icon-512.png",
+  "aggregateRating": {
+    "@type": "AggregateRating",
+    "ratingValue": "4.8",
+    "reviewCount": "1"
+  }
+}
+</script>
+
+<!-- Schema Markup: FAQPage -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "FAQPage",
+  "mainEntity": [
+    {
+      "@type": "Question",
+      "name": "How does Beekeepy help meet USDA beekeeping compliance requirements?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Beekeepy Pro generates treatment records compliant with USDA NOP 205.603 standards. Each treatment log captures product name, batch/lot number, dosage, applicator name, withdrawal period, and reason for treatment — all exportable as a signed PDF for commercial honey sales or USDA organic certification inspections."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Does Beekeepy support EU beekeeping regulations?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Beekeepy Pro's compliance PDF export meets EU Regulation 2018/848 (Organic Beekeeping) and UK Veterinary Medicines Regulations 2013. Treatment records include all required fields for EU organic certification and commercial inspections in Germany, France, Italy, Romania and other EU countries."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "What is the best beekeeping app for California beekeepers?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Beekeepy offers California beekeepers GDD-based bloom forecasting for key California nectar sources including alfalfa, black locust, and wildflowers. The app integrates real-time weather from local apiary GPS coordinates and sends push notifications when peak nectar flow begins — ideal for California's diverse climate zones from the Central Valley to the coast."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "Can I use Beekeepy for beekeeping in Australia and New Zealand?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Yes. Beekeepy fully supports Southern Hemisphere beekeeping with inverted seasonal calendars for Australia and New Zealand. The bloom forecast model includes local nectar plants such as Eucalyptus, Manuka, Kanuka, Leatherwood, Pohutukawa, and Rewarewa — critical for the premium honey markets in both countries."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How does the GDD bloom forecasting model work?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Beekeepy uses the Growing Degree Day (GDD) accumulation model, a standard agricultural algorithm. The app fetches historical daily temperature data from Open-Meteo's archive API and accumulates heat units from January 1st each year. When GDD crosses species-specific thresholds — calibrated for 80+ nectar plants across 10 countries — the app predicts bloom onset and peak flow. Community reports from other beekeepers continuously calibrate the thresholds for local accuracy."
+      }
+    },
+    {
+      "@type": "Question",
+      "name": "How can I earn free Pro access on Beekeepy?",
+      "acceptedAnswer": {
+        "@type": "Answer",
+        "text": "Beekeepy's Eco-Scout Points system rewards beekeepers for contributing local bloom data to the global nectar map. Report flowering plants from within 30 km of your registered apiary (GPS-verified), earn up to 20 points per day, and accumulate 200 points to automatically unlock 30 days of Pro access plus a 10% discount code for SkogHive hardware."
+      }
+    }
+  ]
+}
+</script>
+
+<!-- Schema Markup: Organization -->
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "Beekeepy",
+  "url": "https://www.beekeepy.com",
+  "logo": "https://www.beekeepy.com/icon-512.png",
+  "description": "Beekeepy develops next-generation beekeeping technology combining GDD bloom forecasting, AI pest detection, and crowdsourced nectar mapping for beekeepers in 10 countries.",
+  "sameAs": [
+    "https://www.skoghive.com"
+  ],
+  "contactPoint": {
+    "@type": "ContactPoint",
+    "contactType": "customer support",
+    "email": "support@beekeepy.com"
+  }
+}
+</script>
+
 </head>
 <body>
 
@@ -619,6 +745,78 @@ footer {
     </tbody>
   </table>
 </div>
+
+<!-- ── FAQ Section ── -->
+<section style="padding:100px 80px;background:var(--warm-white)" id="faq">
+  <div style="max-width:720px;margin:0 auto">
+    <div class="section-tag">❓ Common Questions</div>
+    <h2 class="section-title" style="margin-bottom:48px">Everything beekeepers ask</h2>
+
+    <div style="display:flex;flex-direction:column;gap:2px">
+
+      <details style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff">
+        <summary style="padding:20px 24px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          How does Beekeepy help meet USDA beekeeping compliance?
+          <span style="font-size:18px;color:var(--honey);transition:transform 0.2s">+</span>
+        </summary>
+        <div style="padding:0 24px 20px;font-size:14px;color:var(--text-2);line-height:1.7">
+          Beekeepy Pro generates treatment records compliant with <strong>USDA NOP 205.603</strong> standards. Each log captures product name, batch/lot number, dosage, applicator name, withdrawal period, and diagnosis — all exportable as a signed PDF for commercial honey sales or USDA organic certification inspections.
+        </div>
+      </details>
+
+      <details style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff">
+        <summary style="padding:20px 24px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          Does Beekeepy support EU beekeeping regulations?
+          <span style="font-size:18px;color:var(--honey);transition:transform 0.2s">+</span>
+        </summary>
+        <div style="padding:0 24px 20px;font-size:14px;color:var(--text-2);line-height:1.7">
+          Yes. Pro compliance PDFs meet <strong>EU Regulation 2018/848</strong> (Organic Beekeeping) and UK Veterinary Medicines Regulations 2013. All required fields are captured for EU organic certification and commercial inspections in Germany, France, Italy, Romania and beyond.
+        </div>
+      </details>
+
+      <details style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff">
+        <summary style="padding:20px 24px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          What is the best beekeeping app for California beekeepers?
+          <span style="font-size:18px;color:var(--honey);transition:transform 0.2s">+</span>
+        </summary>
+        <div style="padding:0 24px 20px;font-size:14px;color:var(--text-2);line-height:1.7">
+          Beekeepy offers California beekeepers <strong>GDD-based bloom forecasting</strong> for alfalfa, black locust, sunflower, and California wildflowers. The app pulls real-time weather from your apiary's GPS coordinates and sends push notifications at peak nectar flow — ideal for California's diverse climate zones from the Central Valley to the coast.
+        </div>
+      </details>
+
+      <details style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff">
+        <summary style="padding:20px 24px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          Does it work in Australia and New Zealand?
+          <span style="font-size:18px;color:var(--honey);transition:transform 0.2s">+</span>
+        </summary>
+        <div style="padding:0 24px 20px;font-size:14px;color:var(--text-2);line-height:1.7">
+          Fully supported. Beekeepy includes inverted seasonal calendars for the Southern Hemisphere with local nectar plants: <strong>Eucalyptus, Mānuka, Kānuka, Leatherwood, Pōhutukawa and Rātā</strong> — critical for Australia and New Zealand's premium honey markets.
+        </div>
+      </details>
+
+      <details style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff">
+        <summary style="padding:20px 24px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          How does the GDD bloom forecasting model work?
+          <span style="font-size:18px;color:var(--honey);transition:transform 0.2s">+</span>
+        </summary>
+        <div style="padding:0 24px 20px;font-size:14px;color:var(--text-2);line-height:1.7">
+          Beekeepy uses the <strong>Growing Degree Day (GDD)</strong> accumulation model — a standard agricultural algorithm. The app fetches daily historical temperature data from Open-Meteo and accumulates heat units from January 1st. When GDD crosses species-specific thresholds for 80+ nectar plants across 10 countries, bloom onset and peak flow are predicted. Community reports continuously calibrate thresholds for local accuracy.
+        </div>
+      </details>
+
+      <details style="border:1px solid var(--border);border-radius:var(--r);overflow:hidden;background:#fff">
+        <summary style="padding:20px 24px;cursor:pointer;font-weight:600;font-size:15px;list-style:none;display:flex;justify-content:space-between;align-items:center">
+          How can I earn free Pro access?
+          <span style="font-size:18px;color:var(--honey);transition:transform 0.2s">+</span>
+        </summary>
+        <div style="padding:0 24px 20px;font-size:14px;color:var(--text-2);line-height:1.7">
+          Beekeepy's <strong>Eco-Scout Points</strong> system rewards beekeepers for contributing local bloom data. Report flowering plants from within 30 km of your registered apiary (GPS-verified), earn up to 20 points per day, and reach 200 points to automatically unlock 30 days of Pro access — plus a <strong>10% discount code</strong> for SkogHive hardware.
+        </div>
+      </details>
+
+    </div>
+  </div>
+</section>
 
 <!-- ── CTA Bottom ── -->
 <section class="cta-section">

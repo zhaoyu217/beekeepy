@@ -5011,89 +5011,81 @@ function showNFCWrite() {
   const existing = document.getElementById('modal-nfc');
   if(existing) existing.remove();
 
-  const isIOS = /iPhone|iPad|iPod/i.test(navigator.userAgent);
   const hasNFC = 'NDEFReader' in window;
   const hiveUrl = `${location.origin}/app.html?hive=${currentDetailHiveId}`;
 
-  const modal = document.createElement('div');
-  modal.id = 'modal-nfc';
-  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:center;justify-content:center;padding:20px';
-
   const step = (n,text) => `
-    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:14px">
-      <div style="min-width:28px;height:28px;border-radius:50%;background:var(--honey);color:#fff;font-size:13px;font-weight:700;display:flex;align-items:center;justify-content:center">${n}</div>
-      <div style="font-size:14px;color:var(--text);line-height:1.6;padding-top:4px">${text}</div>
+    <div style="display:flex;gap:12px;align-items:flex-start;margin-bottom:12px">
+      <div style="min-width:26px;height:26px;border-radius:50%;background:var(--honey);color:#fff;font-size:12px;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0">${n}</div>
+      <div style="font-size:13px;color:var(--text);line-height:1.6;padding-top:4px">${text}</div>
     </div>`;
 
-  let content_html = '';
-
-  if(hasNFC) {
-    // Android Chrome
-    content_html = `
-      <div style="font-size:12px;font-weight:700;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px">📱 Android — How to write your NFC sticker</div>
-      ${step(1,'Make sure you have a <strong>blank NFC sticker</strong> ready (NTAG213 or NTAG215, available at SkogHive or Amazon).')}
-      ${step(2,'Tap the purple button below — <strong>"Write to Sticker"</strong>.')}
-      ${step(3,'Hold the <strong>back of your phone</strong> against the blank sticker for 1–2 seconds.')}
-      ${step(4,'You will hear a beep or feel a vibration. <strong>Done!</strong> Peel and stick the sticker on your hive.')}
-      <div style="background:var(--forest-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:16px;font-size:12px;color:var(--forest)">
-        ✅ After writing, any phone (iPhone or Android) can tap the sticker to instantly open this hive.
-      </div>
-      <button id="nfc-write-btn" onclick="writeNFCTag('${currentDetailHiveId}','${hiveUrl}')" style="width:100%;padding:16px;border-radius:var(--radius-sm);border:none;background:#6C3483;color:#fff;font-size:16px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;margin-bottom:8px">
-        📡 Write to Sticker
-      </button>
-      <div id="nfc-status" style="text-align:center;font-size:13px;color:var(--text-3);min-height:18px;margin-bottom:10px"></div>`;
-
-  } else if(isIOS) {
-    // iPhone
-    content_html = `
-      <div style="font-size:12px;font-weight:700;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px">📱 iPhone — How to write your NFC sticker</div>
-      ${step(1,'Download the free app <strong>NFC Tools</strong> from the App Store.')}
-      ${step(2,'Come back here and tap <strong>Copy Link</strong> below to copy your hive link.')}
-      ${step(3,'Open <strong>NFC Tools</strong> → tap <strong>Write</strong> → tap <strong>Add a record</strong> → choose <strong>URL / URI</strong> → paste the link → tap <strong>OK</strong>.')}
-      ${step(4,'Tap <strong>Write / 20 Bytes</strong> in NFC Tools, then hold your iPhone to the <strong>blank NFC sticker</strong>.')}
-      ${step(5,'Done! Peel and <strong>stick on your hive</strong>. Any phone can now tap it to open this hive instantly.')}
-      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px">
-        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;font-weight:600">Step 2 — Your hive link (copy this):</div>
-        <div style="font-size:11px;color:var(--text);word-break:break-all;margin-bottom:10px;font-family:monospace;background:var(--cream);padding:8px;border-radius:6px">${hiveUrl}</div>
-        <button onclick="copyNFCLink('${hiveUrl}','✅ Copied! Now open NFC Tools and paste it.')" style="width:100%;padding:12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer">📋 Copy Link</button>
-      </div>
-      <button onclick="showHiveQR();document.getElementById('modal-nfc').remove()" style="width:100%;padding:11px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer;margin-bottom:8px">
-        🏷️ Prefer a QR code sticker instead? Tap here
-      </button>`;
-
-  } else {
-    // Android non-Chrome
-    content_html = `
-      <div style="font-size:12px;font-weight:700;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.08em;margin-bottom:16px">📱 Android — How to write your NFC sticker</div>
-      ${step(1,'NFC writing only works in <strong>Google Chrome</strong>. Open Google Chrome on your Android phone.')}
-      ${step(2,'Copy the link below, paste it into Chrome address bar, and open the page.')}
-      ${step(3,'Tap the <strong>📡 NFC</strong> button again in Chrome — you will see a purple "Write to Sticker" button.')}
-      ${step(4,'Tap that button, then hold the back of your phone to the blank NFC sticker.')}
-      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:12px">
-        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;font-weight:600">Your hive link — open this in Chrome:</div>
-        <div style="font-size:11px;color:var(--text);word-break:break-all;margin-bottom:10px;font-family:monospace;background:var(--cream);padding:8px;border-radius:6px">${hiveUrl}</div>
-        <button onclick="copyNFCLink('${hiveUrl}','✅ Copied! Open Chrome and paste it.')" style="width:100%;padding:12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer">📋 Copy Link</button>
-      </div>`;
-  }
+  const modal = document.createElement('div');
+  modal.id = 'modal-nfc';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:center;justify-content:center;padding:16px';
 
   modal.innerHTML = `
     <div style="background:var(--surface);border-radius:20px;width:100%;max-width:480px;max-height:90vh;overflow-y:auto;padding:24px 20px">
+
+      <!-- Header -->
       <div style="text-align:center;margin-bottom:16px">
-        <div style="font-size:40px;margin-bottom:8px">📡</div>
+        <div style="font-size:36px;margin-bottom:8px">📡</div>
         <div style="font-weight:700;font-size:18px;margin-bottom:4px">Write NFC Sticker</div>
         <div style="font-size:13px;color:var(--text-3)">${h.name}</div>
       </div>
-      <!-- Value proposition -->
-      <div style="background:linear-gradient(135deg,#3D2B1F,#5C3D2A);border-radius:var(--radius);padding:14px 16px;margin-bottom:16px;text-align:center">
-        <div style="font-size:15px;font-weight:600;color:#F5E6D3;line-height:1.6">
-          Turn any old wooden hive into a smart hive — instantly.
-        </div>
-        <div style="font-size:13px;color:rgba(245,230,211,0.75);margin-top:6px;line-height:1.6">
-          Stick it on. Tap with Beekeepy.<br>Open your hive log in one second — even with thick gloves on.
-        </div>
+
+      <!-- Value prop -->
+      <div style="background:linear-gradient(135deg,#3D2B1F,#5C3D2A);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;text-align:center">
+        <div style="font-size:14px;font-weight:600;color:#F5E6D3;line-height:1.6">Turn any old wooden hive into a smart hive — instantly.</div>
+        <div style="font-size:12px;color:rgba(245,230,211,0.75);margin-top:6px;line-height:1.6">Stick it on. Tap with Beekeepy.<br>Open your hive log in one second — even with thick gloves on.</div>
       </div>
-      ${content_html}
-      <button onclick="document.getElementById('modal-nfc').remove()" style="width:100%;padding:11px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+
+      <!-- iPhone section -->
+      <div style="border:1.5px solid #AED6F1;border-radius:var(--radius);padding:16px;margin-bottom:14px;background:#EBF5FB">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span style="font-size:18px">🍎</span>
+          <span style="font-size:13px;font-weight:700;color:#1A5276;text-transform:uppercase;letter-spacing:0.06em">iPhone — How to write your NFC sticker</span>
+        </div>
+        ${step(1,'Download <strong>NFC Tools</strong> — free on the App Store.')}
+        ${step(2,'Tap <strong>Copy Link</strong> below to copy your hive link.')}
+        ${step(3,'Open <strong>NFC Tools</strong> → tap <strong>Write</strong> → <strong>Add a record</strong> → <strong>URL/URI</strong> → paste the link → tap <strong>OK</strong>.')}
+        ${step(4,'Tap <strong>Write / 20 Bytes</strong>, then hold your iPhone to the blank NFC sticker.')}
+        ${step(5,'<strong>Done!</strong> Peel and stick on your hive. Any phone can now tap it to open this hive.')}
+      </div>
+
+      <!-- Android section -->
+      <div style="border:1.5px solid #A9DFBF;border-radius:var(--radius);padding:16px;margin-bottom:14px;background:#EAFAF1">
+        <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
+          <span style="font-size:18px">🤖</span>
+          <span style="font-size:13px;font-weight:700;color:#1E8449;text-transform:uppercase;letter-spacing:0.06em">Android — How to write your NFC sticker</span>
+        </div>
+        ${hasNFC ? `
+        ${step(1,'Make sure you have a <strong>blank NFC sticker</strong> ready (NTAG213/215/216).')}
+        ${step(2,'Tap the button below — <strong>Write to Sticker</strong>.')}
+        ${step(3,'Hold the <strong>back of your phone</strong> to the blank sticker for 1–2 seconds.')}
+        ${step(4,'You will feel a vibration. <strong>Done!</strong> Stick on your hive.')}
+        <button id="nfc-write-btn" onclick="writeNFCTag('${currentDetailHiveId}','${hiveUrl}')" style="width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:#6C3483;color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;margin-top:4px">
+          📡 Write to Sticker
+        </button>
+        <div id="nfc-status" style="text-align:center;font-size:13px;color:var(--text-3);min-height:18px;margin-top:8px"></div>
+        ` : `
+        ${step(1,'Open this page in <strong>Google Chrome</strong> on your Android phone.')}
+        ${step(2,'Tap the <strong>📡 NFC</strong> button again — you will see a purple Write button.')}
+        ${step(3,'Tap it and hold phone to the blank sticker. Done!')}
+        `}
+      </div>
+
+      <!-- Copy link (for both) -->
+      <div style="background:var(--bg);border:1.5px solid var(--border);border-radius:var(--radius-sm);padding:12px;margin-bottom:14px">
+        <div style="font-size:11px;color:var(--text-3);margin-bottom:6px;font-weight:600;text-transform:uppercase;letter-spacing:0.05em">Your hive link — paste into NFC Tools (iPhone) or Chrome (Android):</div>
+        <div style="font-size:11px;color:var(--text);word-break:break-all;margin-bottom:10px;font-family:monospace;background:var(--cream);padding:8px;border-radius:6px">${hiveUrl}</div>
+        <button onclick="copyNFCLink('${hiveUrl}','✅ Copied! Paste it into NFC Tools or Chrome.')" style="width:100%;padding:12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer">📋 Copy Link</button>
+      </div>
+
+      <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
+        <button onclick="showHiveQR();document.getElementById('modal-nfc').remove()" style="padding:11px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);color:var(--text-2);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">🏷️ QR Label instead</button>
+        <button onclick="document.getElementById('modal-nfc').remove()" style="padding:11px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">Close</button>
+      </div>
     </div>`;
 
   document.body.appendChild(modal);

@@ -627,14 +627,18 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <!-- ===== HIVE DETAIL (Timeline) ===== -->
 <div id="pg-hive-detail" class="page">
 <div class="scroll-content">
-  <div style="display:flex;align-items:center;gap:10px;margin-bottom:14px">
-    <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px"><span data-i18n="back">← Back</span></button>
-    <h2 id="hive-detail-name" style="font-size:18px;flex:1"></h2>
-    <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 Export PDF</button>
-    <button class="btn-sm" onclick="shareHiveReport()" style="margin-top:0;padding:6px 12px;background:var(--sky);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🔗 Share</button>
-    <button class="btn-sm" onclick="showHiveQR()" style="margin-top:0;padding:6px 12px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🏷️ Label</button>
-    <button class="btn-sm" onclick="showNFCWrite()" style="margin-top:0;padding:6px 12px;background:#6C3483;color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📡 NFC</button>
-    <button onclick="confirmDeleteHive(currentDetailHiveId)" style="margin-top:0;padding:6px 10px;background:var(--danger-light);color:var(--danger);border:1.5px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;white-space:nowrap">🗑</button>
+  <div style="margin-bottom:14px">
+    <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px">
+      <button class="btn-outline btn-sm" onclick="showPage('home',document.querySelector('.nav-item'))" style="margin-top:0;padding:6px 12px"><span data-i18n="back">← Back</span></button>
+      <h2 id="hive-detail-name" style="font-size:17px;flex:1;white-space:nowrap;overflow:hidden;text-overflow:ellipsis"></h2>
+    </div>
+    <div style="display:flex;gap:6px;flex-wrap:nowrap">
+      <button class="btn-sm" onclick="exportHivePDF()" style="margin-top:0;padding:6px 10px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📄 PDF</button>
+      <button class="btn-sm" onclick="shareHiveReport()" style="margin-top:0;padding:6px 10px;background:var(--sky);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🔗 Share</button>
+      <button class="btn-sm" onclick="showHiveQR()" style="margin-top:0;padding:6px 10px;background:var(--forest);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">🏷️ Label</button>
+      <button class="btn-sm" onclick="showNFCWrite()" style="margin-top:0;padding:6px 10px;background:#6C3483;color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;font-weight:500;white-space:nowrap">📡 NFC</button>
+      <button onclick="confirmDeleteHive(currentDetailHiveId)" style="margin-top:0;padding:6px 10px;background:var(--danger-light);color:var(--danger);border:1.5px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;white-space:nowrap">🗑</button>
+    </div>
   </div>
 
   <!-- AI Analysis for this hive -->
@@ -4967,6 +4971,19 @@ function exportCSV(){
 // ============================================================
 // NFC WRITE — Write hive URL to blank NFC tag
 // ============================================================
+
+function toggleLabelMenu(btn) {
+  const menu = document.getElementById('label-menu');
+  if(!menu) return;
+  const isOpen = menu.style.display === 'block';
+  menu.style.display = isOpen ? 'none' : 'block';
+  if(!isOpen) {
+    setTimeout(()=>document.addEventListener('click', function close(e){
+      if(!menu.contains(e.target)&&e.target!==btn){menu.style.display='none';}
+      document.removeEventListener('click',close);
+    }), 0);
+  }
+}
 
 function showNFCWrite() {
   if(!currentDetailHiveId) return;

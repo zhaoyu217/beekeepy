@@ -913,12 +913,38 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <!-- How to earn -->
   <div class="section-hd">⚡ How to Earn Points</div>
   <div class="card" style="margin-bottom:14px">
-    <div id="pts-earn-list"></div>
+    <div id="pts-earn-list">
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:22px">📋</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Log your first inspection</div><div style="font-size:11px;color:var(--text-3)">One time</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--honey-dark)">+10 pts</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:22px">🗺️</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Add first forage marker on map</div><div style="font-size:11px;color:var(--text-3)">One time</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--honey-dark)">+50 pts</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:22px">✅</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Your marker confirmed by 3 users</div><div style="font-size:11px;color:var(--text-3)">Repeatable</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--honey-dark)">+30 pts</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0;border-bottom:1px solid var(--border)">
+        <div style="font-size:22px">🌸</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">Report local bloom data (weekly)</div><div style="font-size:11px;color:var(--text-3)">Repeatable · 7-day cooldown</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--honey-dark)">+20 pts</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:12px;padding:10px 0">
+        <div style="font-size:22px">🔥</div>
+        <div style="flex:1"><div style="font-size:13px;font-weight:500">3-week reporting streak bonus</div><div style="font-size:11px;color:var(--text-3)">Repeatable</div></div>
+        <div style="font-size:14px;font-weight:700;color:var(--honey-dark)">+60 pts</div>
+      </div>
+    </div>
   </div>
 
   <!-- History -->
   <div class="section-hd">📜 Points History</div>
-  <div id="pts-history-list" class="card"></div>
+  <div id="pts-history-list" class="card"><div style="text-align:center;padding:20px;color:var(--text-3);font-size:13px">No points earned yet — start exploring the map! 🗺️</div></div>
 
 </div>
 </div>

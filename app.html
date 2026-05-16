@@ -794,7 +794,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <button class="btn-add" onclick="openModal('modal-apiary')">＋ <span data-i18n="add_apiary">Add Apiary</span></button>
   <div class="section-hd" style="margin-top:16px">Hives</div>
   <div id="hive-list-full"></div>
-  <button class="btn-add" onclick="openModal('modal-hive')">＋ <span data-i18n="add_hive">Add Hive</span></button>
+  <button class="btn-add" onclick="hives.length>=3&&!userIsPro()?showUpgradeModal('hive_limit'):openModal('modal-hive')">＋ <span data-i18n="add_hive">Add Hive</span></button>
   <!-- EQUIPMENT -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:8px">
     <div class="section-hd" style="margin:0"><span data-i18n="equipment">Equipment</span></div>
@@ -4666,6 +4666,64 @@ function openEditHive(hiveId){
   document.querySelector('#modal-hive .modal-title h2').textContent='Edit Hive';
   document.getElementById('modal-hive').classList.add('open');
 }
+// Pro status check — will connect to payment system later
+function userIsPro() {
+  // Check pro_expires from points system
+  if(userPoints.pro_expires) {
+    return new Date(userPoints.pro_expires) > new Date();
+  }
+  // TODO: connect to Stripe subscription status
+  return false;
+}
+
+function showUpgradeModal(trigger='') {
+  const existing = document.getElementById('modal-upgrade');
+  if(existing) existing.remove();
+  const modal = document.createElement('div');
+  modal.id = 'modal-upgrade';
+  modal.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.6);z-index:600;display:flex;align-items:flex-end;justify-content:center';
+
+  const reasons = {
+    hive_limit: { icon:'🪵', title:'3-Hive Limit Reached', body:'Free plan includes up to 3 hives. Upgrade to Pro for unlimited hives and all premium features.' },
+    bloom_forecast: { icon:'🌸', title:'Pro Feature', body:'Full GDD bloom forecasting is a Pro feature. Upgrade to unlock 10-country nectar plant predictions.' },
+    ai_analysis: { icon:'🔬', title:'Pro Feature', body:'AI pest & disease photo analysis requires Pro. Upgrade to detect Varroa and queen cells instantly.' },
+    annual_pdf: { icon:'📄', title:'Pro Feature', body:'Annual PDF reports are a Pro feature. Upgrade to generate full-year apiary summaries.' },
+    default: { icon:'⚡', title:'Upgrade to Pro', body:'Unlock unlimited hives, AI analysis, bloom forecasting, annual reports and more.' }
+  };
+  const r = reasons[trigger] || reasons.default;
+
+  modal.innerHTML = `
+    <div style="background:var(--surface);border-radius:20px 20px 0 0;width:100%;max-width:480px;padding:28px 20px;padding-bottom:calc(20px + env(safe-area-inset-bottom))">
+      <div style="text-align:center;margin-bottom:20px">
+        <div style="font-size:44px;margin-bottom:10px">${r.icon}</div>
+        <div style="font-weight:700;font-size:18px;margin-bottom:8px">${r.title}</div>
+        <div style="font-size:13px;color:var(--text-2);line-height:1.6">${r.body}</div>
+      </div>
+
+      <!-- Pro features list -->
+      <div style="background:var(--honey-light);border-radius:var(--radius);padding:14px;margin-bottom:16px">
+        <div style="font-size:11px;font-weight:600;color:var(--honey-dark);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:10px">Pro includes</div>
+        ${['Unlimited hives','10-country bloom forecast','AI pest & disease analysis','Annual PDF reports','USDA/EU compliance records','Email reminders','Hive report sharing','Forage map contributions'].map(f=>
+          `<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px"><span style="color:var(--forest);font-size:14px">✓</span><span style="font-size:13px">${f}</span></div>`
+        ).join('')}
+      </div>
+
+      <!-- CTA buttons -->
+      <button onclick="document.getElementById('modal-upgrade').remove();showToast('Coming soon — payment system launching soon! 🚀')" style="width:100%;padding:14px;border-radius:var(--radius-sm);border:none;background:var(--honey);color:#fff;font-size:15px;font-family:'DM Sans',sans-serif;font-weight:700;cursor:pointer;margin-bottom:8px">
+        ⚡ Upgrade to Pro
+      </button>
+      <button onclick="document.getElementById('modal-upgrade').remove()" style="width:100%;padding:11px;border-radius:var(--radius-sm);border:none;background:none;color:var(--text-3);font-size:13px;font-family:'DM Sans',sans-serif;cursor:pointer">
+        Maybe later
+      </button>
+
+      <!-- Earn free Pro note -->
+      <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text-3)">
+        🏆 Earn 200 points on the <span onclick="document.getElementById('modal-upgrade').remove();showPage('points',document.getElementById('nav-points'))" style="color:var(--honey-dark);cursor:pointer;font-weight:600">Points tab</span> to unlock 30 days free
+      </div>
+    </div>`;
+  document.body.appendChild(modal);
+}
+
 async function saveHive(){
   setSyncing('syncing');
   const payload={apiary_id:document.getElementById('hv-apiary').value||null,name:document.getElementById('hv-name').value||'New Hive',type:document.getElementById('hv-type').value,boxes:+document.getElementById('hv-frames').value||2,installed:document.getElementById('hv-date').value,origin:document.getElementById('hv-origin').value};
@@ -4677,6 +4735,13 @@ async function saveHive(){
     editingHiveId=null;
     setSyncing('saved');closeModal('modal-hive');renderSettings();renderHome();showToast('Hive updated ✓');
   } else {
+    // Free plan limit: 3 hives
+    if(hives.length >= 3 && !userIsPro()) {
+      setSyncing('saved');
+      closeModal('modal-hive');
+      showUpgradeModal('hive_limit');
+      return;
+    }
     const{data,error}=await sb.from('hives').insert({user_id:currentUser.id,...payload,status:'ok'}).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
     hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();showToast(t('toast_hive_saved'));

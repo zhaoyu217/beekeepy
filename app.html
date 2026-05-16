@@ -5309,13 +5309,13 @@ async function loadUserPoints() {
   if(!currentUser) return;
   try {
     const [ptsRes, evtRes] = await Promise.all([
-      sb.from('user_points').select('*').eq('user_id', currentUser.id).single(),
+      sb.from('user_points').select('*').eq('user_id', currentUser.id).limit(1),
       sb.from('point_events').select('*').eq('user_id', currentUser.id).order('created_at', {ascending:false}).limit(20)
     ]);
-    if(ptsRes.data) userPoints = ptsRes.data;
+    if(ptsRes.data && ptsRes.data.length > 0) userPoints = ptsRes.data[0];
     if(evtRes.data) pointEvents = evtRes.data;
     updatePointsBadge();
-  } catch(e) {}
+  } catch(e) { console.warn('loadUserPoints error:', e); }
 }
 
 function updatePointsBadge() {

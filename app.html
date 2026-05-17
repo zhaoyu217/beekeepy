@@ -1949,38 +1949,32 @@ let currentDetailHiveId=null;
 
 // Init 
 async function init() {
-  // Load saved language
   try{const l=localStorage.getItem('bk_lang');if(l&&LANGS[l])currentLang=l;}catch(e){}
   applyLang();
-  // Add timeout so loading never gets permanently stuck
-  const loadTimeout = setTimeout(()=>{
-    document.getElementById('loading-overlay').style.display='none';
-    showToast('加载超时，请刷新页面重试','error');
-  }, 15000);
-  try {
-    const { data: { session } } = await sb.auth.getSession();
-    if (!session) {
+  // Safety timeout — never stuck forever
+  const loadTimeout=setTimeout(()=>{
+    const ov=document.getElementById('loading-overlay');
+    if(ov)ov.style.display='none';
+  },12000);
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(!session){
       clearTimeout(loadTimeout);
       const hiveParam=new URLSearchParams(location.search).get('hive');
       if(hiveParam){try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}}
-      window.location.href = 'index.html'; return;
+      window.location.href='index.html';return;
     }
-    currentUser = session.user;
-    const initials = (currentUser.user_metadata?.full_name || currentUser.email || '?')[0].toUpperCase();
-    document.getElementById('user-avatar').textContent = initials;
-    document.getElementById('remind-email-display').textContent = currentUser.email;
+    currentUser=session.user;
+    const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
+    document.getElementById('user-avatar').textContent=initials;
+    document.getElementById('remind-email-display').textContent=currentUser.email;
     await loadAll();
     fetchWeather();
     checkReminders();
     requestPushPermission();
-    clearTimeout(loadTimeout);
-    document.getElementById('loading-overlay').style.display = 'none';
-  } catch(e) {
-    console.error('Init error:', e);
-    clearTimeout(loadTimeout);
-    document.getElementById('loading-overlay').style.display = 'none';
-    showToast('加载失败，请刷新页面重试','error');
-  }
+  }catch(e){console.error('init error:',e);}
+  clearTimeout(loadTimeout);
+  document.getElementById('loading-overlay').style.display='none';
   checkShareParam();
   checkHiveParam();
   // Handle QR scan — auto open hive
@@ -2005,7 +1999,6 @@ function setSyncing(s) {
 async function loadAll() {
   const uid=currentUser.id;
   if(!isOnline){
-    // Offline — use cached data from localStorage
     try{
       const cached=localStorage.getItem('bk_cache_'+uid);
       if(cached){
@@ -2020,28 +2013,35 @@ async function loadAll() {
     }catch(e){}
     renderHome();return;
   }
-  const [a,h,q,i,t,hv,ph,rem]=await Promise.all([
-    sb.from('apiaries').select('*').eq('user_id',uid).order('created_at'),
-    sb.from('hives').select('*').eq('user_id',uid).order('created_at'),
-    sb.from('queens').select('*').eq('user_id',uid),
-    sb.from('inspections').select('*').eq('user_id',uid).order('date',{ascending:false}),
-    sb.from('treatments').select('*').eq('user_id',uid).order('start_date',{ascending:false}),
-    sb.from('harvests').select('*').eq('user_id',uid).order('harvest_date',{ascending:false}),
-    sb.from('photos').select('*').eq('user_id',uid).order('taken_at',{ascending:false}),
-    sb.from('inspection_reminders').select('*').eq('user_id',uid),
-  ]);
-  apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
-  inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];
-  photos=ph.data||[];reminders=rem.data||[];
-  // Cache data for offline use
-  try{localStorage.setItem('bk_cache_'+uid,JSON.stringify({apiaries,hives,queens,inspections,treatments,harvests,photos,reminders}));}catch(e){}
-  await loadOfflineQueue();
+  try{
+    const [a,h,q,i,t,hv,ph,rem]=await Promise.all([
+      sb.from('apiaries').select('*').eq('user_id',uid).order('created_at'),
+      sb.from('hives').select('*').eq('user_id',uid).order('created_at'),
+      sb.from('queens').select('*').eq('user_id',uid),
+      sb.from('inspections').select('*').eq('user_id',uid).order('date',{ascending:false}),
+      sb.from('treatments').select('*').eq('user_id',uid).order('start_date',{ascending:false}),
+      sb.from('harvests').select('*').eq('user_id',uid).order('harvest_date',{ascending:false}),
+      sb.from('photos').select('*').eq('user_id',uid).order('taken_at',{ascending:false}),
+      sb.from('inspection_reminders').select('*').eq('user_id',uid),
+    ]);
+    apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
+    inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];
+    photos=ph.data||[];reminders=rem.data||[];
+    try{localStorage.setItem('bk_cache_'+uid,JSON.stringify({apiaries,hives,queens,inspections,treatments,harvests,photos,reminders}));}catch(e){}
+  }catch(e){
+    console.warn('loadAll data error:',e);
+    // Try load from cache on error
+    try{
+      const cached=localStorage.getItem('bk_cache_'+uid);
+      if(cached){const d=JSON.parse(cached);apiaries=d.apiaries||[];hives=d.hives||[];queens=d.queens||[];inspections=d.inspections||[];treatments=d.treatments||[];harvests=d.harvests||[];photos=d.photos||[];reminders=d.reminders||[];}
+    }catch(e2){}
+  }
+  try{await loadOfflineQueue();}catch(e){console.warn('offline queue error:',e);}
   renderHome();
   checkShowOnboarding();
-  // Load queen history for all hives
-  hives.forEach(h=>loadQueenHistory(h.id));
-  loadUserPoints();
-  checkAndAwardBadges().catch(e=>console.warn("badges error:",e));
+  hives.forEach(h=>loadQueenHistory(h.id).catch(()=>{}));
+  loadUserPoints().catch(e=>console.warn('points error:',e));
+  checkAndAwardBadges().catch(e=>console.warn('badges:',e));
 }
 
 // Helpers 

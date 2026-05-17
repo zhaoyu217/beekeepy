@@ -1952,22 +1952,35 @@ async function init() {
   // Load saved language
   try{const l=localStorage.getItem('bk_lang');if(l&&LANGS[l])currentLang=l;}catch(e){}
   applyLang();
-  const { data: { session } } = await sb.auth.getSession();
-  if (!session) {
-    // Save QR hive target so login page can redirect back
-    const hiveParam=new URLSearchParams(location.search).get('hive');
-    if(hiveParam){try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}}
-    window.location.href = 'index.html'; return;
+  // Add timeout so loading never gets permanently stuck
+  const loadTimeout = setTimeout(()=>{
+    document.getElementById('loading-overlay').style.display='none';
+    showToast('加载超时，请刷新页面重试','error');
+  }, 15000);
+  try {
+    const { data: { session } } = await sb.auth.getSession();
+    if (!session) {
+      clearTimeout(loadTimeout);
+      const hiveParam=new URLSearchParams(location.search).get('hive');
+      if(hiveParam){try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}}
+      window.location.href = 'index.html'; return;
+    }
+    currentUser = session.user;
+    const initials = (currentUser.user_metadata?.full_name || currentUser.email || '?')[0].toUpperCase();
+    document.getElementById('user-avatar').textContent = initials;
+    document.getElementById('remind-email-display').textContent = currentUser.email;
+    await loadAll();
+    fetchWeather();
+    checkReminders();
+    requestPushPermission();
+    clearTimeout(loadTimeout);
+    document.getElementById('loading-overlay').style.display = 'none';
+  } catch(e) {
+    console.error('Init error:', e);
+    clearTimeout(loadTimeout);
+    document.getElementById('loading-overlay').style.display = 'none';
+    showToast('加载失败，请刷新页面重试','error');
   }
-  currentUser = session.user;
-  const initials = (currentUser.user_metadata?.full_name || currentUser.email || '?')[0].toUpperCase();
-  document.getElementById('user-avatar').textContent = initials;
-  document.getElementById('remind-email-display').textContent = currentUser.email;
-  await loadAll();
-  fetchWeather();
-  checkReminders();
-  requestPushPermission();
-  document.getElementById('loading-overlay').style.display = 'none';
   checkShareParam();
   checkHiveParam();
   // Handle QR scan — auto open hive
@@ -2028,7 +2041,7 @@ async function loadAll() {
   // Load queen history for all hives
   hives.forEach(h=>loadQueenHistory(h.id));
   loadUserPoints();
-  await checkAndAwardBadges();
+  checkAndAwardBadges().catch(e=>console.warn("badges error:",e));
 }
 
 // Helpers 
@@ -4210,7 +4223,6 @@ function showPage(id,btn){
   if(id==='settings'){populateHiveApiary();renderSettings();}
   if(id==='account'){renderAccount();renderBadges();}
   if(id==='reminders')renderReminderSettings();
-  if(id==='points'){renderPointsPage();}
   if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
   if(id==='inspect'){if(batchMode)toggleBatchMode();renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
 }

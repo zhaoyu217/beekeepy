@@ -5751,139 +5751,12 @@ function printQRLabel(){
     <body><div class="card">${card.innerHTML}</div>
     <script>window.onload=()=>{window.print();}<\/script>
     <script>
-function updateAIUsesHint() {
-  const hint = document.getElementById('ai-uses-hint');
-  if (!hint) return;
-  if (userIsPro()) {
-    hint.textContent = 'Unlimited AI analyses — Pro feature active';
-    hint.style.color = 'var(--forest)';
-    return;
-  }
-  const used = parseInt(localStorage.getItem('ai_uses_' + currentUser?.id) || '0');
-  const remaining = Math.max(0, 2 - used);
-  if (remaining === 0) {
-    hint.innerHTML = '🔒 Free AI uses exhausted — <span onclick="showUpgradeModal(\'ai_analysis\')" style="color:var(--honey-dark);cursor:pointer;font-weight:600;">Upgrade to Pro</span>';
-  } else {
-    hint.textContent = `${remaining} free AI ${remaining === 1 ? 'analysis' : 'analyses'} remaining`;
-    hint.style.color = remaining === 1 ? 'var(--amber)' : 'var(--text-3)';
-  }
-}
 </script><script>
 // ============================================================
 // AI SOCIAL MEDIA CAPTION GENERATOR
 // ============================================================
 let lastAICaption = '';
-
-async function generateAICaption() {
-  if (!userIsPro()) {
-    showUpgradeModal('ai_caption');
-    return;
-  }
-  const hive = getShareHive();
-  if (!hive) { showToast('Please select a hive first', 'error'); return; }
-
-  const btn = document.getElementById('ai-caption-btn');
-  const result = document.getElementById('ai-caption-result');
-  const content = document.getElementById('ai-caption-content');
-
-  // Show loading
-  if (btn) { btn.innerHTML = '<span>⏳</span><span>Generating...</span>'; btn.disabled = true; }
-
-  const insp = getHiveInspections(hive.id);
-  const harv = getHiveHarvests(hive.id);
-  const totalHoney = harv.reduce((s,h) => s + parseFloat(h.amount_kg||h.amount||0), 0);
-  const latestInsp = insp[0] || {};
-  const templateName = SHARE_TEMPLATE_NAMES[shareCurrentTemplate] || 'Annual Achievement';
-
-  const prompt = `You are a social media expert for backyard beekeeping in the USA.
-Generate an engaging Instagram/Facebook caption for a beekeeper sharing their hive data.
-
-Template: ${templateName}
-Hive name: ${hive.name}
-Total honey this season: ${(totalHoney * 2.205).toFixed(1)} lbs
-Colony strength: ${latestInsp.colony_strength || 'unknown'}/10
-Last inspection: ${latestInsp.date || 'recently'}
-Mite count: ${latestInsp.mite_count !== undefined ? latestInsp.mite_count + '%' : 'not tested'}
-Queen seen: ${latestInsp.queen_seen ? 'Yes' : 'Not confirmed'}
-Season: ${getSeason()?.label || 'Spring'}
-
-Write a caption that:
-- Starts with an engaging hook (not "Just" or "I")
-- Is 3-5 sentences, conversational and warm
-- Includes 1-2 relevant emojis naturally in the text
-- Ends with a question to drive engagement
-- Sounds like a proud backyard beekeeper, not a corporation
-- Does NOT include hashtags (those are added separately)
-
-Return ONLY the caption text, nothing else.`;
-
-  try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY || '',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }]
-      })
-    });
-    const data = await res.json();
-    lastAICaption = data.content?.[0]?.text?.trim() || getFallbackCaption(hive, totalHoney);
-  } catch(e) {
-    lastAICaption = getFallbackCaption(hive, totalHoney);
-  }
-
-  // Show result
-  document.getElementById('ai-caption-text').textContent = lastAICaption;
-  if (content) content.style.display = 'none';
-  if (result) result.style.display = 'block';
-}
-
-function getFallbackCaption(hive, totalHoney) {
-  const lbs = (totalHoney * 2.205).toFixed(1);
-  const season = getSeason()?.label || 'spring';
-  return `Another rewarding ${season} season with ${hive.name}! 🐝 The bees have been working hard and the results speak for themselves — ${lbs > 0 ? lbs + ' lbs of pure liquid gold' : 'healthy and thriving colonies'}. There's nothing quite like the satisfaction of opening a hive and seeing a strong, happy colony. What's the highlight of your beekeeping season so far?`;
-}
-
-function copyAICaption() {
-  const fullText = lastAICaption + '\n\n' + getShareHashtagsText();
-  navigator.clipboard.writeText(fullText).then(() => {
-    showToast('Caption + hashtags copied!', 'success');
-  }).catch(() => {
-    showToast('Caption ready — copy from the text above', 'success');
-  });
-}
-
-function regenerateAICaption() {
-  const content = document.getElementById('ai-caption-content');
-  const result = document.getElementById('ai-caption-result');
-  const btn = document.getElementById('ai-caption-btn');
-  if (content) content.style.display = 'block';
-  if (result) result.style.display = 'none';
-  if (btn) { btn.innerHTML = '<span>✨</span><span>Generate AI Caption</span><span style="font-size:10px;color:#C07A10;font-weight:600;">🔒 PRO</span>'; btn.disabled = false; }
-  generateAICaption();
-}
 </script><script>
-function selectHiveTag(btn, tag) {
-  document.querySelectorAll('.hive-tag-btn').forEach(b => b.style.fontWeight = '');
-  btn.style.fontWeight = '700';
-  document.getElementById('hv-status-tag').value = tag;
-}
-
-function getHiveTagBadge(tag) {
-  const tags = {
-    queenless: '<span style="background:var(--danger-light);color:var(--danger);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🚨 Queenless</span>',
-    weak: '<span style="background:#FFF3CD;color:#856404;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">📦 Weak</span>',
-    quarantine: '<span style="background:var(--purple-light);color:var(--purple);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🩹 Quarantine</span>',
-    swarm_risk: '<span style="background:var(--honey-light);color:var(--honey-dark);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">⚠️ Swarm Risk</span>',
-    new_colony: '<span style="background:var(--forest-light);color:var(--forest);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🌱 New Colony</span>'
-  };
-  return tags[tag] || '';
-}
 </script><script>
 // ============================================================
 // SWARM ALERT NETWORK
@@ -5891,126 +5764,9 @@ function getHiveTagBadge(tag) {
 let swarmAlerts = [];
 let swarmMap = null;
 
-async function loadSwarmAlerts() {
-  try {
-    const { data } = await sb.from('swarm_alerts')
-      .select('*')
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false });
-    swarmAlerts = data || [];
-    renderSwarmList();
-    initSwarmMap();
-  } catch(e) {
-    renderSwarmList();
-  }
-}
-
-function renderSwarmList() {
-  const el = document.getElementById('swarm-list');
-  if (!el) return;
-  if (!swarmAlerts.length) {
-    el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-3);font-size:13px;">No active swarm alerts nearby.<br>Be the first to report one! 🐝</div>`;
-    return;
-  }
-  el.innerHTML = swarmAlerts.map(a => {
-    const hrs = Math.round((new Date(a.expires_at) - new Date()) / 3600000);
-    return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--honey);border-radius:var(--radius);padding:12px;margin-bottom:8px;">
-      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
-        <div style="font-size:13px;font-weight:600;">🐝 Swarm spotted!</div>
-        <div style="font-size:10px;color:var(--text-3);">Expires in ${hrs}h</div>
-      </div>
-      <div style="font-size:12px;color:var(--text-2);margin-bottom:8px;">${a.description || 'No details provided'}</div>
-      <div style="font-size:11px;color:var(--text-3);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
-    </div>`;
-  }).join('');
-}
-
-function initSwarmMap() {
-  const mapEl = document.getElementById('swarm-map');
-  if (!mapEl || swarmMap) return;
-  if (!window.L) {
-    const css = document.createElement('link');
-    css.rel = 'stylesheet';
-    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
-    document.head.appendChild(css);
-    const js = document.createElement('script');
-    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
-    js.onload = () => _renderSwarmMap();
-    document.head.appendChild(js);
-  } else {
-    _renderSwarmMap();
-  }
-}
-
-function _renderSwarmMap() {
-  const mapEl = document.getElementById('swarm-map');
-  if (!mapEl || swarmMap) return;
-  swarmMap = L.map('swarm-map').setView([39.5, -98.35], 4);
-  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
-    attribution: '© OpenStreetMap'
-  }).addTo(swarmMap);
-  swarmAlerts.forEach(a => {
-    if (a.lat && a.lng) {
-      L.marker([a.lat, a.lng])
-        .bindPopup(`<b>🐝 Swarm Alert</b><br>${a.description || 'Swarm spotted here'}<br><small>Expires: ${new Date(a.expires_at).toLocaleDateString()}</small>`)
-        .addTo(swarmMap);
-    }
-  });
-}
-
-async function reportSwarmAlert() {
-  if (!navigator.geolocation) {
-    showToast('Location access required to report a swarm', 'error');
-    return;
-  }
-  showToast('Getting your location...', 'success');
-  navigator.geolocation.getCurrentPosition(async pos => {
-    const { latitude: lat, longitude: lng } = pos.coords;
-    // Show quick description modal
-    const desc = prompt('Briefly describe the swarm (e.g. "Basketball-sized cluster on apple tree, backyard"):') || 'Swarm spotted';
-    const blur = () => (Math.random() - 0.5) * 0.018; // ~2km fuzzy
-    const expires = new Date(Date.now() + 48 * 3600 * 1000).toISOString(); // 48h expiry
-    try {
-      const { error } = await sb.from('swarm_alerts').insert({
-        lat: lat + blur(), lng: lng + blur(),
-        description: desc,
-        reported_by: currentUser?.id || null,
-        expires_at: expires,
-        created_at: new Date().toISOString()
-      });
-      if (error) throw error;
-      showToast('Swarm alert sent! Nearby beekeepers notified 🐝', 'success');
-      await awardPoints('swarm_report');
-      loadSwarmAlerts();
-    } catch(e) {
-      showToast('Could not save swarm alert: ' + (e.message || 'try again'), 'error');
-    }
-  }, () => {
-    showToast('Location access denied. Please enable to report a swarm.', 'error');
-  });
-}
-
 // ============================================================
 // UPDATED setPostCategory for new categories
 // ============================================================
-function setPostCategory(cat, btn) {
-  document.querySelectorAll('.comm-cat-btn').forEach(b => {
-    b.style.border = '1px solid var(--border)';
-    b.style.background = 'var(--surface)';
-    b.style.color = 'var(--text-2)';
-    b.style.fontWeight = '';
-    b.classList.remove('active-cat');
-  });
-  btn.style.border = '2px solid var(--honey)';
-  btn.style.background = 'var(--honey-light)';
-  btn.style.color = 'var(--honey-dark)';
-  btn.style.fontWeight = '600';
-  btn.classList.add('active-cat');
-  const catEl = document.getElementById('comm-category');
-  if (catEl) catEl.value = cat;
-  // Legacy support
-  if (window.currentPostCategory !== undefined) window.currentPostCategory = cat;
-}
 </script></body></html>`);
   win.document.close();
 }
@@ -7683,16 +7439,6 @@ function setCommunityTab(tab, btn){
   } else {
     renderCommunityPosts();
   }
-}
-
-function setPostCategory(cat, btn){
-  postCategory=cat;
-  document.querySelectorAll('.comm-cat-btn').forEach(b=>{
-    b.style.border='1px solid var(--border)';b.style.background='var(--surface)';b.style.color='var(--text-2)';b.style.fontWeight='';
-  });
-  btn.style.border='2px solid var(--honey)';btn.style.background='var(--honey-light)';btn.style.color='var(--honey-dark)';btn.style.fontWeight='600';
-  document.getElementById('comm-local-group-field').style.display=cat==='local'?'block':'none';
-  _updateHiveAttachVisibility(cat);
 }
 
 function openNewPostModal(){

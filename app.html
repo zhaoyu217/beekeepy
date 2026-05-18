@@ -5,13 +5,13 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="Beekeepy">
+<meta name="apple-mobile-web-app-title" content="HiveDash">
 <meta name="theme-color" content="#E8930A">
 <meta name="description" content="Smart beehive tracking for modern beekeepers">
 <link rel="manifest" href="/manifest.json">
 <link rel="apple-touch-icon" href="/apple-touch-icon.png">
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
-<title>Beekeepy · Dashboard</title>
+<title>HiveDash · Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
@@ -341,7 +341,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 <div class="topbar">
   <div class="logo">
     <div class="logo-icon">🐝</div>
-    <h1>Beekeepy</h1>
+    <h1>HiveDash</h1>
   </div>
   <div class="topbar-right">
     <div style="display:flex;align-items:center;font-size:11px;color:var(--text-3)" id="sync-status">
@@ -406,7 +406,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="section-hd"><span data-i18n="recent_activity">Recent Activity</span></div>
   <div class="timeline" id="home-timeline"></div>
 
-  <div class="brand-footer">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
+  <div class="brand-footer">🐝 <strong>HiveDash</strong> · hivedash.app</div>
 </div>
 </div>
 
@@ -774,7 +774,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div id="rtab-settings-panel" style="display:none">
     <div class="card">
       <div class="card-title"><span data-i18n="reminder_settings">Inspection Reminder Settings</span></div>
-      <div style="font-size:13px;color:var(--text-2);margin-bottom:12px">Set how many days between inspections before Beekeepy reminds you</div>
+      <div style="font-size:13px;color:var(--text-2);margin-bottom:12px">Set how many days between inspections before HiveDash reminds you</div>
       <div id="reminder-settings-list"></div>
     </div>
     <div class="card">
@@ -833,7 +833,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <div class="section-hd" style="margin-top:16px"><span data-i18n="data">Data</span></div>
   <button class="btn btn-outline" onclick="exportData()">📤 <span data-i18n="export_data">Export All Data (JSON)</span></button>
   <button class="btn btn-outline" onclick="showExportPanel()" style="margin-top:8px">📊 Export Data (CSV / Excel)</button>
-  <div class="brand-footer" style="margin-top:24px">🐝 <strong>Beekeepy</strong> · beekeepy.com</div>
+  <div class="brand-footer" style="margin-top:24px">🐝 <strong>HiveDash</strong> · hivedash.app</div>
 </div>
 </div>
 
@@ -1458,13 +1458,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div id="qr-label-card" style="background:#fff;border:2px solid #E8930A;border-radius:12px;padding:20px;text-align:center;margin-bottom:16px">
       <div style="display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:12px">
         <div style="width:32px;height:32px;background:#E8930A;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:18px">🐝</div>
-        <span style="font-family:'DM Serif Display',serif;font-size:18px;color:#1A1A14">Beekeepy</span>
+        <span style="font-family:'DM Serif Display',serif;font-size:18px;color:#1A1A14">HiveDash</span>
       </div>
       <div id="qr-container" style="display:flex;justify-content:center;margin-bottom:12px;min-height:180px;align-items:center"></div>
       <div id="qr-hive-name" style="font-size:18px;font-weight:700;color:#1A1A14;margin-bottom:4px"></div>
       <div id="qr-apiary-name" style="font-size:13px;color:#5C5847;margin-bottom:4px"></div>
       <div id="qr-hive-meta" style="font-size:11px;color:#9A9280;margin-bottom:8px"></div>
-      <div style="font-size:10px;color:#9A9280;border-top:1px solid #E8E4DC;padding-top:8px">beekeepy.com · Scan to view hive details</div>
+      <div style="font-size:10px;color:#9A9280;border-top:1px solid #E8E4DC;padding-top:8px">hivedash.app · Scan to view hive details</div>
     </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-primary" onclick="downloadQRLabel()" style="margin-top:0">⬇️ Download Image</button>
@@ -2806,7 +2806,7 @@ function checkSuperAlert(results, lat, lon) {
 
     // Browser push notification
     if(Notification.permission === 'granted') {
-      new Notification('Beekeepy — Nectar Flow Alert 🍯', {
+      new Notification('HiveDash — Nectar Flow Alert 🍯', {
         body: msg,
         icon: '🐝'
       });
@@ -3463,7 +3463,7 @@ function checkReminders(){
   // Schedule browser notifications
   if(Notification.permission==='granted'){
     alerts.filter(a=>a.overdue).forEach(a=>{
-      new Notification('Beekeepy — Inspection Overdue',{
+      new Notification('HiveDash — Inspection Overdue',{
         body:`${a.name} hasn't been inspected in ${a.days} days`,
         icon:'🐝'
       });
@@ -3513,9 +3513,9 @@ async function togglePushNotifications(btn){
   if(permission==='granted'){
     btn.classList.add('on');
     // Send a test notification
-    new Notification('🐝 Beekeepy',{
+    new Notification('🐝 HiveDash',{
       body:'Push notifications enabled! You will be reminded to inspect your hives.',
-      icon:'https://www.beekeepy.com/favicon.ico'
+      icon:'data:image/png;base64,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'
     });
     showToast('Push notifications enabled ✓','success');
     // Schedule daily check via Service Worker if available
@@ -3529,10 +3529,10 @@ async function togglePushNotifications(btn){
 
 function sendPushReminder(hiveName, daysSince){
   if(Notification.permission!=='granted')return;
-  new Notification('🐝 Beekeepy — Inspection Due',{
+  new Notification('🐝 HiveDash — Inspection Due',{
     body:`${hiveName} hasn't been inspected in ${daysSince} days. Time to check your bees!`,
-    icon:'https://www.beekeepy.com/favicon.ico',
-    tag:'beekeepy-reminder'
+    icon:'data:image/png;base64,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',
+    tag:'hivedash-reminder'
   });
 }
 
@@ -4846,7 +4846,7 @@ function showUpgradeModal(trigger='') {
         🏆 Earn 200 points on the <span onclick="document.getElementById('modal-upgrade').remove();showPage('points',document.getElementById('nav-points'))" style="color:var(--honey-dark);cursor:pointer;font-weight:600">Points tab</span> to unlock 30 days free
       </div>
       <div style="text-align:center;margin-top:8px">
-        <a href="https://www.beekeepy.com/landing.html" target="_blank" style="font-size:11px;color:var(--sky);text-decoration:none">Learn more about Free vs Pro →</a>
+        <a href="https://www.hivedash.app/landing.html" target="_blank" style="font-size:11px;color:var(--sky);text-decoration:none">Learn more about Free vs Pro →</a>
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -5018,7 +5018,7 @@ async function deleteHive(hiveId){
 function exportData(){
   const data={apiaries,hives,queens,inspections,treatments,harvests,photos:photos.map(p=>({...p,public_url:p.public_url})),exportedAt:new Date().toISOString(),user:currentUser.email};
   const blob=new Blob([JSON.stringify(data,null,2)],{type:'application/json'});
-  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='beekeepy-export.json';a.click();
+  const a=document.createElement('a');a.href=URL.createObjectURL(blob);a.download='hivedash-export.json';a.click();
 }
 
 function showExportPanel() {
@@ -5157,10 +5157,10 @@ function runExport(format) {
       const a = document.createElement('a'); a.href = URL.createObjectURL(blob); a.download = filename; a.click();
     };
     let delay = 0;
-    if(inspRows.length)  { setTimeout(()=>dl(toCSV(Object.keys(inspRows[0]),  inspRows),  `beekeepy-inspections-${date}.csv`),  delay); delay+=300; }
-    if(harvRows.length)  { setTimeout(()=>dl(toCSV(Object.keys(harvRows[0]),  harvRows),  `beekeepy-harvests-${date}.csv`),     delay); delay+=300; }
-    if(treatRows.length) { setTimeout(()=>dl(toCSV(Object.keys(treatRows[0]), treatRows), `beekeepy-treatments-${date}.csv`),   delay); delay+=300; }
-    if(queenRows.length) { setTimeout(()=>dl(toCSV(Object.keys(queenRows[0]), queenRows), `beekeepy-queens-${date}.csv`),       delay); }
+    if(inspRows.length)  { setTimeout(()=>dl(toCSV(Object.keys(inspRows[0]),  inspRows),  `hivedash-inspections-${date}.csv`),  delay); delay+=300; }
+    if(harvRows.length)  { setTimeout(()=>dl(toCSV(Object.keys(harvRows[0]),  harvRows),  `hivedash-harvests-${date}.csv`),     delay); delay+=300; }
+    if(treatRows.length) { setTimeout(()=>dl(toCSV(Object.keys(treatRows[0]), treatRows), `hivedash-treatments-${date}.csv`),   delay); delay+=300; }
+    if(queenRows.length) { setTimeout(()=>dl(toCSV(Object.keys(queenRows[0]), queenRows), `hivedash-queens-${date}.csv`),       delay); }
     showToast(`✅ ${[inspRows.length&&'Inspections', harvRows.length&&'Harvests', treatRows.length&&'Treatments', queenRows.length&&'Queens'].filter(Boolean).join(', ')} exported as CSV`,'success');
     document.getElementById('modal-export').remove();
 
@@ -5217,7 +5217,7 @@ async function exportExcel(date, inspRows, harvRows, treatRows, queenRows) {
     });
     if(summaryRows.length) addSheet('Summary', summaryRows);
 
-    XLSX.writeFile(wb, `beekeepy-data-${date}.xlsx`);
+    XLSX.writeFile(wb, `hivedash-data-${date}.xlsx`);
     showToast(`✅ Excel file downloaded — ${wb.SheetNames.length} sheets`, 'success');
     document.getElementById('modal-export').remove();
 
@@ -5314,7 +5314,7 @@ function showNFCWrite() {
       <!-- Value prop -->
       <div style="background:linear-gradient(135deg,#3D2B1F,#5C3D2A);border-radius:var(--radius);padding:14px 16px;margin-bottom:20px;text-align:center">
         <div style="font-size:14px;font-weight:600;color:#F5E6D3;line-height:1.6">Turn any old wooden hive into a smart hive — instantly.</div>
-        <div style="font-size:12px;color:rgba(245,230,211,0.75);margin-top:6px;line-height:1.6">Stick it on. Tap with Beekeepy.<br>Open your hive log in one second — even with thick gloves on.</div>
+        <div style="font-size:12px;color:rgba(245,230,211,0.75);margin-top:6px;line-height:1.6">Stick it on. Tap with HiveDash.<br>Open your hive log in one second — even with thick gloves on.</div>
       </div>
 
       <!-- iPhone section -->
@@ -5517,10 +5517,10 @@ async function downloadQRLabel(){
     ctx.textAlign='center';
     ctx.fillText('🐝',W/2,56);
 
-    // Beekeepy title
+    // HiveDash title
     ctx.fillStyle='#1A1A14';
     ctx.font='bold 22px serif';
-    ctx.fillText('Beekeepy',W/2,90);
+    ctx.fillText('HiveDash',W/2,90);
 
     // QR code
     const qrSize=180;
@@ -5555,16 +5555,16 @@ async function downloadQRLabel(){
     // Footer
     ctx.fillStyle='#9A9280';
     ctx.font='12px sans-serif';
-    ctx.fillText('beekeepy.com · Scan to view hive details',W/2,418);
+    ctx.fillText('hivedash.app · Scan to view hive details',W/2,418);
 
     // URL tiny
     ctx.fillStyle='#C0B8A8';
     ctx.font='10px sans-serif';
-    ctx.fillText(`beekeepy.com/app.html?hive=${currentDetailHiveId.slice(0,8)}...`,W/2,438);
+    ctx.fillText(`hivedash.app/app.html?hive=${currentDetailHiveId.slice(0,8)}...`,W/2,438);
 
     // Download
     const link=document.createElement('a');
-    link.download=`Beekeepy-${h.name.replace(/\s+/g,'-')}-label.png`;
+    link.download=`HiveDash-${h.name.replace(/\s+/g,'-')}-label.png`;
     link.href=out.toDataURL('image/png');
     link.click();
     showToast('Label downloaded ✓');
@@ -5598,7 +5598,7 @@ function printQRLabel(){
 const OB_STEPS = [
   {
     icon: '🐝',
-    title: 'Welcome to Beekeepy!',
+    title: 'Welcome to HiveDash!',
     body: 'Your all-in-one beekeeping companion. Track hives, log inspections, monitor health, and get smart alerts — all in one place.',
     cta: 'Get Started',
     skip: true,
@@ -5606,7 +5606,7 @@ const OB_STEPS = [
   {
     icon: '🌿',
     title: 'Step 1: Add your Apiary',
-    body: 'An apiary is a location where your hives live. Start by adding your first apiary — give it a name and location so Beekeepy can show you local weather and bloom forecasts.',
+    body: 'An apiary is a location where your hives live. Start by adding your first apiary — give it a name and location so HiveDash can show you local weather and bloom forecasts.',
     cta: 'Add Apiary',
     action: () => { closeOnboarding(); openModal('modal-apiary'); },
     skip: true,
@@ -5614,7 +5614,7 @@ const OB_STEPS = [
   {
     icon: '🪵',
     title: 'Step 2: Add your first Hive',
-    body: 'Add each hive you manage. You can record the hive type, installation date, and colony origin. Beekeepy will track inspections and health for each hive separately.',
+    body: 'Add each hive you manage. You can record the hive type, installation date, and colony origin. HiveDash will track inspections and health for each hive separately.',
     cta: 'Add Hive',
     action: () => { closeOnboarding(); openModal('modal-hive'); },
     skip: true,
@@ -5622,7 +5622,7 @@ const OB_STEPS = [
   {
     icon: '📋',
     title: 'Step 3: Log your first Inspection',
-    body: 'Tap any hive on the home screen, then use the Inspect tab to record colony strength, brood, honey stores and more. Beekeepy will score each inspection and alert you when action is needed.',
+    body: 'Tap any hive on the home screen, then use the Inspect tab to record colony strength, brood, honey stores and more. HiveDash will score each inspection and alert you when action is needed.',
     cta: 'Go to Home',
     action: () => { closeOnboarding(); },
     skip: false,
@@ -5689,7 +5689,7 @@ function renderHomeEmptyState() {
   grid.innerHTML = `
     <div style="grid-column:1/-1;background:linear-gradient(135deg,var(--honey-light),var(--forest-light));border:1.5px dashed var(--honey);border-radius:var(--radius);padding:24px 20px;text-align:center;cursor:pointer" onclick="showOnboarding()">
       <div style="font-size:40px;margin-bottom:10px">🐝</div>
-      <div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">Welcome to Beekeepy!</div>
+      <div style="font-weight:700;font-size:15px;color:var(--text);margin-bottom:6px">Welcome to HiveDash!</div>
       <div style="font-size:13px;color:var(--text-2);margin-bottom:16px;line-height:1.5">Set up your first apiary and hive<br>to start tracking your colonies.</div>
       <div style="display:flex;gap:8px;justify-content:center">
         <button onclick="event.stopPropagation();openModal('modal-apiary')" style="padding:10px 18px;border-radius:var(--radius-sm);border:none;background:var(--honey);color:#fff;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer">+ Add Apiary</button>
@@ -5790,8 +5790,8 @@ function copyShareLink(url) {
 function nativeShare(url, title) {
   if(navigator.share) {
     navigator.share({
-      title: `Beekeepy — ${title}`,
-      text: `Check out my hive "${title}" on Beekeepy 🐝`,
+      title: `HiveDash — ${title}`,
+      text: `Check out my hive "${title}" on HiveDash 🐝`,
       url
     }).catch(()=>{});
   } else {
@@ -5822,7 +5822,7 @@ function showSharedHiveView(data) {
       <!-- Header -->
       <div style="text-align:center;padding:20px 0 24px">
         <img src="/icon-192.png" style="width:56px;height:56px;border-radius:14px;margin-bottom:6px">
-        <div style="font-size:13px;color:var(--text-3);font-weight:500">Beekeepy · Shared Hive Report</div>
+        <div style="font-size:13px;color:var(--text-3);font-weight:500">HiveDash · Shared Hive Report</div>
       </div>
 
       <!-- Hive card -->
@@ -5852,13 +5852,13 @@ function showSharedHiveView(data) {
 
       <!-- CTA -->
       <div style="background:var(--honey-light);border:1px solid rgba(232,147,10,0.2);border-radius:var(--radius);padding:16px;text-align:center;margin-top:8px">
-        <div style="font-size:13px;color:var(--text-2);margin-bottom:4px;line-height:1.5">🐝 This report was generated by <strong>Beekeepy</strong><br>The smart hive journal for modern beekeepers</div>
+        <div style="font-size:13px;color:var(--text-2);margin-bottom:4px;line-height:1.5">🐝 This report was generated by <strong>HiveDash</strong><br>The smart hive journal for modern beekeepers</div>
         <div style="font-size:11px;color:var(--text-3);margin-bottom:12px">GDD bloom forecasting · AI pest detection · 10 countries</div>
-        <a href="https://www.beekeepy.com/app.html" style="display:inline-block;padding:11px 28px;background:var(--honey);color:#fff;border-radius:100px;font-weight:700;font-size:14px;text-decoration:none">Start managing your hives free →</a>
+        <a href="https://www.hivedash.app/app.html" style="display:inline-block;padding:11px 28px;background:var(--honey);color:#fff;border-radius:100px;font-weight:700;font-size:14px;text-decoration:none">Start managing your hives free →</a>
       </div>
 
       <div style="text-align:center;margin-top:14px;font-size:11px;color:var(--text-3)">
-        🐝 Beekeepy · beekeepy.com · Free to start
+        🐝 HiveDash · hivedash.app · Free to start
       </div>
     </div>`;
   document.body.appendChild(modal);
@@ -6144,10 +6144,10 @@ async function exportCompliancePDF(){
 
   // ── Cover header ──────────────────────────────────────────
   doc.setFillColor(232,147,10);doc.rect(0,0,W,28,'F');
-  sf('bold',18,[255,255,255]);doc.text('Beekeepy',margin,12);
+  sf('bold',18,[255,255,255]);doc.text('HiveDash',margin,12);
   sf('bold',10,[255,220,150]);doc.text('Veterinary Medicine & Treatment Compliance Record',margin,20);
   sf('normal',8,[255,220,150]);
-  doc.text(`Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}  ·  beekeepy.com`,margin,26);
+  doc.text(`Generated: ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})}  ·  hivedash.app`,margin,26);
   y=36;
 
   // ── Beekeeper info ────────────────────────────────────────
@@ -6285,10 +6285,10 @@ async function exportCompliancePDF(){
     doc.setPage(p);
     doc.setFillColor(248,244,236);doc.rect(0,285,W,12,'F');
     sf('normal',7,[154,146,128]);
-    doc.text(`Beekeepy Treatment Compliance Record · ${year} · Page ${p} of ${pages} · beekeepy.com`,W/2,291,{align:'center'});
+    doc.text(`HiveDash Treatment Compliance Record · ${year} · Page ${p} of ${pages} · hivedash.app`,W/2,291,{align:'center'});
   }
 
-  doc.save(`beekeepy-compliance-${year}.pdf`);
+  doc.save(`hivedash-compliance-${year}.pdf`);
   showToast('Compliance PDF downloaded ✓','success');
 }
 
@@ -6320,10 +6320,10 @@ async function exportAnnualPDF(){
   // ── Cover ──────────────────────────────────────────────
   doc.setFillColor(232,147,10);doc.rect(0,0,W,32,'F');
   doc.setFillColor(200,120,5);doc.rect(0,24,W,8,'F');
-  setFont('bold',22,[255,255,255]);doc.text('Beekeepy',margin,14);
+  setFont('bold',22,[255,255,255]);doc.text('HiveDash',margin,14);
   setFont('bold',11,[255,220,150]);doc.text(`${year} Annual Apiary Report`,margin,22);
   setFont('normal',8,[255,220,150]);
-  doc.text(`Generated ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})} · beekeepy.com`,margin,29);
+  doc.text(`Generated ${new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})} · hivedash.app`,margin,29);
   y=42;
 
   // ── Fleet Summary ──────────────────────────────────────
@@ -6484,9 +6484,9 @@ async function exportAnnualPDF(){
   checkPage(10);
   doc.setFillColor(248,244,236);doc.rect(0,285,W,12,'F');
   setFont('normal',7,[154,146,128]);
-  doc.text(`Beekeepy Annual Report ${year}  ·  beekeepy.com  ·  ${hives.length} hive${hives.length!==1?'s':''}  ·  ${yearInsps.length} inspections`,W/2,291,{align:'center'});
+  doc.text(`HiveDash Annual Report ${year}  ·  hivedash.app  ·  ${hives.length} hive${hives.length!==1?'s':''}  ·  ${yearInsps.length} inspections`,W/2,291,{align:'center'});
 
-  doc.save(`beekeepy-annual-report-${year}.pdf`);
+  doc.save(`hivedash-annual-report-${year}.pdf`);
   showToast('Annual report downloaded ✓','success');
 }
 
@@ -6519,8 +6519,8 @@ async function exportHivePDF(){
   };
   // Cover banner
   doc.setFillColor(232,147,10);doc.rect(0,0,W,28,'F');
-  setFont('bold',20,[255,255,255]);doc.text('Beekeepy',margin,12);
-  setFont('normal',9,[255,220,150]);doc.text('Hive Inspection Report  ·  beekeepy.com',margin,19);
+  setFont('bold',20,[255,255,255]);doc.text('HiveDash',margin,12);
+  setFont('normal',9,[255,220,150]);doc.text('Hive Inspection Report  ·  hivedash.app',margin,19);
   setFont('normal',8,[255,220,150]);doc.text('Generated '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'}),margin,25);
   y=36;
   // Hive title
@@ -6631,11 +6631,11 @@ async function exportHivePDF(){
     doc.setFillColor(250,250,247);doc.rect(0,288,W,10,'F');
     doc.setDrawColor(232,228,220);doc.setLineWidth(0.3);doc.line(0,288,W,288);
     setFont('normal',7,[154,146,128]);
-    doc.text('Beekeepy · beekeepy.com',margin,294);
+    doc.text('HiveDash · hivedash.app',margin,294);
     doc.text('Page '+p+' of '+totalPages,W-margin,294,{align:'right'});
     doc.text(h.name+' · '+new Date().toLocaleDateString(),W/2,294,{align:'center'});
   }
-  const filename='Beekeepy-'+h.name.replace(/\s+/g,'-')+'-'+new Date().toISOString().split('T')[0]+'.pdf';
+  const filename='HiveDash-'+h.name.replace(/\s+/g,'-')+'-'+new Date().toISOString().split('T')[0]+'.pdf';
   doc.save(filename);
 }
 
@@ -8067,9 +8067,9 @@ function checkNearbyPesticideAlerts(lat,lng){
     if(isNaN(aLat))return;
     const dist=Math.sqrt(Math.pow(aLat-lat,2)+Math.pow(aLng-lng,2))*111;
     if(dist<=5&&Notification.permission==='granted'){
-      new Notification('⚠️ Beekeepy — Pesticide Alert Near '+a.name,{
+      new Notification('⚠️ HiveDash — Pesticide Alert Near '+a.name,{
         body:'A pesticide alert was reported within 5km of '+a.name+'. Check the Forage Map for details.',
-        icon:'https://www.beekeepy.com/favicon.ico'
+        icon:'data:image/png;base64,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'
       });
     }
   });
@@ -8080,7 +8080,7 @@ function checkNearbyPesticideAlerts(lat,lng){
 // ============================================================
 // OFFLINE SUPPORT
 // ============================================================
-const OFFLINE_DB = 'beekeepy-offline';
+const OFFLINE_DB = 'hivedash-offline';
 const OFFLINE_STORE = 'pending-ops';
 let offlineQueue = [];
 let isOnline = navigator.onLine;
@@ -8197,7 +8197,7 @@ init();
 
 <script>
 // ============================================
-// SHARE FEATURE — Beekeepy
+// SHARE FEATURE — HiveDash
 // ============================================
 
 let shareCurrentTemplate = 1;
@@ -8205,8 +8205,8 @@ let shareCurrentSize = 'square';
 let shareCurrentHiveId = null;
 
 const SHARE_HASHTAGS = {
-  base: ['#backyardbeekeeping','#beekeeping','#beekeepy'],
-  pro: ['#backyardbeekeeping','#beekeepersofinstagram','#hiveinspection','#beekeeping','#citizenscience','#beekeepy','#savethebees','#urbanbeekeeping','#backyardbees','#beekeeper'],
+  base: ['#backyardbeekeeping','#beekeeping','#hivedash'],
+  pro: ['#backyardbeekeeping','#beekeepersofinstagram','#hiveinspection','#beekeeping','#citizenscience','#hivedash','#savethebees','#urbanbeekeeping','#backyardbees','#beekeeper'],
   extra: {
     1: ['#365dayclub','#wintersurvivor'],
     2: ['#honeyharvest','#liquidgold'],
@@ -8313,7 +8313,7 @@ function buildShareCardHTML(hive, template, size) {
   const isPro = userIsPro();
 
   // Watermark — always shown for free, optional for pro (shown by default)
-  const wmHTML = `<div style="font-size:9px;color:#C8C4BC;font-family:'JetBrains Mono','Courier New',monospace;text-align:right;margin-top:14px;">🐝 beekeepy.com</div>`;
+  const wmHTML = `<div style="font-size:9px;color:#C8C4BC;font-family:'JetBrains Mono','Courier New',monospace;text-align:right;margin-top:14px;">🐝 hivedash.app</div>`;
 
   // Story wrapper adds aspect ratio
   const storyStyle = isStory ? 'min-height:400px;display:flex;flex-direction:column;' : '';
@@ -8455,7 +8455,7 @@ function buildShareCardHTML(hive, template, size) {
         <div style="font-size:11px;color:#7A5050;line-height:1.6;">Sudden die-off observed. Pattern consistent with acute pesticide poisoning. Incident reported to local authorities.</div>
       </div>
       <div style="background:#fff;border-radius:10px;padding:12px;border:1px solid #EAE6DF;">
-        <div style="font-size:11px;color:#6A7060;line-height:1.6;"><strong style="color:#2B2D42;">Help protect bees.</strong> Report pesticide incidents at beekeepy.com. Every report counts.</div>
+        <div style="font-size:11px;color:#6A7060;line-height:1.6;"><strong style="color:#2B2D42;">Help protect bees.</strong> Report pesticide incidents at hivedash.app. Every report counts.</div>
       </div>`;
   }
 
@@ -8534,7 +8534,7 @@ async function generateAndShare() {
     // Download
     const a = document.createElement('a');
     a.href = url;
-    a.download = `beekeepy-${SHARE_TEMPLATE_NAMES[shareCurrentTemplate].toLowerCase().replace(/ /g,'-')}-${Date.now()}.png`;
+    a.download = `hivedash-${SHARE_TEMPLATE_NAMES[shareCurrentTemplate].toLowerCase().replace(/ /g,'-')}-${Date.now()}.png`;
     a.click();
 
     showToast('Card downloaded! Hashtags copied to clipboard.', 'success');
@@ -8550,13 +8550,13 @@ async function downloadShareCard() {
 }
 
 function shareToFacebook() {
-  const url = encodeURIComponent('https://www.beekeepy.com');
-  const text = encodeURIComponent('Tracking my hives with Beekeepy 🐝 ' + getShareHashtagsText());
+  const url = encodeURIComponent('https://www.hivedash.app');
+  const text = encodeURIComponent('Tracking my hives with HiveDash 🐝 ' + getShareHashtagsText());
   window.open(`https://www.facebook.com/sharer/sharer.php?u=${url}&quote=${text}`, '_blank', 'width=600,height=400');
 }
 
 function shareToTwitter() {
-  const text = encodeURIComponent('Just checked my hives with Beekeepy 🐝🍯 ' + getShareHashtagsText() + ' https://beekeepy.com');
+  const text = encodeURIComponent('Just checked my hives with HiveDash 🐝🍯 ' + getShareHashtagsText() + ' https://hivedash.app');
   window.open(`https://twitter.com/intent/tweet?text=${text}`, '_blank', 'width=600,height=400');
 }
 
@@ -8567,9 +8567,9 @@ async function shareNative() {
   if (!navigator.share) { showToast('System share not supported on this browser', 'error'); return; }
   try {
     await navigator.share({
-      title: 'My Beekeepy Hive Report',
-      text: `Check out my hive report on Beekeepy! 🐝 ${getShareHashtagsText()}`,
-      url: 'https://www.beekeepy.com'
+      title: 'My HiveDash Hive Report',
+      text: `Check out my hive report on HiveDash! 🐝 ${getShareHashtagsText()}`,
+      url: 'https://www.hivedash.app'
     });
   } catch(e) {
     if (e.name !== 'AbortError') showToast('Share failed', 'error');

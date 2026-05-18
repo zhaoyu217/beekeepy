@@ -2154,6 +2154,13 @@ async function init() {
     if(ov)ov.style.display='none';
   },12000);
   try{
+    // Handle Google OAuth callback — URL contains #access_token=...
+    if(location.hash&&location.hash.includes('access_token')){
+      // Let Supabase process the hash token first
+      await sb.auth.getSession();
+      // Clean up the URL without reloading
+      history.replaceState(null,'',location.pathname+location.search);
+    }
     const{data:{session}}=await sb.auth.getSession();
     if(!session){
       clearTimeout(loadTimeout);

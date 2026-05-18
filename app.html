@@ -23,9 +23,11 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
 <title>HiveDash · Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
-<script src="https://cdn.jsdelivr.net/npm/jspdf@2.5.1/dist/jspdf.umd.min.js"></script>
-<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
+
+
+
+</script>
 <style>
 :root{
   --honey:#E8930A;--honey-light:#FDF3E0;--honey-dark:#B36800;
@@ -5782,14 +5784,16 @@ function printQRLabel(){
     </style></head>
     <body><div class="card">${card.innerHTML}</div>
     <script>window.onload=()=>{window.print();}<\/script>
-    <script>
-</script><script>
-// ============================================================
+    // ============================================================
 // AI SOCIAL MEDIA CAPTION GENERATOR
 // ============================================================
 let lastAICaption = '';
-</script><script>
-</script><script>
+
+
+
+
+
+
 // ============================================================
 // SWARM ALERT NETWORK
 // ============================================================
@@ -5799,31 +5803,7 @@ let swarmMap = null;
 // ============================================================
 // UPDATED setPostCategory for new categories
 // ============================================================
-</script><script>
-// Force hide loading overlay after page is interactive
-window.addEventListener('load', function() {
-  setTimeout(function() {
-    var ov = document.getElementById('loading-overlay');
-    if (ov && ov.style.display !== 'none') {
-      ov.style.display = 'none';
-    }
-  }, 5000);
-});
-
-// Also hide immediately if content is visible
-document.addEventListener('DOMContentLoaded', function() {
-  setTimeout(function() {
-    var ov = document.getElementById('loading-overlay');
-    if (ov && ov.style.display !== 'none') {
-      // Check if user is logged in by checking if avatar has content
-      var avatar = document.getElementById('user-avatar');
-      if (avatar && avatar.textContent && avatar.textContent !== '?') {
-        ov.style.display = 'none';
-      }
-    }
-  }, 8000);
-});
-</script></body></html>`);
+`);
   win.document.close();
 }
 
@@ -8448,7 +8428,9 @@ function updateAIUsesHint() {
     hint.style.color = remaining === 1 ? 'var(--amber)' : 'var(--text-3)';
   }
 }
-</script><script>
+
+
+
 // ============================================================
 // AI SOCIAL MEDIA CAPTION GENERATOR
 // ============================================================
@@ -8547,7 +8529,9 @@ function regenerateAICaption() {
   if (btn) { btn.innerHTML = '<span>✨</span><span>Generate AI Caption</span><span style="font-size:10px;color:#C07A10;font-weight:600;">🔒 PRO</span>'; btn.disabled = false; }
   generateAICaption();
 }
-</script><script>
+
+
+
 function selectHiveTag(btn, tag) {
   document.querySelectorAll('.hive-tag-btn').forEach(b => b.style.fontWeight = '');
   btn.style.fontWeight = '700';
@@ -8564,7 +8548,9 @@ function getHiveTagBadge(tag) {
   };
   return tags[tag] || '';
 }
-</script><script>
+
+
+
 // ============================================================
 // SWARM ALERT NETWORK
 // ============================================================
@@ -8691,7 +8677,9 @@ function setPostCategory(cat, btn) {
   // Legacy support
   if (window.currentPostCategory !== undefined) window.currentPostCategory = cat;
 }
-</script><script>
+
+
+
 // Force hide loading overlay after page is interactive
 window.addEventListener('load', function() {
   setTimeout(function() {
@@ -8715,10 +8703,9 @@ document.addEventListener('DOMContentLoaded', function() {
     }
   }, 8000);
 });
-</script></body>
-</html>
 
-<script>
+
+
 // ============================================
 // SHARE FEATURE — HiveDash
 // ============================================
@@ -9193,3 +9180,14 @@ function startCheckout(plan) {
   // }
 }
 </script>
+<script>
+// Force hide loading overlay after content loads
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    var ov = document.getElementById('loading-overlay');
+    if (ov) ov.style.display = 'none';
+  }, 5000);
+});
+</script>
+</body>
+</html>

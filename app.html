@@ -2148,45 +2148,78 @@ let currentDetailHiveId=null;
 async function init() {
   try{const l=localStorage.getItem('bk_lang');if(l&&LANGS[l])currentLang=l;}catch(e){}
   applyLang();
-  // Safety timeout — never stuck forever
+
+  // Safety timeout — no matter what, hide loading after 15s
   const loadTimeout=setTimeout(()=>{
-    const ov=document.getElementById('loading-overlay');
-    if(ov)ov.style.display='none';
-  },12000);
-  try{
-    // Handle Google OAuth callback — URL contains #access_token=...
-    if(location.hash&&location.hash.includes('access_token')){
-      // Let Supabase process the hash token first
-      await sb.auth.getSession();
-      // Clean up the URL without reloading
-      history.replaceState(null,'',location.pathname+location.search);
-    }
-    const{data:{session}}=await sb.auth.getSession();
+    document.getElementById('loading-overlay').style.display='none';
+  },15000);
+
+  async function startApp(session) {
     if(!session){
       clearTimeout(loadTimeout);
       const hiveParam=new URLSearchParams(location.search).get('hive');
       if(hiveParam){try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}}
-      window.location.href='index.html';return;
+      window.location.href='index.html';
+      return;
     }
-    currentUser=session.user;
-    const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
-    document.getElementById('user-avatar').textContent=initials;
-    document.getElementById('remind-email-display').textContent=currentUser.email;
-    await loadAll();
-    fetchWeather();
-    checkReminders();
-    requestPushPermission();
-  }catch(e){console.warn('init:',e);}
-  clearTimeout(loadTimeout);
-  document.getElementById('loading-overlay').style.display='none';
-  checkShareParam();
-  checkHiveParam();
-  // Handle QR scan — auto open hive
-  const urlParams=new URLSearchParams(location.search);
-  const qrHiveId=urlParams.get('hive');
-  if(qrHiveId){
-    const target=hives.find(h=>h.id===qrHiveId);
-    if(target){setTimeout(()=>{openHiveDetail(qrHiveId);showToast('🐝 '+target.name);},300);}
+    try{
+      currentUser=session.user;
+      const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
+      document.getElementById('user-avatar').textContent=initials;
+      document.getElementById('remind-email-display').textContent=currentUser.email;
+      await loadAll();
+      fetchWeather();
+      checkReminders();
+      requestPushPermission();
+    }catch(e){console.warn('startApp error:',e);}
+    clearTimeout(loadTimeout);
+    document.getElementById('loading-overlay').style.display='none';
+    // Clean up OAuth hash from URL
+    if(location.hash&&location.hash.includes('access_token')){
+      history.replaceState(null,'',location.pathname+location.search);
+    }
+    checkShareParam();
+    checkHiveParam();
+    const urlParams=new URLSearchParams(location.search);
+    const qrHiveId=urlParams.get('hive');
+    if(qrHiveId){
+      const target=hives.find(h=>h.id===qrHiveId);
+      if(target){setTimeout(()=>{openHiveDetail(qrHiveId);showToast('🐝 '+target.name);},300);}
+    }
+  }
+
+  // Listen for auth state changes (handles OAuth callback automatically)
+  sb.auth.onAuthStateChange(async(event, session) => {
+    if(event==='SIGNED_IN'||event==='INITIAL_SESSION'){
+      if(!currentUser){ // Only run once
+        await startApp(session);
+      }
+    } else if(event==='SIGNED_OUT'){
+      window.location.href='index.html';
+    }
+  });
+
+  // Also check session immediately (for normal reload)
+  try{
+    const{data:{session}}=await sb.auth.getSession();
+    if(session&&!currentUser){
+      await startApp(session);
+    } else if(!session){
+      // Wait briefly for onAuthStateChange to fire for OAuth callback
+      setTimeout(async()=>{
+        if(!currentUser){
+          const{data:{session:s}}=await sb.auth.getSession();
+          if(!s){
+            clearTimeout(loadTimeout);
+            window.location.href='index.html';
+          }
+        }
+      },3000);
+    }
+  }catch(e){
+    console.warn('init error:',e);
+    clearTimeout(loadTimeout);
+    document.getElementById('loading-overlay').style.display='none';
   }
 }
 

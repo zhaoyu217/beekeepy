@@ -1194,6 +1194,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <button class="close-btn" onclick="closeModal('modal-community-post')">✕</button>
     </div>
 
+    <!-- Photo required notice -->
+    <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:12px;font-size:12px;color:var(--honey-dark);">
+      📷 <strong>Photo required</strong> — attach a clear photo of the issue for best community answers
+    </div>
     <!-- Q&A categories only -->
     <div style="margin-bottom:14px;">
       <div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px;">Category (required)</div>
@@ -7545,19 +7549,23 @@ function handleCommPhoto(input){
 }
 
 async function submitCommunityPost(){
-  // Attach hive data for clinic posts
-  const attachHiveId=document.getElementById('comm-attach-hive')?.value;
-  if(attachHiveId&&postCategory==='clinic'){
-    const h=getHive(attachHiveId);const li=lastInsp(attachHiveId);
-    if(h&&li){
-      const existing=document.getElementById('comm-content').value;
-      const hiveData='\n\n---\n📋 Hive: '+h.name+' · Score '+li.score+' · '+daysSince(li.date)+'d ago · Strength '+li.colony_strength+'/10 · Honey '+li.honey_stores+'/10'+(li.mite_count>0?' · Mites '+li.mite_count+'%':'')+(li.disease_signs?' · Disease signs':'');
-      document.getElementById('comm-content').value=existing+hiveData;
-    }
-  }
   const title=document.getElementById('comm-title').value.trim();
   const content=document.getElementById('comm-content').value.trim();
   if(!title){showToast('Please add a title','warning');return;}
+  // Require photo for Q&A posts
+  if(!commPhotoFile&&!commVideoFile){
+    showToast('Please attach a photo of your hive or bees 📷','warning');return;
+  }
+  // Attach hive data for clinic posts
+  const attachHiveId=document.getElementById('comm-attach-hive')?.value;
+  if(attachHiveId){
+    const h=getHive(attachHiveId);const li=lastInsp(attachHiveId);
+    if(h&&li){
+      const existing=document.getElementById('comm-content').value;
+      const hiveData='\n\n---\n📋 Hive: '+h.name+' · Score '+li.score+' · '+daysSince(li.date)+'d ago · Strength '+li.colony_strength+'/10 · Mites '+(li.mite_count||0)+'%';
+      document.getElementById('comm-content').value=existing+hiveData;
+    }
+  }
   setSyncing('syncing');
   let photoUrl=null,videoUrl=null;
   const mediaFile=commVideoFile||commPhotoFile;
@@ -7573,10 +7581,18 @@ async function submitCommunityPost(){
   if(false){
   }
   const localGroup=postCategory==='local'?document.getElementById('comm-local-group').value:null;
+  const aiDiag = document.getElementById('tog-ai-diag')?.classList.contains('on') || false;
+  const catEl = document.getElementById('comm-category');
+  const finalCategory = catEl ? catEl.value : postCategory;
   const{data,error}=await sb.from('community_posts').insert({
-    user_id:currentUser.id,category:postCategory,
-    title,content,photo_url:photoUrl,video_url:videoUrl,local_group:localGroup
+    user_id:currentUser.id,category:finalCategory,
+    title,content,photo_url:photoUrl,video_url:videoUrl,local_group:localGroup,
+    ai_diagnosis_enabled:aiDiag
   }).select().single();
+  // If AI diagnosis enabled, trigger AI analysis on the photo
+  if(!error&&data&&aiDiag&&photoUrl){
+    setTimeout(()=>runCommunityAIDiagnosis(data.id, photoUrl, title), 1000);
+  }
   if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
   communityPosts.unshift(data);
   setSyncing('saved');closeModal('modal-community-post');
@@ -7585,7 +7601,13 @@ async function submitCommunityPost(){
 }
 
 async function loadCommunityPosts(){
-  const{data}=await sb.from('community_posts').select('*').order('created_at',{ascending:false}).limit(50);
+  // Only load Q&A posts (no showcase/free posts)
+  const qaCategories=['clinic','disease','queen','varroa','swarm','feeding','general'];
+  const{data}=await sb.from('community_posts')
+    .select('*')
+    .in('category',qaCategories)
+    .order('created_at',{ascending:false})
+    .limit(50);
   communityPosts=data||[];
   renderCommunityPosts();
 }
@@ -7593,12 +7615,20 @@ async function loadCommunityPosts(){
 function renderCommunityPosts(){
   const el=document.getElementById('community-content');
   if(!el)return;
-  const filtered=communityTab==='local'
-    ?communityPosts.filter(p=>p.category==='local')
-    :communityPosts.filter(p=>p.category===communityTab);
+  const qaCategories = ['disease','queen','varroa','swarm','feeding','general'];
+  const filtered = communityTab==='clinic'
+    ? communityPosts.filter(p=>qaCategories.includes(p.category)||p.category==='clinic')
+    : communityTab==='local'
+    ? communityPosts.filter(p=>p.category==='local')
+    : communityPosts.filter(p=>p.category===communityTab);
   if(filtered.length===0){
-    const emptyMsg={clinic:'No questions yet — ask the first one! 🩺',showcase:'No hive showcases yet — share yours! 🐝',local:'No local posts yet — start the conversation! 📍'};
-    el.innerHTML=`<div class="empty" style="padding:40px 16px"><div class="empty-icon">${communityTab==='clinic'?'🩺':communityTab==='showcase'?'🐝':'📍'}</div>${emptyMsg[communityTab]||'No posts yet'}</div>`;
+    const emptyMsg={
+      clinic:'No questions yet — be the first to ask! Attach a photo for best answers. 🩺',
+      disease:'No disease posts yet',queen:'No queen posts yet',varroa:'No varroa posts yet',
+      swarm:'No swarm posts yet',feeding:'No feeding posts yet',general:'No posts yet'
+    };
+    const emptyIcon={clinic:'🩺',disease:'🦠',queen:'👑',varroa:'🔴',swarm:'🐝',feeding:'🍯',general:'💬'};
+    el.innerHTML=`<div class="empty" style="padding:40px 16px"><div class="empty-icon">${emptyIcon[communityTab]||'🩺'}</div>${emptyMsg[communityTab]||'No posts yet'}</div>`;
     return;
   }
   const catIcon={clinic:'🩺',showcase:'🐝',map:'🗺️',local:'📍'};
@@ -7606,10 +7636,16 @@ function renderCommunityPosts(){
     const ago=daysSince(p.created_at?.split('T')[0]);
     const agoText=ago===0?'Today':ago===1?'Yesterday':ago+' days ago';
     const isOwn=p.user_id===currentUser.id;
+    const catColors={disease:'var(--danger-light)',queen:'var(--purple-light)',varroa:'var(--danger-light)',swarm:'var(--honey-light)',feeding:'#FFF3CD',general:'var(--sky-light)',clinic:'var(--honey-light)'};
+    const catTextColors={disease:'var(--danger)',queen:'var(--purple)',varroa:'var(--danger)',swarm:'var(--honey-dark)',feeding:'#856404',general:'var(--sky)',clinic:'var(--honey-dark)'};
     return`<div style="background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:12px 14px;margin-bottom:10px;cursor:pointer" onclick="openPostDetail('${p.id}')">
       <div style="display:flex;align-items:flex-start;gap:8px">
         <div style="width:36px;height:36px;border-radius:50%;background:var(--honey-light);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">${catIcon[p.category]||'🐝'}</div>
         <div style="flex:1;min-width:0">
+          <div style="display:flex;align-items:center;gap:6px;margin-bottom:4px">
+            <span style="font-size:10px;padding:2px 7px;border-radius:10px;font-weight:600;background:${catColors[p.category]||'var(--honey-light)'};color:${catTextColors[p.category]||'var(--honey-dark)'}">${p.category||'general'}</span>
+            ${p.ai_diagnosis_enabled?'<span style="font-size:10px;padding:2px 7px;border-radius:10px;background:var(--purple-light);color:var(--purple);font-weight:600;">🤖 AI Diagnosed</span>':''}
+          </div>
           <div style="font-weight:600;font-size:13px;margin-bottom:3px">${p.title}</div>
           ${p.content?`<div style="font-size:12px;color:var(--text-2);margin-bottom:6px;overflow:hidden;text-overflow:ellipsis;white-space:nowrap">${p.content}</div>`:''}
           ${p.photo_url?`<img loading="lazy" src="${p.photo_url}" style="width:100%;max-height:140px;object-fit:cover;border-radius:var(--radius-sm);margin-bottom:6px">`:''}${p.video_url?`<video src="${p.video_url}" style="width:100%;max-height:180px;border-radius:var(--radius-sm);margin-bottom:6px" controls playsinline preload="metadata"></video>`:''}
@@ -7710,7 +7746,7 @@ function renderCommunityMapMarkers(){
   const bloomColor={early:'#f39c12',peak:'#27ae60',late:'#e67e22',none:'#95a5a6'};
   (forageMarkers||[]).forEach(m=>{
     const c=L.circleMarker([m.lat,m.lng],{radius:10,fillColor:bloomColor[m.bloom_status]||'#27ae60',color:'#fff',weight:2,fillOpacity:0.85});
-    c.bindPopup(`<b>${m.plant_type}</b><br>${m.bloom_status} bloom${m.notes?'<br>'+m.notes:''}`);
+    c.bindPopup(`<b>${m.plant_type}</b><br>${m.bloom_status} bloom${m.notes?'<br>'+m.notes:''}<br><div style='margin-top:6px;display:flex;gap:6px'><button onclick='confirmForageMarker("${m.id}",true)' style='padding:3px 8px;border-radius:10px;background:#EAF3DE;color:#3B6D11;border:none;cursor:pointer;font-size:11px;'>✅ Confirm</button><button onclick='confirmForageMarker("${m.id}",false)' style='padding:3px 8px;border-radius:10px;background:#FDECEA;color:#C0392B;border:none;cursor:pointer;font-size:11px;'>❌ False</button></div>`);
     c.addTo(communityMapObj);commMapLayers.push(c);
   });
   (pesticideAlerts||[]).forEach(a=>{
@@ -8075,7 +8111,7 @@ function renderForageMapMarkers(){
     if(currentFilter==='alert')return;
     if(currentFilter==='mine'&&m.user_id!==currentUser.id)return;
     const circle=L.circleMarker([m.lat,m.lng],{radius:10,fillColor:bloomColor[m.bloom_status]||'#27ae60',color:'#fff',weight:2,opacity:1,fillOpacity:0.85});
-    circle.bindPopup(`<b>${m.plant_type}</b><br>${m.bloom_status} bloom${m.notes?'<br><i>'+m.notes+'</i>':''}`);
+    circle.bindPopup(`<b>${m.plant_type}</b><br>${m.bloom_status} bloom${m.notes?'<br><i>'+m.notes+'</i>':''}<br><div style='margin-top:6px;display:flex;gap:6px'><button onclick='confirmForageMarker("${m.id}",true)' style='padding:3px 8px;border-radius:10px;background:#EAF3DE;color:#3B6D11;border:none;cursor:pointer;font-size:11px;'>✅ Confirm</button><button onclick='confirmForageMarker("${m.id}",false)' style='padding:3px 8px;border-radius:10px;background:#FDECEA;color:#C0392B;border:none;cursor:pointer;font-size:11px;'>❌ False</button></div>`);
     circle.addTo(forageMap);forageLayers.push(circle);
   });
   pesticideAlerts.forEach(a=>{
@@ -9188,6 +9224,86 @@ window.addEventListener('load', function() {
     if (ov) ov.style.display = 'none';
   }, 5000);
 });
-</script>
-</body>
+
+// ============================================================
+// COMMUNITY AI DIAGNOSIS
+// ============================================================
+async function runCommunityAIDiagnosis(postId, photoUrl, title) {
+  if(!CLAUDE_API_KEY) return;
+  try {
+    // Fetch image and convert to base64
+    const resp = await fetch(photoUrl);
+    const blob = await resp.blob();
+    const reader = new FileReader();
+    reader.onload = async(e) => {
+      const b64 = e.target.result.split(',')[1];
+      const prompt = `You are an expert beekeeper. A beekeeper posted this photo asking: "${title}"
+Analyze the photo and give a helpful diagnosis in 2-3 sentences. Be specific about what you see.
+Start with the most likely issue, then suggest immediate action.
+Keep it under 80 words, friendly and practical.`;
+      try {
+        const res = await fetch('https://api.anthropic.com/v1/messages', {
+          method:'POST',
+          headers:{'Content-Type':'application/json','x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
+          body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:[
+            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
+            {type:'text',text:prompt}
+          ]}]})
+        });
+        const d = await res.json();
+        const aiText = d.content?.[0]?.text?.trim();
+        if(aiText && postId) {
+          // Add AI reply to the post
+          await sb.from('community_replies').insert({
+            post_id:postId,
+            user_id:currentUser?.id,
+            content:'🤖 **AI Diagnosis:** ' + aiText,
+            is_expert:true
+          });
+          // Refresh if viewing this post
+          if(currentPostId === postId) await openPostDetail(postId);
+        }
+      } catch(e) { console.warn('AI diagnosis error:', e); }
+    };
+    reader.readAsDataURL(blob);
+  } catch(e) { console.warn('runCommunityAIDiagnosis error:', e); }
+}
+
+// ============================================================
+// PEER REVIEW: Confirm/False forage markers
+// ============================================================
+async function confirmForageMarker(markerId, isConfirm) {
+  if(!currentUser) { showToast('Sign in to confirm markers','warning'); return; }
+  try {
+    // Record the review
+    await sb.from('forage_reviews').upsert({
+      marker_id: markerId,
+      user_id: currentUser.id,
+      confirmed: isConfirm,
+      created_at: new Date().toISOString()
+    });
+    // Check confirmation count
+    const{data:reviews} = await sb.from('forage_reviews').select('confirmed').eq('marker_id', markerId);
+    const confirms = (reviews||[]).filter(r=>r.confirmed).length;
+    const falses = (reviews||[]).filter(r=>!r.confirmed).length;
+    if(confirms >= 5) {
+      // Award points to marker creator
+      const{data:marker} = await sb.from('forage_markers').select('user_id').eq('id',markerId).single();
+      if(marker?.user_id && marker.user_id !== currentUser.id) {
+        showToast('Marker confirmed! Creator gets +10 pts 🎉','success');
+      }
+    }
+    if(falses >= 3) {
+      // Auto-remove marker
+      await sb.from('forage_markers').update({expires_at: new Date().toISOString()}).eq('id',markerId);
+      showToast('Marker reported as false — removed from map','success');
+    } else {
+      showToast(isConfirm ? '✅ Confirmed! Thank you' : '❌ Reported as false/expired','success');
+    }
+    loadForageData();
+  } catch(e) {
+    showToast('Review failed: ' + e.message,'error');
+  }
+}
+</script></body>
 </html>

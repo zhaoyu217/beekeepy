@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#E8930A">
-<title>Beekeepy · Sign In</title>
+<title>HiveDash · Sign In</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <style>
@@ -98,10 +98,10 @@ input:focus{border-color:var(--honey);border-width:1.5px}
 
   <!-- Logo -->
   <div class="logo">
-    <div class="logo-icon">🐝</div>
-    <h1>Beekeepy</h1>
+    <div class="logo-icon" style="background:none;padding:0;box-shadow:none;"><img src="data:image/png;base64,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" style="width:52px;height:52px;border-radius:16px;" alt="HiveDash"></div>
+    <h1>HiveDash</h1>
   </div>
-  <div class="tagline" id="tagline">Free Beekeeping Journal · beekeepy.com</div>
+  <div class="tagline" id="tagline">Free Beekeeping Journal · hivedash.app</div>
 
   <!-- Free plan badge -->
   <div class="free-badge">
@@ -176,7 +176,7 @@ input:focus{border-color:var(--honey);border-width:1.5px}
     </div>
   </div>
 
-  <div class="footer">🐝 Beekeepy · beekeepy.com · <span id="footer-sub">Free Beekeeping Journal</span></div>
+  <div class="footer">🐝 HiveDash · hivedash.app · <span id="footer-sub">Free Beekeeping Journal</span></div>
 </div>
 
 <script>
@@ -187,7 +187,7 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
 
 const L = {
   en:{
-    tagline:'Free Beekeeping Journal · beekeepy.com',
+    tagline:'Free Beekeeping Journal · hivedash.app',
     badge_title:'Free plan: 2 hives included',
     badge_sub:'Track inspections, queens, treatments & harvests — no credit card needed',
     tab_signin:'Sign In', tab_signup:'Create Account',
@@ -208,7 +208,7 @@ const L = {
     success_reset:'Password reset email sent! Check your inbox.',
   },
   de:{
-    tagline:'Kostenloses Imker-Tagebuch · beekeepy.com',
+    tagline:'Kostenloses Imker-Tagebuch · hivedash.app',
     badge_title:'Kostenloser Plan: 2 Völker inklusive',
     badge_sub:'Kontrollen, Königinnen, Behandlungen & Ernten erfassen — keine Kreditkarte nötig',
     tab_signin:'Anmelden', tab_signup:'Konto erstellen',
@@ -229,7 +229,7 @@ const L = {
     success_reset:'Passwort-Reset-E-Mail gesendet! Bitte überprüfen Sie Ihren Posteingang.',
   },
   fr:{
-    tagline:'Journal apicole gratuit · beekeepy.com',
+    tagline:'Journal apicole gratuit · hivedash.app',
     badge_title:'Plan gratuit : 2 ruches incluses',
     badge_sub:'Suivez visites, reines, traitements & récoltes — sans carte bancaire',
     tab_signin:'Connexion', tab_signup:'Créer un compte',
@@ -250,7 +250,7 @@ const L = {
     success_reset:'E-mail de réinitialisation envoyé ! Vérifiez votre boîte de réception.',
   },
   it:{
-    tagline:'Diario apicolo gratuito · beekeepy.com',
+    tagline:'Diario apicolo gratuito · hivedash.app',
     badge_title:'Piano gratuito: 2 arnie incluse',
     badge_sub:'Registra ispezioni, regine, trattamenti & raccolte — senza carta di credito',
     tab_signin:'Accedi', tab_signup:'Crea account',
@@ -271,7 +271,7 @@ const L = {
     success_reset:'E-mail di reimpostazione inviata! Controlla la tua casella di posta.',
   },
   pt:{
-    tagline:'Diário apícola gratuito · beekeepy.com',
+    tagline:'Diário apícola gratuito · hivedash.app',
     badge_title:'Plano gratuito: 2 colmeias incluídas',
     badge_sub:'Registre vistorias, rainhas, tratamentos & colheitas — sem cartão de crédito',
     tab_signin:'Entrar', tab_signup:'Criar conta',
@@ -292,7 +292,7 @@ const L = {
     success_reset:'E-mail de redefinição enviado! Verifique sua caixa de entrada.',
   },
   ro:{
-    tagline:'Jurnal apicol gratuit · beekeepy.com',
+    tagline:'Jurnal apicol gratuit · hivedash.app',
     badge_title:'Plan gratuit: 2 stupi incluși',
     badge_sub:'Urmărește inspecții, mătci, tratamente & recolte — fără card de credit',
     tab_signin:'Autentificare', tab_signup:'Creare cont',
@@ -313,7 +313,7 @@ const L = {
     success_reset:'E-mail de resetare trimis! Verifică-ți căsuța de intrare.',
   },
   tr:{
-    tagline:'Ücretsiz Arıcılık Günlüğü · beekeepy.com',
+    tagline:'Ücretsiz Arıcılık Günlüğü · hivedash.app',
     badge_title:'Ücretsiz plan: 2 kovan dahil',
     badge_sub:'Kontroller, kraliçeler, tedaviler ve hasatları takip edin — kredi kartı gerekmez',
     tab_signin:'Giriş Yap', tab_signup:'Hesap Oluştur',

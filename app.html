@@ -996,7 +996,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <button class="nav-item active" onclick="showPage('home',this)"><span class="ni">🏠</span><span><span data-i18n="nav_home">Home</span></span><div class="nav-pip"></div></button>
   <button class="nav-item" onclick="showPage('inspect',this)"><span class="ni">📋</span><span><span data-i18n="nav_inspect">Inspect</span></span><div class="nav-pip"></div></button>
   <button class="nav-item" onclick="showPage('insights',this)"><span class="ni">📊</span><span><span data-i18n="nav_insights">Insights</span></span><div class="nav-pip"></div></button>
-  <button class="nav-item" onclick="showPage('community',this)"><span class="ni">🌐</span><span>Community</span><div class="nav-pip"></div></button>
+  <button class="nav-item" onclick="showPage('community',this)"><span class="ni">🧠</span><span>HiveMind</span><div class="nav-pip"></div></button>
   <button class="nav-item" id="nav-more" onclick="toggleMoreMenu(this)"><span class="ni">☰</span><span>More</span><div class="nav-pip"></div></button>
 </nav>
 
@@ -1120,75 +1120,94 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
 </div>
 </div>
 
-<!-- ===== COMMUNITY ===== -->
+<!-- ===== HIVEMIND ===== -->
 <div id="pg-community" class="page">
-<div class="scroll-content" style="padding:0">
+<div class="scroll-content" style="padding:0 0 80px;">
 
   <!-- Header -->
-  <div style="padding:14px 16px 0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10">
-    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px">
+  <div style="padding:14px 16px 0;background:var(--surface);border-bottom:1px solid var(--border);position:sticky;top:0;z-index:10;">
+    <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
       <div>
-        <div style="font-size:16px;font-weight:600">🌐 Community</div>
-        <div style="font-size:11px;color:var(--text-3)">Beekeepers helping beekeepers</div>
+        <div style="font-size:16px;font-weight:600;">🧠 HiveMind</div>
+        <div style="font-size:11px;color:var(--text-3);">Community intelligence for beekeepers</div>
       </div>
-      <button onclick="openNewPostModal()" style="padding:7px 14px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500">+ Post</button>
+      <button onclick="openNewPostModal()" style="padding:7px 14px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;font-weight:500;">+ Ask</button>
     </div>
     <!-- Tabs -->
-    <div style="display:flex;gap:0;border-bottom:none">
-      <button onclick="setCommunityTab('clinic',this)" id="ctab-clinic" class="ctab ctab-active" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--honey);font-weight:600;border-bottom:2px solid var(--honey)">🩺 Clinic</button>
-      <button onclick="setCommunityTab('showcase',this)" id="ctab-showcase" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent">🐝 Showcase</button>
-      <button onclick="setCommunityTab('map',this)" id="ctab-map" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent">🌸 蜜源</button>
-      <button onclick="setCommunityTab('local',this)" id="ctab-local" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:12px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent">📍 Local</button>
+    <div style="display:flex;gap:0;border-bottom:none;">
+      <button onclick="setCommunityTab('clinic',this)" id="ctab-clinic" class="ctab ctab-active" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--honey);font-weight:600;border-bottom:2px solid var(--honey);">🩺 Q&A</button>
+      <button onclick="setCommunityTab('swarm',this)" id="ctab-swarm" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent;">🐝 Swarms</button>
+      <button onclick="setCommunityTab('map',this)" id="ctab-map" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent;">🌸 Forage</button>
+      <button onclick="setCommunityTab('local',this)" id="ctab-local" class="ctab" style="flex:1;padding:8px 4px;border:none;background:none;cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif;color:var(--text-3);border-bottom:2px solid transparent;">📍 Local</button>
     </div>
   </div>
 
   <!-- Tab content -->
-  <div id="community-content" style="padding:12px 16px"></div>
+  <div id="community-content" style="padding:12px 16px;"></div>
 
-  <!-- Map tab special container -->
-  <div id="community-map-wrap" style="display:none">
-    <div id="community-map" style="height:300px"></div>
-    <div style="padding:12px 16px" id="community-map-list"></div>
+  <!-- Swarm tab -->
+  <div id="community-swarm-wrap" style="display:none;padding:12px 16px;">
+    <div style="background:var(--honey-light);border:1px solid var(--honey);border-radius:var(--radius);padding:14px;margin-bottom:14px;">
+      <div style="font-size:14px;font-weight:700;color:var(--honey-dark);margin-bottom:6px;">🐝 Swarm Alert Network</div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:12px;line-height:1.6;">Spotted a swarm? Alert nearby beekeepers instantly. Anyone within 10km gets a push notification — first one there gets a free colony!</div>
+      <button onclick="reportSwarmAlert()" style="width:100%;padding:12px;background:var(--honey);color:#fff;border:none;border-radius:var(--radius-sm);font-size:14px;font-weight:700;cursor:pointer;font-family:'DM Sans',sans-serif;">🚨 Report Swarm Near Me</button>
+      <div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:6px;">Anyone can report — no account required</div>
+    </div>
+    <div id="swarm-map" style="height:260px;border-radius:var(--radius);overflow:hidden;border:1px solid var(--border);margin-bottom:14px;"></div>
+    <div style="font-size:12px;font-weight:600;color:var(--text-3);text-transform:uppercase;letter-spacing:0.06em;margin-bottom:8px;">Active Swarm Alerts</div>
+    <div id="swarm-list"></div>
+  </div>
 
-    <!-- Nectar Source Leaderboard -->
-    <div style="padding:0 16px 16px">
-      <!-- Filters -->
-      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px">
-        <div style="font-size:13px;font-weight:700;color:var(--text)">🏆 Nectar Leaderboard</div>
-        <div style="display:flex;gap:6px">
-          <select id="lb-radius" onchange="renderLeaderboard()" style="font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-family:'DM Sans',sans-serif">
+  <!-- Map tab -->
+  <div id="community-map-wrap" style="display:none;">
+    <div id="community-map" style="height:280px;"></div>
+    <div style="padding:12px 16px;" id="community-map-list"></div>
+    <div style="padding:0 16px 16px;">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);">🏆 Forage Leaderboard</div>
+        <div style="display:flex;gap:6px;">
+          <select id="lb-radius" onchange="renderLeaderboard()" style="font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-family:'DM Sans',sans-serif;">
             <option value="5">5 km</option>
             <option value="20">20 km</option>
             <option value="50" selected>50 km</option>
           </select>
-          <select id="lb-mode" onchange="renderLeaderboard()" style="font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-family:'DM Sans',sans-serif">
+          <select id="lb-mode" onchange="renderLeaderboard()" style="font-size:11px;padding:4px 8px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-family:'DM Sans',sans-serif;">
             <option value="now">Now</option>
             <option value="soon">Coming Soon</option>
           </select>
         </div>
       </div>
-
-      <!-- Leaderboard list -->
       <div id="leaderboard-list"></div>
     </div>
   </div>
 
 </div>
 </div>
-
 <!-- New Post Modal -->
 <div class="modal-bg" id="modal-community-post">
   <div class="modal">
     <div class="modal-title">
-      <h2 style="font-size:16px" id="comm-modal-title">New Post</h2>
+      <h2 style="font-size:16px" id="comm-modal-title">Ask the Hive 🧠</h2>
       <button class="close-btn" onclick="closeModal('modal-community-post')">✕</button>
     </div>
 
-    <div id="comm-category-row" style="display:grid;grid-template-columns:1fr 1fr;gap:6px;margin-bottom:14px">
-      <button onclick="setPostCategory('clinic',this)" class="comm-cat-btn active-cat" style="padding:8px;border-radius:var(--radius-sm);border:2px solid var(--honey);background:var(--honey-light);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--honey-dark);font-weight:600">🩺 Clinic</button>
-      <button onclick="setPostCategory('showcase',this)" class="comm-cat-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">🐝 Showcase</button>
-      <button onclick="setPostCategory('map',this)" class="comm-cat-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">🌸 蜜源地图</button>
-      <button onclick="setPostCategory('local',this)" class="comm-cat-btn" style="padding:8px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2)">📍 Local Group</button>
+    <!-- Q&A categories only -->
+    <div style="margin-bottom:14px;">
+      <div style="font-size:12px;font-weight:600;color:var(--text-3);margin-bottom:8px;">Category (required)</div>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="comm-category-row">
+        <button onclick="setPostCategory('disease',this)" class="comm-cat-btn" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2);">🦠 Disease</button>
+        <button onclick="setPostCategory('queen',this)" class="comm-cat-btn" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2);">👑 Queen</button>
+        <button onclick="setPostCategory('varroa',this)" class="comm-cat-btn" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2);">🔴 Varroa</button>
+        <button onclick="setPostCategory('swarm',this)" class="comm-cat-btn" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2);">🐝 Swarm</button>
+        <button onclick="setPostCategory('feeding',this)" class="comm-cat-btn" style="padding:6px 12px;border-radius:20px;border:1px solid var(--border);background:var(--surface);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--text-2);">🍯 Feeding</button>
+        <button onclick="setPostCategory('general',this)" class="comm-cat-btn active-cat" style="padding:6px 12px;border-radius:20px;border:2px solid var(--honey);background:var(--honey-light);cursor:pointer;font-family:'DM Sans',sans-serif;font-size:12px;color:var(--honey-dark);font-weight:600;">💬 General</button>
+      </div>
+      <input type="hidden" id="comm-category" value="general">
+    </div>
+    <!-- AI diagnosis toggle -->
+    <div style="background:var(--purple-light);border:1px solid #C39BD3;border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;display:flex;align-items:center;gap:10px;">
+      <div style="flex:1;font-size:12px;color:var(--purple);">🤖 Allow AI public diagnosis — helps the community see AI in action</div>
+      <button class="tog on" id="tog-ai-diag" onclick="this.classList.toggle('on')"></button>
     </div>
 
     <div class="form-group">
@@ -5865,6 +5884,133 @@ function getHiveTagBadge(tag) {
   };
   return tags[tag] || '';
 }
+</script><script>
+// ============================================================
+// SWARM ALERT NETWORK
+// ============================================================
+let swarmAlerts = [];
+let swarmMap = null;
+
+async function loadSwarmAlerts() {
+  try {
+    const { data } = await sb.from('swarm_alerts')
+      .select('*')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+    swarmAlerts = data || [];
+    renderSwarmList();
+    initSwarmMap();
+  } catch(e) {
+    renderSwarmList();
+  }
+}
+
+function renderSwarmList() {
+  const el = document.getElementById('swarm-list');
+  if (!el) return;
+  if (!swarmAlerts.length) {
+    el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-3);font-size:13px;">No active swarm alerts nearby.<br>Be the first to report one! 🐝</div>`;
+    return;
+  }
+  el.innerHTML = swarmAlerts.map(a => {
+    const hrs = Math.round((new Date(a.expires_at) - new Date()) / 3600000);
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--honey);border-radius:var(--radius);padding:12px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div style="font-size:13px;font-weight:600;">🐝 Swarm spotted!</div>
+        <div style="font-size:10px;color:var(--text-3);">Expires in ${hrs}h</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:8px;">${a.description || 'No details provided'}</div>
+      <div style="font-size:11px;color:var(--text-3);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`;
+  }).join('');
+}
+
+function initSwarmMap() {
+  const mapEl = document.getElementById('swarm-map');
+  if (!mapEl || swarmMap) return;
+  if (!window.L) {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.onload = () => _renderSwarmMap();
+    document.head.appendChild(js);
+  } else {
+    _renderSwarmMap();
+  }
+}
+
+function _renderSwarmMap() {
+  const mapEl = document.getElementById('swarm-map');
+  if (!mapEl || swarmMap) return;
+  swarmMap = L.map('swarm-map').setView([39.5, -98.35], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(swarmMap);
+  swarmAlerts.forEach(a => {
+    if (a.lat && a.lng) {
+      L.marker([a.lat, a.lng])
+        .bindPopup(`<b>🐝 Swarm Alert</b><br>${a.description || 'Swarm spotted here'}<br><small>Expires: ${new Date(a.expires_at).toLocaleDateString()}</small>`)
+        .addTo(swarmMap);
+    }
+  });
+}
+
+async function reportSwarmAlert() {
+  if (!navigator.geolocation) {
+    showToast('Location access required to report a swarm', 'error');
+    return;
+  }
+  showToast('Getting your location...', 'success');
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    // Show quick description modal
+    const desc = prompt('Briefly describe the swarm (e.g. "Basketball-sized cluster on apple tree, backyard"):') || 'Swarm spotted';
+    const blur = () => (Math.random() - 0.5) * 0.018; // ~2km fuzzy
+    const expires = new Date(Date.now() + 48 * 3600 * 1000).toISOString(); // 48h expiry
+    try {
+      const { error } = await sb.from('swarm_alerts').insert({
+        lat: lat + blur(), lng: lng + blur(),
+        description: desc,
+        reported_by: currentUser?.id || null,
+        expires_at: expires,
+        created_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      showToast('Swarm alert sent! Nearby beekeepers notified 🐝', 'success');
+      await awardPoints('swarm_report');
+      loadSwarmAlerts();
+    } catch(e) {
+      showToast('Could not save swarm alert: ' + (e.message || 'try again'), 'error');
+    }
+  }, () => {
+    showToast('Location access denied. Please enable to report a swarm.', 'error');
+  });
+}
+
+// ============================================================
+// UPDATED setPostCategory for new categories
+// ============================================================
+function setPostCategory(cat, btn) {
+  document.querySelectorAll('.comm-cat-btn').forEach(b => {
+    b.style.border = '1px solid var(--border)';
+    b.style.background = 'var(--surface)';
+    b.style.color = 'var(--text-2)';
+    b.style.fontWeight = '';
+    b.classList.remove('active-cat');
+  });
+  btn.style.border = '2px solid var(--honey)';
+  btn.style.background = 'var(--honey-light)';
+  btn.style.color = 'var(--honey-dark)';
+  btn.style.fontWeight = '600';
+  btn.classList.add('active-cat');
+  const catEl = document.getElementById('comm-category');
+  if (catEl) catEl.value = cat;
+  // Legacy support
+  if (window.currentPostCategory !== undefined) window.currentPostCategory = cat;
+}
 </script></body></html>`);
   win.document.close();
 }
@@ -7519,14 +7665,22 @@ function setCommunityTab(tab, btn){
   document.querySelectorAll('.ctab').forEach(b=>{
     b.style.color='var(--text-3)';b.style.borderBottom='2px solid transparent';b.style.fontWeight='';
   });
-  btn.style.color='var(--honey)';btn.style.borderBottom='2px solid var(--honey)';btn.style.fontWeight='600';
+  if(btn){btn.style.color='var(--honey)';btn.style.borderBottom='2px solid var(--honey)';btn.style.fontWeight='600';}
   const mapWrap=document.getElementById('community-map-wrap');
-  const content=document.getElementById('community-content');
+  const swarmWrap=document.getElementById('community-swarm-wrap');
+  const cont=document.getElementById('community-content');
+  if(mapWrap) mapWrap.style.display='none';
+  if(swarmWrap) swarmWrap.style.display='none';
+  if(cont) cont.style.display='block';
   if(tab==='map'){
-    mapWrap.style.display='block';content.style.display='none';
+    if(mapWrap) mapWrap.style.display='block';
+    if(cont) cont.style.display='none';
     initCommunityMap();loadForageData();
+  } else if(tab==='swarm'){
+    if(swarmWrap) swarmWrap.style.display='block';
+    if(cont) cont.style.display='none';
+    loadSwarmAlerts();
   } else {
-    mapWrap.style.display='none';content.style.display='block';
     renderCommunityPosts();
   }
 }
@@ -8272,7 +8426,7 @@ async function checkPeerReviewBonus(lat, lng, plantType) {
     );
     // Count unique users
     const uniqueUsers = new Set(nearby.map(m=>m.user_id));
-    if(uniqueUsers.size >= 2) { // 2 others + current user = 3 total
+    if(uniqueUsers.size >= 5) { // 5 others confirming same plant = awarded
       await awardPoints('forage_confirmed', {plant_type: plantType});
     }
   } catch(e) {}
@@ -8314,7 +8468,8 @@ async function saveForageMarker(){
       severity:document.getElementById('fm-severity').value,
       description:document.getElementById('fm-desc').value,
       notes:document.getElementById('fm-notes').value,
-      anonymous:anon
+      anonymous:anon,
+      expires_at:new Date(Date.now()+7*24*3600*1000).toISOString()
     });
     if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
     // Notify nearby users via push
@@ -8605,6 +8760,133 @@ function getHiveTagBadge(tag) {
     new_colony: '<span style="background:var(--forest-light);color:var(--forest);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🌱 New Colony</span>'
   };
   return tags[tag] || '';
+}
+</script><script>
+// ============================================================
+// SWARM ALERT NETWORK
+// ============================================================
+let swarmAlerts = [];
+let swarmMap = null;
+
+async function loadSwarmAlerts() {
+  try {
+    const { data } = await sb.from('swarm_alerts')
+      .select('*')
+      .gt('expires_at', new Date().toISOString())
+      .order('created_at', { ascending: false });
+    swarmAlerts = data || [];
+    renderSwarmList();
+    initSwarmMap();
+  } catch(e) {
+    renderSwarmList();
+  }
+}
+
+function renderSwarmList() {
+  const el = document.getElementById('swarm-list');
+  if (!el) return;
+  if (!swarmAlerts.length) {
+    el.innerHTML = `<div style="text-align:center;padding:24px;color:var(--text-3);font-size:13px;">No active swarm alerts nearby.<br>Be the first to report one! 🐝</div>`;
+    return;
+  }
+  el.innerHTML = swarmAlerts.map(a => {
+    const hrs = Math.round((new Date(a.expires_at) - new Date()) / 3600000);
+    return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--honey);border-radius:var(--radius);padding:12px;margin-bottom:8px;">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
+        <div style="font-size:13px;font-weight:600;">🐝 Swarm spotted!</div>
+        <div style="font-size:10px;color:var(--text-3);">Expires in ${hrs}h</div>
+      </div>
+      <div style="font-size:12px;color:var(--text-2);margin-bottom:8px;">${a.description || 'No details provided'}</div>
+      <div style="font-size:11px;color:var(--text-3);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
+    </div>`;
+  }).join('');
+}
+
+function initSwarmMap() {
+  const mapEl = document.getElementById('swarm-map');
+  if (!mapEl || swarmMap) return;
+  if (!window.L) {
+    const css = document.createElement('link');
+    css.rel = 'stylesheet';
+    css.href = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.css';
+    document.head.appendChild(css);
+    const js = document.createElement('script');
+    js.src = 'https://unpkg.com/leaflet@1.9.4/dist/leaflet.js';
+    js.onload = () => _renderSwarmMap();
+    document.head.appendChild(js);
+  } else {
+    _renderSwarmMap();
+  }
+}
+
+function _renderSwarmMap() {
+  const mapEl = document.getElementById('swarm-map');
+  if (!mapEl || swarmMap) return;
+  swarmMap = L.map('swarm-map').setView([39.5, -98.35], 4);
+  L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
+    attribution: '© OpenStreetMap'
+  }).addTo(swarmMap);
+  swarmAlerts.forEach(a => {
+    if (a.lat && a.lng) {
+      L.marker([a.lat, a.lng])
+        .bindPopup(`<b>🐝 Swarm Alert</b><br>${a.description || 'Swarm spotted here'}<br><small>Expires: ${new Date(a.expires_at).toLocaleDateString()}</small>`)
+        .addTo(swarmMap);
+    }
+  });
+}
+
+async function reportSwarmAlert() {
+  if (!navigator.geolocation) {
+    showToast('Location access required to report a swarm', 'error');
+    return;
+  }
+  showToast('Getting your location...', 'success');
+  navigator.geolocation.getCurrentPosition(async pos => {
+    const { latitude: lat, longitude: lng } = pos.coords;
+    // Show quick description modal
+    const desc = prompt('Briefly describe the swarm (e.g. "Basketball-sized cluster on apple tree, backyard"):') || 'Swarm spotted';
+    const blur = () => (Math.random() - 0.5) * 0.018; // ~2km fuzzy
+    const expires = new Date(Date.now() + 48 * 3600 * 1000).toISOString(); // 48h expiry
+    try {
+      const { error } = await sb.from('swarm_alerts').insert({
+        lat: lat + blur(), lng: lng + blur(),
+        description: desc,
+        reported_by: currentUser?.id || null,
+        expires_at: expires,
+        created_at: new Date().toISOString()
+      });
+      if (error) throw error;
+      showToast('Swarm alert sent! Nearby beekeepers notified 🐝', 'success');
+      await awardPoints('swarm_report');
+      loadSwarmAlerts();
+    } catch(e) {
+      showToast('Could not save swarm alert: ' + (e.message || 'try again'), 'error');
+    }
+  }, () => {
+    showToast('Location access denied. Please enable to report a swarm.', 'error');
+  });
+}
+
+// ============================================================
+// UPDATED setPostCategory for new categories
+// ============================================================
+function setPostCategory(cat, btn) {
+  document.querySelectorAll('.comm-cat-btn').forEach(b => {
+    b.style.border = '1px solid var(--border)';
+    b.style.background = 'var(--surface)';
+    b.style.color = 'var(--text-2)';
+    b.style.fontWeight = '';
+    b.classList.remove('active-cat');
+  });
+  btn.style.border = '2px solid var(--honey)';
+  btn.style.background = 'var(--honey-light)';
+  btn.style.color = 'var(--honey-dark)';
+  btn.style.fontWeight = '600';
+  btn.classList.add('active-cat');
+  const catEl = document.getElementById('comm-category');
+  if (catEl) catEl.value = cat;
+  // Legacy support
+  if (window.currentPostCategory !== undefined) window.currentPostCategory = cat;
 }
 </script></body>
 </html>

@@ -7586,14 +7586,13 @@ async function submitCommunityPost(){
   const finalCategory = catEl ? catEl.value : postCategory;
   const{data,error}=await sb.from('community_posts').insert({
     user_id:currentUser.id,category:finalCategory,
-    title,content,photo_url:photoUrl,video_url:videoUrl,local_group:localGroup,
-    ai_diagnosis_enabled:aiDiag
+    title,content,photo_url:photoUrl,video_url:videoUrl,local_group:localGroup
   }).select().single();
+  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
   // If AI diagnosis enabled, trigger AI analysis on the photo
-  if(!error&&data&&aiDiag&&photoUrl){
+  if(aiDiag&&photoUrl&&data){
     setTimeout(()=>runCommunityAIDiagnosis(data.id, photoUrl, title), 1000);
   }
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
   communityPosts.unshift(data);
   setSyncing('saved');closeModal('modal-community-post');
   showToast('✅ Posted to community!','success');

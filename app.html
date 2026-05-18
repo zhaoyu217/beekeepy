@@ -2188,33 +2188,24 @@ async function init() {
     }
   }
 
+  let appStarted = false;
+
   // Listen for auth state changes (handles OAuth callback automatically)
   sb.auth.onAuthStateChange(async(event, session) => {
-    if(event==='SIGNED_IN'||event==='INITIAL_SESSION'){
-      if(!currentUser){ // Only run once
-        await startApp(session);
-      }
+    if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && !appStarted){
+      appStarted = true;
+      await startApp(session);
     } else if(event==='SIGNED_OUT'){
       window.location.href='index.html';
     }
   });
 
-  // Also check session immediately (for normal reload)
+  // Also check session immediately (handles normal page reload)
   try{
     const{data:{session}}=await sb.auth.getSession();
-    if(session&&!currentUser){
+    if(session && !appStarted){
+      appStarted = true;
       await startApp(session);
-    } else if(!session){
-      // Wait briefly for onAuthStateChange to fire for OAuth callback
-      setTimeout(async()=>{
-        if(!currentUser){
-          const{data:{session:s}}=await sb.auth.getSession();
-          if(!s){
-            clearTimeout(loadTimeout);
-            window.location.href='index.html';
-          }
-        }
-      },3000);
     }
   }catch(e){
     console.warn('init error:',e);
@@ -5808,6 +5799,30 @@ let swarmMap = null;
 // ============================================================
 // UPDATED setPostCategory for new categories
 // ============================================================
+</script><script>
+// Force hide loading overlay after page is interactive
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    var ov = document.getElementById('loading-overlay');
+    if (ov && ov.style.display !== 'none') {
+      ov.style.display = 'none';
+    }
+  }, 5000);
+});
+
+// Also hide immediately if content is visible
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var ov = document.getElementById('loading-overlay');
+    if (ov && ov.style.display !== 'none') {
+      // Check if user is logged in by checking if avatar has content
+      var avatar = document.getElementById('user-avatar');
+      if (avatar && avatar.textContent && avatar.textContent !== '?') {
+        ov.style.display = 'none';
+      }
+    }
+  }, 8000);
+});
 </script></body></html>`);
   win.document.close();
 }
@@ -8675,6 +8690,30 @@ function setPostCategory(cat, btn) {
   // Legacy support
   if (window.currentPostCategory !== undefined) window.currentPostCategory = cat;
 }
+</script><script>
+// Force hide loading overlay after page is interactive
+window.addEventListener('load', function() {
+  setTimeout(function() {
+    var ov = document.getElementById('loading-overlay');
+    if (ov && ov.style.display !== 'none') {
+      ov.style.display = 'none';
+    }
+  }, 5000);
+});
+
+// Also hide immediately if content is visible
+document.addEventListener('DOMContentLoaded', function() {
+  setTimeout(function() {
+    var ov = document.getElementById('loading-overlay');
+    if (ov && ov.style.display !== 'none') {
+      // Check if user is logged in by checking if avatar has content
+      var avatar = document.getElementById('user-avatar');
+      if (avatar && avatar.textContent && avatar.textContent !== '?') {
+        ov.style.display = 'none';
+      }
+    }
+  }, 8000);
+});
 </script></body>
 </html>
 

@@ -919,6 +919,23 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
     </div>
 
+    <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:10px;letter-spacing:1px;">AI CAPTION</div>
+    <div style="background:var(--surface);border-radius:12px;padding:14px;border:1px solid #EAE6DF;margin-bottom:20px;">
+      <div id="ai-caption-content">
+        <div style="font-size:12px;color:var(--text-3);margin-bottom:10px;line-height:1.5;">Auto-generate a social media caption based on your hive data</div>
+        <button onclick="generateAICaption()" id="ai-caption-btn" style="width:100%;padding:10px;border-radius:10px;border:1px solid #D0E8C8;background:#EDF5E8;color:#4A7A30;font-size:13px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;display:flex;align-items:center;justify-content:center;gap:6px;">
+          <span>✨</span><span>Generate AI Caption</span><span style="font-size:10px;color:#C07A10;font-weight:600;">🔒 PRO</span>
+        </button>
+      </div>
+      <div id="ai-caption-result" style="display:none;">
+        <div id="ai-caption-text" style="font-size:13px;color:var(--text-1);line-height:1.7;background:var(--bg);border-radius:8px;padding:12px;margin-bottom:10px;white-space:pre-wrap;"></div>
+        <div style="display:flex;gap:8px;">
+          <button onclick="copyAICaption()" style="flex:1;padding:8px;border-radius:8px;border:1px solid #D0E8C8;background:#EDF5E8;color:#4A7A30;font-size:12px;font-weight:500;cursor:pointer;font-family:'DM Sans',sans-serif;">Copy caption</button>
+          <button onclick="regenerateAICaption()" style="flex:1;padding:8px;border-radius:8px;border:1px solid #EAE6DF;background:var(--surface);color:var(--text-2);font-size:12px;cursor:pointer;font-family:'DM Sans',sans-serif;">Regenerate</button>
+        </div>
+      </div>
+    </div>
+
     <div style="font-size:11px;font-weight:600;color:var(--text-3);margin-bottom:10px;letter-spacing:1px;">SHARE TO</div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px;">
       <button onclick="shareToFacebook()" style="padding:12px 8px;border-radius:12px;border:1px solid #EAE6DF;background:var(--surface);cursor:pointer;text-align:center;font-family:'DM Sans',sans-serif;">
@@ -5663,6 +5680,105 @@ function updateAIUsesHint() {
     hint.style.color = remaining === 1 ? 'var(--amber)' : 'var(--text-3)';
   }
 }
+</script><script>
+// ============================================================
+// AI SOCIAL MEDIA CAPTION GENERATOR
+// ============================================================
+let lastAICaption = '';
+
+async function generateAICaption() {
+  if (!userIsPro()) {
+    showUpgradeModal('ai_caption');
+    return;
+  }
+  const hive = getShareHive();
+  if (!hive) { showToast('Please select a hive first', 'error'); return; }
+
+  const btn = document.getElementById('ai-caption-btn');
+  const result = document.getElementById('ai-caption-result');
+  const content = document.getElementById('ai-caption-content');
+
+  // Show loading
+  if (btn) { btn.innerHTML = '<span>⏳</span><span>Generating...</span>'; btn.disabled = true; }
+
+  const insp = getHiveInspections(hive.id);
+  const harv = getHiveHarvests(hive.id);
+  const totalHoney = harv.reduce((s,h) => s + parseFloat(h.amount_kg||h.amount||0), 0);
+  const latestInsp = insp[0] || {};
+  const templateName = SHARE_TEMPLATE_NAMES[shareCurrentTemplate] || 'Annual Achievement';
+
+  const prompt = `You are a social media expert for backyard beekeeping in the USA.
+Generate an engaging Instagram/Facebook caption for a beekeeper sharing their hive data.
+
+Template: ${templateName}
+Hive name: ${hive.name}
+Total honey this season: ${(totalHoney * 2.205).toFixed(1)} lbs
+Colony strength: ${latestInsp.colony_strength || 'unknown'}/10
+Last inspection: ${latestInsp.date || 'recently'}
+Mite count: ${latestInsp.mite_count !== undefined ? latestInsp.mite_count + '%' : 'not tested'}
+Queen seen: ${latestInsp.queen_seen ? 'Yes' : 'Not confirmed'}
+Season: ${getSeason()?.label || 'Spring'}
+
+Write a caption that:
+- Starts with an engaging hook (not "Just" or "I")
+- Is 3-5 sentences, conversational and warm
+- Includes 1-2 relevant emojis naturally in the text
+- Ends with a question to drive engagement
+- Sounds like a proud backyard beekeeper, not a corporation
+- Does NOT include hashtags (those are added separately)
+
+Return ONLY the caption text, nothing else.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_API_KEY || '',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    lastAICaption = data.content?.[0]?.text?.trim() || getFallbackCaption(hive, totalHoney);
+  } catch(e) {
+    lastAICaption = getFallbackCaption(hive, totalHoney);
+  }
+
+  // Show result
+  document.getElementById('ai-caption-text').textContent = lastAICaption;
+  if (content) content.style.display = 'none';
+  if (result) result.style.display = 'block';
+}
+
+function getFallbackCaption(hive, totalHoney) {
+  const lbs = (totalHoney * 2.205).toFixed(1);
+  const season = getSeason()?.label || 'spring';
+  return `Another rewarding ${season} season with ${hive.name}! 🐝 The bees have been working hard and the results speak for themselves — ${lbs > 0 ? lbs + ' lbs of pure liquid gold' : 'healthy and thriving colonies'}. There's nothing quite like the satisfaction of opening a hive and seeing a strong, happy colony. What's the highlight of your beekeeping season so far?`;
+}
+
+function copyAICaption() {
+  const fullText = lastAICaption + '\n\n' + getShareHashtagsText();
+  navigator.clipboard.writeText(fullText).then(() => {
+    showToast('Caption + hashtags copied!', 'success');
+  }).catch(() => {
+    showToast('Caption ready — copy from the text above', 'success');
+  });
+}
+
+function regenerateAICaption() {
+  const content = document.getElementById('ai-caption-content');
+  const result = document.getElementById('ai-caption-result');
+  const btn = document.getElementById('ai-caption-btn');
+  if (content) content.style.display = 'block';
+  if (result) result.style.display = 'none';
+  if (btn) { btn.innerHTML = '<span>✨</span><span>Generate AI Caption</span><span style="font-size:10px;color:#C07A10;font-weight:600;">🔒 PRO</span>'; btn.disabled = false; }
+  generateAICaption();
+}
 </script></body></html>`);
   win.document.close();
 }
@@ -8286,6 +8402,105 @@ function updateAIUsesHint() {
     hint.textContent = `${remaining} free AI ${remaining === 1 ? 'analysis' : 'analyses'} remaining`;
     hint.style.color = remaining === 1 ? 'var(--amber)' : 'var(--text-3)';
   }
+}
+</script><script>
+// ============================================================
+// AI SOCIAL MEDIA CAPTION GENERATOR
+// ============================================================
+let lastAICaption = '';
+
+async function generateAICaption() {
+  if (!userIsPro()) {
+    showUpgradeModal('ai_caption');
+    return;
+  }
+  const hive = getShareHive();
+  if (!hive) { showToast('Please select a hive first', 'error'); return; }
+
+  const btn = document.getElementById('ai-caption-btn');
+  const result = document.getElementById('ai-caption-result');
+  const content = document.getElementById('ai-caption-content');
+
+  // Show loading
+  if (btn) { btn.innerHTML = '<span>⏳</span><span>Generating...</span>'; btn.disabled = true; }
+
+  const insp = getHiveInspections(hive.id);
+  const harv = getHiveHarvests(hive.id);
+  const totalHoney = harv.reduce((s,h) => s + parseFloat(h.amount_kg||h.amount||0), 0);
+  const latestInsp = insp[0] || {};
+  const templateName = SHARE_TEMPLATE_NAMES[shareCurrentTemplate] || 'Annual Achievement';
+
+  const prompt = `You are a social media expert for backyard beekeeping in the USA.
+Generate an engaging Instagram/Facebook caption for a beekeeper sharing their hive data.
+
+Template: ${templateName}
+Hive name: ${hive.name}
+Total honey this season: ${(totalHoney * 2.205).toFixed(1)} lbs
+Colony strength: ${latestInsp.colony_strength || 'unknown'}/10
+Last inspection: ${latestInsp.date || 'recently'}
+Mite count: ${latestInsp.mite_count !== undefined ? latestInsp.mite_count + '%' : 'not tested'}
+Queen seen: ${latestInsp.queen_seen ? 'Yes' : 'Not confirmed'}
+Season: ${getSeason()?.label || 'Spring'}
+
+Write a caption that:
+- Starts with an engaging hook (not "Just" or "I")
+- Is 3-5 sentences, conversational and warm
+- Includes 1-2 relevant emojis naturally in the text
+- Ends with a question to drive engagement
+- Sounds like a proud backyard beekeeper, not a corporation
+- Does NOT include hashtags (those are added separately)
+
+Return ONLY the caption text, nothing else.`;
+
+  try {
+    const res = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': CLAUDE_API_KEY || '',
+        'anthropic-version': '2023-06-01'
+      },
+      body: JSON.stringify({
+        model: 'claude-sonnet-4-20250514',
+        max_tokens: 300,
+        messages: [{ role: 'user', content: prompt }]
+      })
+    });
+    const data = await res.json();
+    lastAICaption = data.content?.[0]?.text?.trim() || getFallbackCaption(hive, totalHoney);
+  } catch(e) {
+    lastAICaption = getFallbackCaption(hive, totalHoney);
+  }
+
+  // Show result
+  document.getElementById('ai-caption-text').textContent = lastAICaption;
+  if (content) content.style.display = 'none';
+  if (result) result.style.display = 'block';
+}
+
+function getFallbackCaption(hive, totalHoney) {
+  const lbs = (totalHoney * 2.205).toFixed(1);
+  const season = getSeason()?.label || 'spring';
+  return `Another rewarding ${season} season with ${hive.name}! 🐝 The bees have been working hard and the results speak for themselves — ${lbs > 0 ? lbs + ' lbs of pure liquid gold' : 'healthy and thriving colonies'}. There's nothing quite like the satisfaction of opening a hive and seeing a strong, happy colony. What's the highlight of your beekeeping season so far?`;
+}
+
+function copyAICaption() {
+  const fullText = lastAICaption + '\n\n' + getShareHashtagsText();
+  navigator.clipboard.writeText(fullText).then(() => {
+    showToast('Caption + hashtags copied!', 'success');
+  }).catch(() => {
+    showToast('Caption ready — copy from the text above', 'success');
+  });
+}
+
+function regenerateAICaption() {
+  const content = document.getElementById('ai-caption-content');
+  const result = document.getElementById('ai-caption-result');
+  const btn = document.getElementById('ai-caption-btn');
+  if (content) content.style.display = 'block';
+  if (result) result.style.display = 'none';
+  if (btn) { btn.innerHTML = '<span>✨</span><span>Generate AI Caption</span><span style="font-size:10px;color:#C07A10;font-weight:600;">🔒 PRO</span>'; btn.disabled = false; }
+  generateAICaption();
 }
 </script></body>
 </html>

@@ -5871,8 +5871,9 @@ let obStep = 0;
 function showOnboarding() {
   try { if(localStorage.getItem('bk_onboarded')) return; } catch(e) {}
   obStep = 0;
-  renderObStep();
+  // Open modal first, then render content so DOM is visible
   document.getElementById('modal-onboarding').classList.add('open');
+  setTimeout(renderObStep, 50);
 }
 
 function renderObStep() {

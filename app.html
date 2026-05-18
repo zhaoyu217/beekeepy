@@ -533,7 +533,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button onclick="openAIVisionAnalysis()" style="width:100%;padding:10px;border-radius:var(--radius-sm);border:1.5px solid #C39BD3;background:var(--purple-light);color:var(--purple);font-size:13px;font-family:'DM Sans',sans-serif;font-weight:600;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px">
           🔬 AI Pest & Disease Analysis
         </button>
-        <div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:4px">Take or upload a photo of your frames for instant AI analysis</div>
+        <div style="font-size:10px;color:var(--text-3);text-align:center;margin-top:4px" id="ai-uses-hint">Take or upload a photo of your frames for instant AI analysis</div>
       </div>
     </div>
 
@@ -3435,6 +3435,24 @@ function getMockAIAnalysis(h,li){
 }
 
 async function showHiveAIAnalysis(hiveId){
+  // Check AI usage limit for free users
+  if(!userIsPro()){
+    const used = parseInt(localStorage.getItem('ai_uses_'+currentUser?.id)||'0');
+    const FREE_AI_LIMIT = 2;
+    if(used >= FREE_AI_LIMIT){
+      showUpgradeModal('ai_analysis');
+      return;
+    }
+    // Increment usage
+    localStorage.setItem('ai_uses_'+currentUser?.id, used+1);
+    // Show remaining uses
+    const remaining = FREE_AI_LIMIT - used - 1;
+    if(remaining === 0){
+      showToast('Last free AI analysis used. Upgrade Pro for unlimited! 🔬','warning');
+    } else {
+      showToast(`AI analysis — ${remaining} free use${remaining!==1?'s':''} remaining`,'success');
+    }
+  }
   const panel=document.getElementById('hive-ai-panel');
   panel.innerHTML=`<div class="ai-panel"><div class="ai-panel-title">🤖 AI Analysis</div><div class="ai-loading"><div class="ai-spinner"></div>Analyzing ${getHive(hiveId)?.name||'hive'}...</div></div>`;
   const result=await runAIAnalysis(hiveId);
@@ -4348,6 +4366,7 @@ function showPage(id,btn){
   if(id==='reminders')renderReminderSettings();
   if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
   if(id==='share'){renderSharePage();}
+  if(id==='hive-detail'){setTimeout(updateAIUsesHint,100);}
   if(id==='inspect'){if(batchMode)toggleBatchMode();renderHiveGrid('inspect-hive-grid',true);pendingPhotos=[];}
 }
 
@@ -4851,7 +4870,7 @@ function showUpgradeModal(trigger='') {
   const reasons = {
     hive_limit: { icon:'🪵', title:'3-Hive Limit Reached', body:'Free plan includes up to 3 hives. Upgrade to Pro for unlimited hives and all premium features.' },
     bloom_forecast: { icon:'🌸', title:'Pro Feature', body:'Full GDD bloom forecasting is a Pro feature. Upgrade to unlock 10-country nectar plant predictions.' },
-    ai_analysis: { icon:'🔬', title:'Pro Feature', body:'AI pest & disease photo analysis requires Pro. Upgrade to detect Varroa and queen cells instantly.' },
+    ai_analysis: { icon:'🔬', title:'Free AI Uses Exhausted', body:'You\'ve used your 2 free AI analyses. Upgrade to Pro for unlimited AI pest & disease detection — Varroa, queen cells, foulbrood and more.' },
     annual_pdf: { icon:'📄', title:'Pro Feature', body:'Annual PDF reports are a Pro feature. Upgrade to generate full-year apiary summaries.' },
     default: { icon:'⚡', title:'Upgrade to Pro', body:'Unlock unlimited hives, AI analysis, bloom forecasting, annual reports and more.' }
   };
@@ -5626,7 +5645,25 @@ function printQRLabel(){
     </style></head>
     <body><div class="card">${card.innerHTML}</div>
     <script>window.onload=()=>{window.print();}<\/script>
-    </body></html>`);
+    <script>
+function updateAIUsesHint() {
+  const hint = document.getElementById('ai-uses-hint');
+  if (!hint) return;
+  if (userIsPro()) {
+    hint.textContent = 'Unlimited AI analyses — Pro feature active';
+    hint.style.color = 'var(--forest)';
+    return;
+  }
+  const used = parseInt(localStorage.getItem('ai_uses_' + currentUser?.id) || '0');
+  const remaining = Math.max(0, 2 - used);
+  if (remaining === 0) {
+    hint.innerHTML = '🔒 Free AI uses exhausted — <span onclick="showUpgradeModal(\'ai_analysis\')" style="color:var(--honey-dark);cursor:pointer;font-weight:600;">Upgrade to Pro</span>';
+  } else {
+    hint.textContent = `${remaining} free AI ${remaining === 1 ? 'analysis' : 'analyses'} remaining`;
+    hint.style.color = remaining === 1 ? 'var(--amber)' : 'var(--text-3)';
+  }
+}
+</script></body></html>`);
   win.document.close();
 }
 
@@ -8232,7 +8269,25 @@ init();
     <div style="font-size:12px;color:var(--text-3);margin-top:8px" id="map-modal-info"></div>
   </div>
 </div>
-</body>
+<script>
+function updateAIUsesHint() {
+  const hint = document.getElementById('ai-uses-hint');
+  if (!hint) return;
+  if (userIsPro()) {
+    hint.textContent = 'Unlimited AI analyses — Pro feature active';
+    hint.style.color = 'var(--forest)';
+    return;
+  }
+  const used = parseInt(localStorage.getItem('ai_uses_' + currentUser?.id) || '0');
+  const remaining = Math.max(0, 2 - used);
+  if (remaining === 0) {
+    hint.innerHTML = '🔒 Free AI uses exhausted — <span onclick="showUpgradeModal(\'ai_analysis\')" style="color:var(--honey-dark);cursor:pointer;font-weight:600;">Upgrade to Pro</span>';
+  } else {
+    hint.textContent = `${remaining} free AI ${remaining === 1 ? 'analysis' : 'analyses'} remaining`;
+    hint.style.color = remaining === 1 ? 'var(--amber)' : 'var(--text-3)';
+  }
+}
+</script></body>
 </html>
 
 <script>

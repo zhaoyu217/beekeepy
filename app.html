@@ -558,9 +558,35 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       </div>
       <div id="action-feeding">
         <div class="form-group"><label class="form-label">Feed type</label>
-          <select><option>Sugar syrup 1:1 (spring)</option><option>Sugar syrup 2:1 (fall)</option><option>Pollen patty</option><option>Fondant</option><option>Mann Lake Pollen Sub</option></select>
+          <select id="feed-type">
+            <option value="">— Not fed —</option>
+            <option value="syrup_1_1">🍯 Sugar syrup 1:1 (spring/summer)</option>
+            <option value="syrup_2_1">🍯 Sugar syrup 2:1 (fall/winter)</option>
+            <option value="pollen_patty">🌼 Pollen patty</option>
+            <option value="fondant">🍬 Fondant / candy board</option>
+            <option value="mann_lake">🌼 Mann Lake Pollen Sub</option>
+            <option value="other">Other</option>
+          </select>
         </div>
-        <div class="form-group"><label class="form-label">Amount (oz / lbs)</label><input type="number" placeholder="e.g. 32"></div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
+          <div class="form-group"><label class="form-label">Amount (oz)</label><input type="number" id="feed-amount" placeholder="e.g. 32" min="0" step="0.5"></div>
+          <div class="form-group"><label class="form-label">Feeder type</label>
+            <select id="feed-feeder">
+              <option value="">— Select —</option>
+              <option value="top_feeder">Top feeder</option>
+              <option value="entrance_feeder">Entrance feeder</option>
+              <option value="frame_feeder">Frame feeder</option>
+              <option value="bucket_feeder">Bucket feeder</option>
+              <option value="boardman">Boardman feeder</option>
+            </select>
+          </div>
+        </div>
+        <div class="form-group"><label class="form-label">Feeding notes</label>
+          <input type="text" id="feed-notes" placeholder="e.g. Bees taking syrup readily, added 2nd patty">
+        </div>
+        <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--honey-dark);">
+          💡 <strong>Tip:</strong> Feed 1:1 syrup in spring to stimulate brood. Switch to 2:1 in fall to build winter stores.
+        </div>
       </div>
       <div id="action-treatment" style="display:none">
         <div class="form-group"><label class="form-label">Treatment product</label>
@@ -1016,13 +1042,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div style="font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.08em;opacity:0.8;margin-bottom:6px">Your Points Balance</div>
     <div style="display:flex;align-items:flex-end;gap:8px;margin-bottom:12px">
       <div id="pts-balance" style="font-size:48px;font-family:'DM Serif Display',serif;font-weight:700;line-height:1">0</div>
-      <div style="font-size:14px;opacity:0.8;margin-bottom:8px">/ 200 pts</div>
+      <div style="font-size:14px;opacity:0.8;margin-bottom:8px">/ 500 pts</div>
     </div>
     <!-- Progress bar -->
     <div style="background:rgba(255,255,255,0.25);border-radius:4px;height:8px;margin-bottom:8px">
       <div id="pts-progress-bar" style="background:#fff;border-radius:4px;height:8px;width:0%;transition:width 0.8s ease"></div>
     </div>
-    <div id="pts-progress-label" style="font-size:11px;opacity:0.8">Earn 200 points to unlock rewards</div>
+    <div id="pts-progress-label" style="font-size:11px;opacity:0.8">Earn 500 points to unlock rewards · Max 2 redemptions lifetime</div>
   </div>
 
   <!-- Rewards -->
@@ -1470,6 +1496,17 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
 
     <div class="form-group"><label class="form-label">Hive name</label><input type="text" id="hv-name" placeholder="e.g. Hive 1, Blue Box"></div>
+    <div class="form-group"><label class="form-label">Status Tag</label>
+      <div style="display:flex;flex-wrap:wrap;gap:6px;" id="hive-status-tags">
+        <button type="button" onclick="selectHiveTag(this,'none')" data-tag="none" class="hive-tag-btn" style="padding:5px 11px;border-radius:20px;border:1.5px solid var(--honey);background:var(--honey-light);color:var(--honey-dark);font-size:12px;cursor:pointer;font-weight:600;">None</button>
+        <button type="button" onclick="selectHiveTag(this,'queenless')" data-tag="queenless" class="hive-tag-btn" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;">🚨 Queenless</button>
+        <button type="button" onclick="selectHiveTag(this,'weak')" data-tag="weak" class="hive-tag-btn" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;">📦 Weak</button>
+        <button type="button" onclick="selectHiveTag(this,'quarantine')" data-tag="quarantine" class="hive-tag-btn" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;">🩹 Quarantine</button>
+        <button type="button" onclick="selectHiveTag(this,'swarm_risk')" data-tag="swarm_risk" class="hive-tag-btn" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;">⚠️ Swarm Risk</button>
+        <button type="button" onclick="selectHiveTag(this,'new_colony')" data-tag="new_colony" class="hive-tag-btn" style="padding:5px 11px;border-radius:20px;border:1px solid var(--border);background:var(--surface);font-size:12px;cursor:pointer;">🌱 New Colony</button>
+      </div>
+      <input type="hidden" id="hv-status-tag" value="none">
+    </div>
     <div class="form-group"><label class="form-label">Apiary</label><select id="hv-apiary"></select></div>
     <div class="form-group"><label class="form-label">Hive type</label>
       <select id="hv-type">
@@ -3195,14 +3232,30 @@ function previewVisionPhoto(input) {
   if(!file) return;
   const reader = new FileReader();
   reader.onload = e => {
-    visionImageBase64 = e.target.result.split(',')[1]; // base64 only
-    const preview = document.getElementById('vision-preview');
-    preview.innerHTML = `<img loading="lazy" src="${e.target.result}" style="width:100%;height:220px;object-fit:cover;border-radius:var(--radius)">`;
-    const btn = document.getElementById('vision-analyze-btn');
-    btn.disabled = false;
-    btn.style.background = 'var(--purple)';
-    btn.style.color = '#fff';
-    btn.style.cursor = 'pointer';
+    // Compress image to max 1024x1024 before sending to AI API
+    const img = new Image();
+    img.onload = () => {
+      const MAX = 1024;
+      let w = img.width, h = img.height;
+      if (w > MAX || h > MAX) {
+        if (w > h) { h = Math.round(h * MAX / w); w = MAX; }
+        else { w = Math.round(w * MAX / h); h = MAX; }
+      }
+      const canvas = document.createElement('canvas');
+      canvas.width = w; canvas.height = h;
+      canvas.getContext('2d').drawImage(img, 0, 0, w, h);
+      // Use JPEG at 85% quality for optimal size/quality balance
+      const compressed = canvas.toDataURL('image/jpeg', 0.85);
+      visionImageBase64 = compressed.split(',')[1];
+      const preview = document.getElementById('vision-preview');
+      preview.innerHTML = `<img loading="lazy" src="${compressed}" style="width:100%;height:220px;object-fit:cover;border-radius:var(--radius)">`;
+      const btn = document.getElementById('vision-analyze-btn');
+      btn.disabled = false;
+      btn.style.background = 'var(--purple)';
+      btn.style.color = '#fff';
+      btn.style.cursor = 'pointer';
+    };
+    img.src = e.target.result;
   };
   reader.readAsDataURL(file);
 }
@@ -3929,7 +3982,7 @@ function renderHiveGrid(containerId,selectable=false){
     const photoCount=hivePhotos(h.id).length;
     return`<div class="hive-card ${hiveStatusClass(h.id)}" id="hcard-${h.id}" onclick="${selectable?`selectHive('${h.id}',this)`:`openHiveDetail('${h.id}')`}">
       ${overdue?`<span class="warning-tag overdue-tag">Overdue!</span>`:ws.length?`<span class="warning-tag">${ws[0]}</span>`:''}
-      <div class="hive-name">${h.name}</div>
+      <div class="hive-name">${h.name}${getHiveTagBadge(h.status_tag||"none")}</div>
       <div class="hive-apiary">${getApiary(h.apiary_id)?.name||''}</div>
       <div class="score-row">${[1,2,3,4,5].map(i=>`<div class="pip ${sc!==null&&sc/10>=i*2?cls:''}"></div>`).join('')}</div>
       <div class="hive-meta">${sc!==null?`Score: ${sc}`:''}</div>
@@ -4859,6 +4912,16 @@ function openEditHive(hiveId){
   editingHiveId=hiveId;
   populateHiveApiary();
   document.getElementById('hv-name').value=h.name||'';
+  // Set status tag
+  const stEl = document.getElementById('hv-status-tag');
+  if(stEl) stEl.value = h.status_tag||'none';
+  document.querySelectorAll('.hive-tag-btn').forEach(b=>{
+    const isActive = (b.dataset.tag||'none') === (h.status_tag||'none');
+    b.style.borderColor = isActive ? 'var(--honey)' : 'var(--border)';
+    b.style.background = isActive ? 'var(--honey-light)' : 'var(--surface)';
+    b.style.color = isActive ? 'var(--honey-dark)' : '';
+    b.style.fontWeight = isActive ? '600' : '';
+  });
   document.getElementById('hv-apiary').value=h.apiary_id||'';
   document.getElementById('hv-type').value=h.type||'Langstroth 10-frame deep';
   document.getElementById('hv-frames').value=h.boxes||2;
@@ -4919,7 +4982,7 @@ function showUpgradeModal(trigger='') {
 
       <!-- Earn free Pro note -->
       <div style="text-align:center;margin-top:10px;font-size:11px;color:var(--text-3)">
-        🏆 Earn 200 points on the <span onclick="document.getElementById('modal-upgrade').remove();showPage('points',document.getElementById('nav-points'))" style="color:var(--honey-dark);cursor:pointer;font-weight:600">Points tab</span> to unlock 30 days free
+        🏆 Earn 500 points on the <span onclick="document.getElementById('modal-upgrade').remove();showPage('points',document.getElementById('nav-points'))" style="color:var(--honey-dark);cursor:pointer;font-weight:600">Points tab</span> to unlock 30 days free
       </div>
       <div style="text-align:center;margin-top:8px">
         <a href="https://www.hivedash.app/landing.html" target="_blank" style="font-size:11px;color:var(--sky);text-decoration:none">Learn more about Free vs Pro →</a>
@@ -4930,7 +4993,7 @@ function showUpgradeModal(trigger='') {
 
 async function saveHive(){
   setSyncing('syncing');
-  const payload={apiary_id:document.getElementById('hv-apiary').value||null,name:document.getElementById('hv-name').value||'New Hive',type:document.getElementById('hv-type').value,boxes:+document.getElementById('hv-frames').value||2,installed:document.getElementById('hv-date').value,origin:document.getElementById('hv-origin').value};
+  const payload={apiary_id:document.getElementById('hv-apiary').value||null,name:document.getElementById('hv-name').value||'New Hive',type:document.getElementById('hv-type').value,boxes:+document.getElementById('hv-frames').value||2,installed:document.getElementById('hv-date').value,origin:document.getElementById('hv-origin').value,status_tag:document.getElementById('hv-status-tag')?.value||'none'};
   if(editingHiveId){
     const{data,error}=await sb.from('hives').update(payload).eq('id',editingHiveId).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
@@ -5357,6 +5420,12 @@ function fallbackCopy(url, msg) {
 }
 
 function showNFCWrite() {
+  // Check iOS - Web NFC not supported
+  const isIOS = /iPad|iPhone|iPod/.test(navigator.userAgent);
+  if (isIOS) {
+    showToast('NFC writing is only supported on Android Chrome. Use QR code instead for iOS.', 'warning');
+    return;
+  }
   if(!currentDetailHiveId) return;
   const h = getHive(currentDetailHiveId);
   if(!h) return;
@@ -5778,6 +5847,23 @@ function regenerateAICaption() {
   if (result) result.style.display = 'none';
   if (btn) { btn.innerHTML = '<span>✨</span><span>Generate AI Caption</span><span style="font-size:10px;color:#C07A10;font-weight:600;">🔒 PRO</span>'; btn.disabled = false; }
   generateAICaption();
+}
+</script><script>
+function selectHiveTag(btn, tag) {
+  document.querySelectorAll('.hive-tag-btn').forEach(b => b.style.fontWeight = '');
+  btn.style.fontWeight = '700';
+  document.getElementById('hv-status-tag').value = tag;
+}
+
+function getHiveTagBadge(tag) {
+  const tags = {
+    queenless: '<span style="background:var(--danger-light);color:var(--danger);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🚨 Queenless</span>',
+    weak: '<span style="background:#FFF3CD;color:#856404;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">📦 Weak</span>',
+    quarantine: '<span style="background:var(--purple-light);color:var(--purple);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🩹 Quarantine</span>',
+    swarm_risk: '<span style="background:var(--honey-light);color:var(--honey-dark);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">⚠️ Swarm Risk</span>',
+    new_colony: '<span style="background:var(--forest-light);color:var(--forest);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🌱 New Colony</span>'
+  };
+  return tags[tag] || '';
 }
 </script></body></html>`);
   win.document.close();
@@ -8204,7 +8290,8 @@ async function saveForageMarker(){
     }catch(e){setSyncing('saved');showToast('Location access denied — tap on map to place marker','error');return;}
   }
   // Privacy: blur coordinates by ±0.008° (~900m)
-  const blur=()=>(Math.random()-0.5)*0.016;
+  // Privacy: fuzzy coordinates ~2km radius to protect user location
+  const blur=()=>(Math.random()-0.5)*0.022; // ~2.4km max offset
   const blurLat=lat+blur(), blurLng=lng+blur();
   if(selectedMarkerType==='forage'){
     const{error}=await sb.from('forage_markers').insert({
@@ -8501,6 +8588,23 @@ function regenerateAICaption() {
   if (result) result.style.display = 'none';
   if (btn) { btn.innerHTML = '<span>✨</span><span>Generate AI Caption</span><span style="font-size:10px;color:#C07A10;font-weight:600;">🔒 PRO</span>'; btn.disabled = false; }
   generateAICaption();
+}
+</script><script>
+function selectHiveTag(btn, tag) {
+  document.querySelectorAll('.hive-tag-btn').forEach(b => b.style.fontWeight = '');
+  btn.style.fontWeight = '700';
+  document.getElementById('hv-status-tag').value = tag;
+}
+
+function getHiveTagBadge(tag) {
+  const tags = {
+    queenless: '<span style="background:var(--danger-light);color:var(--danger);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🚨 Queenless</span>',
+    weak: '<span style="background:#FFF3CD;color:#856404;font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">📦 Weak</span>',
+    quarantine: '<span style="background:var(--purple-light);color:var(--purple);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🩹 Quarantine</span>',
+    swarm_risk: '<span style="background:var(--honey-light);color:var(--honey-dark);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">⚠️ Swarm Risk</span>',
+    new_colony: '<span style="background:var(--forest-light);color:var(--forest);font-size:10px;padding:2px 6px;border-radius:10px;font-weight:600;margin-left:4px;">🌱 New Colony</span>'
+  };
+  return tags[tag] || '';
 }
 </script></body>
 </html>

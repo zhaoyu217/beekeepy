@@ -23,6 +23,7 @@
 <link rel="icon" type="image/png" sizes="32x32" href="/favicon.png">
 <title>HiveDash · Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
 <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
 
 
@@ -7573,7 +7574,7 @@ async function submitCommunityPost(){
   if(mediaFile){
     const isVideo=!!commVideoFile;
     const ext=mediaFile.name.split('.').pop();
-    const path=(isVideo?'community-videos':'community')+'/'+currentUser.id+'/'+Date.now()+'.'+ext;
+    const path='media/'+currentUser.id+'/'+Date.now()+'.'+ext;
     const{error:upErr,data:upData}=await sb.storage.from('community').upload(path,mediaFile,{upsert:true,cacheControl:'3600'});
     console.log('Upload result:', JSON.stringify({error:upErr,path,size:mediaFile.size}));
     if(upErr){setSyncing('error');showToast('Upload failed: '+upErr.message,'error');console.error('Upload error:',upErr);return;}
@@ -9161,11 +9162,39 @@ function closeMoreMenuOutside(e) {
 // ============================================================
 // UPGRADE / PAYMENT
 // ============================================================
+// ── Paddle config ──────────────────────────────────────────────
+// Fill these in after creating products in Paddle dashboard
+const PADDLE_CLIENT_TOKEN  = 'REPLACE_WITH_PADDLE_CLIENT_TOKEN'; // live_xxxx
+const PADDLE_MONTHLY_ID    = 'pri_REPLACE_MONTHLY';              // from Paddle dashboard
+const PADDLE_YEARLY_ID     = 'pri_REPLACE_YEARLY';               // from Paddle dashboard
+const PADDLE_SANDBOX       = false; // set true while testing
+
+// Initialize Paddle once
+(function initPaddle() {
+  if (typeof Paddle === 'undefined') return;
+  if (PADDLE_SANDBOX) Paddle.Environment.set('sandbox');
+  Paddle.Initialize({
+    token: PADDLE_CLIENT_TOKEN,
+    eventCallback: async function(ev) {
+      if (ev.name === 'checkout.completed') {
+        // Payment succeeded — write pro_expires to Supabase
+        const plan = ev.data?.items?.[0]?.price_id === PADDLE_YEARLY_ID ? 'yearly' : 'monthly';
+        const days = plan === 'yearly' ? 365 : 31;
+        const expiry = new Date(Date.now() + days * 86400000).toISOString();
+        if (currentUser?.id) {
+          await sb.from('user_points').update({ pro_expires: expiry }).eq('user_id', currentUser.id);
+          userPoints.pro_expires = expiry;
+        }
+        showToast('🎉 Welcome to Pro!', 'success');
+        renderHome();
+      }
+    }
+  });
+})();
+
 function openUpgradeCheckout() {
-  // Paddle payment integration placeholder
-  // Replace with actual Paddle price IDs when account is ready
-  const PADDLE_MONTHLY_ID = 'pri_REPLACE_MONTHLY';
-  const PADDLE_YEARLY_ID  = 'pri_REPLACE_YEARLY';
+  const PADDLE_MONTHLY_ID = window.PADDLE_MONTHLY_ID || 'pri_REPLACE_MONTHLY';
+  const PADDLE_YEARLY_ID  = window.PADDLE_YEARLY_ID  || 'pri_REPLACE_YEARLY';
 
   // Show plan selection modal
   const el = document.createElement('div');
@@ -9206,15 +9235,29 @@ function openUpgradeCheckout() {
 
 function startCheckout(plan) {
   document.getElementById('modal-checkout')?.remove();
-  // TODO: Replace with actual Paddle price IDs after account setup
-  showToast('Payment system coming very soon! 🚀', 'success');
-  // When Paddle is ready, uncomment:
-  // if (typeof Paddle !== 'undefined') {
-  //   Paddle.Checkout.open({
-  //     items: [{ priceId: plan === 'monthly' ? 'pri_MONTHLY' : 'pri_YEARLY', quantity: 1 }],
-  //     customData: { userId: currentUser?.id }
-  //   });
-  // }
+  const priceId = plan === 'yearly' ? PADDLE_YEARLY_ID : PADDLE_MONTHLY_ID;
+
+  // If Paddle not configured yet, show coming soon
+  if (priceId.startsWith('pri_REPLACE')) {
+    showToast('Payment coming very soon! 🚀', 'success');
+    return;
+  }
+
+  if (typeof Paddle === 'undefined') {
+    showToast('Loading payment system…', 'info');
+    return;
+  }
+
+  Paddle.Checkout.open({
+    items: [{ priceId, quantity: 1 }],
+    customer: { email: currentUser?.email || '' },
+    customData: { userId: currentUser?.id || '' },
+    settings: {
+      displayMode: 'overlay',
+      theme: 'light',
+      locale: 'en'
+    }
+  });
 }
 </script>
 <script>

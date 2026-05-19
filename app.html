@@ -2267,7 +2267,7 @@ async function init() {
       currentUser._accessToken=session.access_token;
       const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
       document.getElementById('user-avatar').textContent=initials;
-      document.getElementById('remind-email-display').textContent=currentUser.email;
+      const _red=document.getElementById('remind-email-display');if(_red)_red.textContent=currentUser.email;
       // 立即渲染季节横幅 + 天气占位，不等数据加载
       try{
         const _s=getSeason();
@@ -4141,7 +4141,7 @@ function renderReminderSettingsPanel(){
     </div>`;
   }).join('')||'<div style="font-size:13px;color:var(--text-3)">Add hives first</div>';
   const user=currentUser;
-  if(user)document.getElementById('remind-email-display').textContent=user.email||'';
+  if(user){const _red2=document.getElementById('remind-email-display');if(_red2)_red2.textContent=user.email||'';}
 }
 
 async function saveReminderSettings(){

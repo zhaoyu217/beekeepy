@@ -446,11 +446,18 @@ async function signUp() {
 async function signInWithGoogle() {
   const btn = document.getElementById('btn-google-signin') || document.getElementById('btn-google-signup');
   if(btn) btn.textContent = 'Redirecting...';
+  // Build absolute redirectTo — mobile browsers need the full URL
+  const origin = window.location.origin;
+  const redirectTo = origin + (origin.endsWith('/') ? '' : '/') + 'app.html';
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
     options: {
-      redirectTo: window.location.origin + '/app.html',
-      skipBrowserRedirect: false
+      redirectTo: redirectTo,
+      skipBrowserRedirect: false,
+      queryParams: {
+        access_type: 'offline',
+        prompt: 'select_account'
+      }
     }
   });
   if (error) {

@@ -2157,7 +2157,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storage: window.localStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });
 
@@ -2200,9 +2201,12 @@ async function init() {
     }catch(e){console.warn('startApp error:',e);}
     clearTimeout(loadTimeout);
     document.getElementById('loading-overlay').style.display='none';
-    // Clean up OAuth hash from URL
+    // Clean up OAuth callback params from URL
     if(location.hash&&location.hash.includes('access_token')){
       history.replaceState(null,'',location.pathname+location.search);
+    }
+    if(location.search&&(location.search.includes('code='))){
+      history.replaceState(null,'',location.pathname);
     }
     checkShareParam();
     checkHiveParam();

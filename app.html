@@ -2194,6 +2194,12 @@ async function init() {
       const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
       document.getElementById('user-avatar').textContent=initials;
       document.getElementById('remind-email-display').textContent=currentUser.email;
+      // 立即渲染季节横幅，不等数据加载
+      try{
+        const _s=getSeason();
+        const _sb=document.getElementById('season-banner');
+        if(_sb)_sb.innerHTML=`<span style="font-size:26px">${_s.icon}</span><div style="flex:1"><div style="font-weight:600;font-size:14px;color:#1A1A14">${_s.label}</div><div style="font-size:12px;color:#5C5847;margin-top:2px">${_s.tip}</div></div>`;
+      }catch(e){}
       await loadAll();
       fetchWeather();
       checkReminders();

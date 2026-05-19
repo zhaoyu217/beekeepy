@@ -2241,7 +2241,19 @@ async function init() {
   }
 }
 
-async function signOut() { await sb.auth.signOut(); window.location.href = 'index.html'; }
+async function signOut() {
+  // Clear auth token directly, bypass sb.auth lock
+  const key = 'sb-ydrawqnkwdvfhauansdf-auth-token';
+  const token = JSON.parse(localStorage.getItem(key)||'{}')?.access_token||'';
+  if(token) {
+    fetch('https://ydrawqnkwdvfhauansdf.supabase.co/auth/v1/logout',{
+      method:'POST',
+      headers:{'Authorization':'Bearer '+token,'apikey':SUPABASE_ANON_KEY}
+    }).catch(()=>{});
+  }
+  localStorage.removeItem(key);
+  window.location.href = 'index.html';
+}
 
 // Sync 
 function setSyncing(s) {

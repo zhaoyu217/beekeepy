@@ -2185,8 +2185,10 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storage: window.localStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true,
-    flowType: 'pkce'
+    detectSessionInUrl: true
+  },
+  global: {
+    headers: {}
   }
 });
 
@@ -5055,18 +5057,30 @@ async function saveApiary(){
   const _forageVal = (_forageCustom && _forageCustom.style.display!=='none' && _forageCustom.value) ? _forageCustom.value : (_forageSelect?.value||'');
   const payload={name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:_forageVal,note:document.getElementById('ap-note').value};
   if(editingApiaryId){
-    const{data,error}=await sb.from('apiaries').update(payload).eq('id',editingApiaryId).select().single();
-    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
+    const _tok2 = currentUser._accessToken || JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token || '';
+    const _res2 = await fetch(SUPABASE_URL+'/rest/v1/apiaries?id=eq.'+editingApiaryId, {
+      method:'PATCH',
+      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok2,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify(payload)
+    });
+    const _json2 = await _res2.json();
+    if(!_res2.ok){setSyncing('error');showToast('Error: '+(_json2?.message||_res2.status),'error');return;}
+    const _updated = Array.isArray(_json2)?_json2[0]:_json2;
     const idx=apiaries.findIndex(a=>a.id===editingApiaryId);
-    if(idx>=0)apiaries[idx]={...apiaries[idx],...data};
+    if(idx>=0)apiaries[idx]={...apiaries[idx],..._updated};
     editingApiaryId=null;
     setSyncing('saved');closeModal('modal-apiary');renderSettings();renderHome();showToast('Apiary updated ✓');
   } else {
-    console.log('[saveApiary] inserting:', {user_id:currentUser.id,...payload});
-    const{data,error}=await sb.from('apiaries').insert({user_id:currentUser.id,...payload}).select().single();
-    console.log('[saveApiary] result:', {data, error});
-    if(error){setSyncing('error');showToast('Error: '+error.message,'error');console.error('[saveApiary] error:',error);return;}
-    if(!data){setSyncing('error');showToast('Save failed — no data returned','error');return;}
+    const _tok = currentUser._accessToken || JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token || '';
+    const _res = await fetch(SUPABASE_URL+'/rest/v1/apiaries', {
+      method:'POST',
+      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok,'Content-Type':'application/json','Prefer':'return=representation'},
+      body:JSON.stringify({user_id:currentUser.id,...payload})
+    });
+    const _json = await _res.json();
+    if(!_res.ok){setSyncing('error');showToast('Error: '+(_json?.message||_res.status),'error');return;}
+    const data = Array.isArray(_json)?_json[0]:_json;
+    if(!data){setSyncing('error');showToast('Save failed','error');return;}
     apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();renderHome();showToast(t('toast_apiary_saved'));
   }
 }

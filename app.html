@@ -8063,17 +8063,17 @@ function filterMapByPlant(plantName) {
 }
 
 async function loadForageData(){
-  const[fm,pa]=await Promise.all([
-    sb.from('forage_markers').select('*').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false}),
-    sb.from('pesticide_alerts').select('*').gt('expires_at',new Date().toISOString()).order('created_at',{ascending:false})
-  ]);
-  forageMarkers=fm.data||[];
-  pesticideAlerts=pa.data||[];
-  // Cache all markers for leaderboard (including expired ones for 3-year history)
   var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
-  const _fmResp = await fetch(SUPABASE_URL+'/rest/v1/forage_markers?order=created_at.desc&limit=500',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
-  const allFm = await _fmResp.json();
-  forageMarkersCache = allFm.data||forageMarkers;
+  const now=new Date().toISOString();
+  const [fmResp, paResp, allFmResp] = await Promise.all([
+    fetch(SUPABASE_URL+'/rest/v1/forage_markers?expires_at=gt.'+now+'&order=created_at.desc',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}}),
+    fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts?expires_at=gt.'+now+'&order=created_at.desc',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}}),
+    fetch(SUPABASE_URL+'/rest/v1/forage_markers?order=created_at.desc&limit=500',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}})
+  ]);
+  forageMarkers = await fmResp.json(); if(!Array.isArray(forageMarkers)) forageMarkers=[];
+  pesticideAlerts = await paResp.json(); if(!Array.isArray(pesticideAlerts)) pesticideAlerts=[];
+  const allFm = await allFmResp.json();
+  forageMarkersCache = Array.isArray(allFm) ? allFm : forageMarkers;
   renderForageList();
   if(forageMap)renderForageMapMarkers();
   renderLeaderboard();

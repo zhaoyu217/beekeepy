@@ -6641,13 +6641,13 @@ async function exportCompliancePDF(){
 
   // Table header
   const cols=[
-    {label:'Date',       x:margin,        w:20},
-    {label:'Hive',       x:margin+20,     w:42},
-    {label:'Product',    x:margin+62,     w:46},
-    {label:'Dosage',     x:margin+108,    w:20},
-    {label:'Days',       x:margin+128,    w:14},
-    {label:'Withdrawal', x:margin+142,    w:20},
-    {label:'Applicator', x:margin+162,    w:contentW-144},
+    {label:'Date',       x:margin,        w:18},
+    {label:'Hive',       x:margin+18,     w:36},
+    {label:'Product',    x:margin+54,     w:40},
+    {label:'Dosage',     x:margin+94,     w:18},
+    {label:'Days',       x:margin+112,    w:12},
+    {label:'Withdrawal', x:margin+124,    w:18},
+    {label:'Applicator', x:margin+142,    w:contentW-124},
   ];
   const rowH=7;
 
@@ -6655,7 +6655,7 @@ async function exportCompliancePDF(){
   doc.setFillColor(55,71,79);
   doc.rect(margin,y,contentW,rowH,'F');
   cols.forEach(c=>{
-    sf('bold',7,[255,255,255]);
+    sf('bold',6,[255,255,255]);
     doc.text(c.label,c.x+1,y+5);
   });
   y+=rowH;
@@ -6673,27 +6673,28 @@ async function exportCompliancePDF(){
 
     const vals=[
       pdfText(tr.start_date),
-      pdfText(hive?.name).slice(0,24),
-      pdfText(tr.product).slice(0,28),
-      pdfText(tr.amount).slice(0,13),
+      pdfText(hive?.name).slice(0,20),
+      pdfText(tr.product).slice(0,24),
+      pdfText(tr.amount).slice(0,11),
       tr.duration_days?tr.duration_days+'d':'-',
-      pdfText(tr.withdrawal_period).slice(0,12),
-      pdfText(tr.applicator).slice(0,14),
+      pdfText(tr.withdrawal_period).slice(0,11),
+      pdfText(tr.applicator).slice(0,18),
     ];
     cols.forEach((c,i)=>{
-      sf('normal',7,[26,26,20]);
+      sf('normal',6,[26,26,20]);
       doc.text(vals[i],c.x+1,y+5);
     });
 
     // Batch number in small text below if present
-    if(tr.batch_number||tr.reason){
+    if(tr.batch_number||tr.reason||tr.applicator){
       doc.setFillColor(isEven?248:255,isEven?246:255,isEven?240:255);
       doc.rect(margin,y+rowH,contentW,5,'F');
       sf('italic',6,[120,110,90]);
       const subText=[];
-      if(tr.batch_number)subText.push(`Batch: ${pdfText(tr.batch_number)}`);
-      if(tr.reason)subText.push(`Reason: ${pdfText(tr.reason).slice(0,60)}`);
-      doc.text(subText.join('  ·  '),margin+2,y+rowH+3.5);
+      if(tr.applicator)subText.push('Applicator: '+pdfText(tr.applicator));
+      if(tr.batch_number)subText.push('Batch: '+pdfText(tr.batch_number));
+      if(tr.reason)subText.push('Reason: '+pdfText(tr.reason).slice(0,70));
+      doc.text(subText.join('  -  '),margin+2,y+rowH+3.5);
       y+=5;
     }
 

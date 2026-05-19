@@ -2222,7 +2222,7 @@ async function init() {
 
   // Listen for auth state changes (handles OAuth callback automatically)
   sb.auth.onAuthStateChange(async(event, session) => {
-    if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && !appStarted){
+    if((event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED') && session && !appStarted){
       appStarted = true;
       await startApp(session);
     } else if(event==='SIGNED_OUT'){
@@ -8515,7 +8515,6 @@ if('serviceWorker' in navigator){
   }).catch(()=>{});
 }
 
-init();
 </script><!-- MAP MODAL -->
 <!-- ===== ONBOARDING ===== -->
 <div class="modal-bg" id="modal-onboarding" style="align-items:flex-end;z-index:600">

@@ -6583,6 +6583,17 @@ async function renderPointsPage() {
   }
 }
 
+// Sanitize text for jsPDF (remove non-Latin1 chars that cause encoding issues)
+function pdfText(str) {
+  if(!str) return '—';
+  return String(str)
+    .replace(/[‘’]/g, "'")  // smart quotes
+    .replace(/[“”]/g, '"')  // smart double quotes
+    .replace(/–/g, '-')          // en dash
+    .replace(/—/g, '-')          // em dash
+    .replace(/[^ -ÿ]/g, '?');   // replace other non-Latin1
+}
+
 async function exportCompliancePDF(){
   const{jsPDF}=window.jspdf;
   if(!jsPDF){showToast(t('toast_pdf_error'),'error');return;}
@@ -6660,13 +6671,13 @@ async function exportCompliancePDF(){
       : '—';
 
     const vals=[
-      tr.start_date||'—',
-      (hive?.name||'—').slice(0,14),
-      (tr.product||'—').slice(0,18),
-      (tr.amount||'—').slice(0,13),
+      pdfText(tr.start_date),
+      pdfText(hive?.name).slice(0,14),
+      pdfText(tr.product).slice(0,18),
+      pdfText(tr.amount).slice(0,13),
       tr.duration_days?tr.duration_days+'d':'—',
-      (tr.withdrawal_period||'—').slice(0,11),
-      (tr.applicator||'—').slice(0,14),
+      pdfText(tr.withdrawal_period).slice(0,11),
+      pdfText(tr.applicator).slice(0,14),
     ];
     cols.forEach((c,i)=>{
       sf('normal',7,[26,26,20]);
@@ -6679,8 +6690,8 @@ async function exportCompliancePDF(){
       doc.rect(margin,y+rowH,contentW,5,'F');
       sf('italic',6,[120,110,90]);
       const subText=[];
-      if(tr.batch_number)subText.push(`Batch: ${tr.batch_number}`);
-      if(tr.reason)subText.push(`Reason: ${tr.reason.slice(0,60)}`);
+      if(tr.batch_number)subText.push(`Batch: ${pdfText(tr.batch_number)}`);
+      if(tr.reason)subText.push(`Reason: ${pdfText(tr.reason).slice(0,60)}`);
       doc.text(subText.join('  ·  '),margin+2,y+rowH+3.5);
       y+=5;
     }
@@ -6707,7 +6718,7 @@ async function exportCompliancePDF(){
     sf('normal',8,[92,88,71]);doc.text(`${hiveTreats.length} treatment${hiveTreats.length!==1?'s':''} recorded`,margin+60,y);
     y+=5;
     const products=[...new Set(hiveTreats.map(tr=>tr.product))];
-    sf('normal',8,[120,110,90]);doc.text(`Products used: ${products.join(', ')}`,margin+4,y);
+    sf('normal',8,[120,110,90]);doc.text(`Products used: ${products.map(pdfText).join(', ')}`,margin+4,y);
     y+=5;
     line([235,230,220]);
   });
@@ -6930,7 +6941,7 @@ async function exportAnnualPDF(){
       setFont('normal',7,[26,26,20]);
       doc.text(tr.start_date||'—',margin,y);
       doc.text((hive?.name||'—').substring(0,18),margin+25,y);
-      doc.text((tr.product||'—').substring(0,22),margin+70,y);
+      doc.text(pdfText(tr.product).substring(0,22),margin+70,y);
       doc.text(tr.end_date?tr.start_date+' → '+tr.end_date:'—',margin+130,y);
       y+=5;
     });

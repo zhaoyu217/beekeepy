@@ -484,7 +484,11 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="form-group"><label class="form-label"><span data-i18n="honey_stores">Honey Stores</span> <span class="val" id="hs-val">5</span></label><input type="range" id="sl-hs" min="0" max="10" value="5" step="1" oninput="document.getElementById('hs-val').textContent=this.value;calcScore()"></div>
       <div class="form-group"><label class="form-label"><span data-i18n="pollen">Pollen / Bee Bread</span> <span class="val" id="ps-val">4</span></label><input type="range" id="sl-ps" min="0" max="10" value="4" step="1" oninput="document.getElementById('ps-val').textContent=this.value;calcScore()"></div>
       <div class="form-group"><label class="form-label"><span data-i18n="queen_cells">Queen Cells</span> <span class="val" id="qc-val">0</span></label><input type="range" id="sl-qc" min="0" max="10" value="0" step="1" oninput="document.getElementById('qc-val').textContent=this.value;calcScore();toggleQueenCells()"></div>
-      <div class="form-group"><label class="form-label">Hive Weight (lbs) <span class="val" id="hw-val">—</span></label><input type="number" id="insp-weight" min="0" max="300" step="0.5" placeholder="Optional — e.g. 85.5" style="font-size:16px" oninput="document.getElementById('hw-val').textContent=this.value?this.value+' lbs':'—'"></div>
+      <div class="form-group"><label class="form-label">Hive Weight (lbs) <span class="val" id="hw-val">—</span></label><div style="display:flex;align-items:center;gap:0">
+          <button type="button" onclick="const e=document.getElementById('insp-weight');const v=Math.max(0,((+e.value||0)-0.5));e.value=v.toFixed(1);document.getElementById('hw-val').textContent=v?v+' lbs':'—'" style="padding:11px 16px;border:1px solid var(--border);border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">−</button>
+          <input type="number" id="insp-weight" min="0" max="300" step="0.5" placeholder="lbs" style="border-radius:0;text-align:center;flex:1;font-size:16px" oninput="document.getElementById('hw-val').textContent=this.value?this.value+' lbs':'—'">
+          <button type="button" onclick="const e=document.getElementById('insp-weight');const v=((+e.value||0)+0.5);e.value=v.toFixed(1);document.getElementById('hw-val').textContent=v+' lbs'" style="padding:11px 16px;border:1px solid var(--border);border-left:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">＋</button>
+        </div></div>
       <div id="queen-cell-opts" style="display:none;margin-top:6px">
         <div class="chips">
           <button class="chip" id="chip-swarm" onclick="this.classList.toggle('on');calcScore()">Swarm Cells</button>
@@ -579,7 +583,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           </select>
         </div>
         <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
-          <div class="form-group"><label class="form-label">Amount (oz)</label><input type="number" id="feed-amount" placeholder="e.g. 32" min="0" step="0.5"></div>
+          <div class="form-group"><label class="form-label">Amount (oz)</label>
+            <div style="display:flex;align-items:center;gap:0">
+              <button type="button" onclick="const e=document.getElementById('feed-amount');e.value=Math.max(0,((+e.value||0)-0.5))" style="padding:11px 16px;border:1px solid var(--border);border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">−</button>
+              <input type="number" id="feed-amount" placeholder="32" min="0" step="0.5" style="border-radius:0;text-align:center;flex:1">
+              <button type="button" onclick="const e=document.getElementById('feed-amount');e.value=(+e.value||0)+0.5" style="padding:11px 16px;border:1px solid var(--border);border-left:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">＋</button>
+            </div>
+          </div>
           <div class="form-group"><label class="form-label">Feeder type</label>
             <select id="feed-feeder">
               <option value="">— Select —</option>
@@ -592,7 +602,10 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
           </div>
         </div>
         <div class="form-group"><label class="form-label">Feeding notes</label>
-          <input type="text" id="feed-notes" placeholder="e.g. Bees taking syrup readily, added 2nd patty">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+            <button id="voice-feed-notes-btn" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">🎤 Dictate</button>
+          </div>
+          <textarea rows="2" id="feed-notes-input" placeholder="e.g. Bees taking syrup readily, added 2nd patty... or tap 🎤 to dictate"></textarea>
         </div>
         <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;font-size:12px;color:var(--honey-dark);">
           💡 <strong>Tip:</strong> Feed 1:1 syrup in spring to stimulate brood. Switch to 2:1 in fall to build winter stores.
@@ -741,7 +754,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="form-group"><label class="form-label">Dosage / Amount</label><input type="text" id="treat-amount" placeholder="e.g. 2 strips, 50ml, 2g OA"></div>
     <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">
       <div class="form-group"><label class="form-label">Start date</label><input type="date" id="treat-date"></div>
-      <div class="form-group"><label class="form-label">Duration (days)</label><input type="number" id="treat-days" placeholder="e.g. 42"></div>
+      <div class="form-group"><label class="form-label">Duration (days)</label>
+        <div style="display:flex;align-items:center;gap:0">
+          <button type="button" onclick="const e=document.getElementById('treat-days');e.value=Math.max(0,(+e.value||0)-1)" style="padding:11px 16px;border:1px solid var(--border);border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">−</button>
+          <input type="number" id="treat-days" placeholder="42" min="0" style="border-radius:0;text-align:center;flex:1">
+          <button type="button" onclick="const e=document.getElementById('treat-days');e.value=(+e.value||0)+1" style="padding:11px 16px;border:1px solid var(--border);border-left:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">＋</button>
+        </div>
+      </div>
     </div>
     <!-- Compliance fields -->
     <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:10px">
@@ -753,7 +772,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">Applicator Name</label><input type="text" id="treat-applicator" placeholder="Person who applied treatment"></div>
       <div class="form-group" style="margin-top:10px;margin-bottom:0"><label class="form-label">Reason / Diagnosis</label><input type="text" id="treat-reason" placeholder="e.g. Varroa count 4.2% — threshold exceeded"></div>
     </div>
-    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="treat-note" placeholder="Mite count before/after treatment..."></textarea></div>
+    <div class="form-group"><label class="form-label">Notes</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <button id="voice-treat-note" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">🎤 Dictate</button>
+      </div>
+      <textarea rows="2" id="treat-note" placeholder="Mite count before/after treatment... or tap 🎤 to dictate"></textarea>
+    </div>
     <div style="display:flex;gap:8px">
       <button class="btn btn-primary" style="flex:1" onclick="addTreatment()">Log Treatment</button>
       <button class="btn btn-outline" onclick="exportCompliancePDF()" style="flex:1;white-space:nowrap">📋 Export Compliance PDF</button>
@@ -776,7 +800,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <select id="harv-type"><option>Clover</option><option>Wildflower</option><option>Orange Blossom</option><option>Sourwood</option><option>Buckwheat</option><option>Tupelo</option><option>Alfalfa</option><option>Blueberry</option><option>Mixed / Unknown</option></select>
     </div>
     <div class="form-group"><label class="form-label">Date</label><input type="date" id="harv-date"></div>
-    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="harv-note" placeholder="Color, flavor, extraction method..."></textarea></div>
+    <div class="form-group"><label class="form-label">Notes</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <button id="voice-harv-note" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">🎤 Dictate</button>
+      </div>
+      <textarea rows="2" id="harv-note" placeholder="Color, flavor, extraction method... or tap 🎤 to dictate"></textarea>
+    </div>
     <button class="btn btn-primary" onclick="addHarvest()">Record Harvest 🍯</button>
   </div>
   <div class="section-hd"><span data-i18n="harvest_log">Harvest Log</span></div>
@@ -1477,7 +1506,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <select id="qm-race"><option>Italian</option><option>Carniolan</option><option>Russian</option><option>Buckfast</option><option>VSH</option><option>Minnesota Hygienic</option><option>Local feral</option><option>Unknown</option></select>
     </div>
     <div class="form-group"><label class="form-label">Introduced date</label><input type="date" id="qm-date"></div>
-    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="qm-note"></textarea></div>
+    <div class="form-group"><label class="form-label">Notes</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <button id="voice-qm-note" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">🎤 Dictate</button>
+      </div>
+      <textarea rows="2" id="qm-note" placeholder="Queen notes... or tap 🎤 to dictate"></textarea>
+    </div>
     <button class="btn btn-primary" onclick="saveQueen()"><span data-i18n="save_queen">Save Queen Record</span></button>
   </div>
 </div>
@@ -1517,7 +1551,12 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <input type="text" id="ap-forage-custom" placeholder="Or type custom forage..." style="margin-top:6px;display:none">
       <button type="button" onclick="document.getElementById('ap-forage-custom').style.display=document.getElementById('ap-forage-custom').style.display==='none'?'block':'none'" style="font-size:11px;color:var(--honey-dark);background:none;border:none;cursor:pointer;margin-top:4px;padding:0;font-family:'DM Sans',sans-serif">+ Enter custom forage</button>
     </div>
-    <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="ap-note"></textarea></div>
+    <div class="form-group"><label class="form-label">Notes</label>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <button id="voice-ap-note" style="display:flex;align-items:center;gap:6px;padding:7px 12px;border-radius:var(--radius-sm);border:1.5px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;font-family:'DM Sans',sans-serif;color:var(--text-2)">🎤 Dictate</button>
+      </div>
+      <textarea rows="2" id="ap-note" placeholder="Apiary notes... or tap 🎤 to dictate"></textarea>
+    </div>
     <button class="btn btn-primary" onclick="saveApiary()"><span data-i18n="save_apiary">Save Apiary</span></button>
   </div>
 </div>
@@ -1586,7 +1625,13 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <option>Other</option>
       </select>
     </div>
-    <div class="form-group"><label class="form-label">Number of boxes</label><input type="number" id="hv-frames" placeholder="e.g. 2" min="1" max="10"></div>
+    <div class="form-group"><label class="form-label">Number of boxes</label>
+      <div style="display:flex;align-items:center;gap:0">
+        <button type="button" onclick="const e=document.getElementById('hv-frames');e.value=Math.max(1,(+e.value||1)-1)" style="padding:11px 16px;border:1px solid var(--border);border-right:none;border-radius:var(--radius-sm) 0 0 var(--radius-sm);background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">−</button>
+        <input type="number" id="hv-frames" placeholder="2" min="1" max="10" style="border-radius:0;text-align:center;flex:1">
+        <button type="button" onclick="const e=document.getElementById('hv-frames');e.value=Math.min(10,(+e.value||1)+1)" style="padding:11px 16px;border:1px solid var(--border);border-left:none;border-radius:0 var(--radius-sm) var(--radius-sm) 0;background:var(--bg);cursor:pointer;font-size:18px;color:var(--text-2)">＋</button>
+      </div>
+    </div>
     <div class="form-group"><label class="form-label">Installed date</label><input type="date" id="hv-date"></div>
     <div class="form-group"><label class="form-label">Origin</label>
       <select id="hv-origin"><option>Package bees</option><option>Nucleus colony (nuc)</option><option>Swarm catch</option><option>Split from existing hive</option><option>Overwintered colony</option></select>
@@ -4635,12 +4680,13 @@ function showPage(id,btn){
   if(btn)btn.classList.add('active');
   if(id==='home')renderHome();
   if(id==='queens')renderQueens();
-  if(id==='treatment'){populateTreatHive();renderTreatments();}
-  if(id==='harvest'){populateHarvHive();renderHarvests();}
+  if(id==='treatment'){populateTreatHive();renderTreatments();setTimeout(initAllVoiceButtons,100);}
+  if(id==='harvest'){populateHarvHive();renderHarvests();setTimeout(initAllVoiceButtons,100);}
   if(id==='insights')renderInsights();
   if(id==='settings'){populateHiveApiary();renderSettings();}
   if(id==='account'){renderAccount();renderBadges();}
   if(id==='reminders')renderReminderSettings();
+  if(id==='inspect')setTimeout(initAllVoiceButtons,100);
   if(id==='community'){loadCommunityPosts();if(communityTab==='map'){initCommunityMap();loadForageData();}}
   if(id==='share'){renderSharePage();}
   if(id==='hive-detail'){setTimeout(updateAIUsesHint,100);}
@@ -5260,6 +5306,7 @@ async function saveHive(){
 // MODALS 
 function openModal(id){
   if(id==='modal-queen'){document.getElementById('qm-hive').innerHTML=hives.map(h=>`<option value="${h.id}">${h.name}</option>`).join('');document.getElementById('qm-date').value=new Date().toISOString().split('T')[0];}
+  setTimeout(initAllVoiceButtons, 100);
   if(id==='modal-hive'){
     editingHiveId=null;
     populateHiveApiary();
@@ -7241,6 +7288,55 @@ function toggleVoice(){
     stopVoice();
   }
 }
+
+// ============================================================
+// VOICE INPUT HELPER — reusable for any textarea
+// ============================================================
+function attachVoiceToTextarea(btnId, textareaId) {
+  const btn = document.getElementById(btnId);
+  const ta = document.getElementById(textareaId);
+  if(!btn || !ta) return;
+  let rec = null, isRec = false;
+  btn.onclick = function() {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if(!SR) { showToast('Voice not supported on this browser','warning'); return; }
+    if(isRec) {
+      if(rec) rec.stop();
+      isRec = false;
+      btn.textContent = '🎤';
+      btn.style.background = '';
+      return;
+    }
+    rec = new SR();
+    rec.continuous = true;
+    rec.interimResults = true;
+    const langMap = {en:'en-US',de:'de-DE',fr:'fr-FR',it:'it-IT',pt:'pt-BR',ro:'ro-RO',tr:'tr-TR'};
+    rec.lang = langMap[currentLang] || 'en-US';
+    let finalText = ta.value;
+    rec.onstart = () => { isRec = true; btn.textContent = '🔴'; btn.style.background = 'var(--danger-light)'; };
+    rec.onresult = e => {
+      let interim = '';
+      for(let i = e.resultIndex; i < e.results.length; i++) {
+        if(e.results[i].isFinal) finalText += e.results[i][0].transcript + ' ';
+        else interim += e.results[i][0].transcript;
+      }
+      ta.value = finalText + interim;
+    };
+    rec.onend = () => { isRec = false; btn.textContent = '🎤'; btn.style.background = ''; ta.value = finalText; };
+    rec.onerror = () => { isRec = false; btn.textContent = '🎤'; btn.style.background = ''; showToast('Voice error — try again','error'); };
+    rec.start();
+  };
+}
+
+// Attach voice to all note fields after page loads
+function initAllVoiceButtons() {
+  attachVoiceToTextarea('voice-treat-note', 'treat-note');
+  attachVoiceToTextarea('voice-harv-note', 'harv-note');
+  attachVoiceToTextarea('voice-qm-note', 'qm-note');
+  attachVoiceToTextarea('voice-ap-note', 'ap-note');
+  attachVoiceToTextarea('voice-feed-notes-btn', 'feed-notes-input');
+}
+
 function stopVoice(){
   isRecording=false;
   const btn=document.getElementById('voice-btn');

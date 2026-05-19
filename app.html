@@ -5238,7 +5238,7 @@ async function saveHive(){
     }
     const{data,error}=await sb.from('hives').insert({user_id:currentUser.id,...payload,status:'ok'}).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
-    hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();showToast(t('toast_hive_saved'));
+    hives.push(data);setSyncing('saved');closeModal('modal-hive');renderSettings();renderHome();showToast(t('toast_hive_saved'));
   }
 }
 

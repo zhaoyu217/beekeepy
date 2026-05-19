@@ -2194,14 +2194,22 @@ async function init() {
       const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
       document.getElementById('user-avatar').textContent=initials;
       document.getElementById('remind-email-display').textContent=currentUser.email;
-      // 立即渲染季节横幅，不等数据加载
+      // 立即渲染季节横幅 + 天气占位，不等数据加载
       try{
         const _s=getSeason();
         const _sb=document.getElementById('season-banner');
         if(_sb)_sb.innerHTML=`<span style="font-size:26px">${_s.icon}</span><div style="flex:1"><div style="font-weight:600;font-size:14px;color:#1A1A14">${_s.label}</div><div style="font-size:12px;color:#5C5847;margin-top:2px">${_s.tip}</div></div>`;
       }catch(e){}
+      // 天气占位符 — 立刻显示加载中状态
+      try{
+        const _ww=document.getElementById('weather-widget');
+        if(_ww && !_ww.innerHTML.trim()){
+          _ww.innerHTML=`<div class="weather-card"><div class="weather-icon">🌤</div><div style="flex:1"><div class="weather-loading"><div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Loading weather...</div></div></div>`;
+        }
+      }catch(e){}
+      // 并行加载：数据和天气同时请求，互不等待
+      fetchWeather(); // 不 await，立即开始，后台完成
       await loadAll();
-      fetchWeather();
       checkReminders();
       requestPushPermission();
     }catch(e){console.warn('startApp error:',e);}
@@ -2409,6 +2417,8 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
       hasSnow: v.conditions.includes('Snow')
     }));
 
+    // Cache weather for instant display on next load
+    try { localStorage.setItem('bk_weather_cache', JSON.stringify({...currentWeather, _ts: Date.now(), _forecast: currentForecast})); } catch(e) {}
     renderWeatherWidget(currentWeather);
     populateInspectWeather(currentWeather);
     renderWeatherAlerts();
@@ -2426,6 +2436,17 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
 
 async function fetchWeather() {
   if(!OPENWEATHER_API_KEY) { renderWeatherWidget(null); return; }
+  // Show cached weather instantly while fetching fresh data
+  try {
+    const cached = localStorage.getItem('bk_weather_cache');
+    if(cached) {
+      const w = JSON.parse(cached);
+      if(w && Date.now() - w._ts < 3600000) { // 1 hour cache
+        renderWeatherWidget(w);
+        if(w._forecast) { currentForecast = w._forecast; renderWeatherAlerts(); renderBloomForecast(); }
+      }
+    }
+  } catch(e) {}
   const apiaryWithGps = apiaries && apiaries.find(a => a.gps && a.gps.trim());
   if(apiaryWithGps) {
     try {

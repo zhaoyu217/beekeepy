@@ -4182,6 +4182,10 @@ function renderHiveGrid(containerId,selectable=false){
     const days=daysSince(li?.date),rem=reminders.find(r=>r.hive_id===h.id),threshold=rem?.reminder_days||10;
     const overdue=days>=threshold+3;
     const photoCount=hivePhotos(h.id).length;
+    const _editDelBtns = selectable ? '' : `<div style="display:flex;gap:4px;margin-top:6px" onclick="event.stopPropagation()">
+      <button onclick="openEditHive('${h.id}')" style="flex:1;padding:4px;background:var(--honey-light);color:var(--honey-dark);border:1px solid var(--honey);border-radius:var(--radius-sm);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif">✏️ Edit</button>
+      <button onclick="confirmDeleteHive('${h.id}')" style="flex:1;padding:4px;background:var(--danger-light);color:var(--danger);border:1px solid #F5B7B1;border-radius:var(--radius-sm);cursor:pointer;font-size:11px;font-family:'DM Sans',sans-serif">🗑 Delete</button>
+    </div>`;
     return`<div class="hive-card ${hiveStatusClass(h.id)}" id="hcard-${h.id}" onclick="${selectable?`selectHive('${h.id}',this)`:`openHiveDetail('${h.id}')`}">
       ${overdue?`<span class="warning-tag overdue-tag">Overdue!</span>`:ws.length?`<span class="warning-tag">${ws[0]}</span>`:''}
       <div class="hive-name">${h.name}${getHiveTagBadge(h.status_tag||"none")}</div>
@@ -4190,6 +4194,7 @@ function renderHiveGrid(containerId,selectable=false){
       <div class="hive-meta">${sc!==null?`Score: ${sc}`:''}</div>
       <div style="font-size:10px;color:${days===999?'var(--danger)':days>=threshold?'var(--amber)':'var(--text-3)'};margin-top:2px">${li?(days===0?'Today':days===1?'Yesterday':days+' days ago'):'Never inspected'}</div>
       ${photoCount>0?`<div style="font-size:10px;color:var(--text-3);margin-top:3px">📷 ${photoCount} photo${photoCount!==1?'s':''}</div>`:''}
+      ${_editDelBtns}
     </div>`;
   }).join('');
 }

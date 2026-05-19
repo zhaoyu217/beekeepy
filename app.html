@@ -2280,9 +2280,37 @@ async function init() {
     if(session && !appStarted){
       appStarted = true;
       await startApp(session);
+    } else if(!appStarted) {
+      // Fallback: try reading token directly from localStorage
+      try {
+        const rawToken = localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token');
+        if(rawToken) {
+          const parsed = JSON.parse(rawToken);
+          const tok = parsed?.access_token;
+          const user = parsed?.user;
+          if(tok && user && !appStarted) {
+            appStarted = true;
+            await startApp({user, access_token: tok});
+          }
+        }
+      } catch(e2){ console.warn('localStorage session fallback error:', e2); }
     }
   }catch(e){
     console.warn('init error:',e);
+    // Fallback: try reading token directly from localStorage
+    try {
+      const rawToken = localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token');
+      if(rawToken) {
+        const parsed = JSON.parse(rawToken);
+        const tok = parsed?.access_token;
+        const user = parsed?.user;
+        if(tok && user && !appStarted) {
+          appStarted = true;
+          await startApp({user, access_token: tok});
+          return;
+        }
+      }
+    } catch(e2){ console.warn('localStorage session fallback error:', e2); }
     clearTimeout(loadTimeout);
     document.getElementById('loading-overlay').style.display='none';
   }
@@ -2309,6 +2337,18 @@ function setSyncing(s) {
   txt.innerHTML=states[s]||states.saved;
 }
 
+// Helper: get auth token reliably
+async function getAuthToken() {
+  let tok = currentUser?._accessToken || '';
+  if(!tok) {
+    try { tok = JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||''; } catch(e){}
+  }
+  if(!tok) {
+    try { const {data:{session}} = await sb.auth.getSession(); tok = session?.access_token||''; if(tok && currentUser) currentUser._accessToken = tok; } catch(e){}
+  }
+  return tok;
+}
+
 // Load 
 async function loadAll() {
   const uid=currentUser.id;
@@ -2328,7 +2368,8 @@ async function loadAll() {
     renderHome();return;
   }
   try{
-    const _tok=currentUser._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    const _tok = await getAuthToken();
+    console.log('[loadAll] token present:', !!_tok, 'length:', _tok.length);
     const _h={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok};
     const _get=url=>fetch(SUPABASE_URL+'/rest/v1/'+url,{headers:_h}).then(r=>r.json()).then(d=>({data:Array.isArray(d)?d:[]}));
     const [a,h,q,i,t,hv,ph,rem]=await Promise.all([
@@ -5060,7 +5101,7 @@ async function saveApiary(){
   const _forageVal = (_forageCustom && _forageCustom.style.display!=='none' && _forageCustom.value) ? _forageCustom.value : (_forageSelect?.value||'');
   const payload={name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:_forageVal,note:document.getElementById('ap-note').value};
   if(editingApiaryId){
-    const _tok2 = currentUser._accessToken || JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token || '';
+    const _tok2 = await getAuthToken();
     const _res2 = await fetch(SUPABASE_URL+'/rest/v1/apiaries?id=eq.'+editingApiaryId, {
       method:'PATCH',
       headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok2,'Content-Type':'application/json','Prefer':'return=representation'},
@@ -5074,7 +5115,7 @@ async function saveApiary(){
     editingApiaryId=null;
     setSyncing('saved');closeModal('modal-apiary');renderSettings();renderHome();showToast('Apiary updated ✓');
   } else {
-    const _tok = currentUser._accessToken || JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token || '';
+    const _tok = await getAuthToken();
     const _res = await fetch(SUPABASE_URL+'/rest/v1/apiaries', {
       method:'POST',
       headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok,'Content-Type':'application/json','Prefer':'return=representation'},

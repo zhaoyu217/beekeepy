@@ -7694,7 +7694,7 @@ async function openPostDetail(postId){
       ${post.local_group?`<div style="font-size:11px;color:var(--sky);margin-top:6px">📍 ${post.local_group}</div>`:''}
     </div>`;
   // Load replies
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   const _rResp=await fetch(SUPABASE_URL+'/rest/v1/community_replies?post_id=eq.'+postId+'&order=created_at.asc',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}}); const replies=await _rResp.json();
   const repliesList=document.getElementById('comm-replies-list');
   repliesList.innerHTML=replies?.length?replies.map(r=>`
@@ -7709,7 +7709,7 @@ async function openPostDetail(postId){
 async function submitReply(){
   const content=document.getElementById('comm-reply-input').value.trim();
   if(!content||!currentPostId)return;
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   const _repResp=await fetch(SUPABASE_URL+'/rest/v1/community_replies',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({post_id:currentPostId,user_id:currentUser.id,content})});
   if(!_repResp.ok){showToast('Error posting reply','error');return;}
   document.getElementById('comm-reply-input').value='';
@@ -7719,7 +7719,7 @@ async function submitReply(){
 }
 
 async function toggleLike(postId){
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   const _lResp=await fetch(SUPABASE_URL+'/rest/v1/community_likes?post_id=eq.'+postId+'&user_id=eq.'+currentUser.id,{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
   const _lData=await _lResp.json();
   const existing=Array.isArray(_lData)&&_lData.length>0?_lData[0]:null;
@@ -7801,7 +7801,7 @@ function renderCommunityMapMarkers(){
 async function reportPost(postId){
   const reason = prompt('Why are you reporting this post?\n\n1. Spam / Advertisement\n2. Inappropriate content\n3. Misinformation\n4. Other\n\nEnter reason:');
   if(!reason)return;
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   const _rpResp=await fetch(SUPABASE_URL+'/rest/v1/community_reports',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({post_id:postId,user_id:currentUser.id,reason})});
   if(_rpResp.status===409){showToast('You already reported this post','warning');return;}
   if(!_rpResp.ok){showToast('Error reporting','error');return;}
@@ -8070,7 +8070,7 @@ async function loadForageData(){
   forageMarkers=fm.data||[];
   pesticideAlerts=pa.data||[];
   // Cache all markers for leaderboard (including expired ones for 3-year history)
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   const _fmResp = await fetch(SUPABASE_URL+'/rest/v1/forage_markers?order=created_at.desc&limit=500',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
   const allFm = await _fmResp.json();
   forageMarkersCache = allFm.data||forageMarkers;
@@ -8255,7 +8255,7 @@ async function validateAndAwardBloomPoints(userLat, userLng, plantType) {
 async function checkPeerReviewBonus(lat, lng, plantType) {
   try {
     // Check recent forage markers with same plant within 50km
-    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
     const _fm2Resp = await fetch(SUPABASE_URL+'/rest/v1/forage_markers?plant_type=eq.'+encodeURIComponent(plantType)+'&created_at=gte.'+new Date(Date.now()-7*86400000).toISOString()+'&select=user_id,lat,lng',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
     const data = await _fm2Resp.json();
 
@@ -8289,7 +8289,7 @@ async function saveForageMarker(){
   const blur=()=>(Math.random()-0.5)*0.022; // ~2.4km max offset
   const blurLat=lat+blur(), blurLng=lng+blur();
   if(selectedMarkerType==='forage'){
-    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
     const _fiResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       plant_type:document.getElementById('fm-plant').value,
@@ -8305,7 +8305,7 @@ async function saveForageMarker(){
       validateAndAwardBloomPoints(lat, lng, plantType);
     }, 800);
   } else {
-    const _t2=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    var _t2=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
     const _paResp=await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t2,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       severity:document.getElementById('fm-severity').value,
@@ -8325,14 +8325,14 @@ async function saveForageMarker(){
 }
 
 async function deleteForageMarker(id){
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   await fetch(SUPABASE_URL+'/rest/v1/forage_markers?id=eq.'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
   forageMarkers=forageMarkers.filter(m=>m.id!==id);
   renderForageList();if(forageMap)renderForageMapMarkers();
   showToast('🗑 Marker removed','success');
 }
 async function deletePesticideAlert(id){
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts?id=eq.'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
   pesticideAlerts=pesticideAlerts.filter(a=>a.id!==id);
   renderForageList();if(forageMap)renderForageMapMarkers();
@@ -8621,7 +8621,7 @@ let swarmMap = null;
 
 async function loadSwarmAlerts() {
   try {
-    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
     const _swlResp = await fetch(SUPABASE_URL+'/rest/v1/swarm_alerts?expires_at=gt.'+new Date().toISOString()+'&order=created_at.desc&limit=50',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
     const data = await _swlResp.json();
     swarmAlerts = Array.isArray(data) ? data : [];
@@ -8659,7 +8659,7 @@ function renderSwarmList() {
 
 async function deleteSwarmAlert(id) {
   if(!confirm('Delete this swarm alert?'))return;
-  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
   await fetch(SUPABASE_URL+'/rest/v1/swarm_alerts?id=eq.'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
   swarmAlerts=swarmAlerts.filter(a=>a.id!==id);
   renderSwarmList();
@@ -8712,7 +8712,7 @@ async function reportSwarmAlert() {
     const blur = () => (Math.random() - 0.5) * 0.018; // ~2km fuzzy
     const expires = new Date(Date.now() + 48 * 3600 * 1000).toISOString(); // 48h expiry
     try {
-      const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+      var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
       const _swResp = await fetch(SUPABASE_URL+'/rest/v1/swarm_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({lat:lat+blur(),lng:lng+blur(),description:desc,reported_by:currentUser?.id||null,expires_at:expires,created_at:new Date().toISOString()})});
       if (!_swResp.ok) throw new Error(await _swResp.text());
       showToast('Swarm alert sent! Nearby beekeepers notified 🐝', 'success');
@@ -9336,7 +9336,7 @@ Keep it under 80 words, friendly and practical.`;
             user_id:currentUser?.id,
             content:'🤖 **AI Diagnosis:** ' + aiText,
             is_expert:true
-          });
+          })});
           // Refresh if viewing this post
           if(currentPostId === postId) await openPostDetail(postId);
         }
@@ -9353,7 +9353,7 @@ async function confirmForageMarker(markerId, isConfirm) {
   if(!currentUser) { showToast('Sign in to confirm markers','warning'); return; }
   try {
     // Record the review
-    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
     await fetch(SUPABASE_URL+'/rest/v1/forage_reviews',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify({
       marker_id: markerId,
       user_id: currentUser.id,
@@ -9361,14 +9361,14 @@ async function confirmForageMarker(markerId, isConfirm) {
       created_at: new Date().toISOString()
     })});
     // Check confirmation count
-    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
     const _rvResp=await fetch(SUPABASE_URL+'/rest/v1/forage_reviews?marker_id=eq.'+markerId+'&select=confirmed',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
     const reviews=await _rvResp.json();
     const confirms = (reviews||[]).filter(r=>r.confirmed).length;
     const falses = (reviews||[]).filter(r=>!r.confirmed).length;
     if(confirms >= 5) {
       // Award points to marker creator
-      const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+      var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
       const _fmcResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers?id=eq.'+markerId+'&select=user_id',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
       const _fmcData=await _fmcResp.json(); const marker=Array.isArray(_fmcData)?_fmcData[0]:null;
       if(marker?.user_id && marker.user_id !== currentUser.id) {
@@ -9377,7 +9377,7 @@ async function confirmForageMarker(markerId, isConfirm) {
     }
     if(falses >= 3) {
       // Auto-remove marker
-      const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+      var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
       await fetch(SUPABASE_URL+'/rest/v1/forage_markers?id=eq.'+markerId,{method:'PATCH',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({expires_at:new Date().toISOString()})});
       showToast('Marker reported as false — removed from map','success');
     } else {

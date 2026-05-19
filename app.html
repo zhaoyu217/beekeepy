@@ -6673,12 +6673,12 @@ async function exportCompliancePDF(){
 
     const vals=[
       pdfText(tr.start_date),
-      pdfText(hive?.name).slice(0,14),
-      pdfText(tr.product).slice(0,18),
-      pdfText(tr.amount).slice(0,13),
-      tr.duration_days?tr.duration_days+'d':'—',
-      pdfText(tr.withdrawal_period).slice(0,11),
-      pdfText(tr.applicator).slice(0,14),
+      pdfText(hive?.name).slice(0,16),
+      pdfText(tr.product).slice(0,28),
+      pdfText(tr.amount).slice(0,14),
+      tr.duration_days?tr.duration_days+'d':'-',
+      pdfText(tr.withdrawal_period).slice(0,13),
+      pdfText(tr.applicator).slice(0,16),
     ];
     cols.forEach((c,i)=>{
       sf('normal',7,[26,26,20]);

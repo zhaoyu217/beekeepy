@@ -8641,15 +8641,29 @@ function renderSwarmList() {
   }
   el.innerHTML = swarmAlerts.map(a => {
     const hrs = Math.round((new Date(a.expires_at) - new Date()) / 3600000);
+    const isOwn = a.reported_by === currentUser?.id;
     return `<div style="background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--honey);border-radius:var(--radius);padding:12px;margin-bottom:8px;">
       <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:4px;">
         <div style="font-size:13px;font-weight:600;">🐝 Swarm spotted!</div>
-        <div style="font-size:10px;color:var(--text-3);">Expires in ${hrs}h</div>
+        <div style="display:flex;align-items:center;gap:8px;">
+          <div style="font-size:10px;color:var(--text-3);">Expires in ${hrs}h</div>
+          ${isOwn?`<button onclick="deleteSwarmAlert('${a.id}')" style="padding:2px 8px;border-radius:20px;border:1px solid #F5B7B1;background:var(--danger-light);cursor:pointer;font-size:11px;color:var(--danger)">🗑</button>`:''}
+        </div>
       </div>
       <div style="font-size:12px;color:var(--text-2);margin-bottom:8px;">${a.description || 'No details provided'}</div>
       <div style="font-size:11px;color:var(--text-3);">${new Date(a.created_at).toLocaleDateString('en-US',{month:'short',day:'numeric',hour:'2-digit',minute:'2-digit'})}</div>
     </div>`;
   }).join('');
+}
+
+
+async function deleteSwarmAlert(id) {
+  if(!confirm('Delete this swarm alert?'))return;
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  await fetch(SUPABASE_URL+'/rest/v1/swarm_alerts?id=eq.'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+  swarmAlerts=swarmAlerts.filter(a=>a.id!==id);
+  renderSwarmList();
+  showToast('🗑 Alert removed','success');
 }
 
 function initSwarmMap() {

@@ -1338,8 +1338,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <label class="form-label" style="margin:0">Post anonymously</label>
       <button class="tog" id="tog-anon" onclick="this.classList.toggle('on')"></button>
     </div>
-    <div style="background:var(--honey-light);border-radius:var(--radius-sm);padding:10px 12px;margin-bottom:14px;font-size:12px;color:var(--honey-dark)">
-      📍 Tap on the map to place marker, or will use your GPS location.
+    <div id="fm-mini-map" style="height:180px;border-radius:var(--radius-sm);border:1px solid var(--border);margin-bottom:10px;overflow:hidden;"></div>
+    <div id="fm-location-hint" style="background:var(--honey-light);border-radius:var(--radius-sm);padding:8px 12px;margin-bottom:14px;font-size:12px;color:var(--honey-dark)">
+      📍 Tap on the map above to place marker, or we'll use your GPS location.
     </div>
     <button class="btn btn-primary" onclick="saveForageMarker()">Submit Report</button>
   </div>
@@ -7896,6 +7897,25 @@ function openAddMarkerModal(){
   document.getElementById('forage-fields').style.display='block';
   document.getElementById('alert-fields').style.display='none';
   openModal('modal-formap');
+  // Init mini map inside modal
+  setTimeout(()=>{
+    const el=document.getElementById('fm-mini-map');
+    if(!el||el._mapInited)return;
+    el._mapInited=true;
+    if(!window.L){return;}
+    const m=L.map(el).setView([39.5,-98.35],4);
+    L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
+    let pin=null;
+    m.on('click',e=>{
+      window._clickedLat=e.latlng.lat;window._clickedLng=e.latlng.lng;
+      if(pin)m.removeLayer(pin);
+      pin=L.marker([e.latlng.lat,e.latlng.lng]).addTo(m);
+      document.getElementById('fm-location-hint').textContent='📍 Location set! Ready to submit.';
+      document.getElementById('fm-location-hint').style.background='var(--forest-light)';
+      document.getElementById('fm-location-hint').style.color='var(--forest)';
+    });
+    setTimeout(()=>m.invalidateSize(),200);
+  },300);
 }
 
 // ============================================================
@@ -8304,27 +8324,34 @@ async function saveForageMarker(){
   setSyncing('syncing');
   const anon=document.getElementById('tog-anon').classList.contains('on');
   let lat,lng;
-  if(window._clickedLat){lat=window._clickedLat;lng=window._clickedLng;window._clickedLat=null;}
-  else{
+  if(window._clickedLat){
+    lat=window._clickedLat;lng=window._clickedLng;
+    window._clickedLat=null;window._clickedLng=null;
+  } else {
     try{
       const pos=await new Promise((res,rej)=>navigator.geolocation.getCurrentPosition(res,rej,{timeout:8000}));
       lat=pos.coords.latitude;lng=pos.coords.longitude;
-    }catch(e){setSyncing('saved');showToast('Location access denied — tap on map to place marker','error');return;}
+    }catch(e){
+      setSyncing('saved');
+      showToast('Tap on the map first to set location 📍','warning');
+      return;
+    }
   }
+  if(!lat||!lng){setSyncing('saved');showToast('Tap on the map first to set location 📍','warning');return;}
   // Privacy: blur coordinates by ±0.008° (~900m)
   // Privacy: fuzzy coordinates ~2km radius to protect user location
   const blur=()=>(Math.random()-0.5)*0.022; // ~2.4km max offset
   const blurLat=lat+blur(), blurLng=lng+blur();
   if(selectedMarkerType==='forage'){
     var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
-    const _fiResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({
+    const _fiResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       plant_type:document.getElementById('fm-plant').value,
       bloom_status:selectedBloom,
       notes:document.getElementById('fm-notes').value,
       anonymous:anon
     })});
-    if(_fiResp.status>=300){setSyncing('error');showToast('Error saving marker: '+_fiResp.status,'error');return;}
+    if(!_fiResp.ok){setSyncing('error');showToast('Error saving marker','error');return;}
     // Award points with anti-cheat validation
     const plantType = document.getElementById('fm-plant').value;
     setTimeout(()=>{
@@ -8333,7 +8360,7 @@ async function saveForageMarker(){
     }, 800);
   } else {
     var _t2=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
-    const _paResp=await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t2,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({
+    const _paResp=await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t2,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       severity:document.getElementById('fm-severity').value,
       description:document.getElementById('fm-desc').value,
@@ -8341,7 +8368,7 @@ async function saveForageMarker(){
       anonymous:anon,
       expires_at:new Date(Date.now()+7*24*3600*1000).toISOString()
     })});
-    if(_paResp.status>=300){setSyncing('error');showToast('Error saving alert: '+_paResp.status,'error');return;}
+    if(!_paResp.ok){setSyncing('error');showToast('Error saving alert','error');return;}
     // Notify nearby users via push
     checkNearbyPesticideAlerts(lat,lng);
   }

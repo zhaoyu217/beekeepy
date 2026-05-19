@@ -6585,13 +6585,14 @@ async function renderPointsPage() {
 
 // Sanitize text for jsPDF (remove non-Latin1 chars that cause encoding issues)
 function pdfText(str) {
-  if(!str) return '—';
-  return String(str)
-    .replace(/[‘’]/g, "'")  // smart quotes
-    .replace(/[“”]/g, '"')  // smart double quotes
-    .replace(/–/g, '-')          // en dash
-    .replace(/—/g, '-')          // em dash
-    .replace(/[^ -ÿ]/g, '?');   // replace other non-Latin1
+  if(!str) return '-';
+  var s = String(str);
+  s = s.replace(/[‘’]/g, "'");
+  s = s.replace(/[“”]/g, '"');
+  s = s.replace(/–/g, '-');
+  s = s.replace(/—/g, '-');
+  s = s.replace(/[^ -ÿ]/g, '?');
+  return s;
 }
 
 async function exportCompliancePDF(){

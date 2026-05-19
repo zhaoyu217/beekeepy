@@ -7734,7 +7734,8 @@ async function toggleLike(postId){
 
 async function deleteCommunityPost(postId){
   if(!confirm('Delete this post?'))return;
-  await sb.from('community_posts').delete().eq('id',postId);
+  const token=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  await fetch(SUPABASE_URL+'/rest/v1/community_posts?id=eq.'+postId,{method:'DELETE',headers:{'Authorization':'Bearer '+token,'apikey':SUPABASE_ANON_KEY}});
   communityPosts=communityPosts.filter(p=>p.id!==postId);
   renderCommunityPosts();showToast('🗑 Post deleted','success');
 }

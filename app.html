@@ -5062,9 +5062,12 @@ async function saveApiary(){
     editingApiaryId=null;
     setSyncing('saved');closeModal('modal-apiary');renderSettings();renderHome();showToast('Apiary updated ✓');
   } else {
+    console.log('[saveApiary] inserting:', {user_id:currentUser.id,...payload});
     const{data,error}=await sb.from('apiaries').insert({user_id:currentUser.id,...payload}).select().single();
-    if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
-    apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();showToast(t('toast_apiary_saved'));
+    console.log('[saveApiary] result:', {data, error});
+    if(error){setSyncing('error');showToast('Error: '+error.message,'error');console.error('[saveApiary] error:',error);return;}
+    if(!data){setSyncing('error');showToast('Save failed — no data returned','error');return;}
+    apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();renderHome();showToast(t('toast_apiary_saved'));
   }
 }
 

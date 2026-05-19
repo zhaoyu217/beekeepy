@@ -2383,13 +2383,47 @@ function setSyncing(s) {
 
 // Helper: get auth token reliably
 async function getAuthToken() {
+  // Try currentUser first
   let tok = currentUser?._accessToken || '';
-  if(!tok) {
-    try { tok = JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||''; } catch(e){}
+  let refreshTok = '';
+
+  // Parse localStorage for both access and refresh tokens
+  try {
+    const raw = JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}');
+    if(!tok) tok = raw?.access_token || '';
+    refreshTok = raw?.refresh_token || '';
+  } catch(e){}
+
+  // If token looks expired (401 scenario), force refresh using refresh_token
+  if(tok && refreshTok) {
+    try {
+      // Check if token is expired by looking at expiry
+      const payload = JSON.parse(atob(tok.split('.')[1]));
+      const isExpired = payload.exp * 1000 < Date.now() + 30000; // 30s buffer
+      if(isExpired) {
+        const refreshRes = await fetch('https://ydrawqnkwdvfhauansdf.supabase.co/auth/v1/token?grant_type=refresh_token', {
+          method: 'POST',
+          headers: {'apikey': SUPABASE_ANON_KEY, 'Content-Type': 'application/json'},
+          body: JSON.stringify({refresh_token: refreshTok})
+        });
+        if(refreshRes.ok) {
+          const refreshData = await refreshRes.json();
+          if(refreshData.access_token) {
+            tok = refreshData.access_token;
+            if(currentUser) currentUser._accessToken = tok;
+            // Update localStorage
+            try {
+              const stored = JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}');
+              stored.access_token = tok;
+              if(refreshData.refresh_token) stored.refresh_token = refreshData.refresh_token;
+              localStorage.setItem('sb-ydrawqnkwdvfhauansdf-auth-token', JSON.stringify(stored));
+            } catch(e){}
+          }
+        }
+      }
+    } catch(e){}
   }
-  if(!tok) {
-    try { const {data:{session}} = await sb.auth.getSession(); tok = session?.access_token||''; if(tok && currentUser) currentUser._accessToken = tok; } catch(e){}
-  }
+
   return tok;
 }
 
@@ -2413,9 +2447,24 @@ async function loadAll() {
   }
   try{
     const _tok = await getAuthToken();
-    console.log('[loadAll] token present:', !!_tok, 'length:', _tok.length);
     const _h={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok};
-    const _get=url=>fetch(SUPABASE_URL+'/rest/v1/'+url,{headers:_h}).then(r=>r.json()).then(d=>({data:Array.isArray(d)?d:[]}));
+    // Load from cache immediately so UI shows instantly
+    try{
+      const cached=localStorage.getItem('bk_cache_'+uid);
+      if(cached){
+        const d=JSON.parse(cached);
+        apiaries=d.apiaries||[];hives=d.hives||[];queens=d.queens||[];
+        inspections=d.inspections||[];treatments=d.treatments||[];harvests=d.harvests||[];
+        photos=d.photos||[];reminders=d.reminders||[];
+        renderHome(); // Show cached data immediately
+      }
+    }catch(e){}
+    // Then fetch fresh data with 8s timeout
+    const _timeout = ms => new Promise((_,rej)=>setTimeout(()=>rej(new Error('timeout')),ms));
+    const _get=url=>Promise.race([
+      fetch(SUPABASE_URL+'/rest/v1/'+url,{headers:_h}).then(r=>r.json()).then(d=>({data:Array.isArray(d)?d:[]})),
+      _timeout(8000).then(()=>({data:[]}))
+    ]);
     const [a,h,q,i,t,hv,ph,rem]=await Promise.all([
       _get('apiaries?select=*&user_id=eq.'+uid+'&order=created_at'),
       _get('hives?select=*&user_id=eq.'+uid+'&order=created_at'),
@@ -2426,10 +2475,13 @@ async function loadAll() {
       _get('photos?select=*&user_id=eq.'+uid+'&order=taken_at.desc'),
       _get('inspection_reminders?select=*&user_id=eq.'+uid),
     ]);
-    apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
-    inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];
-    photos=ph.data||[];reminders=rem.data||[];
-    try{localStorage.setItem('bk_cache_'+uid,JSON.stringify({apiaries,hives,queens,inspections,treatments,harvests,photos,reminders}));}catch(e){}
+    // Only update if we got real data back (not empty from timeout)
+    if(a.data.length||h.data.length||q.data.length||i.data.length||t.data.length||hv.data.length){
+      apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
+      inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];
+      photos=ph.data||[];reminders=rem.data||[];
+      try{localStorage.setItem('bk_cache_'+uid,JSON.stringify({apiaries,hives,queens,inspections,treatments,harvests,photos,reminders}));}catch(e){}
+    }
   }catch(e){
     console.warn('loadAll data error:',e);
     // Try load from cache on error

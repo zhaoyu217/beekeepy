@@ -2143,7 +2143,7 @@ const OPENWEATHER_API_KEY = '6224c11c5ee340327a054c579d1e37c0';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storageKey: 'hivedash-auth',
+    storageKey: 'sb-ydrawqnkwdvfhauansdf-auth-token',
     storage: window.localStorage,
     autoRefreshToken: true,
     persistSession: true,
@@ -7584,7 +7584,7 @@ async function submitCommunityPost(){
     const isVideo=!!commVideoFile;
     const ext=mediaFile.name.split('.').pop();
     const path='media/'+currentUser.id+'/'+Date.now()+'.'+ext;
-    const token=currentUser._accessToken||localStorage.getItem('hivedash-auth')&&JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>k.includes('auth-token'))||'null')||'{}')?.access_token;
+    const token=currentUser._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
     const uploadUrl=SUPABASE_URL+'/storage/v1/object/community/'+path;
     const uploadResp=await fetch(uploadUrl,{method:'POST',headers:{'Authorization':'Bearer '+(currentUser._accessToken||''),'Content-Type':mediaFile.type,'x-upsert':'true'},body:mediaFile});
     console.log('Upload status:',uploadResp.status);
@@ -7597,7 +7597,7 @@ async function submitCommunityPost(){
   const localGroup=postCategory==='local'?document.getElementById('comm-local-group').value:null;
   const aiDiag = document.getElementById('tog-ai-diag')?.classList.contains('on') || false;
   const catEl = document.getElementById('comm-category');
-  const finalCategory = catEl ? catEl.value : postCategory;
+  const finalCategory = (catEl && catEl.value) ? catEl.value : (postCategory||'general');
   const insertResp=await fetch(SUPABASE_URL+'/rest/v1/community_posts',{
     method:'POST',
     headers:{'Authorization':'Bearer '+(currentUser._accessToken||''),'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
@@ -7619,14 +7619,14 @@ async function submitCommunityPost(){
 }
 
 async function loadCommunityPosts(){
-  // Only load Q&A posts (no showcase/free posts)
-  const qaCategories=['clinic','disease','queen','varroa','swarm','feeding','general'];
-  const{data}=await sb.from('community_posts')
-    .select('*')
-    .in('category',qaCategories)
-    .order('created_at',{ascending:false})
-    .limit(50);
-  communityPosts=data||[];
+  const token=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  try{
+    const resp=await fetch(SUPABASE_URL+'/rest/v1/community_posts?select=*&order=created_at.desc&limit=50',{
+      headers:{'Authorization':'Bearer '+token,'apikey':SUPABASE_ANON_KEY}
+    });
+    const data=await resp.json();
+    communityPosts=Array.isArray(data)?data:[];
+  }catch(e){communityPosts=[];}
   renderCommunityPosts();
 }
 

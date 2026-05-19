@@ -839,7 +839,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
   <button class="btn-add" onclick="openModal('modal-apiary')">＋ <span data-i18n="add_apiary">Add Apiary</span></button>
   <div class="section-hd" style="margin-top:16px">Hives</div>
   <div id="hive-list-full"></div>
-  <button class="btn-add" onclick="hives.length>=3&&!userIsPro()?showUpgradeModal('hive_limit'):openModal('modal-hive')">＋ <span data-i18n="add_hive">Add Hive</span></button>
+  <button class="btn-add" onclick="hives.length>=3&&!userIsPro()?showUpgradeModal('hive_limit'):apiaries.length===0?showToast('Please add an apiary first','warning'):openModal('modal-hive')">＋ <span data-i18n="add_hive">Add Hive</span></button>
   <!-- EQUIPMENT -->
   <div style="display:flex;align-items:center;justify-content:space-between;margin-top:16px;margin-bottom:8px">
     <div class="section-hd" style="margin:0"><span data-i18n="equipment">Equipment</span></div>
@@ -1488,7 +1488,29 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
         <button type="button" onclick="autoLocateApiary()" style="padding:9px 12px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);cursor:pointer;font-size:13px;flex-shrink:0">📍 Auto</button>
       </div>
     </div>
-    <div class="form-group"><label class="form-label">Primary forage</label><input type="text" id="ap-forage" placeholder="e.g. Clover, wildflower"></div>
+    <div class="form-group"><label class="form-label">Primary forage</label>
+      <select id="ap-forage">
+        <option value="">— Select main forage —</option>
+        <option value="White Clover">🍀 White Clover</option>
+        <option value="Red Clover">🍀 Red Clover</option>
+        <option value="Wildflower Mix">🌸 Wildflower Mix</option>
+        <option value="Dandelion">🌼 Dandelion</option>
+        <option value="Basswood / Linden">🌳 Basswood / Linden</option>
+        <option value="Black Locust">🌿 Black Locust</option>
+        <option value="Goldenrod">🌻 Goldenrod</option>
+        <option value="Sunflower">🌻 Sunflower</option>
+        <option value="Apple Blossom">🍎 Apple Blossom</option>
+        <option value="Orange Blossom">🍊 Orange Blossom</option>
+        <option value="Lavender">💜 Lavender</option>
+        <option value="Alfalfa">🌿 Alfalfa</option>
+        <option value="Buckwheat">🌾 Buckwheat</option>
+        <option value="Aster">🌺 Aster</option>
+        <option value="Clover, Basswood, Goldenrod">🍀 Clover + Basswood + Goldenrod (MI)</option>
+        <option value="Mixed / Unknown">🌿 Mixed / Unknown</option>
+      </select>
+      <input type="text" id="ap-forage-custom" placeholder="Or type custom forage..." style="margin-top:6px;display:none">
+      <button type="button" onclick="document.getElementById('ap-forage-custom').style.display=document.getElementById('ap-forage-custom').style.display==='none'?'block':'none'" style="font-size:11px;color:var(--honey-dark);background:none;border:none;cursor:pointer;margin-top:4px;padding:0;font-family:'DM Sans',sans-serif">+ Enter custom forage</button>
+    </div>
     <div class="form-group"><label class="form-label">Notes</label><textarea rows="2" id="ap-note"></textarea></div>
     <button class="btn btn-primary" onclick="saveApiary()"><span data-i18n="save_apiary">Save Apiary</span></button>
   </div>
@@ -4988,7 +5010,15 @@ function openEditApiary(apiaryId){
   document.getElementById('ap-name').value=a.name||'';
   document.getElementById('ap-loc').value=a.location||'';
   document.getElementById('ap-gps').value=a.gps||'';
-  document.getElementById('ap-forage').value=a.forage||'';
+  // Populate forage - try select first, fall back to custom input
+  const _apForageSel = document.getElementById('ap-forage');
+  const _apForageCust = document.getElementById('ap-forage-custom');
+  if(_apForageSel){
+    const _opts = Array.from(_apForageSel.options).map(o=>o.value);
+    if(_opts.includes(a.forage||'')){ _apForageSel.value=a.forage||''; }
+    else if(a.forage){ _apForageSel.value=''; if(_apForageCust){_apForageCust.value=a.forage;_apForageCust.style.display='block';} }
+    else { _apForageSel.value=''; }
+  }
   document.getElementById('ap-note').value=a.note||'';
   document.querySelector('#modal-apiary .modal-title h2').textContent='Edit Apiary';
   document.getElementById('modal-apiary').classList.add('open');
@@ -5014,7 +5044,10 @@ async function deleteApiary(apiaryId){
 }
 async function saveApiary(){
   setSyncing('syncing');
-  const payload={name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:document.getElementById('ap-forage').value,note:document.getElementById('ap-note').value};
+  const _forageSelect = document.getElementById('ap-forage');
+  const _forageCustom = document.getElementById('ap-forage-custom');
+  const _forageVal = (_forageCustom && _forageCustom.style.display!=='none' && _forageCustom.value) ? _forageCustom.value : (_forageSelect?.value||'');
+  const payload={name:document.getElementById('ap-name').value||'New Apiary',location:document.getElementById('ap-loc').value,gps:document.getElementById('ap-gps').value,forage:_forageVal,note:document.getElementById('ap-note').value};
   if(editingApiaryId){
     const{data,error}=await sb.from('apiaries').update(payload).eq('id',editingApiaryId).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
@@ -5156,7 +5189,8 @@ function openModal(id){
     document.getElementById('ap-name').value='';
     document.getElementById('ap-loc').value='';
     document.getElementById('ap-gps').value='';
-    document.getElementById('ap-forage').value='';
+    const _fs=document.getElementById('ap-forage');if(_fs)_fs.value='';
+    const _fc=document.getElementById('ap-forage-custom');if(_fc){_fc.value='';_fc.style.display='none';}
     document.getElementById('ap-note').value='';
     document.querySelector('#modal-apiary .modal-title h2').textContent='Add Apiary';
   }

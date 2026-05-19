@@ -6633,8 +6633,13 @@ async function exportCompliancePDF(){
   // ── Regulatory header ─────────────────────────────────────
   doc.setFillColor(232,228,220);doc.roundedRect(margin,y,contentW,8,2,2,'F');
   sf('bold',8,[92,88,71]);
-  doc.text('This record is intended to comply with: EU Regulation 2018/848 (Organic Beekeeping) · USDA NOP 205.603 · UK Veterinary Medicines Regulations 2013',margin+4,y+5.5);
-  y+=14;
+  const _regText = 'This record is intended to comply with: EU Regulation 2018/848 (Organic Beekeeping) - USDA NOP 205.603 - UK Veterinary Medicines Regulations 2013';
+  const _regLines = doc.splitTextToSize(_regText, contentW-8);
+  const _regH = Math.max(8, _regLines.length * 4 + 2);
+  doc.setFillColor(232,228,220);doc.roundedRect(margin,y,contentW,_regH,2,2,'F');
+  sf('bold',8,[92,88,71]);
+  _regLines.forEach((ln,i)=>doc.text(ln,margin+4,y+5+i*4));
+  y+=_regH+6;
 
   // ── Treatment records ─────────────────────────────────────
   sf('bold',12,[26,26,20]);doc.text('Treatment Records',margin,y);y+=8;

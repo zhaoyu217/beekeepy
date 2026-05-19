@@ -2491,8 +2491,11 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
       hasSnow: v.conditions.includes('Snow')
     }));
 
-    // Cache weather for instant display on next load
-    try { localStorage.setItem('bk_weather_cache', JSON.stringify({...currentWeather, _ts: Date.now(), _forecast: currentForecast})); } catch(e) {}
+    // Cache weather for instant display on next load (location-specific key)
+    try {
+      const _ck = 'bk_weather_cache_' + (cityName||lat+'_'+lon).toString().replace(/[^0-9a-zA-Z.-]/g,'_');
+      localStorage.setItem(_ck, JSON.stringify({...currentWeather, _ts: Date.now(), _forecast: currentForecast}));
+    } catch(e) {}
     renderWeatherWidget(currentWeather);
     populateInspectWeather(currentWeather);
     renderWeatherAlerts();
@@ -2511,8 +2514,10 @@ async function fetchWeatherByCoords(lat, lon, cityName) {
 async function fetchWeather() {
   if(!OPENWEATHER_API_KEY) { renderWeatherWidget(null); return; }
   // Show cached weather instantly while fetching fresh data
+  const apiaryWithGps = apiaries && apiaries.find(a => a.gps && a.gps.trim());
+  const _cacheKey = 'bk_weather_cache_' + (apiaryWithGps?.gps||'device').replace(/[^0-9.-]/g,'_');
   try {
-    const cached = localStorage.getItem('bk_weather_cache');
+    const cached = localStorage.getItem(_cacheKey);
     if(cached) {
       const w = JSON.parse(cached);
       if(w && Date.now() - w._ts < 3600000) { // 1 hour cache
@@ -2521,7 +2526,6 @@ async function fetchWeather() {
       }
     }
   } catch(e) {}
-  const apiaryWithGps = apiaries && apiaries.find(a => a.gps && a.gps.trim());
   if(apiaryWithGps) {
     try {
       const parts = apiaryWithGps.gps.split(',').map(s=>s.trim());
@@ -8059,7 +8063,8 @@ function openAddMarkerModal(){
     if(!el||el._mapInited)return;
     el._mapInited=true;
     if(!window.L){return;}
-    const m=L.map(el).setView([39.5,-98.35],4);
+    const _fa0=apiaries.find(a=>a.gps&&a.gps.includes(','));const _c0=_fa0?_fa0.gps.split(',').map(Number):[39.5,-98.35];const _z0=_fa0?11:4;
+    const m=L.map(el).setView(_c0,_z0);
     L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:19}).addTo(m);
     let pin=null;
     m.on('click',e=>{
@@ -8917,7 +8922,8 @@ function initSwarmMap() {
 function _renderSwarmMap() {
   const mapEl = document.getElementById('swarm-map');
   if (!mapEl || swarmMap) return;
-  swarmMap = L.map('swarm-map').setView([39.5, -98.35], 4);
+  const _fas=apiaries.find(a=>a.gps&&a.gps.includes(','));const _cs=_fas?_fas.gps.split(',').map(Number):[39.5,-98.35];const _zs=_fas?11:4;
+  swarmMap = L.map('swarm-map').setView(_cs,_zs);
   L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png', {
     attribution: '© OpenStreetMap'
   }).addTo(swarmMap);

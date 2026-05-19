@@ -188,11 +188,12 @@ const SUPABASE_ANON_KEY = 'sb_publishable_6VC3g90SrIM5s7bI-CIwZQ_tbmk_h4B';
 const { createClient } = supabase;
 const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
   auth: {
-    storageKey: 'hivedash-auth',
+    storageKey: 'sb-ydrawqnkwdvfhauansdf-auth-token',
     storage: window.localStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: false
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   }
 });
 
@@ -443,11 +444,19 @@ async function signUp() {
 }
 
 async function signInWithGoogle() {
+  const btn = document.getElementById('btn-google-signin') || document.getElementById('btn-google-signup');
+  if(btn) btn.textContent = 'Redirecting...';
   const { error } = await sb.auth.signInWithOAuth({
     provider: 'google',
-    options: { redirectTo: window.location.origin + '/app.html' }
+    options: {
+      redirectTo: window.location.origin + '/app.html',
+      skipBrowserRedirect: false
+    }
   });
-  if (error) showError(error.message);
+  if (error) {
+    showError(error.message);
+    if(btn) btn.textContent = 'Continue with Google';
+  }
 }
 
 async function showForgotPassword() {

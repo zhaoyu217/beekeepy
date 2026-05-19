@@ -855,10 +855,9 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div class="card">
       <div class="card-title"><span data-i18n="notif_prefs">Notification Preferences</span></div>
       <div class="toggle-list">
-        <div class="trow"><span class="tog-label"><span data-i18n="push_notif">Browser push notifications</span></span><button class="tog on" id="tog-push" onclick="togglePushNotifications(this)"></button></div>
-        <div class="trow"><span class="tog-label"><span data-i18n="push_notif">Push notifications</span></span><button class="tog on" id="tog-email-remind" onclick="this.classList.toggle('on')"></button></div>
+        <div class="trow"><span class="tog-label">Browser push notifications</span><button class="tog on" id="tog-push" onclick="togglePushNotifications(this)"></button></div>
       </div>
-      <div style="font-size:12px;color:var(--text-3);margin-top:10px">Email: <strong id="remind-email-display"></strong></div>
+
     </div>
     <button class="btn btn-primary" onclick="saveReminderSettings()"><span data-i18n="save_reminders">Save Reminder Settings</span></button>
   </div>

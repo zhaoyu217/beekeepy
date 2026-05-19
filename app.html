@@ -8091,6 +8091,7 @@ function renderForageList(){
     const pa=currentFilter==='mine'?pesticideAlerts.filter(a=>a.user_id===currentUser.id):pesticideAlerts;
     pa.forEach(a=>items.push({type:'alert',data:a}));
   }
+  // Show all — no location filter
   items.sort((a,b)=>new Date(b.data.created_at)-new Date(a.data.created_at));
   document.getElementById('formap-count').textContent=items.length;
   if(items.length===0){list.innerHTML='<div class="empty">No reports in this area yet — be the first to add one!</div>';return;}
@@ -8153,6 +8154,13 @@ function renderForageMapMarkers(){
     marker.bindPopup(`<b>🐝 ${a.name}</b>`);
     marker.addTo(forageMap);forageLayers.push(marker);
   });
+  // Auto-zoom to markers if any
+  if(forageLayers.length>0){
+    try{
+      const group=L.featureGroup(forageLayers);
+      forageMap.fitBounds(group.getBounds().pad(0.3));
+    }catch(e){}
+  }
 }
 
 function initForageMap(){

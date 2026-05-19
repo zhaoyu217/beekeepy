@@ -8317,14 +8317,14 @@ async function saveForageMarker(){
   const blurLat=lat+blur(), blurLng=lng+blur();
   if(selectedMarkerType==='forage'){
     var _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
-    const _fiResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
+    const _fiResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       plant_type:document.getElementById('fm-plant').value,
       bloom_status:selectedBloom,
       notes:document.getElementById('fm-notes').value,
       anonymous:anon
     })});
-    if(!_fiResp.ok){setSyncing('error');showToast('Error saving marker','error');return;}
+    if(_fiResp.status>=300){setSyncing('error');showToast('Error saving marker: '+_fiResp.status,'error');return;}
     // Award points with anti-cheat validation
     const plantType = document.getElementById('fm-plant').value;
     setTimeout(()=>{
@@ -8333,7 +8333,7 @@ async function saveForageMarker(){
     }, 800);
   } else {
     var _t2=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
-    const _paResp=await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t2,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
+    const _paResp=await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t2,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=minimal'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       severity:document.getElementById('fm-severity').value,
       description:document.getElementById('fm-desc').value,
@@ -8341,7 +8341,7 @@ async function saveForageMarker(){
       anonymous:anon,
       expires_at:new Date(Date.now()+7*24*3600*1000).toISOString()
     })});
-    if(!_paResp.ok){setSyncing('error');showToast('Error saving alert','error');return;}
+    if(_paResp.status>=300){setSyncing('error');showToast('Error saving alert: '+_paResp.status,'error');return;}
     // Notify nearby users via push
     checkNearbyPesticideAlerts(lat,lng);
   }

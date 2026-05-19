@@ -187,7 +187,15 @@ input:focus{border-color:var(--honey);border-width:1.5px}
 const SUPABASE_URL = 'https://ydrawqnkwdvfhauansdf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_6VC3g90SrIM5s7bI-CIwZQ_tbmk_h4B';
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storageKey: 'hivedash-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false
+  }
+});
 
 const L = {
   en:{

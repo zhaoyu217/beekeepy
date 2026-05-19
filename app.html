@@ -2179,6 +2179,7 @@ async function init() {
     }
     try{
       currentUser=session.user;
+      currentUser._accessToken=session.access_token;
       const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
       document.getElementById('user-avatar').textContent=initials;
       document.getElementById('remind-email-display').textContent=currentUser.email;
@@ -7583,11 +7584,13 @@ async function submitCommunityPost(){
     const isVideo=!!commVideoFile;
     const ext=mediaFile.name.split('.').pop();
     const path='media/'+currentUser.id+'/'+Date.now()+'.'+ext;
-    const{error:upErr,data:upData}=await sb.storage.from('community').upload(path,mediaFile,{upsert:true,cacheControl:'3600'});
-    console.log('Upload result:', JSON.stringify({error:upErr,path,size:mediaFile.size}));
-    if(upErr){setSyncing('error');showToast('Upload failed: '+upErr.message,'error');console.error('Upload error:',upErr);return;}
-    const{data:urlData}=sb.storage.from('community').getPublicUrl(path);
-    if(isVideo)videoUrl=urlData.publicUrl;else photoUrl=urlData.publicUrl;
+    const token=currentUser._accessToken||localStorage.getItem('hivedash-auth')&&JSON.parse(localStorage.getItem(Object.keys(localStorage).find(k=>k.includes('auth-token'))||'null')||'{}')?.access_token;
+    const uploadUrl=SUPABASE_URL+'/storage/v1/object/community/'+path;
+    const uploadResp=await fetch(uploadUrl,{method:'POST',headers:{'Authorization':'Bearer '+(currentUser._accessToken||''),'Content-Type':mediaFile.type,'x-upsert':'true'},body:mediaFile});
+    console.log('Upload status:',uploadResp.status);
+    if(!uploadResp.ok){const e=await uploadResp.text();setSyncing('error');showToast('Upload failed: '+uploadResp.status,'error');console.error('Upload error:',e);return;}
+    const publicUrl=SUPABASE_URL+'/storage/v1/object/public/community/'+path;
+    if(isVideo)videoUrl=publicUrl;else photoUrl=publicUrl;
   }
   if(false){
   }
@@ -7595,11 +7598,16 @@ async function submitCommunityPost(){
   const aiDiag = document.getElementById('tog-ai-diag')?.classList.contains('on') || false;
   const catEl = document.getElementById('comm-category');
   const finalCategory = catEl ? catEl.value : postCategory;
-  const{data,error}=await sb.from('community_posts').insert({
-    user_id:currentUser.id,category:finalCategory,
-    title:finalTitle,content,photo_url:photoUrl,video_url:videoUrl,local_group:localGroup
-  }).select().single();
-  if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+  const insertResp=await fetch(SUPABASE_URL+'/rest/v1/community_posts',{
+    method:'POST',
+    headers:{'Authorization':'Bearer '+(currentUser._accessToken||''),'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=representation'},
+    body:JSON.stringify({user_id:currentUser.id,category:finalCategory,title:finalTitle,content,photo_url:photoUrl,video_url:videoUrl,local_group:localGroup})
+  });
+  console.log('Insert status:',insertResp.status);
+  if(!insertResp.ok){const e=await insertResp.text();setSyncing('error');showToast('Post failed: '+insertResp.status,'error');console.error(e);return;}
+  const inserted=await insertResp.json();
+  const data=Array.isArray(inserted)?inserted[0]:inserted;
+  const error=null;
   // If AI diagnosis enabled, trigger AI analysis on the photo
   if(aiDiag&&photoUrl&&data){
     setTimeout(()=>runCommunityAIDiagnosis(data.id, photoUrl, title), 1000);

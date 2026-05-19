@@ -8506,17 +8506,30 @@ async function flushOfflineQueue(){
   }
 }
 
-// Register Service Worker
+// Register Service Worker — with auto-refresh on new version
 if('serviceWorker' in navigator){
   navigator.serviceWorker.register('/sw.js').then(reg => {
+
+    // 检测到新 SW 安装完成后自动刷新页面
     reg.addEventListener('updatefound', () => {
       const newSW = reg.installing;
       newSW.addEventListener('statechange', () => {
         if(newSW.state === 'installed' && navigator.serviceWorker.controller){
-          showToast('🔄 App updated — refresh to get latest version', 'success');
+          // 新版本已就绪，通知新 SW 立即接管
+          newSW.postMessage({type: 'SKIP_WAITING'});
+        }
+        if(newSW.state === 'activated'){
+          // 新 SW 激活后自动刷新，用户无感知拿到最新版本
+          window.location.reload();
         }
       });
     });
+
+    // 页面已被旧 SW 控制时，监听 controllerchange 事件触发刷新
+    navigator.serviceWorker.addEventListener('controllerchange', () => {
+      window.location.reload();
+    });
+
   }).catch(()=>{});
 }
 

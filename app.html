@@ -410,10 +410,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
   </div>
 
-  <div class="section-hd"><span data-i18n="apiaries">Apiaries</span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px">
+    <div class="section-hd" style="margin:0"><span data-i18n="apiaries">Apiaries</span></div>
+    <button onclick="openModal('modal-apiary')" style="padding:4px 12px;background:var(--honey);color:#fff;border:none;border-radius:20px;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer">＋ Add</button>
+  </div>
   <div id="apiary-summary"></div>
 
-  <div class="section-hd"><span data-i18n="all_hives">All Hives</span></div>
+  <div style="display:flex;align-items:center;justify-content:space-between;margin:14px 0 8px">
+    <div class="section-hd" style="margin:0"><span data-i18n="all_hives">All Hives</span></div>
+    <button onclick="hives.length>=3&&!userIsPro()?showUpgradeModal('hive_limit'):apiaries.length===0?showToast('Please add an apiary first','warning'):openModal('modal-hive')" style="padding:4px 12px;background:var(--honey);color:#fff;border:none;border-radius:20px;font-size:12px;font-family:'DM Sans',sans-serif;font-weight:500;cursor:pointer">＋ Add</button>
+  </div>
   <div class="hive-grid" id="home-hive-grid"></div>
 
   <div class="section-hd"><span data-i18n="recent_activity">Recent Activity</span></div>

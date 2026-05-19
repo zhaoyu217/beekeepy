@@ -6641,13 +6641,13 @@ async function exportCompliancePDF(){
 
   // Table header
   const cols=[
-    {label:'Date',       x:margin,        w:22},
-    {label:'Hive',       x:margin+22,     w:32},
-    {label:'Product',    x:margin+54,     w:50},
-    {label:'Dosage',     x:margin+104,    w:24},
-    {label:'Duration',   x:margin+128,    w:16},
-    {label:'Withdrawal', x:margin+144,    w:22},
-    {label:'Applicator', x:margin+166,    w:contentW-148},
+    {label:'Date',       x:margin,        w:20},
+    {label:'Hive',       x:margin+20,     w:42},
+    {label:'Product',    x:margin+62,     w:46},
+    {label:'Dosage',     x:margin+108,    w:20},
+    {label:'Days',       x:margin+128,    w:14},
+    {label:'Withdrawal', x:margin+142,    w:20},
+    {label:'Applicator', x:margin+162,    w:contentW-144},
   ];
   const rowH=7;
 
@@ -6673,8 +6673,8 @@ async function exportCompliancePDF(){
 
     const vals=[
       pdfText(tr.start_date),
-      pdfText(hive?.name).slice(0,16),
-      pdfText(tr.product).slice(0,32),
+      pdfText(hive?.name).slice(0,24),
+      pdfText(tr.product).slice(0,28),
       pdfText(tr.amount).slice(0,13),
       tr.duration_days?tr.duration_days+'d':'-',
       pdfText(tr.withdrawal_period).slice(0,12),

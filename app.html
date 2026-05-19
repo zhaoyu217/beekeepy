@@ -8070,7 +8070,9 @@ async function loadForageData(){
   forageMarkers=fm.data||[];
   pesticideAlerts=pa.data||[];
   // Cache all markers for leaderboard (including expired ones for 3-year history)
-  const allFm = await sb.from('forage_markers').select('*').order('created_at',{ascending:false}).limit(500);
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  const _fmResp = await fetch(SUPABASE_URL+'/rest/v1/forage_markers?order=created_at.desc&limit=500',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+  const allFm = await _fmResp.json();
   forageMarkersCache = allFm.data||forageMarkers;
   renderForageList();
   if(forageMap)renderForageMapMarkers();
@@ -8253,12 +8255,11 @@ async function validateAndAwardBloomPoints(userLat, userLng, plantType) {
 async function checkPeerReviewBonus(lat, lng, plantType) {
   try {
     // Check recent forage markers with same plant within 50km
-    const{data} = await sb.from('forage_markers')
-      .select('user_id, lat, lng')
-      .eq('plant_type', plantType)
-      .gte('created_at', new Date(Date.now()-7*86400000).toISOString());
+    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    const _fm2Resp = await fetch(SUPABASE_URL+'/rest/v1/forage_markers?plant_type=eq.'+encodeURIComponent(plantType)+'&created_at=gte.'+new Date(Date.now()-7*86400000).toISOString()+'&select=user_id,lat,lng',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+    const data = await _fm2Resp.json();
 
-    if(!data) return;
+    if(!Array.isArray(data)) return;
     // Filter to within 50km
     const nearby = data.filter(m =>
       m.user_id !== currentUser.id &&
@@ -8288,14 +8289,15 @@ async function saveForageMarker(){
   const blur=()=>(Math.random()-0.5)*0.022; // ~2.4km max offset
   const blurLat=lat+blur(), blurLng=lng+blur();
   if(selectedMarkerType==='forage'){
-    const{error}=await sb.from('forage_markers').insert({
+    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    const _fiResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       plant_type:document.getElementById('fm-plant').value,
       bloom_status:selectedBloom,
       notes:document.getElementById('fm-notes').value,
       anonymous:anon
-    });
-    if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+    })});
+    if(!_fiResp.ok){setSyncing('error');showToast('Error saving marker','error');return;}
     // Award points with anti-cheat validation
     const plantType = document.getElementById('fm-plant').value;
     setTimeout(()=>{
@@ -8303,15 +8305,16 @@ async function saveForageMarker(){
       validateAndAwardBloomPoints(lat, lng, plantType);
     }, 800);
   } else {
-    const{error}=await sb.from('pesticide_alerts').insert({
+    const _t2=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    const _paResp=await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t2,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
       user_id:currentUser.id,lat:blurLat,lng:blurLng,
       severity:document.getElementById('fm-severity').value,
       description:document.getElementById('fm-desc').value,
       notes:document.getElementById('fm-notes').value,
       anonymous:anon,
       expires_at:new Date(Date.now()+7*24*3600*1000).toISOString()
-    });
-    if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
+    })});
+    if(!_paResp.ok){setSyncing('error');showToast('Error saving alert','error');return;}
     // Notify nearby users via push
     checkNearbyPesticideAlerts(lat,lng);
   }
@@ -8322,13 +8325,15 @@ async function saveForageMarker(){
 }
 
 async function deleteForageMarker(id){
-  await sb.from('forage_markers').delete().eq('id',id);
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  await fetch(SUPABASE_URL+'/rest/v1/forage_markers?id=eq.'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
   forageMarkers=forageMarkers.filter(m=>m.id!==id);
   renderForageList();if(forageMap)renderForageMapMarkers();
   showToast('🗑 Marker removed','success');
 }
 async function deletePesticideAlert(id){
-  await sb.from('pesticide_alerts').delete().eq('id',id);
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  await fetch(SUPABASE_URL+'/rest/v1/pesticide_alerts?id=eq.'+id,{method:'DELETE',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
   pesticideAlerts=pesticideAlerts.filter(a=>a.id!==id);
   renderForageList();if(forageMap)renderForageMapMarkers();
   showToast('🗑 Alert removed','success');
@@ -8616,11 +8621,10 @@ let swarmMap = null;
 
 async function loadSwarmAlerts() {
   try {
-    const { data } = await sb.from('swarm_alerts')
-      .select('*')
-      .gt('expires_at', new Date().toISOString())
-      .order('created_at', { ascending: false });
-    swarmAlerts = data || [];
+    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    const _swlResp = await fetch(SUPABASE_URL+'/rest/v1/swarm_alerts?expires_at=gt.'+new Date().toISOString()+'&order=created_at.desc&limit=50',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+    const data = await _swlResp.json();
+    swarmAlerts = Array.isArray(data) ? data : [];
     renderSwarmList();
     initSwarmMap();
   } catch(e) {
@@ -8694,14 +8698,9 @@ async function reportSwarmAlert() {
     const blur = () => (Math.random() - 0.5) * 0.018; // ~2km fuzzy
     const expires = new Date(Date.now() + 48 * 3600 * 1000).toISOString(); // 48h expiry
     try {
-      const { error } = await sb.from('swarm_alerts').insert({
-        lat: lat + blur(), lng: lng + blur(),
-        description: desc,
-        reported_by: currentUser?.id || null,
-        expires_at: expires,
-        created_at: new Date().toISOString()
-      });
-      if (error) throw error;
+      const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+      const _swResp = await fetch(SUPABASE_URL+'/rest/v1/swarm_alerts',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({lat:lat+blur(),lng:lng+blur(),description:desc,reported_by:currentUser?.id||null,expires_at:expires,created_at:new Date().toISOString()})});
+      if (!_swResp.ok) throw new Error(await _swResp.text());
       showToast('Swarm alert sent! Nearby beekeepers notified 🐝', 'success');
       await awardPoints('swarm_report');
       loadSwarmAlerts();
@@ -9340,26 +9339,32 @@ async function confirmForageMarker(markerId, isConfirm) {
   if(!currentUser) { showToast('Sign in to confirm markers','warning'); return; }
   try {
     // Record the review
-    await sb.from('forage_reviews').upsert({
+    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    await fetch(SUPABASE_URL+'/rest/v1/forage_reviews',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'resolution=merge-duplicates'},body:JSON.stringify({
       marker_id: markerId,
       user_id: currentUser.id,
       confirmed: isConfirm,
       created_at: new Date().toISOString()
-    });
+    })});
     // Check confirmation count
-    const{data:reviews} = await sb.from('forage_reviews').select('confirmed').eq('marker_id', markerId);
+    const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+    const _rvResp=await fetch(SUPABASE_URL+'/rest/v1/forage_reviews?marker_id=eq.'+markerId+'&select=confirmed',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+    const reviews=await _rvResp.json();
     const confirms = (reviews||[]).filter(r=>r.confirmed).length;
     const falses = (reviews||[]).filter(r=>!r.confirmed).length;
     if(confirms >= 5) {
       // Award points to marker creator
-      const{data:marker} = await sb.from('forage_markers').select('user_id').eq('id',markerId).single();
+      const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+      const _fmcResp=await fetch(SUPABASE_URL+'/rest/v1/forage_markers?id=eq.'+markerId+'&select=user_id',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+      const _fmcData=await _fmcResp.json(); const marker=Array.isArray(_fmcData)?_fmcData[0]:null;
       if(marker?.user_id && marker.user_id !== currentUser.id) {
         showToast('Marker confirmed! Creator gets +10 pts 🎉','success');
       }
     }
     if(falses >= 3) {
       // Auto-remove marker
-      await sb.from('forage_markers').update({expires_at: new Date().toISOString()}).eq('id',markerId);
+      const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+      await fetch(SUPABASE_URL+'/rest/v1/forage_markers?id=eq.'+markerId,{method:'PATCH',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({expires_at:new Date().toISOString()})});
       showToast('Marker reported as false — removed from map','success');
     } else {
       showToast(isConfirm ? '✅ Confirmed! Thank you' : '❌ Reported as false/expired','success');

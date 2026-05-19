@@ -7694,7 +7694,8 @@ async function openPostDetail(postId){
       ${post.local_group?`<div style="font-size:11px;color:var(--sky);margin-top:6px">📍 ${post.local_group}</div>`:''}
     </div>`;
   // Load replies
-  const{data:replies}=await sb.from('community_replies').select('*').eq('post_id',postId).order('created_at');
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  const _rResp=await fetch(SUPABASE_URL+'/rest/v1/community_replies?post_id=eq.'+postId+'&order=created_at.asc',{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}}); const replies=await _rResp.json();
   const repliesList=document.getElementById('comm-replies-list');
   repliesList.innerHTML=replies?.length?replies.map(r=>`
     <div style="padding:8px 10px;background:${r.is_expert?'var(--honey-light)':'var(--bg)'};border-radius:var(--radius-sm);margin-bottom:6px;border:1px solid ${r.is_expert?'var(--honey)':'var(--border)'}">
@@ -7708,10 +7709,9 @@ async function openPostDetail(postId){
 async function submitReply(){
   const content=document.getElementById('comm-reply-input').value.trim();
   if(!content||!currentPostId)return;
-  const{data,error}=await sb.from('community_replies').insert({
-    post_id:currentPostId,user_id:currentUser.id,content
-  }).select().single();
-  if(error){showToast('Error: '+error.message,'error');return;}
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  const _repResp=await fetch(SUPABASE_URL+'/rest/v1/community_replies',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({post_id:currentPostId,user_id:currentUser.id,content})});
+  if(!_repResp.ok){showToast('Error posting reply','error');return;}
   document.getElementById('comm-reply-input').value='';
   // Refresh replies
   await openPostDetail(currentPostId);
@@ -7719,15 +7719,18 @@ async function submitReply(){
 }
 
 async function toggleLike(postId){
-  const{data:existing}=await sb.from('community_likes').select('id').eq('post_id',postId).eq('user_id',currentUser.id).single();
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  const _lResp=await fetch(SUPABASE_URL+'/rest/v1/community_likes?post_id=eq.'+postId+'&user_id=eq.'+currentUser.id,{headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+  const _lData=await _lResp.json();
+  const existing=Array.isArray(_lData)&&_lData.length>0?_lData[0]:null;
+  const _post=communityPosts.find(p=>p.id===postId);
   if(existing){
-    await sb.from('community_likes').delete().eq('id',existing.id);
-    await sb.from('community_posts').update({likes:Math.max(0,(communityPosts.find(p=>p.id===postId)?.likes||1)-1)}).eq('id',postId);
-    const p=communityPosts.find(p=>p.id===postId);if(p)p.likes=Math.max(0,(p.likes||1)-1);
+    await fetch(SUPABASE_URL+'/rest/v1/community_likes?id=eq.'+existing.id,{method:'DELETE',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY}});
+    if(_post)_post.likes=Math.max(0,(_post.likes||1)-1);
   } else {
-    await sb.from('community_likes').insert({post_id:postId,user_id:currentUser.id});
-    await sb.from('community_posts').update({likes:(communityPosts.find(p=>p.id===postId)?.likes||0)+1}).eq('id',postId);
-    const p=communityPosts.find(p=>p.id===postId);if(p)p.likes=(p.likes||0)+1;
+    await fetch(SUPABASE_URL+'/rest/v1/community_likes',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({post_id:postId,user_id:currentUser.id})});
+    await fetch(SUPABASE_URL+'/rest/v1/community_posts?id=eq.'+postId,{method:'PATCH',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({likes:(_post?.likes||0)+1})});
+    if(_post)_post.likes=(_post.likes||0)+1;
   }
   renderCommunityPosts();
 }
@@ -7798,11 +7801,10 @@ function renderCommunityMapMarkers(){
 async function reportPost(postId){
   const reason = prompt('Why are you reporting this post?\n\n1. Spam / Advertisement\n2. Inappropriate content\n3. Misinformation\n4. Other\n\nEnter reason:');
   if(!reason)return;
-  const{error}=await sb.from('community_reports').insert({
-    post_id:postId, user_id:currentUser.id, reason
-  });
-  if(error&&error.code==='23505'){showToast('You already reported this post','warning');return;}
-  if(error){showToast('Error: '+error.message,'error');return;}
+  const _t=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+  const _rpResp=await fetch(SUPABASE_URL+'/rest/v1/community_reports',{method:'POST',headers:{'Authorization':'Bearer '+_t,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({post_id:postId,user_id:currentUser.id,reason})});
+  if(_rpResp.status===409){showToast('You already reported this post','warning');return;}
+  if(!_rpResp.ok){showToast('Error reporting','error');return;}
   showToast('🚩 Report submitted — thank you','success');
 }
 
@@ -9315,7 +9317,8 @@ Keep it under 80 words, friendly and practical.`;
         const aiText = d.content?.[0]?.text?.trim();
         if(aiText && postId) {
           // Add AI reply to the post
-          await sb.from('community_replies').insert({
+          const _aiTok=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';
+          await fetch(SUPABASE_URL+'/rest/v1/community_replies',{method:'POST',headers:{'Authorization':'Bearer '+_aiTok,'apikey':SUPABASE_ANON_KEY,'Content-Type':'application/json'},body:JSON.stringify({
             post_id:postId,
             user_id:currentUser?.id,
             content:'🤖 **AI Diagnosis:** ' + aiText,

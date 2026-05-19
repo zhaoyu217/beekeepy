@@ -2141,7 +2141,15 @@ const CLAUDE_API_KEY = '';
 const OPENWEATHER_API_KEY = '6224c11c5ee340327a054c579d1e37c0';
 
 const { createClient } = supabase;
-const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
+  auth: {
+    storageKey: 'hivedash-auth',
+    storage: window.localStorage,
+    autoRefreshToken: true,
+    persistSession: true,
+    detectSessionInUrl: false
+  }
+});
 
 // State 
 let currentUser = null;

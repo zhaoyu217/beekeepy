@@ -4916,13 +4916,15 @@ async function saveInspection(mode){
     editingInspectionId=null;
     document.getElementById('single-save-btns').innerHTML=`<button class="btn btn-outline" onclick="saveInspection('draft')" ><span data-i18n="save_draft">Save Draft</span></button><button class="btn btn-primary" onclick="saveInspection('done')"><span data-i18n="complete">Complete ✓</span></button>`;
   } else {
-    {const _itok=await getAuthToken();const _ir=await fetch(SUPABASE_URL+'/rest/v1/inspections',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_itok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(record)});const _ij=await _ir.json();data=Array.isArray(_ij)?_ij[0]:_ij;error=_ir.ok?null:{message:_ij?.message||_ir.status};}
-    if(!error&&data)inspections.unshift(data);
+    {const _itok=await getAuthToken();const _ir=await fetch(SUPABASE_URL+'/rest/v1/inspections',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_itok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(record)});const _ij=await _ir.json();data=Array.isArray(_ij)?_ij[0]:_ij;error=_ir.ok?null:{message:_ij?.message||_ir.status};console.log('[saveInspection] data:',data,'error:',error);}
+    if(error){setSyncing('error');showToast('Error saving: '+(error.message||'unknown'),'error');return;}
+    if(data)inspections.unshift(data);
   }
   // Link pending photos to this inspection
-  if(pendingPhotos.length>0){
+  if(pendingPhotos.length>0 && data?.id){
+    const _ptok=await getAuthToken();
     for(const p of pendingPhotos){
-      await sb.from('photos').update({inspection_id:data.id}).eq('id',p.id);
+      await fetch(SUPABASE_URL+'/rest/v1/photos?id=eq.'+p.id,{method:'PATCH',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_ptok,'Content-Type':'application/json'},body:JSON.stringify({inspection_id:data.id})});
       p.inspection_id=data.id;
     }
   }

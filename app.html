@@ -24,11 +24,10 @@
 <title>HiveDash · Dashboard</title>
 <link href="https://fonts.googleapis.com/css2?family=DM+Serif+Display:ital@0;1&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
 <script src="https://cdn.paddle.com/paddle/v2/paddle.js"></script>
-<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2">
-
-
-
-</script>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf-autotable/3.8.2/jspdf.plugin.autotable.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/qrcodejs/1.0.0/qrcode.min.js"></script>
 <style>
 :root{
   --honey:#E8930A;--honey-light:#FDF3E0;--honey-dark:#B36800;
@@ -363,7 +362,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     </div>
     <button class="icon-btn" id="lang-btn" onclick="toggleLangMenu()" style="font-size:12px;font-weight:700;letter-spacing:-0.5px" title="Language">EN</button>
     <div class="user-avatar" id="user-avatar" onclick="showPage('account',null)">?</div>
-    <button class="icon-btn" id="dark-toggle-btn" onclick="toggleDarkMode()" title="Toggle dark mode">🌙</button>
+    <button class="icon-btn" id="dark-toggle-btn" onclick="toggleDarkMode()" title="High contrast mode (outdoor)">☀️</button>
     <button class="icon-btn" onclick="showPage('settings',null)">⚙️</button>
   </div>
 </div>
@@ -479,6 +478,7 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
       <div class="form-group"><label class="form-label"><span data-i18n="honey_stores">Honey Stores</span> <span class="val" id="hs-val">5</span></label><input type="range" id="sl-hs" min="0" max="10" value="5" step="1" oninput="document.getElementById('hs-val').textContent=this.value;calcScore()"></div>
       <div class="form-group"><label class="form-label"><span data-i18n="pollen">Pollen / Bee Bread</span> <span class="val" id="ps-val">4</span></label><input type="range" id="sl-ps" min="0" max="10" value="4" step="1" oninput="document.getElementById('ps-val').textContent=this.value;calcScore()"></div>
       <div class="form-group"><label class="form-label"><span data-i18n="queen_cells">Queen Cells</span> <span class="val" id="qc-val">0</span></label><input type="range" id="sl-qc" min="0" max="10" value="0" step="1" oninput="document.getElementById('qc-val').textContent=this.value;calcScore();toggleQueenCells()"></div>
+      <div class="form-group"><label class="form-label">Hive Weight (lbs) <span class="val" id="hw-val">—</span></label><input type="number" id="insp-weight" min="0" max="300" step="0.5" placeholder="Optional — e.g. 85.5" style="font-size:16px" oninput="document.getElementById('hw-val').textContent=this.value?this.value+' lbs':'—'"></div>
       <div id="queen-cell-opts" style="display:none;margin-top:6px">
         <div class="chips">
           <button class="chip" id="chip-swarm" onclick="this.classList.toggle('on');calcScore()">Swarm Cells</button>
@@ -3600,14 +3600,15 @@ function getMockAIAnalysis(h,li){
 async function showHiveAIAnalysis(hiveId){
   // Check AI usage limit for free users
   if(!userIsPro()){
-    const used = parseInt(localStorage.getItem('ai_uses_'+currentUser?.id)||'0');
+    const _aiKey = 'bk_ai_' + btoa((currentUser?.id||'') + (currentUser?.email||'')).slice(0,16);
+    const used = parseInt(localStorage.getItem(_aiKey)||localStorage.getItem('ai_uses_'+currentUser?.id)||'0');
     const FREE_AI_LIMIT = 2;
     if(used >= FREE_AI_LIMIT){
       showUpgradeModal('ai_analysis');
       return;
     }
     // Increment usage
-    localStorage.setItem('ai_uses_'+currentUser?.id, used+1);
+    localStorage.setItem(_aiKey, used+1);
     // Show remaining uses
     const remaining = FREE_AI_LIMIT - used - 1;
     if(remaining === 0){
@@ -4650,7 +4651,8 @@ async function saveBatchInspection(){
       laying_workers:document.getElementById('tog-laying').classList.contains('on'),
       swarm_cells:document.getElementById('chip-swarm')?.classList.contains('on')||false,
       supersedure_cells:document.getElementById('chip-super')?.classList.contains('on')||false,
-      mite_count:mc,score,notes
+      mite_count:mc,score,notes,
+      hive_weight:document.getElementById('insp-weight')?.value?parseFloat(document.getElementById('insp-weight').value):null
     };
     const{data,error}=await sb.from('inspections').insert(record).select().single();
     if(!error&&data)inspections.unshift(data);
@@ -4744,6 +4746,7 @@ function openEditInspection(id){
   document.getElementById('sl-qc').value=insp.queen_cells||0;
   document.getElementById('sl-tmp').value=insp.temperament||5;
   document.getElementById('sl-mite').value=insp.mite_count||0;
+  if(document.getElementById('insp-weight'))document.getElementById('insp-weight').value=insp.hive_weight||'';
   document.getElementById('insp-notes').value=insp.notes||'';
   // Update slider displays
   document.querySelectorAll('#inspect-form input[type=range]').forEach(s=>{
@@ -4790,7 +4793,8 @@ async function saveInspection(mode){
     swarm_cells:document.getElementById('chip-swarm')?.classList.contains('on')||false,
     supersedure_cells:document.getElementById('chip-super')?.classList.contains('on')||false,
     mite_count:mc,score,
-    notes:document.getElementById('insp-notes').value
+    notes:document.getElementById('insp-notes').value,
+    hive_weight:document.getElementById('insp-weight')?.value?parseFloat(document.getElementById('insp-weight').value):null
   };
   let data,error;
   if(editingInspectionId){
@@ -6551,6 +6555,7 @@ async function exportCompliancePDF(){
 }
 
 async function exportAnnualPDF(){
+  if(!userIsPro()){showUpgradeModal('annual_pdf');return;}
   const {jsPDF}=window.jspdf;
   if(!jsPDF){showToast(t('toast_pdf_error'),'error');return;}
   if(hives.length===0){showToast('No hives to report','warning');return;}
@@ -7349,7 +7354,7 @@ function applyBrightMode(){
   const btn = document.getElementById('dark-toggle-btn');
   if(btn){
     btn.textContent = brightMode ? '🔆' : '☀️';
-    btn.title = brightMode ? 'Normal mode' : 'Bright mode (outdoor)';
+    btn.title = brightMode ? 'Normal mode' : 'High contrast mode (outdoor)';
     btn.style.background = brightMode ? 'var(--honey-light)' : '';
     btn.style.borderColor = brightMode ? 'var(--honey)' : '';
   }
@@ -8549,7 +8554,8 @@ function updateAIUsesHint() {
     hint.style.color = 'var(--forest)';
     return;
   }
-  const used = parseInt(localStorage.getItem('ai_uses_' + currentUser?.id) || '0');
+  const _aiKey2 = 'bk_ai_' + btoa((currentUser?.id||'') + (currentUser?.email||'')).slice(0,16);
+  const used = parseInt(localStorage.getItem(_aiKey2)||localStorage.getItem('ai_uses_' + currentUser?.id) || '0');
   const remaining = Math.max(0, 2 - used);
   if (remaining === 0) {
     hint.innerHTML = '🔒 Free AI uses exhausted — <span onclick="showUpgradeModal(\'ai_analysis\')" style="color:var(--honey-dark);cursor:pointer;font-weight:600;">Upgrade to Pro</span>';
@@ -9150,6 +9156,8 @@ async function generateAndShare() {
   if (!hive) { showToast('Please select a hive first', 'error'); return; }
 
   // Load html2canvas
+  const _dlBtn = document.querySelector('[onclick="downloadShareCard()"]');
+  if(_dlBtn){ _dlBtn.textContent = '⏳ Loading...'; _dlBtn.disabled = true; }
   if (typeof html2canvas === 'undefined') {
     await new Promise((resolve, reject) => {
       const s = document.createElement('script');
@@ -9169,6 +9177,7 @@ async function generateAndShare() {
   if (!container) return;
 
   try {
+    if(_dlBtn){ _dlBtn.textContent = '⬇️ Rendering...'; }
     const canvas = await html2canvas(container, {
       scale: 2,
       useCORS: true,
@@ -9182,6 +9191,7 @@ async function generateAndShare() {
     // Download
     const a = document.createElement('a');
     a.href = url;
+    if(_dlBtn){ _dlBtn.textContent = '⬇️ Download PNG'; _dlBtn.disabled = false; }
     a.download = `hivedash-${SHARE_TEMPLATE_NAMES[shareCurrentTemplate].toLowerCase().replace(/ /g,'-')}-${Date.now()}.png`;
     a.click();
 
@@ -9339,7 +9349,18 @@ function startCheckout(plan) {
 
   // If Paddle not configured yet, show coming soon
   if (priceId.startsWith('pri_REPLACE')) {
-    showToast('Payment coming very soon! 🚀', 'success');
+    showToast('Pro payments launching soon — stay tuned! 🚀', 'success');
+    // Show a nicer modal instead
+    const m = document.createElement('div');
+    m.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,0.5);z-index:700;display:flex;align-items:center;justify-content:center;padding:20px';
+    m.innerHTML = `<div style="background:#fff;border-radius:16px;padding:28px 24px;max-width:340px;width:100%;text-align:center">
+      <div style="font-size:40px;margin-bottom:12px">🚀</div>
+      <div style="font-size:17px;font-weight:600;margin-bottom:8px">Pro is coming soon!</div>
+      <div style="font-size:13px;color:#5C5847;margin-bottom:20px;line-height:1.6">We're setting up payments. In the meantime, earn 200 points through inspections and harvests to unlock Pro for free!</div>
+      <button onclick="this.closest('div[style*=fixed]').remove();showPage('points',document.querySelector('.nav-item'))" style="width:100%;padding:12px;background:#E8930A;color:#fff;border:none;border-radius:10px;font-size:14px;font-weight:600;cursor:pointer;margin-bottom:8px">🏆 Earn Points Instead</button>
+      <button onclick="this.closest('div[style*=fixed]').remove()" style="width:100%;padding:10px;background:none;border:none;color:#9A9280;font-size:13px;cursor:pointer">Maybe later</button>
+    </div>`;
+    document.body.appendChild(m);
     return;
   }
 

@@ -2237,9 +2237,9 @@ async function init() {
           _ww.innerHTML=`<div class="weather-card"><div class="weather-icon">🌤</div><div style="flex:1"><div class="weather-loading"><div class="spinner" style="width:14px;height:14px;border-width:2px"></div> Loading weather...</div></div></div>`;
         }
       }catch(e){}
-      // 并行加载：数据和天气同时请求，互不等待
-      fetchWeather(); // 不 await，立即开始，后台完成
+      // 先加载数据（获取蜂场GPS），再加载天气
       await loadAll();
+      fetchWeather(); // loadAll完成后再获取天气，确保使用蜂场坐标
       checkReminders();
       requestPushPermission();
     }catch(e){console.warn('startApp error:',e);}

@@ -1167,6 +1167,16 @@ select{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/
     <div id="community-map" style="height:280px;"></div>
     <div style="padding:12px 16px;" id="community-map-list"></div>
     <div style="padding:0 16px 16px;">
+      <!-- Reports list -->
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:10px;">
+        <div style="font-size:13px;font-weight:700;color:var(--text);">📍 Reports <span id="formap-count" style="font-size:11px;color:var(--text-3);font-weight:400">0</span></div>
+        <div style="display:flex;gap:6px;">
+          <button onclick="setForageFilter('all',this)" id="ff-all" style="padding:3px 10px;border-radius:20px;border:1.5px solid var(--honey);background:var(--honey-light);color:var(--honey-dark);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600;">All</button>
+          <button onclick="setForageFilter('mine',this)" id="ff-mine" style="padding:3px 10px;border-radius:20px;border:1px solid var(--border);background:var(--surface);color:var(--text-3);font-size:11px;font-family:'DM Sans',sans-serif;cursor:pointer;">Mine</button>
+        </div>
+      </div>
+      <div id="formap-list" style="margin-bottom:16px;"></div>
+
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:12px;">
         <div style="font-size:13px;font-weight:700;color:var(--text);">🏆 Forage Leaderboard</div>
         <div style="display:flex;gap:6px;">
@@ -8075,6 +8085,17 @@ async function loadForageData(){
   renderForageList();
   if(forageMap)renderForageMapMarkers();
   renderLeaderboard();
+}
+
+
+function setForageFilter(type, btn) {
+  currentFilter = type;
+  ['ff-all','ff-mine'].forEach(id => {
+    const el = document.getElementById(id);
+    if(el){ el.style.border='1px solid var(--border)';el.style.background='var(--surface)';el.style.color='var(--text-3)';el.style.fontWeight=''; }
+  });
+  if(btn){ btn.style.border='1.5px solid var(--honey)';btn.style.background='var(--honey-light)';btn.style.color='var(--honey-dark)';btn.style.fontWeight='600'; }
+  renderForageList();
 }
 
 function renderForageList(){

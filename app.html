@@ -2523,6 +2523,31 @@ async function loadAll() {
     }catch(e2){}
   }
   try{await loadOfflineQueue();}catch(e){console.warn('offline queue error:',e);}
+  // ===== TEMPORARY DIAGNOSTIC — REMOVE AFTER DEBUG =====
+  try{
+    const _diagTok = currentUser?._accessToken||'';
+    let _diagTokStatus = '无token';
+    if(_diagTok){
+      try{
+        const _p = JSON.parse(atob(_diagTok.split('.')[1]));
+        const _exp = _p.exp*1000;
+        const _left = Math.round((_exp - Date.now())/1000);
+        _diagTokStatus = _left > 0 ? '有效（剩'+_left+'秒）' : '已过期（'+Math.abs(_left)+'秒前）';
+      }catch(e){ _diagTokStatus = '解析失败'; }
+    }
+    const _lsRaw = localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token');
+    const _lsTok = _lsRaw ? (JSON.parse(_lsRaw)?.access_token ? '有' : '无') : '无';
+    const _msg = [
+      '=== HiveDash 诊断 ===',
+      'hives: '+hives.length,
+      'apiaries: '+apiaries.length,
+      'token状态: '+_diagTokStatus,
+      'localStorage token: '+_lsTok,
+      'uid: '+(currentUser?.id||'无'),
+    ].join('\n');
+    alert(_msg);
+  }catch(e){ alert('诊断出错: '+e.message); }
+  // ===== END DIAGNOSTIC =====
   renderHome();
   checkShowOnboarding();
   hives.forEach(h=>loadQueenHistory(h.id).catch(()=>{}));

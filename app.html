@@ -2229,7 +2229,8 @@ const sb = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
     storage: window.localStorage,
     autoRefreshToken: true,
     persistSession: true,
-    detectSessionInUrl: true
+    detectSessionInUrl: true,
+    flowType: 'pkce'
   },
   global: {
     headers: {}
@@ -2282,13 +2283,11 @@ async function init() {
         }
       }catch(e){}
       // 先加载数据（获取蜂场GPS），再加载天气
-      alert('【诊断1】开始loadAll\nuid:'+currentUser?.id+'\ntoken:'+(currentUser?._accessToken?'有('+currentUser._accessToken.length+'chars)':'无'));
-      try{ await loadAll(); } catch(loadErr){ alert('【诊断ERR】loadAll异常:\n'+loadErr.message); throw loadErr; }
-      alert('【诊断2】loadAll完成\nhives:'+hives.length+'\napiaries:'+apiaries.length);
-      fetchWeather();
+      await loadAll();
+      fetchWeather(); // loadAll完成后再获取天气，确保使用蜂场坐标
       checkReminders();
       requestPushPermission();
-    }catch(e){alert('【诊断CATCH】startApp捕获异常:\n'+e.message);console.warn('startApp error:',e);}
+    }catch(e){console.warn('startApp error:',e);}
     clearTimeout(loadTimeout);
     document.getElementById('loading-overlay').style.display='none';
     // Clean up OAuth callback params from URL
@@ -2315,7 +2314,6 @@ async function init() {
 
   // Listen for auth state changes (handles OAuth callback automatically)
   sb.auth.onAuthStateChange(async(event, session) => {
-    alert('【诊断A】event:'+event+' session:'+(session?'有uid:'+session.user?.id:'null')+' appStarted:'+appStarted);
     if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && session && !appStarted){
       appStarted = true;
       loadedWithStaleToken = false;
@@ -2342,7 +2340,6 @@ async function init() {
   // Also check session immediately (handles normal page reload)
   try{
     const{data:{session}}=await sb.auth.getSession();
-    alert('【诊断B】getSession结果: '+(session?'有session uid:'+session.user?.id:'null，无session')+' appStarted:'+appStarted);
     if(session && !appStarted){
       appStarted = true;
       // Check if this token is already expired — if so, mark it so TOKEN_REFRESHED
@@ -7224,7 +7221,6 @@ async function exportHivePDF(){
 }
 
 // START 
-alert('【诊断0】页面脚本开始执行');
 init();
 
 // SEASONAL TASKS 

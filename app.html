@@ -3471,7 +3471,7 @@ document.addEventListener('keydown',e=>{
 function removePendingPhoto(photoId){
   const idx=pendingPhotos.findIndex(p=>p.id===photoId);
   if(idx>-1)pendingPhotos.splice(idx,1);
-  renderInspectPhotoGrid();
+  renderInspectPhotos();
 }
 
 async function confirmDeletePhoto(photoId, hiveId){

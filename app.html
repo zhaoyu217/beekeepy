@@ -2155,10 +2155,6 @@ function setLang(lang){
   // Re-render current active page so dynamic content updates
   const active=document.querySelector('.page.active');
   const activeNav=document.querySelector('.nav-item.active');
-  // Re-run bloom forecast with new language filter
-  if(typeof lastWeatherLat!=='undefined'&&lastWeatherLat){
-    computeBloomForecast(lastWeatherLat,lastWeatherLon).catch(()=>{});
-  }
   if(active){
     const id=active.id.replace('pg-','');
     if(id==='home'){renderHome();if(currentWeather)renderWeatherWidget(currentWeather);}
@@ -2312,30 +2308,12 @@ async function init() {
   }
 
   let appStarted = false;
-  // Track whether the first loadAll used a potentially-stale token so that
-  // TOKEN_REFRESHED can trigger a silent data reload with the fresh token.
-  let loadedWithStaleToken = false;
 
   // Listen for auth state changes (handles OAuth callback automatically)
   sb.auth.onAuthStateChange(async(event, session) => {
-    if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && session && !appStarted){
+    if((event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED') && session && !appStarted){
       appStarted = true;
-      loadedWithStaleToken = false;
       await startApp(session);
-    } else if(event==='TOKEN_REFRESHED' && session) {
-      // Always update the in-memory token so subsequent mutations use it
-      if(currentUser) currentUser._accessToken = session.access_token;
-      if(!appStarted){
-        // App hasn't started yet — start it now with the fresh token
-        appStarted = true;
-        loadedWithStaleToken = false;
-        await startApp(session);
-      } else if(loadedWithStaleToken) {
-        // App started earlier with a stale/expired token → silently reload data
-        loadedWithStaleToken = false;
-        currentUser._accessToken = session.access_token;
-        try{ await loadAll(); } catch(e){ console.warn('reload after token refresh:', e); }
-      }
     } else if(event==='SIGNED_OUT'){
       window.location.href='index.html';
     }
@@ -2346,12 +2324,6 @@ async function init() {
     const{data:{session}}=await sb.auth.getSession();
     if(session && !appStarted){
       appStarted = true;
-      // Check if this token is already expired — if so, mark it so TOKEN_REFRESHED
-      // can trigger a reload once Supabase delivers the refreshed token.
-      try{
-        const payload = JSON.parse(atob(session.access_token.split('.')[1]));
-        loadedWithStaleToken = payload.exp * 1000 < Date.now() + 30000;
-      }catch(e){ loadedWithStaleToken = false; }
       await startApp(session);
     } else if(!appStarted) {
       // Fallback: try reading token directly from localStorage
@@ -2363,10 +2335,6 @@ async function init() {
           const user = parsed?.user;
           if(tok && user && !appStarted) {
             appStarted = true;
-            try{
-              const payload = JSON.parse(atob(tok.split('.')[1]));
-              loadedWithStaleToken = payload.exp * 1000 < Date.now() + 30000;
-            }catch(e){ loadedWithStaleToken = false; }
             await startApp({user, access_token: tok});
           }
         }
@@ -2383,10 +2351,6 @@ async function init() {
         const user = parsed?.user;
         if(tok && user && !appStarted) {
           appStarted = true;
-          try{
-            const payload = JSON.parse(atob(tok.split('.')[1]));
-            loadedWithStaleToken = payload.exp * 1000 < Date.now() + 30000;
-          }catch(e3){ loadedWithStaleToken = false; }
           await startApp({user, access_token: tok});
           return;
         }
@@ -2512,7 +2476,7 @@ async function loadAll() {
       _get('photos?select=*&user_id=eq.'+uid+'&order=taken_at.desc'),
       _get('inspection_reminders?select=*&user_id=eq.'+uid),
     ]);
-    // Only update if we got real data back (not empty from timeout or stale token)
+    // Only update if we got real data back (not empty from timeout)
     if(a.data.length||h.data.length||q.data.length||i.data.length||t.data.length||hv.data.length){
       apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
       inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];
@@ -2566,10 +2530,8 @@ function getSeason(){
 
 //  FEATURE 1: WEATHER 
 let currentForecast=null; // 5-day forecast data
-let lastWeatherLat=null, lastWeatherLon=null; // saved for bloom re-run on lang change
 
 async function fetchWeatherByCoords(lat, lon, cityName) {
-  lastWeatherLat=lat; lastWeatherLon=lon; // save for bloom re-run on lang change
   try {
     // Fetch current weather + 5-day forecast simultaneously
     const [curRes, fcastRes] = await Promise.all([
@@ -7222,46 +7184,12 @@ function getWeekKey(){const d=new Date(),s=new Date(d.getFullYear(),0,1),w=Math.
 function getSeasonalTasks(){
   const m=new Date().getMonth()+1;
   const season=m>=3&&m<=5?'spring':m>=6&&m<=8?'summer':m>=9&&m<=10?'fall':'winter';
-  const L=currentLang.startsWith('en-')?(LANGS.en):(LANGS[currentLang]||LANGS.en);
-  const T={
-    spring:{
-      sp1:{en:'Check for swarm cells — inspect every 7 days',de:'Schwarmzellen prüfen — alle 7 Tage kontrollieren',fr:'Vérifier les cellules d'essaimage — inspecter chaque semaine',it:'Controllare celle sciamatura — ispezionare ogni 7 giorni',pt:'Verificar células de enxame — inspecionar a cada 7 dias',ro:'Verificați celulele de roi — inspectați la fiecare 7 zile',tr:'Oğul hücrelerini kontrol et — 7 günde bir denetle'},
-      sp2:{en:'Add supers as colony builds up',de:'Honigraum aufsetzen, wenn Volk wächst',fr:'Ajouter des hausses au fur et à mesure',it:'Aggiungere melari con la crescita della colonia',pt:'Adicionar melgueiras conforme a colônia cresce',ro:'Adăugați corpuri pe măsură ce colonia crește',tr:'Koloni büyüdükçe bal katı ekle'},
-      sp3:{en:'Test Varroa mite levels (alcohol wash)',de:'Varroabefall messen (Alkoholwäsche)',fr:'Tester le niveau de varroa (lavage à l'alcool)',it:'Testare livelli Varroa (lavaggio con alcol)',pt:'Testar nível de varroa (lavagem com álcool)',ro:'Testați nivelul de varroa (spălare cu alcool)',tr:'Varroa düzeyini test et (alkol yıkama)'},
-      sp4:{en:'Replace old dark brood comb',de:'Alte dunkle Brutwaben erneuern',fr:'Remplacer les vieux rayons de couvain sombres',it:'Sostituire vecchi favi scuri di covata',pt:'Substituir favos velhos escuros de cria',ro:'Înlocuiți fagurii vechi de culoare închisă',tr:'Eski koyu renk kuluçka peteklerini değiştir'},
-      sp5:{en:'Check queen is laying well',de:'Königin auf gute Legeleistung prüfen',fr:'Vérifier que la reine pond bien',it:'Controllare che la regina stia deponendo bene',pt:'Verificar se a rainha está posturando bem',ro:'Verificați că regina depune bine',tr:'Kraliçenin iyi yumurtladığını kontrol et'},
-      sp6:{en:'Record first inspection of the season',de:'Erste Kontrolle der Saison protokollieren',fr:'Enregistrer la première inspection de la saison',it:'Registrare la prima ispezione della stagione',pt:'Registrar a primeira inspeção da temporada',ro:'Înregistrați prima inspecție a sezonului',tr:'Sezonun ilk denetimini kaydet'},
-    },
-    summer:{
-      su1:{en:'Monitor mite count monthly — treat if 3%+',de:'Varroabefall monatlich messen — ab 3% behandeln',fr:'Surveiller le comptage mensuel — traiter si 3%+',it:'Monitorare conta acari mensile — trattare se 3%+',pt:'Monitorar contagem mensal — tratar se 3%+',ro:'Monitorizați lunar — tratați dacă 3%+',tr:'Aylık akar sayımı — %3+ ise tedavi et'},
-      su2:{en:'Check honey stores — add supers before they fill',de:'Honigvorräte prüfen — Honigraum rechtzeitig aufsetzen',fr:'Vérifier les réserves — ajouter hausses avant remplissage',it:'Controllare scorte miele — aggiungere melari prima che si riempiano',pt:'Verificar estoques — adicionar melgueiras antes de encher',ro:'Verificați rezervele — adăugați corpuri înainte de umplere',tr:'Bal depolarını kontrol et — dolmadan önce kat ekle'},
-      su3:{en:'Watch for swarm preparations',de:'Auf Schwarmanzeichen achten',fr:'Surveiller les préparatifs d'essaimage',it:'Osservare preparativi di sciamatura',pt:'Observar preparativos de enxame',ro:'Urmăriți pregătirile de roit',tr:'Oğul hazırlıklarını izle'},
-      su4:{en:'Harvest honey when frames are 80% capped',de:'Honig ernten, wenn Rähmchen zu 80% verdeckelt',fr:'Récolter quand 80% des cadres sont operculés',it:'Raccogliere miele quando i favi sono opercolati all'80%',pt:'Colher mel quando favos estão 80% operculados',ro:'Recoltați mierea când 80% din rame sunt căpăcite',tr:'Çerçeveler %80 kapalıyken bal topla'},
-      su5:{en:'Ensure adequate ventilation in heat',de:'Ausreichende Belüftung bei Hitze sicherstellen',fr:'Assurer une ventilation adéquate par la chaleur',it:'Garantire ventilazione adeguata nel caldo',pt:'Garantir ventilação adequada no calor',ro:'Asigurați ventilație adecvată în căldură',tr:'Sıcakta yeterli havalandırmayı sağla'},
-      su6:{en:'Record inspection notes',de:'Kontrollnotizen erfassen',fr:'Enregistrer les notes d'inspection',it:'Registrare note di ispezione',pt:'Registrar notas de inspeção',ro:'Înregistrați notele de inspecție',tr:'Denetim notlarını kaydet'},
-    },
-    fall:{
-      fa1:{en:'Treat Varroa mites before brood breaks',de:'Varroa behandeln, bevor die Brut abbricht',fr:'Traiter varroa avant l'arrêt du couvain',it:'Trattare varroa prima della fine della covata',pt:'Tratar varroa antes do término da cria',ro:'Tratați varroa înainte de pauza de puiet',tr:'Kuluçka bitişinden önce Varroa tedavisi uygula'},
-      fa2:{en:'Ensure 60-80 lbs honey stores for winter',de:'27–36 kg Honigvorräte für den Winter sicherstellen',fr:'Assurer 27-36 kg de réserves de miel pour l'hiver',it:'Assicurare 27-36 kg di scorte di miele per l'inverno',pt:'Garantir 27-36 kg de mel para o inverno',ro:'Asigurați 27-36 kg rezerve de miere pentru iarnă',tr:'Kış için 27-36 kg bal rezervi sağla'},
-      fa3:{en:'Feed 2:1 sugar syrup if stores are low',de:'2:1 Zuckerlösung füttern, wenn Vorräte knapp',fr:'Nourrir sirop 2:1 si les réserves sont faibles',it:'Alimentare sciroppo 2:1 se le scorte sono basse',pt:'Alimentar xarope 2:1 se estoques baixos',ro:'Hrăniți sirop 2:1 dacă rezervele sunt scăzute',tr:'Depolar düşükse 2:1 şeker şurubu ver'},
-      fa4:{en:'Reduce entrance to prevent robbing',de:'Flugloch verengen gegen Räuberei',fr:'Réduire l'entrée pour éviter le pillage',it:'Ridurre l'ingresso per prevenire saccheggio',pt:'Reduzir entrada para prevenir pilhagem',ro:'Reduceți urdiniș pentru a preveni jefuitul',tr:'Soygunculuğu önlemek için giriş çıkışı daralt'},
-      fa5:{en:'Check queen is present and laying',de:'Königin auf Anwesenheit und Legeleistung prüfen',fr:'Vérifier présence et ponte de la reine',it:'Verificare presenza e deposizione della regina',pt:'Verificar presença e postura da rainha',ro:'Verificați prezența și depunerea reginei',tr:'Kraliçenin varlığını ve yumurtlamasını kontrol et'},
-      fa6:{en:'Install mouse guard',de:'Mäuseschutz anbringen',fr:'Installer la grille anti-souris',it:'Installare protezione contro i topi',pt:'Instalar proteção contra ratos',ro:'Instalați grila de șoareci',tr:'Fare koruyucusu tak'},
-    },
-    winter:{
-      wi1:{en:'OA vaporization treatment if broodless',de:'Oxalsäure-Behandlung bei brutfreiem Volk',fr:'Traitement à l'acide oxalique si sans couvain',it:'Trattamento con acido ossalico se senza covata',pt:'Tratamento com ácido oxálico se sem cria',ro:'Tratament cu acid oxalic dacă fără puiet',tr:'Kuluçkasızsa OA buharlaştırma tedavisi'},
-      wi2:{en:'Check hive weight monthly',de:'Beutengewicht monatlich prüfen',fr:'Vérifier le poids de la ruche mensuellement',it:'Controllare il peso dell'arnia mensilmente',pt:'Verificar peso da colmeia mensalmente',ro:'Verificați greutatea stupului lunar',tr:'Kovan ağırlığını aylık kontrol et'},
-      wi3:{en:'Minimal disturbance — only open on warm days (50F+)',de:'Möglichst wenig stören — nur ab 10°C öffnen',fr:'Déranger au minimum — ouvrir seulement par temps chaud (10°C+)',it:'Disturbare il meno possibile — aprire solo nelle giornate calde (10°C+)',pt:'Mínima perturbação — abrir apenas em dias quentes (10°C+)',ro:'Deranjați minim — deschideți doar în zilele calde (10°C+)',tr:'En az rahatsızlık — sadece ılık günlerde (10°C+) aç'},
-      wi4:{en:'Clear entrance of dead bees',de:'Flugloch von Totbienen freimachen',fr:'Dégager l'entrée des abeilles mortes',it:'Liberare l'ingresso dalle api morte',pt:'Limpar entrada de abelhas mortas',ro:'Curățați urdiniș de albinele moarte',tr:'Girişi ölü arılardan temizle'},
-      wi5:{en:'Order queens and packages for spring',de:'Königinnen und Ableger für den Frühling bestellen',fr:'Commander reines et essaims pour le printemps',it:'Ordinare regine e pacchi per la primavera',pt:'Encomendar rainhas e pacotes para a primavera',ro:'Comandați regine și pachete pentru primăvară',tr:'İlkbahar için kraliçe ve paket siparişi ver'},
-      wi6:{en:'Review last season records and plan ahead',de:'Aufzeichnungen der letzten Saison auswerten und planen',fr:'Réviser les notes de la dernière saison et planifier',it:'Rivedere i registri della stagione passata e pianificare',pt:'Revisar registros da última temporada e planejar',ro:'Revizuiți înregistrările sezonului trecut și planificați',tr:'Geçen sezonun kayıtlarını incele ve planla'},
-    }
+  const base={
+    spring:[{id:'sp1',text:'Check for swarm cells — inspect every 7 days',p:'high'},{id:'sp2',text:'Add supers as colony builds up',p:'high'},{id:'sp3',text:'Test Varroa mite levels (alcohol wash)',p:'high'},{id:'sp4',text:'Replace old dark brood comb',p:'med'},{id:'sp5',text:'Check queen is laying well',p:'med'},{id:'sp6',text:'Record first inspection of the season',p:'low'}],
+    summer:[{id:'su1',text:'Monitor mite count monthly — treat if 3%+',p:'high'},{id:'su2',text:'Check honey stores — add supers before they fill',p:'high'},{id:'su3',text:'Watch for swarm preparations',p:'med'},{id:'su4',text:'Harvest honey when frames are 80% capped',p:'med'},{id:'su5',text:'Ensure adequate ventilation in heat',p:'med'},{id:'su6',text:'Record inspection notes',p:'low'}],
+    fall:[{id:'fa1',text:'Treat Varroa mites before brood breaks',p:'high'},{id:'fa2',text:'Ensure 60-80 lbs honey stores for winter',p:'high'},{id:'fa3',text:'Feed 2:1 sugar syrup if stores are low',p:'high'},{id:'fa4',text:'Reduce entrance to prevent robbing',p:'med'},{id:'fa5',text:'Check queen is present and laying',p:'med'},{id:'fa6',text:'Install mouse guard',p:'low'}],
+    winter:[{id:'wi1',text:'OA vaporization treatment if broodless',p:'high'},{id:'wi2',text:'Check hive weight monthly',p:'high'},{id:'wi3',text:'Minimal disturbance — only open on warm days (50F+)',p:'med'},{id:'wi4',text:'Clear entrance of dead bees',p:'med'},{id:'wi5',text:'Order queens and packages for spring',p:'low'},{id:'wi6',text:'Review last season records and plan ahead',p:'low'}]
   };
-  const lang=currentLang.startsWith('en-')?'en':(LANGS[currentLang]?currentLang:'en');
-  const base=Object.entries(T[season]).map(([id,txts])=>({id,text:txts[lang]||txts.en,p:
-    id.endsWith('1')||id.endsWith('2')||id.endsWith('3')?'high':
-    id.endsWith('4')||id.endsWith('5')?'med':'low'
-  }));
   const dyn=[];
   hives.forEach(h=>{
     const li=lastInsp(h.id);if(!li)return;
@@ -7270,7 +7198,7 @@ function getSeasonalTasks(){
     if(!li.queen_seen&&!li.eggs_present)dyn.push({id:'dq_'+h.id,text:'Queen not confirmed on '+h.name+' — check urgently',p:'high'});
     if(daysSince(li.date)>=14)dyn.push({id:'di_'+h.id,text:h.name+': '+daysSince(li.date)+' days since last inspection',p:'med'});
   });
-  return[...dyn,...base];
+  return[...dyn,...base[season]];
 }
 function renderSeasonalTasks(){
   const panel=document.getElementById('seasonal-tasks-panel');

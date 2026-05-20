@@ -2307,12 +2307,30 @@ async function init() {
   }
 
   let appStarted = false;
+  // Track whether the first loadAll used a potentially-stale token so that
+  // TOKEN_REFRESHED can trigger a silent data reload with the fresh token.
+  let loadedWithStaleToken = false;
 
   // Listen for auth state changes (handles OAuth callback automatically)
   sb.auth.onAuthStateChange(async(event, session) => {
-    if((event==='SIGNED_IN'||event==='INITIAL_SESSION'||event==='TOKEN_REFRESHED') && session && !appStarted){
+    if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && session && !appStarted){
       appStarted = true;
+      loadedWithStaleToken = false;
       await startApp(session);
+    } else if(event==='TOKEN_REFRESHED' && session) {
+      // Always update the in-memory token so subsequent mutations use it
+      if(currentUser) currentUser._accessToken = session.access_token;
+      if(!appStarted){
+        // App hasn't started yet — start it now with the fresh token
+        appStarted = true;
+        loadedWithStaleToken = false;
+        await startApp(session);
+      } else if(loadedWithStaleToken) {
+        // App started earlier with a stale/expired token → silently reload data
+        loadedWithStaleToken = false;
+        currentUser._accessToken = session.access_token;
+        try{ await loadAll(); } catch(e){ console.warn('reload after token refresh:', e); }
+      }
     } else if(event==='SIGNED_OUT'){
       window.location.href='index.html';
     }
@@ -2323,6 +2341,12 @@ async function init() {
     const{data:{session}}=await sb.auth.getSession();
     if(session && !appStarted){
       appStarted = true;
+      // Check if this token is already expired — if so, mark it so TOKEN_REFRESHED
+      // can trigger a reload once Supabase delivers the refreshed token.
+      try{
+        const payload = JSON.parse(atob(session.access_token.split('.')[1]));
+        loadedWithStaleToken = payload.exp * 1000 < Date.now() + 30000;
+      }catch(e){ loadedWithStaleToken = false; }
       await startApp(session);
     } else if(!appStarted) {
       // Fallback: try reading token directly from localStorage
@@ -2334,6 +2358,10 @@ async function init() {
           const user = parsed?.user;
           if(tok && user && !appStarted) {
             appStarted = true;
+            try{
+              const payload = JSON.parse(atob(tok.split('.')[1]));
+              loadedWithStaleToken = payload.exp * 1000 < Date.now() + 30000;
+            }catch(e){ loadedWithStaleToken = false; }
             await startApp({user, access_token: tok});
           }
         }
@@ -2350,6 +2378,10 @@ async function init() {
         const user = parsed?.user;
         if(tok && user && !appStarted) {
           appStarted = true;
+          try{
+            const payload = JSON.parse(atob(tok.split('.')[1]));
+            loadedWithStaleToken = payload.exp * 1000 < Date.now() + 30000;
+          }catch(e3){ loadedWithStaleToken = false; }
           await startApp({user, access_token: tok});
           return;
         }
@@ -2475,7 +2507,7 @@ async function loadAll() {
       _get('photos?select=*&user_id=eq.'+uid+'&order=taken_at.desc'),
       _get('inspection_reminders?select=*&user_id=eq.'+uid),
     ]);
-    // Only update if we got real data back (not empty from timeout)
+    // Only update if we got real data back (not empty from timeout or stale token)
     if(a.data.length||h.data.length||q.data.length||i.data.length||t.data.length||hv.data.length){
       apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
       inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];

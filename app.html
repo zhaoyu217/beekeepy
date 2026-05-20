@@ -1776,7 +1776,7 @@ const LANGS = {
     record_harvest:'Ernte erfassen',harvest_log:'Ernteprotokoll',
     equipment:'Ausrüstung',data:'Daten',export_data:'Alle Daten exportieren (JSON)',
     reminder_settings:'Kontrollerinnerungen',notif_prefs:'Benachrichtigungen',
-    push_notif:'Browser-Benachrichtigungen',push_notif:'E-Mail-Erinnerungen',save_reminders:'Erinnerungen speichern',
+    push_notif:'Browser-Benachrichtigungen',email_remind:'E-Mail-Erinnerungen',save_reminders:'Erinnerungen speichern',
     queen_info:'Königin-Informationen',add_apiary:'Standort hinzufügen',add_hive:'Volk hinzufügen',
     save_queen:'Königin-Datensatz speichern',save_apiary:'Standort speichern',save_hive:'Volk speichern',
     fleet_overview:'Gesamtübersicht',mite_tracker:'Varroabefall-Tracker',harvest_analytics:'Ernte-Analyse',
@@ -1795,7 +1795,7 @@ const LANGS = {
     season_summer_tip:'Haupttracht. Varroa überwachen, Honigvorräte prüfen.',
     season_fall_tip:'Wintervorbereitung. Varroabehandlung, Vorräte prüfen, ggf. 2:1 füttern.',
     season_winter_tip:'Möglichst wenig stören. Monatlich wiegen, OA-Behandlung bei brutfreiem Volk.',
-    warn_no_brood:'Keine Brut',warn_swarm:'Schwarmeifer',warn_supersedure:'Umweiselungszelle',
+    warn_no_brood:'Keine Brut',warn_swarm:'Schwarmlust',warn_supersedure:'Umweiselungszelle',
     warn_disease:'Krankheitszeichen',warn_mite:'Varroabefall',warn_laying:'Legearbeiterinnen?',
     needs_attention:'Handlungsbedarf',no_apiaries:'Noch keine Standorte',no_hives:'Noch keine Völker',no_activity:'Noch keine Aktivitäten',
     inspection:'Kontrolle',harvest_lbl:'Ernte',treatment_lbl:'Behandlung',
@@ -2652,58 +2652,60 @@ function analyzeWeatherAlerts() {
   currentForecast.forEach((day, i) => {
     const label = i===0?'Today': i===1?'Tomorrow': new Date(day.date+'T12:00:00').toLocaleDateString('en-US',{weekday:'short',month:'short',day:'numeric'});
 
+    // Weather alert i18n helper
+    const _wa=(o)=>{const l=typeof currentLang!=='undefined'?currentLang:'en';const b=l.startsWith('en-')?'en':l;return typeof o==='object'?(o[b]||o.en):o;};
     // Extreme heat >35°C
     if(day.maxC >= 35) alerts.push({
       icon:'🌡️', level:'danger',
-      title:{en:`Extreme heat ${label} — ${day.maxC}°C (${day.maxF}°F)`,de:`Extreme Hitze ${label} — ${day.maxC}°C (${day.maxF}°F)`,fr:`Chaleur extrême ${label} — ${day.maxC}°C (${day.maxF}°F)`,it:`Caldo estremo ${label} — ${day.maxC}°C (${day.maxF}°F)`,pt:`Calor extremo ${label} — ${day.maxC}°C (${day.maxF}°F)`,ro:`Căldură extremă ${label} — ${day.maxC}°C (${day.maxF}°F)`,tr:`Aşırı sıcak ${label} — ${day.maxC}°C (${day.maxF}°F)`},
-      detail:{en:'Risk of overheating. Ensure shade, ventilation, and water near hives.',de:'Überhitzungsgefahr. Schatten, Belüftung und Wasser in Beutennähe sicherstellen.',fr:'Risque de surchauffe. Assurer ombre, ventilation et eau près des ruches.',it:'Rischio di surriscaldamento. Garantire ombra, ventilazione e acqua vicino agli alveari.',pt:'Risco de superaquecimento. Garantir sombra, ventilação e água perto das colmeias.',ro:'Risc de supraîncălzire. Asigurați umbră, ventilație și apă lângă stupi.',tr:'Aşırı ısınma riski. Kovanların yakınında gölge, havalandırma ve su sağlayın.'},
-      action:{en:'Add ventilation / shade cloth',de:'Belüftung / Schattentuch anbringen',fr:'Ajouter ventilation / voile d'ombrage',it:'Aggiungere ventilazione / telo ombreggiante',pt:'Adicionar ventilação / tela de sombra',ro:'Adăugați ventilație / pânză de umbră',tr:'Havalandırma / gölgelik ekle'}
+      title:{en:`Extreme heat ${label} — ${day.maxC}°C (${day.maxF}°F)`,de:`Extreme Hitze ${label} — ${day.maxC}°C (${day.maxF}°F)`,fr:`Chaleur extreme ${label} — ${day.maxC}°C (${day.maxF}°F)`,it:`Caldo estremo ${label} — ${day.maxC}°C (${day.maxF}°F)`,pt:`Calor extremo ${label} — ${day.maxC}°C (${day.maxF}°F)`,ro:`Caldura extrema ${label} — ${day.maxC}°C (${day.maxF}°F)`,tr:`Asiri sicak ${label} — ${day.maxC}°C (${day.maxF}°F)`},
+      detail:{en:'Risk of overheating. Ensure shade, ventilation, and water near hives.',de:'Überhitzungsgefahr. Schatten, Belüftung und Wasser in Beutennähe sicherstellen.',fr:'Risque de surchauffe. Assurer ombre, ventilation et eau pres des ruches.',it:'Rischio di surriscaldamento. Garantire ombra, ventilazione e acqua vicino agli alveari.',pt:'Risco de superaquecimento. Garantir sombra, ventilação e água perto das colmeias.',ro:'Risc de supraîncălzire. Asigurați umbră, ventilație și apă lângă stupi.',tr:'Aşırı ısınma riski. Kovanların yakınında gölge, havalandırma ve su sağlayın.'},
+      action:{en:'Add ventilation / shade cloth',de:'Belüftung / Schattentuch anbringen',fr:'Ajouter ventilation / voile ombrage',it:'Aggiungere ventilazione / telo ombreggiante',pt:'Adicionar ventilação / tela de sombra',ro:'Adăugați ventilație / pânză de umbră',tr:'Havalandırma / gölgelik ekle'}
     });
     // High heat warning 30-35°C
     else if(day.maxC >= 30) alerts.push({
       icon:'☀️', level:'warning',
-      title:{en:`High heat ${label} — ${day.maxC}°C`,de:`Hohe Hitze ${label} — ${day.maxC}°C`,fr:`Forte chaleur ${label} — ${day.maxC}°C`,it:`Caldo intenso ${label} — ${day.maxC}°C`,pt:`Calor intenso ${label} — ${day.maxC}°C`,ro:`Căldură mare ${label} — ${day.maxC}°C`,tr:`Yüksek sıcaklık ${label} — ${day.maxC}°C`},
-      detail:{en:'Inspect early morning. Bees may beard outside the hive.',de:'Früh morgens kontrollieren. Bienen können sich außen an der Beute sammeln.',fr:'Inspecter tôt le matin. Les abeilles peuvent se rassembler à l'extérieur.',it:'Ispezionare di prima mattina. Le api possono raggrupparsi fuori dall'arnia.',pt:'Inspecionar de manhã cedo. Abelhas podem se agrupar fora da colmeia.',ro:'Inspectați dimineața devreme. Albinele pot forma ciorchine afară.',tr:'Sabah erken denetle. Arılar kovan dışında toplanabilir.'},
-      action:{en:'Inspect before 9am',de:'Vor 9 Uhr kontrollieren',fr:'Inspecter avant 9h',it:'Ispezionare prima delle 9',pt:'Inspecionar antes das 9h',ro:'Inspectați înainte de ora 9',tr:'Saat 9'dan önce denetle'}
+      title:{en:`High heat ${label} — ${day.maxC}°C`,de:`Hohe Hitze ${label} — ${day.maxC}°C`,fr:`Forte chaleur ${label} — ${day.maxC}°C`,it:`Caldo intenso ${label} — ${day.maxC}°C`,pt:`Calor intenso ${label} — ${day.maxC}°C`,ro:`Caldura mare ${label} — ${day.maxC}°C`,tr:`Yuksek sicaklik ${label} — ${day.maxC}°C`},
+      detail:{en:'Inspect early morning. Bees may beard outside the hive.',de:'Früh morgens kontrollieren. Bienen können sich außen an der Beute sammeln.',fr:'Inspecter tot le matin. Les abeilles peuvent se rassembler a exterieur.',it:'Ispezionare di prima mattina. Le api possono raggrupparsi fuori.',pt:'Inspecionar de manhã cedo. Abelhas podem se agrupar fora da colmeia.',ro:'Inspectați dimineața devreme. Albinele pot forma ciorchine afară.',tr:'Sabah erken denetle. Arılar kovan dışında toplanabilir.'},
+      action:{en:'Inspect before 9am',de:'Vor 9 Uhr kontrollieren',fr:'Inspecter avant 9h',it:'Ispezionare prima delle 9',pt:'Inspecionar antes das 9h',ro:'Inspectați înainte de ora 9',tr:'Saat 9dan once denetle'}
     });
 
     // Cold snap <4°C
     if(day.minC <= 4 && day.minC > 0) alerts.push({
       icon:'🥶', level:'warning',
-      title:{en:`Cold snap ${label} — low ${day.minC}°C (${day.minF}°F)`,de:`Kälteeinbruch ${label} — min. ${day.minC}°C (${day.minF}°F)`,fr:`Vague de froid ${label} — min. ${day.minC}°C (${day.minF}°F)`,it:`Ondata di freddo ${label} — min. ${day.minC}°C (${day.minF}°F)`,pt:`Onda de frio ${label} — mín. ${day.minC}°C (${day.minF}°F)`,ro:`Val de frig ${label} — min. ${day.minC}°C (${day.minF}°F)`,tr:`Soğuk dalgası ${label} — min. ${day.minC}°C (${day.minF}°F)`},
-      detail:{en:'Cluster may tighten. Check honey stores are accessible.',de:'Traube zieht sich zusammen. Prüfen, ob Honigvorräte erreichbar sind.',fr:'La grappe peut se resserrer. Vérifier l'accessibilité des réserves de miel.',it:'Il glomere può stringersi. Verificare l'accessibilità delle scorte di miele.',pt:'O cacho pode se contrair. Verificar acessibilidade das reservas de mel.',ro:'Ghemul se poate strânge. Verificați accesibilitatea rezervelor de miere.',tr:'Küme sıkışabilir. Bal rezervlerine erişilebildiğini kontrol edin.'},
-      action:{en:'Check winter stores',de:'Wintervorräte prüfen',fr:'Vérifier les réserves hivernales',it:'Controllare le scorte invernali',pt:'Verificar reservas de inverno',ro:'Verificați rezervele de iarnă',tr:'Kış depolarını kontrol et'}
+      title:{en:`Cold snap ${label} — low ${day.minC}°C (${day.minF}°F)`,de:`Kalteeinbruch ${label} — min. ${day.minC}°C (${day.minF}°F)`,fr:`Vague de froid ${label} — min. ${day.minC}°C (${day.minF}°F)`,it:`Ondata di freddo ${label} — min. ${day.minC}°C (${day.minF}°F)`,pt:`Onda de frio ${label} — min. ${day.minC}°C (${day.minF}°F)`,ro:`Val de frig ${label} — min. ${day.minC}°C (${day.minF}°F)`,tr:`Soguk dalgasi ${label} — min. ${day.minC}°C (${day.minF}°F)`},
+      detail:{en:'Cluster may tighten. Check honey stores are accessible.',de:'Traube zieht sich zusammen. Prüfen, ob Honigvorräte erreichbar sind.',fr:'La grappe peut se resserrer. Verifier reserves de miel accessibles.',it:'Il glomere puo stringersi. Verificare scorte di miele accessibili.',pt:'O cacho pode se contrair. Verificar acessibilidade das reservas de mel.',ro:'Ghemul se poate strânge. Verificați accesibilitatea rezervelor de miere.',tr:'Küme sıkışabilir. Bal rezervlerine erişilebildiğini kontrol edin.'},
+      action:{en:'Check winter stores',de:'Wintervorräte prüfen',fr:'Verifier reserves hivernales',it:'Controllare scorte invernali',pt:'Verificar reservas de inverno',ro:'Verificați rezervele de iarnă',tr:'Kış depolarını kontrol et'}
     });
     // Below freezing
     if(day.minC <= 0) alerts.push({
       icon:'❄️', level:'danger',
-      title:{en:`Freezing ${label} — low ${day.minC}°C (${day.minF}°F)`,de:`Frost ${label} — min. ${day.minC}°C (${day.minF}°F)`,fr:`Gel ${label} — min. ${day.minC}°C (${day.minF}°F)`,it:`Gelo ${label} — min. ${day.minC}°C (${day.minF}°F)`,pt:`Geada ${label} — mín. ${day.minC}°C (${day.minF}°F)`,ro:`Îngheț ${label} — min. ${day.minC}°C (${day.minF}°F)`,tr:`Don ${label} — min. ${day.minC}°C (${day.minF}°F)`},
-      detail:{en:'Bees cannot fly. Ensure hive is insulated and dry. Do not open.',de:'Bienen können nicht fliegen. Beute isolieren und trocken halten. Nicht öffnen.',fr:'Les abeilles ne peuvent pas voler. Isoler la ruche. Ne pas ouvrir.',it:'Le api non possono volare. Isolare l'arnia. Non aprire.',pt:'Abelhas não podem voar. Isolar a colmeia. Não abrir.',ro:'Albinele nu pot zbura. Izolați stupul. Nu deschideți.',tr:'Arılar uçamaz. Kovanı yalıtın ve kuru tutun. Açmayın.'},
-      action:{en:'Do NOT inspect — insulate hive',de:'NICHT öffnen — Beute isolieren',fr:'NE PAS inspecter — isoler la ruche',it:'NON ispezionare — isolare l'arnia',pt:'NÃO inspecionar — isolar colmeia',ro:'NU inspectați — izolați stupul',tr:'Denetleme — kovanı yalıt'}
+      title:{en:`Freezing ${label} — low ${day.minC}°C (${day.minF}°F)`,de:`Frost ${label} — min. ${day.minC}°C (${day.minF}°F)`,fr:`Gel ${label} — min. ${day.minC}°C (${day.minF}°F)`,it:`Gelo ${label} — min. ${day.minC}°C (${day.minF}°F)`,pt:`Geada ${label} — min. ${day.minC}°C (${day.minF}°F)`,ro:`Inghet ${label} — min. ${day.minC}°C (${day.minF}°F)`,tr:`Don ${label} — min. ${day.minC}°C (${day.minF}°F)`},
+      detail:{en:'Bees cannot fly. Ensure hive is insulated and dry. Do not open.',de:'Bienen können nicht fliegen. Beute isolieren und trocken halten. Nicht öffnen.',fr:'Les abeilles ne peuvent pas voler. Isoler la ruche. Ne pas ouvrir.',it:'Le api non possono volare. Isolare arnia. Non aprire.',pt:'Abelhas não podem voar. Isolar a colmeia. Não abrir.',ro:'Albinele nu pot zbura. Izolați stupul. Nu deschideți.',tr:'Arılar uçamaz. Kovanı yalıtın ve kuru tutun. Açmayın.'},
+      action:{en:'Do NOT inspect — insulate hive',de:'NICHT öffnen — Beute isolieren',fr:'NE PAS inspecter — isoler ruche',it:'NON ispezionare — isolare arnia',pt:'NAO inspecionar — isolar colmeia',ro:'NU inspectați — izolați stupul',tr:'Denetleme — kovanı yalıt'}
     });
 
     // Thunderstorm
     if(day.hasThunder) alerts.push({
       icon:'⛈️', level:'warning',
-      title:{en:`Thunderstorm ${label}`,de:`Gewitter ${label}`,fr:`Orage ${label}`,it:`Temporale ${label}`,pt:`Tempestade ${label}`,ro:`Furtună ${label}`,tr:`Fırtına ${label}`},
-      detail:{en:'Bees become defensive before storms. Avoid inspections.',de:'Bienen werden vor Gewitter aggressiv. Kontrollen vermeiden.',fr:'Les abeilles deviennent défensives avant les orages. Éviter les inspections.',it:'Le api diventano difensive prima dei temporali. Evitare ispezioni.',pt:'Abelhas ficam defensivas antes de tempestades. Evitar inspeções.',ro:'Albinele devin defensive înainte de furtuni. Evitați inspecțiile.',tr:'Arılar fırtına öncesi savunmaya geçer. Denetimden kaçının.'},
-      action:{en:'Postpone inspection',de:'Kontrolle verschieben',fr:'Reporter l'inspection',it:'Rimandare l'ispezione',pt:'Adiar inspeção',ro:'Amânați inspecția',tr:'Denetimi ertele'}
+      title:{en:`Thunderstorm ${label}`,de:`Gewitter ${label}`,fr:`Orage ${label}`,it:`Temporale ${label}`,pt:`Tempestade ${label}`,ro:`Furtuna ${label}`,tr:`Firtina ${label}`},
+      detail:{en:'Bees become defensive before storms. Avoid inspections.',de:'Bienen werden vor Gewitter aggressiv. Kontrollen vermeiden.',fr:'Les abeilles deviennent defensives. Eviter les inspections.',it:'Le api diventano difensive. Evitare ispezioni.',pt:'Abelhas ficam defensivas. Evitar inspeções.',ro:'Albinele devin defensive. Evitați inspecțiile.',tr:'Arılar savunmaya geçer. Denetimden kaçının.'},
+      action:{en:'Postpone inspection',de:'Kontrolle verschieben',fr:'Reporter inspection',it:'Rimandare ispezione',pt:'Adiar inspeção',ro:'Amânați inspecția',tr:'Denetimi ertele'}
     });
 
     // Strong wind >40km/h
     if(day.maxWind >= 40) alerts.push({
       icon:'💨', level:'warning',
-      title:{en:`Strong wind ${label} — ${day.maxWind} km/h`,de:`Starker Wind ${label} — ${day.maxWind} km/h`,fr:`Vent fort ${label} — ${day.maxWind} km/h`,it:`Vento forte ${label} — ${day.maxWind} km/h`,pt:`Vento forte ${label} — ${day.maxWind} km/h`,ro:`Vânt puternic ${label} — ${day.maxWind} km/h`,tr:`Kuvvetli rüzgar ${label} — ${day.maxWind} km/h`},
-      detail:{en:'Secure hive lids and entrances. Foragers may struggle to return.',de:'Beutendeckel und Fluglöcher sichern. Sammlerinnen können Schwierigkeiten beim Rückflug haben.',fr:'Sécuriser les couvercles et entrées. Les butineuses peuvent avoir du mal à rentrer.',it:'Fissare coperchi e ingressi. Le bottinatrici potrebbero faticare a rientrare.',pt:'Fixar tampas e entradas. Forrageiras podem ter dificuldade em retornar.',ro:'Fixați capacele și urdiniișurile. Culegatoarele pot întâmpina dificultăți la întoarcere.',tr:'Kovan kapaklarını ve girişlerini sabitleyin. Toplayıcı arılar geri dönmekte zorlanabilir.'},
-      action:{en:'Secure hive lids',de:'Beutendeckel sichern',fr:'Sécuriser les couvercles',it:'Fissare i coperchi',pt:'Fixar tampas',ro:'Fixați capacele',tr:'Kovan kapaklarını sabitle'}
+      title:{en:`Strong wind ${label} — ${day.maxWind} km/h`,de:`Starker Wind ${label} — ${day.maxWind} km/h`,fr:`Vent fort ${label} — ${day.maxWind} km/h`,it:`Vento forte ${label} — ${day.maxWind} km/h`,pt:`Vento forte ${label} — ${day.maxWind} km/h`,ro:`Vant puternic ${label} — ${day.maxWind} km/h`,tr:`Kuvvetli ruzgar ${label} — ${day.maxWind} km/h`},
+      detail:{en:'Secure hive lids and entrances. Foragers may struggle to return.',de:'Beutendeckel und Fluglöcher sichern. Sammlerinnen können Schwierigkeiten haben.',fr:'Securiser couvercles et entrees. Les butineuses peuvent avoir du mal.',it:'Fissare coperchi e ingressi. Le bottinatrici potrebbero faticare.',pt:'Fixar tampas e entradas. Forrageiras podem ter dificuldade em retornar.',ro:'Fixați capacele și urdiniișurile. Culegatoarele pot întâmpina dificultăți.',tr:'Kovan kapaklarını sabitleyin. Toplayıcı arılar geri dönmekte zorlanabilir.'},
+      action:{en:'Secure hive lids',de:'Beutendeckel sichern',fr:'Securiser couvercles',it:'Fissare coperchi',pt:'Fixar tampas',ro:'Fixați capacele',tr:'Kovan kapaklarını sabitle'}
     });
 
     // Snowfall
     if(day.hasSnow) alerts.push({
       icon:'🌨️', level:'warning',
-      title:{en:`Snow forecast ${label}`,de:`Schneefall ${label}`,fr:`Chutes de neige ${label}`,it:`Nevicate ${label}`,pt:`Neve prevista ${label}`,ro:`Ninsoare ${label}`,tr:`Kar tahminleri ${label}`},
-      detail:{en:'Clear entrance after snowfall to prevent suffocation.',de:'Flugloch nach Schneefall freimachen, um Erstickung zu verhindern.',fr:'Dégager l'entrée après les chutes de neige pour éviter l'étouffement.',it:'Liberare l'ingresso dopo la nevicata per prevenire il soffocamento.',pt:'Limpar entrada após nevascas para evitar sufocamento.',ro:'Curățați urdiniișul după ninsoare pentru a preveni sufocarea.',tr:'Boğulmayı önlemek için kardan sonra girişi temizleyin.'},
-      action:{en:'Clear entrance after snow',de:'Flugloch nach Schnee freimachen',fr:'Dégager l'entrée après la neige',it:'Liberare l'ingresso dopo la neve',pt:'Limpar entrada após neve',ro:'Curățați urdiniișul după ninsoare',tr:'Kardan sonra girişi temizle'}
+      title:{en:`Snow forecast ${label}`,de:`Schneefall ${label}`,fr:`Chutes de neige ${label}`,it:`Nevicate ${label}`,pt:`Neve prevista ${label}`,ro:`Ninsoare ${label}`,tr:`Kar tahmini ${label}`},
+      detail:{en:'Clear entrance after snowfall to prevent suffocation.',de:'Flugloch nach Schneefall freimachen, um Erstickung zu verhindern.',fr:'Degager entree apres neige pour eviter etouffement.',it:'Liberare ingresso dopo neve per prevenire soffocamento.',pt:'Limpar entrada após neve para evitar sufocamento.',ro:'Curățați urdiniișul după ninsoare pentru a preveni sufocarea.',tr:'Boğulmayı önlemek için kardan sonra girişi temizleyin.'},
+      action:{en:'Clear entrance after snow',de:'Flugloch nach Schnee freimachen',fr:'Degager entree apres neige',it:'Liberare ingresso dopo neve',pt:'Limpar entrada após neve',ro:'Curățați urdiniișul după ninsoare',tr:'Kardan sonra girişi temizle'}
     });
 
     // Good inspection day
@@ -2711,9 +2713,9 @@ function analyzeWeatherAlerts() {
        (day.condition==='Clear'||day.condition==='Clouds')) {
       alerts.push({
         icon:'✅', level:'good',
-        title:{en:`Good inspection day — ${label}`,de:`Guter Kontrolltag — ${label}`,fr:`Bonne journée d'inspection — ${label}`,it:`Buona giornata per l'ispezione — ${label}`,pt:`Bom dia para inspeção — ${label}`,ro:`Zi bună pentru inspecție — ${label}`,tr:`İyi denetim günü — ${label}`},
-        detail:{en:`${day.maxC}°C, calm winds — ideal conditions for opening hives.`,de:`${day.maxC}°C, ruhiger Wind — ideale Bedingungen zum Öffnen der Beuten.`,fr:`${day.maxC}°C, vents calmes — conditions idéales pour ouvrir les ruches.`,it:`${day.maxC}°C, venti calmi — condizioni ideali per aprire gli alveari.`,pt:`${day.maxC}°C, ventos calmos — condições ideais para abrir as colmeias.`,ro:`${day.maxC}°C, vânturi calme — condiții ideale pentru deschiderea stupilor.`,tr:`${day.maxC}°C, sakin rüzgarlar — kovanları açmak için ideal koşullar.`},
-        action:{en:'Schedule your inspection',de:'Kontrolle einplanen',fr:'Planifier votre inspection',it:'Pianifica la tua ispezione',pt:'Agende sua inspeção',ro:'Programați inspecția',tr:'Denetimi planla'}
+        title:{en:`Good inspection day — ${label}`,de:`Guter Kontrolltag — ${label}`,fr:`Bonne journee inspection — ${label}`,it:`Buona giornata ispezione — ${label}`,pt:`Bom dia para inspeção — ${label}`,ro:`Zi buna pentru inspectie — ${label}`,tr:`Iyi denetim gunu — ${label}`},
+        detail:{en:`${day.maxC}°C, calm winds — ideal conditions for opening hives.`,de:`${day.maxC}°C, ruhiger Wind — ideale Bedingungen zum Öffnen der Beuten.`,fr:`${day.maxC}°C, vents calmes — conditions ideales pour ouvrir les ruches.`,it:`${day.maxC}°C, venti calmi — condizioni ideali per aprire gli alveari.`,pt:`${day.maxC}°C, ventos calmos — condições ideais para abrir as colmeias.`,ro:`${day.maxC}°C, vanturi calme — conditii ideale pentru deschiderea stupilor.`,tr:`${day.maxC}°C, sakin ruzgarlar — kovanları açmak için ideal kosullar.`},
+        action:{en:'Schedule your inspection',de:'Kontrolle einplanen',fr:'Planifier inspection',it:'Pianificare ispezione',pt:'Agendar inspeção',ro:'Programați inspecția',tr:'Denetimi planla'}
       });
     }
   });
@@ -2722,9 +2724,9 @@ function analyzeWeatherAlerts() {
   const freezeDays = currentForecast.filter(d=>d.minC<=0).length;
   if(freezeDays >= 3) alerts.unshift({
     icon:'🧊', level:'danger',
-    title:{en:`Extended freeze — ${freezeDays} days below 0°C`,de:`Anhaltender Frost — ${freezeDays} Tage unter 0°C`,fr:`Gel prolongé — ${freezeDays} jours sous 0°C`,it:`Gelo prolungato — ${freezeDays} giorni sotto 0°C`,pt:`Geada prolongada — ${freezeDays} dias abaixo de 0°C`,ro:`Îngheț prelungit — ${freezeDays} zile sub 0°C`,tr:`Uzun süreli don — ${freezeDays} gün 0°C altı`},
-    detail:{en:'Winter cluster risk. Ensure adequate honey stores and hive insulation.',de:'Wintertraubenrisiko. Ausreichende Honigvorräte und Beutenisolierung sicherstellen.',fr:'Risque de grappe hivernale. Assurer des réserves suffisantes et l'isolation de la ruche.',it:'Rischio di glomere invernale. Assicurare scorte adeguate e isolamento dell'arnia.',pt:'Risco de cacho de inverno. Garantir reservas adequadas e isolamento da colmeia.',ro:'Risc de ghem de iarnă. Asigurați rezerve adecvate și izolarea stupului.',tr:'Kış kümesi riski. Yeterli bal rezervi ve kovan yalıtımı sağlayın.'},
-    action:{en:'Check winter prep now',de:'Wintervorbereitung jetzt prüfen',fr:'Vérifier la préparation hivernale',it:'Controllare i preparativi invernali',pt:'Verificar preparo para o inverno',ro:'Verificați pregătirea pentru iarnă',tr:'Kış hazırlığını şimdi kontrol et'}
+    title:{en:`Extended freeze — ${freezeDays} days below 0°C`,de:`Anhaltender Frost — ${freezeDays} Tage unter 0°C`,fr:`Gel prolonge — ${freezeDays} jours sous 0°C`,it:`Gelo prolungato — ${freezeDays} giorni sotto 0°C`,pt:`Geada prolongada — ${freezeDays} dias abaixo de 0°C`,ro:`Inghet prelungit — ${freezeDays} zile sub 0°C`,tr:`Uzun sureli don — ${freezeDays} gun 0°C alti`},
+    detail:{en:'Winter cluster risk. Ensure adequate honey stores and hive insulation.',de:'Wintertraubenrisiko. Honigvorräte und Beutenisolierung sicherstellen.',fr:'Risque grappe hivernale. Assurer reserves et isolation ruche.',it:'Rischio glomere invernale. Assicurare scorte e isolamento arnia.',pt:'Risco de cacho de inverno. Garantir reservas e isolamento da colmeia.',ro:'Risc ghem de iarna. Asigurati rezerve si izolarea stupului.',tr:'Kış kümesi riski. Yeterli bal rezervi ve kovan yalıtımı sağlayın.'},
+    action:{en:'Check winter prep now',de:'Wintervorbereitung jetzt prüfen',fr:'Verifier preparation hivernale',it:'Controllare preparativi invernali',pt:'Verificar preparo para o inverno',ro:'Verificați pregătirea pentru iarnă',tr:'Kış hazırlığını şimdi kontrol et'}
   });
 
   return alerts;
@@ -2758,9 +2760,9 @@ function renderWeatherAlerts() {
     <div style="display:flex;gap:10px;padding:10px 12px;border-radius:var(--radius-sm);border:1px solid;${levelStyle[a.level]}margin-bottom:6px">
       <div style="font-size:20px;flex-shrink:0">${a.icon}</div>
       <div style="flex:1;min-width:0">
-        <div style="font-weight:600;font-size:12px;margin-bottom:1px">${typeof a.title==='object'?(a.title[currentLang]||a.title[currentLang.split('-')[0]]||a.title.en):a.title}</div>
-        <div style="font-size:11px;color:var(--text-2);margin-bottom:3px">${typeof a.detail==='object'?(a.detail[currentLang]||a.detail[currentLang.split('-')[0]]||a.detail.en):a.detail}</div>
-        <div style="font-size:11px;font-weight:600;color:${levelDot[a.level]}">→ ${typeof a.action==='object'?(a.action[currentLang]||a.action[currentLang.split('-')[0]]||a.action.en):a.action}</div>
+        <div style="font-weight:600;font-size:12px;margin-bottom:1px">${(()=>{const _l=typeof currentLang!=='undefined'?currentLang:'en';const _b=_l.startsWith('en-')?'en':_l;return typeof a.title==='object'?(a.title[_b]||a.title.en):a.title;})()}</div>
+        <div style="font-size:11px;color:var(--text-2);margin-bottom:3px">${(()=>{const _l=typeof currentLang!=='undefined'?currentLang:'en';const _b=_l.startsWith('en-')?'en':_l;return typeof a.detail==='object'?(a.detail[_b]||a.detail.en):a.detail;})()}</div>
+        <div style="font-size:11px;font-weight:600;color:${levelDot[a.level]}">→ ${(()=>{const _l=typeof currentLang!=='undefined'?currentLang:'en';const _b=_l.startsWith('en-')?'en':_l;return typeof a.action==='object'?(a.action[_b]||a.action.en):a.action;})()}</div>
       </div>
     </div>`).join('');
 
@@ -3215,26 +3217,27 @@ function showSuperAlert(plant, isNow) {
   }
   const color = isNow ? '#E74C3C' : '#F39C12';
   const bg    = isNow ? '#FDECEA' : '#FFF8E1';
-  const _nl={
-    peak:{en:'PEAK NECTAR FLOW NOW',de:'HÖCHSTE TRACHT JETZT',fr:'FLUX DE NECTAR MAXIMAL',it:'FLUSSO DI NETTARE AL PICCO',pt:'FLUXO DE NÉCTAR MÁXIMO',ro:'FLUX DE NECTAR LA MAXIM',tr:'ZİRVE NEKTAR AKIŞI ŞİMDİ'},
-    incoming:{en:'NECTAR FLOW INCOMING',de:'TRACHT IM ANMARSCH',fr:'FLUX DE NECTAR IMMINENT',it:'FLUSSO DI NETTARE IN ARRIVO',pt:'FLUXO DE NÉCTAR A CAMINHO',ro:'FLUX DE NECTAR ÎN CURS',tr:'NEKTAR AKIŞI GELİYOR'},
+  const _nl=(()=>{const _l=typeof currentLang!=='undefined'?currentLang:'en';return _l.startsWith('en-')?'en':_l;})();
+  const _nt={
+    peak:{en:'PEAK NECTAR FLOW NOW',de:'HÖCHSTE TRACHT JETZT',fr:'FLUX NECTAR MAXIMAL',it:'FLUSSO NETTARE AL PICCO',pt:'FLUXO DE NECTAR MAXIMO',ro:'FLUX NECTAR LA MAXIM',tr:'ZIRVE NEKTAR AKISI SIMDI'},
+    incoming:{en:'NECTAR FLOW INCOMING',de:'TRACHT IM ANMARSCH',fr:'FLUX NECTAR IMMINENT',it:'FLUSSO NETTARE IN ARRIVO',pt:'FLUXO DE NECTAR A CAMINHO',ro:'FLUX NECTAR IN CURS',tr:'NEKTAR AKISI GELIYOR'},
     peakBloom:{en:'peak bloom active',de:'Hauptblüte aktiv',fr:'floraison maximale active',it:'fioritura al picco attiva',pt:'floração máxima ativa',ro:'înflorire maximă activă',tr:'zirve çiçeklenme aktif'},
-    approaching:{en:'approaching peak bloom',de:'Hauptblüte naht',fr:'floraison maximale approche',it:'avvicinamento alla fioritura massima',pt:'aproximando da floração máxima',ro:'se apropie de înflorirea maximă',tr:'zirve çiçeklenmeye yaklaşıyor'},
-    superReady:{en:'Is your honey super ready? 🍯',de:'Ist Ihr Honigraum bereit? 🍯',fr:'Votre hausse à miel est-elle prête ? 🍯',it:'Il vostro melario è pronto? 🍯',pt:'Sua melgueira está pronta? 🍯',ro:'Corpul de miere este pregătit? 🍯',tr:'Bal katınız hazır mı? 🍯'},
-    superBtn:{en:'✅ Super is ready',de:'✅ Honigraum bereit',fr:'✅ Hausse prête',it:'✅ Melario pronto',pt:'✅ Melgueira pronta',ro:'✅ Corp pregătit',tr:'✅ Kat hazır'},
-    logBtn:{en:'📋 Log inspection',de:'📋 Kontrolle erfassen',fr:'📋 Enregistrer inspection',it:'📋 Registra ispezione',pt:'📋 Registrar inspeção',ro:'📋 Înregistrează inspecția',tr:'📋 Denetim kaydet'},
+    approaching:{en:'approaching peak bloom',de:'Hauptblüte naht',fr:'floraison maximale approche',it:'avvicinamento fioritura massima',pt:'aproximando floração máxima',ro:'se apropie de înflorire',tr:'zirve çiçeklenmeye yaklaşıyor'},
+    superReady:{en:'Is your honey super ready? 🍯',de:'Ist Ihr Honigraum bereit? 🍯',fr:'Votre hausse est-elle prete? 🍯',it:'Il vostro melario e pronto? 🍯',pt:'Sua melgueira está pronta? 🍯',ro:'Corpul de miere este pregatit? 🍯',tr:'Bal katınız hazır mı? 🍯'},
+    superBtn:{en:'✅ Super is ready',de:'✅ Honigraum bereit',fr:'✅ Hausse prete',it:'✅ Melario pronto',pt:'✅ Melgueira pronta',ro:'✅ Corp pregatit',tr:'✅ Kat hazır'},
+    logBtn:{en:'📋 Log inspection',de:'📋 Kontrolle erfassen',fr:'📋 Enregistrer inspection',it:'📋 Registra ispezione',pt:'📋 Registrar inspeção',ro:'📋 Inregistreaza inspectia',tr:'📋 Denetim kaydet'},
   };
-  const _lk=k=>_nl[k][currentLang]||_nl[k][currentLang?.split('-')[0]]||_nl[k].en;
+  const _ntl=k=>_nt[k][_nl]||_nt[k].en;
   el.innerHTML = `
     <div style="background:${bg};border:1.5px solid ${color};border-radius:var(--radius-sm);padding:12px 14px;margin-bottom:8px;display:flex;gap:10px;align-items:flex-start">
       <div style="font-size:24px">🍯</div>
       <div style="flex:1">
-        <div style="font-weight:700;font-size:13px;color:${color}">${isNow?_lk('peak'):_lk('incoming')}</div>
-        <div style="font-size:12px;color:var(--text-2);margin:3px 0">${plant.emoji||'🌸'} ${plant.localName||plant.name||'Nectar plant'} — ${isNow?_lk('peakBloom'):_lk('approaching')}</div>
-        <div style="font-size:12px;font-weight:600;color:var(--text)">${_lk('superReady')}</div>
+        <div style="font-weight:700;font-size:13px;color:${color}">${isNow?_ntl('peak'):_ntl('incoming')}</div>
+        <div style="font-size:12px;color:var(--text-2);margin:3px 0">${plant.emoji||'🌸'} ${plant.localName||plant.name||'Nectar plant'} — ${isNow?_ntl('peakBloom'):_ntl('approaching')}</div>
+        <div style="font-size:12px;font-weight:600;color:var(--text)">${_ntl('superReady')}</div>
         <div style="display:flex;gap:6px;margin-top:8px">
-          <button onclick="this.closest('#super-alert-banner').remove()" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid ${color};background:${color};color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600">${_lk('superBtn')}</button>
-          <button onclick="showPage('inspect',document.querySelectorAll('.nav-item')[1])" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">${_lk('logBtn')}</button>
+          <button onclick="this.closest('#super-alert-banner').remove()" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid ${color};background:${color};color:#fff;font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer;font-weight:600">${_ntl('superBtn')}</button>
+          <button onclick="showPage('inspect',document.querySelectorAll('.nav-item')[1])" style="flex:1;padding:7px;border-radius:var(--radius-sm);border:1px solid var(--border);background:var(--surface);color:var(--text-2);font-size:12px;font-family:'DM Sans',sans-serif;cursor:pointer">${_ntl('logBtn')}</button>
         </div>
       </div>
     </div>`;
@@ -4022,7 +4025,7 @@ function generateAllTasks(){
   const weatherAlerts = analyzeWeatherAlerts();
   const today = new Date().toISOString().split('T')[0];
   weatherAlerts.filter(a=>a.level!=='good').forEach(a=>{
-    const _lang=typeof currentLang!=='undefined'?currentLang:'en';const _l=k=>typeof k==='object'?(k[_lang]||k[_lang.split('-')[0]]||k.en):k;all.unshift({icon:a.icon,title:_l(a.title),due:today,daysUntil:0,urgency:a.level==='danger'?'urgent':'soon',detail:_l(a.detail),hiveName:'All Hives',hiveId:null,action:_l(a.action),isWeather:true});
+    const _wl=typeof currentLang!=='undefined'?currentLang:'en';const _wb=_wl.startsWith('en-')?'en':_wl;const _wt=k=>typeof k==='object'?(k[_wb]||k.en):k;all.unshift({icon:a.icon,title:_wt(a.title),due:today,daysUntil:0,urgency:a.level==='danger'?'urgent':'soon',detail:_wt(a.detail),hiveName:'All Hives',hiveId:null,action:_wt(a.action),isWeather:true});
   });
   const order={overdue:0,urgent:1,soon:2,ok:3};
   return all.sort((a,b)=>{if(a.isWeather&&!b.isWeather)return -1;if(!a.isWeather&&b.isWeather)return 1;return order[a.urgency]-order[b.urgency]||a.daysUntil-b.daysUntil;});
@@ -7207,52 +7210,51 @@ function getWeekKey(){const d=new Date(),s=new Date(d.getFullYear(),0,1),w=Math.
 function getSeasonalTasks(){
   const m=new Date().getMonth()+1;
   const season=m>=3&&m<=5?'spring':m>=6&&m<=8?'summer':m>=9&&m<=10?'fall':'winter';
-  const lang=(typeof currentLang!=='undefined'&&currentLang)?currentLang:'en';
-  const l=lang.startsWith('en-')?'en':((['de','fr','it','pt','ro','tr'].includes(lang))?lang:'en');
+  const _tl=(()=>{const l=typeof currentLang!=='undefined'?currentLang:'en';return l.startsWith('en-')?'en':(['de','fr','it','pt','ro','tr'].includes(l)?l:'en');})();
   const T={
-    sp1:{en:'Check for swarm cells — inspect every 7 days',de:'Schwarmzellen prüfen — alle 7 Tage kontrollieren',fr:'Vérifier les cellules d'essaimage — inspecter chaque semaine',it:'Controllare celle sciamatura — ispezionare ogni 7 giorni',pt:'Verificar células de enxame — inspecionar a cada 7 dias',ro:'Verificați celulele de roi — inspectați la fiecare 7 zile',tr:'Oğul hücrelerini kontrol et — 7 günde bir denetle'},
-    sp2:{en:'Add supers as colony builds up',de:'Honigraum aufsetzen wenn Volk wächst',fr:'Ajouter des hausses au fur et à mesure',it:'Aggiungere melari con la crescita della colonia',pt:'Adicionar melgueiras conforme a colônia cresce',ro:'Adăugați corpuri pe măsură ce colonia crește',tr:'Koloni büyüdükçe bal katı ekle'},
-    sp3:{en:'Test Varroa mite levels (alcohol wash)',de:'Varroabefall messen (Alkoholwäsche)',fr:'Tester le niveau de varroa (lavage à l'alcool)',it:'Testare livelli Varroa (lavaggio con alcol)',pt:'Testar nível de varroa (lavagem com álcool)',ro:'Testați nivelul de varroa (spălare cu alcool)',tr:'Varroa düzeyini test et (alkol yıkama)'},
-    sp4:{en:'Replace old dark brood comb',de:'Alte dunkle Brutwaben erneuern',fr:'Remplacer les vieux rayons de couvain sombres',it:'Sostituire vecchi favi scuri di covata',pt:'Substituir favos velhos escuros de cria',ro:'Înlocuiți fagurii vechi de culoare închisă',tr:'Eski koyu renk kuluçka peteklerini değiştir'},
-    sp5:{en:'Check queen is laying well',de:'Königin auf gute Legeleistung prüfen',fr:'Vérifier que la reine pond bien',it:'Controllare che la regina stia deponendo bene',pt:'Verificar se a rainha está posturando bem',ro:'Verificați că regina depune bine',tr:'Kraliçenin iyi yumurtladığını kontrol et'},
-    sp6:{en:'Record first inspection of the season',de:'Erste Kontrolle der Saison protokollieren',fr:'Enregistrer la première inspection de la saison',it:'Registrare la prima ispezione della stagione',pt:'Registrar a primeira inspeção da temporada',ro:'Înregistrați prima inspecție a sezonului',tr:'Sezonun ilk denetimini kaydet'},
-    su1:{en:'Monitor mite count monthly — treat if 3%+',de:'Varroabefall monatlich messen — ab 3% behandeln',fr:'Surveiller le comptage mensuel — traiter si 3%+',it:'Monitorare conta acari mensile — trattare se 3%+',pt:'Monitorar contagem mensal — tratar se 3%+',ro:'Monitorizați lunar — tratați dacă 3%+',tr:'Aylık akar sayımı — %3+ ise tedavi et'},
-    su2:{en:'Check honey stores — add supers before they fill',de:'Honigvorräte prüfen — Honigraum rechtzeitig aufsetzen',fr:'Vérifier les réserves — ajouter hausses avant remplissage',it:'Controllare scorte miele — aggiungere melari prima che si riempiano',pt:'Verificar estoques — adicionar melgueiras antes de encher',ro:'Verificați rezervele — adăugați corpuri înainte de umplere',tr:'Bal depolarını kontrol et — dolmadan önce kat ekle'},
-    su3:{en:'Watch for swarm preparations',de:'Auf Schwarmanzeichen achten',fr:'Surveiller les préparatifs d'essaimage',it:'Osservare preparativi di sciamatura',pt:'Observar preparativos de enxame',ro:'Urmăriți pregătirile de roit',tr:'Oğul hazırlıklarını izle'},
-    su4:{en:'Harvest honey when frames are 80% capped',de:'Honig ernten wenn Rähmchen zu 80% verdeckelt',fr:'Récolter quand 80% des cadres sont operculés',it:'Raccogliere miele quando i favi sono opercolati all'80%',pt:'Colher mel quando favos estão 80% operculados',ro:'Recoltați mierea când 80% din rame sunt căpăcite',tr:'Çerçeveler %80 kapalıyken bal topla'},
-    su5:{en:'Ensure adequate ventilation in heat',de:'Ausreichende Belüftung bei Hitze sicherstellen',fr:'Assurer une ventilation adéquate par la chaleur',it:'Garantire ventilazione adeguata nel caldo',pt:'Garantir ventilação adequada no calor',ro:'Asigurați ventilație adecvată în căldură',tr:'Sıcakta yeterli havalandırmayı sağla'},
-    su6:{en:'Record inspection notes',de:'Kontrollnotizen erfassen',fr:'Enregistrer les notes d'inspection',it:'Registrare note di ispezione',pt:'Registrar notas de inspeção',ro:'Înregistrați notele de inspecție',tr:'Denetim notlarını kaydet'},
-    fa1:{en:'Treat Varroa mites before brood breaks',de:'Varroa behandeln bevor die Brut abbricht',fr:'Traiter varroa avant l'arrêt du couvain',it:'Trattare varroa prima della fine della covata',pt:'Tratar varroa antes do término da cria',ro:'Tratați varroa înainte de pauza de puiet',tr:'Kuluçka bitişinden önce Varroa tedavisi uygula'},
-    fa2:{en:'Ensure 60-80 lbs honey stores for winter',de:'27-36 kg Honigvorräte für den Winter sicherstellen',fr:'Assurer 27-36 kg de réserves de miel pour l'hiver',it:'Assicurare 27-36 kg di scorte di miele per l'inverno',pt:'Garantir 27-36 kg de mel para o inverno',ro:'Asigurați 27-36 kg rezerve de miere pentru iarnă',tr:'Kış için 27-36 kg bal rezervi sağla'},
-    fa3:{en:'Feed 2:1 sugar syrup if stores are low',de:'2:1 Zuckerlösung füttern wenn Vorräte knapp',fr:'Nourrir sirop 2:1 si les réserves sont faibles',it:'Alimentare sciroppo 2:1 se le scorte sono basse',pt:'Alimentar xarope 2:1 se estoques baixos',ro:'Hrăniți sirop 2:1 dacă rezervele sunt scăzute',tr:'Depolar düşükse 2:1 şeker şurubu ver'},
-    fa4:{en:'Reduce entrance to prevent robbing',de:'Flugloch verengen gegen Räuberei',fr:'Réduire l'entrée pour éviter le pillage',it:'Ridurre l'ingresso per prevenire saccheggio',pt:'Reduzir entrada para prevenir pilhagem',ro:'Reduceți urdiniișul pentru a preveni jefuitul',tr:'Soygunculuğu önlemek için girişi daralt'},
-    fa5:{en:'Check queen is present and laying',de:'Königin auf Anwesenheit und Legeleistung prüfen',fr:'Vérifier présence et ponte de la reine',it:'Verificare presenza e deposizione della regina',pt:'Verificar presença e postura da rainha',ro:'Verificați prezența și depunerea reginei',tr:'Kraliçenin varlığını ve yumurtlamasını kontrol et'},
-    fa6:{en:'Install mouse guard',de:'Mäuseschutz anbringen',fr:'Installer la grille anti-souris',it:'Installare protezione contro i topi',pt:'Instalar proteção contra ratos',ro:'Instalați grila de șoareci',tr:'Fare koruyucusu tak'},
-    wi1:{en:'OA vaporization treatment if broodless',de:'Oxalsäure-Behandlung bei brutfreiem Volk',fr:'Traitement à l'acide oxalique si sans couvain',it:'Trattamento con acido ossalico se senza covata',pt:'Tratamento com ácido oxálico se sem cria',ro:'Tratament cu acid oxalic dacă fără puiet',tr:'Kuluçkasızsa OA buharlaştırma tedavisi'},
-    wi2:{en:'Check hive weight monthly',de:'Beutengewicht monatlich prüfen',fr:'Vérifier le poids de la ruche mensuellement',it:'Controllare il peso dell'arnia mensilmente',pt:'Verificar peso da colmeia mensalmente',ro:'Verificați greutatea stupului lunar',tr:'Kovan ağırlığını aylık kontrol et'},
-    wi3:{en:'Minimal disturbance — only open on warm days (50F+)',de:'Möglichst wenig stören — nur ab 10°C öffnen',fr:'Déranger au minimum — ouvrir seulement par temps chaud (10°C+)',it:'Disturbare il meno possibile — aprire solo nelle giornate calde (10°C+)',pt:'Mínima perturbação — abrir apenas em dias quentes (10°C+)',ro:'Deranjați minim — deschideți doar în zilele calde (10°C+)',tr:'En az rahatsızlık — sadece ılık günlerde (10°C+) aç'},
-    wi4:{en:'Clear entrance of dead bees',de:'Flugloch von Totbienen freimachen',fr:'Dégager l'entrée des abeilles mortes',it:'Liberare l'ingresso dalle api morte',pt:'Limpar entrada de abelhas mortas',ro:'Curățați urdiniișul de albinele moarte',tr:'Girişi ölü arılardan temizle'},
-    wi5:{en:'Order queens and packages for spring',de:'Königinnen und Ableger für den Frühling bestellen',fr:'Commander reines et essaims pour le printemps',it:'Ordinare regine e pacchi per la primavera',pt:'Encomendar rainhas e pacotes para a primavera',ro:'Comandați regine și pachete pentru primăvară',tr:'İlkbahar için kraliçe ve paket siparişi ver'},
-    wi6:{en:'Review last season records and plan ahead',de:'Aufzeichnungen der letzten Saison auswerten und planen',fr:'Réviser les notes de la dernière saison et planifier',it:'Rivedere i registri della stagione passata e pianificare',pt:'Revisar registros da última temporada e planejar',ro:'Revizuiți înregistrările sezonului trecut și planificați',tr:'Geçen sezonun kayıtlarını incele ve planla'},
+    sp1:{en:'Check for swarm cells — inspect every 7 days',de:'Schwarmzellen prüfen — alle 7 Tage kontrollieren',fr:'Verifier cellules essaimage — inspecter chaque semaine',it:'Controllare celle sciamatura — ogni 7 giorni',pt:'Verificar células de enxame — a cada 7 dias',ro:'Verificați celulele de roi — la fiecare 7 zile',tr:'Ogul hucrelerini kontrol et — 7 gunde bir denetle'},
+    sp2:{en:'Add supers as colony builds up',de:'Honigraum aufsetzen wenn Volk wächst',fr:'Ajouter hausses au fur et a mesure',it:'Aggiungere melari con la crescita',pt:'Adicionar melgueiras conforme a colônia cresce',ro:'Adaugati corpuri pe masura ce colonia creste',tr:'Koloni buyudukce bal kati ekle'},
+    sp3:{en:'Test Varroa mite levels (alcohol wash)',de:'Varroabefall messen (Alkoholwäsche)',fr:'Tester niveau varroa (lavage alcool)',it:'Testare livelli Varroa (lavaggio alcol)',pt:'Testar nível de varroa (lavagem álcool)',ro:'Testati nivelul de varroa (spalare alcool)',tr:'Varroa duzeyini test et (alkol yikama)'},
+    sp4:{en:'Replace old dark brood comb',de:'Alte dunkle Brutwaben erneuern',fr:'Remplacer vieux rayons couvain sombres',it:'Sostituire vecchi favi scuri di covata',pt:'Substituir favos velhos escuros de cria',ro:'Inlocuiti fagurii vechi de culoare inchisa',tr:'Eski koyu renk kulucka peteklerini degistir'},
+    sp5:{en:'Check queen is laying well',de:'Königin auf gute Legeleistung prüfen',fr:'Verifier que la reine pond bien',it:'Controllare che la regina deponga bene',pt:'Verificar se a rainha está posturando bem',ro:'Verificati ca regina depune bine',tr:'Kralicenin iyi yumurtladigini kontrol et'},
+    sp6:{en:'Record first inspection of the season',de:'Erste Kontrolle der Saison protokollieren',fr:'Enregistrer premiere inspection saison',it:'Registrare prima ispezione stagione',pt:'Registrar primeira inspeção da temporada',ro:'Inregistrati prima inspectie a sezonului',tr:'Sezonun ilk denetimini kaydet'},
+    su1:{en:'Monitor mite count monthly — treat if 3%+',de:'Varroabefall monatlich messen — ab 3% behandeln',fr:'Surveiller comptage mensuel — traiter si 3%+',it:'Monitorare conta acari mensile — trattare se 3%+',pt:'Monitorar contagem mensal — tratar se 3%+',ro:'Monitorizati lunar — tratati daca 3%+',tr:'Aylik akar sayimi — %3+ ise tedavi et'},
+    su2:{en:'Check honey stores — add supers before they fill',de:'Honigvorräte prüfen — Honigraum rechtzeitig aufsetzen',fr:'Verifier reserves — ajouter hausses avant remplissage',it:'Controllare scorte miele — aggiungere melari',pt:'Verificar estoques — adicionar melgueiras antes de encher',ro:'Verificati rezervele — adaugati corpuri inainte de umplere',tr:'Bal depolarini kontrol et — dolmadan once kat ekle'},
+    su3:{en:'Watch for swarm preparations',de:'Auf Schwarmanzeichen achten',fr:'Surveiller preparatifs essaimage',it:'Osservare preparativi sciamatura',pt:'Observar preparativos de enxame',ro:'Urmariti pregatirile de roit',tr:'Ogul hazirliklarini izle'},
+    su4:{en:'Harvest honey when frames are 80% capped',de:'Honig ernten wenn Rähmchen zu 80% verdeckelt',fr:'Recolter quand 80% cadres operculés',it:'Raccogliere miele quando favi opercolati 80%',pt:'Colher mel quando favos 80% operculados',ro:'Recoltati mierea cand 80% din rame sunt capacite',tr:'Cerceveler %80 kapali oldugunda bal topla'},
+    su5:{en:'Ensure adequate ventilation in heat',de:'Ausreichende Belüftung bei Hitze sicherstellen',fr:'Assurer ventilation adequate par chaleur',it:'Garantire ventilazione adeguata nel caldo',pt:'Garantir ventilação adequada no calor',ro:'Asigurati ventilatie adecvata in caldura',tr:'Sicakta yeterli havalandirmayi sagla'},
+    su6:{en:'Record inspection notes',de:'Kontrollnotizen erfassen',fr:'Enregistrer notes inspection',it:'Registrare note ispezione',pt:'Registrar notas de inspeção',ro:'Inregistrati notele de inspectie',tr:'Denetim notlarini kaydet'},
+    fa1:{en:'Treat Varroa mites before brood breaks',de:'Varroa behandeln bevor die Brut abbricht',fr:'Traiter varroa avant arret couvain',it:'Trattare varroa prima fine covata',pt:'Tratar varroa antes do término da cria',ro:'Tratati varroa inainte de pauza de puiet',tr:'Kulucka bitisinden once Varroa tedavisi uygula'},
+    fa2:{en:'Ensure 60-80 lbs honey stores for winter',de:'27-36 kg Honigvorräte für den Winter sicherstellen',fr:'Assurer 27-36 kg reserves miel pour hiver',it:'Assicurare 27-36 kg scorte miele per inverno',pt:'Garantir 27-36 kg de mel para o inverno',ro:'Asigurati 27-36 kg rezerve miere pentru iarna',tr:'Kis icin 27-36 kg bal rezervi sagla'},
+    fa3:{en:'Feed 2:1 sugar syrup if stores are low',de:'2:1 Zuckerlösung füttern wenn Vorräte knapp',fr:'Nourrir sirop 2:1 si reserves faibles',it:'Alimentare sciroppo 2:1 se scorte basse',pt:'Alimentar xarope 2:1 se estoques baixos',ro:'Hraniti sirop 2:1 daca rezervele sunt scazute',tr:'Depolar dusukse 2:1 seker surubu ver'},
+    fa4:{en:'Reduce entrance to prevent robbing',de:'Flugloch verengen gegen Räuberei',fr:'Reduire entree pour eviter pillage',it:'Ridurre ingresso per prevenire saccheggio',pt:'Reduzir entrada para prevenir pilhagem',ro:'Reduceti urdiniisul pentru a preveni jefuitul',tr:'Soygunculugu onlemek icin girisi daralt'},
+    fa5:{en:'Check queen is present and laying',de:'Königin auf Anwesenheit und Legeleistung prüfen',fr:'Verifier presence et ponte de la reine',it:'Verificare presenza e deposizione regina',pt:'Verificar presença e postura da rainha',ro:'Verificati prezenta si depunerea reginei',tr:'Kralicenin varligi ve yumurtlamasini kontrol et'},
+    fa6:{en:'Install mouse guard',de:'Mäuseschutz anbringen',fr:'Installer grille anti-souris',it:'Installare protezione contro topi',pt:'Instalar proteção contra ratos',ro:'Instalati grila de soareci',tr:'Fare koruyucusu tak'},
+    wi1:{en:'OA vaporization treatment if broodless',de:'Oxalsäure-Behandlung bei brutfreiem Volk',fr:'Traitement acide oxalique si sans couvain',it:'Trattamento acido ossalico se senza covata',pt:'Tratamento com ácido oxálico se sem cria',ro:'Tratament acid oxalic daca fara puiet',tr:'Kuluckasizia OA buharlastrima tedavisi'},
+    wi2:{en:'Check hive weight monthly',de:'Beutengewicht monatlich prüfen',fr:'Verifier poids ruche mensuellement',it:'Controllare peso arnia mensilmente',pt:'Verificar peso da colmeia mensalmente',ro:'Verificati greutatea stupului lunar',tr:'Kovan agirligini aylik kontrol et'},
+    wi3:{en:'Minimal disturbance — only open on warm days (50F+)',de:'Möglichst wenig stören — nur ab 10°C öffnen',fr:'Deranger minimum — ouvrir seulement temps chaud (10°C+)',it:'Disturbare minimo — aprire solo giornate calde (10°C+)',pt:'Mínima perturbação — abrir apenas dias quentes (10°C+)',ro:'Deranjati minim — deschideti doar zile calde (10°C+)',tr:'En az rahatsizlik — sadece ilik gunlerde (10C+) ac'},
+    wi4:{en:'Clear entrance of dead bees',de:'Flugloch von Totbienen freimachen',fr:'Degager entree des abeilles mortes',it:'Liberare ingresso dalle api morte',pt:'Limpar entrada de abelhas mortas',ro:'Curatati urdiniisul de albinele moarte',tr:'Girisi olu arilardan temizle'},
+    wi5:{en:'Order queens and packages for spring',de:'Königinnen und Ableger für den Frühling bestellen',fr:'Commander reines et essaims pour printemps',it:'Ordinare regine e pacchi per primavera',pt:'Encomendar rainhas e pacotes para a primavera',ro:'Comandati regine si pachete pentru primavara',tr:'Ilkbahar icin kralice ve paket siparisi ver'},
+    wi6:{en:'Review last season records and plan ahead',de:'Aufzeichnungen der letzten Saison auswerten und planen',fr:'Reviser notes derniere saison et planifier',it:'Rivedere registri stagione passata e pianificare',pt:'Revisar registros da última temporada e planejar',ro:'Revizuiti inregistrarile sezonului trecut si planificati',tr:'Gecen sezonun kayitlarini incele ve planla'},
   };
-  const _t=k=>T[k]?.(l)||T[k]?.en||'';
+  const _tt=k=>T[k]?.[_tl]||T[k]?.en||'';
   const seasonKeys={spring:['sp1','sp2','sp3','sp4','sp5','sp6'],summer:['su1','su2','su3','su4','su5','su6'],fall:['fa1','fa2','fa3','fa4','fa5','fa6'],winter:['wi1','wi2','wi3','wi4','wi5','wi6']};
   const pMap={sp1:'high',sp2:'high',sp3:'high',sp4:'med',sp5:'med',sp6:'low',su1:'high',su2:'high',su3:'med',su4:'med',su5:'med',su6:'low',fa1:'high',fa2:'high',fa3:'high',fa4:'med',fa5:'med',fa6:'low',wi1:'high',wi2:'high',wi3:'med',wi4:'med',wi5:'low',wi6:'low'};
-  const base=seasonKeys[season].map(id=>({id,text:_t(id),p:pMap[id]}));
+  const base=seasonKeys[season].map(id=>({id,text:_tt(id),p:pMap[id]}));
   const dyn=[];
-  const dynT={
-    mite:{en:(c,n)=>'Mite count '+c+'% on '+n+' — treat now',de:(c,n)=>'Varroabefall '+c+'% bei '+n+' — jetzt behandeln',fr:(c,n)=>'Taux d'acariens '+c+'% sur '+n+' — traiter maintenant',it:(c,n)=>'Conta acari '+c+'% su '+n+' — trattare ora',pt:(c,n)=>'Contagem de ácaros '+c+'% em '+n+' — tratar agora',ro:(c,n)=>'Număr acarieni '+c+'% la '+n+' — tratați acum',tr:(c,n)=>n+''de akar sayısı '+c+'% — şimdi tedavi et'},
-    honey:{en:(n)=>'Low honey stores on '+n+' — consider feeding',de:(n)=>'Geringe Honigvorräte bei '+n+' — Fütterung erwägen',fr:(n)=>'Faibles réserves de miel sur '+n+' — envisager de nourrir',it:(n)=>'Scorte di miele basse su '+n+' — considerare l'alimentazione',pt:(n)=>'Baixas reservas de mel em '+n+' — considerar alimentação',ro:(n)=>'Rezerve scăzute de miere la '+n+' — luați în considerare hrănirea',tr:(n)=>n+''de bal depoları düşük — beslemeyi düşün'},
-    queen:{en:(n)=>'Queen not confirmed on '+n+' — check urgently',de:(n)=>'Königin bei '+n+' nicht bestätigt — dringend prüfen',fr:(n)=>'Reine non confirmée sur '+n+' — vérifier d'urgence',it:(n)=>'Regina non confermata su '+n+' — controllare urgentemente',pt:(n)=>'Rainha não confirmada em '+n+' — verificar urgentemente',ro:(n)=>'Regina neconfirmată la '+n+' — verificați urgent',tr:(n)=>n+''de kraliçe doğrulanmadı — acilen kontrol et'},
-    days:{en:(n,d)=>n+': '+d+' days since last inspection',de:(n,d)=>n+': '+d+' Tage seit letzter Kontrolle',fr:(n,d)=>n+': '+d+' jours depuis la dernière inspection',it:(n,d)=>n+': '+d+' giorni dall'ultima ispezione',pt:(n,d)=>n+': '+d+' dias desde a última inspeção',ro:(n,d)=>n+': '+d+' zile de la ultima inspecție',tr:(n,d)=>n+': son denetimden bu yana '+d+' gün'},
+  const _dtxt={
+    mite:{en:(c,n)=>'Mite count '+c+'% on '+n+' — treat now',de:(c,n)=>'Varroabefall '+c+'% bei '+n+' — jetzt behandeln',fr:(c,n)=>'Taux acariens '+c+'% sur '+n+' — traiter maintenant',it:(c,n)=>'Conta acari '+c+'% su '+n+' — trattare ora',pt:(c,n)=>'Contagem '+c+'% em '+n+' — tratar agora',ro:(c,n)=>'Acarieni '+c+'% la '+n+' — tratati acum',tr:(c,n)=>n+' akar sayisi '+c+'% — simdi tedavi et'},
+    honey:{en:(n)=>'Low honey stores on '+n+' — consider feeding',de:(n)=>'Geringe Honigvorräte bei '+n+' — Fütterung erwägen',fr:(n)=>'Faibles reserves miel sur '+n+' — envisager nourrissage',it:(n)=>'Scorte miele basse su '+n+' — considerare alimentazione',pt:(n)=>'Baixas reservas em '+n+' — considerar alimentação',ro:(n)=>'Rezerve scazute la '+n+' — luati in considerare hranirea',tr:(n)=>n+' bal depolari dusuk — beslemeyi dusun'},
+    queen:{en:(n)=>'Queen not confirmed on '+n+' — check urgently',de:(n)=>'Königin bei '+n+' nicht bestätigt — dringend prüfen',fr:(n)=>'Reine non confirmee sur '+n+' — verifier urgence',it:(n)=>'Regina non confermata su '+n+' — controllare urgente',pt:(n)=>'Rainha não confirmada em '+n+' — verificar urgente',ro:(n)=>'Regina neconfirmata la '+n+' — verificati urgent',tr:(n)=>n+' kralice dogrulanmadi — acilen kontrol et'},
+    days:{en:(n,d)=>n+': '+d+' days since last inspection',de:(n,d)=>n+': '+d+' Tage seit letzter Kontrolle',fr:(n,d)=>n+': '+d+' jours depuis derniere inspection',it:(n,d)=>n+': '+d+' giorni dall ultima ispezione',pt:(n,d)=>n+': '+d+' dias desde última inspeção',ro:(n,d)=>n+': '+d+' zile de la ultima inspectie',tr:(n,d)=>n+': son denetimden bu yana '+d+' gun'},
   };
-  const _d=k=>dynT[k]?.[l]||dynT[k]?.en;
+  const _df=k=>_dtxt[k]?.[_tl]||_dtxt[k]?.en;
   hives.forEach(h=>{
     const li=lastInsp(h.id);if(!li)return;
-    if((li.mite_count||0)>=3)dyn.push({id:'dm_'+h.id,text:_d('mite')(li.mite_count,h.name),p:'high'});
-    if((li.honey_stores||0)<=2)dyn.push({id:'dh_'+h.id,text:_d('honey')(h.name),p:'high'});
-    if(!li.queen_seen&&!li.eggs_present)dyn.push({id:'dq_'+h.id,text:_d('queen')(h.name),p:'high'});
-    if(daysSince(li.date)>=14)dyn.push({id:'di_'+h.id,text:_d('days')(h.name,daysSince(li.date)),p:'med'});
+    if((li.mite_count||0)>=3)dyn.push({id:'dm_'+h.id,text:_df('mite')(li.mite_count,h.name),p:'high'});
+    if((li.honey_stores||0)<=2)dyn.push({id:'dh_'+h.id,text:_df('honey')(h.name),p:'high'});
+    if(!li.queen_seen&&!li.eggs_present)dyn.push({id:'dq_'+h.id,text:_df('queen')(h.name),p:'high'});
+    if(daysSince(li.date)>=14)dyn.push({id:'di_'+h.id,text:_df('days')(h.name,daysSince(li.date)),p:'med'});
   });
   return[...dyn,...base];
 }

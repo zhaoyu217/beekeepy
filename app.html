@@ -2477,7 +2477,6 @@ async function loadAll() {
       _get('inspection_reminders?select=*&user_id=eq.'+uid),
     ]);
     // Only update if we got real data back (not empty from timeout)
-    alert('server: apiaries='+a.data.length+' hives='+h.data.length+' err='+JSON.stringify(a.data[0]||h.data[0]||'empty'));
     if(a.data.length||h.data.length||q.data.length||i.data.length||t.data.length||hv.data.length){
       apiaries=a.data||[];hives=h.data||[];queens=q.data||[];
       inspections=i.data||[];treatments=t.data||[];harvests=hv.data||[];

@@ -2315,6 +2315,7 @@ async function init() {
 
   // Listen for auth state changes (handles OAuth callback automatically)
   sb.auth.onAuthStateChange(async(event, session) => {
+    alert('【诊断A】event:'+event+' session:'+(session?'有uid:'+session.user?.id:'null')+' appStarted:'+appStarted);
     if((event==='SIGNED_IN'||event==='INITIAL_SESSION') && session && !appStarted){
       appStarted = true;
       loadedWithStaleToken = false;
@@ -2341,6 +2342,7 @@ async function init() {
   // Also check session immediately (handles normal page reload)
   try{
     const{data:{session}}=await sb.auth.getSession();
+    alert('【诊断B】getSession结果: '+(session?'有session uid:'+session.user?.id:'null，无session')+' appStarted:'+appStarted);
     if(session && !appStarted){
       appStarted = true;
       // Check if this token is already expired — if so, mark it so TOKEN_REFRESHED

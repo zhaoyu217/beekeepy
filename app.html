@@ -2220,6 +2220,7 @@ function showToast(msg,type='success',duration=2800){
 const SUPABASE_URL = 'https://ydrawqnkwdvfhauansdf.supabase.co';
 const SUPABASE_ANON_KEY = 'sb_publishable_6VC3g90SrIM5s7bI-CIwZQ_tbmk_h4B';
 const CLAUDE_API_KEY = '';
+const GEMINI_API_KEY = 'AIzaSyBggLJT49h6UCKRIkfgkhWoAVM_s7h6CEI';
 const OPENWEATHER_API_KEY = '6224c11c5ee340327a054c579d1e37c0';
 
 const { createClient } = supabase;
@@ -3636,35 +3637,22 @@ Respond ONLY in this exact JSON format (no markdown, no explanation outside JSON
   "confidence": "low/medium/high"
 }`;
 
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key=' + GEMINI_API_KEY, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY,
-        'anthropic-version': '2023-06-01'
-      },
+      headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 1000,
-        messages: [{
-          role: 'user',
-          content: [
-            {
-              type: 'image',
-              source: {
-                type: 'base64',
-                media_type: 'image/jpeg',
-                data: visionImageBase64
-              }
-            },
-            { type: 'text', text: prompt }
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: 'image/jpeg', data: visionImageBase64 } },
+            { text: prompt }
           ]
-        }]
+        }],
+        generationConfig: { maxOutputTokens: 1000, temperature: 0.1 }
       })
     });
 
     const d = await res.json();
-    const text = d.content?.[0]?.text || '{}';
+    const text = d.candidates?.[0]?.content?.parts?.[0]?.text || '{}';
     const result = JSON.parse(text.replace(/```json|```/g,'').trim());
     showVisionResult(result);
 
@@ -3766,7 +3754,7 @@ async function runAIAnalysis(hiveId){
   const treats=treatments.filter(tr=>tr.hive_id===hiveId).slice(0,3);
   const li=insps[0];
 
-  if(!CLAUDE_API_KEY||CLAUDE_API_KEY===''){
+  if(!GEMINI_API_KEY||GEMINI_API_KEY===''){
     return getMockAIAnalysis(h,li);
   }
 
@@ -3798,13 +3786,13 @@ Analyze this hive and respond in JSON only (no markdown):
 Be specific and practical. Mention actual numbers from the data. Max 3 alerts, max 3 recommendations.`;
 
   try {
-    const res=await fetch('https://api.anthropic.com/v1/messages',{
+    const res=await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+GEMINI_API_KEY,{
       method:'POST',
-      headers:{'Content-Type':'application/json','x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
-      body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:800,messages:[{role:'user',content:prompt}]})
+      headers:{'Content-Type':'application/json'},
+      body:JSON.stringify({contents:[{parts:[{text:prompt}]}],generationConfig:{maxOutputTokens:800,temperature:0.1}})
     });
     const d=await res.json();
-    const text=d.content?.[0]?.text||'{}';
+    const text=d.candidates?.[0]?.content?.parts?.[0]?.text||'{}';
     return JSON.parse(text.replace(/```json|```/g,'').trim());
   } catch(e){
     return getMockAIAnalysis(h,li);
@@ -9005,21 +8993,13 @@ Write a caption that:
 Return ONLY the caption text, nothing else.`;
 
   try {
-    const res = await fetch('https://api.anthropic.com/v1/messages', {
+    const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+GEMINI_API_KEY, {
       method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        'x-api-key': CLAUDE_API_KEY || '',
-        'anthropic-version': '2023-06-01'
-      },
-      body: JSON.stringify({
-        model: 'claude-sonnet-4-20250514',
-        max_tokens: 300,
-        messages: [{ role: 'user', content: prompt }]
-      })
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ contents:[{parts:[{text:prompt}]}], generationConfig:{maxOutputTokens:300,temperature:0.7} })
     });
     const data = await res.json();
-    lastAICaption = data.content?.[0]?.text?.trim() || getFallbackCaption(hive, totalHoney);
+    lastAICaption = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || getFallbackCaption(hive, totalHoney);
   } catch(e) {
     lastAICaption = getFallbackCaption(hive, totalHoney);
   }
@@ -9784,7 +9764,7 @@ window.addEventListener('load', function() {
 // COMMUNITY AI DIAGNOSIS
 // ============================================================
 async function runCommunityAIDiagnosis(postId, photoUrl, title) {
-  if(!CLAUDE_API_KEY) return;
+  if(!GEMINI_API_KEY) return;
   try {
     // Fetch image and convert to base64
     const resp = await fetch(photoUrl);
@@ -9797,16 +9777,13 @@ Analyze the photo and give a helpful diagnosis in 2-3 sentences. Be specific abo
 Start with the most likely issue, then suggest immediate action.
 Keep it under 80 words, friendly and practical.`;
       try {
-        const res = await fetch('https://api.anthropic.com/v1/messages', {
+        const res = await fetch('https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash:generateContent?key='+GEMINI_API_KEY, {
           method:'POST',
-          headers:{'Content-Type':'application/json','x-api-key':CLAUDE_API_KEY,'anthropic-version':'2023-06-01'},
-          body:JSON.stringify({model:'claude-sonnet-4-20250514',max_tokens:200,messages:[{role:'user',content:[
-            {type:'image',source:{type:'base64',media_type:'image/jpeg',data:b64}},
-            {type:'text',text:prompt}
-          ]}]})
+          headers:{'Content-Type':'application/json'},
+          body:JSON.stringify({contents:[{parts:[{inline_data:{mime_type:'image/jpeg',data:b64}},{text:prompt}]}],generationConfig:{maxOutputTokens:200,temperature:0.3}})
         });
         const d = await res.json();
-        const aiText = d.content?.[0]?.text?.trim();
+        const aiText = d.candidates?.[0]?.content?.parts?.[0]?.text?.trim();
         if(aiText && postId) {
           // Add AI reply to the post
           const _aiTok=currentUser?._accessToken||JSON.parse(localStorage.getItem('sb-ydrawqnkwdvfhauansdf-auth-token')||'{}')?.access_token||'';

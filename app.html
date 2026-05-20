@@ -2282,11 +2282,13 @@ async function init() {
         }
       }catch(e){}
       // 先加载数据（获取蜂场GPS），再加载天气
-      await loadAll();
-      fetchWeather(); // loadAll完成后再获取天气，确保使用蜂场坐标
+      alert('【诊断1】开始loadAll\nuid:'+currentUser?.id+'\ntoken:'+(currentUser?._accessToken?'有('+currentUser._accessToken.length+'chars)':'无'));
+      try{ await loadAll(); } catch(loadErr){ alert('【诊断ERR】loadAll异常:\n'+loadErr.message); throw loadErr; }
+      alert('【诊断2】loadAll完成\nhives:'+hives.length+'\napiaries:'+apiaries.length);
+      fetchWeather();
       checkReminders();
       requestPushPermission();
-    }catch(e){console.warn('startApp error:',e);}
+    }catch(e){alert('【诊断CATCH】startApp捕获异常:\n'+e.message);console.warn('startApp error:',e);}
     clearTimeout(loadTimeout);
     document.getElementById('loading-overlay').style.display='none';
     // Clean up OAuth callback params from URL

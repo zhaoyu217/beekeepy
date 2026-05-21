@@ -18,12 +18,27 @@ html,body{height:100%;overflow:hidden;font-family:'Inter',sans-serif}
 
 /* ── TOKENS ── */
 :root{
-  --honey:#D5A144;--honey-light:#FDF6E8;--honey-border:#EDCF8A;--honey-dark:#8A6010;
-  --green:#3A9A5C;--green-light:#EDFAF3;--amber:#D9B66B;--amber-light:#FDF8EE;
-  --danger:#C0392B;--danger-light:#FDECEA;
-  --bg:#F9F7F3;--surface:#FFFFFF;--border:#E8E4DC;--border-light:#F0EDE8;
-  --text:#111111;--text2:#555555;--text3:#AAAAAA;--text4:#CCCCCC;
-  --forest-dark:#5A3A00;--forest-mid:#8A6010;
+  /* 主色优先级系统 */
+  --honey:#C79B3B;          /* 一级强调：自然蜂蜡金，仅当前Tab/主CTA/Hero重点 */
+  --honey-light:#FBF5E6;
+  --honey-border:#E8CC88;
+  --honey-dark:#7A5C1E;
+
+  --green:#5E7A63;           /* 二级强调：森林绿，Healthy/Active/Positive */
+  --green-light:#EEF5EF;
+  --amber:#C4974A;
+  --amber-light:#FBF3E3;
+
+  --danger:#B83A2A;--danger-light:#FDECEA;
+
+  --bg:#F9F7F3;--surface:#FFFFFF;
+  --border:#EAE6DE;--border-light:#F2EFE9;
+
+  --text:#1A1A1A;--text2:#5A5550;
+  --text3:#B7B1A7;           /* 三级：暖灰，inactive icon/secondary text */
+  --text4:#D0CCC6;
+
+  --forest-dark:#4A3510;--forest-mid:#7A5C1E;
   --r:14px;--r-lg:18px;--r-xl:20px;
 }
 
@@ -98,10 +113,10 @@ body{
 
 /* ② STATS */
 .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:8px;padding:0 16px;margin-bottom:10px}
-.stat-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--r);padding:12px 6px;text-align:center;cursor:pointer;transition:.15s}
-.stat-card:active{background:#F5F3F0;transform:scale(.97)}
+.stat-card{background:#FAF8F3;border:none;border-radius:var(--r);padding:14px 6px;text-align:center;cursor:pointer;transition:.15s}
+.stat-card:active{background:#F2EFE8;transform:scale(.97)}
 .stat-val{font-size:22px;font-weight:700;letter-spacing:-.5px}
-.stat-lbl{font-size:9px;color:var(--text3);margin-top:2px;font-weight:500;text-transform:uppercase;letter-spacing:.05em}
+.stat-lbl{font-size:9px;color:var(--text3);margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
 
 /* ③ HARVEST */
 .harvest-card{margin:0 16px 10px;background:var(--surface);border:1px solid var(--border);border-radius:var(--r-xl);padding:14px 16px;cursor:pointer;transition:.15s}
@@ -496,63 +511,58 @@ body{
 
   </div><!-- /scroll -->
 
-  <!-- BOTTOM NAV — 户外戴手套场景：大触控区 + 高对比图标 -->
+  <!-- BOTTOM NAV — 户外戴手套场景：大触控区，SF Symbols 统一风格 -->
   <nav class="bnav" aria-label="Main navigation">
-    <!-- 今天状态 — 房子图标 -->
+
+    <!-- 今天 — house -->
     <div class="ni" id="ni0" onclick="setNav(0)">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-        <path d="M3 13L15 3l12 10v13a1 1 0 01-1 1H4a1 1 0 01-1-1V13z" stroke="#D5A144" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M11 27V18h8v9" stroke="#D5A144" stroke-width="2.2" stroke-linejoin="round"/>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M4 12L14 4l10 8v11a1.5 1.5 0 01-1.5 1.5h-5V17h-7v7.5H5.5A1.5 1.5 0 014 23V12z" stroke="#C79B3B" stroke-width="1.8" stroke-linejoin="round"/>
       </svg>
-      <span class="ni-label" style="color:#D5A144">今天</span>
+      <span class="ni-label" style="color:#C79B3B">今天</span>
       <div class="ni-pip"></div>
     </div>
-    <!-- 现场检查 — 剪贴板+放大镜 -->
+
+    <!-- 检查 — checkmark in circle -->
     <div class="ni" id="ni1" onclick="setNav(1)">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-        <rect x="5" y="3" width="16" height="21" rx="2.5" stroke="#BBB" stroke-width="2.2"/>
-        <path d="M9 9h8M9 13h8M9 17h5" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="22" cy="23" r="4" stroke="#BBB" stroke-width="2"/>
-        <path d="M25 26l2.5 2.5" stroke="#BBB" stroke-width="2.2" stroke-linecap="round"/>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="10" stroke="#B7B1A7" stroke-width="1.8"/>
+        <path d="M9 14l3.5 3.5L19 10" stroke="#B7B1A7" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>
       </svg>
-      <span class="ni-label" style="color:#BBB">检查</span>
+      <span class="ni-label" style="color:#B7B1A7">检查</span>
     </div>
-    <!-- 养蜂日志 — 打开的书 -->
+
+    <!-- 日志 — open notebook -->
     <div class="ni" id="ni2" onclick="setNav(2)">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-        <path d="M3 5h11v22H3z" stroke="#BBB" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M16 5h11v22H16z" stroke="#BBB" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M14 5v22" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
-        <path d="M6 10h5M6 14h5M6 18h3" stroke="#BBB" stroke-width="1.8" stroke-linecap="round"/>
-        <path d="M19 10h5M19 14h5M19 18h3" stroke="#BBB" stroke-width="1.8" stroke-linecap="round"/>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M6 5.5A1.5 1.5 0 017.5 4h13A1.5 1.5 0 0122 5.5v17a1.5 1.5 0 01-1.5 1.5h-13A1.5 1.5 0 016 22.5V5.5z" stroke="#B7B1A7" stroke-width="1.8"/>
+        <path d="M10 4v20" stroke="#B7B1A7" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M13 9h6M13 13h6M13 17h4" stroke="#B7B1A7" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      <span class="ni-label" style="color:#BBB">日志</span>
+      <span class="ni-label" style="color:#B7B1A7">日志</span>
     </div>
-    <!-- 丰收记录 — 蜂蜜罐 -->
+
+    <!-- 丰收 — honey drop -->
     <div class="ni" id="ni3" onclick="setNav(3)">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-        <path d="M10 8h10l2 4v10a2 2 0 01-2 2H10a2 2 0 01-2-2V12l2-4z" stroke="#BBB" stroke-width="2.2" stroke-linejoin="round"/>
-        <path d="M8 12h14" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
-        <path d="M12 6h6" stroke="#BBB" stroke-width="2.2" stroke-linecap="round"/>
-        <path d="M15 16v4M13 18h4" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <path d="M14 5C14 5 7 13 7 17.5a7 7 0 0014 0C21 13 14 5 14 5z" stroke="#B7B1A7" stroke-width="1.8" stroke-linejoin="round"/>
+        <path d="M10.5 19a4 4 0 005-2.5" stroke="#B7B1A7" stroke-width="1.5" stroke-linecap="round"/>
       </svg>
-      <span class="ni-label" style="color:#BBB">丰收</span>
+      <span class="ni-label" style="color:#B7B1A7">丰收</span>
     </div>
-    <!-- 自然蜜源 — 花朵 -->
+
+    <!-- 蜜源 — 4-petal flower -->
     <div class="ni" id="ni4" onclick="setNav(4)">
-      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
-        <circle cx="15" cy="15" r="3.5" stroke="#BBB" stroke-width="2.2"/>
-        <ellipse cx="15" cy="8" rx="3" ry="4.5" stroke="#BBB" stroke-width="2"/>
-        <ellipse cx="15" cy="22" rx="3" ry="4.5" stroke="#BBB" stroke-width="2"/>
-        <ellipse cx="8" cy="15" rx="4.5" ry="3" stroke="#BBB" stroke-width="2"/>
-        <ellipse cx="22" cy="15" rx="4.5" ry="3" stroke="#BBB" stroke-width="2"/>
-        <ellipse cx="9.5" cy="9.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(-45 9.5 9.5)"/>
-        <ellipse cx="20.5" cy="20.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(-45 20.5 20.5)"/>
-        <ellipse cx="20.5" cy="9.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(45 20.5 9.5)"/>
-        <ellipse cx="9.5" cy="20.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(45 9.5 20.5)"/>
+      <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+        <circle cx="14" cy="14" r="2.5" stroke="#B7B1A7" stroke-width="1.8"/>
+        <ellipse cx="14" cy="7.5" rx="2.2" ry="3.5" stroke="#B7B1A7" stroke-width="1.6"/>
+        <ellipse cx="14" cy="20.5" rx="2.2" ry="3.5" stroke="#B7B1A7" stroke-width="1.6"/>
+        <ellipse cx="7.5" cy="14" rx="3.5" ry="2.2" stroke="#B7B1A7" stroke-width="1.6"/>
+        <ellipse cx="20.5" cy="14" rx="3.5" ry="2.2" stroke="#B7B1A7" stroke-width="1.6"/>
       </svg>
-      <span class="ni-label" style="color:#BBB">蜜源</span>
+      <span class="ni-label" style="color:#B7B1A7">蜜源</span>
     </div>
+
   </nav>
 
   <!-- ══════════════ SETTINGS DRAWER ══════════════ -->
@@ -1106,11 +1116,14 @@ function setNav(idx){
     const ni=document.getElementById('ni'+i);
     if(!ni)continue;
     const lbl=ni.querySelector('.ni-label');
-    const paths=ni.querySelectorAll('[stroke]');
+    const paths=ni.querySelectorAll('path,circle,ellipse,rect');
     const pip=ni.querySelector('.ni-pip');
     const active=(i===idx);
-    if(lbl)lbl.style.color=active?'#D5A144':'#BBB';
-    paths.forEach(p=>{if(p.getAttribute('stroke')!=='none')p.setAttribute('stroke',active?'#D5A144':'#BBB')});
+    if(lbl)lbl.style.color=active?'#C79B3B':'#B7B1A7';
+    paths.forEach(p=>{
+      const s=p.getAttribute('stroke');
+      if(s&&s!=='none')p.setAttribute('stroke',active?'#C79B3B':'#B7B1A7');
+    });
     if(pip)pip.style.display=active?'block':'none';
   }
 }

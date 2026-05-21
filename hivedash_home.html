@@ -303,15 +303,28 @@ body{
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="logo">
-      <svg width="26" height="24" viewBox="0 0 28 26" fill="none" aria-hidden="true">
-        <ellipse cx="14" cy="13" rx="12" ry="10" fill="#D5A144" opacity=".12"/>
-        <path d="M4 18 Q14 4 24 18" stroke="#D5A144" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M5.5 21 Q14 9 22.5 21" stroke="#D5A144" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M7 24 Q14 14 21 24" stroke="#D5A144" stroke-width="2" fill="none" stroke-linecap="round"/>
-        <path d="M9 26 H19" stroke="#D5A144" stroke-width="2" stroke-linecap="round"/>
-        <rect x="4" y="16.5" width="20" height="1.5" rx=".75" fill="#D5A144" opacity=".35"/>
+      <!-- Official HiveDash logo: solid skep hive icon -->
+      <svg width="28" height="30" viewBox="0 0 56 60" fill="none" aria-label="HiveDash" role="img">
+        <!-- top bar -->
+        <rect x="8" y="2" width="40" height="5" rx="2.5" fill="#111"/>
+        <!-- skep body: stacked horizontal bands forming a dome shape -->
+        <!-- top dome cap -->
+        <path d="M18 10 Q28 7 38 10 L38 16 Q28 13 18 16 Z" fill="#111"/>
+        <!-- band 2 -->
+        <rect x="14" y="17" width="28" height="6" rx="1" fill="#111"/>
+        <!-- band 3 -->
+        <rect x="11" y="24" width="34" height="6" rx="1" fill="#111"/>
+        <!-- band 4 -->
+        <rect x="10" y="31" width="36" height="6" rx="1" fill="#111"/>
+        <!-- bottom base -->
+        <path d="M10 37 L10 43 Q10 46 13 46 L43 46 Q46 46 46 43 L46 37 Z" fill="#111"/>
+        <!-- entrance arch -->
+        <path d="M23 46 Q28 38 33 46 Z" fill="white"/>
       </svg>
-      <span class="logo-text">HiveDash</span>
+      <!-- Wordmark: Hive bold, Dash light — matching the logo image -->
+      <div style="display:flex;align-items:baseline;gap:0;line-height:1">
+        <span style="font-size:19px;font-weight:800;color:#111;letter-spacing:-.5px;font-family:'Inter',sans-serif">Hive</span><span style="font-size:19px;font-weight:400;color:#111;letter-spacing:-.3px;font-family:'Inter',sans-serif">Dash</span>
+      </div>
     </div>
     <div class="topbar-right">
       <div class="unit-pill" id="unitPill" onclick="toggleUnit()">
@@ -922,8 +935,16 @@ body{
     </div>
     <div class="sp-body">
       <div class="ob-hero">
-        <div style="font-size:40px;margin-bottom:8px">🐝</div>
-        <div style="font-size:18px;font-weight:700;color:var(--text);letter-spacing:-.4px">Welcome to HiveDash</div>
+        <svg width="40" height="44" viewBox="0 0 56 60" fill="none" aria-hidden="true" style="margin-bottom:6px">
+          <rect x="8" y="2" width="40" height="5" rx="2.5" fill="#D5A144"/>
+          <path d="M18 10 Q28 7 38 10 L38 16 Q28 13 18 16 Z" fill="#D5A144"/>
+          <rect x="14" y="17" width="28" height="6" rx="1" fill="#D5A144"/>
+          <rect x="11" y="24" width="34" height="6" rx="1" fill="#D5A144"/>
+          <rect x="10" y="31" width="36" height="6" rx="1" fill="#D5A144"/>
+          <path d="M10 37 L10 43 Q10 46 13 46 L43 46 Q46 46 46 43 L46 37 Z" fill="#D5A144"/>
+          <path d="M23 46 Q28 38 33 46 Z" fill="white"/>
+        </svg>
+        <div style="font-size:18px;color:var(--text);letter-spacing:-.4px"><span style="font-weight:800">Hive</span><span style="font-weight:400">Dash</span></div>
         <div style="font-size:12px;color:var(--text3);margin-top:4px">Set up your hive yard in 4 steps</div>
         <div class="ob-progress"><div class="ob-pfill" style="width:25%"></div></div>
         <div style="font-size:11px;color:var(--text3)">1 of 4 complete</div>

@@ -508,49 +508,58 @@ body{
 
   <!-- BOTTOM NAV — 户外戴手套场景：大触控区 + 高对比图标 -->
   <nav class="bnav" aria-label="Main navigation">
-    <!-- 今天状态 -->
+    <!-- 今天状态 — 房子图标 -->
     <div class="ni" id="ni0" onclick="setNav(0)">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1v-10.5z" stroke="#D5A144" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M9 22v-8h6v8" stroke="#D5A144" stroke-width="2" stroke-linejoin="round"/>
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+        <path d="M3 13L15 3l12 10v13a1 1 0 01-1 1H4a1 1 0 01-1-1V13z" stroke="#D5A144" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M11 27V18h8v9" stroke="#D5A144" stroke-width="2.2" stroke-linejoin="round"/>
       </svg>
       <span class="ni-label" style="color:#D5A144">今天</span>
       <div class="ni-pip"></div>
     </div>
-    <!-- 现场检查 -->
+    <!-- 现场检查 — 剪贴板+放大镜 -->
     <div class="ni" id="ni1" onclick="setNav(1)">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <rect x="4" y="2" width="16" height="20" rx="2" stroke="#BBB" stroke-width="2"/>
-        <path d="M8 7h8M8 11h8M8 15h5" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
-        <circle cx="18" cy="18" r="4" fill="#F9F7F3" stroke="#BBB" stroke-width="2"/>
-        <path d="M17 18h2M18 17v2" stroke="#BBB" stroke-width="1.5" stroke-linecap="round"/>
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+        <rect x="5" y="3" width="16" height="21" rx="2.5" stroke="#BBB" stroke-width="2.2"/>
+        <path d="M9 9h8M9 13h8M9 17h5" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="22" cy="23" r="4" stroke="#BBB" stroke-width="2"/>
+        <path d="M25 26l2.5 2.5" stroke="#BBB" stroke-width="2.2" stroke-linecap="round"/>
       </svg>
       <span class="ni-label" style="color:#BBB">检查</span>
     </div>
-    <!-- 养蜂日志 -->
+    <!-- 养蜂日志 — 打开的书 -->
     <div class="ni" id="ni2" onclick="setNav(2)">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M4 4h16v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="#BBB" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M8 2v4M16 2v4" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
-        <path d="M8 10h8M8 14h5" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+        <path d="M3 5h11v22H3z" stroke="#BBB" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M16 5h11v22H16z" stroke="#BBB" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M14 5v22" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+        <path d="M6 10h5M6 14h5M6 18h3" stroke="#BBB" stroke-width="1.8" stroke-linecap="round"/>
+        <path d="M19 10h5M19 14h5M19 18h3" stroke="#BBB" stroke-width="1.8" stroke-linecap="round"/>
       </svg>
       <span class="ni-label" style="color:#BBB">日志</span>
     </div>
-    <!-- 丰收记录 -->
+    <!-- 丰收记录 — 蜂蜜罐 -->
     <div class="ni" id="ni3" onclick="setNav(3)">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <path d="M12 3C9 3 5 7 5 12c0 4.5 3 8 7 9 4-1 7-4.5 7-9 0-5-4-9-7-9z" stroke="#BBB" stroke-width="2" stroke-linejoin="round"/>
-        <path d="M12 8v6M9.5 11l2.5 3 2.5-3" stroke="#BBB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+        <path d="M10 8h10l2 4v10a2 2 0 01-2 2H10a2 2 0 01-2-2V12l2-4z" stroke="#BBB" stroke-width="2.2" stroke-linejoin="round"/>
+        <path d="M8 12h14" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+        <path d="M12 6h6" stroke="#BBB" stroke-width="2.2" stroke-linecap="round"/>
+        <path d="M15 16v4M13 18h4" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
       </svg>
       <span class="ni-label" style="color:#BBB">丰收</span>
     </div>
-    <!-- 自然蜜源 -->
+    <!-- 自然蜜源 — 花朵 -->
     <div class="ni" id="ni4" onclick="setNav(4)">
-      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
-        <circle cx="12" cy="8" r="3" stroke="#BBB" stroke-width="2"/>
-        <path d="M12 5C12 5 8 2 5 5s1 7 4 7M12 5c0 0 4-3 7 0s-1 7-4 7" stroke="#BBB" stroke-width="1.5" stroke-linecap="round"/>
-        <path d="M12 12v4M9 19h6" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
-        <path d="M6 22c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+      <svg width="30" height="30" viewBox="0 0 30 30" fill="none" aria-hidden="true">
+        <circle cx="15" cy="15" r="3.5" stroke="#BBB" stroke-width="2.2"/>
+        <ellipse cx="15" cy="8" rx="3" ry="4.5" stroke="#BBB" stroke-width="2"/>
+        <ellipse cx="15" cy="22" rx="3" ry="4.5" stroke="#BBB" stroke-width="2"/>
+        <ellipse cx="8" cy="15" rx="4.5" ry="3" stroke="#BBB" stroke-width="2"/>
+        <ellipse cx="22" cy="15" rx="4.5" ry="3" stroke="#BBB" stroke-width="2"/>
+        <ellipse cx="9.5" cy="9.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(-45 9.5 9.5)"/>
+        <ellipse cx="20.5" cy="20.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(-45 20.5 20.5)"/>
+        <ellipse cx="20.5" cy="9.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(45 20.5 9.5)"/>
+        <ellipse cx="9.5" cy="20.5" rx="3" ry="4" stroke="#BBB" stroke-width="1.8" transform="rotate(45 9.5 20.5)"/>
       </svg>
       <span class="ni-label" style="color:#BBB">蜜源</span>
     </div>

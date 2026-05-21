@@ -1112,11 +1112,7 @@ function filterHives(type){
   },80);
 }
 
-/* ── ONBOARDING — show if no hives ── */
-const hasHives=localStorage.getItem('hd_has_hives');
-if(!hasHives){
-  setTimeout(()=>openSub('subOnboarding'),600);
-}
+/* ── ONBOARDING — triggered manually or on first login ── */
 </script>
 </body>
 </html>

@@ -169,12 +169,12 @@ body{
 .btn-dark{background:var(--text);color:#fff}
 .btn-honey{background:var(--honey);color:#fff}
 
-/* ── BOTTOM NAV ── */
-.bnav{background:var(--surface);border-top:1.5px solid var(--border-light);display:grid;grid-template-columns:repeat(5,1fr);grid-template-rows:auto auto;padding:12px 0 28px;z-index:50}
-.ni{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:4px 0;transition:.15s}
-.ni:active{opacity:.6}
-.ni-label{font-size:12px;font-weight:600;font-family:'Inter',sans-serif}
-.ni-pip{width:4px;height:4px;border-radius:2px;background:var(--honey);margin-top:1px}
+/* ── BOTTOM NAV — 户外戴手套：大触控区，高对比 ── */
+.bnav{background:var(--surface);border-top:2px solid var(--border);display:grid;grid-template-columns:repeat(5,1fr);padding:8px 0 26px;z-index:50}
+.ni{display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;padding:8px 4px;transition:.15s;min-height:64px;justify-content:center}
+.ni:active{background:var(--bg);border-radius:12px}
+.ni-label{font-size:11px;font-weight:600;font-family:'Inter',sans-serif}
+.ni-pip{width:5px;height:5px;border-radius:3px;background:var(--honey);margin-top:1px}
 
 /* ── DRAWER ── */
 .drawer-overlay{position:absolute;inset:0;background:rgba(0,0,0,.4);z-index:200;opacity:0;pointer-events:none;transition:opacity .25s}
@@ -306,27 +306,19 @@ body{
   <!-- TOPBAR -->
   <div class="topbar">
     <div class="logo">
-      <!-- Official HiveDash logo: solid skep hive icon -->
-      <svg width="28" height="30" viewBox="0 0 56 60" fill="none" aria-label="HiveDash" role="img">
-        <!-- top bar -->
-        <rect x="8" y="2" width="40" height="5" rx="2.5" fill="#111"/>
-        <!-- skep body: stacked horizontal bands forming a dome shape -->
-        <!-- top dome cap -->
-        <path d="M18 10 Q28 7 38 10 L38 16 Q28 13 18 16 Z" fill="#111"/>
-        <!-- band 2 -->
-        <rect x="14" y="17" width="28" height="6" rx="1" fill="#111"/>
-        <!-- band 3 -->
-        <rect x="11" y="24" width="34" height="6" rx="1" fill="#111"/>
-        <!-- band 4 -->
-        <rect x="10" y="31" width="36" height="6" rx="1" fill="#111"/>
-        <!-- bottom base -->
-        <path d="M10 37 L10 43 Q10 46 13 46 L43 46 Q46 46 46 43 L46 37 Z" fill="#111"/>
-        <!-- entrance arch -->
-        <path d="M23 46 Q28 38 33 46 Z" fill="white"/>
+      <!-- Official logo: 2 top bars + dome bands + arch entrance -->
+      <svg width="24" height="26" viewBox="0 0 48 52" fill="none" aria-label="HiveDash logo">
+        <rect x="6" y="0" width="36" height="4" rx="2" fill="#111"/>
+        <rect x="10" y="6" width="28" height="4" rx="2" fill="#111"/>
+        <path d="M10 12 Q24 8 38 12 L38 17 Q24 13 10 17 Z" fill="#111"/>
+        <rect x="8" y="18" width="32" height="5" rx="1.5" fill="#111"/>
+        <rect x="6" y="24" width="36" height="5" rx="1.5" fill="#111"/>
+        <rect x="5" y="30" width="38" height="5" rx="1.5" fill="#111"/>
+        <path d="M5 35 L5 42 Q5 46 9 46 L39 46 Q43 46 43 42 L43 35 Z" fill="#111"/>
+        <path d="M19 46 Q24 37 29 46 Z" fill="white"/>
       </svg>
-      <!-- Wordmark: Hive bold, Dash light — matching the logo image -->
-      <div style="display:flex;align-items:baseline;gap:0;line-height:1">
-        <span style="font-size:19px;font-weight:800;color:#111;letter-spacing:-.5px;font-family:'Inter',sans-serif">Hive</span><span style="font-size:19px;font-weight:400;color:#111;letter-spacing:-.3px;font-family:'Inter',sans-serif">Dash</span>
+      <div style="display:flex;align-items:baseline;line-height:1">
+        <span style="font-size:20px;font-weight:800;color:#111;letter-spacing:-.5px">Hive</span><span style="font-size:20px;font-weight:400;color:#111;letter-spacing:-.3px">Dash</span>
       </div>
     </div>
     <div class="topbar-right">
@@ -507,44 +499,53 @@ body{
 
   </div><!-- /scroll -->
 
-  <!-- BOTTOM NAV -->
+  <!-- BOTTOM NAV — 户外戴手套场景：大触控区 + 高对比图标 -->
   <nav class="bnav" aria-label="Main navigation">
-    <!-- logo strip above tabs -->
-    <div style="grid-column:1/-1;display:flex;align-items:center;justify-content:center;gap:7px;padding:6px 0 0;border-bottom:1px solid var(--border-light);margin-bottom:2px">
-      <svg width="18" height="20" viewBox="0 0 56 60" fill="none" aria-hidden="true">
-        <rect x="8" y="2" width="40" height="5" rx="2.5" fill="#D5A144"/>
-        <path d="M18 10 Q28 7 38 10 L38 16 Q28 13 18 16 Z" fill="#D5A144"/>
-        <rect x="14" y="17" width="28" height="6" rx="1" fill="#D5A144"/>
-        <rect x="11" y="24" width="34" height="6" rx="1" fill="#D5A144"/>
-        <rect x="10" y="31" width="36" height="6" rx="1" fill="#D5A144"/>
-        <path d="M10 37 L10 43 Q10 46 13 46 L43 46 Q46 46 46 43 L46 37 Z" fill="#D5A144"/>
-        <path d="M23 46 Q28 38 33 46 Z" fill="white"/>
+    <!-- 今天状态 -->
+    <div class="ni" id="ni0" onclick="setNav(0)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M3 10.5L12 3l9 7.5V21a1 1 0 01-1 1H4a1 1 0 01-1-1v-10.5z" stroke="#D5A144" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M9 22v-8h6v8" stroke="#D5A144" stroke-width="2" stroke-linejoin="round"/>
       </svg>
-      <div style="font-size:13px;color:#bbb;letter-spacing:-.2px"><span style="font-weight:700;color:#ccc">Hive</span>Dash</div>
-    </div>
-    <div class="ni" onclick="setNav(0)">
-      <svg width="26" height="26" viewBox="0 0 22 22" fill="none" aria-hidden="true">
-        <path d="M3 9.5L11 3l8 6.5V19a1 1 0 01-1 1H4a1 1 0 01-1-1V9.5z" stroke="#D5A144" stroke-width="1.5" stroke-linejoin="round" fill="none"/>
-        <path d="M8 20v-7h6v7" stroke="#D5A144" stroke-width="1.5" stroke-linejoin="round"/>
-      </svg>
-      <span class="ni-label" style="color:var(--honey)">Home</span>
+      <span class="ni-label" style="color:#D5A144">今天</span>
       <div class="ni-pip"></div>
     </div>
-    <div class="ni" onclick="setNav(1)">
-      <svg width="26" height="26" viewBox="0 0 22 22" fill="none" aria-hidden="true"><rect x="4" y="2" width="14" height="18" rx="2" stroke="#ccc" stroke-width="1.5" fill="none"/><path d="M7 7h8M7 11h8M7 15h5" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span class="ni-label" style="color:#ccc">Inspect</span>
+    <!-- 现场检查 -->
+    <div class="ni" id="ni1" onclick="setNav(1)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <rect x="4" y="2" width="16" height="20" rx="2" stroke="#BBB" stroke-width="2"/>
+        <path d="M8 7h8M8 11h8M8 15h5" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+        <circle cx="18" cy="18" r="4" fill="#F9F7F3" stroke="#BBB" stroke-width="2"/>
+        <path d="M17 18h2M18 17v2" stroke="#BBB" stroke-width="1.5" stroke-linecap="round"/>
+      </svg>
+      <span class="ni-label" style="color:#BBB">检查</span>
     </div>
-    <div class="ni" onclick="setNav(2)">
-      <svg width="26" height="26" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M6 4h10v2a5 5 0 01-10 0V4z" stroke="#ccc" stroke-width="1.5" fill="none"/><path d="M11 10v8M8 18h6" stroke="#ccc" stroke-width="1.5" stroke-linecap="round"/></svg>
-      <span class="ni-label" style="color:#ccc">Journal</span>
+    <!-- 养蜂日志 -->
+    <div class="ni" id="ni2" onclick="setNav(2)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M4 4h16v16a2 2 0 01-2 2H6a2 2 0 01-2-2V4z" stroke="#BBB" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M8 2v4M16 2v4" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+        <path d="M8 10h8M8 14h5" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="ni-label" style="color:#BBB">日志</span>
     </div>
-    <div class="ni" onclick="setNav(3)">
-      <svg width="26" height="26" viewBox="0 0 22 22" fill="none" aria-hidden="true"><path d="M11 3C8 3 5 6 5 10c0 4 2.5 7 6 8 3.5-1 6-4 6-8 0-4-3-7-6-7z" stroke="#ccc" stroke-width="1.5" fill="none"/><path d="M11 11V7M9 9l2-2 2 2" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      <span class="ni-label" style="color:#ccc">Harvest</span>
+    <!-- 丰收记录 -->
+    <div class="ni" id="ni3" onclick="setNav(3)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <path d="M12 3C9 3 5 7 5 12c0 4.5 3 8 7 9 4-1 7-4.5 7-9 0-5-4-9-7-9z" stroke="#BBB" stroke-width="2" stroke-linejoin="round"/>
+        <path d="M12 8v6M9.5 11l2.5 3 2.5-3" stroke="#BBB" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>
+      </svg>
+      <span class="ni-label" style="color:#BBB">丰收</span>
     </div>
-    <div class="ni" onclick="setNav(4)">
-      <svg width="26" height="26" viewBox="0 0 22 22" fill="none" aria-hidden="true"><circle cx="11" cy="9" r="3" stroke="#ccc" stroke-width="1.5" fill="none"/><path d="M5 20c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#ccc" stroke-width="1.5" stroke-linecap="round" fill="none"/></svg>
-      <span class="ni-label" style="color:#ccc">Bloom</span>
+    <!-- 自然蜜源 -->
+    <div class="ni" id="ni4" onclick="setNav(4)">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" aria-hidden="true">
+        <circle cx="12" cy="8" r="3" stroke="#BBB" stroke-width="2"/>
+        <path d="M12 5C12 5 8 2 5 5s1 7 4 7M12 5c0 0 4-3 7 0s-1 7-4 7" stroke="#BBB" stroke-width="1.5" stroke-linecap="round"/>
+        <path d="M12 12v4M9 19h6" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+        <path d="M6 22c0-3.3 2.7-6 6-6s6 2.7 6 6" stroke="#BBB" stroke-width="2" stroke-linecap="round"/>
+      </svg>
+      <span class="ni-label" style="color:#BBB">蜜源</span>
     </div>
   </nav>
 
@@ -1095,18 +1096,19 @@ function closeSub(id){document.getElementById(id).classList.remove('open');}
 
 /* ── NAV ── */
 function setNav(idx){
-  const labels=['Home','Inspect','Journal','Harvest','Bloom'];
-  document.querySelectorAll('.ni').forEach((n,i)=>{
-    const lbl=n.querySelector('.ni-label');
-    const svgPaths=n.querySelectorAll('[stroke]');
-    const pip=n.querySelector('.ni-pip');
+  for(let i=0;i<5;i++){
+    const ni=document.getElementById('ni'+i);
+    if(!ni)continue;
+    const lbl=ni.querySelector('.ni-label');
+    const paths=ni.querySelectorAll('[stroke]');
+    const pip=ni.querySelector('.ni-pip');
     const active=(i===idx);
-    lbl.style.color=active?'var(--honey)':'#ccc';
-    svgPaths.forEach(p=>p.setAttribute('stroke',active?'#D5A144':'#ccc'));
+    if(lbl)lbl.style.color=active?'#D5A144':'#BBB';
+    paths.forEach(p=>{if(p.getAttribute('stroke')!=='none')p.setAttribute('stroke',active?'#D5A144':'#BBB')});
     if(pip)pip.style.display=active?'block':'none';
-  });
+  }
 }
-document.querySelectorAll('.ni-pip').forEach((p,i)=>{p.style.display=i===0?'block':'none'});
+for(let i=0;i<5;i++){const p=document.querySelector('#ni'+i+' .ni-pip');if(p)p.style.display=i===0?'block':'none';}
 
 /* ── FILTER HIVES ── */
 function filterHives(type){

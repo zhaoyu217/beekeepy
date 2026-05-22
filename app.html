@@ -1675,27 +1675,30 @@ function editApiary(){
   let ov=document.getElementById('editApiaryOv'); if(ov)ov.remove();
   ov=document.createElement('div'); ov.id='editApiaryOv';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
-  ov.innerHTML='<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">'+
-    '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>'+
-    '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px">Edit apiary</div>'+
-    '<div style="margin-bottom:12px">'+
-      '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Apiary name</div>'+
-      '<input id="editApiaryName" value="'+a.name+'" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">'+
-    '</div>'+
-    '<div style="margin-bottom:20px">'+
-      '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Location</div>'+
-      '<div style="display:flex;gap:8px;align-items:center">'+
-        '<input id="editApiaryLocation" value="'+a.location+'" placeholder="e.g. Boulder, CO" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">'+
-        '<button id="gpsBtn" onclick="useMyLocation()" style="padding:11px 12px;border-radius:12px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:11px;font-weight:600;color:#5E7A63;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">&#128205; Use GPS</button>'+
-      '</div>'+
-      '<div style="font-size:10px;color:#B7B1A7;margin-top:5px">Weather will show conditions at this location</div>'+
-    '</div>'+
-    '<div style="display:flex;gap:10px">'+
-      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;editApiaryOv&quot;).remove()">Cancel</button>'+
-      '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveApiary()">Save</button>'+
-    '</div>'+
-    (APIARIES.length>1?'<div style="margin-top:12px;text-align:center"><span style="font-size:12px;color:#B83A2A;cursor:pointer;font-weight:600" onclick="deleteApiary()">🗑 Remove this apiary</span></div>':'')
-  +'</div>';
+  var deleteBtn = APIARIES.length>1 ? '<div style="margin-top:12px;text-align:center"><span style="font-size:12px;color:#B83A2A;cursor:pointer;font-weight:600" onclick="deleteApiary()">&#128465; Remove this apiary</span></div>' : '';
+  ov.innerHTML = [
+    '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">',
+      '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>',
+      '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px">Edit apiary</div>',
+      '<div style="margin-bottom:12px">',
+        '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Apiary name</div>',
+        '<input id="editApiaryName" value="' + a.name.replace(/"/g,'&quot;') + '" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">',
+      '</div>',
+      '<div style="margin-bottom:20px">',
+        '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Location</div>',
+        '<div style="display:flex;gap:8px;align-items:center">',
+          '<input id="editApiaryLocation" value="' + (a.location||'').replace(/"/g,'&quot;') + '" placeholder="e.g. Boulder, CO" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">',
+          '<button id="gpsBtn" onclick="useMyLocation()" style="padding:11px 12px;border-radius:12px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:11px;font-weight:600;color:#5E7A63;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">&#128205; Use GPS</button>',
+        '</div>',
+        '<div style="font-size:10px;color:#B7B1A7;margin-top:5px">Weather will show conditions at this location</div>',
+      '</div>',
+      '<div style="display:flex;gap:10px">',
+        '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="var o=document.getElementById(&quot;editApiaryOv&quot;);if(o)o.remove()">Cancel</button>',
+        '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveApiary()">Save</button>',
+      '</div>',
+      deleteBtn,
+    '</div>'
+  ].join('');
   ov.onclick=function(e){if(e.target===ov)ov.remove();};
   document.body.appendChild(ov);
   setTimeout(function(){document.getElementById('editApiaryName').focus();},100);

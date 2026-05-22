@@ -325,7 +325,20 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
         <div class="pill"><div class="pill-val" style="color:#B7B1A7;font-size:11px">Not checked</div><div class="pill-lbl">Queen</div></div>
       </div>
       <div class="emo-note">"Hive 2 hasn't been opened in 5 days — spring buildup is fast. Schedule an inspection soon."</div>
-      <div style="margin-top:4px">
+      <div class="photo-row">
+        <div class="photo-slot" onclick="event.stopPropagation();document.getElementById('photoInput2').click()" style="cursor:pointer">
+          <input type="file" id="photoInput2" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto2(this)">
+          <div class="photo-grid" id="photoPreview2"></div>
+          <div class="photo-hint" id="photoHint2">Add photo</div>
+          <div style="position:absolute;bottom:4px;right:5px;font-size:9px;color:#ddd">📷</div>
+        </div>
+        <div class="note-slot">
+          <div class="note-lbl">Last note</div>
+          <div class="note-text">Honey stores looking moderate. Need to check brood pattern next visit.</div>
+          <div class="note-date">May 17, 2025</div>
+        </div>
+      </div>
+      <div style="margin-top:8px">
         <button style="background:#C4974A;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif" onclick="event.stopPropagation();openSub('sal')">Schedule inspection →</button>
       </div>
     </div>
@@ -1061,6 +1074,19 @@ function toggleHive2(){
 function toggleHive3(){
   const d=document.getElementById('hive3detail');
   d.style.display=d.style.display==='block'?'none':'block';
+}
+function handlePhoto2(input){
+  if(!input.files||!input.files[0])return;
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const p=document.getElementById('photoPreview2');
+    const h=document.getElementById('photoHint2');
+    p.style.backgroundImage='url('+e.target.result+')';
+    p.style.backgroundSize='cover';p.style.backgroundPosition='center';p.style.opacity='1';
+    if(h)h.textContent='Tap to change';
+    showToast('Photo saved to Hive 2 · May 22');
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 function handlePhoto3(input){
   if(!input.files||!input.files[0])return;

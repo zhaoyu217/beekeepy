@@ -1382,7 +1382,7 @@ function updateCounters(){
   const show=id=>{const d=document.getElementById(id);if(d)d.style.display='';};
   const hide=id=>{const d=document.getElementById(id);if(d)d.style.display='none';};
   if(hasApiaries){ hide('emptyState'); } else { show('emptyState'); }
-  if(hasApiaries && !hasHives){ show('addHiveGuide'); } else { hide('addHiveGuide'); }
+  if(hasApiaries && !hasHives && APIARIES.length === 1){ show('addHiveGuide'); } else { hide('addHiveGuide'); }
   if(hasHives){
     show('harvestCard');show('alertsSection');
     show('nectarTag');show('timelineSection');show('ctaRow');

@@ -1770,15 +1770,33 @@ async function fetchWeatherForLocation(lat, lon, cityLabel){
     // Step 1: resolve lat/lon if only address/city name given
     let fLat = lat, fLon = lon, locName = cityLabel || 'Your apiary';
     if((!fLat || !fLon) && cityLabel){
-      // Use Nominatim (OpenStreetMap) — supports full street addresses
-      const geoUrl = 'https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(cityLabel)+'&format=json&limit=1';
-      const geoRes = await fetch(geoUrl, {headers:{'Accept-Language':'en','User-Agent':'HiveDash/1.0'}});
-      const geoData = await geoRes.json();
-      if(geoData && geoData.length > 0){
-        fLat = parseFloat(geoData[0].lat);
-        fLon = parseFloat(geoData[0].lon);
-        // Build clean display name: first 2 parts of display_name
-        const parts = geoData[0].display_name.split(',');
+      // Try progressively shorter versions of the address until one resolves
+      async function tryGeocode(q){
+        const url = 'https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(q)+'&format=json&limit=1';
+        const r = await fetch(url, {headers:{'Accept-Language':'en'}});
+        const d = await r.json();
+        return (d && d.length > 0) ? d[0] : null;
+      }
+      // Build a list of progressively simpler queries from the address
+      const queries = [cityLabel];
+      // If address has commas, try parts after first comma
+      const commaParts = cityLabel.split(',');
+      if(commaParts.length > 1) queries.push(commaParts.slice(1).join(',').trim());
+      // Try last 2 space-separated words (e.g. "Fowlerville MI")
+      const spaceParts = cityLabel.trim().split(/\s+/);
+      if(spaceParts.length > 2) queries.push(spaceParts.slice(-2).join(' '));
+      // Try last word only (state/country)
+      if(spaceParts.length > 1) queries.push(spaceParts.slice(-1)[0]);
+
+      let result = null;
+      for(const q of queries){
+        result = await tryGeocode(q);
+        if(result) break;
+      }
+      if(result){
+        fLat = parseFloat(result.lat);
+        fLon = parseFloat(result.lon);
+        const parts = result.display_name.split(',');
         locName = parts.slice(0,2).join(',').trim();
       }
     }

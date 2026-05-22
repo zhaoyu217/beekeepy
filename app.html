@@ -1843,7 +1843,11 @@ async function fetchWeatherForLocation(lat, lon, cityLabel){
       if(tempEl) tempEl.textContent = maxT+'°';
     }
     console.log('[HiveDash] weather OK:', desc, temp+tempUnit, locName);
-  } catch(e){ console.log('[HiveDash] weather error:', e); }
+  } catch(e){
+    console.log('[HiveDash] weather error:', e);
+    var wt=document.getElementById('wTemp'); if(wt) wt.textContent='Weather unavailable';
+    var wc=document.getElementById('wCity'); if(wc) wc.textContent='Check console · '+String(e).slice(0,60);
+  }
 }
 /* USER & LANGUAGE */
 var USER = { name: 'James' };

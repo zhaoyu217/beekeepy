@@ -491,7 +491,7 @@ body.bright *{-webkit-font-smoothing:auto}
   <!-- ③ NOTIFICATIONS -->
   <div class="drawer-sec">Notifications</div>
   <div class="drawer-item" onclick="openSub('sal');closeDrawer()">
-    <div class="di-icon">🔔</div><div class="di-label">Inspection reminders</div><div class="di-val">Every 10 days</div><div class="di-arrow">›</div>
+    <div class="di-icon">🔔</div><div class="di-label">Inspection reminders</div><div class="di-val" id="drawerReminderVal">Every 10 days</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-item" onclick="openSub('sal');closeDrawer()">
     <div class="di-icon">⛈️</div><div class="di-label">Weather alerts</div><div class="di-arrow">›</div>
@@ -808,9 +808,13 @@ body.bright *{-webkit-font-smoothing:auto}
     <!-- Inspection reminders -->
     <div class="sp-card">
       <div class="sp-lbl">Inspection reminders</div>
-      <div class="sp-row">
+      <div class="sp-row" style="align-items:center">
         <div><div class="sp-key">Reminder interval</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">Applied to all hives</div></div>
-        <span class="sp-val">Every 10 days</span>
+        <div style="display:flex;align-items:center;gap:0;background:#F2EFE9;border-radius:12px;overflow:hidden;border:1px solid #EDE8E0">
+          <button onclick="changeReminderDays(-1)" style="width:34px;height:34px;border:none;background:transparent;font-size:18px;font-weight:300;color:#C79B3B;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1" id="reminderMinus">−</button>
+          <div style="min-width:64px;text-align:center;font-size:13px;font-weight:700;color:#1A1A1A" id="reminderVal">Every 10 days</div>
+          <button onclick="changeReminderDays(1)" style="width:34px;height:34px;border:none;background:transparent;font-size:18px;font-weight:300;color:#C79B3B;cursor:pointer;display:flex;align-items:center;justify-content:center;line-height:1" id="reminderPlus">+</button>
+        </div>
       </div>
       <div class="sp-row"><span class="sp-key">Push notifications</span><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
       <div class="sp-row"><span class="sp-key">Morning reminder</span><span class="sp-val">8:00 AM</span></div>
@@ -2813,6 +2817,17 @@ function toggleBiometric(){
   if(tog){ tog.classList.toggle('on', on); tog.classList.toggle('off', !on); }
   if(lbl){ lbl.textContent = on ? 'On' : 'Off'; lbl.style.color = on ? '#5E7A63' : '#B7B1A7'; }
   showToast('Biometric unlock ' + (on ? 'enabled ✓' : 'disabled'));
+}
+
+var REMINDER_DAYS = 10;
+function changeReminderDays(delta){
+  REMINDER_DAYS = Math.min(30, Math.max(1, REMINDER_DAYS + delta));
+  var label = 'Every ' + REMINDER_DAYS + (REMINDER_DAYS === 1 ? ' day' : ' days');
+  var val = document.getElementById('reminderVal'); if(val) val.textContent = label;
+  var drawerVal = document.getElementById('drawerReminderVal'); if(drawerVal) drawerVal.textContent = label;
+  // Dim minus at 1, plus at 30
+  var minus = document.getElementById('reminderMinus'); if(minus) minus.style.opacity = REMINDER_DAYS <= 1 ? '0.3' : '1';
+  var plus = document.getElementById('reminderPlus'); if(plus) plus.style.opacity = REMINDER_DAYS >= 30 ? '0.3' : '1';
 }
 
 function toggleBrightMode(){

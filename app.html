@@ -2389,11 +2389,45 @@ function openSettingsSheet(type){
       '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveProfile()">Save</button></div>';
   } else if(type==='security'){
     title = 'Security';
+    var twoFaOn = USER.twoFaEnabled !== false;
+    var biometricOn = USER.biometricEnabled === true;
     html =
-      '<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:20px">' +
-      _settingRow('🔑','Change password','Update your login password','›','showToast(&quot;Change password flow coming soon&quot;)') +
-      _settingRow('📱','Two-factor authentication','Protect your account with 2FA','<span style="font-size:11px;color:#5E7A63;font-weight:600">On</span>','showToast(&quot;2FA settings coming soon&quot;)') +
-      _settingRow('🪪','Face ID / Touch ID','Use biometrics to unlock','','') +
+      '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">' +
+
+      // Change password row
+      '<div style="background:#F9F7F3;border-radius:12px;overflow:hidden">' +
+        '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;cursor:pointer" onclick="securitySection(\'password\')">' +
+          '<div style="font-size:18px;width:28px;text-align:center">🔑</div>' +
+          '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">Change password</div><div style="font-size:11px;color:#B7B1A7;margin-top:1px">Update your login password</div></div>' +
+          '<div style="color:#D0CCC6">›</div>' +
+        '</div>' +
+        '<div id="secPwSection" style="display:none;padding:0 14px 14px;border-top:1px solid #EDE8E0">' +
+          '<div style="padding-top:12px;display:flex;flex-direction:column;gap:8px">' +
+            '<input id="secOldPw" type="password" placeholder="Current password" style="width:100%;padding:10px 12px;border:1.5px solid #EDE8E0;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:#fff;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">' +
+            '<input id="secNewPw" type="password" placeholder="New password" style="width:100%;padding:10px 12px;border:1.5px solid #EDE8E0;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:#fff;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">' +
+            '<input id="secConfPw" type="password" placeholder="Confirm new password" style="width:100%;padding:10px 12px;border:1.5px solid #EDE8E0;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;outline:none;background:#fff;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">' +
+            '<div id="secPwError" style="font-size:11px;color:#B83A2A;display:none"></div>' +
+            '<button onclick="saveNewPassword()" style="width:100%;padding:10px;border-radius:10px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Update password</button>' +
+          '</div>' +
+        '</div>' +
+      '</div>' +
+
+      // 2FA row
+      '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#F9F7F3;border-radius:12px;cursor:pointer" onclick="toggleTwoFa()">' +
+        '<div style="font-size:18px;width:28px;text-align:center">📱</div>' +
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">Two-factor authentication</div><div style="font-size:11px;color:#B7B1A7;margin-top:1px">Protect your account with 2FA</div></div>' +
+        '<span id="twoFaLabel" style="font-size:11px;font-weight:600;color:'+(twoFaOn?'#5E7A63':'#B7B1A7')+'">'+(twoFaOn?'On':'Off')+'</span>' +
+        '<div class="tog '+(twoFaOn?'on':'off')+'" id="twoFaTog" style="margin-left:8px" onclick="event.stopPropagation();toggleTwoFa()"></div>' +
+      '</div>' +
+
+      // Biometric row
+      '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#F9F7F3;border-radius:12px;cursor:pointer" onclick="toggleBiometric()">' +
+        '<div style="font-size:18px;width:28px;text-align:center">🪪</div>' +
+        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">Face ID / Touch ID</div><div style="font-size:11px;color:#B7B1A7;margin-top:1px">Use biometrics to unlock</div></div>' +
+        '<span id="bioLabel" style="font-size:11px;font-weight:600;color:'+(biometricOn?'#5E7A63':'#B7B1A7')+'">'+(biometricOn?'On':'Off')+'</span>' +
+        '<div class="tog '+(biometricOn?'on':'off')+'" id="bioTog" style="margin-left:8px" onclick="event.stopPropagation();toggleBiometric()"></div>' +
+      '</div>' +
+
       '</div>' +
       '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
   } else if(type==='export'){
@@ -2531,6 +2565,49 @@ function saveProfile(){
   if(greet){ var h=new Date().getHours(); greet.innerHTML=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+',<br>'+USER.name; }
   document.getElementById('settingsOv').remove();
   showToast('Profile updated ✓');
+}
+
+function securitySection(sec){
+  var el = document.getElementById('secPwSection');
+  if(!el) return;
+  var open = el.style.display === 'none';
+  el.style.display = open ? 'block' : 'none';
+  if(open) setTimeout(function(){ var f=document.getElementById('secOldPw'); if(f) f.focus(); }, 50);
+}
+
+function saveNewPassword(){
+  var oldPw = (document.getElementById('secOldPw')||{}).value || '';
+  var newPw = (document.getElementById('secNewPw')||{}).value || '';
+  var confPw = (document.getElementById('secConfPw')||{}).value || '';
+  var errEl = document.getElementById('secPwError');
+  function showErr(msg){ if(errEl){ errEl.textContent=msg; errEl.style.display='block'; } }
+  if(!oldPw){ showErr('Please enter your current password.'); return; }
+  if(newPw.length < 8){ showErr('New password must be at least 8 characters.'); return; }
+  if(newPw !== confPw){ showErr('Passwords do not match.'); return; }
+  if(errEl) errEl.style.display='none';
+  USER.password = newPw;
+  document.getElementById('settingsOv').remove();
+  showToast('Password updated ✓');
+}
+
+function toggleTwoFa(){
+  USER.twoFaEnabled = USER.twoFaEnabled === false ? true : false;
+  var on = USER.twoFaEnabled;
+  var tog = document.getElementById('twoFaTog');
+  var lbl = document.getElementById('twoFaLabel');
+  if(tog){ tog.classList.toggle('on', on); tog.classList.toggle('off', !on); }
+  if(lbl){ lbl.textContent = on ? 'On' : 'Off'; lbl.style.color = on ? '#5E7A63' : '#B7B1A7'; }
+  showToast('Two-factor authentication ' + (on ? 'enabled ✓' : 'disabled'));
+}
+
+function toggleBiometric(){
+  USER.biometricEnabled = !USER.biometricEnabled;
+  var on = USER.biometricEnabled;
+  var tog = document.getElementById('bioTog');
+  var lbl = document.getElementById('bioLabel');
+  if(tog){ tog.classList.toggle('on', on); tog.classList.toggle('off', !on); }
+  if(lbl){ lbl.textContent = on ? 'On' : 'Off'; lbl.style.color = on ? '#5E7A63' : '#B7B1A7'; }
+  showToast('Biometric unlock ' + (on ? 'enabled ✓' : 'disabled'));
 }
 
 function exportData(fmt){

@@ -1343,6 +1343,7 @@ function updateCounters(){
   const healthy = hives.filter(h=>h.status==='Healthy').length;
   const due = hives.filter(h=>h.status==='Due soon').length;
   const hasHives = n > 0;
+  const hasApiaries = APIARIES.length > 0;
   // Stats
   const sh=document.getElementById('statHives');if(sh)sh.textContent=n;
   const shl=document.getElementById('statHealthy');if(shl)shl.textContent=healthy;
@@ -1356,11 +1357,12 @@ function updateCounters(){
   // Toggle sections
   const show=id=>{const d=document.getElementById(id);if(d)d.style.display='';};
   const hide=id=>{const d=document.getElementById(id);if(d)d.style.display='none';};
+  if(hasApiaries){ hide('emptyState'); } else { show('emptyState'); }
   if(hasHives){
-    hide('emptyState');show('harvestCard');show('alertsSection');
+    show('harvestCard');show('alertsSection');
     show('nectarTag');show('timelineSection');show('ctaRow');
   } else {
-    show('emptyState');hide('harvestCard');hide('alertsSection');
+    hide('harvestCard');hide('alertsSection');
     hide('nectarTag');hide('timelineSection');hide('ctaRow');
   }
   updateHiveBadge();

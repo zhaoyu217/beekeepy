@@ -1163,6 +1163,8 @@ function updateHarvestUI(){
   const hbar=document.getElementById('harvestHeroBar');if(hbar)hbar.style.width=pct+'%';
 }
 
+var APIARY = { name:'Backyard Apiary', location:'', lat:null, lon:null };
+
 /* ── PERSISTENCE ── */
 function saveData(){
   try{
@@ -1515,7 +1517,6 @@ window.addEventListener('load', function(){
 });
 
 /* APIARY MANAGEMENT */
-var APIARY = { name:'Backyard Apiary', location:'', lat:null, lon:null };
 
 function editApiary(){
   let ov=document.getElementById('editApiaryOv'); if(ov)ov.remove();

@@ -270,111 +270,18 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <div class="prog-labels"><span>0 <span id="hu2">lbs</span></span><span>Goal: <span id="hg">55</span> <span id="hu3">lbs</span></span></div>
   </div>
 
-  <!-- ④ HIVE CARDS -->
-  <div class="sec-hd" style="margin-top:16px">Your hives</div>
-
-  <!-- Hive 1 expanded -->
-  <div class="hive-exp" onclick="openSub('shd')">
-    <div class="hive-row">
-      <div class="hive-icon" style="background:#EEF5EF">
-        <svg width="16" height="16" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
-      </div>
+  <!-- ④ MY APIARY ENTRY -->
+  <div class="sec-hd" style="margin-top:16px">My apiary</div>
+  <div class="hive-exp" onclick="openSub('smya')" style="padding:14px 16px;margin-bottom:12px">
+    <div style="display:flex;align-items:center;gap:12px">
+      <div style="width:44px;height:44px;border-radius:14px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌻</div>
       <div style="flex:1">
-        <div class="hive-name">Hive 1 · Italian</div>
-        <div class="hive-sub">Inspected 2 days ago</div>
+        <div style="font-size:14px;font-weight:600;color:#1A1A1A">Backyard Apiary</div>
+        <div style="font-size:11px;color:#B7B1A7;margin-top:2px">3 hives · Boulder, CO · Spring</div>
       </div>
-      <div class="hive-status" style="color:#5E7A63">Healthy</div>
-    </div>
-    <div class="pills">
-      <div class="pill"><div class="pill-val" style="color:#5A5550;font-size:11px">Brood warm</div><div class="pill-lbl">Brood</div></div>
-      <div class="pill"><div class="pill-val" style="color:#5A5550;font-size:11px">Honey strong</div><div class="pill-lbl">Stores</div></div>
-      <div class="pill"><div class="pill-val" style="color:#5E7A63;font-size:11px">Queen seen ✓</div><div class="pill-lbl">Queen</div></div>
-    </div>
-    <div class="emo-note">"Your bees are keeping the brood nest perfectly warm today."</div>
-    <div class="photo-row">
-      <div class="photo-slot" onclick="document.getElementById('photoInput').click()" style="cursor:pointer">
-        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
-        <div class="photo-grid" id="photoPreview"></div>
-        <div class="photo-hint" id="photoHint">Add photo</div>
-        <div style="position:absolute;bottom:4px;right:5px;font-size:9px;color:#ddd">📷</div>
-      </div>
-      <div class="note-slot">
-        <div class="note-lbl">Last note</div>
-        <div class="note-text">Queen spotted. 6 frames brood. Added 1 super.</div>
-        <div class="note-date">May 16, 2025</div>
-      </div>
-    </div>
-  </div>
-
-  <!-- Hive 2 — 折叠状态，点击展开 -->
-  <div class="hive-exp" id="hive2card" onclick="toggleHive2()" style="padding:12px 14px">
-    <div class="hive-row" style="margin-bottom:0">
-      <div class="hive-icon" style="background:#FBF3E3">
-        <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#C4974A" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
-      </div>
-      <div style="flex:1">
-        <div class="hive-name">Hive 2 · Carniolan</div>
-        <div class="hc-sub" id="h2s">Needs attention · 5 days ago</div>
-      </div>
-      <div class="hive-status" style="color:#C4974A">Due soon</div>
-    </div>
-    <div id="hive2detail" style="display:none;margin-top:12px">
-      <div class="pills">
-        <div class="pill"><div class="pill-val" style="color:#C4974A;font-size:11px">Slightly cool</div><div class="pill-lbl">Brood</div></div>
-        <div class="pill"><div class="pill-val" style="color:#5A5550;font-size:11px">Moderate</div><div class="pill-lbl">Stores</div></div>
-        <div class="pill"><div class="pill-val" style="color:#B7B1A7;font-size:11px">Not checked</div><div class="pill-lbl">Queen</div></div>
-      </div>
-      <div class="emo-note">"Hive 2 hasn't been opened in 5 days — spring buildup is fast. Schedule an inspection soon."</div>
-      <div class="photo-row">
-        <div class="photo-slot" onclick="event.stopPropagation();document.getElementById('photoInput2').click()" style="cursor:pointer">
-          <input type="file" id="photoInput2" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto2(this)">
-          <div class="photo-grid" id="photoPreview2"></div>
-          <div class="photo-hint" id="photoHint2">Add photo</div>
-          <div style="position:absolute;bottom:4px;right:5px;font-size:9px;color:#ddd">📷</div>
-        </div>
-        <div class="note-slot">
-          <div class="note-lbl">Last note</div>
-          <div class="note-text">Honey stores looking moderate. Need to check brood pattern next visit.</div>
-          <div class="note-date">May 17, 2025</div>
-        </div>
-      </div>
-      <div style="margin-top:8px">
-        <button style="background:#C4974A;color:#fff;border:none;border-radius:10px;padding:8px 14px;font-size:11px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif" onclick="event.stopPropagation();openSub('sal')">Schedule inspection →</button>
-      </div>
-    </div>
-  </div>
-
-  <!-- Hive 3 — 折叠状态，点击展开 -->
-  <div class="hive-exp" id="hive3card" onclick="toggleHive3()" style="padding:12px 14px">
-    <div class="hive-row" style="margin-bottom:0">
-      <div class="hive-icon" style="background:#EEF5EF">
-        <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
-      </div>
-      <div style="flex:1">
-        <div class="hive-name">Hive 3 · Buckfast</div>
-        <div class="hc-sub" id="h3s">Looking good · yesterday</div>
-      </div>
-      <div class="hive-status" style="color:#5E7A63">Healthy</div>
-    </div>
-    <div id="hive3detail" style="display:none;margin-top:12px">
-      <div class="pills">
-        <div class="pill"><div class="pill-val" style="color:#5E7A63;font-size:11px">Brood warm</div><div class="pill-lbl">Brood</div></div>
-        <div class="pill"><div class="pill-val" style="color:#5A5550;font-size:11px">Building up</div><div class="pill-lbl">Stores</div></div>
-        <div class="pill"><div class="pill-val" style="color:#5E7A63;font-size:11px">Active ✓</div><div class="pill-lbl">Queen</div></div>
-      </div>
-      <div class="emo-note">"New queen is settling in well. Hive 3 is calm and growing steadily."</div>
-      <div class="photo-row">
-        <div class="photo-slot" onclick="event.stopPropagation();document.getElementById('photoInput3').click()" style="cursor:pointer">
-          <input type="file" id="photoInput3" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto3(this)">
-          <div class="photo-grid" id="photoPreview3"></div>
-          <div class="photo-hint" id="photoHint3">Add photo</div>
-          <div style="position:absolute;bottom:4px;right:5px;font-size:9px;color:#ddd">📷</div>
-        </div>
-        <div class="note-slot">
-          <div class="note-lbl">Last note</div>
-          <div class="note-text">New queen released. Calm temperament. Monitoring for eggs.</div>
-          <div class="note-date">May 10, 2025</div>
-        </div>
+      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
+        <div style="font-size:11px;font-weight:600;color:var(--green);background:#EEF5EF;border-radius:8px;padding:3px 8px">2 healthy</div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
     </div>
   </div>
@@ -539,7 +446,118 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
   </div>
 </div>
 
-<!-- SUB: WEATHER -->
+<!-- SUB: MY APIARY -->
+<div class="sub" id="smya">
+  <div class="sub-hd">
+    <div class="back" onclick="closeSub('smya')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="sub-title">My apiary</div>
+    <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer;margin-left:auto" onclick="editApiary()">Edit</div>
+  </div>
+  <div class="sp">
+
+    <!-- Apiary info card -->
+    <div class="sp-card" style="padding:16px">
+      <div style="display:flex;align-items:center;gap:12px;margin-bottom:12px">
+        <div style="width:48px;height:48px;border-radius:14px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:24px">🌻</div>
+        <div style="flex:1">
+          <div id="apiaryName" style="font-size:15px;font-weight:700;color:#1A1A1A">Backyard Apiary</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:2px">Boulder, CO · Est. March 2024</div>
+        </div>
+        <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="cursor:pointer" onclick="editApiary()"><path d="M11 2l3 3-8 8H3v-3L11 2z" stroke="#B7B1A7" stroke-width="1.5" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+        <div style="text-align:center;background:#F9F7F3;border-radius:10px;padding:8px 4px">
+          <div style="font-size:18px;font-weight:700;color:#1A1A1A" id="myaHiveCount">3</div>
+          <div style="font-size:9px;color:#B7B1A7;margin-top:1px;text-transform:uppercase;letter-spacing:.05em">Hives</div>
+        </div>
+        <div style="text-align:center;background:#F9F7F3;border-radius:10px;padding:8px 4px">
+          <div style="font-size:18px;font-weight:700;color:var(--green)">2</div>
+          <div style="font-size:9px;color:#B7B1A7;margin-top:1px;text-transform:uppercase;letter-spacing:.05em">Healthy</div>
+        </div>
+        <div style="text-align:center;background:#F9F7F3;border-radius:10px;padding:8px 4px">
+          <div style="font-size:18px;font-weight:700;color:var(--honey)">1</div>
+          <div style="font-size:9px;color:#B7B1A7;margin-top:1px;text-transform:uppercase;letter-spacing:.05em">Attention</div>
+        </div>
+      </div>
+    </div>
+
+    <!-- Hive list -->
+    <div style="font-size:10px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.07em;padding:0 4px;margin-bottom:4px">Your hives</div>
+
+    <!-- Hive 1 -->
+    <div class="sp-card" style="padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
+        <div style="width:36px;height:36px;border-radius:12px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 1 · Italian</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:1px">Inspected 2 days ago</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--green)">Healthy</div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="border-top:1px solid #F5F2EE;display:flex">
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="showToast('Rename Hive 1 — tap to edit name and breed.')">✏️ Rename</div>
+        <div style="width:1px;background:#F5F2EE"></div>
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B83A2A;cursor:pointer;text-align:center" onclick="deleteHive(1,'Hive 1 · Italian')">🗑 Remove</div>
+      </div>
+    </div>
+
+    <!-- Hive 2 -->
+    <div class="sp-card" style="padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
+        <div style="width:36px;height:36px;border-radius:12px;background:#FBF3E3;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#C4974A" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 2 · Carniolan</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:1px">Needs attention · 5 days ago</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:#C4974A">Due soon</div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="border-top:1px solid #F5F2EE;display:flex">
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="showToast('Rename Hive 2 — tap to edit name and breed.')">✏️ Rename</div>
+        <div style="width:1px;background:#F5F2EE"></div>
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B83A2A;cursor:pointer;text-align:center" onclick="deleteHive(2,'Hive 2 · Carniolan')">🗑 Remove</div>
+      </div>
+    </div>
+
+    <!-- Hive 3 -->
+    <div class="sp-card" style="padding:0;overflow:hidden">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
+        <div style="width:36px;height:36px;border-radius:12px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 3 · Buckfast</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:1px">Looking good · yesterday</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:var(--green)">Healthy</div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="border-top:1px solid #F5F2EE;display:flex">
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="showToast('Rename Hive 3 — tap to edit name and breed.')">✏️ Rename</div>
+        <div style="width:1px;background:#F5F2EE"></div>
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B83A2A;cursor:pointer;text-align:center" onclick="deleteHive(3,'Hive 3 · Buckfast')">🗑 Remove</div>
+      </div>
+    </div>
+
+    <!-- Add hive button -->
+    <button class="btn-full" style="background:var(--forest);color:#fff" onclick="addHive()">+ Add a hive</button>
+
+    <!-- Danger zone: delete apiary -->
+    <div style="padding-top:8px;border-top:1px solid #F2EFE9;text-align:center">
+      <div style="font-size:11px;color:#B7B1A7;margin-bottom:10px">Manage this apiary</div>
+      <div style="display:flex;gap:8px">
+        <button style="flex:1;padding:10px;border-radius:12px;border:1px solid #EDE8E0;background:#fff;font-size:12px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:'Inter',sans-serif" onclick="editApiary()">✏️ Edit apiary</button>
+        <button style="flex:1;padding:10px;border-radius:12px;border:1px solid #F5C1C1;background:#FDECEA;font-size:12px;font-weight:600;color:#B83A2A;cursor:pointer;font-family:'Inter',sans-serif" onclick="deleteApiary()">🗑 Remove apiary</button>
+      </div>
+    </div>
+
+  </div>
+</div>
 <div class="sub" id="sw">
   <div class="sub-hd"><div class="back" onclick="closeSub('sw')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Today's weather</div></div>
   <div class="sp">
@@ -1144,6 +1162,32 @@ function upgradeToPro(){
 
 // Init badge on load
 document.addEventListener('DOMContentLoaded', updateHiveBadge);
+
+/* APIARY MANAGEMENT */
+function editApiary(){
+  const name = window.prompt('Apiary name:', document.getElementById('apiaryName').textContent);
+  if(name && name.trim()){
+    document.getElementById('apiaryName').textContent = name.trim();
+    showToast('Apiary name updated to "' + name.trim() + '"');
+  }
+}
+function deleteHive(num, name){
+  const ok = window.confirm('Remove ' + name + '?\n\nAll records and photos will be permanently deleted.');
+  if(ok){
+    hiveCount = Math.max(0, hiveCount - 1);
+    updateHiveBadge();
+    const el = document.getElementById('myaHiveCount');
+    if(el) el.textContent = hiveCount;
+    showToast(name + ' removed.');
+  }
+}
+function deleteApiary(){
+  const ok = window.confirm('Remove Backyard Apiary?\n\nAll hives, inspections, and photos will be permanently deleted. This cannot be undone.');
+  if(ok){
+    closeSub('smya');
+    showToast('Backyard Apiary removed.');
+  }
+}
 
 /* DELETE HIVE */
 function confirmDeleteHive(){

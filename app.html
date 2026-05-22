@@ -2478,18 +2478,48 @@ function openSettingsSheet(type){
       '<button style="width:100%;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:8px" onclick="showToast(&quot;Scanning for Bluetooth devices…&quot;)">🔍 Scan for devices</button>' +
       '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
   } else if(type==='plan'){
-    title = 'Your Plan';
+    title = 'Choose a Plan';
+    var curPlan = USER.planType || 'monthly';
+    var cur = getCurrency();
+    var mPrice = fmtPrice(cur, cur.monthly);
+    var yPrice = fmtPrice(cur, cur.yearly);
+    var yMonthly = fmtPrice(cur, +(cur.yearly/12).toFixed(2));
+    var saving = getYearlySaving();
     html =
-      '<div style="background:linear-gradient(135deg,#FDF0D0,#FAE8B0);border-radius:16px;padding:20px;margin-bottom:16px;text-align:center">' +
-      '<div style="font-size:28px;margin-bottom:4px">⭐</div>' +
-      '<div style="font-size:18px;font-weight:700;color:#4A3000;margin-bottom:2px">Pro Plan</div>' +
-      '<div style="font-size:13px;color:#7A5C1E">$9.99 / month · Renews Jun 1, 2026</div></div>' +
-      '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">' +
+      // Tab switcher
+      '<div style="display:flex;background:#F2EFE9;border-radius:14px;padding:4px;margin-bottom:20px;position:relative">' +
+        '<div id="planTabMonthly" onclick="switchPlanTab(\'monthly\')" style="flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;'+(curPlan==='monthly'?'background:#fff;color:#1A1A1A;box-shadow:0 1px 4px rgba(0,0,0,.08)':'color:#B7B1A7')+'">Monthly</div>' +
+        '<div id="planTabYearly" onclick="switchPlanTab(\'yearly\')" style="flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;position:relative;'+(curPlan==='yearly'?'background:#fff;color:#1A1A1A;box-shadow:0 1px 4px rgba(0,0,0,.08)':'color:#B7B1A7')+'">' +
+          'Yearly' +
+          '<span style="position:absolute;top:-8px;right:6px;font-size:9px;font-weight:700;background:#C79B3B;color:#fff;border-radius:6px;padding:2px 6px">'+saving+'</span>' +
+        '</div>' +
+      '</div>' +
+      // Monthly card
+      '<div id="planCardMonthly" style="border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer;transition:.2s;border:2px solid '+(curPlan==='monthly'?'#C79B3B':'#EDE8E0')+';background:'+(curPlan==='monthly'?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3')+'" onclick="selectPlan(\'monthly\')">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between">' +
+          '<div><div style="font-size:15px;font-weight:700;color:#1A1A1A">Monthly</div><div style="font-size:12px;color:#7A5C1E;margin-top:2px">Billed every month</div></div>' +
+          '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#1A1A1A">'+mPrice+'</div><div style="font-size:11px;color:#B7B1A7">/ month</div></div>' +
+        '</div>' +
+        '<div id="planCheckMonthly" style="margin-top:10px;font-size:11px;font-weight:600;color:#C79B3B;display:'+(curPlan==='monthly'?'block':'none')+'">✓ Current selection</div>' +
+      '</div>' +
+      // Yearly card
+      '<div id="planCardYearly" style="border-radius:16px;padding:18px;margin-bottom:20px;cursor:pointer;transition:.2s;border:2px solid '+(curPlan==='yearly'?'#C79B3B':'#EDE8E0')+';background:'+(curPlan==='yearly'?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3')+'" onclick="selectPlan(\'yearly\')">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between">' +
+          '<div><div style="font-size:15px;font-weight:700;color:#1A1A1A">Yearly</div><div style="font-size:12px;color:#7A5C1E;margin-top:2px">'+yPrice+' billed once a year</div></div>' +
+          '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#1A1A1A">'+yMonthly+'</div><div style="font-size:11px;color:#B7B1A7">/ month</div></div>' +
+        '</div>' +
+        '<div id="planCheckYearly" style="margin-top:10px;font-size:11px;font-weight:600;color:#C79B3B;display:'+(curPlan==='yearly'?'block':'none')+'">✓ Current selection</div>' +
+      '</div>' +
+      // Features
+      '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;padding:0 2px">' +
+      '<div style="font-size:10px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:2px">Included in all plans</div>' +
       '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Unlimited hives</div>' +
       '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Advanced analytics</div>' +
       '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Priority support</div>' +
-      '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Data export</div></div>' +
-      '<button style="width:100%;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:8px" onclick="showToast(&quot;Opening App Store subscription management…&quot;)">Manage subscription</button>' +
+      '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Data export</div>' +
+      '<div style="margin-top:6px;font-size:10px;color:#B7B1A7">Prices shown in '+cur.code+'. Tax may apply.</div>' +
+      '</div>' +
+      '<button id="planSubscribeBtn" onclick="confirmPlanSubscribe()" style="width:100%;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:8px">Subscribe · '+(curPlan==='monthly'?getPlanLabel('monthly'):getPlanLabel('yearly'))+'</button>' +
       '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
   } else if(type==='billing'){
     title = 'Billing History';
@@ -2819,7 +2849,76 @@ function toggleBiometric(){
   showToast('Biometric unlock ' + (on ? 'enabled ✓' : 'disabled'));
 }
 
-var REMINDER_DAYS = 10;
+// ── CURRENCY CONFIG ──
+var CURRENCY_MAP = {
+  'en-US': { code:'USD', symbol:'$',  monthly:2.99,  yearly:19.99 },
+  'en-GB': { code:'GBP', symbol:'£',  monthly:2.39,  yearly:15.99 },
+  'en-AU': { code:'AUD', symbol:'A$', monthly:4.59,  yearly:29.99 },
+  'en-NZ': { code:'NZD', symbol:'NZ$',monthly:4.99,  yearly:32.99 },
+  'de':    { code:'EUR', symbol:'€',  monthly:2.79,  yearly:17.99 },
+  'fr':    { code:'EUR', symbol:'€',  monthly:2.79,  yearly:17.99 },
+  'it':    { code:'EUR', symbol:'€',  monthly:2.79,  yearly:17.99 },
+  'pt':    { code:'BRL', symbol:'R$', monthly:14.90, yearly:99.90 },
+  'ro':    { code:'RON', symbol:'lei',monthly:13.99, yearly:89.99 },
+  'tr':    { code:'TRY', symbol:'₺',  monthly:89.99, yearly:599.99 }
+};
+function getCurrency(){
+  return CURRENCY_MAP[CURRENT_LANG] || CURRENCY_MAP['en-US'];
+}
+function fmtPrice(cur, amount){
+  // Symbol before for most, after for RON
+  if(cur.code === 'RON') return amount.toFixed(2) + ' ' + cur.symbol;
+  return cur.symbol + amount.toFixed(2);
+}
+function getPlanLabel(type){
+  var cur = getCurrency();
+  if(type === 'monthly') return fmtPrice(cur, cur.monthly) + '/mo';
+  return fmtPrice(cur, cur.yearly) + '/yr';
+}
+function getYearlySaving(){
+  var cur = getCurrency();
+  var fullYear = cur.monthly * 12;
+  var saving = Math.round((1 - cur.yearly / fullYear) * 100);
+  return 'SAVE ' + saving + '%';
+}
+
+var SELECTED_PLAN = 'monthly';
+function switchPlanTab(type){
+  SELECTED_PLAN = type;
+  var isMonthly = type === 'monthly';
+  var tM = document.getElementById('planTabMonthly');
+  var tY = document.getElementById('planTabYearly');
+  if(tM){ tM.style.background = isMonthly?'#fff':''; tM.style.color = isMonthly?'#1A1A1A':'#B7B1A7'; tM.style.boxShadow = isMonthly?'0 1px 4px rgba(0,0,0,.08)':''; }
+  if(tY){ tY.style.background = !isMonthly?'#fff':''; tY.style.color = !isMonthly?'#1A1A1A':'#B7B1A7'; tY.style.boxShadow = !isMonthly?'0 1px 4px rgba(0,0,0,.08)':''; }
+  selectPlan(type);
+}
+function selectPlan(type){
+  SELECTED_PLAN = type;
+  var isMonthly = type === 'monthly';
+  var cM = document.getElementById('planCardMonthly');
+  var cY = document.getElementById('planCardYearly');
+  var ckM = document.getElementById('planCheckMonthly');
+  var ckY = document.getElementById('planCheckYearly');
+  var btn = document.getElementById('planSubscribeBtn');
+  if(cM){ cM.style.border = '2px solid '+(isMonthly?'#C79B3B':'#EDE8E0'); cM.style.background = isMonthly?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3'; }
+  if(cY){ cY.style.border = '2px solid '+(!isMonthly?'#C79B3B':'#EDE8E0'); cY.style.background = !isMonthly?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3'; }
+  if(ckM) ckM.style.display = isMonthly?'block':'none';
+  if(ckY) ckY.style.display = !isMonthly?'block':'none';
+  if(btn) btn.textContent = 'Subscribe · ' + getPlanLabel(type);
+}
+function confirmPlanSubscribe(){
+  USER.planType = SELECTED_PLAN;
+  var cur = getCurrency();
+  var label = SELECTED_PLAN === 'monthly'
+    ? fmtPrice(cur, cur.monthly) + '/mo'
+    : fmtPrice(cur, cur.yearly) + '/yr';
+  var dv = document.querySelector('#drawer .di-val[style*="C79B3B"]');
+  if(dv) dv.textContent = label;
+  document.getElementById('settingsOv').remove();
+  showToast('Subscribed to Pro · ' + (SELECTED_PLAN==='monthly'?'Monthly':'Yearly') + ' · ' + label + ' ✓');
+}
+
+function changeReminderDays(delta){
 function changeReminderDays(delta){
   REMINDER_DAYS = Math.min(30, Math.max(1, REMINDER_DAYS + delta));
   var label = 'Every ' + REMINDER_DAYS + (REMINDER_DAYS === 1 ? ' day' : ' days');

@@ -1141,7 +1141,7 @@ function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem(
 applyUnit();
 
 /* ── HARVEST DATA ── */
-const HARVEST = {
+var HARVEST = {
   totalLbs: 41, totalKg: 18.6,
   goalLbs: 55, goalKg: 25,
   pct: 74,
@@ -1165,14 +1165,14 @@ function updateHarvestUI(){
 }
 
 /* ── MEMBERSHIP & HIVE SYSTEM ── */
-const PLAN = {
+var PLAN = {
   isPro: false,       // false = Free (max 3), true = Pro (unlimited)
   freeLimit: 3,
 };
 
 // Hive data model
-const hives = [];
-let nextHiveId = 1;
+var hives = [];
+var nextHiveId = 1;
 
 function renderHiveList(){
   const container = document.getElementById('hiveListContainer');

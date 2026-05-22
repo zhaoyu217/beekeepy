@@ -1122,7 +1122,6 @@ document.getElementById('greet').innerHTML=(hr<12?'Good morning':hr<17?'Good aft
 const RAW={wF:78,wC:26,h2sF:'Needs attention · 5 days ago',h2sC:'Needs attention · 5 days ago',h3sF:'Looking good · yesterday',h3sC:'Looking good · yesterday',hvLbs:41,hvKg:18.6,hgLbs:55,hgKg:25};
 let isF=(localStorage.getItem('hd_unit')||'f')==='f';
 function applyUnit(){
-  updateHarvestUI();
   const f=isF;
   document.getElementById('uf').className=f?'on':'';document.getElementById('uc').className=f?'':'on';
   document.getElementById('duf').style.cssText=f?'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer':'padding:5px 12px;color:#aaa;cursor:pointer';
@@ -1138,7 +1137,6 @@ function applyUnit(){
 }
 function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
-applyUnit();
 
 /* ── HARVEST DATA ── */
 var HARVEST = {
@@ -1389,6 +1387,7 @@ function upgradeToPro(){
 
 // Init on page load
 window.addEventListener('load', function(){
+  applyUnit();
   renderHiveList();
   updateHiveBadge();
   updateHarvestUI();

@@ -147,29 +147,36 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 .vault-ok{font-size:11px;font-weight:600;color:#5E7A63}
 .vault-btn{padding:7px 14px;background:#1A1A1A;color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
 
+/* ── CSS TOKENS ── */
+:root{--honey:#C79B3B;--forest:#1F2A24;--green:#5E7A63;}
+
 /* ── SUBPAGES ── */
-.sub{position:absolute;inset:0;background:#F9F7F3;z-index:100;transform:translateX(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);overflow-y:auto;padding-bottom:40px}
+.sub{position:absolute;inset:0;background:#F9F7F3;z-index:100;transform:translateX(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);overflow-y:auto;padding-bottom:80px}
 .sub.open{transform:translateX(0)}
+/* 底部渐变淡出遮罩 */
+.sub::after{content:'';position:fixed;bottom:0;left:0;right:0;height:64px;background:linear-gradient(to top,#F9F7F3 0%,rgba(249,247,243,0) 100%);pointer-events:none;z-index:101}
 .sub-hd{background:#fff;border-bottom:1px solid #EDE8E0;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
-.back{width:32px;height:32px;border-radius:10px;background:#F9F7F3;border:1px solid #EDE8E0;display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:16px;flex-shrink:0}
+/* 返回箭头 — 纯SVG描边 */
+.back{width:32px;height:32px;border-radius:10px;background:#F9F7F3;border:1px solid #EDE8E0;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}
 .sub-title{font-size:16px;font-weight:700;color:#1A1A1A;letter-spacing:-.3px;flex:1}
 .sp{padding:14px 16px;display:flex;flex-direction:column;gap:10px}
 .sp-card{background:#fff;border:1px solid #EDE8E0;border-radius:18px;padding:14px 16px}
 .sp-lbl{font-size:10px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:10px}
-.sp-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F2EFE9}
+.sp-row{display:flex;align-items:center;justify-content:space-between;padding:10px 0;border-bottom:1px solid #F5F2EE}
 .sp-row:last-child{border:none}
 .sp-key{font-size:13px;color:#1A1A1A;font-weight:500}
-.sp-val{font-size:12px;color:#C79B3B;font-weight:600}
-.day-row{display:flex;gap:6px}
-.day-cell{flex:1;background:#F9F7F3;border-radius:10px;padding:8px 4px;text-align:center}
-.day-name{font-size:9px;color:#B7B1A7;margin-bottom:3px}
-.day-temp{font-size:12px;font-weight:700;color:#1A1A1A;margin-top:3px}
+.sp-val{font-size:12px;color:var(--honey);font-weight:600}
+/* 5-Day forecast — Apple Weather 风格，无边框 */
+.day-row{display:flex;gap:4px}
+.day-cell{flex:1;background:#F9F7F3;border-radius:12px;padding:10px 4px;text-align:center}
+.day-name{font-size:9px;color:#B7B1A7;margin-bottom:4px;font-weight:500;text-transform:uppercase;letter-spacing:.04em}
+.day-temp{font-size:13px;font-weight:700;color:#1A1A1A;margin-top:4px}
 .map-bg{background:#EEE8D8;border-radius:14px;height:140px;position:relative;overflow:hidden;margin-bottom:10px}
 .map-pin{position:absolute;top:44%;left:40%;transform:translate(-50%,-50%);display:flex;flex-direction:column;align-items:center}
-.map-pin-c{width:28px;height:28px;border-radius:50%;background:#C79B3B;border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:13px}
+.map-pin-c{width:28px;height:28px;border-radius:50%;background:var(--honey);border:2.5px solid #fff;display:flex;align-items:center;justify-content:center;font-size:13px}
 .map-bloom{position:absolute;font-size:9px;background:rgba(255,252,245,.92);border:1px solid #D4C090;border-radius:5px;padding:3px 7px;font-weight:600}
 .score-wrap{display:flex;align-items:center;gap:12px;padding-bottom:12px;border-bottom:1px solid #F2EFE9;margin-bottom:12px}
-.score-ring{width:56px;height:56px;border-radius:50%;border:4.5px solid #EEF5EF;border-top-color:#5E7A63;display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.score-ring{width:56px;height:56px;border-radius:50%;border:4.5px solid #EEF5EF;border-top-color:var(--green);display:flex;align-items:center;justify-content:center;flex-shrink:0}
 .dg{display:grid;grid-template-columns:1fr 1fr;gap:7px}
 .dc{background:#F9F7F3;border-radius:10px;padding:10px 12px}
 .dc-lbl{font-size:9px;color:#B7B1A7;text-transform:uppercase;letter-spacing:.05em;margin-bottom:4px}
@@ -479,208 +486,460 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 
 <!-- SUB: WEATHER -->
 <div class="sub" id="sw">
-  <div class="sub-hd"><div class="back" onclick="closeSub('sw')">‹</div><div class="sub-title">Weather</div></div>
+  <div class="sub-hd"><div class="back" onclick="closeSub('sw')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Today's weather</div></div>
   <div class="sp">
-    <div class="sp-card">
-      <div style="display:flex;align-items:center;gap:12px;margin-bottom:10px">
-        <div style="font-size:32px;font-weight:700;color:#1A1A1A">78°F</div>
-        <div><div style="font-size:13px;color:#5A5550;font-weight:500">Sunny · Humidity 42%</div><div style="font-size:12px;color:#B7B1A7;margin-top:2px">Wind 6 mph · UV 7 · Boulder, CO</div></div>
+
+    <!-- HERO — 天气绝对主角 -->
+    <div class="sp-card" style="background:linear-gradient(150deg,#FDF0D0 0%,#FAE8B0 100%);border-color:#E8CC88;padding:22px 20px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:6px">
+        <div>
+          <div style="font-size:58px;font-weight:700;color:#4A3000;letter-spacing:-3px;line-height:1">78°</div>
+          <div style="font-size:14px;font-weight:600;color:#7A5C1E;margin-top:2px">Sunny · Boulder, CO</div>
+        </div>
+        <div style="text-align:right;padding-bottom:6px">
+          <div style="font-size:11px;font-weight:700;color:#5E7A63;background:rgba(255,255,255,.7);border-radius:10px;padding:5px 10px;display:inline-block">Open hive ✓</div>
+          <div style="font-size:11px;color:#A07030;margin-top:8px">Feels like 76°</div>
+          <div style="font-size:11px;color:#B7935A;margin-top:2px">H: 81° · L: 58°</div>
+        </div>
       </div>
+      <div style="font-size:11px;color:#A07030;padding-top:8px;border-top:1px solid rgba(180,130,40,.2)">Humidity 42% · Wind 6 mph · UV index 7</div>
     </div>
+
+    <!-- Best inspection window — 核心差异化功能 -->
+    <div class="sp-card" style="background:#1F2A24;border-color:#1F2A24;padding:16px 18px">
+      <div style="font-size:10px;font-weight:600;color:#7A9A84;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Best inspection window</div>
+      <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:3px">10:30 AM – 2:00 PM</div>
+      <div style="font-size:12px;color:#7A9A84;line-height:1.6">Warm enough for bees to be calm. Wind is low. Avoid early morning — dew makes frames slippery.</div>
+    </div>
+
+    <!-- 5-Day — Apple Weather 风格 -->
     <div class="sp-card">
-      <div class="sp-lbl">5-Day Forecast</div>
+      <div class="sp-lbl">5-Day forecast</div>
       <div class="day-row">
-        <div class="day-cell"><div class="day-name">Thu</div><div style="font-size:18px">☀️</div><div class="day-temp">78°</div></div>
-        <div class="day-cell"><div class="day-name">Fri</div><div style="font-size:18px">🌤</div><div class="day-temp">74°</div></div>
-        <div class="day-cell"><div class="day-name">Sat</div><div style="font-size:18px">⛅</div><div class="day-temp">68°</div></div>
-        <div class="day-cell"><div class="day-name">Sun</div><div style="font-size:18px">🌧</div><div class="day-temp">61°</div></div>
-        <div class="day-cell"><div class="day-name">Mon</div><div style="font-size:18px">☀️</div><div class="day-temp">72°</div></div>
+        <div class="day-cell">
+          <div class="day-name">Today</div>
+          <div style="font-size:22px;margin:4px 0">☀️</div>
+          <div class="day-temp">78°</div>
+        </div>
+        <div class="day-cell">
+          <div class="day-name">Fri</div>
+          <div style="font-size:22px;margin:4px 0">🌤</div>
+          <div class="day-temp">74°</div>
+        </div>
+        <div class="day-cell">
+          <div class="day-name">Sat</div>
+          <div style="font-size:22px;margin:4px 0">⛅</div>
+          <div class="day-temp">68°</div>
+        </div>
+        <div class="day-cell" style="background:#FEF2F2">
+          <div class="day-name" style="color:#B83A2A">Sun</div>
+          <div style="font-size:22px;margin:4px 0">🌧</div>
+          <div class="day-temp" style="color:#B83A2A">61°</div>
+        </div>
+        <div class="day-cell">
+          <div class="day-name">Mon</div>
+          <div style="font-size:22px;margin:4px 0">☀️</div>
+          <div class="day-temp">72°</div>
+        </div>
       </div>
     </div>
+
+    <!-- Beekeeping windows — 轻分隔线 -->
     <div class="sp-card">
-      <div class="sp-lbl">Beekeeping forecast</div>
-      <div class="sp-row"><span class="sp-key">Thursday</span><span style="font-size:12px;color:#5E7A63;font-weight:600">Perfect for inspection ✓</span></div>
-      <div class="sp-row"><span class="sp-key">Saturday</span><span style="font-size:12px;color:#C4974A;font-weight:600">Overcast · caution</span></div>
-      <div class="sp-row"><span class="sp-key">Sunday</span><span style="font-size:12px;color:#B83A2A;font-weight:600">Rain · avoid opening</span></div>
-      <div class="sp-row"><span class="sp-key">Monday</span><span style="font-size:12px;color:#5E7A63;font-weight:600">Good window</span></div>
+      <div class="sp-lbl">Beekeeping windows</div>
+      <div class="sp-row">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Today · Thu</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">78°F · Low wind · Sunny</div></div>
+        <span style="font-size:11px;font-weight:700;color:var(--green)">Open hive ✓</span>
+      </div>
+      <div class="sp-row">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Friday</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">74°F · Partly cloudy</div></div>
+        <span style="font-size:11px;font-weight:600;color:var(--green)">Good window</span>
+      </div>
+      <div class="sp-row">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Saturday</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">68°F · Overcast</div></div>
+        <span style="font-size:11px;font-weight:600;color:#C4974A">Use caution</span>
+      </div>
+      <div class="sp-row">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Sunday</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">61°F · Rain all day</div></div>
+        <span style="font-size:11px;font-weight:600;color:#B83A2A">Stay closed</span>
+      </div>
+      <div class="sp-row">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Monday</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">72°F · Clearing up</div></div>
+        <span style="font-size:11px;font-weight:600;color:var(--green)">Open hive ✓</span>
+      </div>
     </div>
+
+    <!-- Quiet intelligence nudge -->
     <div class="sp-card" style="background:#FBF5E6;border-color:#E8CC88">
-      <div style="font-size:12px;color:#7A5C1E;font-style:italic;line-height:1.6">🌼 Spring clover flow is peaking. Your bees are actively foraging — consider adding a super to Hive 1 before the weekend rain.</div>
+      <div style="font-size:11px;font-weight:600;color:#7A5C1E;margin-bottom:6px">🌼 Right now</div>
+      <div style="font-size:12px;color:#7A5C1E;line-height:1.7;font-style:italic">Spring clover flow is peaking. Add a super to Hive 1 before Sunday's rain — stores are building fast.</div>
     </div>
+
+    <!-- Treatment note -->
+    <div class="sp-card" style="background:#FBF3E3;border-color:#E8D4A0">
+      <div style="font-size:11px;font-weight:600;color:#7A5C1E;margin-bottom:5px">⚠️ Treatment note</div>
+      <div style="font-size:12px;color:#7A5C1E;line-height:1.7">78°F is within the safe range for Formic Pro (65–85°F). Avoid oxalic acid while honey supers are on.</div>
+    </div>
+
   </div>
 </div>
 
 <!-- SUB: ALERTS -->
 <div class="sub" id="sal">
-  <div class="sub-hd"><div class="back" onclick="closeSub('sal')">‹</div><div class="sub-title">Alerts & reminders</div></div>
+  <div class="sub-hd"><div class="back" onclick="closeSub('sal')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Alerts & reminders</div></div>
   <div class="sp">
+
+    <!-- Active alert -->
     <div class="sp-card" style="background:#FDECEA;border-color:#F5C1C1">
-      <div style="font-size:13px;font-weight:700;color:#B83A2A;margin-bottom:6px">Hive 2 overdue</div>
-      <div style="font-size:12px;color:#B83A2A;line-height:1.5">Last inspection was 5 days ago. Your threshold is 10 days. Inspect soon.</div>
+      <div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">
+        <div style="width:8px;height:8px;border-radius:50%;background:#B83A2A;flex-shrink:0"></div>
+        <div style="font-size:13px;font-weight:700;color:#B83A2A">Hive 2 is overdue</div>
+      </div>
+      <div style="font-size:12px;color:#B83A2A;line-height:1.6">Last opened 5 days ago. Your interval is every 10 days. Spring buildup is fast — colonies can swarm without warning.</div>
+      <div style="margin-top:10px"><button style="background:#B83A2A;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Schedule inspection →</button></div>
     </div>
+
+    <!-- Rain defer note -->
+    <div class="sp-card" style="background:#EEF2FF;border-color:#C7D2FE">
+      <div style="font-size:11px;font-weight:600;color:#3730A3;margin-bottom:5px">🌦 Auto-deferred</div>
+      <div style="font-size:12px;color:#4338CA;line-height:1.6">Sunday rain detected. Hive 2 inspection has been moved to Monday's sunny window. You'll get a reminder at 8 AM.</div>
+    </div>
+
+    <!-- Inspection reminders -->
     <div class="sp-card">
       <div class="sp-lbl">Inspection reminders</div>
-      <div class="sp-row"><span class="sp-key">Reminder interval</span><span class="sp-val">Every 10 days</span></div>
+      <div class="sp-row">
+        <div><div class="sp-key">Reminder interval</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">Applied to all hives</div></div>
+        <span class="sp-val">Every 10 days</span>
+      </div>
       <div class="sp-row"><span class="sp-key">Push notifications</span><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
-      <div class="sp-row"><span class="sp-key">Morning reminder time</span><span class="sp-val">8:00 AM</span></div>
+      <div class="sp-row"><span class="sp-key">Morning reminder</span><span class="sp-val">8:00 AM</span></div>
+      <div class="sp-row"><span class="sp-key">Swarm season boost</span><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
     </div>
+
+    <!-- Weather alerts -->
     <div class="sp-card">
-      <div class="sp-lbl">Weather alert settings</div>
-      <div class="sp-row"><span class="sp-key">Frost warnings (&lt;32°F)</span><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
-      <div class="sp-row"><span class="sp-key">Heat advisories (&gt;95°F)</span><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
-      <div class="sp-row"><span class="sp-key">Task auto-defer on rain</span><div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div></div>
+      <div class="sp-lbl">Weather-triggered alerts</div>
+      <div class="sp-row">
+        <div><div class="sp-key">Frost warning</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">Alert when &lt;32°F forecast</div></div>
+        <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+      </div>
+      <div class="sp-row">
+        <div><div class="sp-key">Heat advisory</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">Alert when &gt;95°F forecast</div></div>
+        <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+      </div>
+      <div class="sp-row">
+        <div><div class="sp-key">Task auto-defer on rain</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">Reschedule to next clear day</div></div>
+        <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+      </div>
+      <div class="sp-row">
+        <div><div class="sp-key">False spring warning</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">Warm spell in winter months</div></div>
+        <div class="tog on" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+      </div>
     </div>
-    <div class="sp-card" style="background:#FBF5E6;border-color:#E8CC88">
-      <div style="font-size:12px;color:#7A5C1E;font-style:italic;line-height:1.6">🌦 Rain detected Sunday. Hive 2 inspection deferred to Monday's sunny window.</div>
-    </div>
+
   </div>
 </div>
 
 <!-- SUB: SUPER -->
 <div class="sub" id="ssp">
-  <div class="sub-hd"><div class="back" onclick="closeSub('ssp')">‹</div><div class="sub-title">Super alerts</div></div>
+  <div class="sub-hd"><div class="back" onclick="closeSub('ssp')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Super alert</div></div>
   <div class="sp">
-    <div class="sp-card" style="background:#EEF2FF;border-color:#C7D2FE">
-      <div style="font-size:13px;font-weight:700;color:#3730A3;margin-bottom:4px">Spring flow is peaking</div>
-      <div style="font-size:12px;color:#4338CA;line-height:1.5">Clover in full bloom · 2 hives need supers within 7 days</div>
+
+    <!-- Hero alert -->
+    <div class="sp-card" style="background:#EEF2FF;border-color:#C7D2FE;padding:16px">
+      <div style="font-size:13px;font-weight:700;color:#3730A3;margin-bottom:6px">🌸 Spring flow is peaking</div>
+      <div style="font-size:12px;color:#4338CA;line-height:1.7">Clover, lavender, and wildflower are all blooming now. Your bees are building stores fast. 2 hives may run out of room within the next 7 days.</div>
     </div>
+
+    <!-- Hives needing supers -->
     <div class="sp-card">
-      <div class="sp-lbl">Hives needing supers</div>
-      <div class="sp-row">
-        <div><div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 1 · Italian</div><div style="font-size:11px;color:#B7B1A7">Honey 82% · Add super soon</div></div>
-        <span style="font-size:12px;color:#C79B3B;font-weight:600">5 days</span>
+      <div class="sp-lbl">Action needed</div>
+      <div class="sp-row" style="padding:12px 0">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 1 · Italian</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:3px">Stores filling fast · Last inspected 2 days ago</div>
+          <div style="background:#F1EDE4;border-radius:20px;height:5px;margin-top:8px;overflow:hidden"><div style="background:#C79B3B;height:5px;border-radius:20px;width:82%"></div></div>
+          <div style="font-size:9px;color:#B7B1A7;margin-top:3px">Honey stores 82% full</div>
+        </div>
+        <div style="margin-left:12px;text-align:right">
+          <div style="font-size:11px;font-weight:700;color:#B83A2A;background:#FDECEA;border:1px solid #F5C1C1;border-radius:8px;padding:3px 8px">Add super</div>
+          <div style="font-size:10px;color:#B7B1A7;margin-top:4px">~5 days</div>
+        </div>
       </div>
-      <div class="sp-row">
-        <div><div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 3 · Buckfast</div><div style="font-size:11px;color:#B7B1A7">Honey 74% · Monitor</div></div>
-        <span style="font-size:12px;color:#C4974A;font-weight:600">10 days</span>
+      <div class="sp-row" style="padding:12px 0">
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 3 · Buckfast</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:3px">Growing well · Inspected yesterday</div>
+          <div style="background:#F1EDE4;border-radius:20px;height:5px;margin-top:8px;overflow:hidden"><div style="background:#C79B3B;height:5px;border-radius:20px;width:74%"></div></div>
+          <div style="font-size:9px;color:#B7B1A7;margin-top:3px">Honey stores 74% full</div>
+        </div>
+        <div style="margin-left:12px;text-align:right">
+          <div style="font-size:11px;font-weight:700;color:#C4974A;background:#FBF3E3;border:1px solid #E8CC88;border-radius:8px;padding:3px 8px">Monitor</div>
+          <div style="font-size:10px;color:#B7B1A7;margin-top:4px">~10 days</div>
+        </div>
       </div>
     </div>
+
+    <!-- GDD model -->
     <div class="sp-card">
-      <div class="sp-lbl">Prediction model</div>
-      <div class="sp-row"><span class="sp-key">Flow intensity</span><span style="font-size:12px;color:#5E7A63;font-weight:600">High</span></div>
-      <div class="sp-row"><span class="sp-key">Based on</span><span style="font-size:12px;color:#B7B1A7">GDD + weather</span></div>
+      <div class="sp-lbl">Flow prediction model</div>
+      <div class="sp-row"><span class="sp-key">Flow intensity</span><span style="font-size:12px;color:#5E7A63;font-weight:600">High 🌿</span></div>
       <div class="sp-row"><span class="sp-key">GDD accumulated</span><span style="font-size:12px;color:#B7B1A7">842 units</span></div>
+      <div class="sp-row"><span class="sp-key">Peak expected</span><span style="font-size:12px;color:#C79B3B;font-weight:600">Next 3–7 days</span></div>
+      <div class="sp-row"><span class="sp-key">Based on</span><span style="font-size:12px;color:#B7B1A7">GDD + local weather + bloom reports</span></div>
     </div>
+
   </div>
 </div>
 
 <!-- SUB: APIARIES -->
 <div class="sub" id="sap">
-  <div class="sub-hd"><div class="back" onclick="closeSub('sap')">‹</div><div class="sub-title">Apiaries</div></div>
+  <div class="sub-hd"><div class="back" onclick="closeSub('sap')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Your apiaries</div></div>
   <div class="sp">
+
+    <!-- Map -->
     <div class="map-bg">
-      <div style="position:absolute;top:55px;left:0;right:0;height:2px;background:#D8CCAA;opacity:.8"></div>
-      <div style="position:absolute;left:105px;top:0;bottom:0;width:2px;background:#D8CCAA;opacity:.7"></div>
-      <div style="position:absolute;top:10px;left:25px;width:55px;height:35px;background:#C8DDB0;border-radius:8px;opacity:.7"></div>
-      <div style="position:absolute;top:44%;left:40%;width:90px;height:90px;border-radius:50%;border:2px dashed #C79B3B;opacity:.4;transform:translate(-50%,-50%)"></div>
+      <div style="position:absolute;top:55px;left:0;right:0;height:2px;background:#D8CCAA;opacity:.7"></div>
+      <div style="position:absolute;left:105px;top:0;bottom:0;width:2px;background:#D8CCAA;opacity:.6"></div>
+      <div style="position:absolute;top:10px;left:25px;width:55px;height:35px;background:#C8DDB0;border-radius:8px;opacity:.6"></div>
+      <div style="position:absolute;top:44%;left:40%;width:90px;height:90px;border-radius:50%;border:2px dashed #C79B3B;opacity:.35;transform:translate(-50%,-50%)"></div>
       <div class="map-pin"><div class="map-pin-c">🐝</div></div>
       <div class="map-bloom" style="top:16%;left:52%;color:#4A7020">🌿 Clover</div>
-      <div class="map-bloom" style="top:60%;left:60%;color:#6A4080">💜 Lavender</div>
+      <div class="map-bloom" style="top:60%;left:62%;color:#6A4080">💜 Lavender</div>
+      <div style="position:absolute;bottom:10px;right:12px;font-size:9px;color:#B7935A;background:rgba(255,252,245,.85);border-radius:6px;padding:3px 7px">2 mi radius</div>
     </div>
+
+    <!-- Apiaries list -->
     <div class="sp-card">
-      <div class="sp-lbl">Your apiaries</div>
-      <div class="sp-row">
-        <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <div style="font-size:20px">📍</div>
-          <div><div style="font-size:13px;font-weight:600;color:#1A1A1A">Backyard Apiary</div><div style="font-size:11px;color:#B7B1A7">3 hives · Boulder, CO</div></div>
+      <div class="sp-lbl">Locations</div>
+      <div class="sp-row" style="padding:12px 0">
+        <div style="display:flex;align-items:center;gap:12px;flex:1">
+          <div style="width:38px;height:38px;border-radius:12px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌻</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1A1A1A">Backyard Apiary</div>
+            <div style="font-size:11px;color:#B7B1A7;margin-top:2px">3 hives · Boulder, CO · Active now</div>
+          </div>
         </div>
-        <span style="font-size:11px;color:#fff;background:#C79B3B;border-radius:10px;padding:3px 10px;font-weight:600">Active</span>
+        <span style="font-size:11px;color:#fff;background:#C79B3B;border-radius:10px;padding:4px 10px;font-weight:600;flex-shrink:0">Active</span>
       </div>
-      <div class="sp-row">
-        <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <div style="font-size:20px">📍</div>
-          <div><div style="font-size:13px;font-weight:600;color:#1A1A1A">North Hill</div><div style="font-size:11px;color:#B7B1A7">2 hives · 4.1 mi away</div></div>
+      <div class="sp-row" style="padding:12px 0">
+        <div style="display:flex;align-items:center;gap:12px;flex:1">
+          <div style="width:38px;height:38px;border-radius:12px;background:#F5F4F2;border:1px solid #E8E4DC;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌾</div>
+          <div>
+            <div style="font-size:13px;font-weight:600;color:#1A1A1A">North Hill</div>
+            <div style="font-size:11px;color:#B7B1A7;margin-top:2px">2 hives · 4.1 mi away</div>
+          </div>
         </div>
-        <span style="font-size:11px;color:#7A5C1E;background:#FBF5E6;border:1px solid #E8CC88;border-radius:10px;padding:3px 10px;cursor:pointer;font-weight:600">Switch</span>
+        <span style="font-size:11px;color:#7A5C1E;background:#FBF5E6;border:1px solid #E8CC88;border-radius:10px;padding:4px 10px;cursor:pointer;font-weight:600;flex-shrink:0">Switch</span>
       </div>
     </div>
+
+    <!-- Add apiary -->
+    <button class="btn-full" style="background:#F9F7F3;color:#5A5550;border:1px solid #EDE8E0">+ Add new apiary</button>
+
   </div>
 </div>
 
 <!-- SUB: HIVE DETAIL -->
 <div class="sub" id="shd">
-  <div class="sub-hd"><div class="back" onclick="closeSub('shd')">‹</div><div class="sub-title">Hive 1 · Italian</div></div>
+  <div class="sub-hd"><div class="back" onclick="closeSub('shd')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Hive 1 · Italian</div></div>
   <div class="sp">
-    <div style="display:flex;gap:8px">
-      <div style="flex:1;background:#F9F7F3;border:1px solid #EDE8E0;border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:7px;cursor:pointer">
-        <span style="font-size:16px">📱</span><div><div style="font-size:11px;font-weight:600;color:#1A1A1A">Scan QR</div><div style="font-size:9px;color:#B7B1A7">Quick access</div></div>
+
+    <!-- Quick actions -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
+      <div style="background:#F9F7F3;border:1px solid #EDE8E0;border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer">
+        <div style="font-size:20px;margin-bottom:4px">📱</div>
+        <div style="font-size:10px;font-weight:600;color:#1A1A1A">Scan QR</div>
+        <div style="font-size:9px;color:#B7B1A7;margin-top:1px">Quick open</div>
       </div>
-      <div style="flex:1;background:#F9F7F3;border:1px solid #EDE8E0;border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:7px;cursor:pointer">
-        <span style="font-size:16px">📡</span><div><div style="font-size:11px;font-weight:600;color:#1A1A1A">Bind NFC</div><div style="font-size:9px;color:#B7B1A7">Tap to open</div></div>
+      <div style="background:#F9F7F3;border:1px solid #EDE8E0;border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer">
+        <div style="font-size:20px;margin-bottom:4px">📡</div>
+        <div style="font-size:10px;font-weight:600;color:#1A1A1A">NFC tag</div>
+        <div style="font-size:9px;color:#B7B1A7;margin-top:1px">Tap to bind</div>
       </div>
-      <div style="flex:1;background:#F9F7F3;border:1px solid #EDE8E0;border-radius:10px;padding:9px 12px;display:flex;align-items:center;gap:7px;cursor:pointer">
-        <span style="font-size:16px">📄</span><div><div style="font-size:11px;font-weight:600;color:#1A1A1A">PDF</div><div style="font-size:9px;color:#B7B1A7">Export</div></div>
+      <div style="background:#F9F7F3;border:1px solid #EDE8E0;border-radius:12px;padding:10px 8px;text-align:center;cursor:pointer">
+        <div style="font-size:20px;margin-bottom:4px">📄</div>
+        <div style="font-size:10px;font-weight:600;color:#1A1A1A">Export PDF</div>
+        <div style="font-size:9px;color:#B7B1A7;margin-top:1px">Full history</div>
       </div>
     </div>
+
+    <!-- Colony health -->
     <div class="sp-card">
       <div class="score-wrap">
-        <div class="score-ring"><div style="font-size:16px;font-weight:700;color:#1A1A1A">82</div></div>
+        <div class="score-ring">
+          <svg width="28" height="28" viewBox="0 0 28 28" fill="none">
+            <path d="M14 5C14 5 7 13 7 17.5a7 7 0 0014 0C21 13 14 5 14 5z" fill="#EEF5EF" stroke="#5E7A63" stroke-width="1.5" stroke-linejoin="round"/>
+            <path d="M10.5 19a4 4 0 005-2.5" stroke="#5E7A63" stroke-width="1.5" stroke-linecap="round"/>
+          </svg>
+        </div>
         <div>
-          <div style="font-size:14px;font-weight:700;color:#1A1A1A">Colony: Strong</div>
-          <div style="font-size:11px;color:#B7B1A7;margin-top:2px">Trending up · 3 inspections</div>
-          <div style="font-size:11px;color:#5E7A63;margin-top:2px;font-style:italic">"Your girls are doing great."</div>
+          <div style="font-size:14px;font-weight:700;color:#1A1A1A">Colony is thriving</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:3px">Trending up · 3 inspections this month</div>
+          <div style="font-size:11px;color:var(--green);margin-top:4px;font-style:italic">"Your girls are doing beautifully."</div>
         </div>
       </div>
       <div class="dg">
-        <div class="dc"><div class="dc-lbl">Brood temp</div><div class="dc-val" id="d-t">93.5°F</div><div class="dc-note" style="color:#5E7A63">Optimal ✓</div></div>
-        <div class="dc"><div class="dc-lbl">Honey stores</div><div class="dc-val" id="d-h">18 lbs</div><div style="background:#F1EDE4;border-radius:8px;height:4px;margin-top:5px;overflow:hidden"><div style="background:#C79B3B;height:4px;width:65%;border-radius:8px"></div></div></div>
-        <div class="dc"><div class="dc-lbl">Queen</div><div class="dc-val" style="color:#5E7A63;font-size:15px">Spotted ✓</div><div class="dc-note" style="color:#B7B1A7">May 16</div></div>
-        <div class="dc"><div class="dc-lbl">Varroa</div><div class="dc-val" style="color:#C79B3B">1.2%</div><div class="dc-note" style="color:#C4974A">Monitor</div></div>
+        <div class="dc">
+          <div class="dc-lbl">Brood</div>
+          <div class="dc-val" style="font-size:14px;color:#5E7A63">Warm ✓</div>
+          <div class="dc-note" style="color:#5E7A63">Nest temp healthy</div>
+        </div>
+        <div class="dc">
+          <div class="dc-lbl">Honey stores</div>
+          <div class="dc-val" style="font-size:14px">Strong</div>
+          <div style="background:#F1EDE4;border-radius:6px;height:4px;margin-top:6px;overflow:hidden"><div style="background:#C79B3B;height:4px;width:65%;border-radius:6px"></div></div>
+        </div>
+        <div class="dc">
+          <div class="dc-lbl">Queen</div>
+          <div class="dc-val" style="color:#5E7A63;font-size:14px">Seen ✓</div>
+          <div class="dc-note" style="color:#B7B1A7">May 16 · White mark</div>
+        </div>
+        <div class="dc">
+          <div class="dc-lbl">Varroa</div>
+          <div class="dc-val" style="color:var(--honey);font-size:14px">1.2%</div>
+          <div class="dc-note" style="color:#C4974A">Monitor · below threshold</div>
+        </div>
       </div>
     </div>
-    <button class="btn-full" style="background:#1A1A1A;color:#fff">+ New inspection</button>
-    <button class="btn-full" style="background:#fff;border:1px solid #EDE8E0;color:#5A5550">View full history →</button>
+
+    <!-- Queen info -->
+    <div class="sp-card">
+      <div class="sp-lbl">Queen</div>
+      <div class="sp-row"><span class="sp-key">Breed</span><span class="sp-val">Italian</span></div>
+      <div class="sp-row"><span class="sp-key">Introduced</span><span style="font-size:12px;color:#B7B1A7">March 14, 2026</span></div>
+      <div class="sp-row"><span class="sp-key">2026 mark color</span><span style="font-size:12px;font-weight:600;color:#fff;background:#888;border-radius:6px;padding:2px 8px">White ●</span></div>
+      <div class="sp-row"><span class="sp-key">Last seen</span><span style="font-size:12px;color:#5E7A63;font-weight:600">May 16 ✓</span></div>
+    </div>
+
+    <!-- Actions -->
+    <button class="btn-full" style="background:#1F2A24;color:#fff">+ Start inspection</button>
+    <button class="btn-full" style="background:#fff;border:1px solid #EDE8E0;color:#5A5550;margin-top:-4px">View full history →</button>
+
   </div>
 </div>
 
 <!-- SUB: ACTIVITY -->
 <div class="sub" id="sat">
-  <div class="sub-hd"><div class="back" onclick="closeSub('sat')">‹</div><div class="sub-title">Recent activity</div></div>
+  <div class="sub-hd"><div class="back" onclick="closeSub('sat')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Recent activity</div></div>
   <div class="sp">
     <div class="sp-card">
+
       <div class="tl-sub-item">
         <div class="tl-left"><div class="tl-sub-dot" style="background:#5E7A63"></div><div class="tl-sub-line"></div></div>
-        <div class="tl-sub-body"><div class="tl-title">Hive 1 inspected <span class="tl-badge" style="background:#EEF5EF;color:#5E7A63">Score 82</span></div><div class="tl-sub">May 21 · Healthy · Queen spotted · 6 frames</div></div>
+        <div class="tl-sub-body">
+          <div class="tl-title">Hive 1 inspected <span class="tl-badge" style="background:#EEF5EF;color:#5E7A63">Healthy colony</span></div>
+          <div class="tl-sub">May 21 · Queen spotted · 6 frames brood · Stores building</div>
+        </div>
       </div>
+
       <div class="tl-sub-item">
         <div class="tl-left"><div class="tl-sub-dot" style="background:#C79B3B"></div><div class="tl-sub-line"></div></div>
-        <div class="tl-sub-body"><div class="tl-title">Harvest recorded <span class="tl-badge" style="background:#FBF5E6;color:#7A5C1E">🍯 18 lbs</span></div><div class="tl-sub">May 18 · Clover · Excellent quality</div></div>
+        <div class="tl-sub-body">
+          <div class="tl-title">Harvest recorded <span class="tl-badge" style="background:#FBF5E6;color:#7A5C1E">🍯 18 lbs</span></div>
+          <div class="tl-sub">May 18 · Clover · Excellent quality · Hive 1</div>
+        </div>
       </div>
+
       <div class="tl-sub-item">
         <div class="tl-left"><div class="tl-sub-dot" style="background:#C4974A"></div><div class="tl-sub-line"></div></div>
-        <div class="tl-sub-body"><div class="tl-title">Hive 2 treatment <span class="tl-badge" style="background:#FBF3E3;color:#6B4E00">OA Vapor</span></div><div class="tl-sub">May 14 · 14-day buffer active</div></div>
+        <div class="tl-sub-body">
+          <div class="tl-title">Hive 2 treatment <span class="tl-badge" style="background:#FBF3E3;color:#6B4E00">OA Vapor</span></div>
+          <div class="tl-sub">May 14 · 14-day buffer active · Safe harvest May 28</div>
+        </div>
       </div>
+
       <div class="tl-sub-item">
         <div class="tl-left"><div class="tl-sub-dot" style="background:#5E7A63"></div><div class="tl-sub-line"></div></div>
-        <div class="tl-sub-body"><div class="tl-title">Queen added · Hive 3</div><div class="tl-sub">May 10 · Italian · 2026 mark: White ●</div></div>
+        <div class="tl-sub-body">
+          <div class="tl-title">Queen introduced · Hive 3</div>
+          <div class="tl-sub">May 10 · Italian · 2026 mark: White · Released from cage</div>
+        </div>
       </div>
+
+      <div class="tl-sub-item">
+        <div class="tl-left"><div class="tl-sub-dot" style="background:#C79B3B"></div><div class="tl-sub-line"></div></div>
+        <div class="tl-sub-body">
+          <div class="tl-title">Super added <span class="tl-badge" style="background:#FBF5E6;color:#7A5C1E">Spring prep</span></div>
+          <div class="tl-sub">May 8 · Hive 1 · Flow starting · 1 medium super</div>
+        </div>
+      </div>
+
       <div class="tl-sub-item">
         <div class="tl-left"><div class="tl-sub-dot" style="background:#B7B1A7"></div></div>
-        <div class="tl-sub-body"><div class="tl-title">Super added</div><div class="tl-sub">May 8 · Hive 1 · Spring flow prep</div></div>
+        <div class="tl-sub-body">
+          <div class="tl-title">Hive 3 inspected</div>
+          <div class="tl-sub">May 5 · New queen settling in · Calm temperament</div>
+        </div>
       </div>
+
     </div>
   </div>
 </div>
 
 <!-- SUB: ONBOARDING -->
 <div class="sub" id="sob">
-  <div class="sub-hd"><div class="back" onclick="closeSub('sob')">‹</div><div class="sub-title">Get started</div><div style="font-size:12px;color:#B7B1A7;margin-left:auto;cursor:pointer">Skip</div></div>
+  <div class="sub-hd"><div class="back" onclick="closeSub('sob')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Welcome to HiveDash</div><div style="font-size:12px;color:#B7B1A7;margin-left:auto;cursor:pointer">Skip</div></div>
   <div class="sp">
-    <div style="text-align:center;padding:16px 0 10px">
-      <div style="font-size:36px;margin-bottom:8px">🐝</div>
-      <div style="font-size:18px;font-weight:700;color:#1A1A1A;letter-spacing:-.4px"><span style="font-weight:800">Hive</span>Dash</div>
-      <div style="font-size:12px;color:#B7B1A7;margin-top:4px">Welcome to your hive yard</div>
-      <div style="background:#EDE8E0;border-radius:20px;height:5px;margin:12px 0 4px;overflow:hidden"><div style="background:#C79B3B;height:5px;border-radius:20px;width:25%"></div></div>
-      <div style="font-size:11px;color:#B7B1A7">1 of 4 complete</div>
+
+    <!-- Hero -->
+    <div style="text-align:center;padding:20px 0 14px">
+      <div style="font-size:48px;margin-bottom:10px">🐝</div>
+      <div style="font-size:19px;font-weight:700;color:#1A1A1A;letter-spacing:-.5px"><span style="font-weight:800">Hive</span>Dash</div>
+      <div style="font-size:12px;color:#B7B1A7;margin-top:5px;line-height:1.6">Your modern beekeeping companion.<br>Let's get your hive yard set up.</div>
     </div>
+
+    <!-- Progress -->
+    <div style="padding:0 4px">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:6px">
+        <div style="font-size:11px;color:#B7B1A7">Setup progress</div>
+        <div style="font-size:11px;font-weight:600;color:#C79B3B">1 of 4 done</div>
+      </div>
+      <div style="background:#EDE8E0;border-radius:20px;height:6px;overflow:hidden">
+        <div style="background:#C79B3B;height:6px;border-radius:20px;width:25%;transition:.4s"></div>
+      </div>
+    </div>
+
+    <!-- Steps -->
     <div class="sp-card">
-      <div class="ob-step"><div class="ob-num ob-done">✓</div><span style="font-size:13px;color:#5A5550;font-weight:500;flex:1">Create your account</span><span style="font-size:11px;font-weight:600;color:#5E7A63">Done ✓</span></div>
-      <div class="ob-step"><div class="ob-num ob-active">2</div><span style="font-size:13px;color:#5A5550;font-weight:500;flex:1">Add your first apiary</span><span style="font-size:11px;font-weight:600;color:#C79B3B">Now →</span></div>
-      <div class="ob-step"><div class="ob-num ob-todo">3</div><span style="font-size:13px;color:#5A5550;font-weight:500;flex:1">Add your hives</span><span style="font-size:11px;color:#B7B1A7">Pending</span></div>
-      <div class="ob-step"><div class="ob-num ob-todo">4</div><span style="font-size:13px;color:#5A5550;font-weight:500;flex:1">Log first inspection</span><span style="font-size:11px;color:#B7B1A7">Pending <span class="pts-badge">✨ +10 pts</span></span></div>
+      <div class="ob-step">
+        <div class="ob-num ob-done">✓</div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:#1A1A1A;font-weight:600">Create your account</div>
+          <div style="font-size:10px;color:#B7B1A7;margin-top:2px">Welcome, James!</div>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:#5E7A63">Done ✓</span>
+      </div>
+      <div class="ob-step">
+        <div class="ob-num ob-active">2</div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:#1A1A1A;font-weight:600">Add your first apiary</div>
+          <div style="font-size:10px;color:#B7B1A7;margin-top:2px">Tell us where your hives are</div>
+        </div>
+        <span style="font-size:11px;font-weight:600;color:#C79B3B">Now →</span>
+      </div>
+      <div class="ob-step">
+        <div class="ob-num ob-todo">3</div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:#5A5550;font-weight:500">Add your hives</div>
+          <div style="font-size:10px;color:#B7B1A7;margin-top:2px">Name, breed, setup date</div>
+        </div>
+        <span style="font-size:11px;color:#B7B1A7">Pending</span>
+      </div>
+      <div class="ob-step">
+        <div class="ob-num ob-todo">4</div>
+        <div style="flex:1">
+          <div style="font-size:13px;color:#5A5550;font-weight:500">Log your first inspection</div>
+          <div style="font-size:10px;color:#B7B1A7;margin-top:2px">Takes 2 minutes · voice mode supported</div>
+        </div>
+        <span style="font-size:11px;color:#B7B1A7"><span class="pts-badge">✨ +10 pts</span></span>
+      </div>
     </div>
-    <button class="btn-full" style="background:#C79B3B;color:#fff">Add apiary →</button>
-    <div style="font-size:11px;color:#D0CCC6;text-align:center">Complete all steps to earn 50 points · Redeem for Pro</div>
+
+    <button class="btn-full" style="background:#C79B3B;color:#fff">Set up my apiary →</button>
+    <div style="font-size:11px;color:#D0CCC6;text-align:center;padding-top:4px">Complete all 4 steps to earn 50 bonus points</div>
+
   </div>
 </div>
 
@@ -698,25 +957,21 @@ const hr=(new Date()).getHours();
 document.getElementById('greet').innerHTML=(hr<12?'Good morning':hr<17?'Good afternoon':'Good evening')+',<br>James';
 
 /* UNIT */
-const RAW={wF:78,wC:26,h1tF:'93.5°F',h1tC:'34.2°C',h1hLbs:'18 lbs',h1hKg:'8.2 kg',h2sF:'91.4°F · 14 lbs · 5 days ago',h2sC:'33.0°C · 6.4 kg · 5 days ago',h3sF:'94.1°F · 9 lbs · yesterday',h3sC:'34.5°C · 4.1 kg · yesterday',hvLbs:41,hvKg:18.6,hgLbs:55,hgKg:25,dtF:'93.5°F',dtC:'34.2°C',dhLbs:'18 lbs',dhKg:'8.2 kg'};
+const RAW={wF:78,wC:26,h2sF:'Needs attention · 5 days ago',h2sC:'Needs attention · 5 days ago',h3sF:'Looking good · yesterday',h3sC:'Looking good · yesterday',hvLbs:41,hvKg:18.6,hgLbs:55,hgKg:25};
 let isF=(localStorage.getItem('hd_unit')||'f')==='f';
 function applyUnit(){
   const f=isF;
   document.getElementById('uf').className=f?'on':'';document.getElementById('uc').className=f?'':'on';
   document.getElementById('duf').style.cssText=f?'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer':'padding:5px 12px;color:#aaa;cursor:pointer';
   document.getElementById('duc').style.cssText=f?'padding:5px 12px;color:#aaa;cursor:pointer':'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer';
-  document.getElementById('wTemp').textContent=(f?'Sunny · '+RAW.wF+'°F':'Sunny · '+RAW.wC+'°C');
-  document.getElementById('h1t').textContent=f?RAW.h1tF:RAW.h1tC;
-  document.getElementById('h1h').textContent=f?RAW.h1hLbs:RAW.h1hKg;
-  document.getElementById('h2s').textContent=f?RAW.h2sF:RAW.h2sC;
-  document.getElementById('h3s').textContent=f?RAW.h3sF:RAW.h3sC;
-  document.getElementById('hv').textContent=f?RAW.hvLbs:RAW.hvKg;
-  document.getElementById('hu').textContent=f?'lbs':'kg';
-  document.getElementById('hu2').textContent=f?'lbs':'kg';
-  document.getElementById('hg').textContent=f?RAW.hgLbs:RAW.hgKg;
-  document.getElementById('hu3').textContent=f?'lbs':'kg';
-  document.getElementById('d-t').textContent=f?RAW.dtF:RAW.dtC;
-  document.getElementById('d-h').textContent=f?RAW.dhLbs:RAW.dhKg;
+  const wt=document.getElementById('wTemp');if(wt)wt.textContent=(f?'Sunny · '+RAW.wF+'°F':'Sunny · '+RAW.wC+'°C');
+  const h2=document.getElementById('h2s');if(h2)h2.textContent=f?RAW.h2sF:RAW.h2sC;
+  const h3=document.getElementById('h3s');if(h3)h3.textContent=f?RAW.h3sF:RAW.h3sC;
+  const hv=document.getElementById('hv');if(hv)hv.textContent=f?RAW.hvLbs:RAW.hvKg;
+  const hu=document.getElementById('hu');if(hu)hu.textContent=f?'lbs':'kg';
+  const hu2=document.getElementById('hu2');if(hu2)hu2.textContent=f?'lbs':'kg';
+  const hg=document.getElementById('hg');if(hg)hg.textContent=f?RAW.hgLbs:RAW.hgKg;
+  const hu3=document.getElementById('hu3');if(hu3)hu3.textContent=f?'lbs':'kg';
 }
 function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}

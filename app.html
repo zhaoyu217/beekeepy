@@ -1174,10 +1174,10 @@ var _nextApiaryId = 1;
 function getActiveApiary(){
   return APIARIES.find(a=>a.id===ACTIVE_APIARY_ID) || APIARIES[0] || null;
 }
-// Legacy shim so existing code still works
-var APIARY = new Proxy({}, {
-  get(_,k){ const a=getActiveApiary(); return a?a[k]:null; },
-  set(_,k,v){ const a=getActiveApiary(); if(a) a[k]=v; return true; }
+// Legacy shim — simple getter
+Object.defineProperty(window, 'APIARY', {
+  get(){ var _a=getActiveApiary(); return _a||{name:'My Apiary',location:'',hives:[]}; },
+  configurable: true
 });
 
 /* ── PERSISTENCE ── */
@@ -1227,32 +1227,20 @@ var PLAN = {
   freeLimit: 3,
 };
 
-// Hive shims — always operate on the active apiary's hive list
-var hives = new Proxy([], {
-  get(_, k){
-    const a = getActiveApiary();
-    const arr = a ? a.hives : [];
-    if(k==='length') return arr.length;
-    if(k==='splice') return arr.splice.bind(arr);
-    if(k==='push') return arr.push.bind(arr);
-    if(k==='filter') return arr.filter.bind(arr);
-    if(k==='find') return arr.find.bind(arr);
-    if(k==='findIndex') return arr.findIndex.bind(arr);
-    if(k==='forEach') return arr.forEach.bind(arr);
-    if(k==='map') return arr.map.bind(arr);
-    if(k==='sort') return arr.sort.bind(arr);
-    if(typeof k==='string' && !isNaN(k)) return arr[parseInt(k)];
-    if(k===Symbol.iterator) return arr[Symbol.iterator].bind(arr);
-    return arr[k];
-  },
-  set(_, k, v){
-    const a = getActiveApiary();
-    if(a){ a.hives[k]=v; } return true;
-  }
+// Helper: get hives array of active apiary
+function getHives(){ const a=getActiveApiary(); return a?a.hives:[]; }
+function getNextHiveId(){ const a=getActiveApiary(); return a?a.nextHiveId:1; }
+function bumpNextHiveId(){ const a=getActiveApiary(); if(a) a.nextHiveId++; }
+// Compatibility shim — most code uses 'hives' as an array reference
+// We redefine it as a getter that always returns the active apiary's hives
+Object.defineProperty(window, 'hives', {
+  get(){ var _a=getActiveApiary(); return _a?_a.hives:[]; },
+  configurable: true
 });
 Object.defineProperty(window, 'nextHiveId', {
-  get(){ const a=getActiveApiary(); return a?a.nextHiveId:1; },
-  set(v){ const a=getActiveApiary(); if(a) a.nextHiveId=v; }
+  get(){ return getNextHiveId(); },
+  set(v){ const a=getActiveApiary(); if(a) a.nextHiveId=v; },
+  configurable: true
 });
 
 function renderHiveList(){
@@ -1418,8 +1406,9 @@ function confirmAddHive(){
   const photoInput = document.getElementById('newHivePhoto');
   const photoData = (photoInput && photoInput.files && photoInput.files[0]) ? photoInput.files[0] : null;
   document.getElementById('addHiveOv').remove();
+  const _nid = nextHiveId; nextHiveId = _nid + 1;
   const newHive = {
-    id: nextHiveId++,
+    id: _nid,
     name: name,
     breed: breed,
     status: 'New',

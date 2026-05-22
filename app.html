@@ -292,9 +292,10 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     </div>
     <div class="emo-note">"Your bees are keeping the brood nest perfectly warm today."</div>
     <div class="photo-row">
-      <div class="photo-slot">
-        <div class="photo-grid"></div>
-        <div class="photo-hint">Add photo</div>
+      <div class="photo-slot" onclick="document.getElementById('photoInput').click()" style="cursor:pointer">
+        <input type="file" id="photoInput" accept="image/*" capture="environment" style="display:none" onchange="handlePhoto(this)">
+        <div class="photo-grid" id="photoPreview"></div>
+        <div class="photo-hint" id="photoHint">Add photo</div>
         <div style="position:absolute;bottom:4px;right:5px;font-size:9px;color:#ddd">📷</div>
       </div>
       <div class="note-slot">
@@ -1015,6 +1016,25 @@ function applyUnit(){
 function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 applyUnit();
+
+/* PHOTO */
+function handlePhoto(input){
+  if(!input.files||!input.files[0])return;
+  const file=input.files[0];
+  const reader=new FileReader();
+  reader.onload=function(e){
+    const preview=document.getElementById('photoPreview');
+    const hint=document.getElementById('photoHint');
+    preview.style.backgroundImage='url('+e.target.result+')';
+    preview.style.backgroundSize='cover';
+    preview.style.backgroundPosition='center';
+    preview.style.opacity='1';
+    preview.style.backgroundImage='url('+e.target.result+')';
+    if(hint)hint.textContent='Tap to change';
+    showToast('Photo saved to Hive 1 · May 22');
+  };
+  reader.readAsDataURL(file);
+}
 
 /* TOAST */
 function showToast(msg){

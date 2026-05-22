@@ -1488,22 +1488,8 @@ window.addEventListener('load', function(){
   if(locEl)locEl.textContent=APIARY.location?('📍 '+APIARY.location):'📍 No location set · tap Edit to add';
   const homeSub=document.getElementById('homeApiaryLocation');
   if(homeSub)homeSub.textContent=APIARY.location||'No location set';
-  if(APIARY.lat&&APIARY.lon){
-    fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
-  } else if(APIARY.location){
-    // Location string saved but lat/lon missing — re-geocode now
-    (async()=>{
-      try{
-        const res=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(APIARY.location)+'&count=1&language=en&format=json');
-        const d=await res.json();
-        if(d.results&&d.results[0]){
-          APIARY.lat=d.results[0].latitude;
-          APIARY.lon=d.results[0].longitude;
-          saveData();
-          fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
-        }
-      }catch(e){ fetchWeather(); }
-    })();
+  if(APIARY.location){
+    fetchWeatherForLocation(null, null, APIARY.location);
   } else {
     fetchWeather();
   }
@@ -1575,6 +1561,7 @@ function useMyLocation(){
 async function saveApiary(){
   const name=document.getElementById('editApiaryName').value.trim();
   const loc=document.getElementById('editApiaryLocation').value.trim();
+  console.log('[HiveDash] saveApiary - name:',name,'loc:',loc);
   if(name)APIARY.name=name;
   APIARY.location=loc; APIARY.lat=null; APIARY.lon=null;
   document.getElementById('editApiaryOv').remove();
@@ -1584,23 +1571,9 @@ async function saveApiary(){
   const homeSub=document.getElementById('homeApiaryLocation');
   if(homeSub)homeSub.textContent=loc||'No location set';
   if(loc){
-    try{
-      // Use Open-Meteo geocoding (same provider as weather, CORS-friendly)
-      const res=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(loc)+'&count=1&language=en&format=json');
-      const d=await res.json();
-      console.log('[HiveDash] geocode result:', JSON.stringify(d).slice(0,200));
-      if(d.results&&d.results[0]){
-        APIARY.lat=d.results[0].latitude;
-        APIARY.lon=d.results[0].longitude;
-        // Use the canonical name from geocoding
-        const canon = [d.results[0].name, d.results[0].admin1, d.results[0].country_code].filter(Boolean).join(', ');
-        APIARY.location = canon;
-        const locEl2=document.getElementById('apiaryLocation');
-        if(locEl2)locEl2.textContent='📍 '+canon;
-      }
-    }catch(e){ console.log('Geocode error:',e); }
+    APIARY.lat = 1; APIARY.lon = 1; // sentinel values to indicate location is set
     saveData();
-    if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
+    fetchWeatherForLocation(null, null, loc);
   } else {
     saveData();
   }
@@ -1760,49 +1733,54 @@ function getSeason(){
 async function fetchWeatherForLocation(lat, lon, cityLabel){
   console.log('[HiveDash] fetchWeather:', lat, lon, cityLabel);
   try {
-    const unit = isF ? 'fahrenheit' : 'celsius';
-    const url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode,windspeed_10m,relativehumidity_2m,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit='+unit+'&wind_speed_unit=mph&timezone=auto&forecast_days=5';
+    const unit = isF ? 'u' : 'm'; // u=imperial, m=metric for wttr.in
+    const tempUnit = isF ? '°F' : '°C';
+    // Use city name if available, otherwise coordinates
+    const loc = cityLabel || (lat+','+lon);
+    const url = 'https://wttr.in/'+encodeURIComponent(loc)+'?format=j1';
+    console.log('[HiveDash] fetching:', url);
     const res = await fetch(url);
     const data = await res.json();
-    const cur = data.current;
-    const daily = data.daily;
-    const tempUnit = isF ? '°F' : '°C';
-    const code = cur.weathercode;
-    const emoji = WMO_EMOJI[code] || '🌤';
-    const desc = WMO_CODES[code] || 'Clear';
-    const temp = Math.round(cur.temperature_2m);
-    const feels = Math.round(cur.apparent_temperature);
-    const wind = Math.round(cur.windspeed_10m);
-    const humidity = cur.relativehumidity_2m;
-    const locName = cityLabel || 'Your apiary';
+    console.log('[HiveDash] weather data:', JSON.stringify(data).slice(0,200));
+    const cur = data.current_condition[0];
+    const temp = isF ? cur.temp_F : cur.temp_C;
+    const feels = isF ? cur.FeelsLikeF : cur.FeelsLikeC;
+    const humidity = cur.humidity;
+    const wind = cur.windspeedKmph;
+    const desc = cur.weatherDesc[0].value;
+    const areaName = data.nearest_area?.[0]?.areaName?.[0]?.value || cityLabel || 'Your apiary';
+    const country = data.nearest_area?.[0]?.country?.[0]?.value || '';
+    const locName = areaName + (country ? ', '+country : '');
 
-    // Home topbar
     const wTemp = document.getElementById('wTemp');
     if(wTemp) wTemp.textContent = desc+' · '+temp+tempUnit;
     const wCity = document.getElementById('wCity');
     if(wCity) wCity.textContent = locName+' · '+getSeason();
-    // Weather page hero
     const wHero = document.getElementById('wHeroTemp');
     if(wHero) wHero.textContent = temp+'°';
     const wHeroCity = document.getElementById('wHeroCity');
     if(wHeroCity) wHeroCity.textContent = desc+' · '+locName;
     const wMeta = document.getElementById('wMeta');
-    if(wMeta) wMeta.textContent = 'Humidity '+humidity+'% · Wind '+wind+' mph · UV 7';
+    if(wMeta) wMeta.textContent = 'Humidity '+humidity+'% · Wind '+wind+' km/h';
     const wFeels = document.getElementById('wFeels');
-    if(wFeels) wFeels.textContent = 'Feels like '+feels+'°';
-    // 5-day forecast
-    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    for(let i=0;i<5;i++){
-      const d = new Date(daily.time[i]);
+    if(wFeels) wFeels.textContent = 'Feels like '+feels+tempUnit;
+
+    // 5-day from wttr.in
+    const weather = data.weather;
+    const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    const wmoToEmoji = {'113':'☀️','116':'⛅','119':'☁️','122':'☁️','143':'🌫','176':'🌦','179':'🌨','182':'🌧','185':'🌧','200':'⛈','227':'❄️','230':'❄️','248':'🌫','260':'🌫','263':'🌦','266':'🌦','281':'🌧','284':'🌧','293':'🌦','296':'🌦','299':'🌧','302':'🌧','305':'🌧','308':'🌧','311':'🌧','314':'🌧','317':'🌧','320':'🌨','323':'🌨','326':'🌨','329':'❄️','332':'❄️','335':'❄️','338':'❄️','350':'🌧','353':'🌦','356':'🌧','359':'🌧','362':'🌧','365':'🌧','368':'🌨','371':'❄️','374':'🌧','377':'🌧','386':'⛈','389':'⛈','392':'⛈','395':'⛈'};
+    for(let i=0;i<Math.min(5,weather.length);i++){
+      const d = new Date(weather[i].date);
+      const code = weather[i].hourly?.[4]?.weatherCode || '113';
+      const maxT = isF ? weather[i].maxtempF : weather[i].maxtempC;
       const dayEl = document.getElementById('forecastDay'+i);
       const iconEl = document.getElementById('forecastIcon'+i);
       const tempEl = document.getElementById('forecastTemp'+i);
-      const dayCode = daily.weathercode[i];
-      if(dayEl) dayEl.textContent = i===0?'Today':days[d.getDay()];
-      if(iconEl) iconEl.textContent = WMO_EMOJI[dayCode]||'🌤';
-      if(tempEl) tempEl.textContent = Math.round(daily.temperature_2m_max[i])+'°';
+      if(dayEl) dayEl.textContent = i===0?'Today':dayNames[d.getDay()];
+      if(iconEl) iconEl.textContent = wmoToEmoji[code]||'🌤';
+      if(tempEl) tempEl.textContent = maxT+'°';
     }
-  } catch(e){ console.log('Weather error:', e); }
+  } catch(e){ console.log('[HiveDash] weather error:', e); }
 }
 /* DRAWER */
 function openDrawer(){document.getElementById('dov').classList.add('open');document.getElementById('drawer').classList.add('open')}

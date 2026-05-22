@@ -755,14 +755,14 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <!-- Action pills — 2+1布局，防止截断 -->
     <div style="display:flex;flex-direction:column;gap:8px">
       <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">
-        <div style="background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:12px 12px;display:flex;align-items:center;gap:9px;cursor:pointer">
+        <div style="background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:12px 12px;display:flex;align-items:center;gap:9px;cursor:pointer" onclick="showToast('Point your camera at the QR code on the hive to open it instantly.')">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex-shrink:0"><rect x="3" y="3" width="6" height="6" rx="1" stroke="#1A1A1A" stroke-width="1.5"/><rect x="11" y="3" width="6" height="6" rx="1" stroke="#1A1A1A" stroke-width="1.5"/><rect x="3" y="11" width="6" height="6" rx="1" stroke="#1A1A1A" stroke-width="1.5"/><rect x="13" y="13" width="4" height="4" rx=".5" stroke="#1A1A1A" stroke-width="1.5"/></svg>
           <div>
             <div style="font-size:12px;font-weight:600;color:#1A1A1A">Open hive quickly</div>
             <div style="font-size:10px;color:#B7B1A7;margin-top:1px">Scan QR code</div>
           </div>
         </div>
-        <div style="background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:12px 12px;display:flex;align-items:center;gap:9px;cursor:pointer">
+        <div style="background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:12px 12px;display:flex;align-items:center;gap:9px;cursor:pointer" onclick="showToast('Tap your phone to the NFC tag on the hive to open it hands-free.')">
           <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex-shrink:0"><circle cx="10" cy="10" r="7" stroke="#1A1A1A" stroke-width="1.5"/><circle cx="10" cy="10" r="2.5" stroke="#1A1A1A" stroke-width="1.5"/><path d="M10 3v2M10 15v2M3 10h2M15 10h2" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round"/></svg>
           <div>
             <div style="font-size:12px;font-weight:600;color:#1A1A1A">Connect hive tag</div>
@@ -770,7 +770,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
           </div>
         </div>
       </div>
-      <div style="background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:9px;cursor:pointer">
+      <div style="background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:11px 12px;display:flex;align-items:center;gap:9px;cursor:pointer" onclick="showToast('Generating your hive history PDF… ready to save or share.')">
         <svg width="18" height="18" viewBox="0 0 20 20" fill="none" style="flex-shrink:0"><path d="M10 3v10M6 9l4 4 4-4" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 14v2a1 1 0 001 1h12a1 1 0 001-1v-2" stroke="#1A1A1A" stroke-width="1.5" stroke-linecap="round"/></svg>
         <div style="display:flex;align-items:center;justify-content:space-between;flex:1">
           <div>
@@ -1015,6 +1015,15 @@ function applyUnit(){
 function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 applyUnit();
+
+/* TOAST */
+function showToast(msg){
+  let t=document.getElementById('toast');
+  if(!t){t=document.createElement('div');t.id='toast';t.style.cssText='position:fixed;bottom:100px;left:50%;transform:translateX(-50%) translateY(10px);background:#1F2A24;color:#fff;font-size:12px;line-height:1.5;font-family:Inter,sans-serif;padding:10px 16px;border-radius:12px;max-width:300px;text-align:center;opacity:0;transition:opacity .2s,transform .2s;z-index:999;pointer-events:none';document.body.appendChild(t);}
+  t.textContent=msg;
+  t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';
+  clearTimeout(t._t);t._t=setTimeout(()=>{t.style.opacity='0';t.style.transform='translateX(-50%) translateY(10px)'},2800);
+}
 
 /* TREATMENT TOGGLE */
 function toggleTreat(){

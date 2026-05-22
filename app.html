@@ -280,21 +280,9 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <div class="prog-labels"><span>0 <span id="hu2">lbs</span></span><span>Goal: <span id="hg">55</span> <span id="hu3">lbs</span></span></div>
   </div>
 
-  <!-- ④ MY APIARY ENTRY -->
+  <!-- ④ MY APIARY ENTRY — dynamic list -->
   <div class="sec-hd" style="margin-top:16px" data-i18n="myApiary">My apiary</div>
-  <div class="hive-exp" onclick="openSub('smya')" style="padding:14px 16px;margin-bottom:12px">
-    <div style="display:flex;align-items:center;gap:12px">
-      <div style="width:44px;height:44px;border-radius:14px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌻</div>
-      <div style="flex:1">
-        <div style="font-size:14px;font-weight:600;color:#1A1A1A" id="homeApiaryName">Backyard Apiary</div>
-        <div style="font-size:11px;color:#B7B1A7;margin-top:2px"><span id="homeHiveCount">0 hives</span><span id="homeApiaryLocation"></span></div>
-      </div>
-      <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <div style="font-size:11px;font-weight:600;color:var(--green);background:#EEF5EF;border-radius:8px;padding:3px 8px" id="homeHealthyCount">–</div>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-    </div>
-  </div>
+  <div id="homeApiaryList" style="margin:0 16px 12px;display:flex;flex-direction:column;gap:8px"></div>
 
   <!-- EMPTY STATE — shown when no hives -->
   <div id="emptyState" style="margin:0 16px 16px;background:#fff;border:1px solid #EDE8E0;border-radius:18px;padding:28px 20px;text-align:center">
@@ -1311,11 +1299,8 @@ function updateCounters(){
   const sh=document.getElementById('statHives');if(sh)sh.textContent=n;
   const shl=document.getElementById('statHealthy');if(shl)shl.textContent=healthy;
   const sd=document.getElementById('statDue');if(sd)sd.textContent=due;
-  // Home card
-  const home=document.getElementById('homeHiveCount');
-  if(home)home.textContent=n+(n===1?' hive':' hives');
-  const hh=document.getElementById('homeHealthyCount');
-  if(hh){hh.textContent=hasHives?healthy+' healthy':'–';hh.style.display=hasHives?'block':'none';}
+  // Home apiary list (re-render to update hive counts)
+  renderHomeApiaryList();
   // Apiary detail
   const myaEl=document.getElementById('myaHiveCount');if(myaEl)myaEl.textContent=n;
   const myaH=document.getElementById('myaHealthyCount');if(myaH)myaH.textContent=healthy;
@@ -1547,11 +1532,44 @@ window.addEventListener('load', function(){
 
 /* ── MULTI-APIARY MANAGEMENT ── */
 
+function renderHomeApiaryList(){
+  var container = document.getElementById('homeApiaryList');
+  if(!container) return;
+  container.innerHTML = '';
+  var icons = ['🌻','🌾','🍀','🌿','🌸','🌼','🌳','🐝'];
+  APIARIES.forEach(function(a){
+    var isActive = (a.id === ACTIVE_APIARY_ID);
+    var healthy = a.hives.filter(function(h){ return h.status==='Healthy'; }).length;
+    var card = document.createElement('div');
+    card.className = 'hive-exp';
+    card.style.cssText = 'padding:14px 16px;margin-bottom:0;cursor:pointer' + (isActive ? ';border-color:#E8CC88;background:#FDFAF5' : '');
+    card.onclick = function(){ switchApiary(a.id); openSub('smya'); };
+    var icon = icons[(a.id-1) % icons.length];
+    var hiveTxt = a.hives.length + (a.hives.length===1?' hive':' hives');
+    var locTxt = a.location ? ' · ' + a.location : '';
+    card.innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px">' +
+        '<div style="width:44px;height:44px;border-radius:14px;background:' + (isActive?'#FBF5E6':'#F5F4F2') + ';border:1px solid ' + (isActive?'#E8CC88':'#E0DDD6') + ';display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">' + icon + '</div>' +
+        '<div style="flex:1">' +
+          '<div style="font-size:14px;font-weight:600;color:#1A1A1A">' + a.name + (isActive ? ' <span style="font-size:10px;color:#C79B3B;font-weight:600;background:#FBF5E6;border-radius:6px;padding:2px 6px">Active</span>' : '') + '</div>' +
+          '<div style="font-size:11px;color:#B7B1A7;margin-top:2px">' + hiveTxt + locTxt + '</div>' +
+        '</div>' +
+        '<div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">' +
+          (a.hives.length > 0 ? '<div style="font-size:11px;font-weight:600;color:var(--green);background:#EEF5EF;border-radius:8px;padding:3px 8px">' + healthy + ' healthy</div>' : '') +
+          '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>' +
+        '</div>' +
+      '</div>';
+    container.appendChild(card);
+  });
+}
+
 function renderApiaryUI(){
   const a = getActiveApiary();
   if(!a) return;
   // Update header title
   const titleEl = document.getElementById('smyaTitle'); if(titleEl) titleEl.textContent = a.name;
+  // Update home list
+  renderHomeApiaryList();
   // Update info card
   const nameEl = document.getElementById('apiaryName'); if(nameEl) nameEl.textContent = a.name;
   const locEl = document.getElementById('apiaryLocation');
@@ -2265,18 +2283,8 @@ function applyTranslations(){
       el.textContent=t('language');
     }
   });
-  // Home hive count string
-  var homeHC=document.getElementById('homeHiveCount');
-  if(homeHC){
-    var n=hives?hives.length:0;
-    homeHC.textContent=n+(n===1?' '+t('hive'):' '+t('hivesUnit'));
-  }
-  // Healthy count label in home card
-  var homeHH=document.getElementById('homeHealthyCount');
-  if(homeHH&&hives&&hives.length>0){
-    var healthy=hives.filter(function(h){return h.status==='Healthy';}).length;
-    homeHH.textContent=healthy+' '+t('healthy').toLowerCase();
-  }
+  // Re-render home apiary list with updated language
+  renderHomeApiaryList();
 }
 
 /* DRAWER */

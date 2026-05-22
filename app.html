@@ -1126,7 +1126,8 @@ function applyUnit(){
   document.getElementById('uf').className=f?'on':'';document.getElementById('uc').className=f?'':'on';
   document.getElementById('duf').style.cssText=f?'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer':'padding:5px 12px;color:#aaa;cursor:pointer';
   document.getElementById('duc').style.cssText=f?'padding:5px 12px;color:#aaa;cursor:pointer':'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer';
-  const wt=document.getElementById('wTemp');if(wt)wt.textContent=(f?'Sunny · '+RAW.wF+'°F':'Sunny · '+RAW.wC+'°C');
+  const wt=document.getElementById('wTemp');
+  if(wt && !APIARY.lat) wt.textContent=(f?'Sunny · '+RAW.wF+'°F':'Sunny · '+RAW.wC+'°C');
   const h2=document.getElementById('h2s');if(h2)h2.textContent=f?RAW.h2sF:RAW.h2sC;
   const h3=document.getElementById('h3s');if(h3)h3.textContent=f?RAW.h3sF:RAW.h3sC;
   const hv=document.getElementById('hv');if(hv)hv.textContent=f?RAW.hvLbs:RAW.hvKg;
@@ -1693,18 +1694,26 @@ const WMO_CODES = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast'
 const WMO_EMOJI = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌧',55:'🌧',61:'🌦',63:'🌧',65:'🌧',71:'🌨',73:'❄️',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
 
 function fetchWeather(){
-  // Only fetch if apiary has a saved location
   if(APIARY.lat && APIARY.lon){
     fetchWeatherForLocation(APIARY.lat, APIARY.lon, APIARY.location);
   } else {
-    // No apiary location — show prompt on weather page
     const wt = document.getElementById('wTemp');
-    if(wt) wt.textContent = 'Set apiary location to see weather';
+    if(wt) wt.textContent = 'Set apiary location';
+    const wc = document.getElementById('wCity');
+    if(wc) wc.textContent = 'Go to My Apiary → Edit to add location';
     const wh = document.getElementById('wHeroTemp');
     if(wh) wh.textContent = '--°';
-    const wc = document.getElementById('wHeroCity');
-    if(wc) wc.textContent = 'No location set · go to My Apiary → Edit';
+    const whc = document.getElementById('wHeroCity');
+    if(whc) whc.textContent = 'No location set · tap Edit in My Apiary';
   }
+}
+
+function getSeason(){
+  const m = new Date().getMonth();
+  if(m>=2&&m<=4) return 'Spring';
+  if(m>=5&&m<=7) return 'Summer';
+  if(m>=8&&m<=10) return 'Fall';
+  return 'Winter';
 }
 
 async function fetchWeatherForLocation(lat, lon, cityLabel){
@@ -1728,6 +1737,8 @@ async function fetchWeatherForLocation(lat, lon, cityLabel){
     // Home topbar
     const wTemp = document.getElementById('wTemp');
     if(wTemp) wTemp.textContent = desc+' · '+temp+tempUnit;
+    const wCity = document.getElementById('wCity');
+    if(wCity) wCity.textContent = locName+' · '+getSeason();
     // Weather page hero
     const wHero = document.getElementById('wHeroTemp');
     if(wHero) wHero.textContent = temp+'°';

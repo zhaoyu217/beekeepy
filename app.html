@@ -2338,11 +2338,21 @@ function openSettingsSheet(type){
 
   if(type==='profile'){
     title = 'Profile';
+    var avatarBg = USER.avatarImg ? 'url('+USER.avatarImg+') center/cover' : '#EDE8DF';
+    var avatarContent = USER.avatarImg ? '' : '<span style=\"font-size:22px;font-weight:700;color:#7A5C1E\">'+USER.name[0].toUpperCase()+'</span>';
     html =
+      '<div style="display:flex;flex-direction:column;align-items:center;margin-bottom:20px">' +
+        '<div style="position:relative;cursor:pointer" onclick="document.getElementById(&quot;avatarFileInput&quot;).click()">' +
+          '<div id="sAvatarPreview" style="width:72px;height:72px;border-radius:50%;background:'+avatarBg+';border:2.5px solid #C79B3B;display:flex;align-items:center;justify-content:center">'+avatarContent+'</div>' +
+          '<div style="position:absolute;bottom:0;right:0;width:22px;height:22px;border-radius:50%;background:#C79B3B;border:2px solid #fff;display:flex;align-items:center;justify-content:center;font-size:11px">✏️</div>' +
+        '</div>' +
+        '<div style="font-size:11px;color:#B7B1A7;margin-top:8px;cursor:pointer" onclick="document.getElementById(&quot;avatarFileInput&quot;).click()">Tap to change photo</div>' +
+        '<input type="file" id="avatarFileInput" accept="image/*" style="display:none" onchange="previewAvatarUpload(this)">' +
+      '</div>' +
       '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Display name</div>' +
       '<input id="sProfileName" value="'+USER.name+'" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box"></div>' +
       '<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Email</div>' +
-      '<input id="sProfileEmail" value="james@hivedash.app" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box"></div>' +
+      '<input id="sProfileEmail" value="'+(USER.email||'james@hivedash.app')+'" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box"></div>' +
       '<div style="display:flex;gap:10px">' +
       '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Cancel</button>' +
       '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveProfile()">Save</button></div>';
@@ -2453,14 +2463,39 @@ function _settingRow(icon, label, sub, badge, action){
     '<div style="color:#D0CCC6">›</div></div>';
 }
 
+function previewAvatarUpload(input){
+  if(!input.files||!input.files[0]) return;
+  var reader = new FileReader();
+  reader.onload = function(e){
+    USER._pendingAvatar = e.target.result;
+    var preview = document.getElementById('sAvatarPreview');
+    if(preview){
+      preview.style.background = 'url('+e.target.result+') center/cover';
+      preview.innerHTML = '';
+    }
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
 function saveProfile(){
   var name = document.getElementById('sProfileName').value.trim();
   var email = document.getElementById('sProfileEmail').value.trim();
-  if(name){ USER.name = name; }
+  if(name) USER.name = name;
+  if(email) USER.email = email;
+  if(USER._pendingAvatar){ USER.avatarImg = USER._pendingAvatar; delete USER._pendingAvatar; }
+  // Update drawer avatar
+  var av = document.getElementById('drawerAvatar');
+  if(av){
+    if(USER.avatarImg){
+      av.style.background = 'url('+USER.avatarImg+') center/cover';
+      av.style.backgroundSize = 'cover';
+      av.textContent = '';
+    } else {
+      av.textContent = USER.name[0].toUpperCase();
+    }
+  }
   var dn = document.getElementById('drawerName'); if(dn) dn.textContent = USER.name;
-  var av = document.getElementById('drawerAvatar'); if(av) av.textContent = USER.name[0].toUpperCase();
-  var avTop = document.getElementById('avatarEl'); if(avTop) avTop.textContent = USER.name[0].toUpperCase();
-  var em = document.getElementById('settingsEmail'); if(em && email) em.textContent = email;
+  var em = document.getElementById('settingsEmail'); if(em) em.textContent = USER.email||email;
   var greet = document.getElementById('greet');
   if(greet){ var h=new Date().getHours(); greet.innerHTML=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+',<br>'+USER.name; }
   document.getElementById('settingsOv').remove();

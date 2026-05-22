@@ -1149,11 +1149,11 @@ const RAW={wF:78,wC:26,h2sF:'Needs attention · 5 days ago',h2sC:'Needs attentio
 let isF=(localStorage.getItem('hd_unit')||'f')==='f';
 function applyUnit(){
   const f=isF;
-  document.getElementById('uf').className=f?'on':'';document.getElementById('uc').className=f?'':'on';
-  document.getElementById('duf').style.cssText=f?'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer':'padding:5px 12px;color:#aaa;cursor:pointer';
-  document.getElementById('duc').style.cssText=f?'padding:5px 12px;color:#aaa;cursor:pointer':'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer';
-  const wt=document.getElementById('wTemp');
-  if(wt && !APIARY.lat) wt.textContent=(f?'Sunny · '+RAW.wF+'°F':'Sunny · '+RAW.wC+'°C');
+  const uf=document.getElementById('uf'); if(uf) uf.className=f?'on':'';
+  const uc=document.getElementById('uc'); if(uc) uc.className=f?'':'on';
+  const duf=document.getElementById('duf'); if(duf) duf.style.cssText=f?'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer':'padding:5px 12px;color:#aaa;cursor:pointer';
+  const duc=document.getElementById('duc'); if(duc) duc.style.cssText=f?'padding:5px 12px;color:#aaa;cursor:pointer':'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer';
+  // Do NOT overwrite wTemp — weather API handles it
   const h2=document.getElementById('h2s');if(h2)h2.textContent=f?RAW.h2sF:RAW.h2sC;
   const h3=document.getElementById('h3s');if(h3)h3.textContent=f?RAW.h3sF:RAW.h3sC;
   const hv=document.getElementById('hv');if(hv)hv.textContent=f?RAW.hvLbs:RAW.hvKg;

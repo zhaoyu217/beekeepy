@@ -1083,7 +1083,9 @@ function handlePhoto2(input){
     const h=document.getElementById('photoHint2');
     p.style.backgroundImage='url('+e.target.result+')';
     p.style.backgroundSize='cover';p.style.backgroundPosition='center';p.style.opacity='1';
-    if(h)h.textContent='Tap to change';
+    if(h)h.textContent='';
+    let del=document.getElementById('photoDel2');
+    if(!del){del=document.createElement('div');del.id='photoDel2';del.style.cssText='position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;font-weight:700;z-index:2;line-height:1';del.textContent='✕';del.onclick=function(ev){ev.stopPropagation();p.style.backgroundImage='';p.style.opacity='.5';if(h)h.textContent='Add photo';del.remove();input.value='';};p.parentElement.appendChild(del);}
     showToast('Photo saved to Hive 2 · May 22');
   };
   reader.readAsDataURL(input.files[0]);
@@ -1096,7 +1098,9 @@ function handlePhoto3(input){
     const h=document.getElementById('photoHint3');
     p.style.backgroundImage='url('+e.target.result+')';
     p.style.backgroundSize='cover';p.style.backgroundPosition='center';p.style.opacity='1';
-    if(h)h.textContent='Tap to change';
+    if(h)h.textContent='';
+    let del=document.getElementById('photoDel3');
+    if(!del){del=document.createElement('div');del.id='photoDel3';del.style.cssText='position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;font-weight:700;z-index:2;line-height:1';del.textContent='✕';del.onclick=function(ev){ev.stopPropagation();p.style.backgroundImage='';p.style.opacity='.5';if(h)h.textContent='Add photo';del.remove();input.value='';};p.parentElement.appendChild(del);}
     showToast('Photo saved to Hive 3 · May 22');
   };
   reader.readAsDataURL(input.files[0]);
@@ -1105,20 +1109,18 @@ function handlePhoto3(input){
 /* PHOTO */
 function handlePhoto(input){
   if(!input.files||!input.files[0])return;
-  const file=input.files[0];
   const reader=new FileReader();
   reader.onload=function(e){
-    const preview=document.getElementById('photoPreview');
-    const hint=document.getElementById('photoHint');
-    preview.style.backgroundImage='url('+e.target.result+')';
-    preview.style.backgroundSize='cover';
-    preview.style.backgroundPosition='center';
-    preview.style.opacity='1';
-    preview.style.backgroundImage='url('+e.target.result+')';
-    if(hint)hint.textContent='Tap to change';
+    const p=document.getElementById('photoPreview');
+    const h=document.getElementById('photoHint');
+    p.style.backgroundImage='url('+e.target.result+')';
+    p.style.backgroundSize='cover';p.style.backgroundPosition='center';p.style.opacity='1';
+    if(h)h.textContent='';
+    let del=document.getElementById('photoDel1');
+    if(!del){del=document.createElement('div');del.id='photoDel1';del.style.cssText='position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;font-weight:700;z-index:2;line-height:1';del.textContent='✕';del.onclick=function(ev){ev.stopPropagation();p.style.backgroundImage='';p.style.opacity='.5';if(h)h.textContent='Add photo';del.remove();input.value='';};p.parentElement.appendChild(del);}
     showToast('Photo saved to Hive 1 · May 22');
   };
-  reader.readAsDataURL(file);
+  reader.readAsDataURL(input.files[0]);
 }
 
 /* TOAST */

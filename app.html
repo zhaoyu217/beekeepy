@@ -243,30 +243,30 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     </div>
   </div>
 
-  <!-- ② STATS -->
-  <div class="stat-row">
-    <div class="stat-card" onclick="filterHives('all')">
-      <div class="stat-val" style="color:#1A1A1A">3</div>
+  <!-- ② STATS — dynamic -->
+  <div class="stat-row" id="statsRow">
+    <div class="stat-card" onclick="openSub('smya')">
+      <div class="stat-val" style="color:#1A1A1A" id="statHives">0</div>
       <div class="stat-lbl">Hives</div>
     </div>
-    <div class="stat-card" onclick="filterHives('healthy')">
-      <div class="stat-val" style="color:#5E7A63">2</div>
+    <div class="stat-card" onclick="openSub('smya')">
+      <div class="stat-val" style="color:#5E7A63" id="statHealthy">0</div>
       <div class="stat-lbl">Healthy</div>
     </div>
-    <div class="stat-card" onclick="filterHives('due')">
-      <div class="stat-val" style="color:#C79B3B">1</div>
+    <div class="stat-card" onclick="openSub('smya')">
+      <div class="stat-val" style="color:#C79B3B" id="statDue">0</div>
       <div class="stat-lbl">Upcoming</div>
     </div>
   </div>
 
-  <!-- ③ HARVEST -->
-  <div class="harvest-card" onclick="setNav(3)">
+  <!-- ③ HARVEST — hidden until hives exist -->
+  <div class="harvest-card" onclick="setNav(3)" id="harvestCard" style="display:none">
     <div class="harvest-lbl">Season harvest</div>
     <div class="harvest-top">
-      <div><span class="harvest-val" id="hv">41</span> <span class="harvest-unit" id="hu">lbs</span></div>
-      <div class="harvest-pct">74%</div>
+      <div><span class="harvest-val" id="hv">0</span> <span class="harvest-unit" id="hu">lbs</span></div>
+      <div class="harvest-pct" id="harvestPct">0%</div>
     </div>
-    <div class="prog-track"><div class="prog-fill" style="width:74%"></div></div>
+    <div class="prog-track"><div class="prog-fill" id="harvestBar" style="width:0%"></div></div>
     <div class="prog-labels"><span>0 <span id="hu2">lbs</span></span><span>Goal: <span id="hg">55</span> <span id="hu3">lbs</span></span></div>
   </div>
 
@@ -276,31 +276,40 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <div style="display:flex;align-items:center;gap:12px">
       <div style="width:44px;height:44px;border-radius:14px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌻</div>
       <div style="flex:1">
-        <div style="font-size:14px;font-weight:600;color:#1A1A1A">Backyard Apiary</div>
-        <div style="font-size:11px;color:#B7B1A7;margin-top:2px"><span id="homeHiveCount">3 hives</span> · Boulder, CO · Spring</div>
+        <div style="font-size:14px;font-weight:600;color:#1A1A1A" id="homeApiaryName">Backyard Apiary</div>
+        <div style="font-size:11px;color:#B7B1A7;margin-top:2px"><span id="homeHiveCount">0 hives</span> · Boulder, CO · Spring</div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
-        <div style="font-size:11px;font-weight:600;color:var(--green);background:#EEF5EF;border-radius:8px;padding:3px 8px" id="homeHealthyCount">2 healthy</div>
+        <div style="font-size:11px;font-weight:600;color:var(--green);background:#EEF5EF;border-radius:8px;padding:3px 8px" id="homeHealthyCount">–</div>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
       </div>
     </div>
   </div>
 
-  <!-- ⑤ ALERTS -->
-  <div class="alert-row" style="background:#FBF5E6;border:1px solid #E8CC88" onclick="openSub('sal')">
-    <div class="alert-dot" style="background:#C79B3B"></div>
-    <div class="alert-text" style="color:#7A5C1E">Hive 2 inspection overdue · 5 days<br><span style="font-size:10px;color:#C4963A">Tap to manage reminders →</span></div>
-    <div class="alert-arrow" style="color:#C4963A">›</div>
+  <!-- EMPTY STATE — shown when no hives -->
+  <div id="emptyState" style="margin:0 16px 16px;background:#fff;border:1px solid #EDE8E0;border-radius:18px;padding:28px 20px;text-align:center">
+    <div style="font-size:40px;margin-bottom:12px">🐝</div>
+    <div style="font-size:15px;font-weight:700;color:#1A1A1A;letter-spacing:-.3px;margin-bottom:6px">Your hive yard is empty</div>
+    <div style="font-size:12px;color:#B7B1A7;line-height:1.7;margin-bottom:18px">Add your first hive to start tracking inspections, harvests, and colony health.</div>
+    <button class="btn-full" style="background:var(--forest);color:#fff" onclick="openSub('smya')">Set up my apiary →</button>
   </div>
 
-  <div class="alert-row" style="background:#EEF2FF;border:1px solid #C7D2FE" onclick="openSub('ssp')">
-    <div class="alert-dot" style="background:#3730A3"></div>
-    <div class="alert-text" style="color:#3730A3">Spring flow peaking · Hive 1 needs super in 5 days<br><span style="font-size:10px;color:#4338CA">View super alert →</span></div>
-    <div class="alert-arrow" style="color:#4338CA">›</div>
+  <!-- ALERTS — hidden until hives exist -->
+  <div id="alertsSection" style="display:none">
+    <div class="alert-row" style="background:#FBF5E6;border:1px solid #E8CC88" onclick="openSub('sal')">
+      <div class="alert-dot" style="background:#C79B3B"></div>
+      <div class="alert-text" style="color:#7A5C1E">Hive 2 inspection overdue · 5 days<br><span style="font-size:10px;color:#C4963A">Tap to manage reminders →</span></div>
+      <div class="alert-arrow" style="color:#C4963A">›</div>
+    </div>
+    <div class="alert-row" style="background:#EEF2FF;border:1px solid #C7D2FE" onclick="openSub('ssp')">
+      <div class="alert-dot" style="background:#3730A3"></div>
+      <div class="alert-text" style="color:#3730A3">Spring flow peaking · Hive 1 needs super in 5 days<br><span style="font-size:10px;color:#4338CA">View super alert →</span></div>
+      <div class="alert-arrow" style="color:#4338CA">›</div>
+    </div>
   </div>
 
-  <!-- NECTAR TAG -->
-  <div class="nectar-tag" onclick="openSub('sw')">
+  <!-- NECTAR TAG — hidden until hives exist -->
+  <div class="nectar-tag" onclick="openSub('sw')" id="nectarTag" style="display:none">
     <svg width="18" height="18" viewBox="0 0 20 20" fill="none">
       <path d="M10 2C10 2 5 7 5 11a5 5 0 0010 0c0-4-5-9-5-9z" fill="#C79B3B" opacity=".25" stroke="#C79B3B" stroke-width="1.2"/>
     </svg>
@@ -314,32 +323,34 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     </div>
   </div>
 
-  <!-- TIMELINE -->
-  <div class="sec-hd" style="margin-top:18px">Recent activity</div>
-  <div class="timeline-wrap">
-    <div class="tl-card" id="tlCard">
-      <div class="tl-item">
-        <div class="tl-left"><div class="tl-dot" style="background:#5E7A63"></div><div class="tl-line"></div></div>
-        <div class="tl-body"><div class="tl-title">Hive 1 inspected <span class="tl-badge" style="background:#EEF5EF;color:#5E7A63">Healthy colony</span></div><div class="tl-sub">May 21 · Queen spotted · 6 frames</div></div>
+  <!-- TIMELINE — hidden until hives exist -->
+  <div id="timelineSection" style="display:none">
+    <div class="sec-hd" style="margin-top:18px">Recent activity</div>
+    <div class="timeline-wrap">
+      <div class="tl-card" id="tlCard">
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot" style="background:#5E7A63"></div><div class="tl-line"></div></div>
+          <div class="tl-body"><div class="tl-title">Hive 1 inspected <span class="tl-badge" style="background:#EEF5EF;color:#5E7A63">Healthy colony</span></div><div class="tl-sub">May 21 · Queen spotted · 6 frames</div></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot" style="background:#C79B3B"></div><div class="tl-line"></div></div>
+          <div class="tl-body"><div class="tl-title">Harvest recorded <span class="tl-badge" style="background:#FBF5E6;color:#7A5C1E">🍯 18 lbs</span></div><div class="tl-sub">May 18 · Clover · Excellent</div></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot" style="background:#C4974A"></div><div class="tl-line"></div></div>
+          <div class="tl-body"><div class="tl-title">Hive 2 treatment <span class="tl-badge" style="background:#FBF3E3;color:#6B4E00">OA Vapor</span></div><div class="tl-sub">May 14 · 14-day buffer active</div></div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-left"><div class="tl-dot" style="background:#5E7A63"></div></div>
+          <div class="tl-body"><div class="tl-title">Queen added · Hive 3</div><div class="tl-sub">May 10 · Italian · 2026 mark: White ●</div></div>
+        </div>
+        <div class="tl-link" onclick="openSub('sat')">View all activity →</div>
       </div>
-      <div class="tl-item">
-        <div class="tl-left"><div class="tl-dot" style="background:#C79B3B"></div><div class="tl-line"></div></div>
-        <div class="tl-body"><div class="tl-title">Harvest recorded <span class="tl-badge" style="background:#FBF5E6;color:#7A5C1E">🍯 18 lbs</span></div><div class="tl-sub">May 18 · Clover · Excellent</div></div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-left"><div class="tl-dot" style="background:#C4974A"></div><div class="tl-line"></div></div>
-        <div class="tl-body"><div class="tl-title">Hive 2 treatment <span class="tl-badge" style="background:#FBF3E3;color:#6B4E00">OA Vapor</span></div><div class="tl-sub">May 14 · 14-day buffer active</div></div>
-      </div>
-      <div class="tl-item">
-        <div class="tl-left"><div class="tl-dot" style="background:#5E7A63"></div></div>
-        <div class="tl-body"><div class="tl-title">Queen added · Hive 3</div><div class="tl-sub">May 10 · Italian · 2026 mark: White ●</div></div>
-      </div>
-      <div class="tl-link" onclick="openSub('sat')">View all activity →</div>
     </div>
   </div>
 
-  <!-- CTA -->
-  <div class="cta-row">
+  <!-- CTA — hidden until hives exist -->
+  <div class="cta-row" id="ctaRow" style="display:none">
     <button class="btn" style="background:#1F2A24;color:#fff" onclick="setNav(1)">Inspect hive</button>
     <button class="btn btn-honey" onclick="setNav(3)">Record harvest</button>
   </div>
@@ -568,6 +579,11 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <!-- Hive list — dynamic -->
     <div style="font-size:10px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.07em;padding:0 4px;margin-bottom:4px">Your hives</div>
     <div id="hiveListContainer" style="display:flex;flex-direction:column;gap:10px"></div>
+    <div id="emptyHiveList" style="display:none;background:#F9F7F3;border:1px dashed #DDD9D0;border-radius:14px;padding:24px;text-align:center">
+      <div style="font-size:28px;margin-bottom:8px">🐝</div>
+      <div style="font-size:13px;font-weight:600;color:#B7B1A7;margin-bottom:4px">No hives yet</div>
+      <div style="font-size:11px;color:#D0CCC6;line-height:1.6">Tap "+ Add a hive" below to get started.</div>
+    </div>
 
     <!-- Add hive button -->
     <button class="btn-full" style="background:var(--forest);color:#fff" onclick="addHive()">+ Add a hive</button>
@@ -1155,17 +1171,23 @@ const PLAN = {
 };
 
 // Hive data model
-const hives = [
-  {id:1, name:'Hive 1', breed:'Italian', status:'Healthy', statusColor:'var(--green)', sub:'Inspected 2 days ago', iconColor:'#EEF5EF', strokeColor:'#5E7A63'},
-  {id:2, name:'Hive 2', breed:'Carniolan', status:'Due soon', statusColor:'#C4974A', sub:'Needs attention · 5 days ago', iconColor:'#FBF3E3', strokeColor:'#C4974A'},
-  {id:3, name:'Hive 3', breed:'Buckfast', status:'Healthy', statusColor:'var(--green)', sub:'Looking good · yesterday', iconColor:'#EEF5EF', strokeColor:'#5E7A63'},
-];
-let nextHiveId = 4;
+const hives = [];
+let nextHiveId = 1;
 
 function renderHiveList(){
   const container = document.getElementById('hiveListContainer');
   if(!container) return;
   container.innerHTML = '';
+  if(hives.length === 0){
+    container.innerHTML = `
+      <div style="text-align:center;padding:24px 16px;background:#F9F7F3;border-radius:16px;border:1.5px dashed #E0DDD6">
+        <div style="font-size:32px;margin-bottom:8px">🐝</div>
+        <div style="font-size:13px;font-weight:600;color:#1A1A1A;margin-bottom:4px">No hives yet</div>
+        <div style="font-size:11px;color:#B7B1A7;line-height:1.6">Add your first hive to start<br>tracking your colony.</div>
+      </div>`;
+    updateCounters();
+    return;
+  }
   hives.forEach(h => {
     const card = document.createElement('div');
     card.className = 'sp-card';
@@ -1190,18 +1212,37 @@ function renderHiveList(){
       </div>`;
     container.appendChild(card);
   });
+  const emptyList = document.getElementById('emptyHiveList');
+  if(emptyList) emptyList.style.display = hives.length === 0 ? 'block' : 'none';
   updateCounters();
 }
 
 function updateCounters(){
   const n = hives.length;
-  const el = document.getElementById('myaHiveCount');
-  if(el) el.textContent = n;
-  const home = document.getElementById('homeHiveCount');
-  if(home) home.textContent = n + (n===1?' hive':' hives');
-  const healthy = hives.filter(h => h.status === 'Healthy').length;
-  const homeHealthy = document.getElementById('homeHealthyCount');
-  if(homeHealthy) homeHealthy.textContent = healthy + ' healthy';
+  const healthy = hives.filter(h=>h.status==='Healthy').length;
+  const due = hives.filter(h=>h.status==='Due soon').length;
+  const hasHives = n > 0;
+  // Stats
+  const sh=document.getElementById('statHives');if(sh)sh.textContent=n;
+  const shl=document.getElementById('statHealthy');if(shl)shl.textContent=healthy;
+  const sd=document.getElementById('statDue');if(sd)sd.textContent=due;
+  // Home card
+  const home=document.getElementById('homeHiveCount');
+  if(home)home.textContent=n+(n===1?' hive':' hives');
+  const hh=document.getElementById('homeHealthyCount');
+  if(hh){hh.textContent=hasHives?healthy+' healthy':'–';hh.style.display=hasHives?'block':'none';}
+  // Apiary detail
+  const myaEl=document.getElementById('myaHiveCount');if(myaEl)myaEl.textContent=n;
+  // Toggle sections
+  const show=id=>{const d=document.getElementById(id);if(d)d.style.display='';};
+  const hide=id=>{const d=document.getElementById(id);if(d)d.style.display='none';};
+  if(hasHives){
+    hide('emptyState');show('harvestCard');show('alertsSection');
+    show('nectarTag');show('timelineSection');show('ctaRow');
+  } else {
+    show('emptyState');hide('harvestCard');hide('alertsSection');
+    hide('nectarTag');hide('timelineSection');hide('ctaRow');
+  }
   updateHiveBadge();
 }
 

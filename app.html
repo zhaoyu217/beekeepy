@@ -1484,8 +1484,25 @@ window.addEventListener('load', function(){
   if(locEl)locEl.textContent=APIARY.location?('📍 '+APIARY.location):'📍 No location set · tap Edit to add';
   const homeSub=document.getElementById('homeApiaryLocation');
   if(homeSub)homeSub.textContent=APIARY.location||'No location set';
-  if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
-  else fetchWeather();
+  if(APIARY.lat&&APIARY.lon){
+    fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
+  } else if(APIARY.location){
+    // Location string saved but lat/lon missing — re-geocode now
+    (async()=>{
+      try{
+        const res=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(APIARY.location)+'&count=1&language=en&format=json');
+        const d=await res.json();
+        if(d.results&&d.results[0]){
+          APIARY.lat=d.results[0].latitude;
+          APIARY.lon=d.results[0].longitude;
+          saveData();
+          fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
+        }
+      }catch(e){ fetchWeather(); }
+    })();
+  } else {
+    fetchWeather();
+  }
   // Force home card update
   const n = hives.length;
   const el = document.getElementById('homeHiveCount');

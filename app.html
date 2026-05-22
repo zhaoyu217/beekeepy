@@ -2486,29 +2486,24 @@ function openSettingsSheet(type){
     var yMonthly = fmtPrice(cur, +(cur.yearly/12).toFixed(2));
     var saving = getYearlySaving();
     html =
-      // Tab switcher
-      '<div style="display:flex;background:#F2EFE9;border-radius:14px;padding:4px;margin-bottom:20px;position:relative">' +
-        '<div id="planTabMonthly" onclick="switchPlanTab(\'monthly\')" style="flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;'+(curPlan==='monthly'?'background:#fff;color:#1A1A1A;box-shadow:0 1px 4px rgba(0,0,0,.08)':'color:#B7B1A7')+'">Monthly</div>' +
-        '<div id="planTabYearly" onclick="switchPlanTab(\'yearly\')" style="flex:1;text-align:center;padding:9px;border-radius:10px;font-size:13px;font-weight:600;cursor:pointer;transition:.2s;position:relative;'+(curPlan==='yearly'?'background:#fff;color:#1A1A1A;box-shadow:0 1px 4px rgba(0,0,0,.08)':'color:#B7B1A7')+'">' +
-          'Yearly' +
-          '<span style="position:absolute;top:-8px;right:6px;font-size:9px;font-weight:700;background:#C79B3B;color:#fff;border-radius:6px;padding:2px 6px">'+saving+'</span>' +
+      // Two cards side by side as selectors — no tab switcher
+      '<div style="display:flex;gap:10px;margin-bottom:20px">' +
+        // Monthly card
+        '<div id="planCardMonthly" onclick="selectPlan(\'monthly\')" style="flex:1;border-radius:16px;padding:16px 12px;cursor:pointer;transition:.2s;border:2px solid '+(curPlan==='monthly'?'#C79B3B':'#EDE8E0')+';background:'+(curPlan==='monthly'?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3')+';text-align:center">' +
+          '<div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:4px">Monthly</div>' +
+          '<div style="font-size:20px;font-weight:800;color:#1A1A1A;letter-spacing:-.5px">'+mPrice+'</div>' +
+          '<div style="font-size:10px;color:#B7B1A7;margin-top:2px">per month</div>' +
+          '<div id="planCheckMonthly" style="margin-top:8px;font-size:10px;font-weight:700;color:#C79B3B;display:'+(curPlan==='monthly'?'block':'none')+'">✓ Selected</div>' +
         '</div>' +
-      '</div>' +
-      // Monthly card
-      '<div id="planCardMonthly" style="border-radius:16px;padding:18px;margin-bottom:10px;cursor:pointer;transition:.2s;border:2px solid '+(curPlan==='monthly'?'#C79B3B':'#EDE8E0')+';background:'+(curPlan==='monthly'?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3')+'" onclick="selectPlan(\'monthly\')">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between">' +
-          '<div><div style="font-size:15px;font-weight:700;color:#1A1A1A">Monthly</div><div style="font-size:12px;color:#7A5C1E;margin-top:2px">Billed every month</div></div>' +
-          '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#1A1A1A">'+mPrice+'</div><div style="font-size:11px;color:#B7B1A7">/ month</div></div>' +
+        // Yearly card
+        '<div id="planCardYearly" onclick="selectPlan(\'yearly\')" style="flex:1;border-radius:16px;padding:16px 12px;cursor:pointer;transition:.2s;border:2px solid '+(curPlan==='yearly'?'#C79B3B':'#EDE8E0')+';background:'+(curPlan==='yearly'?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3')+';text-align:center;position:relative">' +
+          '<div style="position:absolute;top:-10px;left:50%;transform:translateX(-50%);font-size:9px;font-weight:700;background:#C79B3B;color:#fff;border-radius:6px;padding:2px 8px;white-space:nowrap">'+saving+'</div>' +
+          '<div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:4px">Yearly</div>' +
+          '<div style="font-size:20px;font-weight:800;color:#1A1A1A;letter-spacing:-.5px">'+yMonthly+'</div>' +
+          '<div style="font-size:10px;color:#B7B1A7;margin-top:2px">per month</div>' +
+          '<div style="font-size:10px;color:#7A5C1E;margin-top:3px">'+yPrice+' / year</div>' +
+          '<div id="planCheckYearly" style="margin-top:8px;font-size:10px;font-weight:700;color:#C79B3B;display:'+(curPlan==='yearly'?'block':'none')+'">✓ Selected</div>' +
         '</div>' +
-        '<div id="planCheckMonthly" style="margin-top:10px;font-size:11px;font-weight:600;color:#C79B3B;display:'+(curPlan==='monthly'?'block':'none')+'">✓ Current selection</div>' +
-      '</div>' +
-      // Yearly card
-      '<div id="planCardYearly" style="border-radius:16px;padding:18px;margin-bottom:20px;cursor:pointer;transition:.2s;border:2px solid '+(curPlan==='yearly'?'#C79B3B':'#EDE8E0')+';background:'+(curPlan==='yearly'?'linear-gradient(135deg,#FDF0D0,#FAE8B0)':'#F9F7F3')+'" onclick="selectPlan(\'yearly\')">' +
-        '<div style="display:flex;align-items:center;justify-content:space-between">' +
-          '<div><div style="font-size:15px;font-weight:700;color:#1A1A1A">Yearly</div><div style="font-size:12px;color:#7A5C1E;margin-top:2px">'+yPrice+' billed once a year</div></div>' +
-          '<div style="text-align:right"><div style="font-size:22px;font-weight:800;color:#1A1A1A">'+yMonthly+'</div><div style="font-size:11px;color:#B7B1A7">/ month</div></div>' +
-        '</div>' +
-        '<div id="planCheckYearly" style="margin-top:10px;font-size:11px;font-weight:600;color:#C79B3B;display:'+(curPlan==='yearly'?'block':'none')+'">✓ Current selection</div>' +
       '</div>' +
       // Features
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px;padding:0 2px">' +

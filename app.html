@@ -412,36 +412,104 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <svg width="18" height="18" viewBox="0 0 18 18" fill="none" style="cursor:pointer;flex-shrink:0" onclick="editUserName()"><path d="M12 2l4 4-9 9H3v-4L12 2z" stroke="#B7B1A7" stroke-width="1.5" stroke-linejoin="round"/></svg>
   </div>
 
-  <div class="drawer-sec">Apiaries & Hives</div>
-  <div class="drawer-item" onclick="openSub('sap');closeDrawer()">
-    <div class="di-icon">🗺️</div><div class="di-label">Manage apiaries</div><div class="di-arrow">›</div>
+
+  <!-- ① ACCOUNT & SECURITY -->
+  <div class="drawer-sec">Account &amp; Security</div>
+  <div class="drawer-item" onclick="showToast('Profile settings coming soon')">
+    <div class="di-icon">👤</div><div class="di-label">Profile</div><div class="di-val" style="font-size:11px;color:#B7B1A7">james@hivedash.app</div><div class="di-arrow">›</div>
   </div>
+  <div class="drawer-item" onclick="showToast('Security settings: password, 2FA, Face ID')">
+    <div class="di-icon">🔒</div><div class="di-label">Security</div><div class="di-val" style="font-size:11px;color:#5E7A63">2FA on</div><div class="di-arrow">›</div>
+  </div>
+  <div class="drawer-item" onclick="showToast('Preparing your full data export as CSV… download link will be emailed.')">
+    <div class="di-icon">📤</div><div class="di-label">Export data</div><div class="di-val" style="font-size:11px;color:#B7B1A7">CSV / JSON</div><div class="di-arrow">›</div>
+  </div>
+  <div class="drawer-item" onclick="showToast('To delete your account and all data, contact support@hivedash.app — we will process within 48 hours.')">
+    <div class="di-icon">🗑️</div><div class="di-label" style="color:#B83A2A">Delete account</div><div class="di-arrow" style="color:#B83A2A">›</div>
+  </div>
+
+  <!-- ② APP PREFERENCES -->
+  <div class="drawer-sec">Preferences</div>
+  <div class="drawer-item" onclick="showToast('Units settings coming soon')">
+    <div class="di-icon">⚖️</div><div class="di-label">Units</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <div class="unit-pill" style="font-size:11px">
+        <span id="uf" class="on" onclick="event.stopPropagation();setUnit('f',event)">°F</span>
+        <span id="uc" onclick="event.stopPropagation();setUnit('c',event)">°C</span>
+      </div>
+      <div style="width:1px;height:14px;background:#EDE8E0"></div>
+      <div class="unit-pill" style="font-size:11px">
+        <span class="on">lbs</span>
+        <span>kg</span>
+      </div>
+    </div>
+  </div>
+  <div class="drawer-item" onclick="showToast('Language follows your top-bar selection')">
+    <div class="di-icon">🌐</div><div class="di-label">Language &amp; Region</div>
+    <select id="langSelect" onchange="setLanguage(this.value)" style="border:1px solid #EDE8E0;border-radius:10px;padding:4px 8px;font-size:11px;font-family:Inter,sans-serif;background:#F9F7F3;color:#1A1A1A;cursor:pointer;outline:none;max-width:130px">
+      <option value="en-US">🇺🇸 English (US)</option>
+      <option value="en-GB">🇬🇧 English (UK)</option>
+      <option value="en-AU">🇦🇺 English (AU)</option>
+      <option value="en-NZ">🇳🇿 English (NZ)</option>
+      <option value="de">🇩🇪 Deutsch</option>
+      <option value="fr">🇫🇷 Français</option>
+      <option value="it">🇮🇹 Italiano</option>
+      <option value="pt">🇧🇷 Português</option>
+      <option value="ro">🇷🇴 Română</option>
+      <option value="tr">🇹🇷 Türkçe</option>
+    </select>
+  </div>
+  <div class="drawer-item">
+    <div class="di-icon">🌙</div><div class="di-label">Appearance</div>
+    <div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+  </div>
+  <div class="drawer-item" onclick="showToast('IoT device pairing coming soon — pair scales, temperature and humidity sensors.')">
+    <div class="di-icon">📡</div><div class="di-label">Connected devices</div><div class="di-val" style="font-size:11px;color:#B7B1A7">0 paired</div><div class="di-arrow">›</div>
+  </div>
+
+  <!-- ③ NOTIFICATIONS -->
   <div class="drawer-sec">Notifications</div>
   <div class="drawer-item" onclick="openSub('sal');closeDrawer()">
     <div class="di-icon">🔔</div><div class="di-label">Inspection reminders</div><div class="di-val">Every 10 days</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-item" onclick="openSub('sal');closeDrawer()">
-    <div class="di-icon">⛈️</div><div class="di-label">Weather alert settings</div><div class="di-arrow">›</div>
-  </div>
-  <div class="drawer-sec">Data & Security</div>
-  <div class="vault-card">
-    <div class="vault-row"><span class="vault-lbl">Local cache</span><span class="vault-ok">Secure · 12 inspections</span></div>
-    <div class="vault-row"><span class="vault-lbl">Supabase sync</span><span class="vault-ok">100% match ✓</span></div>
-    <div style="margin-top:10px;display:flex;justify-content:flex-end"><button class="vault-btn" onclick="showToast('Preparing your data export… you\'ll get a secure download link.')">Export Vault</button></div>
-  </div>
-  <div class="drawer-sec">Account</div>
-  <div class="drawer-item" onclick="showToast('james@hivedash.app · Pro member')">
-    <div class="di-icon">✉️</div><div class="di-label">james@hivedash.app</div><div class="di-arrow">›</div>
-  </div>
-  <div class="drawer-item" onclick="showToast('You have 340 points · Redeem for Pro features or gear discounts.')">
-    <div class="di-icon">🏆</div><div class="di-label">Points & rewards</div><div class="di-val">340 pts</div><div class="di-arrow">›</div>
+    <div class="di-icon">⛈️</div><div class="di-label">Weather alerts</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-item">
-    <div class="di-icon">🌙</div><div class="di-label">Dark mode</div>
+    <div class="di-icon">📧</div><div class="di-label">Weekly email digest</div>
     <div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
   </div>
-  <div class="drawer-item" onclick="showToast('Signed out. See you next time!')">
-    <div class="di-icon">🚪</div><div class="di-label" style="color:#B83A2A">Sign out</div>
+
+  <!-- ④ SUBSCRIPTION -->
+  <div class="drawer-sec">Subscription &amp; Billing</div>
+  <div class="drawer-item" style="background:#FBF5E6;border-radius:12px;margin:0 12px" onclick="showToast('You are on the Pro plan — unlimited hives, priority support.')">
+    <div class="di-icon">⭐</div><div class="di-label" style="color:#7A5C1E">Pro plan · Active</div><div class="di-val" style="color:#C79B3B;font-weight:600">$9.99/mo</div><div class="di-arrow">›</div>
+  </div>
+  <div class="drawer-item" onclick="showToast('Opening subscription management in App Store…')">
+    <div class="di-icon">💳</div><div class="di-label">Manage subscription</div><div class="di-arrow">›</div>
+  </div>
+  <div class="drawer-item" onclick="showToast('Billing history coming soon')">
+    <div class="di-icon">🧾</div><div class="di-label">Billing history</div><div class="di-arrow">›</div>
+  </div>
+
+  <!-- ⑤ SUPPORT & ABOUT -->
+  <div class="drawer-sec">Support &amp; About</div>
+  <div class="drawer-item" onclick="showToast('Opening Help Center…')">
+    <div class="di-icon">❓</div><div class="di-label">Help Center / FAQs</div><div class="di-arrow">›</div>
+  </div>
+  <div class="drawer-item" onclick="showToast('Opening feedback form…')">
+    <div class="di-icon">💬</div><div class="di-label">Contact support</div><div class="di-arrow">›</div>
+  </div>
+  <div class="drawer-item" onclick="showToast('Terms of Service and Privacy Policy')">
+    <div class="di-icon">📄</div><div class="di-label">Legal</div><div class="di-arrow">›</div>
+  </div>
+  <div class="drawer-item">
+    <div class="di-icon">ℹ️</div><div class="di-label" style="color:#B7B1A7">Version 2.4.0 (Build 42)</div>
+  </div>
+
+  <!-- SIGN OUT -->
+  <div style="padding:20px 20px 8px">
+    <button style="width:100%;padding:13px;border-radius:14px;border:1px solid #F5C1C1;background:#FDECEA;font-size:13px;font-weight:600;color:#B83A2A;cursor:pointer;font-family:Inter,sans-serif" onclick="showToast('Signed out. See you next time!')">Sign out</button>
   </div>
 </div>
 

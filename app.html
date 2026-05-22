@@ -1272,7 +1272,7 @@ function deleteHarvestRecord(id){
 var _harvestNextId=1;
 function openRecordHarvest(){
   var hivesAll=[];
-  APIARIES.forEach(function(a){ a.hives.forEach(function(h){ hivesAll.push({id:h.id,name:h.name+' · '+h.breed,apiaryId:a.id}); }); });
+  APIARIES.forEach(function(a){ a.hives.forEach(function(h){ hivesAll.push({id:h.id,name:h.name+(h.breed?' · '+h.breed:''),apiaryId:a.id}); }); });
   if(hivesAll.length===0){ showToast('Add a hive first before recording a harvest'); return; }
   var ov=document.getElementById('recordHarvestOv'); if(ov)ov.remove();
   ov=document.createElement('div'); ov.id='recordHarvestOv';
@@ -1322,7 +1322,7 @@ function saveHarvestRecord(){
   if(!weight||weight<=0){ errEl.textContent='Please enter a valid weight.'; errEl.style.display='block'; return; }
   // Find hive name
   var hiveName='Unknown hive';
-  APIARIES.forEach(function(a){ a.hives.forEach(function(h){ if(h.id===hiveId) hiveName=h.name+' · '+h.breed; }); });
+  APIARIES.forEach(function(a){ a.hives.forEach(function(h){ if(h.id===hiveId) hiveName=h.name+(h.breed?' · '+h.breed:''); }); });
   var now=new Date();
   var dateStr=now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
   HARVEST.records.push({ id:_harvestNextId++, hiveId:hiveId, hiveName:hiveName, weight:weight, unit:unit, nectar:nectar, quality:quality, date:now.getTime(), dateStr:dateStr });

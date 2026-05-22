@@ -460,19 +460,19 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       <div style="font-size:10px;font-weight:600;color:#B7935A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Season harvest · 2025</div>
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px">
         <div>
-          <span style="font-size:42px;font-weight:700;color:#4A3000;letter-spacing:-2px;line-height:1">41</span>
-          <span style="font-size:16px;color:#B7935A;margin-left:4px">lbs</span>
+          <span style="font-size:42px;font-weight:700;color:#4A3000;letter-spacing:-2px;line-height:1" id="harvestHeroTotal">41</span>
+          <span style="font-size:16px;color:#B7935A;margin-left:4px" id="harvestHeroUnit">lbs</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:13px;font-weight:700;color:var(--honey)">74%</div>
+          <div style="font-size:13px;font-weight:700;color:var(--honey)" id="harvestHeroPct">74%</div>
           <div style="font-size:10px;color:#B7935A;margin-top:2px">of goal</div>
         </div>
       </div>
       <div style="background:rgba(180,130,40,.2);border-radius:20px;height:6px;overflow:hidden;margin-bottom:6px">
-        <div style="background:var(--honey);height:6px;border-radius:20px;width:74%"></div>
+        <div style="background:var(--honey);height:6px;border-radius:20px;width:74%" id="harvestHeroBar"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:#B7935A">
-        <span>0 lbs</span><span>Goal: 55 lbs</span>
+        <span>0 <span id="harvestHeroUnit2">lbs</span></span><span id="harvestHeroGoal">Goal: 55 lbs</span>
       </div>
     </div>
 
@@ -1106,6 +1106,7 @@ document.getElementById('greet').innerHTML=(hr<12?'Good morning':hr<17?'Good aft
 const RAW={wF:78,wC:26,h2sF:'Needs attention · 5 days ago',h2sC:'Needs attention · 5 days ago',h3sF:'Looking good · yesterday',h3sC:'Looking good · yesterday',hvLbs:41,hvKg:18.6,hgLbs:55,hgKg:25};
 let isF=(localStorage.getItem('hd_unit')||'f')==='f';
 function applyUnit(){
+  updateHarvestUI();
   const f=isF;
   document.getElementById('uf').className=f?'on':'';document.getElementById('uc').className=f?'':'on';
   document.getElementById('duf').style.cssText=f?'padding:5px 12px;background:#C79B3B;color:#fff;border-radius:20px;cursor:pointer':'padding:5px 12px;color:#aaa;cursor:pointer';
@@ -1122,6 +1123,30 @@ function applyUnit(){
 function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 applyUnit();
+
+/* ── HARVEST DATA ── */
+const HARVEST = {
+  totalLbs: 41, totalKg: 18.6,
+  goalLbs: 55, goalKg: 25,
+  pct: 74,
+};
+function updateHarvestUI(){
+  const f=isF;
+  const total=f?HARVEST.totalLbs:HARVEST.totalKg;
+  const goal=f?HARVEST.goalLbs:HARVEST.goalKg;
+  const unit=f?'lbs':'kg';
+  const pct=HARVEST.pct;
+  const hv=document.getElementById('hv');if(hv)hv.textContent=total;
+  const hu=document.getElementById('hu');if(hu)hu.textContent=unit;
+  const hu2=document.getElementById('hu2');if(hu2)hu2.textContent=unit;
+  const hg=document.getElementById('hg');if(hg)hg.textContent=goal;
+  const hu3=document.getElementById('hu3');if(hu3)hu3.textContent=unit;
+  const ht=document.getElementById('harvestHeroTotal');if(ht)ht.textContent=total;
+  const hu4=document.getElementById('harvestHeroUnit');if(hu4)hu4.textContent=unit;
+  const hgoal=document.getElementById('harvestHeroGoal');if(hgoal)hgoal.textContent='Goal: '+goal+' '+unit;
+  const hpct=document.getElementById('harvestHeroPct');if(hpct)hpct.textContent=pct+'%';
+  const hbar=document.getElementById('harvestHeroBar');if(hbar)hbar.style.width=pct+'%';
+}
 
 /* ── MEMBERSHIP & HIVE SYSTEM ── */
 const PLAN = {

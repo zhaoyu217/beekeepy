@@ -502,8 +502,13 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
   <div class="drawer-item" onclick="openSub('sap');closeDrawer()">
     <div class="di-icon">🗺️</div><div class="di-label">Manage apiaries</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('Manage your hives — add, rename, or archive.')">
-    <div class="di-icon">📦</div><div class="di-label">Manage hives</div><div class="di-arrow">›</div>
+  <div class="drawer-item" onclick="closeDrawer();addHive()">
+    <div class="di-icon">📦</div>
+    <div class="di-label">Manage hives</div>
+    <div style="display:flex;align-items:center;gap:6px">
+      <span id="hiveLimitBadge" style="font-size:10px;color:#B7B1A7">3 / ∞</span>
+      <div class="di-arrow">›</div>
+    </div>
   </div>
   <div class="drawer-sec">Notifications</div>
   <div class="drawer-item" onclick="openSub('sal');closeDrawer()">
@@ -1075,10 +1080,77 @@ function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');apply
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 applyUnit();
 
+/* ── MEMBERSHIP & HIVE LIMIT ── */
+const PLAN = {
+  isPro: true,          // true = Pro (unlimited), false = Free (max 3)
+  freeLimit: 3,
+};
+let hiveCount = 3;     // current hive count (James has 3)
+
+function updateHiveBadge(){
+  const badge = document.getElementById('hiveLimitBadge');
+  if(!badge) return;
+  badge.textContent = PLAN.isPro ? hiveCount + ' / ∞' : hiveCount + ' / ' + PLAN.freeLimit;
+  badge.style.color = (!PLAN.isPro && hiveCount >= PLAN.freeLimit) ? '#B83A2A' : '#B7B1A7';
+}
+
+function addHive(){
+  if(!PLAN.isPro && hiveCount >= PLAN.freeLimit){
+    // 触发升级弹窗
+    showUpgradePrompt();
+    return;
+  }
+  hiveCount++;
+  updateHiveBadge();
+  showToast('New hive added! You now have ' + hiveCount + ' hives.');
+}
+
+function showUpgradePrompt(){
+  // 创建升级弹窗覆盖层
+  let ov = document.getElementById('upgradeOv');
+  if(!ov){
+    ov = document.createElement('div');
+    ov.id = 'upgradeOv';
+    ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;padding:0';
+    ov.innerHTML = `
+      <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%">
+        <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 20px"></div>
+        <div style="font-size:22px;text-align:center;margin-bottom:12px">🍯</div>
+        <div style="font-size:18px;font-weight:700;color:#1A1A1A;text-align:center;letter-spacing:-.4px;margin-bottom:8px">You've reached 3 hives</div>
+        <div style="font-size:13px;color:#B7B1A7;text-align:center;line-height:1.6;margin-bottom:24px">Free plan includes up to 3 hives.<br>Upgrade to Pro for unlimited hives, advanced insights, and more.</div>
+        <div style="background:#FAF8F3;border:1px solid #EDE8E0;border-radius:16px;padding:14px 16px;margin-bottom:16px">
+          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+            <div style="font-size:13px;font-weight:600;color:#1A1A1A">HiveDash Pro</div>
+            <div style="font-size:13px;font-weight:700;color:var(--honey)">$4.99 / mo</div>
+          </div>
+          <div style="font-size:11px;color:#B7B1A7;line-height:1.7">✓ Unlimited hives &nbsp;·&nbsp; ✓ Advanced insights<br>✓ Varroa radar &nbsp;·&nbsp; ✓ PDF export &nbsp;·&nbsp; ✓ Priority support</div>
+        </div>
+        <button style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--honey);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:10px" onclick="upgradeToPro()">Upgrade to Pro →</button>
+        <button style="width:100%;padding:12px;border-radius:14px;border:1px solid #EDE8E0;background:#fff;color:#B7B1A7;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('upgradeOv').remove()">Maybe later</button>
+      </div>`;
+    ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+    document.querySelector('.shell').appendChild(ov);
+  }
+}
+
+function upgradeToPro(){
+  PLAN.isPro = true;
+  document.getElementById('upgradeOv').remove();
+  updateHiveBadge();
+  const sub = document.getElementById('drawer-sub');
+  if(sub) sub.textContent = 'James · Pro member';
+  showToast('Welcome to Pro! You can now add unlimited hives. 🎉');
+}
+
+// Init badge on load
+document.addEventListener('DOMContentLoaded', updateHiveBadge);
+
 /* DELETE HIVE */
 function confirmDeleteHive(){
   const confirmed=window.confirm('Remove Hive 1 · Italian?\n\nAll inspection records and photos will be permanently deleted. This cannot be undone.');
   if(confirmed){
+    hiveCount = Math.max(0, hiveCount - 1);
+    updateHiveBadge();
     closeSub('shd');
     showToast('Hive 1 removed. Your other hives are unchanged.');
   }

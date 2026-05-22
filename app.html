@@ -544,81 +544,53 @@ body.bright *{-webkit-font-smoothing:auto}
   <div class="sub-hd">
     <div class="back" onclick="closeSub('harvestPage');setNav(0)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="sub-title">Harvest</div>
-    <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer;margin-left:auto" onclick="showToast('Record a new harvest entry')">+ Record</div>
+    <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer;margin-left:auto" onclick="openRecordHarvest()">+ Record</div>
   </div>
   <div class="sp">
 
     <!-- Season hero -->
     <div class="sp-card" style="background:linear-gradient(135deg,#FDF6E3,#F9ECC8);border-color:#E8CC88;padding:20px">
-      <div style="font-size:10px;font-weight:600;color:#B7935A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Season harvest · 2025</div>
+      <div style="font-size:10px;font-weight:600;color:#B7935A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Season harvest · <span id="harvestYear">2026</span></div>
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px">
         <div>
-          <span style="font-size:42px;font-weight:700;color:#4A3000;letter-spacing:-2px;line-height:1" id="harvestHeroTotal">41</span>
+          <span style="font-size:42px;font-weight:700;color:#4A3000;letter-spacing:-2px;line-height:1" id="harvestHeroTotal">0</span>
           <span style="font-size:16px;color:#B7935A;margin-left:4px" id="harvestHeroUnit">lbs</span>
         </div>
         <div style="text-align:right">
-          <div style="font-size:13px;font-weight:700;color:var(--honey)" id="harvestHeroPct">74%</div>
+          <div style="font-size:13px;font-weight:700;color:var(--honey)" id="harvestHeroPct">0%</div>
           <div style="font-size:10px;color:#B7935A;margin-top:2px">of goal</div>
         </div>
       </div>
       <div style="background:rgba(180,130,40,.2);border-radius:20px;height:6px;overflow:hidden;margin-bottom:6px">
-        <div style="background:var(--honey);height:6px;border-radius:20px;width:74%" id="harvestHeroBar"></div>
+        <div style="background:var(--honey);height:6px;border-radius:20px;width:0%" id="harvestHeroBar"></div>
       </div>
       <div style="display:flex;justify-content:space-between;font-size:10px;color:#B7935A">
         <span>0 <span id="harvestHeroUnit2">lbs</span></span><span id="harvestHeroGoal">Goal: 55 lbs</span>
+      </div>
+      <!-- Goal edit -->
+      <div style="margin-top:12px;display:flex;align-items:center;justify-content:flex-end;gap:6px">
+        <span style="font-size:10px;color:#B7935A">Season goal:</span>
+        <div style="display:flex;align-items:center;gap:0;background:rgba(180,130,40,.15);border-radius:8px;overflow:hidden">
+          <button onclick="changeHarvestGoal(-5)" style="width:28px;height:24px;border:none;background:transparent;font-size:14px;color:#C79B3B;cursor:pointer;font-weight:600">−</button>
+          <span id="harvestGoalDisplay" style="font-size:11px;font-weight:700;color:#4A3000;min-width:44px;text-align:center">55 lbs</span>
+          <button onclick="changeHarvestGoal(5)" style="width:28px;height:24px;border:none;background:transparent;font-size:14px;color:#C79B3B;cursor:pointer;font-weight:600">+</button>
+        </div>
       </div>
     </div>
 
     <!-- Per hive breakdown -->
     <div class="sp-card">
       <div class="sp-lbl">Harvest by hive</div>
-      <div class="sp-row" style="padding:12px 0">
-        <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <div style="width:32px;height:32px;border-radius:10px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg></div>
-          <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Hive 1 · Italian</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">Clover · Last harvest May 18</div></div>
-        </div>
-        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1A1A1A">18 lbs</div><div style="font-size:10px;color:var(--green);margin-top:1px">Excellent</div></div>
-      </div>
-      <div class="sp-row" style="padding:12px 0">
-        <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <div style="width:32px;height:32px;border-radius:10px;background:#FBF3E3;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#C4974A" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg></div>
-          <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Hive 2 · Carniolan</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">Wildflower · Last harvest May 10</div></div>
-        </div>
-        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1A1A1A">14 lbs</div><div style="font-size:10px;color:#C4974A;margin-top:1px">Good</div></div>
-      </div>
-      <div class="sp-row" style="padding:12px 0">
-        <div style="display:flex;align-items:center;gap:10px;flex:1">
-          <div style="width:32px;height:32px;border-radius:10px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg></div>
-          <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Hive 3 · Buckfast</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">Lavender · Last harvest May 5</div></div>
-        </div>
-        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1A1A1A">9 lbs</div><div style="font-size:10px;color:var(--green);margin-top:1px">Good</div></div>
-      </div>
+      <div id="harvestByHive"><div style="font-size:12px;color:#B7B1A7;padding:12px 0;text-align:center">No harvests recorded yet</div></div>
     </div>
 
-    <!-- Treatment buffer -->
-    <div class="sp-card" style="background:#FBF3E3;border-color:#E8D4A0">
-      <div style="font-size:11px;font-weight:600;color:#7A5C1E;margin-bottom:5px">⚠️ Treatment buffer · Hive 2</div>
-      <div style="font-size:12px;color:#7A5C1E;line-height:1.7">OA Vapor applied May 14. Safe to harvest after <strong style="font-weight:700">May 28</strong> · 6 days remaining.</div>
-    </div>
-
-    <!-- History -->
+    <!-- Recent harvests history -->
     <div class="sp-card">
       <div class="sp-lbl">Recent harvests</div>
-      <div class="sp-row" style="padding:11px 0">
-        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">🍯 18 lbs · Clover</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">May 18 · Hive 1 · Excellent</div></div>
-        <div style="font-size:11px;color:var(--honey);font-weight:600;cursor:pointer" onclick="showToast('Sharing harvest summary…')">Share →</div>
-      </div>
-      <div class="sp-row" style="padding:11px 0">
-        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">🍯 14 lbs · Wildflower</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">May 10 · Hive 2 · Good</div></div>
-        <div style="font-size:11px;color:var(--honey);font-weight:600;cursor:pointer" onclick="showToast('Sharing harvest summary…')">Share →</div>
-      </div>
-      <div class="sp-row" style="padding:11px 0">
-        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">🍯 9 lbs · Lavender</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">May 5 · Hive 3 · Good</div></div>
-        <div style="font-size:11px;color:var(--honey);font-weight:600;cursor:pointer" onclick="showToast('Sharing harvest summary…')">Share →</div>
-      </div>
+      <div id="harvestHistory"><div style="font-size:12px;color:#B7B1A7;padding:12px 0;text-align:center">No harvests recorded yet</div></div>
     </div>
 
-    <button class="btn-full" style="background:var(--honey);color:#fff" onclick="showToast('Select a hive and enter your harvest weight to record.')">+ Record new harvest</button>
+    <button class="btn-full" style="background:var(--honey);color:#fff" onclick="openRecordHarvest()">+ Record new harvest</button>
 
   </div>
 </div>
@@ -1206,26 +1178,157 @@ function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem(
 
 /* ── HARVEST DATA ── */
 var HARVEST = {
-  totalLbs: 41, totalKg: 18.6,
-  goalLbs: 55, goalKg: 25,
-  pct: 74,
+  records: [],          // { id, hiveId, hiveName, weight, unit, nectar, quality, date, dateStr }
+  goalLbs: 55,
+  goalKg: 25,
 };
+function harvestTotalLbs(){
+  return HARVEST.records.reduce(function(s,r){ return s + (r.unit==='lbs' ? r.weight : r.weight*2.205); }, 0);
+}
+function harvestTotalKg(){
+  return HARVEST.records.reduce(function(s,r){ return s + (r.unit==='kg' ? r.weight : r.weight/2.205); }, 0);
+}
 function updateHarvestUI(){
-  const f=isF;
-  const total=f?HARVEST.totalLbs:HARVEST.totalKg;
-  const goal=f?HARVEST.goalLbs:HARVEST.goalKg;
-  const unit=f?'lbs':'kg';
-  const pct=HARVEST.pct;
-  const hv=document.getElementById('hv');if(hv)hv.textContent=total;
-  const hu=document.getElementById('hu');if(hu)hu.textContent=unit;
-  const hu2=document.getElementById('hu2');if(hu2)hu2.textContent=unit;
-  const hg=document.getElementById('hg');if(hg)hg.textContent=goal;
-  const hu3=document.getElementById('hu3');if(hu3)hu3.textContent=unit;
-  const ht=document.getElementById('harvestHeroTotal');if(ht)ht.textContent=total;
-  const hu4=document.getElementById('harvestHeroUnit');if(hu4)hu4.textContent=unit;
-  const hgoal=document.getElementById('harvestHeroGoal');if(hgoal)hgoal.textContent='Goal: '+goal+' '+unit;
-  const hpct=document.getElementById('harvestHeroPct');if(hpct)hpct.textContent=pct+'%';
-  const hbar=document.getElementById('harvestHeroBar');if(hbar)hbar.style.width=pct+'%';
+  var f = isF;
+  var total = f ? harvestTotalLbs() : harvestTotalKg();
+  var goal  = f ? HARVEST.goalLbs : HARVEST.goalKg;
+  var unit  = f ? 'lbs' : 'kg';
+  var pct   = goal > 0 ? Math.min(100, Math.round(total/goal*100)) : 0;
+  var totalRound = Math.round(total*10)/10;
+
+  // Home card
+  var hv=document.getElementById('hv');if(hv)hv.textContent=totalRound;
+  var hu=document.getElementById('hu');if(hu)hu.textContent=unit;
+  var hu2=document.getElementById('hu2');if(hu2)hu2.textContent=unit;
+  var hg=document.getElementById('hg');if(hg)hg.textContent=goal;
+  var hu3=document.getElementById('hu3');if(hu3)hu3.textContent=unit;
+  var hpctHome=document.getElementById('harvestPct');if(hpctHome)hpctHome.textContent=pct+'%';
+  var hbarHome=document.getElementById('harvestBar');if(hbarHome)hbarHome.style.width=pct+'%';
+
+  // Harvest page hero
+  var ht=document.getElementById('harvestHeroTotal');if(ht)ht.textContent=totalRound;
+  var hu4=document.getElementById('harvestHeroUnit');if(hu4)hu4.textContent=unit;
+  var hu5=document.getElementById('harvestHeroUnit2');if(hu5)hu5.textContent=unit;
+  var hgoal=document.getElementById('harvestHeroGoal');if(hgoal)hgoal.textContent='Goal: '+goal+' '+unit;
+  var hpct=document.getElementById('harvestHeroPct');if(hpct)hpct.textContent=pct+'%';
+  var hbar=document.getElementById('harvestHeroBar');if(hbar)hbar.style.width=pct+'%';
+  var hyd=document.getElementById('harvestYear');if(hyd)hyd.textContent=new Date().getFullYear();
+  var hgd=document.getElementById('harvestGoalDisplay');if(hgd)hgd.textContent=goal+' '+unit;
+
+  renderHarvestByHive();
+  renderHarvestHistory();
+}
+function changeHarvestGoal(delta){
+  var f=isF;
+  if(f){ HARVEST.goalLbs=Math.max(5,HARVEST.goalLbs+delta); }
+  else { HARVEST.goalKg=Math.max(2,HARVEST.goalKg+delta); }
+  updateHarvestUI();
+}
+function renderHarvestByHive(){
+  var container=document.getElementById('harvestByHive'); if(!container)return;
+  var f=isF; var unit=f?'lbs':'kg';
+  // Aggregate by hive
+  var byHive={};
+  HARVEST.records.forEach(function(r){
+    if(!byHive[r.hiveId]) byHive[r.hiveId]={name:r.hiveName,total:0,last:null,lastDate:null,quality:r.quality};
+    var w=f?(r.unit==='lbs'?r.weight:r.weight*2.205):(r.unit==='kg'?r.weight:r.weight/2.205);
+    byHive[r.hiveId].total+=w;
+    if(!byHive[r.hiveId].lastDate||r.date>byHive[r.hiveId].lastDate){
+      byHive[r.hiveId].lastDate=r.date; byHive[r.hiveId].last=r.dateStr; byHive[r.hiveId].nectar=r.nectar; byHive[r.hiveId].quality=r.quality;
+    }
+  });
+  var keys=Object.keys(byHive);
+  if(keys.length===0){ container.innerHTML='<div style="font-size:12px;color:#B7B1A7;padding:12px 0;text-align:center">No harvests recorded yet</div>'; return; }
+  var qualColor={'Excellent':'#5E7A63','Good':'#C4974A','Fair':'#B7B1A7'};
+  container.innerHTML=keys.map(function(id){
+    var h=byHive[id]; var tot=Math.round(h.total*10)/10;
+    return '<div class="sp-row" style="padding:12px 0">'+
+      '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:#1A1A1A">'+h.name+'</div>'+
+      '<div style="font-size:10px;color:#B7B1A7;margin-top:1px">'+(h.nectar||'')+(h.last?' · Last harvest '+h.last:'')+'</div></div>'+
+      '<div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1A1A1A">'+tot+' '+unit+'</div>'+
+      '<div style="font-size:10px;color:'+(qualColor[h.quality]||'#B7B1A7')+';margin-top:1px">'+h.quality+'</div></div></div>';
+  }).join('');
+}
+function renderHarvestHistory(){
+  var container=document.getElementById('harvestHistory'); if(!container)return;
+  var f=isF; var unit=f?'lbs':'kg';
+  if(HARVEST.records.length===0){ container.innerHTML='<div style="font-size:12px;color:#B7B1A7;padding:12px 0;text-align:center">No harvests recorded yet</div>'; return; }
+  var sorted=HARVEST.records.slice().sort(function(a,b){return b.date-a.date;});
+  container.innerHTML=sorted.map(function(r){
+    var w=f?(r.unit==='lbs'?r.weight:r.weight*2.205):(r.unit==='kg'?r.weight:r.weight/2.205);
+    var wRound=Math.round(w*10)/10;
+    return '<div class="sp-row" style="padding:11px 0">'+
+      '<div><div style="font-size:12px;font-weight:600;color:#1A1A1A">🍯 '+wRound+' '+unit+(r.nectar?' · '+r.nectar:'')+'</div>'+
+      '<div style="font-size:10px;color:#B7B1A7;margin-top:1px">'+r.dateStr+' · '+r.hiveName+' · '+r.quality+'</div></div>'+
+      '<div style="display:flex;gap:10px;align-items:center">'+
+      '<div style="font-size:11px;color:var(--honey);font-weight:600;cursor:pointer" onclick="deleteHarvestRecord('+r.id+')">🗑</div></div></div>';
+  }).join('');
+}
+function deleteHarvestRecord(id){
+  HARVEST.records=HARVEST.records.filter(function(r){return r.id!==id;});
+  updateHarvestUI();
+  showToast('Harvest record deleted');
+}
+var _harvestNextId=1;
+function openRecordHarvest(){
+  var hivesAll=[];
+  APIARIES.forEach(function(a){ a.hives.forEach(function(h){ hivesAll.push({id:h.id,name:h.name+' · '+h.breed,apiaryId:a.id}); }); });
+  if(hivesAll.length===0){ showToast('Add a hive first before recording a harvest'); return; }
+  var ov=document.getElementById('recordHarvestOv'); if(ov)ov.remove();
+  ov=document.createElement('div'); ov.id='recordHarvestOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
+  var hiveOptions=hivesAll.map(function(h){return '<option value="'+h.id+'">'+h.name+'</option>';}).join('');
+  ov.innerHTML='<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px;max-height:85vh;overflow-y:auto">'+
+    '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>'+
+    '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px">Record harvest</div>'+
+    '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Hive</div>'+
+    '<select id="rhHive" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">'+hiveOptions+'</select></div>'+
+    '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Weight</div>'+
+    '<div style="display:flex;gap:8px">'+
+    '<input id="rhWeight" type="number" min="0.1" step="0.1" placeholder="0.0" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">'+
+    '<select id="rhUnit" style="padding:11px 12px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;cursor:pointer"><option value="lbs"'+(isF?' selected':'')+'>lbs</option><option value="kg"'+(!isF?' selected':'')+'>kg</option></select></div></div>'+
+    '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Nectar source (optional)</div>'+
+    '<input id="rhNectar" placeholder="e.g. Clover, Wildflower, Lavender" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'"></div>'+
+    '<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Quality</div>'+
+    '<div style="display:flex;gap:8px">'+
+    ['Excellent','Good','Fair'].map(function(q){return '<div onclick="selectHarvestQuality(this,\''+q+'\')" style="flex:1;padding:9px;border-radius:10px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:12px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center">'+q+'</div>';}).join('')+
+    '</div></div>'+
+    '<div id="rhErr" style="font-size:11px;color:#B83A2A;margin-bottom:8px;display:none"></div>'+
+    '<div style="display:flex;gap:10px">'+
+    '<button onclick="document.getElementById(\'recordHarvestOv\').remove()" style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif">Cancel</button>'+
+    '<button onclick="saveHarvestRecord()" style="flex:2;padding:13px;border-radius:13px;border:none;background:#C79B3B;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Save harvest</button>'+
+    '</div></div>';
+  document.body.appendChild(ov);
+  // Pre-select Good quality
+  setTimeout(function(){ var btns=document.querySelectorAll('[onclick*="selectHarvestQuality"]'); if(btns[1])btns[1].click(); },50);
+}
+function selectHarvestQuality(el,q){
+  document.querySelectorAll('[onclick*="selectHarvestQuality"]').forEach(function(b){
+    b.style.background='#F9F7F3'; b.style.color='#B7B1A7'; b.style.borderColor='#EDE8E0';
+  });
+  el.style.background='#FBF5E6'; el.style.color='#7A5C1E'; el.style.borderColor='#C79B3B';
+  el.setAttribute('data-selected','1');
+  document.getElementById('recordHarvestOv')._quality=q;
+}
+function saveHarvestRecord(){
+  var ov=document.getElementById('recordHarvestOv');
+  var hiveId=parseInt(document.getElementById('rhHive').value);
+  var weight=parseFloat(document.getElementById('rhWeight').value);
+  var unit=document.getElementById('rhUnit').value;
+  var nectar=(document.getElementById('rhNectar').value||'').trim();
+  var quality=ov._quality||'Good';
+  var errEl=document.getElementById('rhErr');
+  if(!weight||weight<=0){ errEl.textContent='Please enter a valid weight.'; errEl.style.display='block'; return; }
+  // Find hive name
+  var hiveName='Unknown hive';
+  APIARIES.forEach(function(a){ a.hives.forEach(function(h){ if(h.id===hiveId) hiveName=h.name+' · '+h.breed; }); });
+  var now=new Date();
+  var dateStr=now.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+  HARVEST.records.push({ id:_harvestNextId++, hiveId:hiveId, hiveName:hiveName, weight:weight, unit:unit, nectar:nectar, quality:quality, date:now.getTime(), dateStr:dateStr });
+  ov.remove();
+  updateHarvestUI();
+  showToast('Harvest recorded · '+weight+' '+unit+' ✓');
 }
 
 // Multi-apiary data model
@@ -1368,6 +1471,9 @@ function updateCounters(){
   const due = hives.filter(h=>h.status==='Due soon').length;
   const hasHives = n > 0;
   const hasApiaries = APIARIES.length > 0;
+  // Total hives across ALL apiaries (for home page content visibility)
+  const totalHivesAllApiaries = APIARIES.reduce(function(sum,a){ return sum + a.hives.length; }, 0);
+  const anyHivesExist = totalHivesAllApiaries > 0;
   // Stats
   const sh=document.getElementById('statHives');if(sh)sh.textContent=n;
   const shl=document.getElementById('statHealthy');if(shl)shl.textContent=healthy;
@@ -1382,8 +1488,8 @@ function updateCounters(){
   const show=id=>{const d=document.getElementById(id);if(d)d.style.display='';};
   const hide=id=>{const d=document.getElementById(id);if(d)d.style.display='none';};
   if(hasApiaries){ hide('emptyState'); } else { show('emptyState'); }
-  if(hasApiaries && !hasHives && APIARIES.length === 1){ show('addHiveGuide'); } else { hide('addHiveGuide'); }
-  if(hasHives){
+  if(hasApiaries && !anyHivesExist && APIARIES.length === 1){ show('addHiveGuide'); } else { hide('addHiveGuide'); }
+  if(anyHivesExist){
     show('harvestCard');show('alertsSection');
     show('nectarTag');show('timelineSection');show('ctaRow');
   } else {

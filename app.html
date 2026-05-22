@@ -586,7 +586,10 @@ window.onerror=function(msg,src,line,col,err){ dbg('ERROR line '+line+': '+msg);
   <div class="sub-hd">
     <div class="back" onclick="closeSub('smya')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
     <div class="sub-title" id="smyaTitle">My Apiary</div>
-    <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer;margin-left:auto" onclick="editApiary()">Edit</div>
+    <div style="display:flex;align-items:center;gap:12px;margin-left:auto">
+      <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer" onclick="addApiary()">+ Add</div>
+      <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer" onclick="editApiary()">Edit</div>
+    </div>
   </div>
   <div class="sp">
 
@@ -873,7 +876,6 @@ window.onerror=function(msg,src,line,col,err){ dbg('ERROR line '+line+': '+msg);
     <!-- Apiaries list -->
     <!-- Apiaries list — dynamic -->
     <div id="apiariesListContainer"></div>
-    <button class="btn-full" style="background:#F9F7F3;color:#5A5550;border:1px solid #EDE8E0;margin-top:4px" onclick="addApiary()">+ Add new apiary</button>
 
   </div>
 </div>
@@ -1615,6 +1617,12 @@ function renderApiariesList(){
     }
     card.appendChild(row);
   });
+  // Add "+" row at bottom of list
+  var addRow = document.createElement('div');
+  addRow.style.cssText = 'padding:12px 0;display:flex;align-items:center;gap:10px;cursor:pointer;border-top:1px solid #F2EFE9;margin-top:4px';
+  addRow.innerHTML = '<div style="width:38px;height:38px;border-radius:12px;background:#F5F4F2;border:1px dashed #D0CCC6;display:flex;align-items:center;justify-content:center;font-size:20px;flex-shrink:0;color:#B7B1A7">+</div><div style="font-size:13px;font-weight:600;color:#C79B3B">Add new apiary</div>';
+  addRow.onclick = function(){ addApiary(); };
+  card.appendChild(addRow);
   container.appendChild(card);
 }
 

@@ -2520,20 +2520,19 @@ function openSettingsSheet(type){
       '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
   } else if(type==='billing'){
     title = 'Billing History';
-    var cur = getCurrency();
-    var planType = USER.planType || 'monthly';
-    var isYearly = planType === 'yearly';
-    var planLabel = isYearly ? 'Pro Plan · Yearly' : 'Pro Plan · Monthly';
-    var price = isYearly ? fmtPrice(cur, cur.yearly) : fmtPrice(cur, cur.monthly);
-    var dates = isYearly
-      ? [['May 1, 2026', planLabel, price], ['May 1, 2025', planLabel, price]]
-      : [['May 1, 2026', planLabel, price], ['Apr 1, 2026', planLabel, price], ['Mar 1, 2026', planLabel, price]];
+    var records = USER.billingHistory && USER.billingHistory.length > 0
+      ? USER.billingHistory
+      : null;
     html = '<div style="display:flex;flex-direction:column;gap:0;margin-bottom:20px;border:1px solid #EDE8E0;border-radius:14px;overflow:hidden">';
-    dates.forEach(function(r){
-      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #F5F2EE">' +
-        '<div><div style="font-size:13px;font-weight:500;color:#1A1A1A">'+r[1]+'</div><div style="font-size:11px;color:#B7B1A7;margin-top:1px">'+r[0]+'</div></div>' +
-        '<div style="font-size:13px;font-weight:600;color:#1A1A1A">'+r[2]+'</div></div>';
-    });
+    if(records){
+      records.forEach(function(r){
+        html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #F5F2EE">' +
+          '<div><div style="font-size:13px;font-weight:500;color:#1A1A1A">'+r.label+'</div><div style="font-size:11px;color:#B7B1A7;margin-top:1px">'+r.date+'</div></div>' +
+          '<div style="font-size:13px;font-weight:600;color:#1A1A1A">'+r.amount+'</div></div>';
+      });
+    } else {
+      html += '<div style="padding:24px;text-align:center;color:#B7B1A7;font-size:13px">No billing records yet.<br>Subscribe to a plan to get started.</div>';
+    }
     html += '</div><button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
   } else if(type==='help'){
     title = 'Help Center';
@@ -2922,13 +2921,18 @@ function updateDrawerPlanPrice(){
 
 function confirmPlanSubscribe(){
   USER.planType = SELECTED_PLAN;
+  var cur = getCurrency();
+  var isYearly = SELECTED_PLAN === 'yearly';
+  var amount = isYearly ? fmtPrice(cur, cur.yearly) : fmtPrice(cur, cur.monthly);
+  var planLabel = isYearly ? 'Pro Plan · Yearly' : 'Pro Plan · Monthly';
+  // Append billing record
+  if(!USER.billingHistory) USER.billingHistory = [];
+  var now = new Date();
+  var dateStr = now.toLocaleDateString('en-US', { year:'numeric', month:'long', day:'numeric' });
+  USER.billingHistory.unshift({ date: dateStr, label: planLabel, amount: amount, currency: cur.code });
   updateDrawerPlanPrice();
   document.getElementById('settingsOv').remove();
-  var cur = getCurrency();
-  var label = SELECTED_PLAN === 'monthly'
-    ? fmtPrice(cur, cur.monthly) + '/mo'
-    : fmtPrice(cur, cur.yearly) + '/yr';
-  showToast('Subscribed to Pro · ' + (SELECTED_PLAN==='monthly'?'Monthly':'Yearly') + ' · ' + label + ' ✓');
+  showToast('Subscribed to Pro · ' + (SELECTED_PLAN==='monthly'?'Monthly':'Yearly') + ' · ' + amount + ' ✓');
 }
 
 function changeReminderDays(delta){

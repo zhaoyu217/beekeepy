@@ -481,68 +481,9 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       </div>
     </div>
 
-    <!-- Hive list -->
+    <!-- Hive list — dynamic -->
     <div style="font-size:10px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.07em;padding:0 4px;margin-bottom:4px">Your hives</div>
-
-    <!-- Hive 1 -->
-    <div class="sp-card" style="padding:0;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
-        <div style="width:36px;height:36px;border-radius:12px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
-        </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 1 · Italian</div>
-          <div style="font-size:11px;color:#B7B1A7;margin-top:1px">Inspected 2 days ago</div>
-        </div>
-        <div style="font-size:11px;font-weight:600;color:var(--green)">Healthy</div>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div style="border-top:1px solid #F5F2EE;display:flex">
-        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="showToast('Rename Hive 1 — tap to edit name and breed.')">✏️ Rename</div>
-        <div style="width:1px;background:#F5F2EE"></div>
-        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B83A2A;cursor:pointer;text-align:center" onclick="deleteHive(1,'Hive 1 · Italian')">🗑 Remove</div>
-      </div>
-    </div>
-
-    <!-- Hive 2 -->
-    <div class="sp-card" style="padding:0;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
-        <div style="width:36px;height:36px;border-radius:12px;background:#FBF3E3;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#C4974A" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
-        </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 2 · Carniolan</div>
-          <div style="font-size:11px;color:#B7B1A7;margin-top:1px">Needs attention · 5 days ago</div>
-        </div>
-        <div style="font-size:11px;font-weight:600;color:#C4974A">Due soon</div>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div style="border-top:1px solid #F5F2EE;display:flex">
-        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="showToast('Rename Hive 2 — tap to edit name and breed.')">✏️ Rename</div>
-        <div style="width:1px;background:#F5F2EE"></div>
-        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B83A2A;cursor:pointer;text-align:center" onclick="deleteHive(2,'Hive 2 · Carniolan')">🗑 Remove</div>
-      </div>
-    </div>
-
-    <!-- Hive 3 -->
-    <div class="sp-card" style="padding:0;overflow:hidden">
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
-        <div style="width:36px;height:36px;border-radius:12px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0">
-          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
-        </div>
-        <div style="flex:1">
-          <div style="font-size:13px;font-weight:600;color:#1A1A1A">Hive 3 · Buckfast</div>
-          <div style="font-size:11px;color:#B7B1A7;margin-top:1px">Looking good · yesterday</div>
-        </div>
-        <div style="font-size:11px;font-weight:600;color:var(--green)">Healthy</div>
-        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
-      </div>
-      <div style="border-top:1px solid #F5F2EE;display:flex">
-        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="showToast('Rename Hive 3 — tap to edit name and breed.')">✏️ Rename</div>
-        <div style="width:1px;background:#F5F2EE"></div>
-        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B83A2A;cursor:pointer;text-align:center" onclick="deleteHive(3,'Hive 3 · Buckfast')">🗑 Remove</div>
-      </div>
-    </div>
+    <div id="hiveListContainer" style="display:flex;flex-direction:column;gap:10px"></div>
 
     <!-- Add hive button -->
     <button class="btn-full" style="background:var(--forest);color:#fff" onclick="addHive()">+ Add a hive</button>
@@ -1098,70 +1039,143 @@ function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');apply
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 applyUnit();
 
-/* ── MEMBERSHIP & HIVE LIMIT ── */
+/* ── MEMBERSHIP & HIVE SYSTEM ── */
 const PLAN = {
-  isPro: true,          // true = Pro (unlimited), false = Free (max 3)
+  isPro: false,       // false = Free (max 3), true = Pro (unlimited)
   freeLimit: 3,
 };
-let hiveCount = 3;     // current hive count (James has 3)
+
+// Hive data model
+const hives = [
+  {id:1, name:'Hive 1', breed:'Italian', status:'Healthy', statusColor:'var(--green)', sub:'Inspected 2 days ago', iconColor:'#EEF5EF', strokeColor:'#5E7A63'},
+  {id:2, name:'Hive 2', breed:'Carniolan', status:'Due soon', statusColor:'#C4974A', sub:'Needs attention · 5 days ago', iconColor:'#FBF3E3', strokeColor:'#C4974A'},
+  {id:3, name:'Hive 3', breed:'Buckfast', status:'Healthy', statusColor:'var(--green)', sub:'Looking good · yesterday', iconColor:'#EEF5EF', strokeColor:'#5E7A63'},
+];
+let nextHiveId = 4;
+
+function renderHiveList(){
+  const container = document.getElementById('hiveListContainer');
+  if(!container) return;
+  container.innerHTML = '';
+  hives.forEach(h => {
+    const card = document.createElement('div');
+    card.className = 'sp-card';
+    card.style.cssText = 'padding:0;overflow:hidden';
+    card.id = 'hiveCard' + h.id;
+    card.innerHTML = `
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
+        <div style="width:36px;height:36px;border-radius:12px;background:${h.iconColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
+          <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="${h.strokeColor}" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
+        </div>
+        <div style="flex:1">
+          <div style="font-size:13px;font-weight:600;color:#1A1A1A">${h.name} · ${h.breed}</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:1px">${h.sub}</div>
+        </div>
+        <div style="font-size:11px;font-weight:600;color:${h.statusColor}">${h.status}</div>
+        <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div style="border-top:1px solid #F5F2EE;display:flex">
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="renameHive(${h.id})">✏️ Rename</div>
+        <div style="width:1px;background:#F5F2EE"></div>
+        <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B83A2A;cursor:pointer;text-align:center" onclick="deleteHive(${h.id},'${h.name} · ${h.breed}')">🗑 Remove</div>
+      </div>`;
+    container.appendChild(card);
+  });
+  updateCounters();
+}
+
+function updateCounters(){
+  const n = hives.length;
+  const el = document.getElementById('myaHiveCount');
+  if(el) el.textContent = n;
+  updateHiveBadge();
+}
 
 function updateHiveBadge(){
   const badge = document.getElementById('hiveLimitBadge');
   if(!badge) return;
-  badge.textContent = PLAN.isPro ? hiveCount + ' / ∞' : hiveCount + ' / ' + PLAN.freeLimit;
-  badge.style.color = (!PLAN.isPro && hiveCount >= PLAN.freeLimit) ? '#B83A2A' : '#B7B1A7';
+  const n = hives.length;
+  badge.textContent = PLAN.isPro ? n + ' / ∞' : n + ' / ' + PLAN.freeLimit;
+  badge.style.color = (!PLAN.isPro && n >= PLAN.freeLimit) ? '#B83A2A' : '#B7B1A7';
 }
 
 function addHive(){
-  if(!PLAN.isPro && hiveCount >= PLAN.freeLimit){
-    // 触发升级弹窗
+  if(!PLAN.isPro && hives.length >= PLAN.freeLimit){
     showUpgradePrompt();
     return;
   }
-  hiveCount++;
-  updateHiveBadge();
-  showToast('New hive added! You now have ' + hiveCount + ' hives.');
+  const name = window.prompt('Hive name (e.g. Hive 4):');
+  if(!name || !name.trim()) return;
+  const breed = window.prompt('Bee breed (e.g. Italian, Carniolan, Buckfast):') || 'Unknown';
+  hives.push({
+    id: nextHiveId++,
+    name: name.trim(),
+    breed: breed.trim(),
+    status: 'New',
+    statusColor: '#B7B1A7',
+    sub: 'Added today · not yet inspected',
+    iconColor: '#F5F4F2',
+    strokeColor: '#B7B1A7',
+  });
+  renderHiveList();
+  showToast(name.trim() + ' added. Ready for your first inspection!');
+}
+
+function renameHive(id){
+  const h = hives.find(x => x.id === id);
+  if(!h) return;
+  const newName = window.prompt('Rename hive:', h.name);
+  if(newName && newName.trim()){ h.name = newName.trim(); renderHiveList(); }
+}
+
+function deleteHive(id, label){
+  const ok = window.confirm('Remove ' + label + '?\n\nAll records and photos will be permanently deleted.');
+  if(ok){
+    const idx = hives.findIndex(x => x.id === id);
+    if(idx > -1) hives.splice(idx, 1);
+    renderHiveList();
+    showToast(label + ' removed.');
+  }
 }
 
 function showUpgradePrompt(){
-  // 创建升级弹窗覆盖层
   let ov = document.getElementById('upgradeOv');
-  if(!ov){
-    ov = document.createElement('div');
-    ov.id = 'upgradeOv';
-    ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end;padding:0';
-    ov.innerHTML = `
-      <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%">
-        <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 20px"></div>
-        <div style="font-size:22px;text-align:center;margin-bottom:12px">🍯</div>
-        <div style="font-size:18px;font-weight:700;color:#1A1A1A;text-align:center;letter-spacing:-.4px;margin-bottom:8px">You've reached 3 hives</div>
-        <div style="font-size:13px;color:#B7B1A7;text-align:center;line-height:1.6;margin-bottom:24px">Free plan includes up to 3 hives.<br>Upgrade to Pro for unlimited hives, advanced insights, and more.</div>
-        <div style="background:#FAF8F3;border:1px solid #EDE8E0;border-radius:16px;padding:14px 16px;margin-bottom:16px">
-          <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
-            <div style="font-size:13px;font-weight:600;color:#1A1A1A">HiveDash Pro</div>
-            <div style="font-size:13px;font-weight:700;color:var(--honey)">$4.99 / mo</div>
-          </div>
-          <div style="font-size:11px;color:#B7B1A7;line-height:1.7">✓ Unlimited hives &nbsp;·&nbsp; ✓ Advanced insights<br>✓ Varroa radar &nbsp;·&nbsp; ✓ PDF export &nbsp;·&nbsp; ✓ Priority support</div>
+  if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'upgradeOv';
+  ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%">
+      <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 20px"></div>
+      <div style="font-size:22px;text-align:center;margin-bottom:10px">🍯</div>
+      <div style="font-size:18px;font-weight:700;color:#1A1A1A;text-align:center;letter-spacing:-.4px;margin-bottom:6px">You've reached 3 hives</div>
+      <div style="font-size:13px;color:#B7B1A7;text-align:center;line-height:1.65;margin-bottom:20px">Free plan includes up to 3 hives.<br>Upgrade to Pro for unlimited hives and more.</div>
+      <div style="background:#FAF8F3;border:1px solid #EDE8E0;border-radius:14px;padding:14px 16px;margin-bottom:16px">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:8px">
+          <div style="font-size:13px;font-weight:700;color:#1A1A1A">HiveDash Pro</div>
+          <div style="font-size:14px;font-weight:700;color:var(--honey)">$4.99 / mo</div>
         </div>
-        <button style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--honey);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:10px" onclick="upgradeToPro()">Upgrade to Pro →</button>
-        <button style="width:100%;padding:12px;border-radius:14px;border:1px solid #EDE8E0;background:#fff;color:#B7B1A7;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('upgradeOv').remove()">Maybe later</button>
-      </div>`;
-    ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
-    document.querySelector('.shell').appendChild(ov);
-  }
+        <div style="font-size:11px;color:#B7B1A7;line-height:1.8">✓ Unlimited hives &nbsp;·&nbsp; ✓ Advanced insights<br>✓ Varroa radar &nbsp;·&nbsp; ✓ PDF export &nbsp;·&nbsp; ✓ Priority support</div>
+      </div>
+      <button style="width:100%;padding:14px;border-radius:14px;border:none;background:var(--honey);color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:10px" onclick="upgradeToPro()">Upgrade to Pro →</button>
+      <button style="width:100%;padding:12px;border-radius:14px;border:1px solid #EDE8E0;background:#fff;color:#B7B1A7;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('upgradeOv').remove()">Maybe later</button>
+    </div>`;
+  ov.onclick = e => { if(e.target===ov) ov.remove(); };
+  document.querySelector('.shell').appendChild(ov);
 }
 
 function upgradeToPro(){
   PLAN.isPro = true;
   document.getElementById('upgradeOv').remove();
   updateHiveBadge();
-  const sub = document.getElementById('drawer-sub');
-  if(sub) sub.textContent = 'James · Pro member';
-  showToast('Welcome to Pro! You can now add unlimited hives. 🎉');
+  showToast('Welcome to Pro! Add as many hives as you need. 🎉');
 }
 
-// Init badge on load
-document.addEventListener('DOMContentLoaded', updateHiveBadge);
+// Init on page load
+window.addEventListener('load', function(){
+  renderHiveList();
+  updateHiveBadge();
+});
 
 /* APIARY MANAGEMENT */
 function editApiary(){
@@ -1171,32 +1185,11 @@ function editApiary(){
     showToast('Apiary name updated to "' + name.trim() + '"');
   }
 }
-function deleteHive(num, name){
-  const ok = window.confirm('Remove ' + name + '?\n\nAll records and photos will be permanently deleted.');
-  if(ok){
-    hiveCount = Math.max(0, hiveCount - 1);
-    updateHiveBadge();
-    const el = document.getElementById('myaHiveCount');
-    if(el) el.textContent = hiveCount;
-    showToast(name + ' removed.');
-  }
-}
 function deleteApiary(){
   const ok = window.confirm('Remove Backyard Apiary?\n\nAll hives, inspections, and photos will be permanently deleted. This cannot be undone.');
   if(ok){
     closeSub('smya');
     showToast('Backyard Apiary removed.');
-  }
-}
-
-/* DELETE HIVE */
-function confirmDeleteHive(){
-  const confirmed=window.confirm('Remove Hive 1 · Italian?\n\nAll inspection records and photos will be permanently deleted. This cannot be undone.');
-  if(confirmed){
-    hiveCount = Math.max(0, hiveCount - 1);
-    updateHiveBadge();
-    closeSub('shd');
-    showToast('Hive 1 removed. Your other hives are unchanged.');
   }
 }
 

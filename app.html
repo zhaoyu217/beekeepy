@@ -147,7 +147,21 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 .vault-ok{font-size:11px;font-weight:600;color:#5E7A63}
 .vault-btn{padding:7px 14px;background:#1A1A1A;color:#fff;border:none;border-radius:8px;font-family:'Inter',sans-serif;font-size:12px;font-weight:600;cursor:pointer}
 
-/* ── CSS TOKENS ── */
+/* ── BRIGHT LIGHT MODE ── */
+body.bright .shell{background:#fff;filter:contrast(1.08)}
+body.bright .topbar{background:#fff;border-bottom-color:#C8C4BC}
+body.bright .weather-card{border-color:#C8C4BC}
+body.bright .weather-top{background:linear-gradient(135deg,#FFE87A,#FFD700)}
+body.bright .hive-exp,body.bright .hive-compact,body.bright .harvest-card,body.bright .sp-card,body.bright .tl-card,body.bright .nectar-tag,body.bright .drawer,body.bright .vault-card{background:#fff;border-color:#C0BBB3}
+body.bright .stat-card{background:#F0EDE6;border:1.5px solid #C8C4BC}
+body.bright .stat-val,body.bright .hive-name,body.bright .hc-name,body.bright .greeting-name,body.bright .harvest-val,body.bright .tl-title,body.bright .di-label{color:#000;font-weight:700}
+body.bright .bnav{background:#fff;border-top-color:#C0BBB3}
+body.bright .scroll{background:#EDEBE5}
+body.bright .pill{background:#E8E4DC;border:1px solid #C8C4BC}
+body.bright .emotional{background:#FFF3B0;border-left-color:#C79B3B;color:#3A2800}
+body.bright *{-webkit-font-smoothing:auto}
+
+
 :root{--honey:#C79B3B;--forest:#1F2A24;--green:#5E7A63;}
 
 /* ── SUBPAGES ── */
@@ -465,9 +479,10 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       <option value="tr">🇹🇷 Türkçe</option>
     </select>
   </div>
-  <div class="drawer-item">
-    <div class="di-icon">🌙</div><div class="di-label">Appearance</div>
-    <div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
+  <div class="drawer-item" onclick="toggleBrightMode()">
+    <div class="di-icon">☀️</div>
+    <div class="di-label">Bright light mode</div>
+    <div class="tog off" id="brightModeTog" onclick="event.stopPropagation();toggleBrightMode()"></div>
   </div>
   <div class="drawer-item" onclick="openSettingsSheet('devices')">
     <div class="di-icon">📡</div><div class="di-label">Connected devices</div><div class="di-val" style="font-size:11px;color:#B7B1A7">0 paired</div><div class="di-arrow">›</div>
@@ -2798,6 +2813,14 @@ function toggleBiometric(){
   if(tog){ tog.classList.toggle('on', on); tog.classList.toggle('off', !on); }
   if(lbl){ lbl.textContent = on ? 'On' : 'Off'; lbl.style.color = on ? '#5E7A63' : '#B7B1A7'; }
   showToast('Biometric unlock ' + (on ? 'enabled ✓' : 'disabled'));
+}
+
+function toggleBrightMode(){
+  var on = document.body.classList.toggle('bright');
+  var tog = document.getElementById('brightModeTog');
+  if(tog){ tog.classList.toggle('on', on); tog.classList.toggle('off', !on); }
+  USER.brightMode = on;
+  showToast(on ? '☀️ Bright light mode on' : 'Bright light mode off');
 }
 
 function exportData(fmt){

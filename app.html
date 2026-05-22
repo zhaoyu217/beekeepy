@@ -151,10 +151,10 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 :root{--honey:#C79B3B;--forest:#1F2A24;--green:#5E7A63;}
 
 /* ── SUBPAGES ── */
-.sub{position:absolute;inset:0;background:#F9F7F3;z-index:100;transform:translateX(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);overflow-y:auto;padding-bottom:100px}
+.sub{position:absolute;inset:0;background:#F9F7F3;z-index:100;transform:translateX(100%);transition:transform .28s cubic-bezier(.25,.46,.45,.94);overflow-y:auto;padding-bottom:160px}
 .sub.open{transform:translateX(0)}
 /* 底部渐变淡出遮罩 */
-.sub::after{content:'';position:fixed;bottom:0;left:0;right:0;height:64px;background:linear-gradient(to top,#F9F7F3 0%,rgba(249,247,243,0) 100%);pointer-events:none;z-index:101}
+.sub::after{content:'';display:none}
 .sub-hd{background:#fff;border-bottom:1px solid #EDE8E0;padding:14px 20px;display:flex;align-items:center;gap:12px;position:sticky;top:0;z-index:10}
 /* 返回箭头 — 纯SVG描边 */
 .back{width:32px;height:32px;border-radius:10px;background:#F9F7F3;border:1px solid #EDE8E0;display:flex;align-items:center;justify-content:center;cursor:pointer;flex-shrink:0}

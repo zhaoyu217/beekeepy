@@ -1514,11 +1514,7 @@ window.addEventListener('load', function(){
   if(locEl)locEl.textContent=APIARY.location?('📍 '+APIARY.location):'📍 No location set · tap Edit to add';
   const homeSub=document.getElementById('homeApiaryLocation');
   if(homeSub)homeSub.textContent=APIARY.location?(' · '+APIARY.location):'';
-  if(APIARY.location){
-    fetchWeatherForLocation(null, null, APIARY.location);
-  } else {
-    fetchWeather();
-  }
+  fetchWeather();
   // Force home card update
   const n = hives.length;
   const el = document.getElementById('homeHiveCount');
@@ -1741,17 +1737,22 @@ const WMO_CODES = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast'
 const WMO_EMOJI = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌧',55:'🌧',61:'🌦',63:'🌧',65:'🌧',71:'🌨',73:'❄️',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
 
 function fetchWeather(){
-  if(APIARY.lat && APIARY.lon){
-    fetchWeatherForLocation(APIARY.lat, APIARY.lon, APIARY.location);
+  if(APIARY.location){
+    fetchWeatherForLocation(null, null, APIARY.location);
+  } else if(navigator.geolocation){
+    navigator.geolocation.getCurrentPosition(
+      function(pos){ fetchWeatherForLocation(pos.coords.latitude, pos.coords.longitude, null); },
+      function(){
+        var wt=document.getElementById('wTemp'); if(wt) wt.textContent='Set apiary location';
+        var wc=document.getElementById('wCity'); if(wc) wc.textContent='Go to My Apiary to add location';
+        var wh=document.getElementById('wHeroTemp'); if(wh) wh.textContent='--';
+        var whc=document.getElementById('wHeroCity'); if(whc) whc.textContent='No location set';
+      },
+      {timeout:8000}
+    );
   } else {
-    const wt = document.getElementById('wTemp');
-    if(wt) wt.textContent = 'Set apiary location';
-    const wc = document.getElementById('wCity');
-    if(wc) wc.textContent = 'Go to My Apiary → Edit to add location';
-    const wh = document.getElementById('wHeroTemp');
-    if(wh) wh.textContent = '--°';
-    const whc = document.getElementById('wHeroCity');
-    if(whc) whc.textContent = 'No location set · tap Edit in My Apiary';
+    var wt=document.getElementById('wTemp'); if(wt) wt.textContent='Set apiary location';
+    var wc=document.getElementById('wCity'); if(wc) wc.textContent='Go to My Apiary to add location';
   }
 }
 
@@ -1767,7 +1768,7 @@ async function fetchWeatherForLocation(lat, lon, cityLabel){
   console.log('[HiveDash] fetchWeather:', lat, lon, cityLabel);
   try {
     const tempUnit = isF ? '°F' : '°C';
-    const loc = cityLabel || 'London';
+    const loc = (lat && lon) ? (lat+','+lon) : (cityLabel || 'London');
     const url = 'https://wttr.in/'+encodeURIComponent(loc)+'?format=j1';
     console.log('[HiveDash] fetching:', url);
     const res = await fetch(url);

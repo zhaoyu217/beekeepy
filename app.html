@@ -1189,6 +1189,11 @@ function saveData(){
     localStorage.setItem('hd_plan', JSON.stringify({isPro: PLAN.isPro}));
   }catch(e){}
 }
+var PLAN = {
+  isPro: false,
+  freeLimit: 3,
+};
+
 function loadData(){
   try{
     // Migrate old single-apiary data
@@ -1198,7 +1203,7 @@ function loadData(){
     if(newData){
       const parsed = JSON.parse(newData);
       APIARIES.splice(0, APIARIES.length, ...parsed);
-      ACTIVE_APIARY_ID = parseInt(localStorage.getItem('hd_active_apiary')) || APIARIES[0]?.id || null;
+      ACTIVE_APIARY_ID = parseInt(localStorage.getItem('hd_active_apiary')) || (APIARIES[0] ? APIARIES[0].id : null);
       _nextApiaryId = parseInt(localStorage.getItem('hd_next_apiary_id')) || APIARIES.length+1;
     } else if(oldApiary){
       // Migrate legacy data
@@ -1221,11 +1226,6 @@ function loadData(){
   }catch(e){ console.log('loadData error',e); }
 }
 
-
-var PLAN = {
-  isPro: false,       // false = Free (max 3), true = Pro (unlimited)
-  freeLimit: 3,
-};
 
 // Helper: get hives array of active apiary
 function getHives(){ const a=getActiveApiary(); return a?a.hives:[]; }

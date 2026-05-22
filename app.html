@@ -2074,7 +2074,7 @@ async function fetchWeatherForLocation(lat, lon, cityLabel){
   }
 }
 /* USER & LANGUAGE */
-var USER = { name: 'James' };
+var USER = { name: 'James', twoFaEnabled: false, biometricEnabled: false };
 function editUserName(){
   let ov=document.getElementById('editNameOv'); if(ov)ov.remove();
   ov=document.createElement('div'); ov.id='editNameOv';
@@ -2389,7 +2389,7 @@ function openSettingsSheet(type){
       '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveProfile()">Save</button></div>';
   } else if(type==='security'){
     title = 'Security';
-    var twoFaOn = USER.twoFaEnabled !== false;
+    var twoFaOn = USER.twoFaEnabled === true;
     var biometricOn = USER.biometricEnabled === true;
     html =
       '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">' +
@@ -2591,7 +2591,7 @@ function saveNewPassword(){
 }
 
 function toggleTwoFa(){
-  var on = USER.twoFaEnabled !== false;
+  var on = USER.twoFaEnabled === true;
   if(on){
     // Already on — confirm disable
     var ov = document.createElement('div');

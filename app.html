@@ -403,7 +403,13 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 <div class="drawer" id="drawer">
   <div class="drawer-hd">
     <div style="display:flex;align-items:center;gap:12px">
-      <div class="avatar" style="width:40px;height:40px;font-size:15px" id="drawerAvatar">J</div>
+      <div style="position:relative;cursor:pointer;flex-shrink:0" onclick="triggerAvatarPick()">
+        <div class="avatar" style="width:40px;height:40px;font-size:15px" id="drawerAvatar">J</div>
+        <div style="position:absolute;bottom:-2px;right:-2px;width:16px;height:16px;border-radius:50%;background:#C79B3B;border:1.5px solid #fff;display:flex;align-items:center;justify-content:center">
+          <svg width="8" height="8" viewBox="0 0 10 10" fill="none"><path d="M6.5 1.5l2 2-5 5H1.5v-2l5-5z" stroke="#fff" stroke-width="1.2" stroke-linejoin="round"/></svg>
+        </div>
+        <input type="file" id="drawerAvatarInput" accept="image/*" style="display:none" onchange="applyDrawerAvatar(this)">
+      </div>
       <div>
         <div class="drawer-title" id="drawerName">James</div>
         <div class="drawer-sub" id="drawerSub">Pro member</div>
@@ -2089,11 +2095,34 @@ function saveUserName(){
   USER.name=name;
   document.getElementById('editNameOv').remove();
   const dn=document.getElementById('drawerName'); if(dn)dn.textContent=name;
-  const av=document.getElementById('drawerAvatar'); if(av)av.textContent=name[0].toUpperCase();
-  const avTop=document.getElementById('avatarEl'); if(avTop)avTop.textContent=name[0].toUpperCase();
+  const av=document.getElementById('drawerAvatar');
+  if(av){ if(!USER.avatarImg){ av.textContent=name[0].toUpperCase(); } }
+  const avTop=document.getElementById('avatarEl');
+  if(avTop){ if(!USER.avatarImg){ avTop.textContent=name[0].toUpperCase(); } }
   const greet=document.getElementById('greet');
   if(greet){const h=new Date().getHours();greet.innerHTML=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+',<br>'+name;}
   showToast('Name updated to '+name);
+}
+function triggerAvatarPick(){
+  document.getElementById('drawerAvatarInput').click();
+}
+function applyDrawerAvatar(input){
+  if(!input.files||!input.files[0]) return;
+  var reader=new FileReader();
+  reader.onload=function(e){
+    USER.avatarImg=e.target.result;
+    // Update drawer avatar
+    var av=document.getElementById('drawerAvatar');
+    if(av){ av.style.background='url('+e.target.result+') center/cover'; av.style.backgroundSize='cover'; av.textContent=''; }
+    // Update topbar avatar
+    var avTop=document.getElementById('avatarEl');
+    if(avTop){ avTop.style.background='url('+e.target.result+') center/cover'; avTop.style.backgroundSize='cover'; avTop.textContent=''; }
+    // Sync profile sheet preview if open
+    var preview=document.getElementById('sAvatarPreview');
+    if(preview){ preview.style.background='url('+e.target.result+') center/cover'; preview.style.backgroundSize='cover'; preview.innerHTML=''; }
+    showToast('Profile photo updated ✓');
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 /* ── i18n TRANSLATIONS ── */
 var CURRENT_LANG = 'en-US';

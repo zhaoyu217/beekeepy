@@ -1192,7 +1192,7 @@ function renderHiveList(){
     card.style.cssText = 'padding:0;overflow:hidden';
     card.id = 'hiveCard' + h.id;
     card.innerHTML = `
-      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="openSub('shd');closeSub('smya')">
+      <div style="display:flex;align-items:center;gap:12px;padding:14px 16px;cursor:pointer" onclick="toggleHiveCard(${h.id})">
         <div style="width:36px;height:36px;border-radius:12px;background:${h.iconColor};display:flex;align-items:center;justify-content:center;flex-shrink:0">
           <svg width="14" height="14" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="${h.strokeColor}" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg>
         </div>
@@ -1202,6 +1202,20 @@ function renderHiveList(){
         </div>
         <div style="font-size:11px;font-weight:600;color:${h.statusColor}">${h.status}</div>
         <svg width="14" height="14" viewBox="0 0 14 14" fill="none" style="margin-left:4px"><path d="M5 3l4 4-4 4" stroke="#D0CCC6" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div id="hiveDetail${h.id}" style="display:none;padding:0 14px 12px">
+        <div style="display:flex;gap:8px;margin-bottom:10px">
+          <div class="photo-slot" onclick="event.stopPropagation();document.getElementById('hivePhoto${h.id}').click()" style="cursor:pointer;width:70px;flex-shrink:0">
+            <input type="file" id="hivePhoto${h.id}" accept="image/*" capture="environment" style="display:none" onchange="handleHivePhoto(this,${h.id})">
+            <div class="photo-grid" id="hivePhotoPreview${h.id}"></div>
+            <div class="photo-hint" id="hivePhotoHint${h.id}">Add photo</div>
+            <div style="position:absolute;bottom:4px;right:5px;font-size:9px;color:#ddd">📷</div>
+          </div>
+          <div class="note-slot">
+            <div class="note-lbl">Notes</div>
+            <div class="note-text" style="color:#B7B1A7;font-style:italic">No notes yet · inspect to add</div>
+          </div>
+        </div>
       </div>
       <div style="border-top:1px solid #F5F2EE;display:flex">
         <div style="flex:1;padding:10px 16px;font-size:11px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center" onclick="renameHive(${h.id})">✏️ Rename</div>
@@ -1414,6 +1428,40 @@ function deleteApiary(){
     closeSub('smya');
     showToast('Backyard Apiary removed.');
   }
+}
+
+/* HIVE CARD EXPAND */
+function toggleHiveCard(id){
+  const d = document.getElementById('hiveDetail'+id);
+  if(!d) return;
+  d.style.display = d.style.display==='block' ? 'none' : 'block';
+}
+function handleHivePhoto(input, id){
+  if(!input.files||!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const p = document.getElementById('hivePhotoPreview'+id);
+    const h = document.getElementById('hivePhotoHint'+id);
+    if(p){ p.style.backgroundImage='url('+e.target.result+')'; p.style.backgroundSize='cover'; p.style.backgroundPosition='center'; p.style.opacity='1'; }
+    if(h) h.textContent='';
+    let del = document.getElementById('hivePhotoDel'+id);
+    if(!del){
+      del = document.createElement('div');
+      del.id = 'hivePhotoDel'+id;
+      del.style.cssText='position:absolute;top:3px;right:3px;width:16px;height:16px;border-radius:50%;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;cursor:pointer;font-size:9px;color:#fff;font-weight:700;z-index:2;line-height:1';
+      del.textContent='✕';
+      del.onclick=function(ev){
+        ev.stopPropagation();
+        if(p){ p.style.backgroundImage=''; p.style.opacity='.5'; }
+        if(h) h.textContent='Add photo';
+        del.remove();
+        input.value='';
+      };
+      p.parentElement.appendChild(del);
+    }
+    showToast('Photo saved to '+document.querySelector('#hiveCard'+id+' .sp-card, #hiveCard'+id)?.querySelector?.('[style*="font-weight:600"]')?.textContent || 'hive');
+  };
+  reader.readAsDataURL(input.files[0]);
 }
 
 /* HIVE EXPAND */

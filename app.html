@@ -229,7 +229,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
         </svg>
         <div>
           <div style="font-size:16px;font-weight:700;color:#5A3A00;letter-spacing:-.3px" id="wTemp">Sunny · 78°F</div>
-          <div style="font-size:11px;color:#7A5C1E;margin-top:1px">Boulder, CO · Spring</div>
+          <div style="font-size:11px;color:#7A5C1E;margin-top:1px" id="wCity">Boulder, CO · Spring</div>
         </div>
       </div>
       <div class="weather-badge">
@@ -556,7 +556,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
         <div style="width:48px;height:48px;border-radius:14px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:24px">🌻</div>
         <div style="flex:1">
           <div id="apiaryName" style="font-size:15px;font-weight:700;color:#1A1A1A">Backyard Apiary</div>
-          <div style="font-size:11px;color:#B7B1A7;margin-top:2px">Boulder, CO · Est. March 2024</div>
+          <div style="font-size:11px;color:#B7B1A7;margin-top:2px" id="apiaryLocation">📍 No location set · tap Edit to add</div>
         </div>
         <svg width="16" height="16" viewBox="0 0 16 16" fill="none" style="cursor:pointer" onclick="editApiary()"><path d="M11 2l3 3-8 8H3v-3L11 2z" stroke="#B7B1A7" stroke-width="1.5" stroke-linejoin="round"/></svg>
       </div>
@@ -607,17 +607,17 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <div class="sp-card" style="background:linear-gradient(150deg,#FDF0D0 0%,#FAE8B0 100%);border-color:#E8CC88;padding:22px 20px">
       <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px">
         <div>
-          <div style="font-size:58px;font-weight:700;color:#4A3000;letter-spacing:-3px;line-height:1">78°</div>
-          <div style="font-size:14px;font-weight:600;color:#7A5C1E;margin-top:4px">Sunny · Boulder, CO</div>
+          <div style="font-size:58px;font-weight:700;color:#4A3000;letter-spacing:-3px;line-height:1" id="wHeroTemp">78°</div>
+          <div style="font-size:14px;font-weight:600;color:#7A5C1E;margin-top:4px" id="wHeroCity">Sunny · Boulder, CO</div>
         </div>
         <div style="text-align:right;padding-bottom:4px">
           <!-- 半透明玻璃 pill -->
           <div style="font-size:11px;font-weight:700;color:#3A6A45;background:rgba(255,255,255,.38);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.55);border-radius:20px;padding:5px 12px;display:inline-block;letter-spacing:.01em">Open hive ✓</div>
-          <div style="font-size:11px;color:#A07030;margin-top:10px">Feels like 76°</div>
+          <div style="font-size:11px;color:#A07030;margin-top:10px" id="wFeels">Feels like 76°</div>
           <div style="font-size:11px;color:#B7935A;margin-top:2px">H 81° · L 58°</div>
         </div>
       </div>
-      <div style="font-size:11px;color:#A07030;padding-top:10px;border-top:1px solid rgba(180,130,40,.18)">Humidity 42% · Wind 6 mph · UV index 7</div>
+      <div style="font-size:11px;color:#A07030;padding-top:10px;border-top:1px solid rgba(180,130,40,.18)" id="wMeta">Humidity 42% · Wind 6 mph · UV index 7</div>
     </div>
 
     <!-- Best inspection window -->
@@ -632,29 +632,29 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       <div class="sp-lbl">5-Day forecast</div>
       <div class="day-row">
         <div class="day-cell">
-          <div class="day-name">Today</div>
-          <div style="font-size:22px;margin:4px 0">☀️</div>
-          <div class="day-temp">78°</div>
+          <div class="day-name" id="forecastDay0">Today</div>
+          <div style="font-size:22px;margin:4px 0" id="forecastIcon0">☀️</div>
+          <div class="day-temp" id="forecastTemp0">78°</div>
         </div>
         <div class="day-cell">
-          <div class="day-name">Fri</div>
-          <div style="font-size:22px;margin:4px 0">🌤</div>
-          <div class="day-temp">74°</div>
+          <div class="day-name" id="forecastDay1">Fri</div>
+          <div style="font-size:22px;margin:4px 0" id="forecastIcon1">🌤</div>
+          <div class="day-temp" id="forecastTemp1">74°</div>
         </div>
         <div class="day-cell">
-          <div class="day-name">Sat</div>
-          <div style="font-size:22px;margin:4px 0">⛅</div>
-          <div class="day-temp">68°</div>
+          <div class="day-name" id="forecastDay2">Sat</div>
+          <div style="font-size:22px;margin:4px 0" id="forecastIcon2">⛅</div>
+          <div class="day-temp" id="forecastTemp2">68°</div>
         </div>
         <div class="day-cell" style="background:#FEF2F2">
-          <div class="day-name" style="color:#B83A2A">Sun</div>
-          <div style="font-size:22px;margin:4px 0">🌧</div>
-          <div class="day-temp" style="color:#B83A2A">61°</div>
+          <div class="day-name" style="color:#B83A2A" id="forecastDay3">Sun</div>
+          <div style="font-size:22px;margin:4px 0" id="forecastIcon3">🌧</div>
+          <div class="day-temp" style="color:#B83A2A" id="forecastTemp3">61°</div>
         </div>
         <div class="day-cell">
-          <div class="day-name">Mon</div>
-          <div style="font-size:22px;margin:4px 0">☀️</div>
-          <div class="day-temp">72°</div>
+          <div class="day-name" id="forecastDay4">Mon</div>
+          <div style="font-size:22px;margin:4px 0" id="forecastIcon4">☀️</div>
+          <div class="day-temp" id="forecastTemp4">72°</div>
         </div>
       </div>
     </div>
@@ -1450,6 +1450,7 @@ window.addEventListener('load', function(){
   renderHiveList();
   updateHiveBadge();
   updateHarvestUI();
+  fetchWeather();
   // Force home card update
   const n = hives.length;
   const el = document.getElementById('homeHiveCount');
@@ -1460,13 +1461,75 @@ window.addEventListener('load', function(){
 });
 
 /* APIARY MANAGEMENT */
+var APIARY = { name:'Backyard Apiary', location:'', lat:null, lon:null };
+
 function editApiary(){
-  const name = window.prompt('Apiary name:', document.getElementById('apiaryName').textContent);
-  if(name && name.trim()){
-    document.getElementById('apiaryName').textContent = name.trim();
-    showToast('Apiary name updated to "' + name.trim() + '"');
-  }
+  let ov=document.getElementById('editApiaryOv'); if(ov)ov.remove();
+  ov=document.createElement('div'); ov.id='editApiaryOv';
+  ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML='<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">'+
+    '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>'+
+    '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px">Edit apiary</div>'+
+    '<div style="margin-bottom:12px">'+
+      '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Apiary name</div>'+
+      '<input id="editApiaryName" value="'+APIARY.name+'" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">'+
+    '</div>'+
+    '<div style="margin-bottom:20px">'+
+      '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Location</div>'+
+      '<div style="display:flex;gap:8px;align-items:center">'+
+        '<input id="editApiaryLocation" value="'+APIARY.location+'" placeholder="e.g. Boulder, CO" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">'+
+        '<button id="gpsBtn" onclick="useMyLocation()" style="padding:11px 12px;border-radius:12px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:11px;font-weight:600;color:#5E7A63;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">&#128205; Use GPS</button>'+
+      '</div>'+
+      '<div style="font-size:10px;color:#B7B1A7;margin-top:5px">Weather will show conditions at this location</div>'+
+    '</div>'+
+    '<div style="display:flex;gap:10px">'+
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(\'editApiaryOv\').remove()">Cancel</button>'+
+      '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveApiary()">Save</button>'+
+    '</div>'+
+  '</div>';
+  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+  document.body.appendChild(ov);
+  setTimeout(()=>document.getElementById('editApiaryName').focus(),100);
 }
+
+function useMyLocation(){
+  const btn=document.getElementById('gpsBtn'); if(btn)btn.textContent='⏳ Locating…';
+  navigator.geolocation.getCurrentPosition(async function(pos){
+    APIARY.lat=pos.coords.latitude; APIARY.lon=pos.coords.longitude;
+    try{
+      const res=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+APIARY.lat+'&lon='+APIARY.lon+'&format=json');
+      const d=await res.json();
+      const city=d.address?.city||d.address?.town||d.address?.village||'';
+      const state=d.address?.state_code||'';
+      const loc=state?(city+', '+state):city;
+      const inp=document.getElementById('editApiaryLocation'); if(inp)inp.value=loc;
+      if(btn)btn.textContent='📍 Got it ✓';
+    }catch(e){if(btn)btn.textContent='📍 Use GPS';}
+  },function(){if(btn)btn.textContent='📍 Use GPS';});
+}
+
+async function saveApiary(){
+  const name=document.getElementById('editApiaryName').value.trim();
+  const loc=document.getElementById('editApiaryLocation').value.trim();
+  if(name)APIARY.name=name;
+  APIARY.location=loc; APIARY.lat=null; APIARY.lon=null;
+  document.getElementById('editApiaryOv').remove();
+  ['apiaryName','homeApiaryName'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=APIARY.name;});
+  const locEl=document.getElementById('apiaryLocation');
+  if(locEl)locEl.textContent=loc?('📍 '+loc):'📍 No location set · tap Edit to add';
+  const homeSub=document.getElementById('homeApiaryLocation');
+  if(homeSub)homeSub.textContent=loc||'No location set';
+  if(loc){
+    try{
+      const res=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(loc)+'&format=json&limit=1');
+      const d=await res.json();
+      if(d[0]){APIARY.lat=parseFloat(d[0].lat);APIARY.lon=parseFloat(d[0].lon);}
+    }catch(e){}
+    if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,loc);
+  }
+  showToast(loc?('Weather updating for '+loc+' 🌤'):'Apiary name saved');
+}
+
 function deleteApiary(){
   const ok = window.confirm('Remove Backyard Apiary?\n\nAll hives, inspections, and photos will be permanently deleted. This cannot be undone.');
   if(ok){
@@ -1590,6 +1653,69 @@ function toggleTreat(){
   chevron.style.transform=open?'rotate(0deg)':'rotate(180deg)';
 }
 
+/* ── REAL WEATHER ── */
+const WMO_CODES = {0:'Clear sky',1:'Mainly clear',2:'Partly cloudy',3:'Overcast',45:'Foggy',48:'Icy fog',51:'Light drizzle',53:'Drizzle',55:'Heavy drizzle',61:'Light rain',63:'Rain',65:'Heavy rain',71:'Light snow',73:'Snow',75:'Heavy snow',80:'Rain showers',81:'Rain showers',82:'Heavy showers',95:'Thunderstorm',96:'Thunderstorm',99:'Thunderstorm'};
+const WMO_EMOJI = {0:'☀️',1:'🌤',2:'⛅',3:'☁️',45:'🌫',48:'🌫',51:'🌦',53:'🌧',55:'🌧',61:'🌦',63:'🌧',65:'🌧',71:'🌨',73:'❄️',75:'❄️',80:'🌦',81:'🌧',82:'⛈',95:'⛈',96:'⛈',99:'⛈'};
+
+function fetchWeather(){
+  // Only fetch if apiary has a saved location
+  if(APIARY.lat && APIARY.lon){
+    fetchWeatherForLocation(APIARY.lat, APIARY.lon, APIARY.location);
+  } else {
+    // No apiary location — show prompt on weather page
+    const wt = document.getElementById('wTemp');
+    if(wt) wt.textContent = 'Set apiary location to see weather';
+    const wh = document.getElementById('wHeroTemp');
+    if(wh) wh.textContent = '--°';
+    const wc = document.getElementById('wHeroCity');
+    if(wc) wc.textContent = 'No location set · go to My Apiary → Edit';
+  }
+}
+
+async function fetchWeatherForLocation(lat, lon, cityLabel){
+  try {
+    const unit = isF ? 'fahrenheit' : 'celsius';
+    const url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode,windspeed_10m,relativehumidity_2m,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit='+unit+'&wind_speed_unit=mph&timezone=auto&forecast_days=5';
+    const res = await fetch(url);
+    const data = await res.json();
+    const cur = data.current;
+    const daily = data.daily;
+    const tempUnit = isF ? '°F' : '°C';
+    const code = cur.weathercode;
+    const emoji = WMO_EMOJI[code] || '🌤';
+    const desc = WMO_CODES[code] || 'Clear';
+    const temp = Math.round(cur.temperature_2m);
+    const feels = Math.round(cur.apparent_temperature);
+    const wind = Math.round(cur.windspeed_10m);
+    const humidity = cur.relativehumidity_2m;
+    const locName = cityLabel || 'Your apiary';
+
+    // Home topbar
+    const wTemp = document.getElementById('wTemp');
+    if(wTemp) wTemp.textContent = desc+' · '+temp+tempUnit;
+    // Weather page hero
+    const wHero = document.getElementById('wHeroTemp');
+    if(wHero) wHero.textContent = temp+'°';
+    const wHeroCity = document.getElementById('wHeroCity');
+    if(wHeroCity) wHeroCity.textContent = desc+' · '+locName;
+    const wMeta = document.getElementById('wMeta');
+    if(wMeta) wMeta.textContent = 'Humidity '+humidity+'% · Wind '+wind+' mph · UV 7';
+    const wFeels = document.getElementById('wFeels');
+    if(wFeels) wFeels.textContent = 'Feels like '+feels+'°';
+    // 5-day forecast
+    const days = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
+    for(let i=0;i<5;i++){
+      const d = new Date(daily.time[i]);
+      const dayEl = document.getElementById('forecastDay'+i);
+      const iconEl = document.getElementById('forecastIcon'+i);
+      const tempEl = document.getElementById('forecastTemp'+i);
+      const dayCode = daily.weathercode[i];
+      if(dayEl) dayEl.textContent = i===0?'Today':days[d.getDay()];
+      if(iconEl) iconEl.textContent = WMO_EMOJI[dayCode]||'🌤';
+      if(tempEl) tempEl.textContent = Math.round(daily.temperature_2m_max[i])+'°';
+    }
+  } catch(e){ console.log('Weather error:', e); }
+}
 /* DRAWER */
 function openDrawer(){document.getElementById('dov').classList.add('open');document.getElementById('drawer').classList.add('open')}
 function closeDrawer(){document.getElementById('dov').classList.remove('open');document.getElementById('drawer').classList.remove('open')}

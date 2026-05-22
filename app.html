@@ -1266,9 +1266,9 @@ function addHive(){
   if(ov) ov.remove();
   ov = document.createElement('div');
   ov.id = 'addHiveOv';
-  ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-end';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   ov.innerHTML = `
-    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 36px;width:100%">
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 36px;width:100%;max-width:430px">
       <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>
       <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px;letter-spacing:-.3px">Add a hive</div>
       <div style="margin-bottom:12px">
@@ -1285,7 +1285,7 @@ function addHive(){
       </div>
     </div>`;
   ov.onclick = e => { if(e.target===ov) ov.remove(); };
-  document.querySelector('.shell').appendChild(ov);
+  document.body.appendChild(ov);
   setTimeout(()=>document.getElementById('newHiveName').focus(), 100);
 }
 
@@ -1315,7 +1315,7 @@ function renameHive(id){
   if(ov) ov.remove();
   ov = document.createElement('div');
   ov.id = 'renameHiveOv';
-  ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-end';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   ov.innerHTML = `
     <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 36px;width:100%">
       <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>
@@ -1330,7 +1330,7 @@ function renameHive(id){
       </div>
     </div>`;
   ov.onclick = e => { if(e.target===ov) ov.remove(); };
-  document.querySelector('.shell').appendChild(ov);
+  document.body.appendChild(ov);
   setTimeout(()=>{ const el=document.getElementById('renameHiveInput'); el.focus(); el.select(); }, 100);
 }
 
@@ -1359,7 +1359,7 @@ function showUpgradePrompt(){
   if(ov) ov.remove();
   ov = document.createElement('div');
   ov.id = 'upgradeOv';
-  ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.5);z-index:300;display:flex;align-items:flex-end';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.5);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
   ov.innerHTML = `
     <div style="background:#fff;border-radius:24px 24px 0 0;padding:28px 24px 40px;width:100%">
       <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 20px"></div>
@@ -1377,7 +1377,7 @@ function showUpgradePrompt(){
       <button style="width:100%;padding:12px;border-radius:14px;border:1px solid #EDE8E0;background:#fff;color:#B7B1A7;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('upgradeOv').remove()">Maybe later</button>
     </div>`;
   ov.onclick = e => { if(e.target===ov) ov.remove(); };
-  document.querySelector('.shell').appendChild(ov);
+  document.body.appendChild(ov);
 }
 
 function upgradeToPro(){
@@ -1480,8 +1480,8 @@ function showToast(msg){
   if(!t){
     t=document.createElement('div');
     t.id='toast';
-    t.style.cssText='position:absolute;top:70px;left:50%;transform:translateX(-50%) translateY(-8px);background:#1F2A24;color:#fff;font-size:11px;line-height:1.55;font-family:Inter,sans-serif;padding:9px 14px;border-radius:12px;width:calc(100% - 64px);max-width:300px;text-align:center;opacity:0;transition:opacity .22s,transform .22s;z-index:500;pointer-events:none';
-    document.querySelector('.shell').appendChild(t);
+    t.style.cssText='position:fixed;top:80px;left:50%;transform:translateX(-50%) translateY(-8px);background:#1F2A24;color:#fff;font-size:11px;line-height:1.55;font-family:Inter,sans-serif;padding:9px 14px;border-radius:12px;width:calc(100% - 64px);max-width:300px;text-align:center;opacity:0;transition:opacity .22s,transform .22s;z-index:9999;pointer-events:none';
+    document.body.appendChild(t);
   }
   t.textContent=msg;
   t.style.opacity='1';t.style.transform='translateX(-50%) translateY(0)';

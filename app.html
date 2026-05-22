@@ -208,7 +208,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       <span class="on" id="uf">°F</span><span id="uc">°C</span>
     </div>
     <button style="background:none;border:none;font-size:18px;cursor:pointer;color:#B7B1A7;padding:4px" onclick="openDrawer()">⚙️</button>
-    <div class="avatar">J</div>
+    <div class="avatar" onclick="openDrawer()">J</div>
   </div>
 </div>
 
@@ -452,34 +452,34 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
   <div class="drawer-item" onclick="openSub('sap');closeDrawer()">
     <div class="di-icon">🗺️</div><div class="di-label">Manage apiaries</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item">
+  <div class="drawer-item" onclick="showToast('Manage your hives — add, rename, or archive.')">
     <div class="di-icon">📦</div><div class="di-label">Manage hives</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-sec">Notifications</div>
   <div class="drawer-item" onclick="openSub('sal');closeDrawer()">
     <div class="di-icon">🔔</div><div class="di-label">Inspection reminders</div><div class="di-val">Every 10 days</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item">
+  <div class="drawer-item" onclick="openSub('sal');closeDrawer()">
     <div class="di-icon">⛈️</div><div class="di-label">Weather alert settings</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-sec">Data & Security</div>
   <div class="vault-card">
     <div class="vault-row"><span class="vault-lbl">Local cache</span><span class="vault-ok">Secure · 12 inspections</span></div>
     <div class="vault-row"><span class="vault-lbl">Supabase sync</span><span class="vault-ok">100% match ✓</span></div>
-    <div style="margin-top:10px;display:flex;justify-content:flex-end"><button class="vault-btn">Export Vault</button></div>
+    <div style="margin-top:10px;display:flex;justify-content:flex-end"><button class="vault-btn" onclick="showToast('Preparing your data export… you\'ll get a secure download link.')">Export Vault</button></div>
   </div>
   <div class="drawer-sec">Account</div>
-  <div class="drawer-item">
+  <div class="drawer-item" onclick="showToast('james@hivedash.app · Pro member since March 2026')">
     <div class="di-icon">👤</div><div class="di-label">james@hivedash.app</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item">
+  <div class="drawer-item" onclick="showToast('You have 340 points · Redeem for Pro features or gear discounts.')">
     <div class="di-icon">🏆</div><div class="di-label">Points & rewards</div><div class="di-val">340 pts</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-item">
     <div class="di-icon">🌙</div><div class="di-label">Dark mode</div>
     <div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
   </div>
-  <div class="drawer-item">
+  <div class="drawer-item" onclick="showToast('Signed out. See you next time, James.')">
     <div class="di-icon">🚪</div><div class="di-label" style="color:#B83A2A">Sign out</div>
   </div>
 </div>
@@ -602,7 +602,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
         <div style="font-size:13px;font-weight:700;color:#B83A2A">Hive 2 is overdue</div>
       </div>
       <div style="font-size:12px;color:#B83A2A;line-height:1.6">Last opened 5 days ago. Your interval is every 10 days. Spring buildup is fast — colonies can swarm without warning.</div>
-      <div style="margin-top:10px"><button style="background:#B83A2A;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif">Schedule inspection →</button></div>
+      <div style="margin-top:10px"><button style="background:#B83A2A;color:#fff;border:none;border-radius:10px;padding:8px 16px;font-size:12px;font-weight:600;cursor:pointer;font-family:'Inter',sans-serif" onclick="closeSub('sal');openSub('shd')">Schedule inspection →</button></div>
     </div>
 
     <!-- Rain defer note -->
@@ -737,12 +737,12 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
             <div style="font-size:11px;color:#B7B1A7;margin-top:2px">2 hives · 4.1 mi away</div>
           </div>
         </div>
-        <span style="font-size:11px;color:#7A5C1E;background:#FBF5E6;border:1px solid #E8CC88;border-radius:10px;padding:4px 10px;cursor:pointer;font-weight:600;flex-shrink:0">Switch</span>
+        <span style="font-size:11px;color:#7A5C1E;background:#FBF5E6;border:1px solid #E8CC88;border-radius:10px;padding:4px 10px;cursor:pointer;font-weight:600;flex-shrink:0" onclick="showToast('Switching to North Hill apiary…')">Switch</span>
       </div>
     </div>
 
     <!-- Add apiary -->
-    <button class="btn-full" style="background:#F9F7F3;color:#5A5550;border:1px solid #EDE8E0">+ Add new apiary</button>
+    <button class="btn-full" style="background:#F9F7F3;color:#5A5550;border:1px solid #EDE8E0" onclick="showToast('Add a new apiary location to manage multiple hive yards.')">+ Add new apiary</button>
 
   </div>
 </div>
@@ -976,7 +976,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       </div>
     </div>
 
-    <button class="btn-full" style="background:#C79B3B;color:#fff">Set up my apiary →</button>
+    <button class="btn-full" style="background:#C79B3B;color:#fff" onclick="closeSub('sob');openSub('sap')">Set up my apiary →</button>
     <div style="font-size:11px;color:#D0CCC6;text-align:center;padding-top:4px">Complete all 4 steps to earn 50 bonus points</div>
 
   </div>

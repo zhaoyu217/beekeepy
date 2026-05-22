@@ -1285,11 +1285,24 @@ function addHive(){
       <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px;letter-spacing:-.3px">Add a hive</div>
       <div style="margin-bottom:12px">
         <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Hive name</div>
-        <input id="newHiveName" placeholder="e.g. Hive 4" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">
+        <input id="newHiveName" placeholder="e.g. Hive 1" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">
+      </div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Bee breed</div>
+        <input id="newHiveBreed" placeholder="e.g. Italian, Carniolan, Buckfast" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">
       </div>
       <div style="margin-bottom:20px">
-        <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Bee breed</div>
-        <input id="newHiveBreed" placeholder="e.g. Italian, Carniolan, Buckfast" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">
+        <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Photo (optional)</div>
+        <div onclick="document.getElementById('newHivePhoto').click()" style="display:flex;align-items:center;gap:12px;padding:11px 14px;border:1.5px dashed #EDE8E0;border-radius:12px;background:#F9F7F3;cursor:pointer" id="newHivePhotoSlot">
+          <div style="width:44px;height:44px;border-radius:8px;background:#EDE8DC;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center" id="newHivePhotoThumb">
+            <svg width="18" height="18" viewBox="0 0 20 20" fill="none"><rect x="2" y="5" width="16" height="12" rx="2" stroke="#B7B1A7" stroke-width="1.5"/><circle cx="10" cy="11" r="3" stroke="#B7B1A7" stroke-width="1.5"/><path d="M7 5l1-2h4l1 2" stroke="#B7B1A7" stroke-width="1.5" stroke-linejoin="round"/></svg>
+          </div>
+          <div>
+            <div style="font-size:12px;font-weight:600;color:#1A1A1A" id="newHivePhotoLabel">Add a photo</div>
+            <div style="font-size:10px;color:#B7B1A7;margin-top:2px">Tap to open camera or choose from gallery</div>
+          </div>
+        </div>
+        <input type="file" id="newHivePhoto" accept="image/*" capture="environment" style="display:none" onchange="previewNewHivePhoto(this)">
       </div>
       <div style="display:flex;gap:10px">
         <button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('addHiveOv').remove()">Cancel</button>
@@ -1301,12 +1314,28 @@ function addHive(){
   setTimeout(()=>document.getElementById('newHiveName').focus(), 100);
 }
 
+function previewNewHivePhoto(input){
+  if(!input.files||!input.files[0]) return;
+  const reader = new FileReader();
+  reader.onload = function(e){
+    const thumb = document.getElementById('newHivePhotoThumb');
+    const label = document.getElementById('newHivePhotoLabel');
+    if(thumb){ thumb.innerHTML=''; thumb.style.backgroundImage='url('+e.target.result+')'; thumb.style.backgroundSize='cover'; thumb.style.backgroundPosition='center'; }
+    if(label) label.textContent='Photo added ✓';
+    const slot = document.getElementById('newHivePhotoSlot');
+    if(slot) slot.style.borderColor='#5E7A63';
+  };
+  reader.readAsDataURL(input.files[0]);
+}
+
 function confirmAddHive(){
   const name = document.getElementById('newHiveName').value.trim();
   const breed = document.getElementById('newHiveBreed').value.trim() || 'Unknown';
   if(!name){ document.getElementById('newHiveName').style.borderColor='#B83A2A'; return; }
+  const photoInput = document.getElementById('newHivePhoto');
+  const photoData = (photoInput && photoInput.files && photoInput.files[0]) ? photoInput.files[0] : null;
   document.getElementById('addHiveOv').remove();
-  hives.push({
+  const newHive = {
     id: nextHiveId++,
     name: name,
     breed: breed,
@@ -1315,9 +1344,25 @@ function confirmAddHive(){
     sub: 'Added today · not yet inspected',
     iconColor: '#F5F4F2',
     strokeColor: '#B7B1A7',
-  });
+    photo: null,
+  };
+  hives.push(newHive);
   renderHiveList();
-  showToast(name + ' added. Ready for your first inspection!');
+  // If photo was selected, inject it after render
+  if(photoData){
+    const reader = new FileReader();
+    reader.onload = function(e){
+      const p = document.getElementById('hivePhotoPreview'+newHive.id);
+      const h = document.getElementById('hivePhotoHint'+newHive.id);
+      if(p){ p.style.backgroundImage='url('+e.target.result+')'; p.style.backgroundSize='cover'; p.style.backgroundPosition='center'; p.style.opacity='1'; }
+      if(h) h.textContent='';
+      // Auto-expand the card to show photo
+      const det = document.getElementById('hiveDetail'+newHive.id);
+      if(det) det.style.display='block';
+    };
+    reader.readAsDataURL(photoData);
+  }
+  showToast(name + ' added!');
 }
 
 function renameHive(id){

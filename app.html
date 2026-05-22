@@ -1109,13 +1109,43 @@ function addHive(){
     showUpgradePrompt();
     return;
   }
-  const name = window.prompt('Hive name (e.g. Hive 4):');
-  if(!name || !name.trim()) return;
-  const breed = window.prompt('Bee breed (e.g. Italian, Carniolan, Buckfast):') || 'Unknown';
+  // 内嵌表单弹窗
+  let ov = document.getElementById('addHiveOv');
+  if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'addHiveOv';
+  ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-end';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 36px;width:100%">
+      <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>
+      <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px;letter-spacing:-.3px">Add a hive</div>
+      <div style="margin-bottom:12px">
+        <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Hive name</div>
+        <input id="newHiveName" placeholder="e.g. Hive 4" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">
+      </div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Bee breed</div>
+        <input id="newHiveBreed" placeholder="e.g. Italian, Carniolan, Buckfast" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">
+      </div>
+      <div style="display:flex;gap:10px">
+        <button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('addHiveOv').remove()">Cancel</button>
+        <button style="flex:2;padding:13px;border-radius:13px;border:none;background:var(--forest);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="confirmAddHive()">Add hive</button>
+      </div>
+    </div>`;
+  ov.onclick = e => { if(e.target===ov) ov.remove(); };
+  document.querySelector('.shell').appendChild(ov);
+  setTimeout(()=>document.getElementById('newHiveName').focus(), 100);
+}
+
+function confirmAddHive(){
+  const name = document.getElementById('newHiveName').value.trim();
+  const breed = document.getElementById('newHiveBreed').value.trim() || 'Unknown';
+  if(!name){ document.getElementById('newHiveName').style.borderColor='#B83A2A'; return; }
+  document.getElementById('addHiveOv').remove();
   hives.push({
     id: nextHiveId++,
-    name: name.trim(),
-    breed: breed.trim(),
+    name: name,
+    breed: breed,
     status: 'New',
     statusColor: '#B7B1A7',
     sub: 'Added today · not yet inspected',
@@ -1123,14 +1153,43 @@ function addHive(){
     strokeColor: '#B7B1A7',
   });
   renderHiveList();
-  showToast(name.trim() + ' added. Ready for your first inspection!');
+  showToast(name + ' added. Ready for your first inspection!');
 }
 
 function renameHive(id){
   const h = hives.find(x => x.id === id);
   if(!h) return;
-  const newName = window.prompt('Rename hive:', h.name);
-  if(newName && newName.trim()){ h.name = newName.trim(); renderHiveList(); }
+  let ov = document.getElementById('renameHiveOv');
+  if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'renameHiveOv';
+  ov.style.cssText = 'position:absolute;inset:0;background:rgba(0,0,0,.45);z-index:300;display:flex;align-items:flex-end';
+  ov.innerHTML = `
+    <div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 36px;width:100%">
+      <div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>
+      <div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px;letter-spacing:-.3px">Rename hive</div>
+      <div style="margin-bottom:20px">
+        <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Hive name</div>
+        <input id="renameHiveInput" value="${h.name}" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3">
+      </div>
+      <div style="display:flex;gap:10px">
+        <button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('renameHiveOv').remove()">Cancel</button>
+        <button style="flex:2;padding:13px;border-radius:13px;border:none;background:var(--forest);color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="confirmRenameHive(${id})">Save</button>
+      </div>
+    </div>`;
+  ov.onclick = e => { if(e.target===ov) ov.remove(); };
+  document.querySelector('.shell').appendChild(ov);
+  setTimeout(()=>{ const el=document.getElementById('renameHiveInput'); el.focus(); el.select(); }, 100);
+}
+
+function confirmRenameHive(id){
+  const h = hives.find(x => x.id === id);
+  const newName = document.getElementById('renameHiveInput').value.trim();
+  if(!newName) return;
+  if(h) h.name = newName;
+  document.getElementById('renameHiveOv').remove();
+  renderHiveList();
+  showToast('Renamed to "' + newName + '"');
 }
 
 function deleteHive(id, label){

@@ -2591,13 +2591,203 @@ function saveNewPassword(){
 }
 
 function toggleTwoFa(){
-  USER.twoFaEnabled = USER.twoFaEnabled === false ? true : false;
-  var on = USER.twoFaEnabled;
+  var on = USER.twoFaEnabled !== false;
+  if(on){
+    // Already on — confirm disable
+    var ov = document.createElement('div');
+    ov.id = 'twoFaOv';
+    ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+    ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">' +
+      '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>' +
+      '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:8px">Disable 2FA?</div>' +
+      '<p style="font-size:13px;color:#5A5550;line-height:1.7;margin-bottom:20px">This will remove two-factor authentication from your account, making it less secure.</p>' +
+      '<div style="display:flex;gap:10px">' +
+        '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(\'twoFaOv\').remove()">Cancel</button>' +
+        '<button style="flex:1;padding:13px;border-radius:13px;border:none;background:#B83A2A;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="disableTwoFa()">Disable</button>' +
+      '</div></div>';
+    ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+    document.body.appendChild(ov);
+  } else {
+    // Off — start setup flow
+    openTwoFaSetup('qr');
+  }
+}
+
+function disableTwoFa(){
+  USER.twoFaEnabled = false;
   var tog = document.getElementById('twoFaTog');
   var lbl = document.getElementById('twoFaLabel');
-  if(tog){ tog.classList.toggle('on', on); tog.classList.toggle('off', !on); }
-  if(lbl){ lbl.textContent = on ? 'On' : 'Off'; lbl.style.color = on ? '#5E7A63' : '#B7B1A7'; }
-  showToast('Two-factor authentication ' + (on ? 'enabled ✓' : 'disabled'));
+  if(tog){ tog.classList.remove('on'); tog.classList.add('off'); }
+  if(lbl){ lbl.textContent = 'Off'; lbl.style.color = '#B7B1A7'; }
+  var ov = document.getElementById('twoFaOv'); if(ov) ov.remove();
+  showToast('Two-factor authentication disabled');
+}
+
+// Generate a simple mock TOTP secret for QR demo
+function makeMockSecret(){
+  var chars = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ234567';
+  var s = '';
+  for(var i=0;i<16;i++) s += chars[Math.floor(Math.random()*32)];
+  return s;
+}
+
+// Build QR code SVG using qrcode-svg approach (simple matrix via canvas-free method)
+function makeQrDataUrl(text){
+  // Use a public QR API for demo purposes
+  return 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&data=' + encodeURIComponent(text);
+}
+
+function openTwoFaSetup(step){
+  var ov = document.getElementById('twoFaOv'); if(ov) ov.remove();
+  ov = document.createElement('div');
+  ov.id = 'twoFaOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+
+  if(!USER._2faSecret) USER._2faSecret = makeMockSecret();
+  var secret = USER._2faSecret;
+  var email = USER.email || 'james@hivedash.app';
+  var otpUri = 'otpauth://totp/HiveDash:' + encodeURIComponent(email) + '?secret=' + secret + '&issuer=HiveDash';
+  var qrUrl = makeQrDataUrl(otpUri);
+
+  if(step === 'qr'){
+    ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px;max-height:85vh;overflow-y:auto">' +
+      '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>' +
+      // Step indicators
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:20px">' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#EDE8E0"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#EDE8E0"></div>' +
+      '</div>' +
+      '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:4px">Scan with Authenticator</div>' +
+      '<p style="font-size:12px;color:#B7B1A7;line-height:1.6;margin-bottom:16px">Open Google Authenticator or any TOTP app, tap + and scan this QR code.</p>' +
+      '<div style="display:flex;justify-content:center;margin-bottom:14px">' +
+        '<div style="padding:10px;background:#fff;border:1.5px solid #EDE8E0;border-radius:14px;display:inline-block">' +
+          '<img src="'+qrUrl+'" width="160" height="160" style="display:block;border-radius:6px" alt="QR Code">' +
+        '</div>' +
+      '</div>' +
+      '<div style="background:#F9F7F3;border-radius:10px;padding:10px 14px;margin-bottom:16px;text-align:center">' +
+        '<div style="font-size:10px;color:#B7B1A7;margin-bottom:4px;font-weight:600;text-transform:uppercase;letter-spacing:.05em">Can\'t scan? Enter this key manually</div>' +
+        '<div style="font-size:13px;font-weight:700;color:#1A1A1A;letter-spacing:.12em;cursor:pointer" onclick="navigator.clipboard&&navigator.clipboard.writeText(\''+secret+'\');showToast(\'Key copied ✓\')">' + secret.match(/.{1,4}/g).join(' ') + '</div>' +
+        '<div style="font-size:10px;color:#C79B3B;margin-top:3px">Tap to copy</div>' +
+      '</div>' +
+      '<button onclick="openTwoFaSetup(\'verify-app\')" style="width:100%;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:8px">I\'ve scanned it →</button>' +
+      '<button onclick="openTwoFaSetup(\'sms\')" style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif">Use SMS instead</button>' +
+    '</div>';
+
+  } else if(step === 'verify-app'){
+    // Generate a fake TOTP code for demo
+    var fakeCode = String(Math.floor(100000 + Math.random()*900000));
+    USER._2faDemoCode = fakeCode;
+    ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">' +
+      '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:20px">' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#EDE8E0"></div>' +
+      '</div>' +
+      '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:4px">Enter the 6-digit code</div>' +
+      '<p style="font-size:12px;color:#B7B1A7;line-height:1.6;margin-bottom:8px">Open your Authenticator app and enter the code shown for HiveDash.</p>' +
+      '<div style="background:#FBF5E6;border-radius:10px;padding:8px 12px;margin-bottom:16px;font-size:11px;color:#7A5C1E">Demo hint: enter <strong>' + fakeCode + '</strong></div>' +
+      '<input id="twoFaCode" type="number" maxlength="6" placeholder="000000" style="width:100%;padding:14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:22px;font-weight:700;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box;text-align:center;letter-spacing:.2em" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'" oninput="if(this.value.length>6)this.value=this.value.slice(0,6)">' +
+      '<div id="twoFaErr" style="font-size:11px;color:#B83A2A;margin-top:6px;display:none">Incorrect code. Please try again.</div>' +
+      '<div style="display:flex;gap:10px;margin-top:16px">' +
+        '<button onclick="openTwoFaSetup(\'qr\')" style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif">Back</button>' +
+        '<button onclick="verifyTwoFaCode(\'app\')" style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Verify</button>' +
+      '</div></div>';
+    setTimeout(function(){ var f=document.getElementById('twoFaCode'); if(f) f.focus(); }, 100);
+
+  } else if(step === 'sms'){
+    ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">' +
+      '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:20px">' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#EDE8E0"></div>' +
+      '</div>' +
+      '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:4px">SMS verification</div>' +
+      '<p style="font-size:12px;color:#B7B1A7;line-height:1.6;margin-bottom:16px">Enter your phone number and we\'ll send a 6-digit code to verify it.</p>' +
+      '<div style="display:flex;gap:8px;margin-bottom:8px">' +
+        '<select id="twoFaDialCode" style="padding:11px 8px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:13px;font-family:Inter,sans-serif;background:#F9F7F3;color:#1A1A1A;outline:none;cursor:pointer;flex-shrink:0">' +
+          '<option>🇺🇸 +1</option><option>🇬🇧 +44</option><option>🇩🇪 +49</option><option>🇫🇷 +33</option><option>🇦🇺 +61</option><option>🇨🇳 +86</option><option>🇯🇵 +81</option>' +
+        '</select>' +
+        '<input id="twoFaPhone" type="tel" placeholder="Phone number" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">' +
+      '</div>' +
+      '<div id="twoFaSmsErr" style="font-size:11px;color:#B83A2A;margin-bottom:8px;display:none">Please enter a valid phone number.</div>' +
+      '<div style="display:flex;gap:10px;margin-top:8px">' +
+        '<button onclick="openTwoFaSetup(\'qr\')" style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif">Back</button>' +
+        '<button onclick="sendTwoFaSms()" style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Send code</button>' +
+      '</div></div>';
+    setTimeout(function(){ var f=document.getElementById('twoFaPhone'); if(f) f.focus(); }, 100);
+
+  } else if(step === 'verify-sms'){
+    var phone = USER._2faPhone || '';
+    var fakeCode = String(Math.floor(100000 + Math.random()*900000));
+    USER._2faDemoCode = fakeCode;
+    ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">' +
+      '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>' +
+      '<div style="display:flex;align-items:center;gap:6px;margin-bottom:20px">' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+        '<div style="flex:1;height:3px;border-radius:2px;background:#C79B3B"></div>' +
+      '</div>' +
+      '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:4px">Enter the SMS code</div>' +
+      '<p style="font-size:12px;color:#B7B1A7;line-height:1.6;margin-bottom:8px">We sent a 6-digit code to <strong style="color:#1A1A1A">'+phone+'</strong>.</p>' +
+      '<div style="background:#FBF5E6;border-radius:10px;padding:8px 12px;margin-bottom:16px;font-size:11px;color:#7A5C1E">Demo hint: enter <strong>' + fakeCode + '</strong></div>' +
+      '<input id="twoFaCode" type="number" placeholder="000000" style="width:100%;padding:14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:22px;font-weight:700;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box;text-align:center;letter-spacing:.2em" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'" oninput="if(this.value.length>6)this.value=this.value.slice(0,6)">' +
+      '<div id="twoFaErr" style="font-size:11px;color:#B83A2A;margin-top:6px;display:none">Incorrect code. Please try again.</div>' +
+      '<div style="font-size:11px;color:#C79B3B;margin-top:8px;cursor:pointer;text-align:center" onclick="sendTwoFaSms()">Resend code</div>' +
+      '<div style="display:flex;gap:10px;margin-top:16px">' +
+        '<button onclick="openTwoFaSetup(\'sms\')" style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif">Back</button>' +
+        '<button onclick="verifyTwoFaCode(\'sms\')" style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Verify</button>' +
+      '</div></div>';
+    setTimeout(function(){ var f=document.getElementById('twoFaCode'); if(f) f.focus(); }, 100);
+  }
+
+  document.body.appendChild(ov);
+}
+
+function sendTwoFaSms(){
+  var phone = (document.getElementById('twoFaPhone')||{}).value || '';
+  var errEl = document.getElementById('twoFaSmsErr');
+  if(phone.replace(/\D/g,'').length < 7){
+    if(errEl){ errEl.textContent='Please enter a valid phone number.'; errEl.style.display='block'; }
+    return;
+  }
+  USER._2faPhone = phone;
+  showToast('Code sent to ' + phone);
+  openTwoFaSetup('verify-sms');
+}
+
+function verifyTwoFaCode(method){
+  var input = document.getElementById('twoFaCode');
+  var errEl = document.getElementById('twoFaErr');
+  var code = input ? input.value.trim() : '';
+  if(code !== USER._2faDemoCode){
+    if(errEl){ errEl.style.display='block'; }
+    if(input){ input.style.borderColor='#B83A2A'; setTimeout(function(){ input.style.borderColor='#EDE8E0'; },1500); }
+    return;
+  }
+  // Success
+  USER.twoFaEnabled = true;
+  USER._2faMethod = method;
+  var tog = document.getElementById('twoFaTog');
+  var lbl = document.getElementById('twoFaLabel');
+  if(tog){ tog.classList.add('on'); tog.classList.remove('off'); }
+  if(lbl){ lbl.textContent = 'On'; lbl.style.color = '#5E7A63'; }
+  var ov = document.getElementById('twoFaOv'); if(ov) ov.remove();
+  // Success sheet
+  var sv = document.createElement('div');
+  sv.id = 'twoFaOv';
+  sv.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;display:flex;align-items:flex-end;justify-content:center';
+  sv.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;padding:32px 24px 48px;width:100%;max-width:430px;text-align:center">' +
+    '<div style="width:56px;height:56px;border-radius:50%;background:#EEF5EF;display:flex;align-items:center;justify-content:center;font-size:26px;margin:0 auto 14px">✅</div>' +
+    '<div style="font-size:17px;font-weight:700;color:#1A1A1A;margin-bottom:6px">2FA enabled!</div>' +
+    '<p style="font-size:13px;color:#B7B1A7;line-height:1.7;margin-bottom:24px">Your account is now protected with '+(method==='app'?'an authenticator app':'SMS verification')+'.</p>' +
+    '<button onclick="document.getElementById(\'twoFaOv\').remove()" style="width:100%;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Done</button>' +
+  '</div>';
+  sv.onclick = function(e){ if(e.target===sv) sv.remove(); };
+  document.body.appendChild(sv);
 }
 
 function toggleBiometric(){

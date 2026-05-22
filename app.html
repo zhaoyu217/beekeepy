@@ -1539,6 +1539,7 @@ function useMyLocation(){
       const loc=state?(city+', '+state):city;
       const inp=document.getElementById('editApiaryLocation'); if(inp)inp.value=loc;
       if(btn)btn.textContent='📍 Got it ✓';
+      saveData(); // Save GPS coordinates immediately
     }catch(e){if(btn)btn.textContent='📍 Use GPS';}
   },function(){if(btn)btn.textContent='📍 Use GPS';});
 }
@@ -1560,9 +1561,12 @@ async function saveApiary(){
       const d=await res.json();
       if(d[0]){APIARY.lat=parseFloat(d[0].lat);APIARY.lon=parseFloat(d[0].lon);}
     }catch(e){}
+    saveData(); // Save AFTER geocode so lat/lon is included
     if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,loc);
+    else saveData(); // Save even if geocode failed
+  } else {
+    saveData();
   }
-  saveData();
   showToast(loc?('Weather updating for '+loc+' 🌤'):'Apiary name saved');
 }
 

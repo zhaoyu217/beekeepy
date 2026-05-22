@@ -287,7 +287,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       <div style="width:44px;height:44px;border-radius:14px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:22px;flex-shrink:0">🌻</div>
       <div style="flex:1">
         <div style="font-size:14px;font-weight:600;color:#1A1A1A" id="homeApiaryName">Backyard Apiary</div>
-        <div style="font-size:11px;color:#B7B1A7;margin-top:2px"><span id="homeHiveCount">0 hives</span> · Boulder, CO · Spring</div>
+        <div style="font-size:11px;color:#B7B1A7;margin-top:2px"><span id="homeHiveCount">0 hives</span><span id="homeApiaryLocation"></span></div>
       </div>
       <div style="display:flex;flex-direction:column;align-items:flex-end;gap:4px">
         <div style="font-size:11px;font-weight:600;color:var(--green);background:#EEF5EF;border-radius:8px;padding:3px 8px" id="homeHealthyCount">–</div>
@@ -1513,7 +1513,7 @@ window.addEventListener('load', function(){
   const locEl=document.getElementById('apiaryLocation');
   if(locEl)locEl.textContent=APIARY.location?('📍 '+APIARY.location):'📍 No location set · tap Edit to add';
   const homeSub=document.getElementById('homeApiaryLocation');
-  if(homeSub)homeSub.textContent=APIARY.location||'No location set';
+  if(homeSub)homeSub.textContent=APIARY.location?(' · '+APIARY.location):'';
   if(APIARY.location){
     fetchWeatherForLocation(null, null, APIARY.location);
   } else {
@@ -1595,7 +1595,7 @@ async function saveApiary(){
   const locEl=document.getElementById('apiaryLocation');
   if(locEl)locEl.textContent=loc?('📍 '+loc):'📍 No location set · tap Edit to add';
   const homeSub=document.getElementById('homeApiaryLocation');
-  if(homeSub)homeSub.textContent=loc||'No location set';
+  if(homeSub)homeSub.textContent=loc?(' · '+loc):'';
   if(loc){
     APIARY.lat = 1; APIARY.lon = 1; // sentinel values to indicate location is set
     // Auto temperature unit: US location → °F, elsewhere → °C

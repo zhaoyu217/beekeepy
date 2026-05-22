@@ -1645,7 +1645,7 @@ function addApiary(){
       '<input id="newApiaryLocation" placeholder="e.g. Boulder, CO" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">' +
     '</div>' +
     '<div style="display:flex;gap:10px">' +
-      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('addApiaryOv').remove()">Cancel</button>' +
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;addApiaryOv&quot;).remove()">Cancel</button>' +
       '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveNewApiary()">Add Apiary</button>' +
     '</div>' +
   '</div>';
@@ -1691,7 +1691,7 @@ function editApiary(){
       '<div style="font-size:10px;color:#B7B1A7;margin-top:5px">Weather will show conditions at this location</div>'+
     '</div>'+
     '<div style="display:flex;gap:10px">'+
-      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('editApiaryOv').remove()">Cancel</button>'+
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;editApiaryOv&quot;).remove()">Cancel</button>'+
       '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveApiary()">Save</button>'+
     '</div>'+
     (APIARIES.length>1?'<div style="margin-top:12px;text-align:center"><span style="font-size:12px;color:#B83A2A;cursor:pointer;font-weight:600" onclick="deleteApiary()">🗑 Remove this apiary</span></div>':'')

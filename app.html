@@ -1518,14 +1518,10 @@ window.addEventListener('load', function(){
   updateHarvestUI();
   // Restore apiary UI
   renderApiaryUI();
+  renderHomeApiaryList();
+  renderHiveList();
+  updateCounters();
   fetchWeather();
-  // Force home card update
-  const n = hives.length;
-  const el = document.getElementById('homeHiveCount');
-  if(el) el.textContent = n + (n===1?' hive':' hives');
-  const healthy = hives.filter(h=>h.status==='Healthy').length;
-  const hh = document.getElementById('homeHealthyCount');
-  if(hh) hh.textContent = healthy + ' healthy';
 });
 
 /* APIARY MANAGEMENT */

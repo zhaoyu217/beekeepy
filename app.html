@@ -571,7 +571,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 <div class="sub" id="smya">
   <div class="sub-hd">
     <div class="back" onclick="closeSub('smya')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    <div class="sub-title">My apiary</div>
+    <div class="sub-title" id="smyaTitle">My Apiary</div>
     <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer;margin-left:auto" onclick="editApiary()">Edit</div>
   </div>
   <div class="sp">
@@ -857,32 +857,9 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     </div>
 
     <!-- Apiaries list -->
-    <div class="sp-card">
-      <div class="sp-lbl">Locations</div>
-      <div class="sp-row" style="padding:12px 0">
-        <div style="display:flex;align-items:center;gap:12px;flex:1">
-          <div style="width:38px;height:38px;border-radius:12px;background:#FBF5E6;border:1px solid #E8CC88;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌻</div>
-          <div>
-            <div style="font-size:13px;font-weight:600;color:#1A1A1A">Backyard Apiary</div>
-            <div style="font-size:11px;color:#B7B1A7;margin-top:2px">3 hives · Boulder, CO · Active now</div>
-          </div>
-        </div>
-        <span style="font-size:11px;color:#fff;background:#C79B3B;border-radius:10px;padding:4px 10px;font-weight:600;flex-shrink:0">Active</span>
-      </div>
-      <div class="sp-row" style="padding:12px 0">
-        <div style="display:flex;align-items:center;gap:12px;flex:1">
-          <div style="width:38px;height:38px;border-radius:12px;background:#F5F4F2;border:1px solid #E8E4DC;display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🌾</div>
-          <div>
-            <div style="font-size:13px;font-weight:600;color:#1A1A1A">North Hill</div>
-            <div style="font-size:11px;color:#B7B1A7;margin-top:2px">2 hives · 4.1 mi away</div>
-          </div>
-        </div>
-        <span style="font-size:11px;color:#7A5C1E;background:#FBF5E6;border:1px solid #E8CC88;border-radius:10px;padding:4px 10px;cursor:pointer;font-weight:600;flex-shrink:0" onclick="showToast('Switching to North Hill apiary…')">Switch</span>
-      </div>
-    </div>
-
-    <!-- Add apiary -->
-    <button class="btn-full" style="background:#F9F7F3;color:#5A5550;border:1px solid #EDE8E0" onclick="showToast('Add a new apiary location to manage multiple hive yards.')">+ Add new apiary</button>
+    <!-- Apiaries list — dynamic -->
+    <div id="apiariesListContainer"></div>
+    <button class="btn-full" style="background:#F9F7F3;color:#5A5550;border:1px solid #EDE8E0;margin-top:4px" onclick="addApiary()">+ Add new apiary</button>
 
   </div>
 </div>
@@ -1189,28 +1166,59 @@ function updateHarvestUI(){
   const hbar=document.getElementById('harvestHeroBar');if(hbar)hbar.style.width=pct+'%';
 }
 
-var APIARY = { name:'Backyard Apiary', location:'', lat:null, lon:null };
+// Multi-apiary data model
+var APIARIES = [];        // [{id, name, location, hives:[...], nextHiveId}]
+var ACTIVE_APIARY_ID = null;   // currently viewed apiary id
+var _nextApiaryId = 1;
+
+function getActiveApiary(){
+  return APIARIES.find(a=>a.id===ACTIVE_APIARY_ID) || APIARIES[0] || null;
+}
+// Legacy shim so existing code still works
+var APIARY = new Proxy({}, {
+  get(_,k){ const a=getActiveApiary(); return a?a[k]:null; },
+  set(_,k,v){ const a=getActiveApiary(); if(a) a[k]=v; return true; }
+});
 
 /* ── PERSISTENCE ── */
 function saveData(){
   try{
-    localStorage.setItem('hd_hives', JSON.stringify(hives));
-    localStorage.setItem('hd_nextId', nextHiveId);
-    localStorage.setItem('hd_apiary', JSON.stringify(APIARY));
+    localStorage.setItem('hd_apiaries', JSON.stringify(APIARIES));
+    localStorage.setItem('hd_active_apiary', ACTIVE_APIARY_ID);
+    localStorage.setItem('hd_next_apiary_id', _nextApiaryId);
     localStorage.setItem('hd_plan', JSON.stringify({isPro: PLAN.isPro}));
   }catch(e){}
 }
 function loadData(){
   try{
-    const h = localStorage.getItem('hd_hives');
-    if(h){ const parsed=JSON.parse(h); hives.splice(0,hives.length,...parsed); }
-    const nid = localStorage.getItem('hd_nextId');
-    if(nid) nextHiveId = parseInt(nid);
-    const a = localStorage.getItem('hd_apiary');
-    if(a){ const parsed=JSON.parse(a); Object.assign(APIARY, parsed); }
+    // Migrate old single-apiary data
+    const oldApiary = localStorage.getItem('hd_apiary');
+    const oldHives  = localStorage.getItem('hd_hives');
+    const newData   = localStorage.getItem('hd_apiaries');
+    if(newData){
+      const parsed = JSON.parse(newData);
+      APIARIES.splice(0, APIARIES.length, ...parsed);
+      ACTIVE_APIARY_ID = parseInt(localStorage.getItem('hd_active_apiary')) || APIARIES[0]?.id || null;
+      _nextApiaryId = parseInt(localStorage.getItem('hd_next_apiary_id')) || APIARIES.length+1;
+    } else if(oldApiary){
+      // Migrate legacy data
+      const a = JSON.parse(oldApiary);
+      const h = oldHives ? JSON.parse(oldHives) : [];
+      const nid = parseInt(localStorage.getItem('hd_nextId')) || h.length+1;
+      const migrated = {id:1, name:a.name||'My Apiary', location:a.location||'', hives:h, nextHiveId:nid};
+      APIARIES.push(migrated);
+      ACTIVE_APIARY_ID = 1;
+      _nextApiaryId = 2;
+    } else {
+      // Fresh start — create default apiary
+      const def = {id:1, name:'My Apiary', location:'', hives:[], nextHiveId:1};
+      APIARIES.push(def);
+      ACTIVE_APIARY_ID = 1;
+      _nextApiaryId = 2;
+    }
     const p = localStorage.getItem('hd_plan');
     if(p){ const parsed=JSON.parse(p); PLAN.isPro = parsed.isPro; }
-  }catch(e){}
+  }catch(e){ console.log('loadData error',e); }
 }
 
 
@@ -1219,9 +1227,33 @@ var PLAN = {
   freeLimit: 3,
 };
 
-// Hive data model
-var hives = [];
-var nextHiveId = 1;
+// Hive shims — always operate on the active apiary's hive list
+var hives = new Proxy([], {
+  get(_, k){
+    const a = getActiveApiary();
+    const arr = a ? a.hives : [];
+    if(k==='length') return arr.length;
+    if(k==='splice') return arr.splice.bind(arr);
+    if(k==='push') return arr.push.bind(arr);
+    if(k==='filter') return arr.filter.bind(arr);
+    if(k==='find') return arr.find.bind(arr);
+    if(k==='findIndex') return arr.findIndex.bind(arr);
+    if(k==='forEach') return arr.forEach.bind(arr);
+    if(k==='map') return arr.map.bind(arr);
+    if(k==='sort') return arr.sort.bind(arr);
+    if(typeof k==='string' && !isNaN(k)) return arr[parseInt(k)];
+    if(k===Symbol.iterator) return arr[Symbol.iterator].bind(arr);
+    return arr[k];
+  },
+  set(_, k, v){
+    const a = getActiveApiary();
+    if(a){ a.hives[k]=v; } return true;
+  }
+});
+Object.defineProperty(window, 'nextHiveId', {
+  get(){ const a=getActiveApiary(); return a?a.nextHiveId:1; },
+  set(v){ const a=getActiveApiary(); if(a) a.nextHiveId=v; }
+});
 
 function renderHiveList(){
   const container = document.getElementById('hiveListContainer');
@@ -1508,12 +1540,8 @@ window.addEventListener('load', function(){
   renderHiveList();
   updateHiveBadge();
   updateHarvestUI();
-  // Restore apiary name/location in UI
-  ['apiaryName','homeApiaryName'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=APIARY.name;});
-  const locEl=document.getElementById('apiaryLocation');
-  if(locEl)locEl.textContent=APIARY.location?('📍 '+APIARY.location):'📍 No location set · tap Edit to add';
-  const homeSub=document.getElementById('homeApiaryLocation');
-  if(homeSub)homeSub.textContent=APIARY.location?(' · '+APIARY.location):'';
+  // Restore apiary UI
+  renderApiaryUI();
   fetchWeather();
   // Force home card update
   const n = hives.length;
@@ -1526,7 +1554,117 @@ window.addEventListener('load', function(){
 
 /* APIARY MANAGEMENT */
 
+/* ── MULTI-APIARY MANAGEMENT ── */
+
+function renderApiaryUI(){
+  const a = getActiveApiary();
+  if(!a) return;
+  // Update header title
+  const titleEl = document.getElementById('smyaTitle'); if(titleEl) titleEl.textContent = a.name;
+  // Update info card
+  const nameEl = document.getElementById('apiaryName'); if(nameEl) nameEl.textContent = a.name;
+  const locEl = document.getElementById('apiaryLocation');
+  if(locEl) locEl.textContent = a.location ? ('📍 '+a.location) : '📍 No location set · tap Edit to add';
+  // Render apiaries list in smya
+  renderApiariesList();
+  // Update home card
+  const homeNameEl = document.getElementById('homeApiaryName'); if(homeNameEl) homeNameEl.textContent = a.name;
+  const homeSub = document.getElementById('homeApiaryLocation');
+  if(homeSub) homeSub.textContent = a.location ? (' · '+a.location) : '';
+}
+
+function renderApiariesList(){
+  const container = document.getElementById('apiariesListContainer');
+  if(!container) return;
+  container.innerHTML = '';
+  const card = document.createElement('div');
+  card.className = 'sp-card';
+  card.style.marginBottom = '0';
+  const lbl = document.createElement('div');
+  lbl.className = 'sp-lbl';
+  lbl.textContent = 'Your apiaries';
+  card.appendChild(lbl);
+  APIARIES.forEach(function(a){
+    const isActive = a.id === ACTIVE_APIARY_ID;
+    const row = document.createElement('div');
+    row.className = 'sp-row';
+    row.style.cssText = 'padding:10px 0;cursor:pointer';
+    const icons = ['🌻','🌾','🍀','🌿','🌸','🌼','🌳','🐝'];
+    const icon = icons[(a.id-1) % icons.length];
+    row.innerHTML =
+      '<div style="display:flex;align-items:center;gap:12px;flex:1">' +
+        '<div style="width:38px;height:38px;border-radius:12px;background:'+(isActive?'#FBF5E6':'#F5F4F2')+';border:1px solid '+(isActive?'#E8CC88':'#E8E4DC')+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">'+icon+'</div>' +
+        '<div>' +
+          '<div style="font-size:13px;font-weight:600;color:#1A1A1A">'+a.name+'</div>' +
+          '<div style="font-size:11px;color:#B7B1A7;margin-top:2px">'+a.hives.length+' hive'+(a.hives.length!==1?'s':'')+(a.location?' · '+a.location:'')+'</div>' +
+        '</div>' +
+      '</div>' +
+      (isActive
+        ? '<span style="font-size:11px;color:#fff;background:#C79B3B;border-radius:10px;padding:4px 10px;font-weight:600;flex-shrink:0">Active</span>'
+        : '<span style="font-size:11px;color:#7A5C1E;background:#FBF5E6;border:1px solid #E8CC88;border-radius:10px;padding:4px 10px;cursor:pointer;font-weight:600;flex-shrink:0" data-aid="'+a.id+'">Switch</span>'
+      );
+    if(!isActive){
+      row.querySelector('[data-aid]').onclick = function(){ switchApiary(a.id); };
+    }
+    card.appendChild(row);
+  });
+  container.appendChild(card);
+}
+
+function switchApiary(id){
+  ACTIVE_APIARY_ID = id;
+  saveData();
+  renderApiaryUI();
+  renderHiveList();
+  updateCounters();
+  fetchWeather();
+  const a = getActiveApiary();
+  showToast('Switched to ' + (a?a.name:'apiary'));
+}
+
+function addApiary(){
+  let ov = document.getElementById('addApiaryOv'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.id = 'addApiaryOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px">' +
+    '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>' +
+    '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px">Add new apiary</div>' +
+    '<div style="margin-bottom:12px">' +
+      '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Apiary name</div>' +
+      '<input id="newApiaryName" placeholder="e.g. North Field Apiary" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">' +
+    '</div>' +
+    '<div style="margin-bottom:20px">' +
+      '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Location</div>' +
+      '<input id="newApiaryLocation" placeholder="e.g. Boulder, CO" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">' +
+    '</div>' +
+    '<div style="display:flex;gap:10px">' +
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('addApiaryOv').remove()">Cancel</button>' +
+      '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveNewApiary()">Add Apiary</button>' +
+    '</div>' +
+  '</div>';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+  document.body.appendChild(ov);
+  setTimeout(function(){ document.getElementById('newApiaryName').focus(); }, 100);
+}
+
+function saveNewApiary(){
+  const name = document.getElementById('newApiaryName').value.trim();
+  const loc  = document.getElementById('newApiaryLocation').value.trim();
+  if(!name){ showToast('Please enter an apiary name'); return; }
+  const newApiary = { id: _nextApiaryId++, name: name, location: loc, hives: [], nextHiveId: 1 };
+  APIARIES.push(newApiary);
+  ACTIVE_APIARY_ID = newApiary.id;
+  saveData();
+  document.getElementById('addApiaryOv').remove();
+  renderApiaryUI();
+  renderHiveList();
+  updateCounters();
+  if(loc) fetchWeatherForLocation(null, null, loc);
+  showToast('Apiary "'+name+'" added!');
+}
+
 function editApiary(){
+  const a = getActiveApiary(); if(!a) return;
   let ov=document.getElementById('editApiaryOv'); if(ov)ov.remove();
   ov=document.createElement('div'); ov.id='editApiaryOv';
   ov.style.cssText='position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
@@ -1535,44 +1673,42 @@ function editApiary(){
     '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:16px">Edit apiary</div>'+
     '<div style="margin-bottom:12px">'+
       '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Apiary name</div>'+
-      '<input id="editApiaryName" value="'+APIARY.name+'" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">'+
+      '<input id="editApiaryName" value="'+a.name+'" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box">'+
     '</div>'+
     '<div style="margin-bottom:20px">'+
       '<div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Location</div>'+
       '<div style="display:flex;gap:8px;align-items:center">'+
-        '<input id="editApiaryLocation" value="'+APIARY.location+'" placeholder="e.g. Boulder, CO" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">'+
+        '<input id="editApiaryLocation" value="'+a.location+'" placeholder="e.g. Boulder, CO" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'">'+
         '<button id="gpsBtn" onclick="useMyLocation()" style="padding:11px 12px;border-radius:12px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:11px;font-weight:600;color:#5E7A63;cursor:pointer;font-family:Inter,sans-serif;white-space:nowrap">&#128205; Use GPS</button>'+
       '</div>'+
       '<div style="font-size:10px;color:#B7B1A7;margin-top:5px">Weather will show conditions at this location</div>'+
     '</div>'+
     '<div style="display:flex;gap:10px">'+
-      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(\'editApiaryOv\').remove()">Cancel</button>'+
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById('editApiaryOv').remove()">Cancel</button>'+
       '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveApiary()">Save</button>'+
     '</div>'+
-  '</div>';
-  ov.onclick=e=>{if(e.target===ov)ov.remove();};
+    (APIARIES.length>1?'<div style="margin-top:12px;text-align:center"><span style="font-size:12px;color:#B83A2A;cursor:pointer;font-weight:600" onclick="deleteApiary()">🗑 Remove this apiary</span></div>':'')
+  +'</div>';
+  ov.onclick=function(e){if(e.target===ov)ov.remove();};
   document.body.appendChild(ov);
-  setTimeout(()=>document.getElementById('editApiaryName').focus(),100);
+  setTimeout(function(){document.getElementById('editApiaryName').focus();},100);
 }
 
 function useMyLocation(){
   const btn=document.getElementById('gpsBtn'); if(btn)btn.textContent='⏳ Locating…';
   navigator.geolocation.getCurrentPosition(async function(pos){
-    APIARY.lat=pos.coords.latitude; APIARY.lon=pos.coords.longitude;
+    const a = getActiveApiary(); if(!a) return;
+    a.lat=pos.coords.latitude; a.lon=pos.coords.longitude;
     try{
-      // Get city name from Open-Meteo weather response (includes timezone/location info)
-      const res=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+APIARY.lat+'&longitude='+APIARY.lon+'&current=temperature_2m&timezone=auto&forecast_days=1');
+      const res=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+a.lat+'&longitude='+a.lon+'&current=temperature_2m&timezone=auto&forecast_days=1');
       const d=await res.json();
-      // Use timezone as location hint, or fallback to coordinates
-      const tz = d.timezone || '';
-      const parts = tz.split('/');
-      const cityHint = parts[parts.length-1].replace(/_/g,' ') || (APIARY.lat.toFixed(2)+', '+APIARY.lon.toFixed(2));
+      const tz=d.timezone||''; const parts=tz.split('/');
+      const cityHint=parts[parts.length-1].replace(/_/g,' ')||(a.lat.toFixed(2)+', '+a.lon.toFixed(2));
       const inp=document.getElementById('editApiaryLocation'); if(inp)inp.value=cityHint;
       if(btn)btn.textContent='📍 Got it ✓';
       saveData();
     }catch(e){
-      // Fallback: just show coordinates
-      const coords=APIARY.lat.toFixed(3)+', '+APIARY.lon.toFixed(3);
+      const coords=pos.coords.latitude.toFixed(3)+', '+pos.coords.longitude.toFixed(3);
       const inp=document.getElementById('editApiaryLocation'); if(inp)inp.value=coords;
       if(btn)btn.textContent='📍 Got it ✓';
       saveData();
@@ -1581,41 +1717,38 @@ function useMyLocation(){
 }
 
 async function saveApiary(){
+  const a = getActiveApiary(); if(!a) return;
   const name=document.getElementById('editApiaryName').value.trim();
   const loc=document.getElementById('editApiaryLocation').value.trim();
-  console.log('[HiveDash] saveApiary - name:',name,'loc:',loc);
-  if(name)APIARY.name=name;
-  APIARY.location=loc; APIARY.lat=null; APIARY.lon=null;
+  if(name) a.name=name;
+  a.location=loc;
   document.getElementById('editApiaryOv').remove();
-  ['apiaryName','homeApiaryName'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=APIARY.name;});
-  const locEl=document.getElementById('apiaryLocation');
-  if(locEl)locEl.textContent=loc?('📍 '+loc):'📍 No location set · tap Edit to add';
-  const homeSub=document.getElementById('homeApiaryLocation');
-  if(homeSub)homeSub.textContent=loc?(' · '+loc):'';
+  saveData();
+  renderApiaryUI();
   if(loc){
-    APIARY.lat = 1; APIARY.lon = 1; // sentinel values to indicate location is set
-    // Auto temperature unit: US location → °F, elsewhere → °C
-    const locLower = loc.toLowerCase();
-    const usKeywords = [', us', ', usa', ', united states', ' co', ' ca', ' ny', ' tx', ' fl', ' wa', ' or'];
-    const looksUS = usKeywords.some(k => locLower.endsWith(k)) || /\b(colorado|california|texas|florida|washington|oregon|new york|alaska|hawaii)\b/i.test(loc);
-    isF = looksUS;
-    localStorage.setItem('hd_unit', isF?'f':'c');
-    applyUnit();
-    saveData();
-    fetchWeatherForLocation(null, null, loc);
-  } else {
-    saveData();
+    const locLower=loc.toLowerCase();
+    const usKeywords=[', us',', usa',', united states',' co',' ca',' ny',' tx',' fl',' wa',' or'];
+    const looksUS=usKeywords.some(k=>locLower.endsWith(k))||/\b(colorado|california|texas|florida|washington|oregon|new york|alaska|hawaii|michigan|fowlerville)\b/i.test(loc);
+    isF=looksUS; localStorage.setItem('hd_unit',isF?'f':'c'); applyUnit();
+    fetchWeatherForLocation(null,null,loc);
   }
-  showToast(loc?('Weather updating for '+loc+' 🌤'):'Apiary name saved');
+  showToast(loc?('Weather updating for '+loc+' 🌤'):'Apiary saved');
 }
 
 function deleteApiary(){
-  const ok = window.confirm('Remove Backyard Apiary?\n\nAll hives, inspections, and photos will be permanently deleted. This cannot be undone.');
+  const a=getActiveApiary(); if(!a) return;
+  if(APIARIES.length<=1){ showToast('Cannot remove your only apiary'); return; }
+  const ok=window.confirm('Remove "'+a.name+'"?\n\nAll hives and data will be permanently deleted.');
   if(ok){
-    closeSub('smya');
-    showToast('Backyard Apiary removed.');
+    APIARIES=APIARIES.filter(x=>x.id!==a.id);
+    ACTIVE_APIARY_ID=APIARIES[0].id;
+    saveData();
+    document.getElementById('editApiaryOv')?.remove();
+    renderApiaryUI(); renderHiveList(); updateCounters(); fetchWeather();
+    showToast(a.name+' removed');
   }
 }
+
 
 /* HIVE CARD EXPAND */
 function toggleHiveCard(id){

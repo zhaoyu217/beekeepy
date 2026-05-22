@@ -1270,6 +1270,64 @@ function deleteHarvestRecord(id){
   showToast('Harvest record deleted');
 }
 var _harvestNextId=1;
+/* ── NECTAR SOURCES BY REGION ── */
+var NECTAR_SOURCES = {
+  'en-US': { label:'🇺🇸 United States', sources:['Clover','Wildflower','Orange Blossom','Alfalfa','Buckwheat','Tupelo','Blueberry','Sage','Star Thistle','Sunflower'] },
+  'en-GB': { label:'🇬🇧 United Kingdom', sources:['Clover','Oilseed Rape','Heather','Borage','Phacelia','Blackberry','Hawthorn','Lime Tree','Field Beans','Lavender'] },
+  'en-AU': { label:'🇦🇺 Australia', sources:['Eucalyptus','Leatherwood','Yellow Box','Red Gum','Ironbark','Canola','Salvation Jane','Tea Tree','Macadamia','Banksia'] },
+  'en-NZ': { label:'🇳🇿 New Zealand', sources:['Mānuka','Clover','Kānuka','Rata','Rewarewa','Thyme','Clover','Borage','Phacelia','Heather'] },
+  'de':    { label:'🇩🇪 Germany', sources:['Rapeseed','Acacia','Linden','Sunflower','Phacelia','Clover','Heather','Forest Honeydew','Fruit Blossom','Meadow Flower'] },
+  'fr':    { label:'🇫🇷 France', sources:['Acacia','Lavender','Chestnut','Sunflower','Rapeseed','Linden','Thyme','Rosemary','Heather','Meadow Flower'] },
+  'it':    { label:'🇮🇹 Italy', sources:['Acacia','Chestnut','Citrus','Wildflower','Sulla','Eucalyptus','Sulla','Rosemary','Thyme','Honeydew'] },
+  'pt':    { label:'🇧🇷 Brazil', sources:['Eucalyptus','Orange Blossom','Wildflower','Jatobá','Aroeira','Cipó-uva','Angico','Maracujá','Laranjeira','Cajueiro'] },
+  'ro':    { label:'🇷🇴 Romania', sources:['Acacia','Sunflower','Linden','Rapeseed','Buckwheat','Clover','Phacelia','Forest Honeydew','Coriander','Meadow Flower'] },
+  'tr':    { label:'🇹🇷 Turkey', sources:['Pine Honeydew','Chestnut','Citrus','Thyme','Cotton','Sunflower','Anzer','Lavender','Acacia','Wildflower'] }
+};
+
+function openNectarPicker(){
+  var ov = document.getElementById('nectarPickerOv'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.id = 'nectarPickerOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+
+  // Build regions — current lang first, then rest
+  var regions = Object.keys(NECTAR_SOURCES);
+  var curIdx = regions.indexOf(CURRENT_LANG);
+  if(curIdx > 0){ regions.splice(curIdx,1); regions.unshift(CURRENT_LANG); }
+
+  var sectionsHtml = regions.map(function(lang){
+    var r = NECTAR_SOURCES[lang];
+    var pills = r.sources.map(function(s){
+      return '<div onclick="selectNectar(\''+s+'\')" style="display:inline-block;padding:7px 13px;border-radius:20px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:12px;font-weight:500;color:#1A1A1A;cursor:pointer;margin:3px 3px 3px 0;transition:.15s" onmouseover="this.style.borderColor=\'#C79B3B\';this.style.background=\'#FBF5E6\'" onmouseout="this.style.borderColor=\'#EDE8E0\';this.style.background=\'#F9F7F3\'">'+s+'</div>';
+    }).join('');
+    return '<div style="margin-bottom:14px">'+
+      '<div style="font-size:10px;font-weight:700;color:#B7B1A7;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">'+r.label+'</div>'+
+      '<div>'+pills+'</div>'+
+    '</div>';
+  }).join('');
+
+  ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:80vh;display:flex;flex-direction:column">'+
+    '<div style="padding:16px 20px 12px;border-bottom:1px solid #EDE8E0;flex-shrink:0">'+
+      '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 14px"></div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between">'+
+        '<div style="font-size:15px;font-weight:700;color:#1A1A1A">Nectar source</div>'+
+        '<div onclick="selectNectar(\'\')" style="font-size:12px;color:#B7B1A7;cursor:pointer">Clear</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="overflow-y:auto;padding:16px 20px 32px">'+sectionsHtml+'</div>'+
+  '</div>';
+  document.body.appendChild(ov);
+}
+
+function selectNectar(val){
+  document.getElementById('rhNectar').value = val;
+  var lbl = document.getElementById('rhNectarLabel');
+  var disp = document.getElementById('rhNectarDisplay');
+  if(lbl){ lbl.textContent = val || 'Select nectar source…'; lbl.style.color = val ? '#1A1A1A' : '#B7B1A7'; }
+  if(disp){ disp.style.borderColor = val ? '#C79B3B' : '#EDE8E0'; }
+  var ov = document.getElementById('nectarPickerOv'); if(ov) ov.remove();
+}
+
 function openRecordHarvest(){
   var hivesAll=[];
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){ hivesAll.push({id:h.id,name:h.name+(h.breed?' · '+h.breed:''),apiaryId:a.id}); }); });
@@ -1289,7 +1347,11 @@ function openRecordHarvest(){
     '<input id="rhWeight" type="number" min="0.1" step="0.1" placeholder="0.0" style="flex:1;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'">'+
     '<select id="rhUnit" style="padding:11px 12px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;cursor:pointer"><option value="lbs"'+(isF?' selected':'')+'>lbs</option><option value="kg"'+(!isF?' selected':'')+'>kg</option></select></div></div>'+
     '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Nectar source (optional)</div>'+
-    '<input id="rhNectar" placeholder="e.g. Clover, Wildflower, Lavender" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box" onfocus="this.style.borderColor=\'#C79B3B\'" onblur="this.style.borderColor=\'#EDE8E0\'"></div>'+
+    '<div id="rhNectarDisplay" onclick="openNectarPicker()" style="display:flex;align-items:center;justify-content:space-between;width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#B7B1A7;background:#F9F7F3;box-sizing:border-box;cursor:pointer">'+
+      '<span id="rhNectarLabel">Select nectar source…</span>'+
+      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M3 5l4 4 4-4" stroke="#B7B1A7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+    '</div>'+
+    '<input type="hidden" id="rhNectar"></div>'+
     '<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Quality</div>'+
     '<div style="display:flex;gap:8px">'+
     ['Excellent','Good','Fair'].map(function(q){return '<div onclick="selectHarvestQuality(this,\''+q+'\')" style="flex:1;padding:9px;border-radius:10px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:12px;font-weight:600;color:#B7B1A7;cursor:pointer;text-align:center">'+q+'</div>';}).join('')+

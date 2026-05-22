@@ -2554,9 +2554,69 @@ function openSettingsSheet(type){
   } else if(type==='legal'){
     title = 'Legal';
     html =
-      '<div style="display:flex;flex-direction:column;gap:0;border:1px solid #EDE8E0;border-radius:14px;overflow:hidden;margin-bottom:16px">' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F5F2EE;cursor:pointer" onclick="showToast(&quot;Opening Terms of Service…&quot;)"><span style="font-size:13px;font-weight:500;color:#1A1A1A">Terms of Service</span><span style="color:#D0CCC6">›</span></div>' +
-      '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer" onclick="showToast(&quot;Opening Privacy Policy…&quot;)"><span style="font-size:13px;font-weight:500;color:#1A1A1A">Privacy Policy</span><span style="color:#D0CCC6">›</span></div>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:16px">' +
+
+      // Terms of Service
+      '<div style="border:1px solid #EDE8E0;border-radius:14px;overflow:hidden">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:#F9F7F3" onclick="var b=document.getElementById(\'tosBody\');var a=document.getElementById(\'tosArrow\');var open=b.style.display===\'block\';b.style.display=open?\'none\':\'block\';a.textContent=open?\'›\':\'‹\'">' +
+          '<span style="font-size:13px;font-weight:600;color:#1A1A1A">Terms of Service</span>' +
+          '<span id="tosArrow" style="color:#D0CCC6;font-size:16px">›</span>' +
+        '</div>' +
+        '<div id="tosBody" style="display:none;padding:16px;font-size:12px;color:#5A5550;line-height:1.8;border-top:1px solid #F5F2EE;max-height:360px;overflow-y:auto">' +
+          '<div style="font-size:10px;color:#B7B1A7;margin-bottom:12px">Last Updated: May 23, 2026</div>' +
+          '<p style="margin-bottom:10px">Welcome to HiveDash! By accessing or using the Service, you agree to be bound by these Terms.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">1. Eligibility &amp; Global Availability</div>' +
+          '<p style="margin-bottom:10px">The Service is intended for global use. You must be at least 18 years old, or the age of majority in your jurisdiction, to create an account.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">2. Accounts and Subscriptions</div>' +
+          '<p style="margin-bottom:4px"><strong>Account Accuracy:</strong> You must provide accurate, complete, and current information at all times.</p>' +
+          '<p style="margin-bottom:4px"><strong>Subscription Plans:</strong> HiveDash offers monthly subscriptions at $2.99 USD (or local equivalent) and annual subscriptions at $19.99 USD (or local equivalent).</p>' +
+          '<p style="margin-bottom:10px"><strong>Billing &amp; Auto-Renewal:</strong> Subscriptions renew automatically unless cancelled at least 24 hours before the end of the current period through your App Store or Google Play account. Refund requests must be directed to Apple or Google.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">3. Intellectual Property</div>' +
+          '<p style="margin-bottom:10px">The Service and its original content, features, and functionality are and will remain the exclusive property of SkogHive and its licensors.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">4. Acceptable Use</div>' +
+          '<p style="margin-bottom:10px">You agree not to use the Service for any unlawful purpose or in any way that interrupts, damages, or impairs the Service.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">5. Limitation of Liability</div>' +
+          '<p style="margin-bottom:10px">To the maximum extent permitted by applicable law, HiveDash shall not be liable for any indirect, incidental, special, consequential, or punitive damages resulting from your use of the Service.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">6. Governing Law &amp; Jurisdiction</div>' +
+          '<p style="margin-bottom:10px">These Terms shall be governed by the laws of Sweden. Disputes shall be subject to the exclusive jurisdiction of the courts in Stockholm, Sweden, except where local mandatory consumer protection laws apply.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">7. Contact Us</div>' +
+          '<p>Questions about these Terms? Contact us at <span style="color:#C79B3B">support@skoghive.com</span>.</p>' +
+        '</div>' +
+      '</div>' +
+
+      // Privacy Policy
+      '<div style="border:1px solid #EDE8E0;border-radius:14px;overflow:hidden">' +
+        '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer;background:#F9F7F3" onclick="var b=document.getElementById(\'ppBody\');var a=document.getElementById(\'ppArrow\');var open=b.style.display===\'block\';b.style.display=open?\'none\':\'block\';a.textContent=open?\'›\':\'‹\'">' +
+          '<span style="font-size:13px;font-weight:600;color:#1A1A1A">Privacy Policy</span>' +
+          '<span id="ppArrow" style="color:#D0CCC6;font-size:16px">›</span>' +
+        '</div>' +
+        '<div id="ppBody" style="display:none;padding:16px;font-size:12px;color:#5A5550;line-height:1.8;border-top:1px solid #F5F2EE;max-height:360px;overflow-y:auto">' +
+          '<div style="font-size:10px;color:#B7B1A7;margin-bottom:12px">Last Updated: May 23, 2026</div>' +
+          '<p style="margin-bottom:10px">SkogHive is committed to protecting your privacy. We comply with GDPR, CCPA/CPRA, PIPEDA, the Australian Privacy Act, and Japan\'s APPI.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">1. Information We Collect</div>' +
+          '<p style="margin-bottom:4px"><strong>Account Information:</strong> Email address, username, and password.</p>' +
+          '<p style="margin-bottom:4px"><strong>Apiary &amp; Hive Data:</strong> Location, climate metrics, inspection notes, hive health status, bloom records, and harvest weight.</p>' +
+          '<p style="margin-bottom:10px"><strong>Device &amp; Usage Data:</strong> App settings, IP address, device type, OS version, and usage analytics.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">2. How We Use Your Information</div>' +
+          '<p style="margin-bottom:10px">To operate and optimize HiveDash, process payments, send hive alerts, and calculate harvest goals and weather alerts.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">3. Sharing and Disclosure</div>' +
+          '<p style="margin-bottom:10px">We do not sell your data. We only share with payment processors (Apple, Google) and analytics providers (Firebase, Google Analytics) to facilitate operations.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">4. International Data Transfers</div>' +
+          '<p style="margin-bottom:10px">Your data may be stored on servers in Sweden and the United States. We use Standard Contractual Clauses (SCCs) and encryption to protect it.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">5. Your Privacy Rights</div>' +
+          '<p style="margin-bottom:4px"><strong>EEA / UK (GDPR):</strong> Access, rectify, erase, restrict, or port your data.</p>' +
+          '<p style="margin-bottom:4px"><strong>US (CCPA/CPRA):</strong> Know what we collect, request deletion, opt out of data sharing.</p>' +
+          '<p style="margin-bottom:4px"><strong>Canada (PIPEDA):</strong> Access your data and challenge its accuracy.</p>' +
+          '<p style="margin-bottom:4px"><strong>Australia &amp; NZ:</strong> Request access or lodge a complaint under local Privacy Principles.</p>' +
+          '<p style="margin-bottom:10px"><strong>Japan (APPI):</strong> Request disclosure, correction, or cessation of use of your data.</p>' +
+          '<p style="margin-bottom:10px">Exercise your rights via Settings in the app, or email <span style="color:#C79B3B">support@skoghive.com</span>.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">6. Data Retention &amp; Deletion</div>' +
+          '<p style="margin-bottom:10px">Data is retained while your account is active. You can delete your account in Settings. All data is permanently wiped within 30 days of deletion.</p>' +
+          '<div style="font-weight:700;color:#1A1A1A;margin:12px 0 4px">7. Contact</div>' +
+          '<p>Privacy inquiries: <span style="color:#C79B3B">support@skoghive.com</span></p>' +
+        '</div>' +
+      '</div>' +
+
       '</div>' +
       '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
   }

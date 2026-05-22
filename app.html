@@ -415,22 +415,22 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 
   <!-- ① ACCOUNT & SECURITY -->
   <div class="drawer-sec">Account &amp; Security</div>
-  <div class="drawer-item" onclick="showToast('Profile settings coming soon')">
-    <div class="di-icon">👤</div><div class="di-label">Profile</div><div class="di-val" style="font-size:11px;color:#B7B1A7">james@hivedash.app</div><div class="di-arrow">›</div>
+  <div class="drawer-item" onclick="openSettingsSheet('profile')">
+    <div class="di-icon">👤</div><div class="di-label">Profile</div><div class="di-val" style="font-size:11px;color:#B7B1A7" id="settingsEmail">james@hivedash.app</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('Security settings: password, 2FA, Face ID')">
-    <div class="di-icon">🔒</div><div class="di-label">Security</div><div class="di-val" style="font-size:11px;color:#5E7A63">2FA on</div><div class="di-arrow">›</div>
+  <div class="drawer-item" onclick="openSettingsSheet('security')">
+    <div class="di-icon">🔒</div><div class="di-label">Security</div><div class="di-val" style="font-size:11px;color:#5E7A63">Password · 2FA · Face ID</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('Preparing your full data export as CSV… download link will be emailed.')">
+  <div class="drawer-item" onclick="openSettingsSheet('export')">
     <div class="di-icon">📤</div><div class="di-label">Export data</div><div class="di-val" style="font-size:11px;color:#B7B1A7">CSV / JSON</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('To delete your account and all data, contact support@hivedash.app — we will process within 48 hours.')">
+  <div class="drawer-item" onclick="openSettingsSheet('delete')">
     <div class="di-icon">🗑️</div><div class="di-label" style="color:#B83A2A">Delete account</div><div class="di-arrow" style="color:#B83A2A">›</div>
   </div>
 
   <!-- ② APP PREFERENCES -->
   <div class="drawer-sec">Preferences</div>
-  <div class="drawer-item" onclick="showToast('Units settings coming soon')">
+  <div class="drawer-item">
     <div class="di-icon">⚖️</div><div class="di-label">Units</div>
     <div style="display:flex;align-items:center;gap:6px">
       <div class="unit-pill" style="font-size:11px">
@@ -444,7 +444,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       </div>
     </div>
   </div>
-  <div class="drawer-item" onclick="showToast('Language follows your top-bar selection')">
+  <div class="drawer-item">
     <div class="di-icon">🌐</div><div class="di-label">Language &amp; Region</div>
     <select id="langSelect" onchange="setLanguage(this.value)" style="border:1px solid #EDE8E0;border-radius:10px;padding:4px 8px;font-size:11px;font-family:Inter,sans-serif;background:#F9F7F3;color:#1A1A1A;cursor:pointer;outline:none;max-width:130px">
       <option value="en-US">🇺🇸 English (US)</option>
@@ -463,7 +463,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     <div class="di-icon">🌙</div><div class="di-label">Appearance</div>
     <div class="tog off" onclick="this.classList.toggle('on');this.classList.toggle('off')"></div>
   </div>
-  <div class="drawer-item" onclick="showToast('IoT device pairing coming soon — pair scales, temperature and humidity sensors.')">
+  <div class="drawer-item" onclick="openSettingsSheet('devices')">
     <div class="di-icon">📡</div><div class="di-label">Connected devices</div><div class="di-val" style="font-size:11px;color:#B7B1A7">0 paired</div><div class="di-arrow">›</div>
   </div>
 
@@ -482,25 +482,25 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 
   <!-- ④ SUBSCRIPTION -->
   <div class="drawer-sec">Subscription &amp; Billing</div>
-  <div class="drawer-item" style="background:#FBF5E6;border-radius:12px;margin:0 12px" onclick="showToast('You are on the Pro plan — unlimited hives, priority support.')">
+  <div class="drawer-item" style="background:#FBF5E6;border-radius:12px;margin:0 12px" onclick="openSettingsSheet('plan')">
     <div class="di-icon">⭐</div><div class="di-label" style="color:#7A5C1E">Pro plan · Active</div><div class="di-val" style="color:#C79B3B;font-weight:600">$9.99/mo</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('Opening subscription management in App Store…')">
+  <div class="drawer-item" onclick="openSettingsSheet('billing')">
     <div class="di-icon">💳</div><div class="di-label">Manage subscription</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('Billing history coming soon')">
+  <div class="drawer-item" onclick="openSettingsSheet('billing')">
     <div class="di-icon">🧾</div><div class="di-label">Billing history</div><div class="di-arrow">›</div>
   </div>
 
   <!-- ⑤ SUPPORT & ABOUT -->
   <div class="drawer-sec">Support &amp; About</div>
-  <div class="drawer-item" onclick="showToast('Opening Help Center…')">
+  <div class="drawer-item" onclick="openSettingsSheet('help')">
     <div class="di-icon">❓</div><div class="di-label">Help Center / FAQs</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('Opening feedback form…')">
+  <div class="drawer-item" onclick="openSettingsSheet('feedback')">
     <div class="di-icon">💬</div><div class="di-label">Contact support</div><div class="di-arrow">›</div>
   </div>
-  <div class="drawer-item" onclick="showToast('Terms of Service and Privacy Policy')">
+  <div class="drawer-item" onclick="openSettingsSheet('legal')">
     <div class="di-icon">📄</div><div class="di-label">Legal</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-item">
@@ -2323,6 +2323,184 @@ function applyTranslations(){
   });
   // Re-render home apiary list with updated language
   renderHomeApiaryList();
+}
+
+
+/* ── SETTINGS SHEETS ── */
+function openSettingsSheet(type){
+  var ov = document.getElementById('settingsOv'); if(ov) ov.remove();
+  ov = document.createElement('div'); ov.id = 'settingsOv';
+  ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;display:flex;align-items:flex-end;justify-content:center';
+  ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
+
+  var html = '';
+  var title = '';
+
+  if(type==='profile'){
+    title = 'Profile';
+    html =
+      '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Display name</div>' +
+      '<input id="sProfileName" value="'+USER.name+'" style="width:100%;padding:11px 14px;border:1.5px solid #C79B3B;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box"></div>' +
+      '<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Email</div>' +
+      '<input id="sProfileEmail" value="james@hivedash.app" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box"></div>' +
+      '<div style="display:flex;gap:10px">' +
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Cancel</button>' +
+      '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="saveProfile()">Save</button></div>';
+  } else if(type==='security'){
+    title = 'Security';
+    html =
+      '<div style="display:flex;flex-direction:column;gap:2px;margin-bottom:20px">' +
+      _settingRow('🔑','Change password','Update your login password','›','showToast(&quot;Change password flow coming soon&quot;)') +
+      _settingRow('📱','Two-factor authentication','Protect your account with 2FA','<span style="font-size:11px;color:#5E7A63;font-weight:600">On</span>','showToast(&quot;2FA settings coming soon&quot;)') +
+      _settingRow('🪪','Face ID / Touch ID','Use biometrics to unlock','','') +
+      '</div>' +
+      '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
+  } else if(type==='export'){
+    title = 'Export Data';
+    html =
+      '<p style="font-size:13px;color:#5A5550;line-height:1.7;margin-bottom:16px">Download all your apiary data. Includes hive records, inspection logs, harvest history, and health notes.</p>' +
+      '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">' +
+      '<button style="padding:13px;border-radius:13px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:13px;font-weight:600;color:#1A1A1A;cursor:pointer;font-family:Inter,sans-serif;text-align:left" onclick="exportData(&quot;csv&quot;)">📊 Export as CSV</button>' +
+      '<button style="padding:13px;border-radius:13px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:13px;font-weight:600;color:#1A1A1A;cursor:pointer;font-family:Inter,sans-serif;text-align:left" onclick="exportData(&quot;json&quot;)">📄 Export as JSON</button>' +
+      '</div>' +
+      '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Cancel</button>';
+  } else if(type==='delete'){
+    title = 'Delete Account';
+    html =
+      '<div style="text-align:center;margin-bottom:20px"><div style="font-size:40px;margin-bottom:8px">⚠️</div>' +
+      '<p style="font-size:13px;color:#5A5550;line-height:1.7">This will permanently delete your account and <strong>all associated data</strong> including hives, inspections, and harvest records. This action cannot be undone.</p></div>' +
+      '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Type DELETE to confirm</div>' +
+      '<input id="sDeleteConfirm" placeholder="DELETE" style="width:100%;padding:11px 14px;border:1.5px solid #F5C1C1;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#B83A2A;outline:none;background:#FDECEA;box-sizing:border-box;text-transform:uppercase"></div>' +
+      '<div style="display:flex;gap:10px">' +
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Cancel</button>' +
+      '<button style="flex:1;padding:13px;border-radius:13px;border:none;background:#B83A2A;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="confirmDeleteAccount()">Delete account</button></div>';
+  } else if(type==='devices'){
+    title = 'Connected Devices';
+    html =
+      '<p style="font-size:13px;color:#5A5550;line-height:1.7;margin-bottom:16px">Pair Bluetooth or Wi-Fi sensors to monitor your hives remotely — scales, thermometers, humidity sensors.</p>' +
+      '<div style="background:#F9F7F3;border:1.5px dashed #D0CCC6;border-radius:14px;padding:24px;text-align:center;margin-bottom:16px">' +
+      '<div style="font-size:32px;margin-bottom:8px">📡</div><div style="font-size:13px;font-weight:600;color:#B7B1A7">No devices paired yet</div>' +
+      '<div style="font-size:11px;color:#D0CCC6;margin-top:4px">Tap below to scan for nearby devices</div></div>' +
+      '<button style="width:100%;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:8px" onclick="showToast(&quot;Scanning for Bluetooth devices…&quot;)">🔍 Scan for devices</button>' +
+      '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
+  } else if(type==='plan'){
+    title = 'Your Plan';
+    html =
+      '<div style="background:linear-gradient(135deg,#FDF0D0,#FAE8B0);border-radius:16px;padding:20px;margin-bottom:16px;text-align:center">' +
+      '<div style="font-size:28px;margin-bottom:4px">⭐</div>' +
+      '<div style="font-size:18px;font-weight:700;color:#4A3000;margin-bottom:2px">Pro Plan</div>' +
+      '<div style="font-size:13px;color:#7A5C1E">$9.99 / month · Renews Jun 1, 2026</div></div>' +
+      '<div style="display:flex;flex-direction:column;gap:6px;margin-bottom:20px">' +
+      '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Unlimited hives</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Advanced analytics</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Priority support</div>' +
+      '<div style="display:flex;align-items:center;gap:8px;font-size:13px;color:#1A1A1A"><span style="color:#5E7A63">✓</span> Data export</div></div>' +
+      '<button style="width:100%;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:8px" onclick="showToast(&quot;Opening App Store subscription management…&quot;)">Manage subscription</button>' +
+      '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
+  } else if(type==='billing'){
+    title = 'Billing History';
+    var rows = [['May 1, 2026','Pro Plan · Monthly','$9.99'],['Apr 1, 2026','Pro Plan · Monthly','$9.99'],['Mar 1, 2026','Pro Plan · Monthly','$9.99']];
+    html = '<div style="display:flex;flex-direction:column;gap:0;margin-bottom:20px;border:1px solid #EDE8E0;border-radius:14px;overflow:hidden">';
+    rows.forEach(function(r){
+      html += '<div style="display:flex;align-items:center;justify-content:space-between;padding:12px 14px;border-bottom:1px solid #F5F2EE">' +
+        '<div><div style="font-size:13px;font-weight:500;color:#1A1A1A">'+r[1]+'</div><div style="font-size:11px;color:#B7B1A7;margin-top:1px">'+r[0]+'</div></div>' +
+        '<div style="font-size:13px;font-weight:600;color:#1A1A1A">'+r[2]+'</div></div>';
+    });
+    html += '</div><button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
+  } else if(type==='help'){
+    title = 'Help Center';
+    var faqs = [['How do I add a hive?','Go to My Apiary → tap + Add a hive.'],['How does weather work?','Weather updates based on your apiary location. Set it in My Apiary → Edit.'],['Can I export my data?','Yes — Settings → Account & Security → Export data.'],['How do I add a second apiary?','My Apiary → tap + Add in the top-right corner.']];
+    html = '<div style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px">';
+    faqs.forEach(function(f){
+      html += '<div style="background:#F9F7F3;border-radius:12px;padding:12px 14px;cursor:pointer" onclick="this.querySelector(&quot;.faq-ans&quot;).style.display=this.querySelector(&quot;.faq-ans&quot;).style.display===&quot;none&quot;?&quot;block&quot;:&quot;none&quot;">' +
+        '<div style="font-size:13px;font-weight:600;color:#1A1A1A">'+f[0]+'</div>' +
+        '<div class="faq-ans" style="display:none;font-size:12px;color:#5A5550;margin-top:6px;line-height:1.6">'+f[1]+'</div></div>';
+    });
+    html += '</div><button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
+  } else if(type==='feedback'){
+    title = 'Contact Support';
+    html =
+      '<div style="margin-bottom:12px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Subject</div>' +
+      '<input id="sFeedbackSubj" placeholder="e.g. Feature request" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box"></div>' +
+      '<div style="margin-bottom:20px"><div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Message</div>' +
+      '<textarea id="sFeedbackMsg" rows="4" placeholder="Describe your issue or suggestion…" style="width:100%;padding:11px 14px;border:1.5px solid #EDE8E0;border-radius:12px;font-size:14px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;box-sizing:border-box;resize:none"></textarea></div>' +
+      '<div style="display:flex;gap:10px">' +
+      '<button style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Cancel</button>' +
+      '<button style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif" onclick="sendFeedback()">Send</button></div>';
+  } else if(type==='legal'){
+    title = 'Legal';
+    html =
+      '<div style="display:flex;flex-direction:column;gap:0;border:1px solid #EDE8E0;border-radius:14px;overflow:hidden;margin-bottom:16px">' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;border-bottom:1px solid #F5F2EE;cursor:pointer" onclick="showToast(&quot;Opening Terms of Service…&quot;)"><span style="font-size:13px;font-weight:500;color:#1A1A1A">Terms of Service</span><span style="color:#D0CCC6">›</span></div>' +
+      '<div style="display:flex;align-items:center;justify-content:space-between;padding:14px 16px;cursor:pointer" onclick="showToast(&quot;Opening Privacy Policy…&quot;)"><span style="font-size:13px;font-weight:500;color:#1A1A1A">Privacy Policy</span><span style="color:#D0CCC6">›</span></div>' +
+      '</div>' +
+      '<button style="width:100%;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif" onclick="document.getElementById(&quot;settingsOv&quot;).remove()">Close</button>';
+  }
+
+  ov.innerHTML =
+    '<div style="background:#fff;border-radius:24px 24px 0 0;padding:24px 24px 40px;width:100%;max-width:430px;max-height:80vh;overflow-y:auto">' +
+    '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 18px"></div>' +
+    '<div style="font-size:16px;font-weight:700;color:#1A1A1A;margin-bottom:20px;letter-spacing:-.3px">' + title + '</div>' +
+    html + '</div>';
+  document.body.appendChild(ov);
+}
+
+function _settingRow(icon, label, sub, badge, action){
+  return '<div style="display:flex;align-items:center;gap:12px;padding:13px 14px;background:#F9F7F3;border-radius:12px;margin-bottom:6px;cursor:pointer"' + (action ? ' onclick="'+action+'"' : '') + '>' +
+    '<div style="font-size:18px;width:28px;text-align:center">'+icon+'</div>' +
+    '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">'+label+'</div><div style="font-size:11px;color:#B7B1A7;margin-top:1px">'+sub+'</div></div>' +
+    (badge ? '<div>'+badge+'</div>' : '') +
+    '<div style="color:#D0CCC6">›</div></div>';
+}
+
+function saveProfile(){
+  var name = document.getElementById('sProfileName').value.trim();
+  var email = document.getElementById('sProfileEmail').value.trim();
+  if(name){ USER.name = name; }
+  var dn = document.getElementById('drawerName'); if(dn) dn.textContent = USER.name;
+  var av = document.getElementById('drawerAvatar'); if(av) av.textContent = USER.name[0].toUpperCase();
+  var avTop = document.getElementById('avatarEl'); if(avTop) avTop.textContent = USER.name[0].toUpperCase();
+  var em = document.getElementById('settingsEmail'); if(em && email) em.textContent = email;
+  var greet = document.getElementById('greet');
+  if(greet){ var h=new Date().getHours(); greet.innerHTML=(h<12?'Good morning':h<17?'Good afternoon':'Good evening')+',<br>'+USER.name; }
+  document.getElementById('settingsOv').remove();
+  showToast('Profile updated ✓');
+}
+
+function exportData(fmt){
+  var data = { apiaries: APIARIES, exportDate: new Date().toISOString() };
+  var str, mime, ext;
+  if(fmt==='json'){
+    str = JSON.stringify(data, null, 2);
+    mime = 'application/json'; ext = 'json';
+  } else {
+    var rows = ['Apiary,Hive,Breed,Status,Added'];
+    APIARIES.forEach(function(a){ a.hives.forEach(function(h){ rows.push([a.name,h.name,h.breed,h.status,h.sub].join(',')); }); });
+    str = rows.join('\n');
+    mime = 'text/csv'; ext = 'csv';
+  }
+  var blob = new Blob([str], {type: mime});
+  var url = URL.createObjectURL(blob);
+  var a = document.createElement('a'); a.href = url; a.download = 'hivedash-export.'+ext;
+  document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  URL.revokeObjectURL(url);
+  showToast('Export downloaded as ' + ext.toUpperCase() + ' ✓');
+}
+
+function confirmDeleteAccount(){
+  var val = (document.getElementById('sDeleteConfirm').value||'').trim().toUpperCase();
+  if(val !== 'DELETE'){ showToast('Please type DELETE to confirm'); return; }
+  localStorage.clear();
+  document.getElementById('settingsOv').remove();
+  showToast('Account deleted. All data removed.');
+}
+
+function sendFeedback(){
+  var subj = (document.getElementById('sFeedbackSubj').value||'').trim();
+  var msg  = (document.getElementById('sFeedbackMsg').value||'').trim();
+  if(!msg){ showToast('Please enter a message'); return; }
+  document.getElementById('settingsOv').remove();
+  showToast('Feedback sent — thank you! We will respond within 24 hours.');
 }
 
 /* DRAWER */

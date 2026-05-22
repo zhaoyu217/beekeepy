@@ -5,7 +5,7 @@
 <meta name="viewport" content="width=device-width,initial-scale=1,maximum-scale=1,user-scalable=no">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="theme-color" content="#F9F7F3">
-<title>HiveDash</title>
+<title>HiveDash v2.4</title>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&display=swap" rel="stylesheet">
 <style>
 *{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
@@ -562,15 +562,15 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       </div>
       <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">
         <div style="text-align:center;background:#F9F7F3;border-radius:10px;padding:8px 4px">
-          <div style="font-size:18px;font-weight:700;color:#1A1A1A" id="myaHiveCount">3</div>
+          <div style="font-size:18px;font-weight:700;color:#1A1A1A" id="myaHiveCount">0</div>
           <div style="font-size:9px;color:#B7B1A7;margin-top:1px;text-transform:uppercase;letter-spacing:.05em">Hives</div>
         </div>
         <div style="text-align:center;background:#F9F7F3;border-radius:10px;padding:8px 4px">
-          <div style="font-size:18px;font-weight:700;color:var(--green)">2</div>
+          <div style="font-size:18px;font-weight:700;color:var(--green)" id="myaHealthyCount">0</div>
           <div style="font-size:9px;color:#B7B1A7;margin-top:1px;text-transform:uppercase;letter-spacing:.05em">Healthy</div>
         </div>
         <div style="text-align:center;background:#F9F7F3;border-radius:10px;padding:8px 4px">
-          <div style="font-size:18px;font-weight:700;color:var(--honey)">1</div>
+          <div style="font-size:18px;font-weight:700;color:var(--honey)" id="myaDueCount">0</div>
           <div style="font-size:9px;color:#B7B1A7;margin-top:1px;text-transform:uppercase;letter-spacing:.05em">Attention</div>
         </div>
       </div>
@@ -1233,6 +1233,8 @@ function updateCounters(){
   if(hh){hh.textContent=hasHives?healthy+' healthy':'–';hh.style.display=hasHives?'block':'none';}
   // Apiary detail
   const myaEl=document.getElementById('myaHiveCount');if(myaEl)myaEl.textContent=n;
+  const myaH=document.getElementById('myaHealthyCount');if(myaH)myaH.textContent=healthy;
+  const myaD=document.getElementById('myaDueCount');if(myaD)myaD.textContent=due;
   // Toggle sections
   const show=id=>{const d=document.getElementById(id);if(d)d.style.display='';};
   const hide=id=>{const d=document.getElementById(id);if(d)d.style.display='none';};

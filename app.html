@@ -198,20 +198,6 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 </style>
 </head>
 <body>
-<div id="__dbg" style="position:fixed;bottom:0;left:0;right:0;background:#1A1A1A;color:#0f0;font-family:monospace;font-size:11px;padding:8px 12px;z-index:99999;max-height:120px;overflow-y:auto;display:none">
-<div style="color:#ff0;font-weight:bold;margin-bottom:4px">🐛 Debug Panel <span onclick="document.getElementById('__dbg').style.display='none'" style="cursor:pointer;color:#f00;float:right">✕</span></div>
-<div id="__dbg_log"></div>
-</div>
-<script>
-function dbg(msg){ 
-  var el=document.getElementById('__dbg'); 
-  var log=document.getElementById('__dbg_log');
-  if(el) el.style.display='block'; 
-  if(log) log.innerHTML += '<div>'+msg+'</div>'; 
-  console.log('[DBG]',msg);
-}
-window.onerror=function(msg,src,line,col,err){ dbg('ERROR line '+line+': '+msg); return false; };
-</script>
 <div class="shell">
 
 <!-- TOPBAR -->
@@ -1239,8 +1225,7 @@ function loadData(){
     }
     const p = localStorage.getItem('hd_plan');
     if(p){ const parsed=JSON.parse(p); PLAN.isPro = parsed.isPro; }
-  }catch(e){ console.log('loadData error',e); dbg('loadData ERROR: '+e); }
-  dbg('loadData done: '+APIARIES.length+' apiaries, active='+ACTIVE_APIARY_ID);
+  }catch(e){ console.log('loadData error',e); }
 }
 
 
@@ -1417,7 +1402,6 @@ function previewNewHivePhoto(input){
 }
 
 function confirmAddHive(){
-  dbg('confirmAddHive called, apiaries='+APIARIES.length+', active='+ACTIVE_APIARY_ID);
   const name = document.getElementById('newHiveName').value.trim();
   const breed = document.getElementById('newHiveBreed').value.trim() || 'Unknown';
   if(!name){ document.getElementById('newHiveName').style.borderColor='#B83A2A'; return; }
@@ -1540,9 +1524,7 @@ function upgradeToPro(){
 
 // Init on page load
 window.addEventListener('load', function(){
-  dbg('page load start');
   loadData();
-  dbg('after loadData: apiaries='+APIARIES.length+', active='+ACTIVE_APIARY_ID+', hives='+hives.length);
   console.log('[HiveDash] APIARY:', JSON.stringify(APIARY));
   console.log('[HiveDash] hives:', hives.length);
   applyUnit();

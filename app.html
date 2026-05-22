@@ -47,7 +47,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 .stat-lbl{font-size:9px;color:#B7B1A7;margin-top:3px;font-weight:500;text-transform:uppercase;letter-spacing:.06em}
 
 /* ── HARVEST ── */
-.harvest-card{margin:0 16px 10px;background:#fff;border:1px solid #EDE8E0;border-radius:20px;padding:14px 16px;cursor:pointer}
+.harvest-card{margin:0 16px 20px;background:#fff;border:1px solid #EDE8E0;border-radius:20px;padding:14px 16px;cursor:pointer}
 .harvest-lbl{font-size:9px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px}
 .harvest-top{display:flex;justify-content:space-between;align-items:flex-end;margin-bottom:10px}
 .harvest-val{font-size:28px;font-weight:700;color:#1A1A1A;letter-spacing:-1px;line-height:1}
@@ -58,8 +58,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 .prog-labels{display:flex;justify-content:space-between;font-size:10px;color:#D0CCC6}
 
 /* ── HIVE CARDS ── */
-.sec-hd{font-size:10px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.07em;padding:0 16px;margin-bottom:8px}
-.hive-exp{margin:0 16px 9px;background:#fff;border:1px solid #EDE8E0;border-radius:18px;padding:14px;cursor:pointer;transition:.15s;overflow:hidden}
+.sec-hd{font-size:10px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.07em;padding:0 16px;margin-bottom:8px;margin-top:6px}
+.hive-exp{margin:0 16px 12px;background:#fff;border:1px solid #EDE8E0;border-radius:18px;padding:14px;cursor:pointer;transition:.15s;overflow:hidden}
 .hive-exp:active{background:#FDFAF8}
 .hive-row{display:flex;align-items:center;gap:10px;margin-bottom:10px}
 .hive-icon{width:36px;height:36px;border-radius:12px;display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -79,24 +79,24 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 .note-lbl{font-size:9px;font-weight:600;color:#B7B1A7;margin-bottom:4px;text-transform:uppercase;letter-spacing:.05em}
 .note-text{font-size:12px;color:#5A5550;line-height:1.5}
 .note-date{font-size:10px;color:#D0CCC6;margin-top:4px}
-.hive-compact{margin:0 16px 7px;background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s}
+.hive-compact{margin:0 16px 10px;background:#fff;border:1px solid #EDE8E0;border-radius:14px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:.15s}
 .hive-compact:active{background:#F9F7F3}
 .hc-info{flex:1}
 .hc-name{font-size:13px;font-weight:600;color:#1A1A1A}
 .hc-sub{font-size:11px;color:#B7B1A7;margin-top:1px}
 
 /* ── ALERTS ── */
-.alert-row{margin:0 16px 8px;border-radius:14px;padding:10px 13px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:.15s}
+.alert-row{margin:0 16px 10px;border-radius:14px;padding:10px 13px;display:flex;align-items:center;gap:8px;cursor:pointer;transition:.15s}
 .alert-row:active{opacity:.85}
 .alert-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
 .alert-text{flex:1;font-size:11px;font-weight:500;line-height:1.45}
 .alert-arrow{font-size:14px}
 
 /* ── NECTAR TAG ── */
-.nectar-tag{margin:0 16px 10px;display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1px solid #EDE8E0;border-radius:14px;cursor:pointer}
+.nectar-tag{margin:0 16px 16px;display:flex;align-items:center;gap:8px;padding:10px 14px;background:#fff;border:1px solid #EDE8E0;border-radius:14px;cursor:pointer}
 
 /* ── TIMELINE ── */
-.timeline-wrap{padding:0 16px;margin-bottom:10px}
+.timeline-wrap{padding:0 16px;margin-bottom:18px}
 .tl-card{background:#fff;border:1px solid #EDE8E0;border-radius:18px;padding:14px 16px}
 .tl-item{display:flex;gap:10px}
 .tl-left{display:flex;flex-direction:column;align-items:center}
@@ -264,7 +264,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
   </div>
 
   <!-- ④ HIVE CARDS -->
-  <div class="sec-hd">Your hives</div>
+  <div class="sec-hd" style="margin-top:16px">Your hives</div>
 
   <!-- Hive 1 expanded -->
   <div class="hive-exp" onclick="openSub('shd')">
@@ -279,9 +279,9 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       <div class="hive-status" style="color:#5E7A63">Healthy</div>
     </div>
     <div class="pills">
-      <div class="pill"><div class="pill-val" id="h1t">93.5°F</div><div class="pill-lbl">Temp</div></div>
-      <div class="pill"><div class="pill-val" id="h1h">18 lbs</div><div class="pill-lbl">Honey</div></div>
-      <div class="pill"><div class="pill-val" style="color:#5E7A63">Queen ✓</div><div class="pill-lbl">Status</div></div>
+      <div class="pill"><div class="pill-val" style="color:#5A5550;font-size:11px">Brood warm</div><div class="pill-lbl">Temperature</div></div>
+      <div class="pill"><div class="pill-val" style="color:#5A5550;font-size:11px">Honey strong</div><div class="pill-lbl">Stores</div></div>
+      <div class="pill"><div class="pill-val" style="color:#5E7A63;font-size:11px">Queen seen ✓</div><div class="pill-lbl">Status</div></div>
     </div>
     <div class="emo-note">"Your bees are keeping the brood nest perfectly warm today."</div>
     <div class="photo-row">
@@ -305,7 +305,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     </div>
     <div class="hc-info">
       <div class="hc-name">Hive 2 · Carniolan</div>
-      <div class="hc-sub" id="h2s">91.4°F · 14 lbs · 5 days ago</div>
+      <div class="hc-sub" id="h2s">Needs attention · 5 days ago</div>
     </div>
     <div class="hive-status" style="color:#C4974A">Due soon</div>
   </div>
@@ -317,7 +317,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     </div>
     <div class="hc-info">
       <div class="hc-name">Hive 3 · Buckfast</div>
-      <div class="hc-sub" id="h3s">94.1°F · 9 lbs · yesterday</div>
+      <div class="hc-sub" id="h3s">Looking good · yesterday</div>
     </div>
     <div class="hive-status" style="color:#5E7A63">Healthy</div>
   </div>
@@ -351,12 +351,12 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
   </div>
 
   <!-- TIMELINE -->
-  <div class="sec-hd" style="margin-top:4px">Recent activity</div>
+  <div class="sec-hd" style="margin-top:18px">Recent activity</div>
   <div class="timeline-wrap">
     <div class="tl-card" id="tlCard">
       <div class="tl-item">
         <div class="tl-left"><div class="tl-dot" style="background:#5E7A63"></div><div class="tl-line"></div></div>
-        <div class="tl-body"><div class="tl-title">Hive 1 inspected <span class="tl-badge" style="background:#EEF5EF;color:#5E7A63">Score 82</span></div><div class="tl-sub">May 21 · Healthy · Queen spotted</div></div>
+        <div class="tl-body"><div class="tl-title">Hive 1 inspected <span class="tl-badge" style="background:#EEF5EF;color:#5E7A63">Healthy colony</span></div><div class="tl-sub">May 21 · Queen spotted · 6 frames</div></div>
       </div>
       <div class="tl-item">
         <div class="tl-left"><div class="tl-dot" style="background:#C79B3B"></div><div class="tl-line"></div></div>
@@ -376,7 +376,7 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 
   <!-- CTA -->
   <div class="cta-row">
-    <button class="btn btn-dark">Inspect hive</button>
+    <button class="btn" style="background:#1F2A24;color:#fff">Inspect hive</button>
     <button class="btn btn-honey">Record harvest</button>
   </div>
 

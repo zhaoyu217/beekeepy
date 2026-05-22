@@ -446,6 +446,90 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
   </div>
 </div>
 
+<!-- SUB: HARVEST PAGE -->
+<div class="sub" id="harvestPage">
+  <div class="sub-hd">
+    <div class="back" onclick="closeSub('harvestPage');setNav(0)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="sub-title">Harvest</div>
+    <div style="font-size:12px;font-weight:600;color:var(--honey);cursor:pointer;margin-left:auto" onclick="showToast('Record a new harvest entry')">+ Record</div>
+  </div>
+  <div class="sp">
+
+    <!-- Season hero -->
+    <div class="sp-card" style="background:linear-gradient(135deg,#FDF6E3,#F9ECC8);border-color:#E8CC88;padding:20px">
+      <div style="font-size:10px;font-weight:600;color:#B7935A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">Season harvest · 2025</div>
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:14px">
+        <div>
+          <span style="font-size:42px;font-weight:700;color:#4A3000;letter-spacing:-2px;line-height:1">41</span>
+          <span style="font-size:16px;color:#B7935A;margin-left:4px">lbs</span>
+        </div>
+        <div style="text-align:right">
+          <div style="font-size:13px;font-weight:700;color:var(--honey)">74%</div>
+          <div style="font-size:10px;color:#B7935A;margin-top:2px">of goal</div>
+        </div>
+      </div>
+      <div style="background:rgba(180,130,40,.2);border-radius:20px;height:6px;overflow:hidden;margin-bottom:6px">
+        <div style="background:var(--honey);height:6px;border-radius:20px;width:74%"></div>
+      </div>
+      <div style="display:flex;justify-content:space-between;font-size:10px;color:#B7935A">
+        <span>0 lbs</span><span>Goal: 55 lbs</span>
+      </div>
+    </div>
+
+    <!-- Per hive breakdown -->
+    <div class="sp-card">
+      <div class="sp-lbl">Harvest by hive</div>
+      <div class="sp-row" style="padding:12px 0">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <div style="width:32px;height:32px;border-radius:10px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg></div>
+          <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Hive 1 · Italian</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">Clover · Last harvest May 18</div></div>
+        </div>
+        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1A1A1A">18 lbs</div><div style="font-size:10px;color:var(--green);margin-top:1px">Excellent</div></div>
+      </div>
+      <div class="sp-row" style="padding:12px 0">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <div style="width:32px;height:32px;border-radius:10px;background:#FBF3E3;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#C4974A" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg></div>
+          <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Hive 2 · Carniolan</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">Wildflower · Last harvest May 10</div></div>
+        </div>
+        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1A1A1A">14 lbs</div><div style="font-size:10px;color:#C4974A;margin-top:1px">Good</div></div>
+      </div>
+      <div class="sp-row" style="padding:12px 0">
+        <div style="display:flex;align-items:center;gap:10px;flex:1">
+          <div style="width:32px;height:32px;border-radius:10px;background:#EEF5EF;display:flex;align-items:center;justify-content:center;flex-shrink:0"><svg width="12" height="12" viewBox="0 0 18 18" fill="none"><polygon points="9,2 16,6 16,12 9,16 2,12 2,6" stroke="#5E7A63" stroke-width="1.5" fill="none" stroke-linejoin="round"/></svg></div>
+          <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Hive 3 · Buckfast</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">Lavender · Last harvest May 5</div></div>
+        </div>
+        <div style="text-align:right"><div style="font-size:14px;font-weight:700;color:#1A1A1A">9 lbs</div><div style="font-size:10px;color:var(--green);margin-top:1px">Good</div></div>
+      </div>
+    </div>
+
+    <!-- Treatment buffer -->
+    <div class="sp-card" style="background:#FBF3E3;border-color:#E8D4A0">
+      <div style="font-size:11px;font-weight:600;color:#7A5C1E;margin-bottom:5px">⚠️ Treatment buffer · Hive 2</div>
+      <div style="font-size:12px;color:#7A5C1E;line-height:1.7">OA Vapor applied May 14. Safe to harvest after <strong style="font-weight:700">May 28</strong> · 6 days remaining.</div>
+    </div>
+
+    <!-- History -->
+    <div class="sp-card">
+      <div class="sp-lbl">Recent harvests</div>
+      <div class="sp-row" style="padding:11px 0">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">🍯 18 lbs · Clover</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">May 18 · Hive 1 · Excellent</div></div>
+        <div style="font-size:11px;color:var(--honey);font-weight:600;cursor:pointer" onclick="showToast('Sharing harvest summary…')">Share →</div>
+      </div>
+      <div class="sp-row" style="padding:11px 0">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">🍯 14 lbs · Wildflower</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">May 10 · Hive 2 · Good</div></div>
+        <div style="font-size:11px;color:var(--honey);font-weight:600;cursor:pointer" onclick="showToast('Sharing harvest summary…')">Share →</div>
+      </div>
+      <div class="sp-row" style="padding:11px 0">
+        <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">🍯 9 lbs · Lavender</div><div style="font-size:10px;color:#B7B1A7;margin-top:1px">May 5 · Hive 3 · Good</div></div>
+        <div style="font-size:11px;color:var(--honey);font-weight:600;cursor:pointer" onclick="showToast('Sharing harvest summary…')">Share →</div>
+      </div>
+    </div>
+
+    <button class="btn-full" style="background:var(--honey);color:#fff" onclick="showToast('Select a hive and enter your harvest weight to record.')">+ Record new harvest</button>
+
+  </div>
+</div>
+
 <!-- SUB: MY APIARY -->
 <div class="sub" id="smya">
   <div class="sub-hd">
@@ -1359,6 +1443,9 @@ function setNav(idx){
     paths.forEach(p=>{const s=p.getAttribute('stroke');if(s&&s!=='none')p.setAttribute('stroke',a?'#C79B3B':'#B7B1A7')});
     if(pip)pip.style.display=a?'block':'none';
   }
+  // Open corresponding full pages
+  if(idx===3) openSub('harvestPage');
+  if(idx!==3) closeSub('harvestPage');
 }
 for(let i=0;i<5;i++){const p=document.querySelector('#ni'+i+' .ni-pip');if(p)p.style.display=i===0?'block':'none';}
 

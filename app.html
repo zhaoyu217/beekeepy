@@ -1532,15 +1532,23 @@ function useMyLocation(){
   navigator.geolocation.getCurrentPosition(async function(pos){
     APIARY.lat=pos.coords.latitude; APIARY.lon=pos.coords.longitude;
     try{
-      const res=await fetch('https://nominatim.openstreetmap.org/reverse?lat='+APIARY.lat+'&lon='+APIARY.lon+'&format=json');
+      // Get city name from Open-Meteo weather response (includes timezone/location info)
+      const res=await fetch('https://api.open-meteo.com/v1/forecast?latitude='+APIARY.lat+'&longitude='+APIARY.lon+'&current=temperature_2m&timezone=auto&forecast_days=1');
       const d=await res.json();
-      const city=d.address?.city||d.address?.town||d.address?.village||'';
-      const state=d.address?.state_code||'';
-      const loc=state?(city+', '+state):city;
-      const inp=document.getElementById('editApiaryLocation'); if(inp)inp.value=loc;
+      // Use timezone as location hint, or fallback to coordinates
+      const tz = d.timezone || '';
+      const parts = tz.split('/');
+      const cityHint = parts[parts.length-1].replace(/_/g,' ') || (APIARY.lat.toFixed(2)+', '+APIARY.lon.toFixed(2));
+      const inp=document.getElementById('editApiaryLocation'); if(inp)inp.value=cityHint;
       if(btn)btn.textContent='📍 Got it ✓';
-      saveData(); // Save GPS coordinates immediately
-    }catch(e){if(btn)btn.textContent='📍 Use GPS';}
+      saveData();
+    }catch(e){
+      // Fallback: just show coordinates
+      const coords=APIARY.lat.toFixed(3)+', '+APIARY.lon.toFixed(3);
+      const inp=document.getElementById('editApiaryLocation'); if(inp)inp.value=coords;
+      if(btn)btn.textContent='📍 Got it ✓';
+      saveData();
+    }
   },function(){if(btn)btn.textContent='📍 Use GPS';});
 }
 
@@ -1557,13 +1565,21 @@ async function saveApiary(){
   if(homeSub)homeSub.textContent=loc||'No location set';
   if(loc){
     try{
-      const res=await fetch('https://nominatim.openstreetmap.org/search?q='+encodeURIComponent(loc)+'&format=json&limit=1');
+      // Use Open-Meteo geocoding (same provider as weather, CORS-friendly)
+      const res=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(loc)+'&count=1&language=en&format=json');
       const d=await res.json();
-      if(d[0]){APIARY.lat=parseFloat(d[0].lat);APIARY.lon=parseFloat(d[0].lon);}
-    }catch(e){}
-    saveData(); // Save AFTER geocode so lat/lon is included
-    if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,loc);
-    else saveData(); // Save even if geocode failed
+      if(d.results&&d.results[0]){
+        APIARY.lat=d.results[0].latitude;
+        APIARY.lon=d.results[0].longitude;
+        // Use the canonical name from geocoding
+        const canon = [d.results[0].name, d.results[0].admin1, d.results[0].country_code].filter(Boolean).join(', ');
+        APIARY.location = canon;
+        const locEl2=document.getElementById('apiaryLocation');
+        if(locEl2)locEl2.textContent='📍 '+canon;
+      }
+    }catch(e){ console.log('Geocode error:',e); }
+    saveData();
+    if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
   } else {
     saveData();
   }

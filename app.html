@@ -1474,6 +1474,8 @@ function upgradeToPro(){
 // Init on page load
 window.addEventListener('load', function(){
   loadData();
+  console.log('[HiveDash] APIARY:', JSON.stringify(APIARY));
+  console.log('[HiveDash] hives:', hives.length);
   applyUnit();
   renderHiveList();
   updateHiveBadge();
@@ -1585,6 +1587,7 @@ async function saveApiary(){
       // Use Open-Meteo geocoding (same provider as weather, CORS-friendly)
       const res=await fetch('https://geocoding-api.open-meteo.com/v1/search?name='+encodeURIComponent(loc)+'&count=1&language=en&format=json');
       const d=await res.json();
+      console.log('[HiveDash] geocode result:', JSON.stringify(d).slice(0,200));
       if(d.results&&d.results[0]){
         APIARY.lat=d.results[0].latitude;
         APIARY.lon=d.results[0].longitude;
@@ -1754,6 +1757,7 @@ function getSeason(){
 }
 
 async function fetchWeatherForLocation(lat, lon, cityLabel){
+  console.log('[HiveDash] fetchWeather:', lat, lon, cityLabel);
   try {
     const unit = isF ? 'fahrenheit' : 'celsius';
     const url = 'https://api.open-meteo.com/v1/forecast?latitude='+lat+'&longitude='+lon+'&current=temperature_2m,weathercode,windspeed_10m,relativehumidity_2m,apparent_temperature&daily=temperature_2m_max,temperature_2m_min,weathercode&temperature_unit='+unit+'&wind_speed_unit=mph&timezone=auto&forecast_days=5';

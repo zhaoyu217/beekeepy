@@ -1733,23 +1733,22 @@ function getSeason(){
 async function fetchWeatherForLocation(lat, lon, cityLabel){
   console.log('[HiveDash] fetchWeather:', lat, lon, cityLabel);
   try {
-    const unit = isF ? 'u' : 'm'; // u=imperial, m=metric for wttr.in
     const tempUnit = isF ? '°F' : '°C';
-    // Use city name if available, otherwise coordinates
-    const loc = cityLabel || (lat+','+lon);
+    const loc = cityLabel || 'London';
     const url = 'https://wttr.in/'+encodeURIComponent(loc)+'?format=j1';
     console.log('[HiveDash] fetching:', url);
     const res = await fetch(url);
     const data = await res.json();
-    console.log('[HiveDash] weather data:', JSON.stringify(data).slice(0,200));
     const cur = data.current_condition[0];
+    // wttr.in fields: temp_F, temp_C, FeelsLikeF, FeelsLikeC, humidity, windspeedKmph
     const temp = isF ? cur.temp_F : cur.temp_C;
     const feels = isF ? cur.FeelsLikeF : cur.FeelsLikeC;
     const humidity = cur.humidity;
     const wind = cur.windspeedKmph;
     const desc = cur.weatherDesc[0].value;
-    const areaName = data.nearest_area?.[0]?.areaName?.[0]?.value || cityLabel || 'Your apiary';
-    const country = data.nearest_area?.[0]?.country?.[0]?.value || '';
+    const area = data.nearest_area?.[0];
+    const areaName = area?.areaName?.[0]?.value || cityLabel || 'Your apiary';
+    const country = area?.country?.[0]?.value || '';
     const locName = areaName + (country ? ', '+country : '');
 
     const wTemp = document.getElementById('wTemp');
@@ -1765,21 +1764,25 @@ async function fetchWeatherForLocation(lat, lon, cityLabel){
     const wFeels = document.getElementById('wFeels');
     if(wFeels) wFeels.textContent = 'Feels like '+feels+tempUnit;
 
-    // 5-day from wttr.in
-    const weather = data.weather;
+    // 5-day forecast
+    const weather = data.weather || [];
     const dayNames = ['Sun','Mon','Tue','Wed','Thu','Fri','Sat'];
-    const wmoToEmoji = {'113':'☀️','116':'⛅','119':'☁️','122':'☁️','143':'🌫','176':'🌦','179':'🌨','182':'🌧','185':'🌧','200':'⛈','227':'❄️','230':'❄️','248':'🌫','260':'🌫','263':'🌦','266':'🌦','281':'🌧','284':'🌧','293':'🌦','296':'🌦','299':'🌧','302':'🌧','305':'🌧','308':'🌧','311':'🌧','314':'🌧','317':'🌧','320':'🌨','323':'🌨','326':'🌨','329':'❄️','332':'❄️','335':'❄️','338':'❄️','350':'🌧','353':'🌦','356':'🌧','359':'🌧','362':'🌧','365':'🌧','368':'🌨','371':'❄️','374':'🌧','377':'🌧','386':'⛈','389':'⛈','392':'⛈','395':'⛈'};
+    const codeToEmoji = {'113':'☀️','116':'⛅','119':'☁️','122':'☁️','143':'🌫','176':'🌦','179':'🌨','182':'🌧','200':'⛈','227':'❄️','230':'❄️','248':'🌫','263':'🌦','266':'🌦','293':'🌦','296':'🌦','299':'🌧','302':'🌧','305':'🌧','308':'🌧','317':'🌧','320':'🌨','353':'🌦','356':'🌧','359':'🌧','386':'⛈','389':'⛈'};
     for(let i=0;i<Math.min(5,weather.length);i++){
       const d = new Date(weather[i].date);
-      const code = weather[i].hourly?.[4]?.weatherCode || '113';
+      const hourly = weather[i].hourly || [];
+      const midDay = hourly[4] || hourly[0] || {};
+      const code = String(midDay.weatherCode || '113');
       const maxT = isF ? weather[i].maxtempF : weather[i].maxtempC;
+      const minT = isF ? weather[i].mintempF : weather[i].mintempC;
       const dayEl = document.getElementById('forecastDay'+i);
       const iconEl = document.getElementById('forecastIcon'+i);
       const tempEl = document.getElementById('forecastTemp'+i);
       if(dayEl) dayEl.textContent = i===0?'Today':dayNames[d.getDay()];
-      if(iconEl) iconEl.textContent = wmoToEmoji[code]||'🌤';
+      if(iconEl) iconEl.textContent = codeToEmoji[code]||'🌤';
       if(tempEl) tempEl.textContent = maxT+'°';
     }
+    console.log('[HiveDash] weather displayed OK');
   } catch(e){ console.log('[HiveDash] weather error:', e); }
 }
 /* DRAWER */

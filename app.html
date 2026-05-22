@@ -504,7 +504,7 @@ body.bright *{-webkit-font-smoothing:auto}
   <!-- ④ SUBSCRIPTION -->
   <div class="drawer-sec">Subscription &amp; Billing</div>
   <div class="drawer-item" style="background:#FBF5E6;border-radius:12px;margin:0 12px" onclick="openSettingsSheet('plan')">
-    <div class="di-icon">⭐</div><div class="di-label" style="color:#7A5C1E">Pro plan · Active</div><div class="di-val" style="color:#C79B3B;font-weight:600">$9.99/mo</div><div class="di-arrow">›</div>
+    <div class="di-icon">⭐</div><div class="di-label" style="color:#7A5C1E">Pro plan · Active</div><div class="di-val" id="drawerPlanPrice" style="color:#C79B3B;font-weight:600">$2.99/mo</div><div class="di-arrow">›</div>
   </div>
   <div class="drawer-item" onclick="openSettingsSheet('billing')">
     <div class="di-icon">💳</div><div class="di-label">Manage subscription</div><div class="di-arrow">›</div>
@@ -1591,6 +1591,7 @@ window.addEventListener('load', function(){
   renderHiveList();
   updateCounters();
   fetchWeather();
+  updateDrawerPlanPrice();
 });
 
 /* APIARY MANAGEMENT */
@@ -2310,6 +2311,7 @@ function setLanguage(lang){
   const drawer=document.getElementById('langSelect'); if(drawer)drawer.value=lang;
   // Apply translations to DOM
   applyTranslations();
+  updateDrawerPlanPrice();
   showToast(t('toastLang') + labels[lang]);
 }
 
@@ -2901,15 +2903,24 @@ function selectPlan(type){
   if(ckY) ckY.style.display = !isMonthly?'block':'none';
   if(btn) btn.textContent = 'Subscribe · ' + getPlanLabel(type);
 }
+function updateDrawerPlanPrice(){
+  var cur = getCurrency();
+  var planType = USER.planType || 'monthly';
+  var label = planType === 'monthly'
+    ? fmtPrice(cur, cur.monthly) + '/mo'
+    : fmtPrice(cur, cur.yearly) + '/yr';
+  var el = document.getElementById('drawerPlanPrice');
+  if(el) el.textContent = label;
+}
+
 function confirmPlanSubscribe(){
   USER.planType = SELECTED_PLAN;
+  updateDrawerPlanPrice();
+  document.getElementById('settingsOv').remove();
   var cur = getCurrency();
   var label = SELECTED_PLAN === 'monthly'
     ? fmtPrice(cur, cur.monthly) + '/mo'
     : fmtPrice(cur, cur.yearly) + '/yr';
-  var dv = document.querySelector('#drawer .di-val[style*="C79B3B"]');
-  if(dv) dv.textContent = label;
-  document.getElementById('settingsOv').remove();
   showToast('Subscribed to Pro · ' + (SELECTED_PLAN==='monthly'?'Monthly':'Yearly') + ' · ' + label + ' ✓');
 }
 

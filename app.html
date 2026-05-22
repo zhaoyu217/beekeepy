@@ -1162,7 +1162,29 @@ function updateHarvestUI(){
   const hbar=document.getElementById('harvestHeroBar');if(hbar)hbar.style.width=pct+'%';
 }
 
-/* ── MEMBERSHIP & HIVE SYSTEM ── */
+/* ── PERSISTENCE ── */
+function saveData(){
+  try{
+    localStorage.setItem('hd_hives', JSON.stringify(hives));
+    localStorage.setItem('hd_nextId', nextHiveId);
+    localStorage.setItem('hd_apiary', JSON.stringify(APIARY));
+    localStorage.setItem('hd_plan', JSON.stringify({isPro: PLAN.isPro}));
+  }catch(e){}
+}
+function loadData(){
+  try{
+    const h = localStorage.getItem('hd_hives');
+    if(h){ const parsed=JSON.parse(h); hives.splice(0,hives.length,...parsed); }
+    const nid = localStorage.getItem('hd_nextId');
+    if(nid) nextHiveId = parseInt(nid);
+    const a = localStorage.getItem('hd_apiary');
+    if(a){ const parsed=JSON.parse(a); Object.assign(APIARY, parsed); }
+    const p = localStorage.getItem('hd_plan');
+    if(p){ const parsed=JSON.parse(p); PLAN.isPro = parsed.isPro; }
+  }catch(e){}
+}
+
+
 var PLAN = {
   isPro: false,       // false = Free (max 3), true = Pro (unlimited)
   freeLimit: 3,
@@ -1348,6 +1370,7 @@ function confirmAddHive(){
   };
   hives.push(newHive);
   renderHiveList();
+  saveData();
   // If photo was selected, inject it after render
   if(photoData){
     const reader = new FileReader();
@@ -1398,6 +1421,7 @@ function confirmRenameHive(id){
   if(h) h.name = newName;
   document.getElementById('renameHiveOv').remove();
   renderHiveList();
+  saveData();
   showToast('Renamed to "' + newName + '"');
 }
 
@@ -1407,6 +1431,7 @@ function deleteHive(id, label){
     const idx = hives.findIndex(x => x.id === id);
     if(idx > -1) hives.splice(idx, 1);
     renderHiveList();
+    saveData();
     showToast(label + ' removed.');
   }
 }
@@ -1441,16 +1466,25 @@ function upgradeToPro(){
   PLAN.isPro = true;
   document.getElementById('upgradeOv').remove();
   updateHiveBadge();
+  saveData();
   showToast('Welcome to Pro! Add as many hives as you need. 🎉');
 }
 
 // Init on page load
 window.addEventListener('load', function(){
+  loadData();
   applyUnit();
   renderHiveList();
   updateHiveBadge();
   updateHarvestUI();
-  fetchWeather();
+  // Restore apiary name/location in UI
+  ['apiaryName','homeApiaryName'].forEach(id=>{const el=document.getElementById(id);if(el)el.textContent=APIARY.name;});
+  const locEl=document.getElementById('apiaryLocation');
+  if(locEl)locEl.textContent=APIARY.location?('📍 '+APIARY.location):'📍 No location set · tap Edit to add';
+  const homeSub=document.getElementById('homeApiaryLocation');
+  if(homeSub)homeSub.textContent=APIARY.location||'No location set';
+  if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,APIARY.location);
+  else fetchWeather();
   // Force home card update
   const n = hives.length;
   const el = document.getElementById('homeHiveCount');
@@ -1527,6 +1561,7 @@ async function saveApiary(){
     }catch(e){}
     if(APIARY.lat&&APIARY.lon) fetchWeatherForLocation(APIARY.lat,APIARY.lon,loc);
   }
+  saveData();
   showToast(loc?('Weather updating for '+loc+' 🌤'):'Apiary name saved');
 }
 

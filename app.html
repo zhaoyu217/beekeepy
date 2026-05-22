@@ -298,12 +298,20 @@ body.bright *{-webkit-font-smoothing:auto}
   <div class="sec-hd" style="margin-top:16px" data-i18n="myApiary">My apiary</div>
   <div id="homeApiaryList" style="margin:0 16px 12px;display:flex;flex-direction:column;gap:8px"></div>
 
-  <!-- EMPTY STATE — shown when no hives -->
+  <!-- EMPTY STATE — shown when no apiaries -->
   <div id="emptyState" style="margin:0 16px 16px;background:#fff;border:1px solid #EDE8E0;border-radius:18px;padding:28px 20px;text-align:center">
     <div style="font-size:40px;margin-bottom:12px">🐝</div>
     <div style="font-size:15px;font-weight:700;color:#1A1A1A;letter-spacing:-.3px;margin-bottom:6px">Your hive yard is empty</div>
     <div style="font-size:12px;color:#B7B1A7;line-height:1.7;margin-bottom:18px">Add your first hive to start tracking inspections, harvests, and colony health.</div>
     <button class="btn-full" style="background:var(--forest);color:#fff" onclick="openSub('smya')">Set up my apiary →</button>
+  </div>
+
+  <!-- ADD HIVE GUIDE — shown when apiary exists but no hives -->
+  <div id="addHiveGuide" style="display:none;margin:0 16px 16px;background:#FBF5E6;border:1px solid #E8CC88;border-radius:18px;padding:22px 20px;text-align:center">
+    <div style="font-size:32px;margin-bottom:10px">🏠</div>
+    <div style="font-size:14px;font-weight:700;color:#4A3000;letter-spacing:-.2px;margin-bottom:5px">Add your first hive</div>
+    <div style="font-size:12px;color:#7A5C1E;line-height:1.7;margin-bottom:16px">Your apiary is set up! Now add a hive to start tracking inspections, harvests, and colony health.</div>
+    <button class="btn-full" style="background:#C79B3B;color:#fff" onclick="openSub('smya');closeDrawer()">+ Add a hive →</button>
   </div>
 
   <!-- ALERTS — hidden until hives exist -->
@@ -1374,6 +1382,7 @@ function updateCounters(){
   const show=id=>{const d=document.getElementById(id);if(d)d.style.display='';};
   const hide=id=>{const d=document.getElementById(id);if(d)d.style.display='none';};
   if(hasApiaries){ hide('emptyState'); } else { show('emptyState'); }
+  if(hasApiaries && !hasHives){ show('addHiveGuide'); } else { hide('addHiveGuide'); }
   if(hasHives){
     show('harvestCard');show('alertsSection');
     show('nectarTag');show('timelineSection');show('ctaRow');

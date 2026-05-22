@@ -489,31 +489,32 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
   <div class="sub-hd"><div class="back" onclick="closeSub('sw')"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div><div class="sub-title">Today's weather</div></div>
   <div class="sp">
 
-    <!-- HERO — 天气绝对主角 -->
+    <!-- HERO -->
     <div class="sp-card" style="background:linear-gradient(150deg,#FDF0D0 0%,#FAE8B0 100%);border-color:#E8CC88;padding:22px 20px">
-      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:6px">
+      <div style="display:flex;align-items:flex-end;justify-content:space-between;margin-bottom:10px">
         <div>
           <div style="font-size:58px;font-weight:700;color:#4A3000;letter-spacing:-3px;line-height:1">78°</div>
-          <div style="font-size:14px;font-weight:600;color:#7A5C1E;margin-top:2px">Sunny · Boulder, CO</div>
+          <div style="font-size:14px;font-weight:600;color:#7A5C1E;margin-top:4px">Sunny · Boulder, CO</div>
         </div>
-        <div style="text-align:right;padding-bottom:6px">
-          <div style="font-size:11px;font-weight:700;color:#5E7A63;background:rgba(255,255,255,.7);border-radius:10px;padding:5px 10px;display:inline-block">Open hive ✓</div>
-          <div style="font-size:11px;color:#A07030;margin-top:8px">Feels like 76°</div>
-          <div style="font-size:11px;color:#B7935A;margin-top:2px">H: 81° · L: 58°</div>
+        <div style="text-align:right;padding-bottom:4px">
+          <!-- 半透明玻璃 pill -->
+          <div style="font-size:11px;font-weight:700;color:#3A6A45;background:rgba(255,255,255,.38);backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px);border:1px solid rgba(255,255,255,.55);border-radius:20px;padding:5px 12px;display:inline-block;letter-spacing:.01em">Open hive ✓</div>
+          <div style="font-size:11px;color:#A07030;margin-top:10px">Feels like 76°</div>
+          <div style="font-size:11px;color:#B7935A;margin-top:2px">H 81° · L 58°</div>
         </div>
       </div>
-      <div style="font-size:11px;color:#A07030;padding-top:8px;border-top:1px solid rgba(180,130,40,.2)">Humidity 42% · Wind 6 mph · UV index 7</div>
+      <div style="font-size:11px;color:#A07030;padding-top:10px;border-top:1px solid rgba(180,130,40,.18)">Humidity 42% · Wind 6 mph · UV index 7</div>
     </div>
 
-    <!-- Best inspection window — 核心差异化功能 -->
-    <div class="sp-card" style="background:#1F2A24;border-color:#1F2A24;padding:16px 18px">
+    <!-- Best inspection window -->
+    <div class="sp-card" style="background:var(--forest);border-color:var(--forest);padding:16px 18px">
       <div style="font-size:10px;font-weight:600;color:#7A9A84;text-transform:uppercase;letter-spacing:.08em;margin-bottom:8px">Best inspection window</div>
-      <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:3px">10:30 AM – 2:00 PM</div>
-      <div style="font-size:12px;color:#7A9A84;line-height:1.6">Warm enough for bees to be calm. Wind is low. Avoid early morning — dew makes frames slippery.</div>
+      <div style="font-size:22px;font-weight:700;color:#fff;letter-spacing:-.5px;margin-bottom:4px">10:30 AM – 2:00 PM</div>
+      <div style="font-size:12px;color:#8AAF95;line-height:1.65">Warm enough for bees to be calm. Wind is low. Avoid early morning — dew makes frames slippery.</div>
     </div>
 
-    <!-- 5-Day — Apple Weather 风格 -->
-    <div class="sp-card">
+    <!-- 5-Day — 额外顶部留白 24px -->
+    <div class="sp-card" style="margin-top:14px">
       <div class="sp-lbl">5-Day forecast</div>
       <div class="day-row">
         <div class="day-cell">
@@ -544,8 +545,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       </div>
     </div>
 
-    <!-- Beekeeping windows — 轻分隔线 -->
-    <div class="sp-card">
+    <!-- Beekeeping windows — 额外顶部留白 24px -->
+    <div class="sp-card" style="margin-top:14px">
       <div class="sp-lbl">Beekeeping windows</div>
       <div class="sp-row">
         <div><div style="font-size:12px;font-weight:600;color:#1A1A1A">Today · Thu</div><div style="font-size:10px;color:#B7B1A7;margin-top:2px">78°F · Low wind · Sunny</div></div>
@@ -569,16 +570,21 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
       </div>
     </div>
 
-    <!-- Quiet intelligence nudge -->
-    <div class="sp-card" style="background:#FBF5E6;border-color:#E8CC88">
+    <!-- Seasonal nudge -->
+    <div class="sp-card" style="background:#FBF5E6;border-color:#E8CC88;margin-top:14px">
       <div style="font-size:11px;font-weight:600;color:#7A5C1E;margin-bottom:6px">🌼 Right now</div>
       <div style="font-size:12px;color:#7A5C1E;line-height:1.7;font-style:italic">Spring clover flow is peaking. Add a super to Hive 1 before Sunday's rain — stores are building fast.</div>
     </div>
 
-    <!-- Treatment note -->
-    <div class="sp-card" style="background:#FBF3E3;border-color:#E8D4A0">
-      <div style="font-size:11px;font-weight:600;color:#7A5C1E;margin-bottom:5px">⚠️ Treatment note</div>
-      <div style="font-size:12px;color:#7A5C1E;line-height:1.7">78°F is within the safe range for Formic Pro (65–85°F). Avoid oxalic acid while honey supers are on.</div>
+    <!-- Treatment guidance — 折叠卡，默认收起 -->
+    <div id="treat-card" style="background:#F9F7F3;border:1px solid #EDE8E0;border-radius:18px;padding:13px 16px;cursor:pointer" onclick="toggleTreat()">
+      <div style="display:flex;align-items:center;justify-content:space-between">
+        <div style="font-size:12px;font-weight:600;color:#B7B1A7">Treatment guidance</div>
+        <svg id="treat-chevron" width="14" height="14" viewBox="0 0 14 14" fill="none" style="transition:.2s;transform:rotate(0deg)"><path d="M3 5l4 4 4-4" stroke="#B7B1A7" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+      </div>
+      <div id="treat-body" style="display:none;margin-top:10px;padding-top:10px;border-top:1px solid #F0EDE8">
+        <div style="font-size:12px;color:#7A5C1E;line-height:1.75">Today's temperature (78°F) is a good window for most treatments. <strong style="font-weight:600">Formic acid</strong> works best between 65–85°F. If you're treating, avoid opening honey supers for at least 14 days after.</div>
+      </div>
     </div>
 
   </div>
@@ -976,6 +982,15 @@ function applyUnit(){
 function toggleUnit(){isF=!isF;localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 function setUnit(u,e){e&&e.stopPropagation();isF=(u==='f');localStorage.setItem('hd_unit',isF?'f':'c');applyUnit();}
 applyUnit();
+
+/* TREATMENT TOGGLE */
+function toggleTreat(){
+  const body=document.getElementById('treat-body');
+  const chevron=document.getElementById('treat-chevron');
+  const open=body.style.display==='block';
+  body.style.display=open?'none':'block';
+  chevron.style.transform=open?'rotate(0deg)':'rotate(180deg)';
+}
 
 /* DRAWER */
 function openDrawer(){document.getElementById('dov').classList.add('open');document.getElementById('drawer').classList.add('open')}

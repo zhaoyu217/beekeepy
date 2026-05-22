@@ -383,8 +383,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
 
   <!-- CTA -->
   <div class="cta-row">
-    <button class="btn" style="background:#1F2A24;color:#fff">Inspect hive</button>
-    <button class="btn btn-honey">Record harvest</button>
+    <button class="btn" style="background:#1F2A24;color:#fff" onclick="setNav(1)">Inspect hive</button>
+    <button class="btn btn-honey" onclick="setNav(3)">Record harvest</button>
   </div>
 
 </div><!-- /scroll -->
@@ -853,8 +853,8 @@ html,body{height:100%;font-family:'Inter',sans-serif;background:#F2EFE9;display:
     </div>
 
     <!-- CTAs -->
-    <button class="btn-full" style="background:var(--forest);color:#fff">Begin inspection</button>
-    <button class="btn-full" style="background:#fff;border:1px solid #EDE8E0;color:#5A5550">View full history →</button>
+    <button class="btn-full" style="background:var(--forest);color:#fff" onclick="openSub('sob');closeSub('shd')">Begin inspection</button>
+    <button class="btn-full" style="background:#fff;border:1px solid #EDE8E0;color:#5A5550" onclick="openSub('sat');closeSub('shd')">View full history →</button>
 
   </div>
 </div>

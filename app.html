@@ -1616,6 +1616,9 @@ function switchApiary(id){
   updateCounters();
   fetchWeather();
   const a = getActiveApiary();
+  // Update home card name/location
+  var hn = document.getElementById('homeApiaryName'); if(hn) hn.textContent = a ? a.name : '';
+  var hl = document.getElementById('homeApiaryLocation'); if(hl) hl.textContent = (a && a.location) ? ' · '+a.location : '';
   showToast('Switched to ' + (a?a.name:'apiary'));
 }
 
@@ -1656,6 +1659,9 @@ function saveNewApiary(){
   renderApiaryUI();
   renderHiveList();
   updateCounters();
+  // Update home card
+  var hn = document.getElementById('homeApiaryName'); if(hn) hn.textContent = name;
+  var hl = document.getElementById('homeApiaryLocation'); if(hl) hl.textContent = loc ? ' · '+loc : '';
   if(loc) fetchWeatherForLocation(null, null, loc);
   showToast('Apiary "'+name+'" added!');
 }

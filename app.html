@@ -541,18 +541,33 @@ body.bright *{-webkit-font-smoothing:auto}
 
 <!-- SUB: INSPECT PAGE -->
 <style>
-.ib{padding:14px 10px;border-radius:14px;cursor:pointer;text-align:center;transition:.15s;user-select:none;border:2px solid transparent}
-.ib:active{transform:scale(.96)}
-.ip{padding:7px 14px;border-radius:20px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:12px;font-weight:500;color:#5A5550;cursor:pointer;transition:.15s;white-space:nowrap;user-select:none}
-.ip.on{border-color:#C79B3B!important;background:#FBF5E6!important;color:#7A5C1E!important;font-weight:600!important}
+.insp-page{background:#1C2321;min-height:100%}
+.insp-section-lbl{font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px;display:block}
+.insp-quote{background:#222E2A;border-radius:14px;padding:14px 16px;border-left:3px solid #D5A144;margin-bottom:8px}
+.insp-quote p{font-size:13px;font-style:italic;color:#C8BFA8;line-height:1.6;font-weight:400}
+.insp-card-active{background:#D5A144;border-radius:16px;padding:16px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:.15s}
+.insp-card-active .ica-name{font-size:16px;font-weight:700;color:#1C2321;letter-spacing:-.3px}
+.insp-card-active .ica-sub{font-size:12px;color:rgba(28,35,33,.55);margin-top:3px}
+.insp-card-inactive{background:#222E2A;border-radius:14px;padding:14px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px;transition:.15s}
+.insp-card-inactive .ici-name{font-size:14px;font-weight:600;color:#8AA898;letter-spacing:-.2px}
+.insp-card-inactive .ici-sub{font-size:11px;color:#4A6A5A;margin-top:2px}
+.insp-bar-wrap{background:#1C2321;border-radius:20px;height:8px;overflow:hidden;margin-top:10px}
+.insp-bar-fill{height:100%;background:#D5A144;border-radius:20px;transition:.3s}
+.insp-stepper-btn{width:38px;height:38px;border-radius:10px;border:none;background:#222E2A;color:#D5A144;font-size:22px;cursor:pointer;font-weight:300;line-height:1;display:flex;align-items:center;justify-content:center}
+.insp-dots{display:flex;justify-content:center;gap:6px;margin-bottom:16px}
+.insp-dot{height:4px;border-radius:2px;background:#2E3A36;transition:.3s}
+.insp-dot.active{background:#D5A144;width:20px!important}
 </style>
 <div class="sub" id="inspectPage">
-  <div class="sub-hd">
-    <div class="back" onclick="inspBack()"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
-    <div class="sub-title" id="inspTitle">Inspect</div>
-    <div style="font-size:11px;color:#B7B1A7;margin-left:auto" id="inspDateLbl"></div>
+  <div class="sub-hd" id="inspHd" style="background:#1C2321;border-bottom:none">
+    <div class="back" id="inspBackBtn" onclick="inspBack()" style="background:rgba(255,255,255,.08);border-radius:10px">
+      <svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#F4F0E8" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg>
+    </div>
+    <div class="sub-title" id="inspTitle" style="color:#F4F0E8">Inspect</div>
+    <div id="inspSaveBtn" style="font-size:14px;font-weight:600;color:#D5A144;cursor:pointer;margin-left:auto;display:none" onclick="finishInspection('complete')">Save</div>
+    <div id="inspDateLbl" style="font-size:12px;color:#4A6A5A;margin-left:auto"></div>
   </div>
-  <div class="sp" id="inspBody"></div>
+  <div class="sp insp-page" id="inspBody" style="padding-bottom:100px"></div>
 </div>
 
 
@@ -3201,541 +3216,367 @@ function toggleBrightMode(){
 /* ── INSPECT PAGE ── */
 var INSPECTIONS = [];
 var _inspNextId = 1;
-var _IS = {}; // current inspection state
+var _IS = {};
 
+/* ─── NAVIGATION ─── */
 function inspBack(){
-  var page = document.getElementById('inspectPage');
-  if(page) page.style.background = '';
-  var hd = document.querySelector('#inspectPage .sub-hd');
-  if(hd){ hd.style.background=''; hd.style.borderBottom=''; }
-  var title = document.getElementById('inspTitle');
-  if(title){ title.style.color=''; }
-  var backBtn = document.querySelector('#inspectPage .back');
-  if(backBtn){ backBtn.style.background=''; var p=backBtn.querySelector('path'); if(p) p.setAttribute('stroke','#1A1A1A'); }
-  var dateLbl = document.getElementById('inspDateLbl');
-  if(dateLbl){ dateLbl.style.color=''; }
+  var page=document.getElementById('inspectPage');
+  if(page) page.style.background='';
   closeSub('inspectPage'); setNav(0);
 }
 
+/* ─── STEP 0: Select hive ─── */
 function openInspectPage(){
-  var d = new Date();
-  var lbl = document.getElementById('inspDateLbl');
-  if(lbl) lbl.textContent = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  var dl=document.getElementById('inspDateLbl');
+  if(dl){ dl.textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); dl.style.display=''; }
+  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
+  _IS={};
   renderInspStep0();
 }
 
 function renderInspStep0(){
-  var body = document.getElementById('inspBody'); if(!body) return;
-  var title = document.getElementById('inspTitle'); if(title) title.textContent = 'Inspect';
-  _IS = {};
+  var body=document.getElementById('inspBody'); if(!body) return;
+  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent='Inspect';
 
-  var all = [];
+  var all=[];
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){ all.push({h:h,a:a}); }); });
 
-  var hivesHtml;
-  if(all.length === 0){
-    hivesHtml = '<div style="text-align:center;padding:24px;color:#B7B1A7;font-size:13px">No hives yet.<br>Add a hive from the home screen.</div>';
-  } else {
-    hivesHtml = all.map(function(item){
-      var h=item.h, a=item.a;
-      var name = h.name + (h.breed&&h.breed!=='Unknown'?' · '+h.breed:'');
-      var bg='#F2EFE9', fg='#8A8378';
-      if(h.status==='Healthy'){bg='#EEF5EF';fg='#5E7A63';}
-      else if(h.status==='Due soon'){bg='#FBF3E3';fg='#7A5C1E';}
-      else if(h.status==='Needs attention'){bg='#FDE8E8';fg='#B83A2A';}
-      return '<div onclick="inspPickHive('+h.id+')" data-hname="'+name.replace(/"/g,'&quot;')+'" id="ihc_'+h.id+'" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:2px solid #EDE8E0;background:#F9F7F3;cursor:pointer;margin-bottom:8px">'+
-        '<div style="width:40px;height:40px;border-radius:12px;background:'+bg+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🐝</div>'+
-        '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">'+name+'</div>'+
-        '<div style="font-size:11px;color:#B7B1A7;margin-top:1px">'+a.name+'</div></div>'+
-        '<div style="font-size:10px;font-weight:600;color:'+fg+';background:'+bg+';padding:3px 8px;border-radius:6px">'+(h.status||'New')+'</div>'+
-      '</div>';
-    }).join('');
-  }
+  var hivesHtml = all.length===0
+    ? '<p style="text-align:center;padding:32px;color:#4A6A5A;font-size:13px">No hives yet.<br>Add a hive from the home screen.</p>'
+    : all.map(function(item){
+        var h=item.h, a=item.a;
+        var name=h.name+(h.breed&&h.breed!=='Unknown'?' · '+h.breed:'');
+        var dot='#6E8A78';
+        if(h.status==='Healthy') dot='#3A9A5C';
+        else if(h.status==='Due soon') dot='#D5A144';
+        else if(h.status==='Needs attention') dot='#B83A2A';
+        return '<div onclick="inspPickHive('+h.id+')" data-hname="'+name.replace(/"/g,'&quot;')+'" id="ihc_'+h.id+'"'+
+          ' style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;border:2px solid #2E3A36;background:#222E2A;cursor:pointer;margin-bottom:10px;transition:.15s">'+
+          '<div style="width:44px;height:44px;border-radius:12px;background:#1C2321;display:flex;align-items:center;justify-content:center;font-size:22px">🐝</div>'+
+          '<div style="flex:1"><div style="font-size:14px;font-weight:600;color:#E8E2D8">'+name+'</div>'+
+          '<div style="font-size:11px;color:#4A6A5A;margin-top:3px">'+a.name+'</div></div>'+
+          '<div style="display:flex;align-items:center;gap:5px"><div style="width:6px;height:6px;border-radius:50%;background:'+dot+'"></div>'+
+          '<span style="font-size:11px;font-weight:600;color:'+dot+'">'+(h.status||'New')+'</span></div>'+
+        '</div>';
+      }).join('');
 
-  var wText = '—';
-  var wEl = document.getElementById('weatherDescEl');
-  if(wEl) wText = wEl.textContent || '—';
+  var wText='—'; var wEl=document.getElementById('weatherDescEl'); if(wEl) wText=wEl.textContent||'—';
 
-  body.innerHTML =
-    '<div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:12px">Select hive to inspect</div>'+
+  body.innerHTML=
+    '<div style="padding:0 16px 40px">'+
+    '<div style="font-size:11px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Select hive</div>'+
     hivesHtml+
-    '<div style="font-size:11px;color:#B7B1A7;text-align:center;margin:16px 0 4px">Today\'s weather</div>'+
-    '<div style="background:#F9F7F3;border-radius:12px;padding:10px 14px;font-size:12px;color:#5A5550;margin-bottom:20px;text-align:center">'+wText+'</div>'+
-    '<button id="inspBeginBtn" onclick="renderInspStep1()" style="width:100%;padding:14px;border-radius:14px;border:none;background:#B7B1A7;color:#fff;font-size:14px;font-weight:700;cursor:not-allowed;font-family:Inter,sans-serif" disabled>Begin inspection →</button>';
+    '<div style="background:#222E2A;border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px">'+
+      '<span style="font-size:16px">🌤</span><span style="font-size:12px;color:#6E8A78">'+wText+'</span>'+
+    '</div>'+
+    '<button id="inspBeginBtn" onclick="renderInspStep1()" disabled'+
+      ' style="width:100%;padding:15px;border-radius:16px;border:none;background:#2E3A36;color:#4A6A5A;font-size:15px;font-weight:700;cursor:not-allowed;font-family:Inter,sans-serif;letter-spacing:-.3px;transition:.2s">'+
+      'Begin inspection →</button>'+
+    '</div>';
 }
 
 function inspPickHive(id){
-  var el = document.getElementById('ihc_'+id);
-  var name = el ? el.getAttribute('data-hname') : '';
-  _IS.hiveId = id; _IS.hiveName = name;
-  document.querySelectorAll('[id^="ihc_"]').forEach(function(c){
-    c.style.border='2px solid #EDE8E0'; c.style.background='#F9F7F3';
-  });
-  var sel = document.getElementById('ihc_'+id);
-  if(sel){ sel.style.border='2px solid #C79B3B'; sel.style.background='#FBF5E6'; }
-  var btn = document.getElementById('inspBeginBtn');
-  if(btn){ btn.disabled=false; btn.style.background='#1F2A24'; btn.style.cursor='pointer'; }
+  var el=document.getElementById('ihc_'+id);
+  _IS.hiveId=id; _IS.hiveName=el?el.getAttribute('data-hname'):'';
+  document.querySelectorAll('[id^="ihc_"]').forEach(function(c){ c.style.border='2px solid #2E3A36'; c.style.background='#222E2A'; });
+  if(el){ el.style.border='2px solid #D5A144'; el.style.background='#2A2416'; }
+  var btn=document.getElementById('inspBeginBtn');
+  if(btn){ btn.disabled=false; btn.style.background='#D5A144'; btn.style.color='#1C2321'; btn.style.cursor='pointer'; }
 }
 
+/* ─── STEP 1: Inspection form ─── */
+var _QUEEN_OPTS=[
+  {val:'Spotted',    sub:'Saw her on the comb',        emoji:'👑'},
+  {val:'Not seen',   sub:'Signs still present',         emoji:'🔍'},
+  {val:'Eggs only',  sub:'Fresh eggs confirm presence', emoji:'🥚'},
+  {val:'Queenless',  sub:'No signs at all',             emoji:'⚠️'},
+];
+var _QUOTES={
+  default:  '"Your girls had a full week — let\'s see what they\'ve been up to."',
+  Spotted:  '"She\'s here and looking strong. The colony is in good hands."',
+  'Not seen':'"No queen spotted today. Check for eggs — she may just be hiding."',
+  'Eggs only':'"Fresh eggs confirm her presence. She\'s doing her job."',
+  Queenless: '"No signs of the queen. Act fast — the colony needs her."',
+};
+var _BROOD_CAP=['Very poor — urgent','Weak — monitor','Below average','Moderate','Solid pattern','Good coverage','Very good','Excellent 🌟'];
+var _HONEY_CAP=['Empty — urgent','Very low','Low','Below half','Half full','Adequate','Good','Full — excellent'];
+
 function renderInspStep1(){
-  var body = document.getElementById('inspBody'); if(!body) return;
-  var page = document.getElementById('inspectPage');
-  if(page) page.style.background='#1C2321';
+  if(!_IS.hiveId) return;
+  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent=_IS.hiveName;
+  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='block';
+  var dl=document.getElementById('inspDateLbl'); if(dl) dl.style.display='none';
+  _IS.brood=6; _IS.honey=5; _IS.temp=70;
 
-  // Header: dark bg, Save btn
-  var hd = document.querySelector('#inspectPage .sub-hd');
-  if(hd){
-    hd.style.background='#1C2321';
-    hd.style.borderBottom='none';
-    hd.style.paddingBottom='8px';
-  }
-  var ttl = document.getElementById('inspTitle');
-  if(ttl){ ttl.style.color='#F4F0E8'; }
-  var bp = document.querySelector('#inspectPage .back');
-  if(bp){ bp.style.background='rgba(255,255,255,.08)'; bp.style.borderRadius='10px'; var bpath=bp.querySelector('path'); if(bpath) bpath.setAttribute('stroke','#F4F0E8'); }
-  var dl = document.getElementById('inspDateLbl');
-  if(dl){ dl.textContent='Save'; dl.style.color='#D5A144'; dl.style.fontWeight='600'; dl.style.fontSize='14px'; dl.style.cursor='pointer'; dl.onclick=function(){ finishInspection('complete'); }; }
-
-  body.style.padding='0';
+  var body=document.getElementById('inspBody'); if(!body) return;
   body.scrollTop=0;
-  _IS.brood=6; _IS.honey=5; _IS.temp=70; _IS.broodMax=10;
 
-  // Quote messages per queen selection
-  var quotes = {
-    default: '"Your girls had a full week — let\'s see what they\'ve been up to."',
-    Spotted: '"She\'s here and looking strong. The colony is in good hands."',
-    'Not seen': '"No queen spotted today. Check for eggs — she may just be hiding."',
-    'Eggs only': '"Fresh eggs confirm her presence. She\'s doing her job."',
-    Queenless: '"No signs of the queen. Act fast — the colony needs her."'
-  };
-
-  function renderQueen(){
-    var q = _IS.queen;
-    var options = [
-      {val:'Spotted', sub:'Saw her on the comb', emoji:'👑'},
-      {val:'Not seen', sub:'Signs still present', emoji:'🔍'},
-      {val:'Eggs only', sub:'Fresh eggs confirm presence', emoji:'🥚'},
-      {val:'Queenless', sub:'No signs at all', emoji:'⚠️'},
-    ];
-    return options.map(function(o){
-      var active = q===o.val;
-      if(active){
-        return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#D5A144;border-radius:16px;padding:16px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
-          '<div style="font-size:28px">'+o.emoji+'</div>'+
-          '<div><div style="font-size:15px;font-weight:700;color:#1C2321;letter-spacing:-.3px">'+o.val+'</div>'+
-          '<div style="font-size:12px;color:rgba(28,35,33,.6);margin-top:2px">'+o.sub+'</div></div>'+
-        '</div>';
-      } else {
-        return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#222E2A;border-radius:14px;padding:13px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
-          '<div style="font-size:22px;opacity:.7">'+o.emoji+'</div>'+
-          '<div style="font-size:13px;font-weight:500;color:#8AA898">'+o.val+'</div>'+
-        '</div>';
-      }
-    }).join('');
-  }
-
-  function renderBrood(){
-    var v=_IS.brood||6, mx=_IS.broodMax||10;
-    var captions=['Very poor — urgent attention','Weak — monitor closely','Below average','Moderate — keep watching','Solid pattern','Good coverage','Very good','Excellent pattern 🌟'];
-    var capIdx=Math.min(7,Math.floor(v/mx*8));
-    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
-      '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ibroodCaption">'+captions[capIdx]+'</div>'+
-      '<div style="font-size:22px;font-weight:800;color:#D5A144;letter-spacing:-.5px"><span id="ibroodv">'+v+'</span><span style="font-size:13px;color:#4A6A5A;font-weight:500">/'+mx+'</span></div>'+
-    '</div>'+
-    '<div style="position:relative;height:8px;background:#1C2321;border-radius:4px;overflow:hidden">'+
-      '<div id="ibroodBar" style="position:absolute;left:0;top:0;height:100%;background:#D5A144;border-radius:4px;width:'+(v/mx*100)+'%;transition:.2s"></div>'+
-    '</div>'+
-    '<div style="display:flex;justify-content:space-between;margin-top:6px">'+
-      '<button onclick="adjBrood(-1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#222E2A;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">−</button>'+
-      '<div style="display:flex;gap:6px;align-items:center">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
-        return '<div onclick="setBrood('+n+')" style="width:8px;height:8px;border-radius:50%;background:'+(n<=v?'#D5A144':'#2E3A36')+';cursor:pointer;transition:.2s" id="ibdot_'+n+'"></div>';
-      }).join('')+'</div>'+
-      '<button onclick="adjBrood(1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#222E2A;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">+</button>'+
-    '</div>';
-  }
-
-  function sectionLabel(icon, text){
-    return '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.1em;margin:20px 0 10px;display:flex;align-items:center;gap:6px">'+
-      '<span>'+icon+'</span><span>'+text+'</span>'+
-    '</div>';
-  }
-
-  body.innerHTML =
-    '<div style="padding:0 16px 120px">'+
-
-    // Emotional quote
-    '<div id="inspQuote" style="background:#222E2A;border-radius:14px;padding:14px 16px;border-left:3px solid #D5A144;margin-bottom:20px">'+
-      '<div style="font-size:13px;font-weight:500;color:#E8E2D8;line-height:1.6;font-style:italic" id="inspQuoteText">'+quotes['default']+'</div>'+
-    '</div>'+
+  body.innerHTML=
+    '<div style="padding:0 16px 100px">'+
 
     // Step dots
-    '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px" id="inspStepDots">'+
-      '<div style="width:24px;height:4px;border-radius:2px;background:#D5A144"></div>'+
-      '<div style="width:8px;height:4px;border-radius:2px;background:#2E3A36"></div>'+
-      '<div style="width:8px;height:4px;border-radius:2px;background:#2E3A36"></div>'+
-      '<div style="width:8px;height:4px;border-radius:2px;background:#2E3A36"></div>'+
+    '<div class="insp-dots">'+
+      '<div class="insp-dot active" style="width:20px"></div>'+
+      '<div class="insp-dot" style="width:8px"></div>'+
+      '<div class="insp-dot" style="width:8px"></div>'+
+      '<div class="insp-dot" style="width:8px"></div>'+
     '</div>'+
 
-    // Queen status
-    sectionLabel('👑','Queen Status')+
-    '<div id="queenCards">'+renderQueen()+'</div>'+
+    // Quote
+    '<div class="insp-quote"><p id="inspQuoteText">'+_QUOTES['default']+'</p></div>'+
 
-    // Brood frames
-    sectionLabel('🐣','Brood Frames')+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px" id="broodCard">'+renderBrood()+'</div>'+
+    // Queen
+    '<span class="insp-section-lbl">Queen Status</span>'+
+    '<div id="queenCards">'+_renderQueenCards(null)+'</div>'+
 
-    // Honey stores
-    sectionLabel('🍯','Honey Stores')+
+    // Brood
+    '<span class="insp-section-lbl">Brood Frames</span>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
-        '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ihoneyCaption">Half full — adequate</div>'+
-        '<div style="font-size:22px;font-weight:800;color:#D5A144"><span id="ihoneyv">5</span><span style="font-size:13px;color:#4A6A5A;font-weight:500">/10</span></div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+
+        '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ibroodCap">Expanding nicely!</div>'+
+        '<div style="font-size:20px;font-weight:800;color:#D5A144"><span id="ibroodv">6</span><span style="font-size:13px;color:#4A6A5A;font-weight:500"> /10</span></div>'+
       '</div>'+
-      '<div style="position:relative;height:8px;background:#1C2321;border-radius:4px;overflow:hidden">'+
-        '<div id="ihoneyBar" style="position:absolute;left:0;top:0;height:100%;background:#D5A144;border-radius:4px;width:50%;transition:.2s"></div>'+
+      '<div class="insp-bar-wrap"><div class="insp-bar-fill" id="ibroodBar" style="width:60%"></div></div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'+
+        '<button class="insp-stepper-btn" onclick="adjBrood(-1)">−</button>'+
+        '<div style="display:flex;gap:5px">'+_dots10('ibdot',6)+'</div>'+
+        '<button class="insp-stepper-btn" onclick="adjBrood(1)">+</button>'+
       '</div>'+
-      '<div style="display:flex;justify-content:space-between;margin-top:6px">'+
-        '<button onclick="adjHoney(-1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">−</button>'+
-        '<div style="display:flex;gap:6px;align-items:center">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
-          return '<div onclick="setHoney('+n+')" style="width:8px;height:8px;border-radius:50%;background:'+(n<=5?'#D5A144':'#2E3A36')+';cursor:pointer" id="ihdot_'+n+'"></div>';
-        }).join('')+'</div>'+
-        '<button onclick="adjHoney(1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">+</button>'+
+    '</div>'+
+
+    // Honey
+    '<span class="insp-section-lbl">Honey Stores</span>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:4px">'+
+        '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ihoneyCap">Half full — adequate</div>'+
+        '<div style="font-size:20px;font-weight:800;color:#D5A144"><span id="ihoneyv">5</span><span style="font-size:13px;color:#4A6A5A;font-weight:500"> /10</span></div>'+
+      '</div>'+
+      '<div class="insp-bar-wrap"><div class="insp-bar-fill" id="ihoneyBar" style="width:50%"></div></div>'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'+
+        '<button class="insp-stepper-btn" onclick="adjHoney(-1)">−</button>'+
+        '<div style="display:flex;gap:5px">'+_dots10('ihdot',5)+'</div>'+
+        '<button class="insp-stepper-btn" onclick="adjHoney(1)">+</button>'+
       '</div>'+
     '</div>'+
 
     // Varroa
-    sectionLabel('🔬','Varroa Mite Load')+
+    '<span class="insp-section-lbl">Varroa Mite Load</span>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-      ['Low &lt;1%|🟢','Moderate 1-2%|🟡','High 2-4%|🟠','Critical &gt;4%|🔴'].map(function(s){
-        var parts=s.split('|'); var val=parts[0]; var emoji=parts[1];
-        return '<div data-group="varroa" data-val="'+val+'" onclick="pickBlock(this)" style="background:#222E2A;border:2px solid #2E3A36;border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;transition:.15s">'+
-          '<div style="font-size:24px;margin-bottom:6px">'+emoji+'</div>'+
-          '<div style="font-size:11px;font-weight:600;color:#8AA898">'+val+'</div>'+
-        '</div>';
-      }).join('')+
+      _varBlock('Low &lt;1%','🟢')+_varBlock('Moderate 1-2%','🟡')+
+      _varBlock('High 2-4%','🟠')+_varBlock('Critical &gt;4%','🔴')+
     '</div>'+
 
     // Temperament
-    sectionLabel('😤','Temperament')+
+    '<span class="insp-section-lbl">Temperament</span>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
       '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
       '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:8px;border-radius:4px;accent-color:#3A9A5C;cursor:pointer">'+
     '</div>'+
 
     // Overall
-    sectionLabel('⭐','Overall Impression')+
+    '<span class="insp-section-lbl">Overall Impression</span>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
-      [['Thriving','🌟','#3A9A5C'],['Stable','✅','#D5A144'],['Needs care','🚨','#B83A2A']].map(function(o){
-        return '<div data-group="overall" data-val="'+o[0]+'" onclick="pickBlock(this)" style="background:#222E2A;border:2px solid #2E3A36;border-radius:14px;padding:14px 8px;text-align:center;cursor:pointer;transition:.15s">'+
-          '<div style="font-size:22px;margin-bottom:6px">'+o[1]+'</div>'+
-          '<div style="font-size:11px;font-weight:600;color:#8AA898">'+o[0]+'</div>'+
-        '</div>';
-      }).join('')+
+      _ovBlock('Thriving','🌟')+_ovBlock('Stable','✅')+_ovBlock('Needs care','🚨')+
     '</div>'+
 
-    // More checks
+    // More
     '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:20px">'+
       '<div onclick="toggleInspMore()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
-        '<div style="font-size:13px;font-weight:600;color:#8AA898">More checks</div>'+
+        '<span style="font-size:13px;font-weight:600;color:#8AA898">More checks</span>'+
         '<span id="inspMoreArrow" style="color:#4A6A5A;font-size:18px">›</span>'+
       '</div>'+
-      '<div id="inspMore" style="display:none;margin-top:16px">'+
-        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">🌸 Pollen stores</div>'+
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+['Low','Moderate','Abundant'].map(function(o){
-          return '<div data-group="pollen" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer">'+o+'</div>';
-        }).join('')+'</div>'+
-        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">👑 Queen cells</div>'+
-        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+['None','Swarm','Supersedure','Emergency'].map(function(o){
-          return '<div data-group="qcell" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(o==='None'?'#D5A144':'#2E3A36')+';background:'+(o==='None'?'#2A2416':'#1C2321')+';font-size:12px;font-weight:500;color:'+(o==='None'?'#D5A144':'#6E8A78')+';cursor:pointer" data-on="'+(o==='None'?'1':'')+'"">'+o+'</div>';
-        }).join('')+'</div>'+
-        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">🛠 Actions taken</div>'+
-        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+['Fed colony','Treatment','Added super','Split','Requeened'].map(function(o){
-          return '<div data-group="mgmt" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer">'+o+'</div>';
-        }).join('')+'</div>'+
+      '<div id="inspMore" style="display:none;margin-top:14px">'+
+        _moreSection('🌸 Pollen stores',_pills('pollen',['Low','Moderate','Abundant']))+
+        _moreSection('👑 Queen cells',_pills('qcell',['None','Swarm','Supersedure','Emergency']))+
+        _moreSection('🛠 Actions',_pills('mgmt',['Fed','Treatment','Added super','Split','Requeened']))+
       '</div>'+
     '</div>'+
 
     // Notes
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:12px">'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:10px">'+
       '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📝 Notes</div>'+
-      '<textarea id="inspNotes" placeholder="Any observations…" oninput="_IS.notes=this.value" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box"></textarea>'+
+      '<textarea id="inspNotes" oninput="_IS.notes=this.value" placeholder="Any observations…"'+
+        ' style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box"></textarea>'+
     '</div>'+
 
-    // Save button
-    '<button onclick="finishInspection(&quot;complete&quot;)" style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">Save inspection ✓</button>'+
-    '<button onclick="finishInspection(&quot;draft&quot;)" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">Save as draft</button>'+
+    // Bottom save button
+    '<button onclick="finishInspection(&quot;complete&quot;)"'+
+      ' style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">'+
+      'Save inspection ✓</button>'+
+    '<button onclick="finishInspection(&quot;draft&quot;)"'+
+      ' style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">'+
+      'Save as draft</button>'+
 
     '</div>';
 }
 
-function pickQueenCard(el){
-  var val = el.dataset.val;
-  _IS.queen = val;
-  // Re-render queen cards
-  var container = document.getElementById('queenCards');
-  if(!container) return;
-  var quotes = {
-    Spotted: '"She\'s here and looking strong. The colony is in good hands."',
-    'Not seen': '"No queen spotted today. Check for eggs — she may just be hiding."',
-    'Eggs only': '"Fresh eggs confirm her presence. She\'s doing her job."',
-    Queenless: '"No signs of the queen. Act fast — the colony needs her."'
-  };
-  var options = [
-    {val:'Spotted', sub:'Saw her on the comb', emoji:'👑'},
-    {val:'Not seen', sub:'Signs still present', emoji:'🔍'},
-    {val:'Eggs only', sub:'Fresh eggs confirm presence', emoji:'🥚'},
-    {val:'Queenless', sub:'No signs at all', emoji:'⚠️'},
-  ];
-  container.innerHTML = options.map(function(o){
-    var active = val===o.val;
-    if(active){
-      return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#D5A144;border-radius:16px;padding:16px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
+function _dots10(prefix,active){
+  var s='';
+  for(var i=1;i<=10;i++) s+='<div id="'+prefix+'_'+i+'" onclick="'+prefix==='ibdot'?'setBrood':'setHoney'+'('+i+')"'+
+    ' style="width:7px;height:7px;border-radius:50%;background:'+(i<=active?'#D5A144':'#2E3A36')+';cursor:pointer;transition:.2s"></div>';
+  return s;
+}
+function _varBlock(val,emoji){
+  return '<div data-group="varroa" data-val="'+val+'" onclick="pickBlock(this)"'+
+    ' style="background:#222E2A;border:2px solid #2E3A36;border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;transition:.15s">'+
+    '<div style="font-size:24px;margin-bottom:6px">'+emoji+'</div>'+
+    '<div style="font-size:11px;font-weight:600;color:#8AA898">'+val+'</div></div>';
+}
+function _ovBlock(val,emoji){
+  return '<div data-group="overall" data-val="'+val+'" onclick="pickBlock(this)"'+
+    ' style="background:#222E2A;border:2px solid #2E3A36;border-radius:14px;padding:14px 8px;text-align:center;cursor:pointer;transition:.15s">'+
+    '<div style="font-size:22px;margin-bottom:6px">'+emoji+'</div>'+
+    '<div style="font-size:11px;font-weight:600;color:#8AA898">'+val+'</div></div>';
+}
+function _pills(group,opts){
+  return opts.map(function(o){
+    return '<div data-group="'+group+'" data-val="'+o+'" onclick="pickPill(this)"'+
+      ' style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer;transition:.15s">'+o+'</div>';
+  }).join('');
+}
+function _moreSection(label,inner){
+  return '<div style="margin-bottom:14px"><div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">'+label+'</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+inner+'</div></div>';
+}
+function _renderQueenCards(active){
+  return _QUEEN_OPTS.map(function(o){
+    if(o.val===active){
+      return '<div class="insp-card-active" data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)">'+
         '<div style="font-size:28px">'+o.emoji+'</div>'+
-        '<div><div style="font-size:15px;font-weight:700;color:#1C2321;letter-spacing:-.3px">'+o.val+'</div>'+
-        '<div style="font-size:12px;color:rgba(28,35,33,.6);margin-top:2px">'+o.sub+'</div></div>'+
-      '</div>';
+        '<div><div class="ica-name">'+o.val+'</div><div class="ica-sub">'+o.sub+'</div></div></div>';
     } else {
-      return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#222E2A;border-radius:14px;padding:13px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
+      return '<div class="insp-card-inactive" data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)">'+
         '<div style="font-size:22px;opacity:.7">'+o.emoji+'</div>'+
-        '<div style="font-size:13px;font-weight:500;color:#8AA898">'+o.val+'</div>'+
-      '</div>';
+        '<div><div class="ici-name">'+o.val+'</div></div></div>';
     }
   }).join('');
-  // Update quote
-  var qt = document.getElementById('inspQuoteText');
-  if(qt) qt.textContent = quotes[val] || quotes['Spotted'];
-  calcInspScore();
 }
 
-function adjBrood(d){
-  var v=Math.max(0,Math.min(10,(_IS.brood||6)+d));
-  setBrood(v);
+/* ─── INTERACTIONS ─── */
+function pickQueenCard(el){
+  var val=el.dataset.val;
+  _IS.queen=val;
+  var c=document.getElementById('queenCards'); if(c) c.innerHTML=_renderQueenCards(val);
+  var qt=document.getElementById('inspQuoteText'); if(qt) qt.textContent=_QUOTES[val]||_QUOTES['default'];
 }
-function setBrood(v){
-  _IS.brood=v;
-  var el=document.getElementById('ibroodv'); if(el) el.textContent=v;
-  var bar=document.getElementById('ibroodBar'); if(bar) bar.style.width=(v/10*100)+'%';
-  var captions=['Very poor — urgent','Weak — monitor','Below average','Moderate','Solid pattern','Good coverage','Very good','Excellent 🌟'];
-  var cap=document.getElementById('ibroodCaption');
-  if(cap) cap.textContent=captions[Math.min(7,Math.floor(v/10*8))];
-  for(var i=1;i<=10;i++){
-    var dot=document.getElementById('ibdot_'+i);
-    if(dot) dot.style.background=i<=v?'#D5A144':'#2E3A36';
-  }
-  calcInspScore();
-}
-function adjHoney(d){
-  var v=Math.max(0,Math.min(10,(_IS.honey||5)+d));
-  setHoney(v);
-}
-function setHoney(v){
-  _IS.honey=v;
-  var el=document.getElementById('ihoneyv'); if(el) el.textContent=v;
-  var bar=document.getElementById('ihoneyBar'); if(bar) bar.style.width=(v/10*100)+'%';
-  var captions=['Empty — urgent','Very low','Low','Below half','Half full','Adequate','Good','Full — excellent'];
-  var cap=document.getElementById('ihoneyCaption');
-  if(cap) cap.textContent=captions[Math.min(7,Math.floor(v/10*8))];
-  for(var i=1;i<=10;i++){
-    var dot=document.getElementById('ihdot_'+i);
-    if(dot) dot.style.background=i<=v?'#D5A144':'#2E3A36';
-  }
-  calcInspScore();
-}
-
-
-function toggleInspMore(){
-  var el=document.getElementById('inspMore');
-  var ar=document.getElementById('inspMoreArrow');
-  var open=el.style.display==='none';
-  el.style.display=open?'block':'none';
-  if(ar) ar.textContent=open?'‹':'›';
-}
-function adjWeight(d){
-  if(!_IS.weight) _IS.weight=isF?60:27;
-  _IS.weight=Math.max(0,_IS.weight+d);
-  var el=document.getElementById('inspWtVal');
-  if(el) el.textContent=_IS.weight+(isF?' lbs':' kg');
-}
-function addInspPhotos(input){
-  if(!input.files) return;
-  var c=document.getElementById('inspPhotos');
-  Array.from(input.files).forEach(function(f){
-    var r=new FileReader();
-    r.onload=function(e){
-      var d=document.createElement('div');
-      d.style.cssText='width:80px;height:80px;border-radius:12px;overflow:hidden;flex-shrink:0';
-      d.innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover">';
-      c.insertBefore(d,c.querySelector('label'));
-    };
-    r.readAsDataURL(f);
-  });
+function pickBlock(el){
+  var g=el.dataset.group;
+  document.querySelectorAll('[data-group="'+g+'"]').forEach(function(b){ b.style.border='2px solid #2E3A36'; });
+  el.style.border='2px solid #D5A144';
+  _IS[g]=el.dataset.val;
 }
 function pickPill(el){
-  var group=el.dataset.group;
-  if(group==='mgmt'){
+  var g=el.dataset.group;
+  if(g==='mgmt'){
     var on=el.dataset.on==='1';
     el.dataset.on=on?'':'1';
     el.style.borderColor=on?'#2E3A36':'#D5A144';
     el.style.color=on?'#6E8A78':'#D5A144';
     el.style.background=on?'#1C2321':'#2A2416';
-    if(!_IS.mgmt) _IS.mgmt=[];
-    var val=el.dataset.val;
-    var idx=_IS.mgmt.indexOf(val);
-    if(on) _IS.mgmt.splice(idx,1); else _IS.mgmt.push(val);
+    if(!_IS.mgmt)_IS.mgmt=[];
+    var idx=_IS.mgmt.indexOf(el.dataset.val);
+    if(on)_IS.mgmt.splice(idx,1); else _IS.mgmt.push(el.dataset.val);
   } else {
-    document.querySelectorAll('[data-group="'+group+'"]').forEach(function(b){
-      b.style.borderColor='#2E3A36'; b.style.color='#6E8A78'; b.style.background='#1C2321'; b.dataset.on='';
-    });
+    document.querySelectorAll('[data-group="'+g+'"]').forEach(function(b){ b.style.borderColor='#2E3A36'; b.style.color='#6E8A78'; b.style.background='#1C2321'; b.dataset.on=''; });
     el.style.borderColor='#D5A144'; el.style.color='#D5A144'; el.style.background='#2A2416'; el.dataset.on='1';
-    _IS[group]=el.dataset.val;
+    _IS[g]=el.dataset.val;
   }
 }
-
-
-function pickBlock(el){
-  var group=el.dataset.group, val=el.dataset.val;
-  document.querySelectorAll('[data-group="'+group+'"]').forEach(function(b){ b.style.border='2px solid #2E3A36'; });
-  el.style.border='2px solid #D5A144';
-  _IS[group]=val;
-  calcInspScore();
+function adjBrood(d){ setBrood(Math.max(0,Math.min(10,(_IS.brood||6)+d))); }
+function setBrood(v){
+  _IS.brood=v;
+  var el=document.getElementById('ibroodv'); if(el) el.textContent=v;
+  var bar=document.getElementById('ibroodBar'); if(bar) bar.style.width=(v/10*100)+'%';
+  var cap=document.getElementById('ibroodCap');
+  if(cap) cap.textContent=['Very poor','Weak','Below avg','Moderate','Solid','Good','Very good','Excellent 🌟'][Math.min(7,Math.floor(v/10*8))];
+  for(var i=1;i<=10;i++){ var d=document.getElementById('ibdot_'+i); if(d) d.style.background=i<=v?'#D5A144':'#2E3A36'; }
 }
-
-function islide(inp){
-  var el=document.getElementById(inp.dataset.eid); if(el) el.textContent=inp.value+'%';
-  _IS[inp.dataset.key]=inp.value;
-  if(inp.dataset.key==='brood') updateBroodCaption(inp.value);
-  calcInspScore();
+function adjHoney(d){ setHoney(Math.max(0,Math.min(10,(_IS.honey||5)+d))); }
+function setHoney(v){
+  _IS.honey=v;
+  var el=document.getElementById('ihoneyv'); if(el) el.textContent=v;
+  var bar=document.getElementById('ihoneyBar'); if(bar) bar.style.width=(v/10*100)+'%';
+  var cap=document.getElementById('ihoneyCap');
+  if(cap) cap.textContent=['Empty','Very low','Low','Below half','Half full','Adequate','Good','Full 🌟'][Math.min(7,Math.floor(v/10*8))];
+  for(var i=1;i<=10;i++){ var d=document.getElementById('ihdot_'+i); if(d) d.style.background=i<=v?'#D5A144':'#2E3A36'; }
 }
-function updateBroodCaption(v){
-  var el=document.getElementById('ibroodCaption'); if(!el) return;
-  v=parseInt(v);
-  var msg = v<20 ? 'Very poor pattern · urgent attention needed' :
-            v<40 ? 'Weak pattern · monitor closely' :
-            v<60 ? 'Moderate pattern · keep monitoring' :
-            v<80 ? 'Good solid pattern · colony looking healthy' :
-                   'Excellent pattern · colony thriving 🌟';
-  el.textContent=msg;
-}
-function calcInspScore(){
-  var score=0, factors=0;
-  // Brood 0-30pts
-  if(_IS.brood){ score+=parseInt(_IS.brood)*0.3; factors++; }
-  // Honey 0-20pts
-  if(_IS.honey){ score+=parseInt(_IS.honey)*0.2; factors++; }
-  // Queen 0-20pts
-  var qmap={'Seen':20,'Signs only':14,'Not seen':8,'Queenless':0};
-  if(_IS.queen!==undefined){ score+=qmap[_IS.queen]||0; factors++; }
-  // Varroa 0-20pts
-  var vmap={'Low <1%':20,'Moderate 1-2%':14,'High 2-4%':6,'Critical >4%':0};
-  // match loosely
-  if(_IS.varroa){
-    var vk=Object.keys(vmap).find(function(k){ return _IS.varroa.indexOf(k.split(' ')[0])>=0; });
-    score+=(vk?vmap[vk]:10); factors++;
-  }
-  // Overall 0-10pts
-  var omap={'Thriving':10,'Stable':6,'Needs care':0};
-  if(_IS.overall!==undefined){ score+=omap[_IS.overall]||0; factors++; }
-  if(factors<3) return;
-  score=Math.min(100,Math.round(score));
-  var label=score>=80?'Excellent':score>=60?'Good':score>=40?'Fair':'Needs attention';
-  var color=score>=80?'#3A9A5C':score>=60?'#D5A144':score>=40?'#C4974A':'#B83A2A';
-  var detail=score>=80?'Colony is in great shape. Keep up the good work!':
-             score>=60?'Colony is stable. Monitor regularly.':
-             score>=40?'Some concerns noted. Investigate soon.':
-             'Immediate attention required.';
-  var card=document.getElementById('inspScoreCard');
-  var circle=document.getElementById('inspScoreCircle');
-  var num=document.getElementById('inspScoreNum');
-  var lbl=document.getElementById('inspScoreLabel');
-  var det=document.getElementById('inspScoreDetail');
-  if(card) card.style.display='block';
-  if(circle) circle.style.borderColor=color;
-  if(num){ num.textContent=score; num.style.color=color; }
-  if(lbl){ lbl.textContent=label; lbl.style.color=color; }
-  if(det) det.textContent=detail;
-}
-function itempslide(val){
+function itempslide(v){
   var ls=['Aggressive','Nervous','Calm','Calm','Very calm','Docile'];
-  var el=document.getElementById('itempv'); if(el) el.textContent=ls[Math.min(5,Math.floor(val/17))];
-  _IS.temp=val;
+  var el=document.getElementById('itempv'); if(el) el.textContent=ls[Math.min(5,Math.floor(v/17))];
+  _IS.temp=v;
 }
+function toggleInspMore(){
+  var el=document.getElementById('inspMore'), ar=document.getElementById('inspMoreArrow');
+  var open=el.style.display==='none';
+  el.style.display=open?'block':'none';
+  if(ar) ar.textContent=open?'‹':'›';
+}
+
+/* ─── SAVE ─── */
 function finishInspection(mode){
-  var now = new Date();
-  var record = {
-    id: _inspNextId++,
-    hiveId: _IS.hiveId,
-    hiveName: _IS.hiveName,
-    date: now.getTime(),
-    dateStr: now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
-    queen: _IS.queen || 'Not recorded',
-    brood: _IS.brood || 50,
-    honey: _IS.honey || 50,
-    varroa: _IS.varroa || 'Not recorded',
-    temp: _IS.temp || 70,
-    overall: _IS.overall || 'Stable',
-    notes: _IS.notes || '',
-    draft: mode==='draft'
+  var now=new Date();
+  var record={
+    id:_inspNextId++, hiveId:_IS.hiveId, hiveName:_IS.hiveName,
+    date:now.getTime(), dateStr:now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    queen:_IS.queen||'Not recorded', brood:_IS.brood||6, honey:_IS.honey||5,
+    varroa:_IS.varroa||'Not recorded', overall:_IS.overall||'Stable',
+    notes:_IS.notes||'', draft:mode==='draft'
   };
   INSPECTIONS.unshift(record);
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){
     if(h.id===record.hiveId){
-      h.status = (record.overall==='Thriving'||record.overall==='Stable') ? 'Healthy' : 'Needs attention';
-      h.sub = record.overall+' · '+record.dateStr;
+      h.status=(record.overall==='Thriving'||record.overall==='Stable')?'Healthy':'Needs attention';
+      h.sub=record.overall+' · '+record.dateStr;
     }
   }); });
   updateCounters();
-  if(mode==='draft'){
-    showToast('Draft saved · '+record.hiveName);
-    inspBack();
-  } else {
-    showInspectComplete(record);
-  }
+  if(mode==='draft'){ showToast('Draft saved · '+record.hiveName); inspBack(); }
+  else showInspectComplete(record);
 }
 
-
+/* ─── COMPLETE SCREEN ─── */
 function showInspectComplete(record){
   var ov=document.createElement('div'); ov.id='inspCompleteOv';
   ov.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:#1C2321';
-  var f=isF;
   var overall=record.overall||'Stable';
-  var conditionColor=overall==='Thriving'?'#3A9A5C':overall==='Stable'?'#D5A144':'#B83A2A';
-  var conditionLabel=overall==='Thriving'?'Strong':overall==='Stable'?'Stable':'Needs care';
+  var cColor=overall==='Thriving'?'#3A9A5C':overall==='Stable'?'#D5A144':'#B83A2A';
+  var cLabel=overall==='Thriving'?'Strong':overall==='Stable'?'Stable':'Needs care';
   var msg=overall==='Thriving'?'Your girls look healthy today. 🌤':overall==='Stable'?'Colony is stable. Keep monitoring. 🌿':'This hive needs your attention soon. 🚨';
-  var sub=(record.queen||'Not recorded')+' · Brood '+record.brood+'/10 · Honey '+record.honey+'/10';
   ov.innerHTML='<style>'+
     '@keyframes ripple{0%{opacity:.32;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}'+
     '@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}'+
     '@keyframes draw{to{stroke-dashoffset:0}}'+
     '@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}'+
     '.ic-ring{position:absolute;border-radius:50%;border:1px solid #D5A144;transform:translate(-50%,-50%);opacity:0}'+
-    '.ic-ring1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}'+
-    '.ic-ring2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}'+
-    '.ic-circle{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}'+
-    '.ic-circle svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}'+
-    '.ic-fu1{animation:fadeUp .45s ease .5s both}.ic-fu2{animation:fadeUp .45s ease .6s both}'+
-    '.ic-fu3{animation:fadeUp .45s ease .78s both}.ic-fu4{animation:fadeUp .45s ease .9s both}'+
-    '.ic-fu5{animation:fadeUp .45s ease 1.02s both}.ic-fu6{animation:fadeUp .45s ease 1.1s both}'+
-    '.ic-fu7{animation:fadeUp .45s ease 1.2s both}'+
+    '.ic-r1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}'+
+    '.ic-r2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}'+
+    '.ic-cc{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}'+
+    '.ic-cc svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}'+
+    '.fu1{animation:fadeUp .45s ease .5s both}.fu2{animation:fadeUp .45s ease .62s both}'+
+    '.fu3{animation:fadeUp .45s ease .78s both}.fu4{animation:fadeUp .45s ease .92s both}'+
+    '.fu5{animation:fadeUp .45s ease 1.05s both}.fu6{animation:fadeUp .45s ease 1.15s both}'+
+    '.fu7{animation:fadeUp .45s ease 1.25s both}'+
     '</style>'+
     '<div style="width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;padding:48px 24px 40px;position:relative;overflow:hidden">'+
-      '<div style="position:absolute;top:36%;left:50%;pointer-events:none"><div class="ic-ring ic-ring1"></div><div class="ic-ring ic-ring2"></div></div>'+
-      '<div class="ic-circle"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M7 15l6 6 10-12" stroke="#1C2321" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="30" stroke-dashoffset="30"/></svg></div>'+
-      '<div class="ic-fu1" style="font-size:25px;font-weight:800;color:#F4F0E8;letter-spacing:-.8px;margin-top:20px;text-align:center;line-height:1.2">Inspection<br>saved</div>'+
-      '<div class="ic-fu2" style="font-size:11px;color:#4A6A5A;margin-top:5px;text-align:center">'+record.dateStr+' · '+record.hiveName+'</div>'+
-      '<div class="ic-fu3" style="margin-top:20px;width:100%;background:#222E2A;border-radius:16px;padding:14px 16px;border-left:3px solid #D5A144">'+
+      '<div style="position:absolute;top:36%;left:50%;pointer-events:none"><div class="ic-ring ic-r1"></div><div class="ic-ring ic-r2"></div></div>'+
+      '<div class="ic-cc"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M7 15l6 6 10-12" stroke="#1C2321" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="30" stroke-dashoffset="30"/></svg></div>'+
+      '<div class="fu1" style="font-size:25px;font-weight:800;color:#F4F0E8;letter-spacing:-.8px;margin-top:20px;text-align:center;line-height:1.2">Inspection<br>saved</div>'+
+      '<div class="fu2" style="font-size:11px;color:#4A6A5A;margin-top:5px;text-align:center">'+record.dateStr+' · '+record.hiveName+'</div>'+
+      '<div class="fu3" style="margin-top:20px;width:100%;background:#222E2A;border-radius:16px;padding:14px 16px;border-left:3px solid #D5A144">'+
         '<div style="font-size:14px;font-weight:600;color:#E8E2D8;line-height:1.5;letter-spacing:-.2px">'+msg+'</div>'+
-        '<div style="font-size:11px;color:#5A7A6A;margin-top:4px;font-style:italic;line-height:1.5">'+sub+'</div>'+
+        '<div style="font-size:11px;color:#5A7A6A;margin-top:4px;font-style:italic">'+record.queen+' · Brood '+record.brood+'/10 · Honey '+record.honey+'/10</div>'+
       '</div>'+
-      '<div class="ic-fu4" style="margin-top:10px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Brood</div><div style="font-size:18px;font-weight:800;color:#D5A144;letter-spacing:-.5px;line-height:1">'+record.brood+'<span style="font-size:11px;color:#5A7A6A;font-weight:400">/10</span></div><div style="font-size:10px;color:#6E8A78;margin-top:3px">Frames</div></div>'+
-        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Honey</div><div style="font-size:18px;font-weight:800;color:#D5A144;letter-spacing:-.5px;line-height:1">'+record.honey+'<span style="font-size:11px;color:#5A7A6A;font-weight:400">/10</span></div><div style="font-size:10px;color:#6E8A78;margin-top:3px">Stores</div></div>'+
+      '<div class="fu4" style="margin-top:10px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Brood</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.brood+'<span style="font-size:11px;color:#5A7A6A;font-weight:400"> /10</span></div><div style="font-size:10px;color:#6E8A78;margin-top:2px">Frames</div></div>'+
+        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Honey</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.honey+'<span style="font-size:11px;color:#5A7A6A;font-weight:400"> /10</span></div><div style="font-size:10px;color:#6E8A78;margin-top:2px">Stores</div></div>'+
       '</div>'+
-      '<div class="ic-fu5" style="margin-top:10px;display:flex;align-items:center;gap:6px;width:100%"><div style="width:5px;height:5px;border-radius:50%;background:#3A9A5C;flex-shrink:0"></div><div style="font-size:11px;color:#5A7A6A;line-height:1.5">Next inspection recommended in 7–10 days</div></div>'+
-      '<div class="ic-fu6" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:7px 14px"><div style="font-size:11px;color:#4A6A5A;font-weight:500">Colony condition</div><div style="font-size:12px;font-weight:700;color:'+conditionColor+'">'+conditionLabel+'</div></div>'+
-      '<div class="ic-fu7" style="width:100%;margin-top:24px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();inspBack()" style="width:100%;padding:15px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
+      '<div class="fu5" style="margin-top:10px;display:flex;align-items:center;gap:6px;width:100%"><div style="width:5px;height:5px;border-radius:50%;background:#3A9A5C;flex-shrink:0"></div><div style="font-size:11px;color:#5A7A6A">Next inspection recommended in 7–10 days</div></div>'+
+      '<div class="fu6" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:7px 14px"><div style="font-size:11px;color:#4A6A5A;font-weight:500">Colony condition</div><div style="font-size:12px;font-weight:700;color:'+cColor+'">'+cLabel+'</div></div>'+
+      '<div class="fu7" style="width:100%;margin-top:24px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();inspBack()" style="width:100%;padding:15px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
     '</div>';
   document.body.appendChild(ov);
 }
+
 
 function exportData(fmt){
   var data = { apiaries: APIARIES, exportDate: new Date().toISOString() };

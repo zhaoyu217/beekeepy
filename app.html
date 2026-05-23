@@ -3423,7 +3423,9 @@ function initInspectPage(){
 }
 
 function renderInspHiveList(){
-  var container = document.getElementById('inspHiveList'); if(!container) return;
+  var container = document.getElementById('inspHiveList');
+  console.log('[Inspect] renderInspHiveList container:', container, 'APIARIES:', APIARIES.length);
+  if(!container) return;
   var all = [];
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){ all.push({hive:h,apiary:a}); }); });
   if(all.length === 0){
@@ -3729,7 +3731,7 @@ function setNav(idx){
   // Open corresponding full pages
   if(idx===3) openSub('harvestPage');
   if(idx!==3) closeSub('harvestPage');
-  if(idx===1) { openSub('inspectPage'); initInspectPage(); }
+  if(idx===1) { openSub('inspectPage'); setTimeout(initInspectPage, 50); }
   if(idx!==1) closeSub('inspectPage');
   if(idx===2) openSub('journalPage');
   if(idx!==2) closeSub('journalPage');

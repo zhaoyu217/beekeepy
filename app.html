@@ -3234,17 +3234,17 @@ function getAllHives(){
 }
 
 var _QUEEN_OPTS=[
-  {val:'Spotted',   sub:'在梳上看到她了',        emoji:'👑'},
-  {val:'Not seen',  sub:'迹象依然存在',           emoji:'🔍'},
-  {val:'Eggs only', sub:'新鲜卵证实了这一点',     emoji:'🥚'},
-  {val:'Queenless', sub:'完全没有迹象',           emoji:'⚠️'},
+  {val:'Spotted',   sub:'Saw her on the comb',        emoji:'👑'},
+  {val:'Not seen',  sub:'Signs still present',           emoji:'🔍'},
+  {val:'Eggs only', sub:'Fresh eggs confirm presence',     emoji:'🥚'},
+  {val:'Queenless', sub:'No signs at all',           emoji:'⚠️'},
 ];
 var _QUOTES={
-  default:  '"你的女儿们度过了充实的一周——让我们看看她们都做了些什么。"',
-  Spotted:  '"她在这里，看起来很强壮。蜂群在好手中。"',
-  'Not seen':'"今天没有看到蜂王。检查卵——她可能只是在躲藏。"',
-  'Eggs only':'"新鲜的卵证实了她的存在。她在尽职尽责。"',
-  Queenless: '"没有蜂王的迹象。快点行动——蜂群需要她。"',
+  default:  '"Your girls had a full week — let\'s see what they\'ve been up to."',
+  Spotted:  '"She\'s here and looking strong. The colony is in good hands."',
+  'Not seen':'"No queen spotted today. Check for eggs — she may just be hiding."',
+  'Eggs only':'"Fresh eggs confirm her presence. She\'s doing her job."',
+  Queenless: '"No signs of the queen. Act fast — the colony needs her."',
 };
 
 function renderInspForm(){
@@ -3301,11 +3301,11 @@ function renderInspForm(){
     '</div>'+
 
     // Queen Status
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">女王地位</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Queen Status</div>'+
     '<div id="queenCards">'+_queenCards(_IS.queen||null)+'</div>'+
 
     // Brood Frames
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">育雏框</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Brood Frames</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
         '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ibroodCap">'+_broodCap(brood)+'</div>'+
@@ -3322,8 +3322,8 @@ function renderInspForm(){
     '</div>'+
 
     // Next step button
-    '<button onclick="renderInspStep2()" style="width:100%;padding:15px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:20px">继续 →</button>'+
-    '<button onclick="finishInspection(&quot;draft&quot;)" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">保存草稿</button>'+
+    '<button onclick="renderInspStep2()" style="width:100%;padding:15px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:20px">Continue →</button>'+
+    '<button onclick="finishInspection(&quot;draft&quot;)" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">Save draft</button>'+
 
     '</div>';
 }
@@ -3346,7 +3346,7 @@ function renderInspStep2(){
     '</div>'+
 
     // Honey
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">蜜储</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Honey Stores</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
         '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ihoneyCap">'+_honeyCap(honey)+'</div>'+
@@ -3363,52 +3363,52 @@ function renderInspStep2(){
     '</div>'+
 
     // Varroa
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">螨虫负荷</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Varroa Mite Load</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
       _selBlock('varroa','Low &lt;1%','🟢')+_selBlock('varroa','Moderate 1-2%','🟡')+
       _selBlock('varroa','High 2-4%','🟠')+_selBlock('varroa','Critical &gt;4%','🔴')+
     '</div>'+
 
     // Temperament
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">性情</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Temperament</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>攻击性</span><span id="itempv" style="color:#D5A144;font-weight:700">温顺</span><span>温驯</span></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
       '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:8px;border-radius:4px;accent-color:#3A9A5C;cursor:pointer">'+
     '</div>'+
 
     // Overall
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">总体印象</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Overall Impression</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
       _selBlock('overall','Thriving','🌟')+_selBlock('overall','Stable','✅')+_selBlock('overall','Needs care','🚨')+
     '</div>'+
 
     // Pollen
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">🌸 花粉储量</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">🌸 Pollen Stores</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
       _pillRow('pollen',['Low','Moderate','Abundant'])+
     '</div>'+
 
     // Queen cells
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">👑 王台</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">👑 Queen Cells</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
       _pillRow('qcell',['None','Swarm','Supersedure','Emergency'])+
     '</div>'+
 
     // Actions
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">🛠 操作记录</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">🛠 Actions Taken</div>'+
     '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
       _pillRow('mgmt',['Fed','Treatment','Added super','Split','Requeened'])+
     '</div>'+
 
     // Notes
     '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:20px">'+
-      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📝 备注</div>'+
-      '<textarea id="inspNotes" oninput="_IS.notes=this.value" placeholder="任何观察…" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box">'+((_IS.notes)||'')+'</textarea>'+
+      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📝 Notes</div>'+
+      '<textarea id="inspNotes" oninput="_IS.notes=this.value" placeholder="Any observations…" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box">'+((_IS.notes)||'')+'</textarea>'+
     '</div>'+
 
     // Buttons
-    '<button onclick="finishInspection(&quot;complete&quot;)" style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">保存检查 ✓</button>'+
-    '<button onclick="renderInspForm()" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">← 返回</button>'+
+    '<button onclick="finishInspection(&quot;complete&quot;)" style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">Save inspection ✓</button>'+
+    '<button onclick="renderInspForm()" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">← Back</button>'+
 
     '</div>';
 }
@@ -3515,7 +3515,7 @@ function finishInspection(mode){
     }
   }); });
   updateCounters();
-  if(mode==='draft'){ showToast('草稿已保存 · '+record.hiveName); inspBack(); }
+  if(mode==='draft'){ showToast('Draft saved · '+record.hiveName); inspBack(); }
   else showInspectComplete(record);
 }
 function showInspectComplete(record){

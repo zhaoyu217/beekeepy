@@ -3733,9 +3733,11 @@ function openInspLevel2(){
       '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="#D5A144" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to inspection'+
     '</div>'+
     _l2S('⚖️ Hive Weight', _weightMod())+
+    _l2S('👑 Queen Cells', _queenCellMod())+
     _l2S('💊 Treatment', _treatMod(tempF, varroaPct))+
+    _l2S('🍬 Feeding', _feedingMod(tempF, season))+
     _l2S('🌸 Pollen & Bee Bread', _pollenMod(pollenLow, tempF, season))+
-    _l2S('🌤 Weather Intelligence', _weatherMod(tempF, isEarlySpring, isLateAutumn, falseSpringSuspect, wText))+
+    _l2S('📦 Super & Frame Management', _superMod(falseSpringSuspect, tempF))+
     '</div>';
 }
 
@@ -3777,6 +3779,89 @@ function connectBluetooth(){
     showToast('Searching for BLE scales…');
     navigator.bluetooth.requestDevice({filters:[{services:['weight_scale']}]}).then(function(d){ showToast('Connected: '+d.name+' ✓'); }).catch(function(){ showToast('No BLE scale found nearby'); });
   } else { showToast('Bluetooth not supported in this browser'); }
+}
+
+function _queenCellMod(){
+  var opts=[
+    {val:'none',    emoji:'✅', label:'None',        sub:'No queen cells observed'},
+    {val:'swarm',   emoji:'🐝', label:'Swarm cells',  sub:'Bottom of frames — swarm prep'},
+    {val:'super',   emoji:'👑', label:'Supersedure',  sub:'Middle of frame — replacing queen'},
+    {val:'emerg',   emoji:'🚨', label:'Emergency',    sub:'Multiple cells — queen may be lost'},
+  ];
+  var cur=_IS.queenCells||'none';
+  var advice={
+    swarm:'Colony is preparing to swarm. Consider splitting or adding a super to relieve congestion.',
+    super:'Colony may be superseding an aging queen. Monitor closely — this is usually normal.',
+    emerg:'Emergency cells indicate a missing queen. Check for queen or eggs immediately.',
+    none:''
+  };
+  return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+    opts.map(function(o){
+      var active=cur===o.val;
+      return '<div onclick="selectQCell(\''+o.val+'\')" style="background:#1C2321;border:2px solid '+(active?'#D5A144':'#2E3A36')+';border-radius:12px;padding:12px;cursor:pointer;transition:.15s">'+
+        '<div style="font-size:20px;margin-bottom:5px">'+o.emoji+'</div>'+
+        '<div style="font-size:12px;font-weight:700;color:'+(active?'#D5A144':'#8AA898')+'">'+o.label+'</div>'+
+        '<div style="font-size:10px;color:#4A6A5A;margin-top:2px;line-height:1.4">'+o.sub+'</div>'+
+      '</div>';
+    }).join('')+
+  '</div>'+
+  (advice[cur]?'<div style="background:#2A2416;border-radius:8px;padding:10px 12px;border-left:2px solid #D5A144;font-size:12px;color:#D5A144;line-height:1.5">💡 '+advice[cur]+'</div>':'');
+}
+function selectQCell(val){
+  _IS.queenCells=val;
+  var opts=document.querySelectorAll('[onclick^="selectQCell"]');
+  opts.forEach(function(el){ el.style.border='2px solid #2E3A36'; el.querySelector('div:nth-child(2)').style.color='#8AA898'; });
+  var sel=document.querySelector('[onclick="selectQCell(\''+val+'\')"]');
+  if(sel){ sel.style.border='2px solid #D5A144'; sel.querySelector('div:nth-child(2)').style.color='#D5A144'; }
+}
+
+function _feedingMod(tempF, season){
+  var isAutumn=season==='autumn'||season==='winter';
+  var rec=isAutumn?'2:1 sugar syrup (thick — for winter stores)':tempF>75?'1:1 sugar syrup (thin — stimulates brood)':'1:1 sugar syrup';
+  var feedTypes=[
+    {name:'Sugar syrup 1:1', icon:'🥤', note:'Stimulates foraging & brood. Spring/summer.'},
+    {name:'Sugar syrup 2:1', icon:'🍯', note:'Thick syrup for winter stores. Autumn.', hl:isAutumn},
+    {name:'Fondant / candy', icon:'🍬', note:'Emergency winter feed. No moisture issues.'},
+    {name:'Dry sugar',       icon:'🌾', note:'Moisture absorber. Last resort winter feed.'},
+    {name:'Pollen Patty',    icon:'🌸', note:'Protein supplement. Spring buildup.'},
+    {name:'Apiinvert syrup', icon:'🔬', note:'Ready-to-feed commercial syrup.'},
+  ];
+  return '<div style="background:#1C2321;border-radius:10px;padding:10px 12px;margin-bottom:12px;border-left:2px solid #3A9A5C">'+
+    '<div style="font-size:11px;font-weight:600;color:#3A9A5C;margin-bottom:2px">💡 Recommended for current conditions</div>'+
+    '<div style="font-size:12px;color:#E8E2D8">'+rec+'</div>'+
+  '</div>'+
+  '<div style="display:flex;flex-direction:column;gap:8px">'+
+  feedTypes.map(function(f){
+    return '<div style="display:flex;align-items:center;gap:12px;background:#1C2321;border-radius:10px;padding:10px 12px;border:1px solid '+(f.hl?'#D5A144':'#2E3A36')+'">'+
+      '<span style="font-size:20px">'+f.icon+'</span>'+
+      '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:'+(f.hl?'#D5A144':'#E8E2D8')+'">'+f.name+'</div><div style="font-size:10px;color:#4A6A5A;margin-top:1px">'+f.note+'</div></div>'+
+      '<div onclick="this.dataset.on=this.dataset.on===\'1\'?\'\':\'1\';this.style.background=this.dataset.on===\'1\'?\'#D5A144\':\'#2E3A36\';this.style.color=this.dataset.on===\'1\'?\'#1C2321\':\'#4A6A5A\'" style="padding:5px 12px;border-radius:8px;background:#2E3A36;color:#4A6A5A;font-size:11px;font-weight:600;cursor:pointer;transition:.15s">Log</div>'+
+    '</div>';
+  }).join('')+
+  '</div>';
+}
+
+function _superMod(falseSpringSuspect, tempF){
+  var actions=[
+    {icon:'📦', label:'Add super',     note:'Colony is strong and nectar flow is active.',   warn:falseSpringSuspect?'⚠️ False spring risk — hold off adding supers until stable temperatures.':''},
+    {icon:'🔄', label:'Reverse boxes', note:'Move lower box up in spring to encourage expansion.', warn:''},
+    {icon:'🖼',  label:'Add drawn comb',note:'Speeds up honey storage and brood expansion.',   warn:''},
+    {icon:'✂️', label:'Remove super',  note:'Honey is capped and ready for extraction.',      warn:''},
+    {icon:'🗃',  label:'Add brood box', note:'Colony has outgrown current space.',             warn:falseSpringSuspect?'⚠️ Caution: oversized broodnest in false spring — bees may not be able to heat cluster.':''},
+  ];
+  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:12px;line-height:1.5">Manage hive space to prevent swarming and optimize storage.</div>'+
+  '<div style="display:flex;flex-direction:column;gap:8px">'+
+  actions.map(function(a){
+    return '<div style="background:#1C2321;border-radius:10px;padding:10px 12px;border:1px solid '+(a.warn?'#D5A144':'#2E3A36')+'">'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+        '<span style="font-size:20px">'+a.icon+'</span>'+
+        '<div style="flex:1"><div style="font-size:12px;font-weight:600;color:#E8E2D8">'+a.label+'</div><div style="font-size:10px;color:#4A6A5A;margin-top:1px">'+a.note+'</div></div>'+
+        '<div onclick="showToast(\''+a.label+' logged ✓\')" style="padding:5px 12px;border-radius:8px;background:#2E3A36;color:#4A6A5A;font-size:11px;font-weight:600;cursor:pointer">Log</div>'+
+      '</div>'+
+      (a.warn?'<div style="font-size:11px;color:#D5A144;margin-top:6px">'+a.warn+'</div>':'')+
+    '</div>';
+  }).join('')+
+  '</div>';
 }
 
 function _treatMod(tempF, varroaPct){

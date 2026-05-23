@@ -3432,13 +3432,18 @@ function renderInspHiveList(){
   }
   container.innerHTML = all.map(function(item){
     var h=item.hive, a=item.apiary;
-    var statusColor = h.status==='Healthy'?'#EEF5EF':h.status==='Due soon'?'#FBF3E3':'#FDE8E8';
-    var statusText  = h.status==='Healthy'?'#5E7A63':h.status==='Due soon'?'#7A5C1E':'#B83A2A';
-    return '<div onclick="selectInspHive('+h.id+',\''+h.name+(h.breed?' · '+h.breed:'')+'\')" id="inspHiveCard_'+h.id+'" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:2px solid #EDE8E0;background:#F9F7F3;cursor:pointer;transition:.15s">'+
-      '<div style="width:40px;height:40px;border-radius:12px;background:'+statusColor+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🐝</div>'+
-      '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">'+h.name+(h.breed?' · '+h.breed:'')+'</div>'+
+    var hiveName = h.name + (h.breed ? ' · ' + h.breed : '');
+    var statusBg, statusFg;
+    if(h.status==='Healthy'){ statusBg='#EEF5EF'; statusFg='#5E7A63'; }
+    else if(h.status==='Due soon'){ statusBg='#FBF3E3'; statusFg='#7A5C1E'; }
+    else if(h.status==='Needs attention'){ statusBg='#FDE8E8'; statusFg='#B83A2A'; }
+    else { statusBg='#F2EFE9'; statusFg='#B7B1A7'; }
+    var statusLabel = h.status || 'New';
+    return '<div onclick="selectInspHive('+h.id+',\''+hiveName+'\')" id="inspHiveCard_'+h.id+'" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:2px solid #EDE8E0;background:#F9F7F3;cursor:pointer;transition:.15s">'+
+      '<div style="width:40px;height:40px;border-radius:12px;background:'+statusBg+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🐝</div>'+
+      '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">'+hiveName+'</div>'+
       '<div style="font-size:11px;color:#B7B1A7;margin-top:1px">'+a.name+'</div></div>'+
-      '<div style="font-size:10px;font-weight:600;color:'+statusText+';background:'+statusColor+';padding:3px 8px;border-radius:6px">'+h.status+'</div>'+
+      '<div style="font-size:10px;font-weight:600;color:'+statusFg+';background:'+statusBg+';padding:3px 8px;border-radius:6px">'+statusLabel+'</div>'+
     '</div>';
   }).join('');
 }

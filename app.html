@@ -3218,13 +3218,15 @@ function toggleBrightMode(){
 var INSPECTIONS = [];
 var _inspNextId = 1;
 var _IS = {};
+var _cardSlide = { bio: 0, asset: 0 }; // 0=left, 1=right
 
 function inspBack(){ closeSub('inspectPage'); setNav(0); }
 
 function openInspectPage(){
   _IS = { brood:50, honey:50, temp:70, photos:[], selectedHive:null,
           queen:null, varroa:null, varroaPct:null, overall:null,
-          broodAlert:false, winterTarget:null };
+          broodAlert:false, pollen:50 };
+  _cardSlide = { bio:0, asset:0 };
   setTimeout(renderInspPage, 0);
 }
 
@@ -3233,36 +3235,29 @@ function getAllHives(){
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){ all.push({h:h,a:a}); }); });
   return all;
 }
-
-/* ─── season detection ─── */
 function getSeason(){
-  var m=new Date().getMonth(); // 0-11
+  var m=new Date().getMonth();
   if(m>=8&&m<=10) return 'autumn';
   if(m>=11||m<=1) return 'winter';
   if(m>=2&&m<=4) return 'spring';
   return 'summer';
 }
-function getWinterTarget(){
-  // Target honey % based on region (simplified)
-  var season=getSeason();
-  if(season==='autumn'||season==='winter') return 70;
-  return null;
-}
+function getWinterTarget(){ return (getSeason()==='autumn'||getSeason()==='winter')?70:null; }
 
 var _QUEEN_OPTS=[
   {val:'Spotted',      sub:'Saw her on the comb',             emoji:'👑'},
-  {val:'Not seen',     sub:'Signs still present',              emoji:'🔍'},
-  {val:'Eggs only',    sub:'Fresh eggs confirm presence',      emoji:'🥚'},
-  {val:'Queenless',    sub:'No signs at all',                  emoji:'⚠️'},
-  {val:'Lay in Winter',sub:'Abnormal winter laying — false spring alert!', emoji:'❄️'},
+  {val:'Not seen',     sub:'Signs still present',             emoji:'🔍'},
+  {val:'Eggs only',    sub:'Fresh eggs confirm presence',     emoji:'🥚'},
+  {val:'Queenless',    sub:'No signs at all',                 emoji:'⚠️'},
+  {val:'Lay in Winter',sub:'False spring alert!',            emoji:'❄️'},
 ];
 var _QUOTES={
-  default:     '"Your girls had a full week — let\'s see what they\'ve been up to."',
-  Spotted:     '"She\'s here and looking strong. The colony is in good hands."',
-  'Not seen':  '"No queen spotted today. Check for eggs — she may just be hiding."',
-  'Eggs only': '"Fresh eggs confirm her presence. She\'s doing her job."',
-  Queenless:   '"No signs of the queen. Act fast — the colony needs her."',
-  'Lay in Winter':'"⚠️ False spring alert! Winter laying detected — colony may be at risk of starvation or early swarm."',
+  default:    '"Your girls had a full week — let\'s see what they\'ve been up to."',
+  Spotted:    '"She\'s here and looking strong."',
+  'Not seen': '"No queen spotted. Check for eggs."',
+  'Eggs only':'"Fresh eggs confirm her presence."',
+  Queenless:  '"No signs of the queen. Act fast."',
+  'Lay in Winter':'"⚠️ False spring — winter laying detected!"',
 };
 
 /* ══ MAIN PAGE ══ */
@@ -3276,345 +3271,274 @@ function renderInspPage(){
   var selId=_IS.selectedHive;
   var winterTarget=getWinterTarget();
   _IS.winterTarget=winterTarget;
+  var varroaBombRisk=Math.random()>0.6;
 
-  var hiveHtml = all.length===0
-    ? '<p style="color:#4A6A5A;font-size:13px;text-align:center;padding:20px;font-style:italic">No hives yet.</p>'
-    : '<div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 0 8px">'+
-        all.map(function(item){
-          var h=item.h; var sel=selId===h.id;
-          var dot='#6E8A78';
-          if(h.status==='Healthy')dot='#3A9A5C';
-          else if(h.status==='Due soon')dot='#D5A144';
-          else if(h.status==='Needs attention')dot='#B83A2A';
-          return '<div onclick="selectHive('+h.id+')" style="flex-shrink:0;min-width:120px;padding:12px;border-radius:14px;border:2px solid '+(sel?'#D5A144':'#2E3A36')+';background:'+(sel?'#2A2416':'#222E2A')+';cursor:pointer;transition:.2s">'+
-            '<div style="font-size:16px;margin-bottom:5px">🐝</div>'+
-            '<div style="font-size:12px;font-weight:700;color:'+(sel?'#D5A144':'#E8E2D8')+'">'+h.name+'</div>'+
-            '<div style="display:flex;align-items:center;gap:4px;margin-top:5px"><div style="width:5px;height:5px;border-radius:50%;background:'+dot+'"></div><span style="font-size:10px;color:'+dot+'">'+(h.status||'New')+'</span></div>'+
-          '</div>';
-        }).join('')+
-      '</div>';
+  // Hive selector chips
+  var hiveHtml=all.length===0
+    ?'<p style="color:#4A6A5A;font-size:13px;padding:12px 0;font-style:italic">No hives yet.</p>'
+    :'<div style="display:flex;gap:8px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:2px 0 8px">'+
+      all.map(function(item){
+        var h=item.h; var sel=selId===h.id;
+        var dot=h.status==='Healthy'?'#3A9A5C':h.status==='Due soon'?'#D5A144':h.status==='Needs attention'?'#B83A2A':'#6E8A78';
+        return '<div onclick="selectHive('+h.id+')" style="flex-shrink:0;padding:10px 14px;border-radius:12px;border:2px solid '+(sel?'#D5A144':'#2E3A36')+';background:'+(sel?'#2A2416':'#222E2A')+';cursor:pointer;transition:.2s;min-width:100px;text-align:center">'+
+          '<div style="font-size:13px;font-weight:700;color:'+(sel?'#D5A144':'#E8E2D8')+'">'+h.name+'</div>'+
+          '<div style="display:flex;align-items:center;justify-content:center;gap:4px;margin-top:4px"><div style="width:5px;height:5px;border-radius:50%;background:'+dot+'"></div><span style="font-size:10px;color:'+dot+'">'+(h.status||'New')+'</span></div>'+
+        '</div>';
+      }).join('')+
+    '</div>';
 
   var brood=_IS.brood||50;
   var honey=_IS.honey||50;
-  var honeyBarColor=winterTarget&&honey<winterTarget?'#D5A144':'#D5A144';
-  var honeyWarn=winterTarget&&honey<winterTarget
-    ? '<div style="margin-top:10px;background:#2A2416;border-radius:8px;padding:10px 12px;border-left:2px solid #D5A144;font-size:12px;color:#D5A144;line-height:1.5">⚠️ Below winter survival threshold ('+winterTarget+'%).<br>Recommend feeding. See Level 2 → Management Actions.</div>'
-    : (winterTarget?'<div style="margin-top:8px;font-size:11px;color:#3A9A5C">✓ Above winter target ('+winterTarget+'%)</div>':'');
-  var winterTargetLine=winterTarget
-    ? '<div style="display:flex;justify-content:flex-end;margin-top:4px"><span style="font-size:10px;color:#6E8A78">Winter target: '+winterTarget+'% ↑</span></div>'
-    : '';
-
-  // Varroa bomb alert (simulated geo-risk)
-  var varroaBombRisk = Math.random() > 0.6; // ~40% chance of alert for demo
+  var honeyAboveTarget=!winterTarget||honey>=winterTarget;
 
   body.scrollTop=0;
   body.innerHTML=
     '<div style="padding:0 16px 100px">'+
 
     // ① Hive selector
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Select Hive</div>'+
     hiveHtml+
 
     // Quote
-    '<div style="background:#222E2A;border-radius:14px;padding:14px 16px;border-left:3px solid #D5A144;margin-top:16px;margin-bottom:20px">'+
-      '<p id="inspQuoteText" style="font-size:13px;font-style:italic;color:#C8BFA8;line-height:1.6;margin:0">'+(_QUOTES[_IS.queen]||_QUOTES['default'])+'</p>'+
+    '<div style="background:#222E2A;border-radius:14px;padding:12px 16px;border-left:3px solid #D5A144;margin:12px 0 16px">'+
+      '<p id="inspQuoteText" style="font-size:12px;font-style:italic;color:#C8BFA8;line-height:1.5;margin:0">'+(_QUOTES[_IS.queen]||_QUOTES['default'])+'</p>'+
     '</div>'+
 
-    // ② Queen Status (with Lay in Winter)
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Queen Status</div>'+
-    '<div id="queenCards">'+_queenCards(_IS.queen)+'</div>'+
-    (_IS.queen==='Lay in Winter'?
-      '<div style="margin-top:10px;background:#2A1A1A;border-radius:10px;padding:12px 14px;border:1px solid #B83A2A">'+
-        '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:4px">❄️ False Spring Warning</div>'+
-        '<div style="font-size:11px;color:#E8A898;line-height:1.6">Monitor food reserves closely. Early laying depletes winter stores. Consider emergency feeding.</div>'+
-      '</div>':'')+
-
-    // ③ Brood Pattern + AFB alert
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Brood Pattern</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Poor</span><span id="ibroodv" style="color:#D5A144;font-weight:700">'+brood+'%</span><span>Excellent</span></div>'+
-      '<input type="range" min="0" max="100" value="'+brood+'" oninput="updateBrood(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#D5A144;cursor:pointer">'+
-      '<div id="ibroodCap" style="margin-top:10px;font-size:12px;color:#6E8A78;font-style:italic;background:#1C2321;border-radius:8px;padding:8px 12px;border-left:2px solid #D5A144">'+_broodCap(brood)+'</div>'+
-      '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleBroodAlert()">'+
-        '<div id="afbCheckbox" style="width:20px;height:20px;border-radius:6px;border:2px solid '+(_IS.broodAlert?'#B83A2A':'#2E3A36')+';background:'+(_IS.broodAlert?'#B83A2A':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
-          (_IS.broodAlert?'<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>':'')+
+    // ② CARD A: 【蜂群生物状态】Queen ↔ Brood (horizontal carousel)
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">Colony Biology</div>'+
+    '<div style="background:#222E2A;border-radius:16px;overflow:hidden;margin-bottom:16px">'+
+      // Tab bar
+      '<div style="display:flex;border-bottom:1px solid #2E3A36">'+
+        '<div onclick="switchBioCard(0)" id="bioTab0" style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid '+(_cardSlide.bio===0?'#D5A144':'transparent')+';color:'+(_cardSlide.bio===0?'#D5A144':'#4A6A5A')+'">👑 Queen</div>'+
+        '<div onclick="switchBioCard(1)" id="bioTab1" style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid '+(_cardSlide.bio===1?'#D5A144':'transparent')+';color:'+(_cardSlide.bio===1?'#D5A144':'#4A6A5A')+'">🐣 Brood</div>'+
+      '</div>'+
+      // Panel A0: Queen
+      '<div id="bioPanel0" style="padding:14px;display:'+(_cardSlide.bio===0?'block':'none')+'">'+
+        '<div id="queenCards">'+_queenCards(_IS.queen)+'</div>'+
+        (_IS.queen==='Lay in Winter'?
+          '<div style="margin-top:8px;background:#2A1A1A;border-radius:8px;padding:10px 12px;border:1px solid #B83A2A;font-size:11px;color:#E89898;line-height:1.5">❄️ Check stores urgently. Offer fondant or emergency feed.</div>':'')+
+      '</div>'+
+      // Panel A1: Brood
+      '<div id="bioPanel1" style="padding:14px;display:'+(_cardSlide.bio===1?'block':'none')+'">'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Poor</span><span id="ibroodv" style="color:#D5A144;font-weight:700">'+brood+'%</span><span>Excellent</span></div>'+
+        '<input type="range" min="0" max="100" value="'+brood+'" oninput="updateBrood(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#D5A144;cursor:pointer">'+
+        '<div id="ibroodCap" style="margin-top:10px;font-size:12px;color:#6E8A78;font-style:italic;background:#1C2321;border-radius:8px;padding:8px 12px;border-left:2px solid #D5A144">'+_broodCap(brood)+'</div>'+
+        '<div style="margin-top:10px;display:flex;align-items:center;gap:8px;cursor:pointer" onclick="toggleBroodAlert()">'+
+          '<div id="afbCheckbox" style="width:18px;height:18px;border-radius:5px;border:2px solid '+(_IS.broodAlert?'#B83A2A':'#2E3A36')+';background:'+(_IS.broodAlert?'#B83A2A':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+            (_IS.broodAlert?'<svg width="10" height="10" viewBox="0 0 10 10" fill="none"><path d="M1.5 5l2.5 2.5 4.5-4.5" stroke="#fff" stroke-width="1.5" stroke-linecap="round"/></svg>':'')+
+          '</div>'+
+          '<span style="font-size:11px;color:'+(_IS.broodAlert?'#E89898':'#6E8A78')+'">Spotty Brood / Sunken Cappings</span>'+
         '</div>'+
-        '<span style="font-size:12px;color:'+(_IS.broodAlert?'#E89898':'#8AA898')+'">Spotty Brood / Sunken Cappings</span>'+
+        (_IS.broodAlert?
+          '<div style="margin-top:8px;background:#2A1A1A;border-radius:8px;padding:10px 12px;border:1px solid #B83A2A">'+
+            '<div style="font-size:11px;font-weight:700;color:#B83A2A;margin-bottom:4px">🚨 Suspected AFB</div>'+
+            '<div style="font-size:11px;color:#E8A898;line-height:1.5;margin-bottom:8px">Photograph cappings and compare immediately.</div>'+
+            '<label style="display:inline-flex;align-items:center;gap:6px;cursor:pointer;background:#222E2A;padding:6px 10px;border-radius:8px;border:1px dashed #B83A2A">'+
+              '<span style="font-size:16px">📷</span><span style="font-size:11px;color:#B83A2A">Add AFB photo</span>'+
+              '<input type="file" accept="image/*" style="display:none" onchange="showToast(\'AFB photo added ✓\')">'+
+            '</label>'+
+          '</div>':'')+
       '</div>'+
-      (_IS.broodAlert?
-        '<div style="margin-top:10px;background:#2A1A1A;border-radius:10px;padding:12px 14px;border:1px solid #B83A2A">'+
-          '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:6px">🚨 Suspected AFB (American Foulbrood)</div>'+
-          '<div style="font-size:11px;color:#E8A898;line-height:1.6;margin-bottom:10px">Sunken or perforated cappings may indicate AFB. Please photograph and compare with reference images immediately.</div>'+
-          '<label style="display:flex;align-items:center;gap:8px;cursor:pointer">'+
-            '<div style="width:80px;height:80px;background:#222E2A;border:2px dashed #B83A2A;border-radius:10px;display:flex;flex-direction:column;align-items:center;justify-content:center">'+
-              '<div style="font-size:20px">📷</div><div style="font-size:9px;color:#B83A2A;margin-top:3px">Add photo</div>'+
-            '</div>'+
-            '<input type="file" accept="image/*" style="display:none" onchange="addAFBPhoto(this)">'+
-          '</label>'+
-        '</div>'
-      :'')+
     '</div>'+
 
-    // ④ Honey Stores + Winter target
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">'+
-      'Honey Stores'+(winterTarget?' <span style="color:#6E8A78;font-weight:400;font-size:9px;text-transform:none;letter-spacing:0">· Autumn / Winter mode</span>':'')+
-    '</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:6px"><span>Empty</span><span id="ihoneyv" style="color:#D5A144;font-weight:700">'+honey+'%</span><span>Full</span></div>'+
-      (winterTarget?
-        '<div style="position:relative;height:4px;background:#2E3A36;border-radius:2px;margin-bottom:8px">'+
-          '<div style="position:absolute;left:'+(winterTarget)+'%;top:-4px;width:2px;height:12px;background:#B83A2A;border-radius:1px"></div>'+
-          '<div style="position:absolute;left:'+(winterTarget+1)+'%;top:-14px;font-size:9px;color:#B83A2A;white-space:nowrap">Winter min</div>'+
-        '</div>':'')+
-      '<input type="range" min="0" max="100" value="'+honey+'" oninput="updateHoney(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:'+honeyBarColor+';cursor:pointer">'+
-      winterTargetLine+
-      honeyWarn+
-    '</div>'+
-
-    // ⑤ Varroa Smart Grid
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Varroa Status</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-
-      // Cell 1: Not Tested
-      '<div data-vtype="not-tested" onclick="pickVarroa(this)" style="background:#222E2A;border:2px solid '+(_IS.varroa==='not-tested'?'#D5A144':'#2E3A36')+';border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s">'+
-        '<div style="font-size:22px;margin-bottom:6px">🔲</div>'+
-        '<div style="font-size:11px;font-weight:700;color:'+(_IS.varroa==='not-tested'?'#D5A144':'#8AA898')+'">Not Tested</div>'+
-        '<div style="font-size:10px;color:#4A6A5A;margin-top:3px">No mite count yet</div>'+
+    // ③ CARD B: 【蜂箱资产与情绪】Honey ↔ Temperament (horizontal carousel)
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">Hive Assets</div>'+
+    '<div style="background:#222E2A;border-radius:16px;overflow:hidden;margin-bottom:16px">'+
+      '<div style="display:flex;border-bottom:1px solid #2E3A36">'+
+        '<div onclick="switchAssetCard(0)" id="assetTab0" style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid '+(_cardSlide.asset===0?'#D5A144':'transparent')+';color:'+(_cardSlide.asset===0?'#D5A144':'#4A6A5A')+'">🍯 Honey</div>'+
+        '<div onclick="switchAssetCard(1)" id="assetTab1" style="flex:1;padding:10px;text-align:center;font-size:12px;font-weight:700;cursor:pointer;border-bottom:2px solid '+(_cardSlide.asset===1?'#D5A144':'transparent')+';color:'+(_cardSlide.asset===1?'#D5A144':'#4A6A5A')+'">😤 Temperament</div>'+
       '</div>'+
-
-      // Cell 2: Wash test + calculator
-      '<div data-vtype="wash" onclick="pickVarroa(this)" style="background:#222E2A;border:2px solid '+(_IS.varroa==='wash'?'#D5A144':'#2E3A36')+';border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s">'+
-        '<div style="font-size:22px;margin-bottom:6px">🧪</div>'+
-        '<div style="font-size:11px;font-weight:700;color:'+(_IS.varroa==='wash'?'#D5A144':'#8AA898')+'">Alcohol/Sugar Wash</div>'+
-        '<div style="font-size:10px;color:#4A6A5A;margin-top:3px">Tap to calculate %</div>'+
-      '</div>'+
-
-      // Cell 3: Treatment active
-      '<div data-vtype="treatment" onclick="pickVarroa(this)" style="background:#222E2A;border:2px solid '+(_IS.varroa==='treatment'?'#D5A144':'#2E3A36')+';border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s">'+
-        '<div style="font-size:22px;margin-bottom:6px">💊</div>'+
-        '<div style="font-size:11px;font-weight:700;color:'+(_IS.varroa==='treatment'?'#D5A144':'#8AA898')+'">Treatment Active</div>'+
-        '<div style="font-size:10px;color:#4A6A5A;margin-top:3px" id="treatmentDay">Tap to log treatment</div>'+
-      '</div>'+
-
-      // Cell 4: Varroa Bomb Alert
-      '<div data-vtype="bomb" onclick="pickVarroa(this)" style="background:'+(varroaBombRisk?'#2A1A1A':'#222E2A')+';border:2px solid '+(varroaBombRisk?'#B83A2A':(_IS.varroa==='bomb'?'#D5A144':'#2E3A36'))+';border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s'+(varroaBombRisk?';animation:varroapulse 1.5s ease-in-out infinite':'')+'">'+
-        '<div style="font-size:22px;margin-bottom:6px">'+(varroaBombRisk?'💣':'🛡')+'</div>'+
-        '<div style="font-size:11px;font-weight:700;color:'+(varroaBombRisk?'#B83A2A':(_IS.varroa==='bomb'?'#D5A144':'#8AA898'))+'">'+
-          (varroaBombRisk?'⚠️ Varroa Bomb Alert':'Nearby Risk: Low')+
+      // Panel B0: Honey
+      '<div id="assetPanel0" style="padding:14px;display:'+(_cardSlide.asset===0?'block':'none')+'">'+
+        (winterTarget?'<div style="font-size:10px;font-weight:600;color:#6EB5FF;margin-bottom:8px">🌨 Autumn / Winter mode · Target: '+winterTarget+'%</div>':'')+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px">'+
+          '<span>Empty</span><span id="ihoneyv" style="color:#D5A144;font-weight:700">'+honey+'%</span><span>Full</span>'+
         '</div>'+
-        '<div style="font-size:10px;color:'+(varroaBombRisk?'#E8A898':'#4A6A5A')+';margin-top:3px">'+
-          (varroaBombRisk?'Nearby hives reported surge':'No alerts in your area')+
+        (winterTarget?
+          '<div style="position:relative;height:4px;background:#2E3A36;border-radius:2px;margin-bottom:6px">'+
+            '<div style="position:absolute;left:'+winterTarget+'%;top:-3px;width:2px;height:10px;background:#B83A2A"></div>'+
+          '</div>':'')+
+        '<input type="range" min="0" max="100" value="'+honey+'" oninput="updateHoney(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:'+(honeyAboveTarget?'#D5A144':'#B83A2A')+';cursor:pointer">'+
+        (!honeyAboveTarget?
+          '<div style="margin-top:8px;background:#2A1A1A;border-radius:8px;padding:8px 12px;border-left:2px solid #B83A2A;font-size:11px;color:#B83A2A;line-height:1.5">'+
+            '⚠️ Below winter survival threshold ('+winterTarget+'%). Feed urgently.'+
+          '</div>':
+          (winterTarget?'<div style="margin-top:6px;font-size:11px;color:#3A9A5C">✓ Above winter target</div>':''))+
+      '</div>'+
+      // Panel B1: Temperament (ultra-compact)
+      '<div id="assetPanel1" style="padding:14px;display:'+(_cardSlide.asset===1?'block':'none')+'">'+
+        '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
+        '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:16px;border-radius:8px;accent-color:#3A9A5C;cursor:pointer">'+
+        '<div style="display:flex;justify-content:space-between;margin-top:10px">'+
+          ['😡','😤','😐','😊','😌','😇'].map(function(e,i){ return '<span style="font-size:18px;cursor:pointer" onclick="setTempByEmoji('+i+')">'+e+'</span>'; }).join('')+
         '</div>'+
       '</div>'+
-
     '</div>'+
 
-    // Varroa panel (calculator / treatment / bomb detail)
+    // ④ Varroa Smart Grid (standalone — too important to merge)
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">Varroa Status</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:8px">'+
+      _varCell('not-tested','🔲','Not Tested','No count yet')+
+      _varCell('wash','🧪','Alcohol Wash','Tap to calculate %')+
+      _varCell('treatment','💊','Treatment Active','Tap to log')+
+      _varCell('bomb','💣',(varroaBombRisk?'⚠️ Bomb Alert':'Nearby: Low'),(varroaBombRisk?'Surge nearby':'No alerts'),varroaBombRisk)+
+    '</div>'+
     '<div id="varroaPanel"></div>'+
 
-    // ⑥ Temperament
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Temperament</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
-      '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#3A9A5C;cursor:pointer">'+
-    '</div>'+
-
-    // ⑦ Overall Impression
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Overall Impression</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+    // ⑤ Overall — 3 big blocks
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:16px 0 8px">Overall Impression</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-bottom:16px">'+
       _ovBlock('Thriving','🌟')+_ovBlock('Stable','✅')+_ovBlock('Needs care','🚨')+
     '</div>'+
 
-    // ⑧ Photos (Polaroid)
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Photos</div>'+
-    '<div id="inspPhotoRow" style="display:flex;gap:10px;overflow-x:auto;-webkit-overflow-scrolling:touch;scrollbar-width:none;padding:4px 0 8px">'+
-      '<label style="flex-shrink:0;cursor:pointer">'+
-        '<div style="width:88px;height:110px;background:#222E2A;border:2px dashed #2E3A36;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center">'+
-          '<div style="font-size:26px">📷</div><div style="font-size:9px;color:#4A6A5A;margin-top:6px">Add photo</div>'+
-        '</div>'+
-        '<input type="file" accept="image/*" multiple style="display:none" onchange="addInspPhoto(this)">'+
-      '</label>'+
-    '</div>'+
-
-    // ⑨ Inspection Score
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Inspection Score</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;display:flex;align-items:center;gap:16px">'+
-      '<div style="position:relative;width:72px;height:72px;flex-shrink:0">'+
-        '<svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)">'+
-          '<circle cx="36" cy="36" r="28" fill="none" stroke="#2E3A36" stroke-width="7"/>'+
-          '<circle id="inspScoreRing" cx="36" cy="36" r="28" fill="none" stroke="#6E8A78" stroke-width="7" stroke-linecap="round" stroke-dasharray="175.9" stroke-dashoffset="175.9"/>'+
+    // ⑥ Inspection Score (compact)
+    '<div id="inspScoreCard" style="background:#222E2A;border-radius:14px;padding:14px;display:flex;align-items:center;gap:14px;margin-bottom:16px">'+
+      '<div style="position:relative;width:60px;height:60px;flex-shrink:0">'+
+        '<svg width="60" height="60" viewBox="0 0 60 60" style="transform:rotate(-90deg)">'+
+          '<circle cx="30" cy="30" r="24" fill="none" stroke="#2E3A36" stroke-width="6"/>'+
+          '<circle id="inspScoreRing" cx="30" cy="30" r="24" fill="none" stroke="#6E8A78" stroke-width="6" stroke-linecap="round" stroke-dasharray="150.8" stroke-dashoffset="150.8"/>'+
         '</svg>'+
         '<div style="position:absolute;inset:0;display:flex;align-items:center;justify-content:center">'+
-          '<div id="inspScoreNum" style="font-size:18px;font-weight:800;color:#6E8A78">—</div>'+
+          '<div id="inspScoreNum" style="font-size:16px;font-weight:800;color:#6E8A78">—</div>'+
         '</div>'+
       '</div>'+
       '<div style="flex:1">'+
-        '<div id="inspScoreLabel" style="font-size:14px;font-weight:700;color:#8AA898;margin-bottom:4px">Fill in the form</div>'+
-        '<div id="inspScoreDetail" style="font-size:11px;color:#4A6A5A;line-height:1.6">Complete the inspection to see your score</div>'+
+        '<div id="inspScoreLabel" style="font-size:14px;font-weight:700;color:#8AA898">Fill in the form</div>'+
+        '<div id="inspScoreDetail" style="font-size:11px;color:#4A6A5A;margin-top:2px;line-height:1.5">Complete to see score</div>'+
       '</div>'+
     '</div>'+
+    '<div id="inspScoreAlert"></div>'+
 
-    // ⑩ Save buttons
-    '<div style="display:flex;gap:10px;margin-top:20px">'+
-      '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:14px;border-radius:14px;border:1px solid #2E3A36;background:transparent;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>'+
+    // ⑦ Save + Level 2
+    '<div style="display:flex;gap:10px;margin-top:4px">'+
+      '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:14px;border-radius:14px;border:1px solid #2E3A36;background:transparent;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Draft</button>'+
       '<button onclick="finishInspection(&quot;complete&quot;)" style="flex:2;padding:14px;border-radius:14px;border:none;background:#D5A144;color:#1C2321;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.2px">Complete ✓</button>'+
     '</div>'+
-    '<button onclick="openInspLevel2()" style="width:100%;padding:13px;border-radius:14px;border:1px solid #3A9A5C;background:transparent;color:#3A9A5C;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px">'+
-      '⚙️ Management & Advanced Checks →'+
-    '</button>'+
+    '<button onclick="openInspLevel2()" style="width:100%;padding:12px;border-radius:14px;border:1px solid #3A9A5C;background:transparent;color:#3A9A5C;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">⚙️ Management & Advanced →</button>'+
 
-    '</div>'+
-    '<style>@keyframes varroapulse{0%,100%{border-color:#B83A2A}50%{border-color:#ff6b6b;box-shadow:0 0 12px rgba(184,58,42,.5)}}</style>';
+    '</div>';
 
   calcScore();
 }
 
-/* ── Hive selection ── */
-function selectHive(id){
-  _IS.selectedHive=id;
-  var all=getAllHives();
-  var item=all.find(function(x){return x.h.id===id;});
-  if(item){ _IS.currentHiveId=id; _IS.currentHiveName=item.h.name+(item.h.breed&&item.h.breed!=='Unknown'?' · '+item.h.breed:''); }
-  document.querySelectorAll('[onclick^="selectHive"]').forEach(function(el){
-    var eid=parseInt(el.getAttribute('onclick').match(/\d+/)[0]);
-    var sel=eid===id;
-    el.style.border='2px solid '+(sel?'#D5A144':'#2E3A36');
-    el.style.background=sel?'#2A2416':'#222E2A';
-    var name=el.querySelector('div:nth-child(2)');
-    if(name) name.style.color=sel?'#D5A144':'#E8E2D8';
+/* ── Card switchers ── */
+function switchBioCard(idx){
+  _cardSlide.bio=idx;
+  ['bioPanel0','bioPanel1'].forEach(function(id,i){
+    var el=document.getElementById(id); if(el) el.style.display=i===idx?'block':'none';
   });
+  ['bioTab0','bioTab1'].forEach(function(id,i){
+    var el=document.getElementById(id); if(!el) return;
+    el.style.borderBottom='2px solid '+(i===idx?'#D5A144':'transparent');
+    el.style.color=i===idx?'#D5A144':'#4A6A5A';
+  });
+}
+function switchAssetCard(idx){
+  _cardSlide.asset=idx;
+  ['assetPanel0','assetPanel1'].forEach(function(id,i){
+    var el=document.getElementById(id); if(el) el.style.display=i===idx?'block':'none';
+  });
+  ['assetTab0','assetTab1'].forEach(function(id,i){
+    var el=document.getElementById(id); if(!el) return;
+    el.style.borderBottom='2px solid '+(i===idx?'#D5A144':'transparent');
+    el.style.color=i===idx?'#D5A144':'#4A6A5A';
+  });
+}
+
+/* ── Varroa ── */
+function _varCell(type,emoji,label,sub,alert){
+  var active=_IS.varroa===type;
+  var bg=alert?'#2A1A1A':'#222E2A';
+  var border=alert?'#B83A2A':active?'#D5A144':'#2E3A36';
+  var labelColor=alert?'#B83A2A':active?'#D5A144':'#8AA898';
+  return '<div data-vtype="'+type+'" onclick="pickVarroa(this)" style="background:'+bg+';border:2px solid '+border+';border-radius:14px;padding:14px 10px;text-align:center;cursor:pointer;transition:.15s'+(alert?';animation:varroapulse 1.5s ease-in-out infinite':'')+'">' +
+    '<div style="font-size:22px;margin-bottom:5px">'+emoji+'</div>'+
+    '<div style="font-size:11px;font-weight:700;color:'+labelColor+'">'+label+'</div>'+
+    '<div style="font-size:10px;color:#4A6A5A;margin-top:2px">'+sub+'</div>'+
+  '</div>';
+}
+function pickVarroa(el){
+  var type=el.dataset.vtype; _IS.varroa=type;
+  document.querySelectorAll('[data-vtype]').forEach(function(b){ b.style.border='2px solid #2E3A36'; });
+  el.style.border='2px solid #D5A144';
+  var panel=document.getElementById('varroaPanel'); if(!panel) return;
+  if(type==='wash'){
+    panel.innerHTML='<div style="background:#1C2321;border-radius:12px;padding:14px;margin-top:8px;border:1px solid #2E3A36">'+
+      '<div style="font-size:11px;font-weight:700;color:#D5A144;margin-bottom:10px">🧪 Mite Calculator</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:10px">'+
+        '<div><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Bees sampled</div>'+
+          '<input id="beeCount" type="number" value="300" oninput="calcMiteRate()" style="width:100%;padding:10px;border:1px solid #2E3A36;border-radius:8px;background:#222E2A;color:#E8E2D8;font-size:16px;font-weight:700;text-align:center;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"></div>'+
+        '<div><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Mites found</div>'+
+          '<input id="miteCount" type="number" value="0" oninput="calcMiteRate()" style="width:100%;padding:10px;border:1px solid #2E3A36;border-radius:8px;background:#222E2A;color:#E8E2D8;font-size:16px;font-weight:700;text-align:center;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"></div>'+
+      '</div>'+
+      '<div style="background:#222E2A;border-radius:8px;padding:12px;text-align:center">'+
+        '<div id="miteResult" style="font-size:28px;font-weight:800;color:#3A9A5C">0.0%</div>'+
+        '<div id="miteAdvice" style="font-size:11px;color:#3A9A5C;margin-top:3px">✓ Below threshold</div>'+
+      '</div></div>';
+    calcMiteRate();
+  } else if(type==='treatment'){
+    panel.innerHTML='<div style="background:#1C2321;border-radius:12px;padding:14px;margin-top:8px;border:1px solid #2E3A36">'+
+      '<div style="font-size:11px;font-weight:700;color:#D5A144;margin-bottom:10px">💊 Treatment Log</div>'+
+      '<select id="treatType" style="width:100%;padding:10px;border:1px solid #2E3A36;border-radius:8px;background:#222E2A;color:#E8E2D8;font-size:13px;font-family:Inter,sans-serif;margin-bottom:8px;outline:none">'+
+        '<option>Apiguard (Thymol)</option><option>OA Vapor</option><option>Apivar</option><option>Formic Pro</option>'+
+      '</select>'+
+      '<input id="treatStart" type="date" value="'+new Date().toISOString().split('T')[0]+'" oninput="updateTreatDay()" style="width:100%;padding:10px;border:1px solid #2E3A36;border-radius:8px;background:#222E2A;color:#E8E2D8;font-size:13px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box;margin-bottom:8px">'+
+      '<div id="treatDayCount" style="text-align:center;font-size:18px;font-weight:700;color:#D5A144;padding:8px;background:#222E2A;border-radius:8px">Day 1</div>'+
+      '<button onclick="showToast(\'Treatment logged ✓\')" style="width:100%;margin-top:8px;padding:10px;border-radius:10px;border:none;background:#D5A144;color:#1C2321;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Log treatment</button>'+
+    '</div>';
+    updateTreatDay();
+  } else if(type==='bomb'){
+    panel.innerHTML='<div style="background:#2A1A1A;border-radius:12px;padding:14px;margin-top:8px;border:1px solid #B83A2A">'+
+      '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:6px">💣 Varroa Bomb — Nearby Alert</div>'+
+      '<div style="font-size:11px;color:#E8A898;line-height:1.6">Hive within 3km reported critical mite levels. Immediate alcohol wash strongly recommended before reinvasion occurs.</div>'+
+      '<button onclick="pickVarroa(document.querySelector(\'[data-vtype=wash]\'))" style="width:100%;margin-top:8px;padding:10px;border-radius:8px;border:1px solid #B83A2A;background:transparent;color:#B83A2A;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Run mite test now →</button>'+
+    '</div>';
+  } else { panel.innerHTML=''; }
+  calcScore();
+}
+function calcMiteRate(){
+  var bees=parseInt(document.getElementById('beeCount').value)||300;
+  var mites=parseInt(document.getElementById('miteCount').value)||0;
+  var pct=bees>0?(mites/bees*100):0; _IS.varroaPct=pct;
+  var r=document.getElementById('miteResult'), a=document.getElementById('miteAdvice'); if(!r) return;
+  r.textContent=pct.toFixed(1)+'%';
+  if(pct<2){ r.style.color='#3A9A5C'; if(a){a.style.color='#3A9A5C';a.textContent='✓ Below treatment threshold (2%)';} }
+  else if(pct<4){ r.style.color='#D5A144'; if(a){a.style.color='#D5A144';a.textContent='⚠️ Above threshold — treat soon';} }
+  else { r.style.color='#B83A2A'; if(a){a.style.color='#B83A2A';a.textContent='🚨 Treat immediately!';} }
+  calcScore();
+}
+function updateTreatDay(){
+  var inp=document.getElementById('treatStart'); if(!inp) return;
+  var diff=Math.floor((new Date()-new Date(inp.value))/(86400000))+1;
+  var el=document.getElementById('treatDayCount'); if(el) el.textContent='Day '+Math.max(1,diff);
 }
 
 /* ── Queen ── */
 function _queenCards(active){
   return _QUEEN_OPTS.map(function(o){
-    var isWinter=o.val==='Lay in Winter';
+    var isWin=o.val==='Lay in Winter';
     if(o.val===active){
-      return '<div class="insp-card-active" data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="'+(isWinter?'background:#8B2020;':'')+'">'+
-        '<div style="font-size:28px">'+o.emoji+'</div>'+
-        '<div><div class="ica-name" style="'+(isWinter?'color:#fff;':'')+'">'+o.val+'</div><div class="ica-sub" style="'+(isWinter?'color:rgba(255,255,255,.7);':'')+'">'+o.sub+'</div></div></div>';
+      return '<div class="insp-card-active" data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="'+(isWin?'background:#8B2020;':'')+'">' +
+        '<div style="font-size:24px">'+o.emoji+'</div>'+
+        '<div><div class="ica-name" style="font-size:14px;'+(isWin?'color:#fff;':'')+'">'+o.val+'</div><div class="ica-sub" style="'+(isWin?'color:rgba(255,255,255,.7);':'')+'">'+o.sub+'</div></div></div>';
     }
-    return '<div class="insp-card-inactive" data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="'+(isWinter?'border-color:#B83A2A;':'')+'">'+
-      '<div style="font-size:22px;opacity:.6">'+o.emoji+'</div>'+
-      '<div><div class="ici-name" style="'+(isWinter?'color:#E89898;':'')+'">'+o.val+'</div><div class="ici-sub">'+o.sub+'</div></div></div>';
+    return '<div class="insp-card-inactive" data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="'+(isWin?'border-color:#B83A2A;':'')+'">' +
+      '<div style="font-size:20px;opacity:.6">'+o.emoji+'</div>'+
+      '<div><div class="ici-name" style="'+(isWin?'color:#E89898;':'')+'">'+o.val+'</div></div></div>';
   }).join('');
 }
 function pickQueenCard(el){
   var val=el.dataset.val; _IS.queen=val;
   var c=document.getElementById('queenCards'); if(c) c.innerHTML=_queenCards(val);
   var qt=document.getElementById('inspQuoteText'); if(qt) qt.textContent=_QUOTES[val]||_QUOTES['default'];
-  // Winter alert re-render
-  if(val==='Lay in Winter'||_IS.queen==='Lay in Winter') renderInspPage();
+  if(val==='Lay in Winter') renderInspPage();
   calcScore();
 }
 
-/* ── Brood AFB toggle ── */
-function toggleBroodAlert(){
-  _IS.broodAlert=!_IS.broodAlert;
-  renderInspPage();
-}
-function addAFBPhoto(input){
-  if(!input.files||!input.files[0]) return;
-  showToast('📷 AFB photo added for review');
-}
-
-/* ── Varroa smart grid ── */
-function pickVarroa(el){
-  var type=el.dataset.vtype;
-  _IS.varroa=type;
-  document.querySelectorAll('[data-vtype]').forEach(function(b){
-    b.style.border='2px solid #2E3A36';
-    var lbl=b.querySelector('div:nth-child(2)'); if(lbl) lbl.style.color='#8AA898';
-  });
-  el.style.border='2px solid #D5A144';
-  var lbl=el.querySelector('div:nth-child(2)'); if(lbl) lbl.style.color='#D5A144';
-
-  var panel=document.getElementById('varroaPanel');
-  if(!panel) return;
-
-  if(type==='wash'){
-    panel.innerHTML=
-      '<div style="background:#1C2321;border-radius:14px;padding:16px;margin-top:10px;border:1px solid #2E3A36">'+
-        '<div style="font-size:12px;font-weight:700;color:#D5A144;margin-bottom:12px">🧪 Mite Calculator — Alcohol/Sugar Wash</div>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
-          '<div><div style="font-size:10px;color:#4A6A5A;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Bees sampled</div>'+
-            '<input id="beeCount" type="number" value="300" min="1" style="width:100%;padding:10px;border:1px solid #2E3A36;border-radius:10px;background:#222E2A;color:#E8E2D8;font-size:16px;font-weight:700;text-align:center;font-family:Inter,sans-serif;outline:none" oninput="calcMiteRate()"></div>'+
-          '<div><div style="font-size:10px;color:#4A6A5A;margin-bottom:5px;text-transform:uppercase;letter-spacing:.06em">Mites found</div>'+
-            '<input id="miteCount" type="number" value="0" min="0" style="width:100%;padding:10px;border:1px solid #2E3A36;border-radius:10px;background:#222E2A;color:#E8E2D8;font-size:16px;font-weight:700;text-align:center;font-family:Inter,sans-serif;outline:none" oninput="calcMiteRate()"></div>'+
-        '</div>'+
-        '<div style="background:#222E2A;border-radius:10px;padding:14px;text-align:center">'+
-          '<div style="font-size:11px;color:#4A6A5A;margin-bottom:4px">Infestation Rate</div>'+
-          '<div id="miteResult" style="font-size:32px;font-weight:800;color:#3A9A5C;letter-spacing:-.5px">0.0%</div>'+
-          '<div id="miteAdvice" style="font-size:11px;color:#3A9A5C;margin-top:4px">✓ Below treatment threshold</div>'+
-        '</div>'+
-      '</div>';
-    calcMiteRate();
-  } else if(type==='treatment'){
-    panel.innerHTML=
-      '<div style="background:#1C2321;border-radius:14px;padding:16px;margin-top:10px;border:1px solid #2E3A36">'+
-        '<div style="font-size:12px;font-weight:700;color:#D5A144;margin-bottom:12px">💊 Treatment Log</div>'+
-        '<select id="treatType" style="width:100%;padding:10px;border:1px solid #2E3A36;border-radius:10px;background:#222E2A;color:#E8E2D8;font-size:13px;font-family:Inter,sans-serif;margin-bottom:10px;outline:none">'+
-          '<option>Apiguard (Thymol)</option><option>OA Vapor</option><option>OA Dribble</option><option>Apivar (Amitraz)</option><option>Formic Pro</option>'+
-        '</select>'+
-        '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px">'+
-          '<div><div style="font-size:10px;color:#4A6A5A;margin-bottom:5px">Start date</div>'+
-            '<input id="treatStart" type="date" style="width:100%;padding:9px;border:1px solid #2E3A36;border-radius:10px;background:#222E2A;color:#E8E2D8;font-size:12px;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"></div>'+
-          '<div><div style="font-size:10px;color:#4A6A5A;margin-bottom:5px">Day #</div>'+
-            '<div id="treatDayCount" style="padding:9px;background:#222E2A;border-radius:10px;font-size:18px;font-weight:700;color:#D5A144;text-align:center">—</div></div>'+
-        '</div>'+
-        '<button onclick="logTreatment()" style="width:100%;margin-top:10px;padding:11px;border-radius:12px;border:none;background:#D5A144;color:#1C2321;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Log treatment</button>'+
-      '</div>';
-    // Set today as default
-    var today=new Date().toISOString().split('T')[0];
-    var inp=document.getElementById('treatStart'); if(inp){ inp.value=today; inp.addEventListener('change',updateTreatDay); }
-    updateTreatDay();
-  } else if(type==='bomb'){
-    panel.innerHTML=
-      '<div style="background:#2A1A1A;border-radius:14px;padding:16px;margin-top:10px;border:1px solid #B83A2A">'+
-        '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:8px">💣 Varroa Bomb Alert — Nearby Report</div>'+
-        '<div style="font-size:12px;color:#E8A898;line-height:1.7">A hive within 3km of your apiary has reported critical mite levels (>4%). Reinvasion risk is HIGH. Immediate alcohol wash recommended before next inspection.</div>'+
-        '<div style="margin-top:10px;display:flex;gap:8px">'+
-          '<button onclick="pickVarroa(document.querySelector(\'[data-vtype=wash]\'))" style="flex:1;padding:10px;border-radius:10px;border:1px solid #B83A2A;background:transparent;color:#B83A2A;font-size:12px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif">Test now →</button>'+
-        '</div>'+
-      '</div>';
-  } else {
-    panel.innerHTML='';
-  }
-  calcScore();
-}
-
-function calcMiteRate(){
-  var bees=parseInt(document.getElementById('beeCount').value)||300;
-  var mites=parseInt(document.getElementById('miteCount').value)||0;
-  var pct=bees>0?(mites/bees*100):0;
-  _IS.varroaPct=pct;
-  var res=document.getElementById('miteResult');
-  var adv=document.getElementById('miteAdvice');
-  if(!res) return;
-  res.textContent=pct.toFixed(1)+'%';
-  if(pct<2){ res.style.color='#3A9A5C'; if(adv){ adv.style.color='#3A9A5C'; adv.textContent='✓ Below treatment threshold (2%)'; } }
-  else if(pct<4){ res.style.color='#D5A144'; if(adv){ adv.style.color='#D5A144'; adv.textContent='⚠️ Above threshold — monitor closely'; } }
-  else { res.style.color='#B83A2A'; if(adv){ adv.style.color='#B83A2A'; adv.textContent='🚨 Treatment required immediately!'; } }
-  calcScore();
-}
-function updateTreatDay(){
-  var inp=document.getElementById('treatStart'); if(!inp) return;
-  var start=new Date(inp.value);
-  var today=new Date();
-  var diff=Math.floor((today-start)/(1000*60*60*24))+1;
-  var el=document.getElementById('treatDayCount');
-  if(el) el.textContent=diff>0?'Day '+diff:'Day 0';
-}
-function logTreatment(){
-  var type=document.getElementById('treatType');
-  showToast('💊 '+(type?type.value:'Treatment')+' logged ✓');
-}
-
-/* ── Other helpers ── */
+/* ── Overall ── */
 function _ovBlock(val,emoji){
   var active=_IS.overall===val;
   return '<div data-group="overall" data-val="'+val+'" onclick="pickOverall(this)" style="background:#222E2A;border:2px solid '+(active?'#D5A144':'#2E3A36')+';border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer;transition:.15s">'+
-    '<div style="font-size:24px;margin-bottom:6px">'+emoji+'</div>'+
+    '<div style="font-size:22px;margin-bottom:5px">'+emoji+'</div>'+
     '<div style="font-size:11px;font-weight:600;color:'+(active?'#D5A144':'#8AA898')+'">'+val+'</div></div>';
 }
 function pickOverall(el){
@@ -3622,6 +3546,19 @@ function pickOverall(el){
   el.style.border='2px solid #D5A144'; el.lastElementChild.style.color='#D5A144';
   _IS.overall=el.dataset.val; calcScore();
 }
+
+/* ── Helpers ── */
+function selectHive(id){
+  _IS.selectedHive=id;
+  var all=getAllHives(); var item=all.find(function(x){return x.h.id===id;});
+  if(item){ _IS.currentHiveId=id; _IS.currentHiveName=item.h.name+(item.h.breed&&item.h.breed!=='Unknown'?' · '+item.h.breed:''); }
+  document.querySelectorAll('[onclick^="selectHive"]').forEach(function(el){
+    var eid=parseInt(el.getAttribute('onclick').match(/\d+/)[0]); var sel=eid===id;
+    el.style.border='2px solid '+(sel?'#D5A144':'#2E3A36'); el.style.background=sel?'#2A2416':'#222E2A';
+    var name=el.querySelector('div'); if(name) name.style.color=sel?'#D5A144':'#E8E2D8';
+  });
+}
+function toggleBroodAlert(){ _IS.broodAlert=!_IS.broodAlert; renderInspPage(); }
 function updateBrood(v){
   _IS.brood=parseInt(v);
   var el=document.getElementById('ibroodv'); if(el) el.textContent=v+'%';
@@ -3630,71 +3567,50 @@ function updateBrood(v){
 }
 function _broodCap(v){
   v=parseInt(v);
-  if(v<20) return 'Very poor pattern · urgent attention needed';
-  if(v<40) return 'Weak pattern · monitor closely';
-  if(v<60) return 'Moderate pattern · keep monitoring';
-  if(v<80) return 'Good solid pattern · colony looking healthy';
-  return 'Excellent pattern · colony thriving 🌟';
+  if(v<20) return 'Very poor · urgent attention needed';
+  if(v<40) return 'Weak · monitor closely';
+  if(v<60) return 'Moderate · keep monitoring';
+  if(v<80) return 'Good solid pattern · healthy';
+  return 'Excellent · colony thriving 🌟';
 }
 function updateHoney(v){
   _IS.honey=parseInt(v);
   var el=document.getElementById('ihoneyv'); if(el) el.textContent=v+'%';
-  // Update winter warning dynamically
   var wt=_IS.winterTarget;
-  if(wt){
-    var warn=document.getElementById('honeyWarnDyn');
-    // re-render honey section is complex, just update color hint
-    var slider=document.querySelector('input[oninput="updateHoney(this.value)"]');
-    if(slider) slider.style.accentColor=parseInt(v)<wt?'#B83A2A':'#D5A144';
-  }
-  calcScore();
+  var slider=document.querySelector('input[oninput="updateHoney(this.value)"]');
+  if(slider) slider.style.accentColor=wt&&parseInt(v)<wt?'#B83A2A':'#D5A144';
 }
 function itempslide(v){
   var ls=['Aggressive','Nervous','Calm','Calm','Very calm','Docile'];
   var el=document.getElementById('itempv'); if(el) el.textContent=ls[Math.min(5,Math.floor(v/17))];
   _IS.temp=parseInt(v);
 }
-function addInspPhoto(input){
-  if(!input.files) return;
-  if(!_IS.photos) _IS.photos=[];
-  var row=document.getElementById('inspPhotoRow'); if(!row) return;
-  Array.from(input.files).forEach(function(file){
-    var reader=new FileReader();
-    reader.onload=function(e){
-      _IS.photos.push(e.target.result);
-      var card=document.createElement('div');
-      card.style.cssText='flex-shrink:0;width:88px;height:110px';
-      card.innerHTML='<div style="width:88px;height:110px;background:#fff;border-radius:10px;padding:5px 5px 22px;box-shadow:0 3px 12px rgba(0,0,0,.4)">'+
-        '<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:6px"></div>';
-      row.insertBefore(card,row.querySelector('label'));
-    };
-    reader.readAsDataURL(file);
-  });
+function setTempByEmoji(idx){
+  var vals=[0,20,40,60,80,100];
+  var slider=document.querySelector('input[oninput="itempslide(this.value)"]');
+  if(slider){ slider.value=vals[idx]; itempslide(vals[idx]); }
 }
+
+/* ── Score ── */
 function calcScore(){
   var score=0;
   score+=(_IS.brood||50)/100*25;
   score+=(_IS.honey||50)/100*20;
   var qmap={'Spotted':20,'Eggs only':14,'Not seen':8,'Queenless':0,'Lay in Winter':5};
   if(_IS.queen) score+=(qmap[_IS.queen]||0);
-  // Varroa score
   if(_IS.varroa==='not-tested') score+=8;
-  else if(_IS.varroa==='wash'){
-    var pct=_IS.varroaPct||0;
-    score+=pct<2?20:pct<4?10:0;
-  } else if(_IS.varroa==='treatment') score+=12;
+  else if(_IS.varroa==='wash'){ var p=_IS.varroaPct||0; score+=p<2?20:p<4?10:0; }
+  else if(_IS.varroa==='treatment') score+=12;
   else if(_IS.varroa==='bomb') score+=5;
   var omap={'Thriving':15,'Stable':9,'Needs care':0};
   if(_IS.overall) score+=(omap[_IS.overall]||0);
-  // Penalties
   if(_IS.broodAlert) score-=15;
   if(_IS.queen==='Lay in Winter') score-=10;
   score=Math.max(0,Math.min(100,Math.round(score)));
-
   var color=score>=80?'#3A9A5C':score>=60?'#D5A144':score>=40?'#C4974A':'#B83A2A';
   var label=score>=80?'Excellent':score>=60?'Good':score>=40?'Fair':'Needs attention';
-  var detail=score>=80?'Colony is in great shape! 🌟':score>=60?'Colony stable. Monitor regularly.':score>=40?'Some concerns — investigate soon.':'Immediate attention required.';
-  var circ=175.9;
+  var detail=score>=80?'Colony in great shape! 🌟':score>=60?'Stable. Monitor regularly.':score>=40?'Some concerns — investigate soon.':'Immediate attention required.';
+  var circ=150.8;
   var ring=document.getElementById('inspScoreRing');
   var num=document.getElementById('inspScoreNum');
   var lbl=document.getElementById('inspScoreLabel');
@@ -3704,41 +3620,20 @@ function calcScore(){
   if(lbl){ lbl.textContent=label; lbl.style.color=color; }
   if(det) det.textContent=detail;
   _IS.finalScore=score;
-  // Smart alert below score card
+  // Smart alert
   var alertEl=document.getElementById('inspScoreAlert');
-  if(!alertEl){
-    var scoreCard=document.getElementById('inspScoreRing');
-    if(scoreCard){
-      var card=scoreCard.closest('div[style*="border-radius:16px"]')||scoreCard.parentElement.parentElement.parentElement;
-      alertEl=document.createElement('div');
-      alertEl.id='inspScoreAlert';
-      if(card&&card.parentElement) card.parentElement.insertBefore(alertEl,card.nextSibling);
-    }
-  }
   if(alertEl){
     if(score<40){
       var alerts=[];
-      if(_IS.varroa==='bomb'||(_IS.varroaPct&&_IS.varroaPct>=3)) alerts.push('nearby mite surge detected');
-      if(_IS.broodAlert) alerts.push('sunken cappings found');
-      if(_IS.honey<30) alerts.push('critically low honey stores');
+      if(_IS.varroa==='bomb'||(_IS.varroaPct&&_IS.varroaPct>=3)) alerts.push('nearby mite surge');
+      if(_IS.broodAlert) alerts.push('sunken cappings');
+      if(_IS.honey<30) alerts.push('critically low stores');
       if(_IS.queen==='Queenless') alerts.push('queenless colony');
-      var alertText = alerts.length>0
-        ? 'Due to '+alerts.join(' and ')+', immediate alcohol wash testing and reporting is strongly recommended.'
-        : 'Multiple risk factors detected. Perform alcohol wash test and inspect brood frames immediately.';
-      alertEl.innerHTML=
-        '<div style="background:#2A1A1A;border-radius:12px;padding:12px 14px;margin-top:8px;border-left:3px solid #B83A2A;display:flex;align-items:flex-start;gap:10px">'+
-          '<div style="font-size:18px;flex-shrink:0">🚨</div>'+
-          '<div style="font-size:12px;color:#E8A898;line-height:1.6">'+alertText+'</div>'+
-        '</div>';
+      var txt=alerts.length>0?'Due to '+alerts.join(' & ')+': immediate alcohol wash and reporting recommended.':'Multiple risks. Perform alcohol wash and inspect brood immediately.';
+      alertEl.innerHTML='<div style="background:#2A1A1A;border-radius:10px;padding:10px 12px;margin-top:8px;border-left:3px solid #B83A2A;display:flex;gap:8px;align-items:flex-start"><span style="font-size:16px;flex-shrink:0">🚨</span><span style="font-size:11px;color:#E8A898;line-height:1.5">'+txt+'</span></div>';
     } else if(score<60){
-      alertEl.innerHTML=
-        '<div style="background:#2A2416;border-radius:12px;padding:12px 14px;margin-top:8px;border-left:3px solid #D5A144;display:flex;align-items:flex-start;gap:10px">'+
-          '<div style="font-size:18px;flex-shrink:0">⚠️</div>'+
-          '<div style="font-size:12px;color:#D5A144;line-height:1.6">Some concerns noted. Schedule a thorough inspection within 3 days.</div>'+
-        '</div>';
-    } else {
-      alertEl.innerHTML='';
-    }
+      alertEl.innerHTML='<div style="background:#2A2416;border-radius:10px;padding:10px 12px;margin-top:8px;border-left:3px solid #D5A144;font-size:11px;color:#D5A144;line-height:1.5">⚠️ Some concerns noted. Schedule thorough inspection within 3 days.</div>';
+    } else { alertEl.innerHTML=''; }
   }
 }
 
@@ -3751,8 +3646,7 @@ function finishInspection(mode){
     date:now.getTime(), dateStr:now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
     queen:_IS.queen||'Not recorded', brood:_IS.brood||50, honey:_IS.honey||50,
     varroa:_IS.varroa||'not-tested', varroaPct:_IS.varroaPct, overall:_IS.overall||'Stable',
-    broodAlert:_IS.broodAlert, score:_IS.finalScore||0,
-    notes:_IS.notes||'', photos:(_IS.photos||[]).slice(), draft:mode==='draft'
+    broodAlert:_IS.broodAlert, score:_IS.finalScore||0, notes:_IS.notes||'', draft:mode==='draft'
   };
   INSPECTIONS.unshift(record);
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){
@@ -3766,362 +3660,48 @@ function finishInspection(mode){
   else showInspectComplete(record);
 }
 
-/* ══ COMPLETE SCREEN with Next Steps ══ */
+/* ══ COMPLETE SCREEN ══ */
 function showInspectComplete(record){
   var ov=document.createElement('div'); ov.id='inspCompleteOv';
   ov.style.cssText='position:fixed;inset:0;z-index:10000;overflow-y:auto;background:#1C2321';
-
   var overall=record.overall||'Stable';
   var cColor=overall==='Thriving'?'#3A9A5C':overall==='Stable'?'#D5A144':'#B83A2A';
   var cLabel=overall==='Thriving'?'Strong':overall==='Stable'?'Stable':'Needs care';
-  var msg=overall==='Thriving'?'Your girls look healthy today. 🌤':overall==='Stable'?'Colony is stable. Keep monitoring. 🌿':'This hive needs your attention soon. 🚨';
-
-  // Generate smart Next Steps
+  var msg=overall==='Thriving'?'Your girls look healthy today. 🌤':overall==='Stable'?'Colony is stable. 🌿':'This hive needs attention. 🚨';
+  var wEl=document.getElementById('weatherDescEl'); var wStr=wEl?wEl.textContent:'';
+  var tMatch=wStr.match(/(\d+)°/); var tempF=tMatch?parseInt(tMatch[1]):75;
   var nextSteps=[];
   if(record.varroa==='wash'&&record.varroaPct&&record.varroaPct>=2){
-    var wTemp=document.getElementById('weatherDescEl');
-    var wStr=wTemp?wTemp.textContent:'';
-    var tMatch=wStr.match(/(\d+)°/);
-    var temp=tMatch?parseInt(tMatch[1]):75;
-    var treatment=temp>60?'Apiguard (Thymol)':'OA Vapor';
-    nextSteps.push({icon:'💊',color:'#B83A2A',text:'Varroa at '+record.varroaPct.toFixed(1)+'% — Treatment recommended. Based on today\'s temperature, use '+treatment+' tomorrow afternoon.'});
+    var treatment=tempF>85?'OA Vapor (cooler temp needed for Apiguard)':tempF>60?'Apiguard (Thymol)':'OA Vapor';
+    nextSteps.push({icon:'💊',color:'#B83A2A',text:'Varroa at '+record.varroaPct.toFixed(1)+'%. Recommended: '+treatment+' based on today\'s '+tempF+'°F. Apply tomorrow morning.'});
   }
-  if(record.broodAlert) nextSteps.push({icon:'🚨',color:'#B83A2A',text:'Suspected AFB detected. Contact your local bee inspector immediately. Do not move frames between hives.'});
-  if(record.queen==='Queenless') nextSteps.push({icon:'👑',color:'#D5A144',text:'Queenless colony — introduce a new queen or allow emergency queen cells within 24 hours.'});
-  if(record.queen==='Lay in Winter') nextSteps.push({icon:'❄️',color:'#6EB5FF',text:'False spring alert. Check stores and consider fondant or syrup feeding to prevent starvation.'});
-  if(record.honey<40) nextSteps.push({icon:'🍯',color:'#D5A144',text:'Low honey stores ('+record.honey+'%). Feed 2:1 sugar syrup immediately to build winter reserves.'});
-  if(record.overall==='Thriving'&&!record.broodAlert) nextSteps.push({icon:'✅',color:'#3A9A5C',text:'Colony looking great! Next inspection in 7–10 days. Consider adding a super if nectar flow is active.'});
-  if(nextSteps.length===0) nextSteps.push({icon:'📋',color:'#D5A144',text:'Next inspection recommended in 7–10 days. Continue monitoring.'});
-
-  var nextStepsHtml=nextSteps.map(function(s,i){
-    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;'+(i<nextSteps.length-1?'border-bottom:1px solid #2E3A36':'')+'">'+
-      '<div style="font-size:20px;flex-shrink:0;margin-top:1px">'+s.icon+'</div>'+
-      '<div style="font-size:12px;color:#E8E2D8;line-height:1.6">'+s.text+'</div>'+
-    '</div>';
+  if(record.broodAlert) nextSteps.push({icon:'🚨',color:'#B83A2A',text:'Suspected AFB. Contact your local bee inspector immediately. Do NOT move frames.'});
+  if(record.queen==='Queenless') nextSteps.push({icon:'👑',color:'#D5A144',text:'Queenless — introduce a new queen or allow emergency queen cells within 24 hours.'});
+  if(record.queen==='Lay in Winter') nextSteps.push({icon:'❄️',color:'#6EB5FF',text:'False spring detected. Check stores and consider fondant feeding to prevent starvation.'});
+  if(record.honey<40) nextSteps.push({icon:'🍯',color:'#D5A144',text:'Low honey ('+record.honey+'%). Feed 2:1 syrup immediately to build winter reserves.'});
+  if(nextSteps.length===0) nextSteps.push({icon:'✅',color:'#3A9A5C',text:'Colony looking good! Next inspection in 7–10 days.'});
+  var nextHtml=nextSteps.map(function(s,i){
+    return '<div style="display:flex;align-items:flex-start;gap:10px;padding:10px 0;'+(i<nextSteps.length-1?'border-bottom:1px solid #2E3A36':'')+'">' +
+      '<div style="font-size:18px;flex-shrink:0">'+s.icon+'</div>'+
+      '<div style="font-size:12px;color:#E8E2D8;line-height:1.6">'+s.text+'</div></div>';
   }).join('');
-
-  ov.innerHTML='<style>'+
-    '@keyframes ripple{0%{opacity:.32;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}'+
-    '@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}'+
-    '@keyframes draw{to{stroke-dashoffset:0}}'+
-    '@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}'+
-    '.icr{position:absolute;border-radius:50%;border:1px solid #D5A144;transform:translate(-50%,-50%);opacity:0}'+
-    '.icr1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}'+
-    '.icr2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}'+
-    '.icc{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}'+
-    '.icc svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}'+
-    '.f1{animation:fadeUp .45s ease .5s both}.f2{animation:fadeUp .45s ease .62s both}.f3{animation:fadeUp .45s ease .78s both}'+
-    '.f4{animation:fadeUp .45s ease .92s both}.f5{animation:fadeUp .45s ease 1.05s both}'+
-    '.f6{animation:fadeUp .45s ease 1.15s both}.f7{animation:fadeUp .45s ease 1.25s both}'+
-    '</style>'+
-    '<div style="max-width:380px;margin:0 auto;padding:48px 24px 48px;display:flex;flex-direction:column;align-items:center;position:relative">'+
-    '<div style="position:absolute;top:25%;left:50%;pointer-events:none"><div class="icr icr1"></div><div class="icr icr2"></div></div>'+
+  ov.innerHTML='<style>@keyframes ripple{0%{opacity:.32;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}@keyframes draw{to{stroke-dashoffset:0}}@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.icr{position:absolute;border-radius:50%;border:1px solid #D5A144;transform:translate(-50%,-50%);opacity:0}.icr1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}.icr2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}.icc{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}.icc svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}.f1{animation:fadeUp .45s ease .5s both}.f2{animation:fadeUp .45s ease .62s both}.f3{animation:fadeUp .45s ease .78s both}.f4{animation:fadeUp .45s ease .92s both}.f5{animation:fadeUp .45s ease 1.05s both}.f6{animation:fadeUp .45s ease 1.15s both}.f7{animation:fadeUp .45s ease 1.25s both}@keyframes varroapulse{0%,100%{border-color:#B83A2A}50%{border-color:#ff6b6b;box-shadow:0 0 12px rgba(184,58,42,.5)}}</style>'+
+    '<div style="max-width:380px;margin:0 auto;padding:48px 24px;display:flex;flex-direction:column;align-items:center;position:relative">'+
+    '<div style="position:absolute;top:20%;left:50%;pointer-events:none"><div class="icr icr1"></div><div class="icr icr2"></div></div>'+
     '<div class="icc"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M7 15l6 6 10-12" stroke="#1C2321" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="30" stroke-dashoffset="30"/></svg></div>'+
     '<div class="f1" style="font-size:24px;font-weight:800;color:#F4F0E8;letter-spacing:-.8px;margin-top:20px;text-align:center;line-height:1.2">Inspection<br>saved</div>'+
     '<div class="f2" style="font-size:11px;color:#4A6A5A;margin-top:5px;text-align:center">'+record.dateStr+' · '+record.hiveName+'</div>'+
-    '<div class="f3" style="margin-top:16px;width:100%;background:#222E2A;border-radius:16px;padding:14px 16px;border-left:3px solid #D5A144">'+
-      '<div style="font-size:13px;font-weight:600;color:#E8E2D8;line-height:1.5">'+msg+'</div>'+
-      '<div style="font-size:11px;color:#5A7A6A;margin-top:4px;font-style:italic">Queen: '+record.queen+' · Brood: '+record.brood+'% · Honey: '+record.honey+'%</div>'+
-    '</div>'+
+    '<div class="f3" style="margin-top:16px;width:100%;background:#222E2A;border-radius:14px;padding:12px 14px;border-left:3px solid #D5A144"><div style="font-size:13px;font-weight:600;color:#E8E2D8;line-height:1.5">'+msg+'</div><div style="font-size:11px;color:#5A7A6A;margin-top:3px;font-style:italic">Queen: '+record.queen+' · Brood: '+record.brood+'% · Honey: '+record.honey+'%</div></div>'+
     '<div class="f4" style="margin-top:10px;width:100%;display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
-      '<div style="background:#222E2A;border-radius:12px;padding:10px;text-align:center"><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Brood</div><div style="font-size:18px;font-weight:800;color:#D5A144">'+record.brood+'%</div></div>'+
-      '<div style="background:#222E2A;border-radius:12px;padding:10px;text-align:center"><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Honey</div><div style="font-size:18px;font-weight:800;color:#D5A144">'+record.honey+'%</div></div>'+
-      '<div style="background:#222E2A;border-radius:12px;padding:10px;text-align:center"><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:3px">Score</div><div style="font-size:18px;font-weight:800;color:'+cColor+'">'+(record.score||'—')+'</div></div>'+
+      '<div style="background:#222E2A;border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;margin-bottom:2px">Brood</div><div style="font-size:18px;font-weight:800;color:#D5A144">'+record.brood+'%</div></div>'+
+      '<div style="background:#222E2A;border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;margin-bottom:2px">Honey</div><div style="font-size:18px;font-weight:800;color:#D5A144">'+record.honey+'%</div></div>'+
+      '<div style="background:#222E2A;border-radius:10px;padding:10px;text-align:center"><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;margin-bottom:2px">Score</div><div style="font-size:18px;font-weight:800;color:'+cColor+'">'+(record.score||'—')+'</div></div>'+
     '</div>'+
-    // Next Steps
-    '<div class="f5" style="width:100%;margin-top:16px">'+
-      '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Next Steps</div>'+
-      '<div style="background:#222E2A;border-radius:16px;padding:14px 16px">'+nextStepsHtml+'</div>'+
-    '</div>'+
-    '<div class="f6" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:7px 14px">'+
-      '<div style="font-size:11px;color:#4A6A5A;font-weight:500">Colony condition</div>'+
-      '<div style="font-size:12px;font-weight:700;color:'+cColor+'">'+cLabel+'</div>'+
-    '</div>'+
-    '<div class="f7" style="width:100%;margin-top:20px;display:flex;gap:8px">'+
-      '<button onclick="document.getElementById(\'inspCompleteOv\').remove();inspBack()" style="flex:1;padding:14px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button>'+
-    '</div>'+
+    '<div class="f5" style="width:100%;margin-top:14px"><div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">Next Steps</div><div style="background:#222E2A;border-radius:14px;padding:12px 14px">'+nextHtml+'</div></div>'+
+    '<div class="f6" style="margin-top:10px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:6px 14px"><div style="font-size:11px;color:#4A6A5A">Colony</div><div style="font-size:12px;font-weight:700;color:'+cColor+'">'+cLabel+'</div></div>'+
+    '<div class="f7" style="width:100%;margin-top:20px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();inspBack()" style="width:100%;padding:14px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
     '</div>';
   document.body.appendChild(ov);
-}
-
-
-/* ══════════════════════════════════════
-   INSPECT LEVEL 2 — Smart Management
-══════════════════════════════════════ */
-
-function openInspLevel2(){
-  var body=document.getElementById('inspBody'); if(!body) return;
-  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent='Management';
-  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
-
-  // Get current weather temp
-  var wEl=document.getElementById('weatherDescEl');
-  var wText=wEl?wEl.textContent:'';
-  var tempMatch=wText.match(/(\d+)°([FC])/);
-  var tempF=75;
-  if(tempMatch){
-    tempF=parseInt(tempMatch[1]);
-    if(tempMatch[2]==='C') tempF=Math.round(tempF*9/5+32);
-  }
-
-  // Season & false spring detection
-  var month=new Date().getMonth();
-  var isEarlySpring=(month>=1&&month<=3);
-  var isLateAutumn=(month>=9&&month<=10);
-  var falseSpringSuspect=isEarlySpring&&tempF>65;
-  var season=getSeason();
-
-  // Varroa level from level 1
-  var varroaPct=_IS.varroaPct||0;
-  var varroaType=_IS.varroa||'not-tested';
-  var pollenLow=(_IS.pollen||50)<30;
-
-  body.scrollTop=0;
-  body.innerHTML=
-    '<div style="padding:0 16px 100px">'+
-
-    // Back button
-    '<div onclick="renderInspPage()" style="display:inline-flex;align-items:center;gap:6px;color:#D5A144;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px">'+
-      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="#D5A144" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
-      'Back to inspection'+
-    '</div>'+
-
-    // ⑤ Hive Weight
-    _l2Section('⚖️ Hive Weight', _renderWeightModule(tempF))+
-
-    // ⑥ Treatment — smart drug recommendations
-    _l2Section('💊 Treatment', _renderTreatmentModule(tempF, varroaPct, varroaType))+
-
-    // ⑦ Pollen / Bee Bread
-    _l2Section('🌸 Pollen & Bee Bread', _renderPollenModule(pollenLow, tempF, season))+
-
-    // ⑧ Weather Intelligence
-    _l2Section('🌤 Weather Intelligence', _renderWeatherModule(tempF, isEarlySpring, isLateAutumn, falseSpringSuspect))+
-
-    '</div>';
-}
-
-function _l2Section(title, content){
-  return '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">'+title+'</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:20px">'+content+'</div>';
-}
-
-/* ── ⑤ Hive Weight Module ── */
-function _renderWeightModule(tempF){
-  var unit=isF?'lbs':'kg';
-  var emptyHiveWeight=isF?40:18; // typical empty hive weight
-  var netHoney=_IS.hiveWeight?((_IS.hiveWeight-emptyHiveWeight)):null;
-  var weightAlert='';
-  if(_IS.hiveWeight){
-    var lbs=isF?_IS.hiveWeight:_IS.hiveWeight*2.205;
-    if(lbs>130) weightAlert='<div style="margin-top:10px;background:#2A2416;border-radius:8px;padding:10px 12px;border-left:2px solid #D5A144;font-size:12px;color:#D5A144;line-height:1.5">⚠️ Total weight '+_IS.hiveWeight+' '+unit+'. When extracting next week, protect your back — consider using a super to distribute the load.</div>';
-  }
-  var crossCheck='';
-  if(netHoney!==null&&_IS.honey!==undefined){
-    var netPct=Math.min(100,Math.round((netHoney/(isF?90:41))*100));
-    var diff=Math.abs(netPct-_IS.honey);
-    if(diff>25) crossCheck='<div style="margin-top:8px;font-size:11px;color:#D5A144;background:#2A2416;border-radius:8px;padding:8px 10px">⚡ Weight data suggests '+netPct+'% stores vs your visual estimate of '+_IS.honey+'%. Consider re-evaluating frames.</div>';
-    else crossCheck='<div style="margin-top:8px;font-size:11px;color:#3A9A5C">✓ Weight confirms visual estimate (±'+diff+'%)</div>';
-  }
-  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:12px;line-height:1.5">Objective weight cross-validates your visual honey estimate.</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
-      '<div>'+
-        '<div style="font-size:10px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Total hive weight ('+unit+')</div>'+
-        '<input id="hiveWeightInput" type="number" placeholder="e.g. 120" value="'+(_IS.hiveWeight||'')+'"'+
-          ' oninput="_IS.hiveWeight=parseFloat(this.value)||null;updateWeightCalc()"'+
-          ' style="width:100%;padding:12px;border:1px solid #2E3A36;border-radius:10px;background:#1C2321;color:#E8E2D8;font-size:18px;font-weight:700;text-align:center;font-family:Inter,sans-serif;outline:none;box-sizing:border-box">'+
-      '</div>'+
-      '<div>'+
-        '<div style="font-size:10px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Net honey weight</div>'+
-        '<div id="netHoneyDisplay" style="padding:12px;border:1px solid #2E3A36;border-radius:10px;background:#1C2321;font-size:18px;font-weight:700;color:#D5A144;text-align:center">'+
-          (netHoney!==null?Math.max(0,netHoney.toFixed(1))+' '+unit:'—')+
-        '</div>'+
-      '</div>'+
-    '</div>'+
-    '<div style="background:#1C2321;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px dashed #2E3A36" onclick="connectBluetooth()">'+
-      '<div style="font-size:22px">📡</div>'+
-      '<div>'+
-        '<div style="font-size:13px;font-weight:600;color:#E8E2D8">Connect Bluetooth Scale</div>'+
-        '<div style="font-size:11px;color:#4A6A5A;margin-top:2px">Auto-capture weight via BLE</div>'+
-      '</div>'+
-      '<div style="margin-left:auto;font-size:11px;font-weight:600;color:#D5A144">Pair →</div>'+
-    '</div>'+
-    weightAlert+crossCheck;
-}
-
-function updateWeightCalc(){
-  var unit=isF?'lbs':'kg';
-  var emptyHive=isF?40:18;
-  var net=_IS.hiveWeight?Math.max(0,_IS.hiveWeight-emptyHive):null;
-  var el=document.getElementById('netHoneyDisplay');
-  if(el) el.textContent=net!==null?net.toFixed(1)+' '+unit:'—';
-}
-
-function connectBluetooth(){
-  if(navigator.bluetooth){
-    showToast('Searching for BLE scales…');
-    navigator.bluetooth.requestDevice({filters:[{services:['weight_scale']}]})
-      .then(function(device){ showToast('Connected: '+device.name+' ✓'); })
-      .catch(function(){ showToast('No BLE scale found nearby'); });
-  } else {
-    showToast('Bluetooth not available in this browser');
-  }
-}
-
-/* ── ⑥ Treatment Module ── */
-function _renderTreatmentModule(tempF, varroaPct, varroaType){
-  var treatments=[
-    {name:'Apiguard (Thymol)',minT:59,maxT:105,days:42,varroa:'low-mod',desc:'Effective for moderate mite loads. Place on top bars.',icon:'🌿'},
-    {name:'Formic Pro',minT:50,maxT:84,days:14,varroa:'mod-high',desc:'Fast-acting, can be used with honey supers.',icon:'⚗️'},
-    {name:'Apivar (Amitraz)',minT:32,maxT:105,days:42,varroa:'high',desc:'Effective year-round. Remove before honey flow.',icon:'💊'},
-    {name:'OA Vapor',minT:32,maxT:105,days:1,varroa:'all',desc:'Best for broodless period. 3 treatments, 5 days apart.',icon:'💨'},
-    {name:'OA Dribble',minT:32,maxT:105,days:1,varroa:'low',desc:'For small colonies or nucs. Do not use with brood.',icon:'💧'},
-    {name:'Mite-Away Quick Strips',minT:50,maxT:92,days:7,varroa:'high',desc:'High-efficacy formic acid. Keep entrance open.',icon:'📋'},
-  ];
-  var rec=varroaPct>=3?'high':varroaPct>=1?'mod-high':'low';
-  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:4px;line-height:1.5">'+
-    'Based on your varroa data'+(varroaPct?(' ('+varroaPct.toFixed(1)+'%)'):'')+' and today\'s temperature ('+tempF+'°F):'+
-  '</div>'+
-  '<div style="font-size:10px;font-weight:600;color:#D5A144;margin-bottom:10px">Today: '+tempF+'°F · Recommended treatments highlighted</div>'+
-  treatments.map(function(t){
-    var tooHot=tempF>t.maxT;
-    var tooCold=tempF<t.minT;
-    var tempOk=!tooHot&&!tooCold;
-    var varroaMatch=t.varroa==='all'||t.varroa.indexOf(rec)>=0||rec==='low'&&t.varroa==='low';
-    var best=tempOk&&varroaMatch;
-    var bg=tooHot||tooCold?'#1C2321':best?'#1E2E1A':'#1C2321';
-    var border=tooHot||tooCold?'#2E3A36':best?'#3A9A5C':'#2E3A36';
-    var nameColor=tooHot||tooCold?'#4A6A5A':best?'#3A9A5C':'#E8E2D8';
-    var warning=tooHot?'🔴 Too hot (max '+t.maxT+'°F) — risk of queen loss or absconding':
-                tooCold?'🔵 Too cold (min '+t.minT+'°F) — insufficient efficacy':'';
-    return '<div style="background:'+bg+';border:1.5px solid '+border+';border-radius:12px;padding:12px 14px;margin-bottom:8px;opacity:'+(tooHot||tooCold?'.55':'1')+'">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
-        '<span style="font-size:18px">'+t.icon+'</span>'+
-        '<div style="flex:1">'+
-          '<div style="font-size:13px;font-weight:700;color:'+nameColor+'">'+t.name+'</div>'+
-          '<div style="font-size:10px;color:#4A6A5A">'+t.days+' day treatment</div>'+
-        '</div>'+
-        (best?'<div style="font-size:10px;font-weight:700;color:#3A9A5C;background:rgba(58,154,92,.15);padding:3px 8px;border-radius:6px">✓ Recommended</div>':'')+
-      '</div>'+
-      '<div style="font-size:11px;color:#6E8A78;line-height:1.5">'+t.desc+'</div>'+
-      (warning?'<div style="font-size:11px;color:#B83A2A;margin-top:6px;font-style:italic">'+warning+'</div>':'')+
-    '</div>';
-  }).join('');
-}
-
-/* ── ⑦ Pollen Module ── */
-function _renderPollenModule(pollenLow, tempF, season){
-  var pollenVal=_IS.pollen||50;
-  var droughtSuspect=tempF>85&&(season==='summer'||season==='autumn');
-  var nutritionAlert=pollenLow&&droughtSuspect;
-  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:12px;line-height:1.5">Pollen availability affects brood development and winter preparation.</div>'+
-    '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>None</span><span id="l2pollenV" style="color:#D5A144;font-weight:700">'+pollenVal+'%</span><span>Abundant</span></div>'+
-    '<input type="range" min="0" max="100" value="'+pollenVal+'" oninput="updatePollen(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#D5A144;cursor:pointer">'+
-    '<div id="pollenCaption" style="margin-top:10px;font-size:12px;color:#6E8A78;font-style:italic">'+_pollenCap(pollenVal)+'</div>'+
-    (nutritionAlert?
-      '<div style="margin-top:12px;background:#2A1A1A;border-radius:10px;padding:12px 14px;border-left:2px solid #B83A2A">'+
-        '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:6px">🌵 Green Desert Alert</div>'+
-        '<div style="font-size:11px;color:#E8A898;line-height:1.5;margin-bottom:8px">High temp ('+tempF+'°F) combined with low pollen suggests local drought stress. Colony nutrition at risk.</div>'+
-        '<div style="background:#222E2A;border-radius:8px;padding:10px 12px;border:1px solid #D5A144">'+
-          '<div style="font-size:11px;font-weight:700;color:#D5A144;margin-bottom:4px">💡 Nutrition Prescription</div>'+
-          '<div style="font-size:11px;color:#E8E2D8;line-height:1.6">'+
-            '• Add <strong>Pollen Patty</strong> (1.5 lb patty directly on frames)<br>'+
-            '• Feed 1:1 sugar syrup to stimulate foraging<br>'+
-            '• Consider planting borage or phacelia nearby'+
-          '</div>'+
-        '</div>'+
-      '</div>'
-    :pollenVal<30?
-      '<div style="margin-top:10px;background:#2A2416;border-radius:8px;padding:10px 12px;border-left:2px solid #D5A144;font-size:12px;color:#D5A144;line-height:1.5">'+
-        '⚠️ Low pollen detected. Add Pollen Patty and consider supplemental feeding.'+
-      '</div>':
-      '<div style="margin-top:8px;font-size:11px;color:#3A9A5C">✓ Pollen levels adequate</div>')+
-    '<div style="margin-top:12px;font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Feeding Actions</div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:6px" id="feedingActions">'+
-      ['Sugar syrup 1:1','Sugar syrup 2:1','Pollen Patty','Fondant','Dry sugar'].map(function(f){
-        var hl=pollenLow&&f==='Pollen Patty';
-        return '<div onclick="toggleFeedingAction(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(hl?'#D5A144':'#2E3A36')+';background:'+(hl?'#2A2416':'#1C2321')+';font-size:12px;font-weight:500;color:'+(hl?'#D5A144':'#6E8A78')+';cursor:pointer;transition:.15s">'+f+'</div>';
-      }).join('')+
-    '</div>';
-}
-
-function updatePollen(v){
-  _IS.pollen=parseInt(v);
-  var el=document.getElementById('l2pollenV'); if(el) el.textContent=v+'%';
-  var cap=document.getElementById('pollenCaption'); if(cap) cap.textContent=_pollenCap(v);
-}
-function _pollenCap(v){
-  v=parseInt(v);
-  if(v<20) return 'Critically low — supplement immediately';
-  if(v<40) return 'Low — consider pollen patty';
-  if(v<60) return 'Moderate — monitor weekly';
-  if(v<80) return 'Good — natural foraging sufficient';
-  return 'Abundant — colony well-nourished 🌸';
-}
-function toggleFeedingAction(el){
-  var on=el.dataset.on==='1'; el.dataset.on=on?'':'1';
-  el.style.borderColor=on?'#2E3A36':'#D5A144';
-  el.style.color=on?'#6E8A78':'#D5A144';
-  el.style.background=on?'#1C2321':'#2A2416';
-}
-
-/* ── ⑧ Weather Intelligence Module ── */
-function _renderWeatherModule(tempF, isEarlySpring, isLateAutumn, falseSpringSuspect){
-  var wEl=document.getElementById('weatherDescEl');
-  var wText=wEl?wEl.textContent:'Overcast';
-  // Simulated 7-day trend (in real app would come from weather API)
-  var trend=[tempF-8,tempF-5,tempF-2,tempF+1,tempF+3,tempF+1,tempF];
-  var trendBars=trend.map(function(t,i){
-    var h=Math.round((t/120)*60);
-    var c=t>85?'#B83A2A':t>65?'#D5A144':'#6EB5FF';
-    var days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
-    return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">'+
-      '<div style="font-size:10px;font-weight:600;color:'+(i===6?'#D5A144':'#4A6A5A')+'">'+t+'°</div>'+
-      '<div style="height:'+h+'px;width:8px;background:'+c+';border-radius:4px;min-height:4px"></div>'+
-      '<div style="font-size:9px;color:#4A6A5A">'+days[i]+'</div>'+
-    '</div>';
-  }).join('');
-
-  var falseSpringAlert=falseSpringSuspect?
-    '<div style="background:#2A2014;border-radius:10px;padding:12px 14px;border:1px solid #D5A144;margin-bottom:12px">'+
-      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
-        '<span style="font-size:20px">⚠️</span>'+
-        '<div style="font-size:13px;font-weight:700;color:#D5A144">False Spring Alert</div>'+
-      '</div>'+
-      '<div style="font-size:12px;color:#E8D8A8;line-height:1.6">Unseasonably warm in early spring detected. Risk of sudden cold snap after colony expands. When managing supers & drawn comb, keep cluster size conservative — avoid oversized broodnest that bees cannot heat.</div>'+
-    '</div>':'';
-
-  var heatAlert=tempF>90?
-    '<div style="background:#2A1A1A;border-radius:10px;padding:12px 14px;border:1px solid #B83A2A;margin-bottom:12px">'+
-      '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:4px">🌡 Extreme Heat ('+tempF+'°F)</div>'+
-      '<div style="font-size:11px;color:#E8A898;line-height:1.5">Ensure adequate ventilation and water supply. Avoid inspections during peak heat (11am–3pm). Some treatments are contraindicated — see Treatment tab.</div>'+
-    '</div>':'';
-
-  var coldAlert=tempF<45?
-    '<div style="background:#1A1A2A;border-radius:10px;padding:12px 14px;border:1px solid #6EB5FF;margin-bottom:12px">'+
-      '<div style="font-size:12px;font-weight:700;color:#6EB5FF;margin-bottom:4px">❄️ Cold Weather ('+tempF+'°F)</div>'+
-      '<div style="font-size:11px;color:#A8C8E8;line-height:1.5">Minimize hive opening time. Keep inspection under 5 minutes. Cluster may have broken — check for winter stores access rather than brood.</div>'+
-    '</div>':'';
-
-  return falseSpringAlert+heatAlert+coldAlert+
-    '<div style="margin-bottom:10px">'+
-      '<div style="font-size:10px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Today vs 7-day trend</div>'+
-      '<div style="background:#1C2321;border-radius:10px;padding:12px">'+
-        '<div style="display:flex;align-items:flex-end;gap:4px;height:80px">'+trendBars+'</div>'+
-      '</div>'+
-    '</div>'+
-    '<div style="background:#1C2321;border-radius:10px;padding:12px 14px">'+
-      '<div style="display:flex;align-items:center;gap:10px">'+
-        '<span style="font-size:24px">'+(tempF>85?'☀️':tempF>65?'⛅':'🌨')+'</span>'+
-        '<div>'+
-          '<div style="font-size:14px;font-weight:700;color:#E8E2D8">'+wText+'</div>'+
-          '<div style="font-size:11px;color:#4A6A5A;margin-top:2px">'+
-            (isEarlySpring?'Early spring · watch for false spring':isLateAutumn?'Late autumn · winter prep mode':'Current conditions')+
-          '</div>'+
-        '</div>'+
-        (falseSpringSuspect?'<div style="margin-left:auto;font-size:20px" title="False spring risk">⚠️</div>':'')+
-      '</div>'+
-    '</div>';
 }
 
 

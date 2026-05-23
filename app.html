@@ -3705,6 +3705,182 @@ function showInspectComplete(record){
 }
 
 
+/* ══ INSPECT LEVEL 2 ══ */
+function openInspLevel2(){
+  var body=document.getElementById('inspBody'); if(!body) return;
+  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent='Management';
+  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
+
+  var wEl=document.getElementById('weatherDescEl');
+  var wText=wEl?wEl.textContent:'';
+  var tMatch=wText.match(/(\d+)°([FC])/);
+  var tempF=75;
+  if(tMatch){ tempF=parseInt(tMatch[1]); if(tMatch[2]==='C') tempF=Math.round(tempF*9/5+32); }
+
+  var month=new Date().getMonth();
+  var isEarlySpring=(month>=1&&month<=3);
+  var isLateAutumn=(month>=9&&month<=10);
+  var falseSpringSuspect=isEarlySpring&&tempF>65;
+  var season=getSeason();
+  var pollenLow=(_IS.pollen||50)<30;
+  var varroaPct=_IS.varroaPct||0;
+
+  var body2=document.getElementById('inspBody'); if(!body2) return;
+  body2.scrollTop=0;
+  body2.innerHTML=
+    '<div style="padding:0 16px 100px">'+
+    '<div onclick="renderInspPage()" style="display:inline-flex;align-items:center;gap:6px;color:#D5A144;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px">'+
+      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="#D5A144" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>Back to inspection'+
+    '</div>'+
+    _l2S('⚖️ Hive Weight', _weightMod())+
+    _l2S('💊 Treatment', _treatMod(tempF, varroaPct))+
+    _l2S('🌸 Pollen & Bee Bread', _pollenMod(pollenLow, tempF, season))+
+    _l2S('🌤 Weather Intelligence', _weatherMod(tempF, isEarlySpring, isLateAutumn, falseSpringSuspect, wText))+
+    '</div>';
+}
+
+function _l2S(title,content){
+  return '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:8px">'+title+'</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:20px">'+content+'</div>';
+}
+
+function _weightMod(){
+  var unit=isF?'lbs':'kg'; var empty=isF?40:18;
+  var net=_IS.hiveWeight?Math.max(0,_IS.hiveWeight-empty):null;
+  var lbs=_IS.hiveWeight?(isF?_IS.hiveWeight:_IS.hiveWeight*2.205):0;
+  var warn=lbs>130?'<div style="margin-top:10px;background:#2A2416;border-radius:8px;padding:10px 12px;border-left:2px solid #D5A144;font-size:12px;color:#D5A144;line-height:1.5">⚠️ Total weight '+_IS.hiveWeight+' '+unit+' — protect your back when extracting. Consider splitting the load with an extra super.</div>':'';
+  var cross='';
+  if(net!==null&&_IS.honey!==undefined){
+    var netPct=Math.min(100,Math.round((net/(isF?90:41))*100));
+    var diff=Math.abs(netPct-_IS.honey);
+    cross=diff>25?'<div style="margin-top:8px;font-size:11px;color:#D5A144;background:#2A2416;border-radius:8px;padding:8px 10px">⚡ Weight data suggests '+netPct+'% vs your visual estimate of '+_IS.honey+'%. Consider re-evaluating.</div>':'<div style="margin-top:6px;font-size:11px;color:#3A9A5C">✓ Weight confirms visual estimate (±'+diff+'%)</div>';
+  }
+  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:12px">Objective weight cross-validates your visual honey estimate.</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
+      '<div><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Total weight ('+unit+')</div>'+
+        '<input id="hiveWeightInput" type="number" placeholder="e.g. 120" value="'+(_IS.hiveWeight||'')+'" oninput="_IS.hiveWeight=parseFloat(this.value)||null;updateWeightCalc()" style="width:100%;padding:12px;border:1px solid #2E3A36;border-radius:10px;background:#1C2321;color:#E8E2D8;font-size:18px;font-weight:700;text-align:center;font-family:Inter,sans-serif;outline:none;box-sizing:border-box"></div>'+
+      '<div><div style="font-size:9px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:5px">Net honey</div>'+
+        '<div id="netHoneyDisplay" style="padding:12px;border:1px solid #2E3A36;border-radius:10px;background:#1C2321;font-size:18px;font-weight:700;color:#D5A144;text-align:center">'+(net!==null?net.toFixed(1)+' '+unit:'—')+'</div></div>'+
+    '</div>'+
+    '<div style="background:#1C2321;border-radius:10px;padding:12px 14px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px dashed #2E3A36" onclick="connectBluetooth()">'+
+      '<span style="font-size:20px">📡</span><div style="flex:1"><div style="font-size:13px;font-weight:600;color:#E8E2D8">Connect Bluetooth Scale</div><div style="font-size:11px;color:#4A6A5A;margin-top:1px">Auto-capture weight via BLE</div></div>'+
+      '<span style="font-size:11px;font-weight:600;color:#D5A144">Pair →</span>'+
+    '</div>'+warn+cross;
+}
+function updateWeightCalc(){
+  var unit=isF?'lbs':'kg'; var empty=isF?40:18;
+  var net=_IS.hiveWeight?Math.max(0,_IS.hiveWeight-empty):null;
+  var el=document.getElementById('netHoneyDisplay'); if(el) el.textContent=net!==null?net.toFixed(1)+' '+unit:'—';
+}
+function connectBluetooth(){
+  if(navigator.bluetooth){
+    showToast('Searching for BLE scales…');
+    navigator.bluetooth.requestDevice({filters:[{services:['weight_scale']}]}).then(function(d){ showToast('Connected: '+d.name+' ✓'); }).catch(function(){ showToast('No BLE scale found nearby'); });
+  } else { showToast('Bluetooth not supported in this browser'); }
+}
+
+function _treatMod(tempF, varroaPct){
+  var rec=varroaPct>=3?'high':varroaPct>=1?'moderate':'low';
+  var treatments=[
+    {name:'Apiguard (Thymol)', icon:'🌿', minT:59, maxT:105, days:42, level:'low-moderate', desc:'Effective for moderate mite loads. Place on top bars.'},
+    {name:'Formic Pro',        icon:'⚗️', minT:50, maxT:84,  days:14, level:'moderate-high',desc:'Fast-acting, usable with honey supers.'},
+    {name:'Apivar (Amitraz)',  icon:'💊', minT:32, maxT:105, days:42, level:'high',          desc:'Year-round. Remove before honey flow.'},
+    {name:'OA Vapor',         icon:'💨', minT:32, maxT:105, days:1,  level:'all',            desc:'Best for broodless period. 3 treatments, 5 days apart.'},
+    {name:'Mite-Away (MAQS)', icon:'📋', minT:50, maxT:92,  days:7,  level:'high',           desc:'High-efficacy formic. Keep entrance fully open.'},
+  ];
+  var html='<div style="font-size:11px;color:#6E8A78;margin-bottom:10px">Based on varroa data'+(varroaPct?' ('+varroaPct.toFixed(1)+'%)':'')+' · Today: '+tempF+'°F</div>';
+  html+=treatments.map(function(t){
+    var tooHot=tempF>t.maxT, tooCold=tempF<t.minT, ok=!tooHot&&!tooCold;
+    var match=t.level==='all'||t.level.indexOf(rec)>=0;
+    var best=ok&&match;
+    return '<div style="background:'+(ok?best?'#1E2E1A':'#1C2321':'#1C2321')+';border:1.5px solid '+(best?'#3A9A5C':'#2E3A36')+';border-radius:12px;padding:12px 14px;margin-bottom:8px;opacity:'+(ok?1:.5)+'">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+        '<span style="font-size:16px">'+t.icon+'</span>'+
+        '<div style="flex:1"><div style="font-size:13px;font-weight:700;color:'+(ok?best?'#3A9A5C':'#E8E2D8':'#4A6A5A')+'">'+t.name+'</div><div style="font-size:10px;color:#4A6A5A">'+t.days+' day treatment</div></div>'+
+        (best?'<div style="font-size:10px;font-weight:700;color:#3A9A5C;background:rgba(58,154,92,.15);padding:3px 8px;border-radius:6px">✓ Best fit</div>':'')+
+      '</div>'+
+      '<div style="font-size:11px;color:#6E8A78">'+t.desc+'</div>'+
+      (tooHot?'<div style="font-size:11px;color:#B83A2A;margin-top:5px">🔴 Too hot (max '+t.maxT+'°F) — risk of queen loss</div>':'')+
+      (tooCold?'<div style="font-size:11px;color:#6EB5FF;margin-top:5px">🔵 Too cold (min '+t.minT+'°F) — low efficacy</div>':'')+
+    '</div>';
+  }).join('');
+  return html;
+}
+
+function _pollenMod(pollenLow, tempF, season){
+  var v=_IS.pollen||50;
+  var drought=tempF>85&&(season==='summer'||season==='autumn');
+  var alert=pollenLow&&drought;
+  return '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>None</span><span id="l2pv" style="color:#D5A144;font-weight:700">'+v+'%</span><span>Abundant</span></div>'+
+    '<input type="range" min="0" max="100" value="'+v+'" oninput="updateL2Pollen(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#D5A144;cursor:pointer">'+
+    '<div id="l2pollenCap" style="margin-top:8px;font-size:11px;color:#6E8A78;font-style:italic">'+_pollenCap(v)+'</div>'+
+    (alert?'<div style="margin-top:10px;background:#2A1A1A;border-radius:10px;padding:12px 14px;border-left:2px solid #B83A2A">'+
+      '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:5px">🌵 Green Desert Alert</div>'+
+      '<div style="font-size:11px;color:#E8A898;line-height:1.5;margin-bottom:8px">High temp ('+tempF+'°F) + low pollen = drought stress. Colony nutrition at risk.</div>'+
+      '<div style="background:#222E2A;border-radius:8px;padding:10px 12px;border:1px solid #D5A144;font-size:11px;color:#E8E2D8;line-height:1.6">'+
+        '• Add <b>Pollen Patty</b> (1.5 lb on frames)<br>• Feed 1:1 sugar syrup<br>• Consider planting borage or phacelia'+
+      '</div></div>':
+    v<30?'<div style="margin-top:8px;background:#2A2416;border-radius:8px;padding:8px 12px;border-left:2px solid #D5A144;font-size:11px;color:#D5A144">⚠️ Low pollen. Add Pollen Patty and supplement feeding.</div>':
+    '<div style="margin-top:6px;font-size:11px;color:#3A9A5C">✓ Pollen adequate</div>')+
+    '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-top:12px;margin-bottom:8px">Feeding Actions</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      ['Sugar syrup 1:1','Sugar syrup 2:1','Pollen Patty','Fondant','Dry sugar'].map(function(f){
+        var hl=pollenLow&&f==='Pollen Patty';
+        return '<div onclick="this.dataset.on=this.dataset.on===\'1\'?\'\':\'1\';this.style.borderColor=this.dataset.on===\'1\'?\'#D5A144\':\'#2E3A36\';this.style.color=this.dataset.on===\'1\'?\'#D5A144\':\'#6E8A78\';this.style.background=this.dataset.on===\'1\'?\'#2A2416\':\'#1C2321\'" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(hl?'#D5A144':'#2E3A36')+';background:'+(hl?'#2A2416':'#1C2321')+';font-size:12px;font-weight:500;color:'+(hl?'#D5A144':'#6E8A78')+';cursor:pointer;transition:.15s">'+f+'</div>';
+      }).join('')+
+    '</div>';
+}
+function updateL2Pollen(v){
+  _IS.pollen=parseInt(v);
+  var el=document.getElementById('l2pv'); if(el) el.textContent=v+'%';
+  var cap=document.getElementById('l2pollenCap'); if(cap) cap.textContent=_pollenCap(v);
+}
+function _pollenCap(v){
+  v=parseInt(v);
+  if(v<20) return 'Critically low — supplement immediately';
+  if(v<40) return 'Low — consider pollen patty';
+  if(v<60) return 'Moderate — monitor weekly';
+  if(v<80) return 'Good — natural foraging sufficient';
+  return 'Abundant — colony well-nourished 🌸';
+}
+
+function _weatherMod(tempF, isEarlySpring, isLateAutumn, falseSpringSuspect, wText){
+  var trend=[tempF-8,tempF-5,tempF-2,tempF+1,tempF+3,tempF+1,tempF];
+  var days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+  var maxT=Math.max.apply(null,trend);
+  var bars=trend.map(function(t,i){
+    var h=Math.round((t/maxT)*60); var c=t>85?'#B83A2A':t>65?'#D5A144':'#6EB5FF';
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:3px;flex:1">'+
+      '<div style="font-size:10px;font-weight:600;color:'+(i===6?'#D5A144':'#4A6A5A')+'">'+t+'°</div>'+
+      '<div style="height:'+h+'px;min-height:4px;width:8px;background:'+c+';border-radius:4px"></div>'+
+      '<div style="font-size:9px;color:#4A6A5A">'+days[i]+'</div>'+
+    '</div>';
+  }).join('');
+  return (falseSpringSuspect?'<div style="background:#2A2014;border-radius:10px;padding:12px;border:1px solid #D5A144;margin-bottom:12px">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:5px"><span style="font-size:18px">⚠️</span><div style="font-size:13px;font-weight:700;color:#D5A144">False Spring Alert</div></div>'+
+      '<div style="font-size:11px;color:#E8D8A8;line-height:1.5">Unseasonably warm in early spring. Risk of sudden cold snap. Keep cluster size conservative — avoid oversized broodnest bees cannot heat.</div>'+
+    '</div>':'')+
+  (tempF>90?'<div style="background:#2A1A1A;border-radius:10px;padding:12px;border:1px solid #B83A2A;margin-bottom:12px">'+
+    '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:3px">🌡 Extreme Heat ('+tempF+'°F)</div>'+
+    '<div style="font-size:11px;color:#E8A898;line-height:1.5">Ensure water and ventilation. Avoid 11am–3pm inspections. Some treatments contraindicated — see Treatment tab.</div>'+
+    '</div>':'')+
+  (tempF<45?'<div style="background:#1A1A2A;border-radius:10px;padding:12px;border:1px solid #6EB5FF;margin-bottom:12px">'+
+    '<div style="font-size:12px;font-weight:700;color:#6EB5FF;margin-bottom:3px">❄️ Cold ('+tempF+'°F)</div>'+
+    '<div style="font-size:11px;color:#A8C8E8;line-height:1.5">Minimize hive open time. Keep inspection under 5 min. Check stores access rather than brood.</div>'+
+    '</div>':'')+
+  '<div style="font-size:10px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">7-day temperature trend</div>'+
+  '<div style="background:#1C2321;border-radius:10px;padding:12px">'+
+    '<div style="display:flex;align-items:flex-end;gap:4px;height:80px">'+bars+'</div>'+
+  '</div>'+
+  '<div style="background:#1C2321;border-radius:10px;padding:12px 14px;margin-top:8px;display:flex;align-items:center;gap:10px">'+
+    '<span style="font-size:22px">'+(tempF>85?'☀️':tempF>65?'⛅':tempF>45?'🌥':'❄️')+'</span>'+
+    '<div><div style="font-size:13px;font-weight:700;color:#E8E2D8">'+wText+'</div>'+
+    '<div style="font-size:11px;color:#4A6A5A;margin-top:1px">'+(isEarlySpring?'Early spring · watch for false spring':isLateAutumn?'Late autumn · winter prep mode':'Current conditions')+'</div></div>'+
+    (falseSpringSuspect?'<span style="margin-left:auto;font-size:20px">⚠️</span>':'')+
+  '</div>';
+}
+
+
 function exportData(fmt){
   var data = { apiaries: APIARIES, exportDate: new Date().toISOString() };
   var str, mime, ext;

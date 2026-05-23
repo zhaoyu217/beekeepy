@@ -3224,31 +3224,27 @@ function inspBack(){
 
 function openInspectPage(){
   _IS = { brood:6, honey:5, temp:70, hiveIdx:0 };
-  setTimeout(function(){
-    renderInspForm();
-  }, 0);
+  setTimeout(renderInspForm, 0);
 }
 
-/* ── Build hive list from all apiaries ── */
 function getAllHives(){
   var all=[];
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){ all.push({h:h,a:a}); }); });
   return all;
 }
 
-/* ── Main render ── */
 var _QUEEN_OPTS=[
-  {val:'Spotted',   sub:'Saw her on the comb',        emoji:'👑'},
-  {val:'Not seen',  sub:'Signs still present',         emoji:'🔍'},
-  {val:'Eggs only', sub:'Fresh eggs confirm presence', emoji:'🥚'},
-  {val:'Queenless', sub:'No signs at all',             emoji:'⚠️'},
+  {val:'Spotted',   sub:'在梳上看到她了',        emoji:'👑'},
+  {val:'Not seen',  sub:'迹象依然存在',           emoji:'🔍'},
+  {val:'Eggs only', sub:'新鲜卵证实了这一点',     emoji:'🥚'},
+  {val:'Queenless', sub:'完全没有迹象',           emoji:'⚠️'},
 ];
 var _QUOTES={
-  default:  '"Your girls had a full week — let\'s see what they\'ve been up to."',
-  Spotted:  '"She\'s here and looking strong. The colony is in good hands."',
-  'Not seen':'"No queen spotted today. Check for eggs — she may just be hiding."',
-  'Eggs only':'"Fresh eggs confirm her presence. She\'s doing her job."',
-  Queenless: '"No signs of the queen. Act fast — the colony needs her."',
+  default:  '"你的女儿们度过了充实的一周——让我们看看她们都做了些什么。"',
+  Spotted:  '"她在这里，看起来很强壮。蜂群在好手中。"',
+  'Not seen':'"今天没有看到蜂王。检查卵——她可能只是在躲藏。"',
+  'Eggs only':'"新鲜的卵证实了她的存在。她在尽职尽责。"',
+  Queenless: '"没有蜂王的迹象。快点行动——蜂群需要她。"',
 };
 
 function renderInspForm(){
@@ -3260,43 +3256,34 @@ function renderInspForm(){
       '<div style="font-size:40px;margin-bottom:16px">🐝</div>'+
       '<div style="font-weight:600;color:#8AA898;margin-bottom:8px">No hives yet</div>'+
       '<div style="font-size:12px;line-height:1.6">Add a hive from the home screen first.</div></div>';
-    var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent='Inspect';
-    var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
     return;
   }
 
   if(_IS.hiveIdx>=all.length) _IS.hiveIdx=0;
   var cur=all[_IS.hiveIdx];
-  _IS.hiveId=cur.h.id; _IS.hiveName=cur.h.name+(cur.h.breed&&cur.h.breed!=='Unknown'?' · '+cur.h.breed:'');
+  _IS.hiveId=cur.h.id;
+  _IS.hiveName=cur.h.name+(cur.h.breed&&cur.h.breed!=='Unknown'?' · '+cur.h.breed:'');
 
-  // Update header
   var ttl=document.getElementById('inspTitle'); if(ttl){ ttl.textContent='Inspect'; ttl.style.color='#F4F0E8'; }
   var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='block';
   var dl=document.getElementById('inspDateLbl'); if(dl) dl.style.display='none';
 
-  // Hive switcher (top right, replaces date)
-  var hd=document.getElementById('inspHd');
-  var hiveSwitcher='';
-  if(all.length>1){
-    hiveSwitcher='<div onclick="nextHive()" style="font-size:12px;font-weight:600;color:#D5A144;cursor:pointer;margin-left:auto;padding:4px 8px;background:rgba(213,161,68,.15);border-radius:8px">'+
-      _IS.hiveName+' ↓</div>';
-  } else {
-    hiveSwitcher='<div style="font-size:12px;color:#4A6A5A;margin-left:auto">'+_IS.hiveName+'</div>';
-  }
-  // Inject hive label next to Save
+  // Hive name label
   var hiveLabel=document.getElementById('inspHiveLabel');
   if(!hiveLabel){
     hiveLabel=document.createElement('div');
     hiveLabel.id='inspHiveLabel';
-    hd && hd.insertBefore(hiveLabel, document.getElementById('inspSaveBtn'));
+    hiveLabel.style.cssText='font-size:12px;color:#4A6A5A;margin-left:auto;margin-right:8px;cursor:pointer';
+    var hd=document.getElementById('inspHd');
+    var svBtn=document.getElementById('inspSaveBtn');
+    if(hd&&svBtn) hd.insertBefore(hiveLabel, svBtn);
   }
-  hiveLabel.innerHTML='<div style="font-size:11px;color:#4A6A5A;margin-right:6px">'+_IS.hiveName+'</div>';
+  hiveLabel.textContent=_IS.hiveName;
+  if(all.length>1) hiveLabel.onclick=nextHive; else hiveLabel.onclick=null;
 
-  var queenActive=_IS.queen||null;
   var brood=_IS.brood||6;
-  var honey=_IS.honey||5;
-
   body.scrollTop=0;
+
   body.innerHTML=
     '<div style="padding:0 16px 100px">'+
 
@@ -3310,15 +3297,15 @@ function renderInspForm(){
 
     // Quote
     '<div style="background:#222E2A;border-radius:14px;padding:14px 16px;border-left:3px solid #D5A144;margin-bottom:20px">'+
-      '<p id="inspQuoteText" style="font-size:13px;font-style:italic;color:#C8BFA8;line-height:1.6;margin:0">'+(_QUOTES[queenActive]||_QUOTES['default'])+'</p>'+
+      '<p id="inspQuoteText" style="font-size:13px;font-style:italic;color:#C8BFA8;line-height:1.6;margin:0">'+(_QUOTES[_IS.queen]||_QUOTES['default'])+'</p>'+
     '</div>'+
 
     // Queen Status
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Queen Status</div>'+
-    '<div id="queenCards">'+_queenCards(queenActive)+'</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">女王地位</div>'+
+    '<div id="queenCards">'+_queenCards(_IS.queen||null)+'</div>'+
 
     // Brood Frames
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Brood Frames</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">育雏框</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
         '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ibroodCap">'+_broodCap(brood)+'</div>'+
@@ -3334,12 +3321,36 @@ function renderInspForm(){
       '</div>'+
     '</div>'+
 
-    // Honey Stores
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Honey Stores</div>'+
+    // Next step button
+    '<button onclick="renderInspStep2()" style="width:100%;padding:15px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:20px">继续 →</button>'+
+    '<button onclick="finishInspection(&quot;draft&quot;)" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">保存草稿</button>'+
+
+    '</div>';
+}
+
+/* ── Step 2: Secondary checks ── */
+function renderInspStep2(){
+  var body=document.getElementById('inspBody'); if(!body) return;
+  var honey=_IS.honey||5;
+  body.scrollTop=0;
+
+  // Update step dots
+  body.innerHTML=
+    '<div style="padding:0 16px 100px">'+
+
+    '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px">'+
+      '<div style="height:4px;border-radius:2px;background:#D5A144;width:8px"></div>'+
+      '<div style="height:4px;border-radius:2px;background:#D5A144;width:20px"></div>'+
+      '<div style="height:4px;border-radius:2px;background:#2E3A36;width:8px"></div>'+
+      '<div style="height:4px;border-radius:2px;background:#2E3A36;width:8px"></div>'+
+    '</div>'+
+
+    // Honey
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">蜜储</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
       '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
         '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ihoneyCap">'+_honeyCap(honey)+'</div>'+
-        '<div style="font-size:22px;font-weight:800;color:#D5A144;letter-spacing:-.5px"><span id="ihoneyv">'+honey+'</span><span style="font-size:13px;color:#4A6A5A;font-weight:500"> /10</span></div>'+
+        '<div style="font-size:22px;font-weight:800;color:#D5A144"><span id="ihoneyv">'+honey+'</span><span style="font-size:13px;color:#4A6A5A;font-weight:500"> /10</span></div>'+
       '</div>'+
       '<div style="background:#1C2321;border-radius:20px;height:8px;overflow:hidden">'+
         '<div id="ihoneyBar" style="height:100%;background:#D5A144;border-radius:20px;width:'+(honey*10)+'%;transition:.25s"></div>'+
@@ -3352,47 +3363,52 @@ function renderInspForm(){
     '</div>'+
 
     // Varroa
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Varroa Mite Load</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">螨虫负荷</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
       _selBlock('varroa','Low &lt;1%','🟢')+_selBlock('varroa','Moderate 1-2%','🟡')+
       _selBlock('varroa','High 2-4%','🟠')+_selBlock('varroa','Critical &gt;4%','🔴')+
     '</div>'+
 
     // Temperament
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Temperament</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">性情</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>攻击性</span><span id="itempv" style="color:#D5A144;font-weight:700">温顺</span><span>温驯</span></div>'+
       '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:8px;border-radius:4px;accent-color:#3A9A5C;cursor:pointer">'+
     '</div>'+
 
     // Overall
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Overall Impression</div>'+
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">总体印象</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
       _selBlock('overall','Thriving','🌟')+_selBlock('overall','Stable','✅')+_selBlock('overall','Needs care','🚨')+
     '</div>'+
 
-    // More checks
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:20px">'+
-      '<div onclick="toggleInspMore()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
-        '<span style="font-size:13px;font-weight:600;color:#8AA898">More checks</span>'+
-        '<span id="inspMoreArrow" style="color:#4A6A5A;font-size:18px">›</span>'+
-      '</div>'+
-      '<div id="inspMore" style="display:none;margin-top:14px">'+
-        _moreSection('🌸 Pollen stores',['Low','Moderate','Abundant'],'pollen')+
-        _moreSection('👑 Queen cells',['None','Swarm','Supersedure','Emergency'],'qcell')+
-        _moreSection('🛠 Actions taken',['Fed','Treatment','Added super','Split','Requeened'],'mgmt')+
-      '</div>'+
+    // Pollen
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">🌸 花粉储量</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      _pillRow('pollen',['Low','Moderate','Abundant'])+
+    '</div>'+
+
+    // Queen cells
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">👑 王台</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      _pillRow('qcell',['None','Swarm','Supersedure','Emergency'])+
+    '</div>'+
+
+    // Actions
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">🛠 操作记录</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
+      _pillRow('mgmt',['Fed','Treatment','Added super','Split','Requeened'])+
     '</div>'+
 
     // Notes
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:10px">'+
-      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📝 Notes</div>'+
-      '<textarea id="inspNotes" oninput="_IS.notes=this.value" placeholder="Any observations…" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box"></textarea>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:20px">'+
+      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📝 备注</div>'+
+      '<textarea id="inspNotes" oninput="_IS.notes=this.value" placeholder="任何观察…" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box">'+((_IS.notes)||'')+'</textarea>'+
     '</div>'+
 
-    // Save button
-    '<button onclick="finishInspection(&quot;complete&quot;)" style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">Save inspection ✓</button>'+
-    '<button onclick="finishInspection(&quot;draft&quot;)" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">Save as draft</button>'+
+    // Buttons
+    '<button onclick="finishInspection(&quot;complete&quot;)" style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">保存检查 ✓</button>'+
+    '<button onclick="renderInspForm()" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">← 返回</button>'+
 
     '</div>';
 }
@@ -3412,35 +3428,30 @@ function _queenCards(active){
 }
 function _dots(prefix,active,max){
   var s='';
-  for(var i=1;i<=max;i++) s+='<div id="'+prefix+'_'+i+'" style="width:7px;height:7px;border-radius:50%;background:'+(i<=active?'#D5A144':'#2E3A36')+';cursor:pointer;transition:.2s" onclick="'+prefix==='ibdot'?'setBrood':'setHoney'+'('+i+')"></div>';
+  for(var i=1;i<=max;i++) s+='<div id="'+prefix+'_'+i+'" onclick="'+(prefix==='ibdot'?'setBrood':'setHoney')+'('+i+')" style="width:7px;height:7px;border-radius:50%;background:'+(i<=active?'#D5A144':'#2E3A36')+';cursor:pointer;transition:.2s"></div>';
   return s;
 }
 function _selBlock(group,val,emoji){
-  return '<div data-group="'+group+'" data-val="'+val+'" onclick="pickBlock(this)" style="background:#222E2A;border:2px solid #2E3A36;border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;transition:.15s">'+
+  var active=_IS[group]===val;
+  return '<div data-group="'+group+'" data-val="'+val+'" onclick="pickBlock(this)" style="background:#222E2A;border:2px solid '+(active?'#D5A144':'#2E3A36')+';border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;transition:.15s">'+
     '<div style="font-size:24px;margin-bottom:6px">'+emoji+'</div>'+
-    '<div style="font-size:11px;font-weight:600;color:#8AA898">'+val+'</div></div>';
+    '<div style="font-size:11px;font-weight:600;color:'+(active?'#D5A144':'#8AA898')+'">'+val+'</div></div>';
 }
-function _moreSection(label,opts,group){
-  return '<div style="margin-bottom:14px">'+
-    '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">'+label+'</div>'+
-    '<div style="display:flex;flex-wrap:wrap;gap:6px">'+
-    opts.map(function(o){
-      return '<div data-group="'+group+'" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer;transition:.15s">'+o+'</div>';
-    }).join('')+
-    '</div></div>';
+function _pillRow(group,opts){
+  return opts.map(function(o){
+    var active=group!=='mgmt'&&_IS[group]===o;
+    return '<div data-group="'+group+'" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(active?'#D5A144':'#2E3A36')+';background:'+(active?'#2A2416':'#1C2321')+';font-size:12px;font-weight:500;color:'+(active?'#D5A144':'#6E8A78')+';cursor:pointer;transition:.15s">'+o+'</div>';
+  }).join('');
 }
 function _broodCap(v){ return ['Very poor','Weak','Below avg','Moderate','Solid','Good','Very good','Excellent 🌟'][Math.min(7,Math.floor(v/10*8))]; }
 function _honeyCap(v){ return ['Empty','Very low','Low','Below half','Half full','Adequate','Good','Full 🌟'][Math.min(7,Math.floor(v/10*8))]; }
 
-/* ── Hive switcher ── */
 function nextHive(){
   var all=getAllHives();
   _IS.hiveIdx=(_IS.hiveIdx+1)%all.length;
   _IS.brood=6; _IS.honey=5; _IS.queen=null; _IS.varroa=null; _IS.overall=null;
   renderInspForm();
 }
-
-/* ── Interactions ── */
 function pickQueenCard(el){
   var val=el.dataset.val; _IS.queen=val;
   var c=document.getElementById('queenCards'); if(c) c.innerHTML=_queenCards(val);
@@ -3448,7 +3459,7 @@ function pickQueenCard(el){
 }
 function pickBlock(el){
   var g=el.dataset.group;
-  document.querySelectorAll('[data-group="'+g+'"]').forEach(function(b){ b.style.border='2px solid #2E3A36'; });
+  document.querySelectorAll('[data-group="'+g+'"]').forEach(function(b){ b.style.border='2px solid #2E3A36'; b.style.color=''; });
   el.style.border='2px solid #D5A144';
   _IS[g]=el.dataset.val;
 }
@@ -3487,14 +3498,6 @@ function itempslide(v){
   var el=document.getElementById('itempv'); if(el) el.textContent=ls[Math.min(5,Math.floor(v/17))];
   _IS.temp=v;
 }
-function toggleInspMore(){
-  var el=document.getElementById('inspMore'), ar=document.getElementById('inspMoreArrow');
-  var open=el.style.display==='none';
-  el.style.display=open?'block':'none';
-  if(ar) ar.textContent=open?'‹':'›';
-}
-
-/* ── Save ── */
 function finishInspection(mode){
   var now=new Date();
   var record={
@@ -3512,11 +3515,9 @@ function finishInspection(mode){
     }
   }); });
   updateCounters();
-  if(mode==='draft'){ showToast('Draft saved · '+record.hiveName); inspBack(); }
+  if(mode==='draft'){ showToast('草稿已保存 · '+record.hiveName); inspBack(); }
   else showInspectComplete(record);
 }
-
-/* ── Complete screen ── */
 function showInspectComplete(record){
   var ov=document.createElement('div'); ov.id='inspCompleteOv';
   ov.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:#1C2321';
@@ -3524,37 +3525,20 @@ function showInspectComplete(record){
   var cColor=overall==='Thriving'?'#3A9A5C':overall==='Stable'?'#D5A144':'#B83A2A';
   var cLabel=overall==='Thriving'?'Strong':overall==='Stable'?'Stable':'Needs care';
   var msg=overall==='Thriving'?'Your girls look healthy today. 🌤':overall==='Stable'?'Colony is stable. Keep monitoring. 🌿':'This hive needs your attention soon. 🚨';
-  ov.innerHTML='<style>'+
-    '@keyframes ripple{0%{opacity:.32;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}'+
-    '@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}'+
-    '@keyframes draw{to{stroke-dashoffset:0}}'+
-    '@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}'+
-    '.icr{position:absolute;border-radius:50%;border:1px solid #D5A144;transform:translate(-50%,-50%);opacity:0}'+
-    '.icr1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}'+
-    '.icr2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}'+
-    '.icc{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}'+
-    '.icc svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}'+
-    '.f1{animation:fadeUp .45s ease .5s both}.f2{animation:fadeUp .45s ease .62s both}'+
-    '.f3{animation:fadeUp .45s ease .78s both}.f4{animation:fadeUp .45s ease .92s both}'+
-    '.f5{animation:fadeUp .45s ease 1.05s both}.f6{animation:fadeUp .45s ease 1.15s both}'+
-    '.f7{animation:fadeUp .45s ease 1.25s both}'+
-    '</style>'+
+  ov.innerHTML='<style>@keyframes ripple{0%{opacity:.32;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}@keyframes draw{to{stroke-dashoffset:0}}@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.icr{position:absolute;border-radius:50%;border:1px solid #D5A144;transform:translate(-50%,-50%);opacity:0}.icr1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}.icr2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}.icc{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}.icc svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}.f1{animation:fadeUp .45s ease .5s both}.f2{animation:fadeUp .45s ease .62s both}.f3{animation:fadeUp .45s ease .78s both}.f4{animation:fadeUp .45s ease .92s both}.f5{animation:fadeUp .45s ease 1.05s both}.f6{animation:fadeUp .45s ease 1.15s both}.f7{animation:fadeUp .45s ease 1.25s both}</style>'+
     '<div style="width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;padding:48px 24px 40px;position:relative;overflow:hidden">'+
-      '<div style="position:absolute;top:36%;left:50%;pointer-events:none"><div class="icr icr1"></div><div class="icr icr2"></div></div>'+
-      '<div class="icc"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M7 15l6 6 10-12" stroke="#1C2321" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="30" stroke-dashoffset="30"/></svg></div>'+
-      '<div class="f1" style="font-size:25px;font-weight:800;color:#F4F0E8;letter-spacing:-.8px;margin-top:20px;text-align:center;line-height:1.2">Inspection<br>saved</div>'+
-      '<div class="f2" style="font-size:11px;color:#4A6A5A;margin-top:5px;text-align:center">'+record.dateStr+' · '+record.hiveName+'</div>'+
-      '<div class="f3" style="margin-top:20px;width:100%;background:#222E2A;border-radius:16px;padding:14px 16px;border-left:3px solid #D5A144">'+
-        '<div style="font-size:14px;font-weight:600;color:#E8E2D8;line-height:1.5;letter-spacing:-.2px">'+msg+'</div>'+
-        '<div style="font-size:11px;color:#5A7A6A;margin-top:4px;font-style:italic">'+record.queen+' · Brood '+record.brood+'/10 · Honey '+record.honey+'/10</div>'+
-      '</div>'+
-      '<div class="f4" style="margin-top:10px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Brood</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.brood+'<span style="font-size:11px;color:#5A7A6A"> /10</span></div><div style="font-size:10px;color:#6E8A78;margin-top:2px">Frames</div></div>'+
-        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Honey</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.honey+'<span style="font-size:11px;color:#5A7A6A"> /10</span></div><div style="font-size:10px;color:#6E8A78;margin-top:2px">Stores</div></div>'+
-      '</div>'+
-      '<div class="f5" style="margin-top:10px;display:flex;align-items:center;gap:6px;width:100%"><div style="width:5px;height:5px;border-radius:50%;background:#3A9A5C;flex-shrink:0"></div><div style="font-size:11px;color:#5A7A6A">Next inspection recommended in 7–10 days</div></div>'+
-      '<div class="f6" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:7px 14px"><div style="font-size:11px;color:#4A6A5A;font-weight:500">Colony condition</div><div style="font-size:12px;font-weight:700;color:'+cColor+'">'+cLabel+'</div></div>'+
-      '<div class="f7" style="width:100%;margin-top:24px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();inspBack()" style="width:100%;padding:15px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
+    '<div style="position:absolute;top:36%;left:50%;pointer-events:none"><div class="icr icr1"></div><div class="icr icr2"></div></div>'+
+    '<div class="icc"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M7 15l6 6 10-12" stroke="#1C2321" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="30" stroke-dashoffset="30"/></svg></div>'+
+    '<div class="f1" style="font-size:25px;font-weight:800;color:#F4F0E8;letter-spacing:-.8px;margin-top:20px;text-align:center;line-height:1.2">Inspection<br>saved</div>'+
+    '<div class="f2" style="font-size:11px;color:#4A6A5A;margin-top:5px;text-align:center">'+record.dateStr+' · '+record.hiveName+'</div>'+
+    '<div class="f3" style="margin-top:20px;width:100%;background:#222E2A;border-radius:16px;padding:14px 16px;border-left:3px solid #D5A144"><div style="font-size:14px;font-weight:600;color:#E8E2D8;line-height:1.5">'+msg+'</div><div style="font-size:11px;color:#5A7A6A;margin-top:4px;font-style:italic">'+record.queen+' · Brood '+record.brood+'/10 · Honey '+record.honey+'/10</div></div>'+
+    '<div class="f4" style="margin-top:10px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+    '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Brood</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.brood+'<span style="font-size:11px;color:#5A7A6A"> /10</span></div></div>'+
+    '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">Honey</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.honey+'<span style="font-size:11px;color:#5A7A6A"> /10</span></div></div>'+
+    '</div>'+
+    '<div class="f5" style="margin-top:10px;display:flex;align-items:center;gap:6px;width:100%"><div style="width:5px;height:5px;border-radius:50%;background:#3A9A5C;flex-shrink:0"></div><div style="font-size:11px;color:#5A7A6A">Next inspection recommended in 7–10 days</div></div>'+
+    '<div class="f6" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:7px 14px"><div style="font-size:11px;color:#4A6A5A;font-weight:500">Colony condition</div><div style="font-size:12px;font-weight:700;color:'+cColor+'">'+cLabel+'</div></div>'+
+    '<div class="f7" style="width:100%;margin-top:24px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();inspBack()" style="width:100%;padding:15px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
     '</div>';
   document.body.appendChild(ov);
 }

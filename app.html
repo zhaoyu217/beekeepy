@@ -3275,100 +3275,204 @@ function inspPickHive(id){
 }
 
 function renderInspStep1(){
-  if(!_IS.hiveId) return;
-  var title = document.getElementById('inspTitle'); if(title) title.textContent = _IS.hiveName;
   var body = document.getElementById('inspBody'); if(!body) return;
   var page = document.getElementById('inspectPage');
-  // Switch to dark theme
-  if(page){ page.style.background='#1C2321'; }
+  if(page) page.style.background='#1C2321';
   var hd = document.querySelector('#inspectPage .sub-hd');
   if(hd){ hd.style.background='#1C2321'; hd.style.borderBottom='1px solid #2E3A36'; }
-  var title = document.getElementById('inspTitle');
-  if(title){ title.style.color='#F4F0E8'; }
-  var backBtn = document.querySelector('#inspectPage .back');
-  if(backBtn){ backBtn.style.background='#222E2A'; backBtn.querySelector('path').setAttribute('stroke','#D5A144'); }
-  var dateLbl = document.getElementById('inspDateLbl');
-  if(dateLbl){ dateLbl.style.color='#4A6A5A'; }
-  body.style.padding = '0';
-  body.scrollTop = 0;
+  var ttl = document.getElementById('inspTitle');
+  if(ttl){ ttl.style.color='#F4F0E8'; }
+  var bp = document.querySelector('#inspectPage .back');
+  if(bp){ bp.style.background='#222E2A'; var bpath=bp.querySelector('path'); if(bpath) bpath.setAttribute('stroke','#D5A144'); }
+  var dl = document.getElementById('inspDateLbl');
+  if(dl) dl.style.color='#4A6A5A';
 
-  body.innerHTML =
-    '<div style="padding:0 16px 120px">'+
-    // Queen
-    _iCard('👑 Queen status',
-      _iGrid2([
-        _iBlock('queen','Seen','✅','#263830'),
-        _iBlock('queen','Not seen','👀','#2A2E28'),
-        _iBlock('queen','Signs only','🥚','#262A24'),
-        _iBlock('queen','Queenless','⚠️','#2E2420'),
-      ])
-    )+
-    // Brood
-    _iCard('🐣 Brood pattern',
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Poor</span><span id="ibroodv" style="color:#D5A144;font-weight:700">50%</span><span>Excellent</span></div>'+
-      '<input type="range" min="0" max="100" value="50" oninput="islide(this)" data-eid="ibroodv" data-key="brood" style="width:100%;height:10px;border-radius:5px;accent-color:#D5A144;cursor:pointer">'
-    )+
-    // Honey
-    _iCard('🍯 Honey stores',
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Empty</span><span id="ihoneyv" style="color:#D5A144;font-weight:700">50%</span><span>Full</span></div>'+
-      '<input type="range" min="0" max="100" value="50" oninput="islide(this)" data-eid="ihoneyv" data-key="honey" style="width:100%;height:10px;border-radius:5px;accent-color:#D5A144;cursor:pointer">'
-    )+
-    // Varroa
-    _iCard('🔬 Varroa mite load',
-      _iGrid2([
-        _iBlock('varroa','Low &lt;1%','🟢','#1E2E22'),
-        _iBlock('varroa','Moderate 1-2%','🟡','#2A2A1E'),
-        _iBlock('varroa','High 2-4%','🟠','#2E2418'),
-        _iBlock('varroa','Critical &gt;4%','🔴','#2E1E1E'),
-      ])
-    )+
-    // Temperament
-    _iCard('😤 Temperament',
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
-      '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:10px;border-radius:5px;accent-color:#3A9A5C;cursor:pointer">'
-    )+
-    // Overall
-    _iCard('⭐ Overall impression',
-      _iGrid3([
-        _iBlock('overall','Thriving','🌟','#1E2E22'),
-        _iBlock('overall','Stable','✅','#222A1E'),
-        _iBlock('overall','Needs care','🚨','#2E1E1E'),
-      ])
-    )+
-    // Notes
-    _iCard('📝 Notes',
-      '<textarea id="inspNotes" placeholder="Any observations…" oninput="_IS.notes=this.value" style="width:100%;min-height:80px;padding:10px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#222E2A;resize:none;box-sizing:border-box"></textarea>'
-    )+
-    // Buttons
-    '<div style="display:flex;gap:10px;margin-top:4px">'+
-      '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:13px;border-radius:13px;border:1px solid #2E3A36;background:#222E2A;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>'+
-      '<button onclick="finishInspection(&quot;complete&quot;)" style="flex:2;padding:13px;border-radius:13px;border:none;background:#D5A144;color:#1C2321;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Complete ✓</button>'+
-    '</div>'+
+  body.style.padding='0';
+  body.scrollTop=0;
+  _IS.brood=50; _IS.honey=50; _IS.temp=70;
+
+  // Dark card builder
+  function dc(label,inner,extra){
+    return '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px'+(extra?';'+extra:'')+'">'+
+      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">'+label+'</div>'+
+      inner+'</div>';
+  }
+  // 2-col grid
+  function g2(items){ return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+items.join('')+'</div>'; }
+  // 3-col grid
+  function g3(items){ return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+items.join('')+'</div>'; }
+  // Block button
+  function blk(group,val,emoji,accent){
+    var id='ib_'+group+'_'+val.replace(/\W/g,'');
+    return '<div id="'+id+'" data-group="'+group+'" data-val="'+val+'" onclick="pickBlock(this)" style="background:#1C2321;border:2px solid #2E3A36;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center;transition:.15s;user-select:none">'+
+      '<div style="font-size:22px;margin-bottom:6px">'+emoji+'</div>'+
+      '<div style="font-size:11px;font-weight:600;color:#E8E2D8;line-height:1.3">'+val+'</div>'+
     '</div>';
+  }
+  // Fat slider
+  function slider(eid,key,min,max,val,leftL,rightL,color){
+    return '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>'+leftL+'</span><span id="'+eid+'" style="color:#D5A144;font-weight:700">'+val+'%</span><span>'+rightL+'</span></div>'+
+      '<input type="range" min="'+min+'" max="'+max+'" value="'+val+'" oninput="islide(this)" data-eid="'+eid+'" data-key="'+key+'" style="width:100%;height:12px;border-radius:6px;accent-color:'+(color||'#D5A144')+';cursor:pointer">';
+  }
+  // Pill toggle
+  function pills(group,opts){
+    return '<div style="display:flex;flex-wrap:wrap;gap:6px">'+opts.map(function(o){
+      var id='ip_'+group+'_'+o.replace(/\W/g,'');
+      return '<div id="'+id+'" data-group="'+group+'" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer;user-select:none;transition:.15s">'+o+'</div>';
+    }).join('')+'</div>';
+  }
 
-  _IS.brood = 50; _IS.honey = 50; _IS.temp = 70;
-}
+  body.innerHTML = '<div style="padding:0 16px 120px">'+
 
-function _iCard(label, inner){
-  return '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px">'+
-    '<div style="font-size:10px;font-weight:600;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">'+label+'</div>'+
-    inner+'</div>';
-}
-function _iGrid2(items){ return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+items.join('')+'</div>'; }
-function _iGrid3(items){ return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+items.join('')+'</div>'; }
-function _iBlock(group, val, emoji, bg){
-  var id = 'ib_'+group+'_'+val.replace(/[^a-z]/gi,'');
-  return '<div id="'+id+'" data-group="'+group+'" data-val="'+val+'" onclick="pickBlock(this)" class="ib" style="background:'+bg+';border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center;border:2px solid transparent;transition:.15s">'+
-    '<div style="font-size:22px;margin-bottom:6px">'+emoji+'</div>'+
-    '<div style="font-size:11px;font-weight:600;color:#E8E2D8">'+val+'</div>'+
+    // 1. Queen
+    dc('👑 Queen status', g2([
+      blk('queen','Seen','✅'),
+      blk('queen','Not seen','👀'),
+      blk('queen','Signs only','🥚'),
+      blk('queen','Queenless','⚠️'),
+    ]))+
+
+    // 2. Brood
+    dc('🐣 Brood pattern', slider('ibroodv','brood',0,100,50,'Poor','Excellent'))+
+
+    // 3. Honey stores
+    dc('🍯 Honey stores', slider('ihoneyv','honey',0,100,50,'Empty','Full'))+
+
+    // 4. Varroa
+    dc('🔬 Varroa mite load', g2([
+      blk('varroa','Low &lt;1%','🟢'),
+      blk('varroa','Moderate 1-2%','🟡'),
+      blk('varroa','High 2-4%','🟠'),
+      blk('varroa','Critical &gt;4%','🔴'),
+    ]))+
+
+    // 5. Temperament
+    dc('😤 Temperament',
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
+      '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#3A9A5C;cursor:pointer">'
+    )+
+
+    // 6. Overall
+    dc('⭐ Overall impression', g3([
+      blk('overall','Thriving','🌟'),
+      blk('overall','Stable','✅'),
+      blk('overall','Needs care','🚨'),
+    ]))+
+
+    // 7. More checks (expandable)
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px">'+
+      '<div onclick="toggleInspMore()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
+        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em">More checks</div>'+
+        '<span id="inspMoreArrow" style="color:#4A6A5A;font-size:16px;transition:.2s">›</span>'+
+      '</div>'+
+      '<div id="inspMore" style="display:none;margin-top:14px">'+
+
+        // Pollen
+        '<div style="margin-bottom:16px">'+
+          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🌸 Pollen stores</div>'+
+          slider('ipollenNav','pollen',0,100,50,'None','Abundant')+
+        '</div>'+
+
+        // Queen cells
+        '<div style="margin-bottom:16px">'+
+          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">👑 Queen cells</div>'+
+          pills('qcell',['None','Swarm cells','Supersedure','Emergency'])+
+        '</div>'+
+
+        // Hive weight
+        '<div style="margin-bottom:16px">'+
+          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">⚖️ Hive weight</div>'+
+          '<div style="display:flex;align-items:center;gap:12px">'+
+            '<button onclick="adjWeight(-5)" style="width:40px;height:40px;border-radius:10px;border:1px solid #2E3A36;background:#1C2321;font-size:20px;color:#D5A144;cursor:pointer;font-weight:300">−</button>'+
+            '<div id="inspWtVal" style="flex:1;text-align:center;font-size:26px;font-weight:800;color:#D5A144;letter-spacing:-.5px">—</div>'+
+            '<button onclick="adjWeight(5)" style="width:40px;height:40px;border-radius:10px;border:1px solid #2E3A36;background:#1C2321;font-size:20px;color:#D5A144;cursor:pointer;font-weight:300">+</button>'+
+          '</div>'+
+        '</div>'+
+
+        // Management actions
+        '<div>'+
+          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🛠 Management actions</div>'+
+          pills('mgmt',['Fed colony','Treatment applied','Added super','Split colony','Requeened'])+
+        '</div>'+
+
+      '</div>'+
+    '</div>'+
+
+    // 8. Photo
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px">'+
+      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">📷 Photos</div>'+
+      '<div id="inspPhotos" style="display:flex;gap:8px;flex-wrap:wrap">'+
+        '<label style="width:80px;height:80px;border-radius:12px;border:2px dashed #2E3A36;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#1C2321">'+
+          '<span style="font-size:22px">📷</span>'+
+          '<span style="font-size:9px;color:#4A6A5A;margin-top:2px">Add</span>'+
+          '<input type="file" accept="image/*" multiple style="display:none" onchange="addInspPhotos(this)">'+
+        '</label>'+
+      '</div>'+
+    '</div>'+
+
+    // 9. Notes
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px">'+
+      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📝 Notes</div>'+
+      '<textarea id="inspNotes" placeholder="Any observations…" oninput="_IS.notes=this.value" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box;placeholder-color:#4A6A5A"></textarea>'+
+    '</div>'+
+
+    // Buttons
+    '<div style="display:flex;gap:10px">'+
+      '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:14px;border-radius:14px;border:1px solid #2E3A36;background:#222E2A;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>'+
+      '<button onclick="finishInspection(&quot;complete&quot;)" style="flex:2;padding:14px;border-radius:14px;border:none;background:#D5A144;color:#1C2321;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.2px">Complete ✓</button>'+
+    '</div>'+
+
   '</div>';
 }
-function pickBlock(el){
-  var group=el.dataset.group, val=el.dataset.val;
-  document.querySelectorAll('[data-group="'+group+'"]').forEach(function(b){ b.style.border='2px solid transparent'; });
-  el.style.border='2px solid #D5A144';
-  _IS[group] = val;
+
+function toggleInspMore(){
+  var el=document.getElementById('inspMore');
+  var ar=document.getElementById('inspMoreArrow');
+  var open=el.style.display==='none';
+  el.style.display=open?'block':'none';
+  if(ar) ar.textContent=open?'‹':'›';
 }
+function adjWeight(d){
+  if(!_IS.weight) _IS.weight=isF?60:27;
+  _IS.weight=Math.max(0,_IS.weight+d);
+  var el=document.getElementById('inspWtVal');
+  if(el) el.textContent=_IS.weight+(isF?' lbs':' kg');
+}
+function addInspPhotos(input){
+  if(!input.files) return;
+  var c=document.getElementById('inspPhotos');
+  Array.from(input.files).forEach(function(f){
+    var r=new FileReader();
+    r.onload=function(e){
+      var d=document.createElement('div');
+      d.style.cssText='width:80px;height:80px;border-radius:12px;overflow:hidden;flex-shrink:0';
+      d.innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover">';
+      c.insertBefore(d,c.querySelector('label'));
+    };
+    r.readAsDataURL(f);
+  });
+}
+function pickPill(el){
+  var group=el.dataset.group;
+  if(group==='mgmt'){
+    var on=el.dataset.on==='1';
+    el.dataset.on=on?'':'1';
+    el.style.borderColor=on?'#2E3A36':'#D5A144';
+    el.style.color=on?'#6E8A78':'#D5A144';
+    el.style.background=on?'#1C2321':'#2A2416';
+    if(!_IS.mgmt) _IS.mgmt=[];
+    var val=el.dataset.val;
+    var idx=_IS.mgmt.indexOf(val);
+    if(on) _IS.mgmt.splice(idx,1); else _IS.mgmt.push(val);
+  } else {
+    document.querySelectorAll('[data-group="'+group+'"]').forEach(function(b){
+      b.style.borderColor='#2E3A36'; b.style.color='#6E8A78'; b.style.background='#1C2321'; b.dataset.on='';
+    });
+    el.style.borderColor='#D5A144'; el.style.color='#D5A144'; el.style.background='#2A2416'; el.dataset.on='1';
+    _IS[group]=el.dataset.val;
+  }
+}
+
 
 function islide(inp){
   var el=document.getElementById(inp.dataset.eid); if(el) el.textContent=inp.value+'%';

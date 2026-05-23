@@ -3224,7 +3224,8 @@ function inspBack(){
 }
 
 function openInspectPage(){
-  setTimeout(renderInspMain, 0);
+  _IS = { brood:50, honey:50, temp:70, photos:[] };
+  setTimeout(renderInspStep0, 0);
 }
 
 function getAllHives(){
@@ -3233,201 +3234,105 @@ function getAllHives(){
   return all;
 }
 
-/* ── MAIN: 1级页面 ── */
-function renderInspMain(){
+/* ══ STEP 0: Select hive ══ */
+function renderInspStep0(){
   var body=document.getElementById('inspBody'); if(!body) return;
   var ttl=document.getElementById('inspTitle'); if(ttl){ ttl.textContent='Inspect'; ttl.style.color='#F4F0E8'; }
   var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
   var dl=document.getElementById('inspDateLbl');
-  if(dl){ dl.textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); dl.style.display=''; dl.style.color='#4A6A5A'; dl.onclick=null; }
+  if(dl){ dl.textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); dl.style.display=''; dl.style.color='#4A6A5A'; dl.onclick=null; dl.style.cursor='default'; }
 
   var all=getAllHives();
-  var selIdx=_IS.hiveIdx||0;
-  if(selIdx>=all.length) selIdx=0;
-  _IS.hiveIdx=selIdx;
-
-  // ① Hive switcher — horizontal scroll
-  var hiveScroll = all.length===0
-    ? '<div style="padding:16px;color:#4A6A5A;font-size:13px;text-align:center">No hives yet. Add one from home.</div>'
-    : '<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0 12px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+
-        all.map(function(item,i){
-          var h=item.h, a=item.a;
-          var active=i===selIdx;
-          var dot='#6E8A78';
-          if(h.status==='Healthy')dot='#3A9A5C';
-          else if(h.status==='Due soon')dot='#D5A144';
-          else if(h.status==='Needs attention')dot='#B83A2A';
-          return '<div style="flex-shrink:0;min-width:140px;background:'+(active?'#D5A144':'#222E2A')+';border-radius:14px;padding:14px;cursor:pointer;transition:.2s;border:2px solid '+(active?'#D5A144':'#2E3A36')+'">'+
-            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
-              '<div style="font-size:18px">🐝</div>'+
-              '<div onclick="event.stopPropagation();openHiveDetail('+h.id+')" style="font-size:9px;font-weight:700;color:'+(active?'#1C2321':'#D5A144')+';background:'+(active?'rgba(0,0,0,.1)':'rgba(213,161,68,.15)')+';padding:3px 7px;border-radius:6px;cursor:pointer">Detail ›</div>'+
-            '</div>'+
-            '<div onclick="selectInspHive('+i+')" style="font-size:13px;font-weight:700;color:'+(active?'#1C2321':'#E8E2D8')+';letter-spacing:-.2px">'+h.name+'</div>'+
-            '<div onclick="selectInspHive('+i+')" style="font-size:11px;color:'+(active?'rgba(28,35,33,.6)':'#4A6A5A')+';margin-top:2px">'+a.name+'</div>'+
-            '<div onclick="selectInspHive('+i+')" style="display:flex;align-items:center;gap:4px;margin-top:8px"><div style="width:5px;height:5px;border-radius:50%;background:'+dot+'"></div><span style="font-size:10px;font-weight:600;color:'+(active?'rgba(28,35,33,.7)':dot)+'">'+(h.status||'New')+'</span></div>'+
-          '</div>';
-        }).join('')+
-      '</div>';
-
-  // ② Colony health ring
-  var hive = all.length>0 ? all[selIdx].h : null;
-  var healthScore = hive ? (hive.status==='Healthy'?85:hive.status==='Due soon'?55:30) : 0;
-  var ringColor = healthScore>=70?'#3A9A5C':healthScore>=45?'#D5A144':'#B83A2A';
-  var ringLabel = healthScore>=70?'Healthy':healthScore>=45?'Monitor':'Attention';
-  var circumference = 2*Math.PI*36;
-  var dashOffset = circumference*(1-healthScore/100);
-  var healthRing =
-    '<div style="display:flex;align-items:center;gap:20px;background:#222E2A;border-radius:16px;padding:18px">'+
-      '<div style="position:relative;width:88px;height:88px;flex-shrink:0">'+
-        '<svg width="88" height="88" viewBox="0 0 88 88" style="transform:rotate(-90deg)">'+
-          '<circle cx="44" cy="44" r="36" fill="none" stroke="#2E3A36" stroke-width="8"/>'+
-          '<circle cx="44" cy="44" r="36" fill="none" stroke="'+ringColor+'" stroke-width="8"'+
-            ' stroke-dasharray="'+circumference.toFixed(1)+'"'+
-            ' stroke-dashoffset="'+dashOffset.toFixed(1)+'"'+
-            ' stroke-linecap="round"/>'+
-        '</svg>'+
-        '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">'+
-          '<div style="font-size:22px;font-weight:800;color:'+ringColor+'">'+healthScore+'</div>'+
-          '<div style="font-size:9px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em">score</div>'+
-        '</div>'+
-      '</div>'+
-      '<div style="flex:1">'+
-        '<div style="font-size:16px;font-weight:700;color:#E8E2D8;letter-spacing:-.3px;margin-bottom:4px">Colony Health</div>'+
-        '<div style="display:inline-flex;align-items:center;gap:6px;background:#1C2321;border-radius:20px;padding:5px 12px;margin-bottom:8px">'+
-          '<div style="width:6px;height:6px;border-radius:50%;background:'+ringColor+'"></div>'+
-          '<span style="font-size:12px;font-weight:600;color:'+ringColor+'">'+ringLabel+'</span>'+
-        '</div>'+
-        '<div style="font-size:11px;color:#4A6A5A;line-height:1.5">'+(hive?hive.sub||'No recent inspection':'Select a hive')+'</div>'+
-        '<button onclick="startInspection()" style="margin-top:10px;padding:8px 16px;border-radius:10px;border:none;background:#D5A144;color:#1C2321;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Inspect now →</button>'+
-      '</div>'+
-    '</div>';
-
-  // ③ Inspection history timeline
-  var hiveInspections = INSPECTIONS.filter(function(r){ return hive && r.hiveId===hive.id; });
-  var timelineHtml;
-  if(hiveInspections.length===0){
-    timelineHtml='<div style="padding:16px 0;color:#4A6A5A;font-size:12px;text-align:center;font-style:italic">No inspections yet for this hive</div>';
-  } else {
-    timelineHtml='<div style="display:flex;flex-direction:column;gap:0">'+
-      hiveInspections.slice(0,5).map(function(r,i){
-        var oc=r.overall==='Thriving'?'#3A9A5C':r.overall==='Stable'?'#D5A144':'#B83A2A';
-        return '<div style="display:flex;gap:12px;padding:10px 0;'+(i<hiveInspections.length-1?'border-bottom:1px solid #2E3A36':'')+'">'+
-          '<div style="display:flex;flex-direction:column;align-items:center;padding-top:4px">'+
-            '<div style="width:8px;height:8px;border-radius:50%;background:'+oc+';flex-shrink:0"></div>'+
-            (i<hiveInspections.slice(0,5).length-1?'<div style="width:1px;flex:1;background:#2E3A36;margin:4px 0"></div>':'')+
+  var hivesHtml = all.length===0
+    ? '<p style="text-align:center;padding:32px;color:#4A6A5A;font-size:13px">No hives yet.<br>Add one from the home screen.</p>'
+    : all.map(function(item,i){
+        var h=item.h, a=item.a;
+        var name=h.name+(h.breed&&h.breed!=='Unknown'?' · '+h.breed:'');
+        var dot='#6E8A78';
+        if(h.status==='Healthy')dot='#3A9A5C';
+        else if(h.status==='Due soon')dot='#D5A144';
+        else if(h.status==='Needs attention')dot='#B83A2A';
+        var sel=_IS.selectedHives&&_IS.selectedHives.indexOf(h.id)>=0;
+        return '<div onclick="toggleHiveSelect('+h.id+',this)" id="ihc_'+h.id+'" data-hid="'+h.id+'" data-hname="'+name.replace(/"/g,'&quot;')+'"'+
+          ' style="display:flex;align-items:center;gap:14px;padding:14px 16px;border-radius:16px;border:2px solid '+(sel?'#D5A144':'#2E3A36')+';background:'+(sel?'#2A2416':'#222E2A')+';cursor:pointer;margin-bottom:10px;transition:.15s">'+
+          '<div style="width:22px;height:22px;border-radius:6px;border:2px solid '+(sel?'#D5A144':'#2E3A36')+';background:'+(sel?'#D5A144':'transparent')+';display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+            (sel?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#1C2321" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>':'')+
           '</div>'+
+          '<div style="font-size:22px;flex-shrink:0">🐝</div>'+
           '<div style="flex:1">'+
-            '<div style="display:flex;align-items:center;justify-content:space-between">'+
-              '<div style="font-size:12px;font-weight:600;color:#E8E2D8">'+r.dateStr+'</div>'+
-              '<div style="font-size:10px;font-weight:600;color:'+oc+';background:#1C2321;padding:2px 8px;border-radius:6px">'+r.overall+'</div>'+
-            '</div>'+
-            '<div style="font-size:11px;color:#4A6A5A;margin-top:3px">Queen: '+r.queen+' · Brood: '+r.brood+'/10 · Honey: '+r.honey+'/10</div>'+
-            (r.notes?'<div style="font-size:11px;color:#6E8A78;font-style:italic;margin-top:3px">"'+r.notes.slice(0,60)+(r.notes.length>60?'…':'')+'"</div>':'')+
+            '<div style="font-size:14px;font-weight:600;color:#E8E2D8;letter-spacing:-.2px">'+name+'</div>'+
+            '<div style="font-size:11px;color:#4A6A5A;margin-top:3px">'+a.name+'</div>'+
+          '</div>'+
+          '<div style="display:flex;align-items:center;gap:5px">'+
+            '<div style="width:6px;height:6px;border-radius:50%;background:'+dot+'"></div>'+
+            '<span style="font-size:11px;font-weight:600;color:'+dot+'">'+(h.status||'New')+'</span>'+
           '</div>'+
         '</div>';
-      }).join('')+
-    '</div>';
-  }
-
-  // ④ Harvest entries (with Share)
-  var hiveHarvests = HARVEST.records.filter(function(r){ return hive && r.hiveId===hive.id; });
-  var harvestHtml;
-  if(hiveHarvests.length===0){
-    harvestHtml='<div style="padding:16px 0;color:#4A6A5A;font-size:12px;text-align:center;font-style:italic">No harvests recorded yet</div>';
-  } else {
-    var cur=getCurrency(); var f=isF;
-    harvestHtml='<div style="display:flex;flex-direction:column;gap:0">'+
-      hiveHarvests.slice(0,4).map(function(r,i){
-        var w=f?(r.unit==='lbs'?r.weight:r.weight*2.205):(r.unit==='kg'?r.weight:r.weight/2.205);
-        var wRound=Math.round(w*10)/10;
-        var unit=f?'lbs':'kg';
-        return '<div style="display:flex;align-items:center;justify-content:space-between;padding:10px 0;'+(i<hiveHarvests.slice(0,4).length-1?'border-bottom:1px solid #2E3A36':'')+'">'+
-          '<div>'+
-            '<div style="font-size:13px;font-weight:600;color:#E8E2D8">🍯 '+wRound+' '+unit+(r.nectar?' · '+r.nectar:'')+'</div>'+
-            '<div style="font-size:11px;color:#4A6A5A;margin-top:2px">'+r.dateStr+' · '+r.quality+'</div>'+
-          '</div>'+
-          '<div onclick="shareHarvest('+r.id+')" style="font-size:11px;font-weight:600;color:#D5A144;cursor:pointer;padding:5px 10px;background:#2A2416;border-radius:8px">Share</div>'+
-        '</div>';
-      }).join('')+
-    '</div>';
-  }
-
-  // ⑤ Polaroid photo thumbnails
-  var photoHtml='<div style="display:flex;gap:10px;overflow-x:auto;padding:4px 0;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+
-    '<div onclick="startInspection()" style="flex-shrink:0;width:90px;height:90px;border-radius:12px;border:2px dashed #2E3A36;background:#222E2A;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer">'+
-      '<div style="font-size:22px">📷</div>'+
-      '<div style="font-size:9px;color:#4A6A5A;margin-top:4px">Add photo</div>'+
-    '</div>'+
-    (hiveInspections.length>0?hiveInspections.filter(function(r){return r.photos&&r.photos.length;}).slice(0,4).map(function(r){
-      return r.photos.slice(0,2).map(function(p){
-        return '<div style="flex-shrink:0;width:90px;height:90px;border-radius:12px;overflow:hidden;border:2px solid #2E3A36"><img src="'+p+'" style="width:100%;height:100%;object-fit:cover"></div>';
       }).join('');
-    }).join(''):'<div style="flex-shrink:0;width:90px;height:90px;border-radius:12px;background:#222E2A;display:flex;align-items:center;justify-content:center"><span style="font-size:28px;opacity:.3">🖼</span></div>'+
-    '<div style="flex-shrink:0;width:90px;height:90px;border-radius:12px;background:#222E2A;display:flex;align-items:center;justify-content:center"><span style="font-size:28px;opacity:.3">🖼</span></div>')+
-  '</div>';
 
-  // ⑥ Notes summary
-  var notesHtml;
-  var latestWithNotes=hiveInspections.find(function(r){return r.notes&&r.notes.trim();});
-  if(latestWithNotes){
-    notesHtml='<div style="background:#1C2321;border-radius:12px;padding:12px 14px;border-left:3px solid #D5A144">'+
-      '<div style="font-size:11px;color:#6E8A78;font-style:italic;line-height:1.6">"'+latestWithNotes.notes+'"</div>'+
-      '<div style="font-size:10px;color:#4A6A5A;margin-top:6px">'+latestWithNotes.dateStr+'</div>'+
-    '</div>';
-  } else {
-    notesHtml='<div style="padding:12px 0;color:#4A6A5A;font-size:12px;font-style:italic">No notes yet</div>';
-  }
+  var wText='—'; var wEl=document.getElementById('weatherDescEl'); if(wEl) wText=wEl.textContent||'—';
 
   body.scrollTop=0;
   body.innerHTML=
-    '<div style="padding:0 16px 80px">'+
-
-    // ① Hive switcher
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Select Hive</div>'+
-    hiveScroll+
-
-    // ② Colony health ring
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Colony Health</div>'+
-    healthRing+
-
-    // ③ Inspection timeline
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Inspection History</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:14px 16px">'+timelineHtml+'</div>'+
-
-    // ④ Harvest entries
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Harvest Entries</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:14px 16px">'+harvestHtml+'</div>'+
-
-    // ⑤ Photos
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Photos</div>'+
-    photoHtml+
-
-    // ⑥ Notes summary
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Latest Notes</div>'+
-    notesHtml+
-
-    // Start inspection CTA
-    '<button onclick="startInspection()" style="width:100%;padding:15px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:20px">Start Inspection →</button>'+
-
+    '<div style="padding:0 16px 40px">'+
+    '<div style="font-size:11px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.1em;margin-bottom:14px">Select hive to inspect</div>'+
+    hivesHtml+
+    // Select all button
+    (all.length>1?'<div onclick="selectAllHives()" style="text-align:center;font-size:12px;font-weight:600;color:#D5A144;cursor:pointer;padding:8px;margin-bottom:10px">Select all hives</div>':'')+
+    '<div style="background:#222E2A;border-radius:12px;padding:12px 16px;margin-bottom:20px;display:flex;align-items:center;gap:10px">'+
+      '<span style="font-size:16px">🌤</span><span style="font-size:12px;color:#6E8A78">'+wText+'</span>'+
+    '</div>'+
+    '<button id="inspBeginBtn" onclick="beginInspection()" disabled'+
+      ' style="width:100%;padding:15px;border-radius:16px;border:none;background:#2E3A36;color:#4A6A5A;font-size:15px;font-weight:700;cursor:not-allowed;font-family:Inter,sans-serif;letter-spacing:-.3px;transition:.2s">'+
+      'Begin inspection →</button>'+
     '</div>';
+
+  if(!_IS.selectedHives) _IS.selectedHives=[];
 }
 
-function selectInspHive(idx){
-  _IS.hiveIdx=idx;
-  renderInspMain();
+function toggleHiveSelect(id, el){
+  if(!_IS.selectedHives) _IS.selectedHives=[];
+  var idx=_IS.selectedHives.indexOf(id);
+  if(idx>=0) _IS.selectedHives.splice(idx,1);
+  else _IS.selectedHives.push(id);
+  // Re-render just this card
+  var sel=_IS.selectedHives.indexOf(id)>=0;
+  el.style.border='2px solid '+(sel?'#D5A144':'#2E3A36');
+  el.style.background=sel?'#2A2416':'#222E2A';
+  var chk=el.querySelector('div');
+  if(chk){ chk.style.borderColor=sel?'#D5A144':'#2E3A36'; chk.style.background=sel?'#D5A144':'transparent';
+    chk.innerHTML=sel?'<svg width="12" height="12" viewBox="0 0 12 12" fill="none"><path d="M2 6l3 3 5-5" stroke="#1C2321" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>':''; }
+  var btn=document.getElementById('inspBeginBtn');
+  if(btn){
+    var has=_IS.selectedHives.length>0;
+    btn.disabled=!has; btn.style.background=has?'#D5A144':'#2E3A36';
+    btn.style.color=has?'#1C2321':'#4A6A5A'; btn.style.cursor=has?'pointer':'not-allowed';
+    btn.textContent=_IS.selectedHives.length>1?'Inspect '+_IS.selectedHives.length+' hives →':'Begin inspection →';
+  }
 }
 
-function shareHarvest(id){
-  var r=HARVEST.records.find(function(x){return x.id===id;});
-  if(!r) return;
-  var f=isF;
-  var w=f?(r.unit==='lbs'?r.weight:r.weight*2.205):(r.unit==='kg'?r.weight:r.weight/2.205);
-  var txt='🍯 Harvested '+Math.round(w*10)/10+(f?' lbs':' kg')+(r.nectar?' of '+r.nectar:'')+' from '+r.hiveName+' on '+r.dateStr+' · Quality: '+r.quality;
-  if(navigator.share){ navigator.share({text:txt}); }
-  else { showToast('Copied to clipboard'); if(navigator.clipboard) navigator.clipboard.writeText(txt); }
+function selectAllHives(){
+  var all=getAllHives();
+  _IS.selectedHives=all.map(function(x){return x.h.id;});
+  renderInspStep0();
+  // re-enable button
+  var btn=document.getElementById('inspBeginBtn');
+  if(btn){ btn.disabled=false; btn.style.background='#D5A144'; btn.style.color='#1C2321'; btn.style.cursor='pointer'; btn.textContent='Inspect '+_IS.selectedHives.length+' hives →'; }
 }
 
-/* ── Inspection form (called from Inspect now button) ── */
+function beginInspection(){
+  if(!_IS.selectedHives||_IS.selectedHives.length===0) return;
+  var all=getAllHives();
+  // Start with first selected hive
+  var first=all.find(function(x){return x.h.id===_IS.selectedHives[0];});
+  if(!first) return;
+  _IS.currentHiveId=first.h.id;
+  _IS.currentHiveName=first.h.name+(first.h.breed&&first.h.breed!=='Unknown'?' · '+first.h.breed:'');
+  _IS.brood=50; _IS.honey=50; _IS.temp=70; _IS.queen=null; _IS.varroa=null; _IS.overall=null; _IS.notes=''; _IS.photos=[];
+  renderInspForm();
+}
+
+/* ══ STEP 1: Inspection form ══ */
 var _QUEEN_OPTS=[
   {val:'Spotted',   sub:'Saw her on the comb',        emoji:'👑'},
   {val:'Not seen',  sub:'Signs still present',         emoji:'🔍'},
@@ -3442,103 +3347,108 @@ var _QUOTES={
   Queenless: '"No signs of the queen. Act fast — the colony needs her."',
 };
 
-function startInspection(){
-  var all=getAllHives();
-  if(all.length===0){ showToast('Add a hive first'); return; }
-  var cur=all[_IS.hiveIdx||0];
-  _IS.hiveId=cur.h.id;
-  _IS.hiveName=cur.h.name+(cur.h.breed&&cur.h.breed!=='Unknown'?' · '+cur.h.breed:'');
-  _IS.brood=6; _IS.honey=5; _IS.temp=70; _IS.queen=null; _IS.varroa=null; _IS.overall=null; _IS.notes=''; _IS.photos=[];
-  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='block';
-  var dl=document.getElementById('inspDateLbl'); if(dl) dl.style.display='none';
-  renderInspForm();
-}
-
 function renderInspForm(){
   var body=document.getElementById('inspBody'); if(!body) return;
-  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent=_IS.hiveName||'Inspect';
-  var brood=_IS.brood||6;
+  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent=_IS.currentHiveName||'Inspect';
+  var sb=document.getElementById('inspSaveBtn'); if(sb){ sb.style.display='block'; sb.textContent='Save'; }
+  var dl=document.getElementById('inspDateLbl'); if(dl) dl.style.display='none';
+
+  var brood=_IS.brood||50;
+  var honey=_IS.honey||50;
+
   body.scrollTop=0;
   body.innerHTML=
     '<div style="padding:0 16px 100px">'+
+
+    // Step dots
     '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:16px">'+
       '<div style="height:4px;border-radius:2px;background:#D5A144;width:20px"></div>'+
       '<div style="height:4px;border-radius:2px;background:#2E3A36;width:8px"></div>'+
       '<div style="height:4px;border-radius:2px;background:#2E3A36;width:8px"></div>'+
       '<div style="height:4px;border-radius:2px;background:#2E3A36;width:8px"></div>'+
     '</div>'+
+
+    // Quote
     '<div style="background:#222E2A;border-radius:14px;padding:14px 16px;border-left:3px solid #D5A144;margin-bottom:20px">'+
       '<p id="inspQuoteText" style="font-size:13px;font-style:italic;color:#C8BFA8;line-height:1.6;margin:0">'+(_QUOTES[_IS.queen]||_QUOTES['default'])+'</p>'+
     '</div>'+
+
+    // Queen Status
     '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Queen Status</div>'+
     '<div id="queenCards">'+_queenCards(_IS.queen)+'</div>'+
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Brood Frames</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
-        '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ibroodCap">'+_broodCap(brood)+'</div>'+
-        '<div style="font-size:22px;font-weight:800;color:#D5A144"><span id="ibroodv">'+brood+'</span><span style="font-size:13px;color:#4A6A5A;font-weight:500"> /10</span></div>'+
-      '</div>'+
-      '<div style="background:#1C2321;border-radius:20px;height:8px;overflow:hidden">'+
-        '<div id="ibroodBar" style="height:100%;background:#D5A144;border-radius:20px;width:'+(brood*10)+'%;transition:.25s"></div>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'+
-        '<button onclick="adjBrood(-1)" style="width:38px;height:38px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:22px;cursor:pointer;line-height:1">−</button>'+
-        '<div style="display:flex;gap:5px">'+_dots('ibdot',brood,10)+'</div>'+
-        '<button onclick="adjBrood(1)" style="width:38px;height:38px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:22px;cursor:pointer;line-height:1">+</button>'+
-      '</div>'+
-    '</div>'+
-    '<button onclick="renderInspStep2()" style="width:100%;padding:15px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:20px">Continue →</button>'+
-    '<button onclick="renderInspMain()" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">← Cancel</button>'+
-    '</div>';
-}
 
-function renderInspStep2(){
-  var body=document.getElementById('inspBody'); if(!body) return;
-  var honey=_IS.honey||5;
-  body.scrollTop=0;
-  body.innerHTML=
-    '<div style="padding:0 16px 100px">'+
-    '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px">'+
-      '<div style="height:4px;border-radius:2px;background:#D5A144;width:8px"></div>'+
-      '<div style="height:4px;border-radius:2px;background:#D5A144;width:20px"></div>'+
-      '<div style="height:4px;border-radius:2px;background:#2E3A36;width:8px"></div>'+
-      '<div style="height:4px;border-radius:2px;background:#2E3A36;width:8px"></div>'+
-    '</div>'+
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Honey Stores</div>'+
+    // Brood
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Brood Pattern</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
-        '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ihoneyCap">'+_honeyCap(honey)+'</div>'+
-        '<div style="font-size:22px;font-weight:800;color:#D5A144"><span id="ihoneyv">'+honey+'</span><span style="font-size:13px;color:#4A6A5A;font-weight:500"> /10</span></div>'+
-      '</div>'+
-      '<div style="background:#1C2321;border-radius:20px;height:8px;overflow:hidden">'+
-        '<div id="ihoneyBar" style="height:100%;background:#D5A144;border-radius:20px;width:'+(honey*10)+'%;transition:.25s"></div>'+
-      '</div>'+
-      '<div style="display:flex;align-items:center;justify-content:space-between;margin-top:12px">'+
-        '<button onclick="adjHoney(-1)" style="width:38px;height:38px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:22px;cursor:pointer;line-height:1">−</button>'+
-        '<div style="display:flex;gap:5px">'+_dots('ihdot',honey,10)+'</div>'+
-        '<button onclick="adjHoney(1)" style="width:38px;height:38px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:22px;cursor:pointer;line-height:1">+</button>'+
-      '</div>'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Poor</span><span id="ibroodv" style="color:#D5A144;font-weight:700">'+brood+'%</span><span>Excellent</span></div>'+
+      '<input type="range" min="0" max="100" value="'+brood+'" oninput="updateBrood(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#D5A144;cursor:pointer">'+
+      '<div id="ibroodCap" style="margin-top:10px;font-size:12px;color:#6E8A78;font-style:italic;background:#1C2321;border-radius:8px;padding:8px 12px;border-left:2px solid #D5A144">'+_broodCap(brood)+'</div>'+
     '</div>'+
+
+    // Honey
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Honey Stores</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Empty</span><span id="ihoneyv" style="color:#D5A144;font-weight:700">'+honey+'%</span><span>Full</span></div>'+
+      '<input type="range" min="0" max="100" value="'+honey+'" oninput="updateHoney(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#D5A144;cursor:pointer">'+
+    '</div>'+
+
+    // Varroa
     '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Varroa Mite Load</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-      _selBlock('varroa','Low &lt;1%','🟢')+_selBlock('varroa','Moderate 1-2%','🟡')+
-      _selBlock('varroa','High 2-4%','🟠')+_selBlock('varroa','Critical &gt;4%','🔴')+
+      _varBlock('Low &lt;1%','🟢')+_varBlock('Moderate 1-2%','🟡')+
+      _varBlock('High 2-4%','🟠')+_varBlock('Critical &gt;4%','🔴')+
     '</div>'+
+
+    // Temperament
     '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Temperament</div>'+
     '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
       '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
-      '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:8px;border-radius:4px;accent-color:#3A9A5C;cursor:pointer">'+
+      '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#3A9A5C;cursor:pointer">'+
     '</div>'+
+
+    // Overall
     '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Overall Impression</div>'+
     '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
-      _selBlock('overall','Thriving','🌟')+_selBlock('overall','Stable','✅')+_selBlock('overall','Needs care','🚨')+
+      _ovBlock('Thriving','🌟')+_ovBlock('Stable','✅')+_ovBlock('Needs care','🚨')+
     '</div>'+
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">📝 Notes</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
-      '<textarea id="inspNotes" oninput="_IS.notes=this.value" placeholder="Any observations…" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box">'+((_IS.notes)||'')+'</textarea>'+
+
+    // Photos (Polaroid style)
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Photos</div>'+
+    '<div id="inspPhotoRow" style="display:flex;gap:10px;overflow-x:auto;padding:4px 0 10px;-webkit-overflow-scrolling:touch;scrollbar-width:none">'+
+      '<label style="flex-shrink:0;width:88px;cursor:pointer">'+
+        '<div style="width:88px;height:88px;background:#222E2A;border:2px dashed #2E3A36;border-radius:12px;display:flex;flex-direction:column;align-items:center;justify-content:center">'+
+          '<div style="font-size:24px">📷</div>'+
+          '<div style="font-size:9px;color:#4A6A5A;margin-top:4px">Add photo</div>'+
+        '</div>'+
+        '<input type="file" accept="image/*" multiple style="display:none" onchange="addInspPhoto(this)">'+
+      '</label>'+
     '</div>'+
-    '<button onclick="finishInspection(&quot;complete&quot;)" style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">Save inspection ✓</button>'+
-    '<button onclick="renderInspForm()" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">← Back</button>'+
+
+    // Inspection score
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin:20px 0 10px">Inspection Score</div>'+
+    '<div id="inspScoreCard" style="background:#222E2A;border-radius:16px;padding:16px;display:flex;align-items:center;gap:16px">'+
+      '<div style="position:relative;width:72px;height:72px;flex-shrink:0">'+
+        '<svg width="72" height="72" viewBox="0 0 72 72" style="transform:rotate(-90deg)">'+
+          '<circle cx="36" cy="36" r="28" fill="none" stroke="#2E3A36" stroke-width="7"/>'+
+          '<circle id="inspScoreRing" cx="36" cy="36" r="28" fill="none" stroke="#6E8A78" stroke-width="7" stroke-linecap="round"'+
+            ' stroke-dasharray="175.9" stroke-dashoffset="175.9"/>'+
+        '</svg>'+
+        '<div style="position:absolute;inset:0;display:flex;flex-direction:column;align-items:center;justify-content:center">'+
+          '<div id="inspScoreNum" style="font-size:20px;font-weight:800;color:#6E8A78">—</div>'+
+        '</div>'+
+      '</div>'+
+      '<div style="flex:1">'+
+        '<div id="inspScoreLabel" style="font-size:14px;font-weight:700;color:#8AA898;margin-bottom:4px">Fill in the form</div>'+
+        '<div id="inspScoreDetail" style="font-size:11px;color:#4A6A5A;line-height:1.6">Select queen, varroa & overall to calculate your score</div>'+
+      '</div>'+
+    '</div>'+
+
+    // Buttons
+    '<div style="display:flex;gap:10px;margin-top:20px">'+
+      '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:14px;border-radius:14px;border:1px solid #2E3A36;background:transparent;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>'+
+      '<button onclick="finishInspection(&quot;complete&quot;)" style="flex:2;padding:14px;border-radius:14px;border:none;background:#D5A144;color:#1C2321;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.2px">Complete ✓</button>'+
+    '</div>'+
+
     '</div>';
 }
 
@@ -3555,60 +3465,121 @@ function _queenCards(active){
       '<div><div class="ici-name">'+o.val+'</div><div class="ici-sub">'+o.sub+'</div></div></div>';
   }).join('');
 }
-function _dots(prefix,active,max){
-  var s='';
-  for(var i=1;i<=max;i++) s+='<div id="'+prefix+'_'+i+'" onclick="'+(prefix==='ibdot'?'setBrood':'setHoney')+'('+i+')" style="width:7px;height:7px;border-radius:50%;background:'+(i<=active?'#D5A144':'#2E3A36')+';cursor:pointer;transition:.2s"></div>';
-  return s;
+function _varBlock(val,emoji){
+  var active=_IS.varroa===val;
+  return '<div data-group="varroa" data-val="'+val+'" onclick="pickBlock(this)"'+
+    ' style="background:#222E2A;border:2px solid '+(active?'#D5A144':'#2E3A36')+';border-radius:14px;padding:18px 10px;text-align:center;cursor:pointer;transition:.15s">'+
+    '<div style="font-size:26px;margin-bottom:6px">'+emoji+'</div>'+
+    '<div style="font-size:11px;font-weight:600;color:'+(active?'#D5A144':'#8AA898')+'">'+val+'</div></div>';
 }
-function _selBlock(group,val,emoji){
-  var active=_IS[group]===val;
-  return '<div data-group="'+group+'" data-val="'+val+'" onclick="pickBlock(this)" style="background:#222E2A;border:2px solid '+(active?'#D5A144':'#2E3A36')+';border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;transition:.15s">'+
+function _ovBlock(val,emoji){
+  var active=_IS.overall===val;
+  return '<div data-group="overall" data-val="'+val+'" onclick="pickBlock(this)"'+
+    ' style="background:#222E2A;border:2px solid '+(active?'#D5A144':'#2E3A36')+';border-radius:14px;padding:16px 8px;text-align:center;cursor:pointer;transition:.15s">'+
     '<div style="font-size:24px;margin-bottom:6px">'+emoji+'</div>'+
     '<div style="font-size:11px;font-weight:600;color:'+(active?'#D5A144':'#8AA898')+'">'+val+'</div></div>';
 }
-function _broodCap(v){ return ['Very poor','Weak','Below avg','Moderate','Solid','Good','Very good','Excellent 🌟'][Math.min(7,Math.floor(v/10*8))]; }
-function _honeyCap(v){ return ['Empty','Very low','Low','Below half','Half full','Adequate','Good','Full 🌟'][Math.min(7,Math.floor(v/10*8))]; }
+function _broodCap(v){
+  v=parseInt(v);
+  if(v<20) return 'Very poor pattern · urgent attention needed';
+  if(v<40) return 'Weak pattern · monitor closely';
+  if(v<60) return 'Moderate pattern · keep monitoring';
+  if(v<80) return 'Good solid pattern · colony looking healthy';
+  return 'Excellent pattern · colony thriving 🌟';
+}
 
 function pickQueenCard(el){
   var val=el.dataset.val; _IS.queen=val;
   var c=document.getElementById('queenCards'); if(c) c.innerHTML=_queenCards(val);
   var qt=document.getElementById('inspQuoteText'); if(qt) qt.textContent=_QUOTES[val]||_QUOTES['default'];
+  calcScore();
 }
 function pickBlock(el){
   var g=el.dataset.group;
-  document.querySelectorAll('[data-group="'+g+'"]').forEach(function(b){ b.style.border='2px solid #2E3A36'; b.querySelector&&b.querySelector('div:last-child')&&(b.querySelector('div:last-child').style.color='#8AA898'); });
+  document.querySelectorAll('[data-group="'+g+'"]').forEach(function(b){
+    b.style.border='2px solid #2E3A36';
+    var lbl=b.querySelector('div:last-child'); if(lbl) lbl.style.color='#8AA898';
+  });
   el.style.border='2px solid #D5A144';
+  var lbl=el.querySelector('div:last-child'); if(lbl) lbl.style.color='#D5A144';
   _IS[g]=el.dataset.val;
+  calcScore();
 }
-function adjBrood(d){ setBrood(Math.max(0,Math.min(10,(_IS.brood||6)+d))); }
-function setBrood(v){
-  _IS.brood=v;
-  var el=document.getElementById('ibroodv'); if(el) el.textContent=v;
-  var bar=document.getElementById('ibroodBar'); if(bar) bar.style.width=(v*10)+'%';
+function updateBrood(v){
+  _IS.brood=parseInt(v);
+  var el=document.getElementById('ibroodv'); if(el) el.textContent=v+'%';
   var cap=document.getElementById('ibroodCap'); if(cap) cap.textContent=_broodCap(v);
-  for(var i=1;i<=10;i++){ var d=document.getElementById('ibdot_'+i); if(d) d.style.background=i<=v?'#D5A144':'#2E3A36'; }
+  calcScore();
 }
-function adjHoney(d){ setHoney(Math.max(0,Math.min(10,(_IS.honey||5)+d))); }
-function setHoney(v){
-  _IS.honey=v;
-  var el=document.getElementById('ihoneyv'); if(el) el.textContent=v;
-  var bar=document.getElementById('ihoneyBar'); if(bar) bar.style.width=(v*10)+'%';
-  var cap=document.getElementById('ihoneyCap'); if(cap) cap.textContent=_honeyCap(v);
-  for(var i=1;i<=10;i++){ var d=document.getElementById('ihdot_'+i); if(d) d.style.background=i<=v?'#D5A144':'#2E3A36'; }
+function updateHoney(v){
+  _IS.honey=parseInt(v);
+  var el=document.getElementById('ihoneyv'); if(el) el.textContent=v+'%';
 }
 function itempslide(v){
   var ls=['Aggressive','Nervous','Calm','Calm','Very calm','Docile'];
   var el=document.getElementById('itempv'); if(el) el.textContent=ls[Math.min(5,Math.floor(v/17))];
-  _IS.temp=v;
+  _IS.temp=parseInt(v);
 }
+function addInspPhoto(input){
+  if(!input.files) return;
+  if(!_IS.photos) _IS.photos=[];
+  var row=document.getElementById('inspPhotoRow'); if(!row) return;
+  Array.from(input.files).forEach(function(file){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      _IS.photos.push(e.target.result);
+      // Polaroid card
+      var card=document.createElement('div');
+      card.style.cssText='flex-shrink:0;width:88px;cursor:pointer';
+      card.innerHTML=
+        '<div style="width:88px;height:88px;border-radius:12px;overflow:hidden;border:3px solid #fff;background:#fff;padding:4px;box-shadow:0 2px 8px rgba(0,0,0,.3)">'+
+          '<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover;border-radius:8px">'+
+        '</div>';
+      var label=row.querySelector('label');
+      row.insertBefore(card,label);
+    };
+    reader.readAsDataURL(file);
+  });
+}
+function calcScore(){
+  var score=0, factors=0;
+  if(_IS.brood!==undefined){ score+=(_IS.brood/100)*30; factors++; }
+  if(_IS.honey!==undefined){ score+=(_IS.honey/100)*20; factors++; }
+  var qmap={'Spotted':20,'Eggs only':14,'Not seen':8,'Queenless':0};
+  if(_IS.queen){ score+=(qmap[_IS.queen]||0); factors++; }
+  var vmap={'Low <1%':20,'Moderate 1-2%':14,'High 2-4%':6,'Critical >4%':0};
+  if(_IS.varroa){
+    var vk=Object.keys(vmap).find(function(k){return _IS.varroa.replace(/&lt;/g,'<').replace(/&gt;/g,'>').indexOf(k.split(' ')[0])>=0;});
+    score+=(vk?vmap[vk]:10); factors++;
+  }
+  var omap={'Thriving':10,'Stable':6,'Needs care':0};
+  if(_IS.overall){ score+=(omap[_IS.overall]||0); factors++; }
+  if(factors<3) return;
+  score=Math.min(100,Math.round(score));
+  var color=score>=80?'#3A9A5C':score>=60?'#D5A144':score>=40?'#C4974A':'#B83A2A';
+  var label=score>=80?'Excellent':score>=60?'Good':score>=40?'Fair':'Needs attention';
+  var detail=score>=80?'Colony is in great shape!':score>=60?'Colony is stable. Monitor regularly.':score>=40?'Some concerns noted. Investigate soon.':'Immediate attention required.';
+  var circ=2*Math.PI*28;
+  var ring=document.getElementById('inspScoreRing');
+  var num=document.getElementById('inspScoreNum');
+  var lbl=document.getElementById('inspScoreLabel');
+  var det=document.getElementById('inspScoreDetail');
+  if(ring){ ring.setAttribute('stroke',color); ring.setAttribute('stroke-dashoffset',(circ*(1-score/100)).toFixed(1)); }
+  if(num){ num.textContent=score; num.style.color=color; }
+  if(lbl){ lbl.textContent=label; lbl.style.color=color; }
+  if(det) det.textContent=detail;
+}
+
+/* ══ SAVE ══ */
 function finishInspection(mode){
   var now=new Date();
   var record={
-    id:_inspNextId++, hiveId:_IS.hiveId, hiveName:_IS.hiveName,
+    id:_inspNextId++,
+    hiveId:_IS.currentHiveId, hiveName:_IS.currentHiveName,
     date:now.getTime(), dateStr:now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
-    queen:_IS.queen||'Not recorded', brood:_IS.brood||6, honey:_IS.honey||5,
-    varroa:_IS.varroa||'Not recorded', overall:_IS.overall||'Stable',
-    notes:_IS.notes||'', photos:_IS.photos||[], draft:mode==='draft'
+    queen:_IS.queen||'Not recorded', brood:_IS.brood||50, honey:_IS.honey||50,
+    varroa:_IS.varroa||'Not recorded', temp:_IS.temp||70, overall:_IS.overall||'Stable',
+    notes:_IS.notes||'', photos:(_IS.photos||[]).slice(), draft:mode==='draft'
   };
   INSPECTIONS.unshift(record);
   APIARIES.forEach(function(a){ a.hives.forEach(function(h){
@@ -3617,10 +3588,12 @@ function finishInspection(mode){
       h.sub=record.overall+' · '+record.dateStr;
     }
   }); });
-  updateCounters();
-  if(mode==='draft'){ showToast('Draft saved · '+record.hiveName); renderInspMain(); }
+  updateCounters(); saveData();
+  if(mode==='draft'){ showToast('Draft saved · '+record.hiveName); inspBack(); }
   else showInspectComplete(record);
 }
+
+/* ══ COMPLETE SCREEN ══ */
 function showInspectComplete(record){
   var ov=document.createElement('div'); ov.id='inspCompleteOv';
   ov.style.cssText='position:fixed;inset:0;z-index:10000;display:flex;align-items:center;justify-content:center;background:#1C2321';
@@ -3628,276 +3601,39 @@ function showInspectComplete(record){
   var cColor=overall==='Thriving'?'#3A9A5C':overall==='Stable'?'#D5A144':'#B83A2A';
   var cLabel=overall==='Thriving'?'Strong':overall==='Stable'?'Stable':'Needs care';
   var msg=overall==='Thriving'?'Your girls look healthy today. 🌤':overall==='Stable'?'Colony is stable. Keep monitoring. 🌿':'This hive needs your attention soon. 🚨';
-  ov.innerHTML='<style>@keyframes ripple{0%{opacity:.32;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}@keyframes draw{to{stroke-dashoffset:0}}@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}.icr{position:absolute;border-radius:50%;border:1px solid #D5A144;transform:translate(-50%,-50%);opacity:0}.icr1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}.icr2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}.icc{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}.icc svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}.f1{animation:fadeUp .45s ease .5s both}.f2{animation:fadeUp .45s ease .62s both}.f3{animation:fadeUp .45s ease .78s both}.f4{animation:fadeUp .45s ease .92s both}.f5{animation:fadeUp .45s ease 1.05s both}.f6{animation:fadeUp .45s ease 1.15s both}.f7{animation:fadeUp .45s ease 1.25s both}</style>'+
+  ov.innerHTML='<style>'+
+    '@keyframes ripple{0%{opacity:.32;transform:translate(-50%,-50%) scale(.5)}100%{opacity:0;transform:translate(-50%,-50%) scale(1)}}'+
+    '@keyframes popIn{from{transform:scale(0);opacity:0}to{transform:scale(1);opacity:1}}'+
+    '@keyframes draw{to{stroke-dashoffset:0}}'+
+    '@keyframes fadeUp{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}'+
+    '.icr{position:absolute;border-radius:50%;border:1px solid #D5A144;transform:translate(-50%,-50%);opacity:0}'+
+    '.icr1{width:90px;height:90px;animation:ripple 2.8s ease-out .1s infinite}'+
+    '.icr2{width:165px;height:165px;animation:ripple 2.8s ease-out .7s infinite}'+
+    '.icc{width:66px;height:66px;border-radius:50%;background:#D5A144;display:flex;align-items:center;justify-content:center;position:relative;z-index:2;animation:popIn .45s cubic-bezier(.34,1.56,.64,1) both}'+
+    '.icc svg path{stroke-dasharray:30;stroke-dashoffset:30;animation:draw .35s ease .4s forwards}'+
+    '.f1{animation:fadeUp .45s ease .5s both}.f2{animation:fadeUp .45s ease .62s both}'+
+    '.f3{animation:fadeUp .45s ease .78s both}.f4{animation:fadeUp .45s ease .92s both}'+
+    '.f5{animation:fadeUp .45s ease 1.05s both}.f6{animation:fadeUp .45s ease 1.15s both}'+
+    '.f7{animation:fadeUp .45s ease 1.25s both}'+
+    '</style>'+
     '<div style="width:100%;max-width:320px;display:flex;flex-direction:column;align-items:center;padding:48px 24px 40px;position:relative;overflow:hidden">'+
-    '<div style="position:absolute;top:36%;left:50%;pointer-events:none"><div class="icr icr1"></div><div class="icr icr2"></div></div>'+
-    '<div class="icc"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M7 15l6 6 10-12" stroke="#1C2321" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="30" stroke-dashoffset="30"/></svg></div>'+
-    '<div class="f1" style="font-size:25px;font-weight:800;color:#F4F0E8;letter-spacing:-.8px;margin-top:20px;text-align:center;line-height:1.2">Inspection<br>saved</div>'+
-    '<div class="f2" style="font-size:11px;color:#4A6A5A;margin-top:5px;text-align:center">'+record.dateStr+' · '+record.hiveName+'</div>'+
-    '<div class="f3" style="margin-top:20px;width:100%;background:#222E2A;border-radius:16px;padding:14px 16px;border-left:3px solid #D5A144"><div style="font-size:14px;font-weight:600;color:#E8E2D8;line-height:1.5">'+msg+'</div><div style="font-size:11px;color:#5A7A6A;margin-top:4px;font-style:italic">'+record.queen+' · Brood '+record.brood+'/10 · Honey '+record.honey+'/10</div></div>'+
-    '<div class="f4" style="margin-top:10px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
-    '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;margin-bottom:4px">Brood</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.brood+'<span style="font-size:11px;color:#5A7A6A"> /10</span></div></div>'+
-    '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;margin-bottom:4px">Honey</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.honey+'<span style="font-size:11px;color:#5A7A6A"> /10</span></div></div>'+
-    '</div>'+
-    '<div class="f5" style="margin-top:10px;display:flex;align-items:center;gap:6px;width:100%"><div style="width:5px;height:5px;border-radius:50%;background:#3A9A5C;flex-shrink:0"></div><div style="font-size:11px;color:#5A7A6A">Next inspection recommended in 7–10 days</div></div>'+
-    '<div class="f6" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:7px 14px"><div style="font-size:11px;color:#4A6A5A;font-weight:500">Colony condition</div><div style="font-size:12px;font-weight:700;color:'+cColor+'">'+cLabel+'</div></div>'+
-    '<div class="f7" style="width:100%;margin-top:24px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();renderInspMain()" style="width:100%;padding:15px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
+      '<div style="position:absolute;top:36%;left:50%;pointer-events:none"><div class="icr icr1"></div><div class="icr icr2"></div></div>'+
+      '<div class="icc"><svg width="30" height="30" viewBox="0 0 30 30" fill="none"><path d="M7 15l6 6 10-12" stroke="#1C2321" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="30" stroke-dashoffset="30"/></svg></div>'+
+      '<div class="f1" style="font-size:25px;font-weight:800;color:#F4F0E8;letter-spacing:-.8px;margin-top:20px;text-align:center;line-height:1.2">Inspection<br>saved</div>'+
+      '<div class="f2" style="font-size:11px;color:#4A6A5A;margin-top:5px;text-align:center">'+record.dateStr+' · '+record.hiveName+'</div>'+
+      '<div class="f3" style="margin-top:20px;width:100%;background:#222E2A;border-radius:16px;padding:14px 16px;border-left:3px solid #D5A144">'+
+        '<div style="font-size:14px;font-weight:600;color:#E8E2D8;line-height:1.5">'+msg+'</div>'+
+        '<div style="font-size:11px;color:#5A7A6A;margin-top:4px;font-style:italic">'+record.queen+' · Brood '+record.brood+'% · Honey '+record.honey+'%</div>'+
+      '</div>'+
+      '<div class="f4" style="margin-top:10px;width:100%;display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;margin-bottom:4px">Brood</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.brood+'%</div></div>'+
+        '<div style="background:#222E2A;border-radius:12px;padding:11px 12px"><div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;margin-bottom:4px">Honey</div><div style="font-size:20px;font-weight:800;color:#D5A144">'+record.honey+'%</div></div>'+
+      '</div>'+
+      '<div class="f5" style="margin-top:10px;display:flex;align-items:center;gap:6px;width:100%"><div style="width:5px;height:5px;border-radius:50%;background:#3A9A5C;flex-shrink:0"></div><div style="font-size:11px;color:#5A7A6A">Next inspection recommended in 7–10 days</div></div>'+
+      '<div class="f6" style="margin-top:12px;display:inline-flex;align-items:center;gap:8px;background:#222E2A;border-radius:20px;padding:7px 14px"><div style="font-size:11px;color:#4A6A5A;font-weight:500">Colony condition</div><div style="font-size:12px;font-weight:700;color:'+cColor+'">'+cLabel+'</div></div>'+
+      '<div class="f7" style="width:100%;margin-top:24px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();inspBack()" style="width:100%;padding:15px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
     '</div>';
   document.body.appendChild(ov);
-}
-
-
-/* ══════════════════════════════════════
-   INSPECT LEVEL 2 — Hive Detail Pages
-══════════════════════════════════════ */
-
-function openHiveDetail(hiveId){
-  var all=getAllHives();
-  var item=all.find(function(x){return x.h.id===hiveId;});
-  if(!item) return;
-  var h=item.h, a=item.a;
-  var hiveInspections=INSPECTIONS.filter(function(r){return r.hiveId===hiveId;});
-  var latest=hiveInspections[0]||null;
-  var body=document.getElementById('inspBody'); if(!body) return;
-
-  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent=h.name;
-  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
-  var dl=document.getElementById('inspDateLbl'); if(dl){ dl.style.display='none'; }
-
-  // Health score history for charts
-  var scores=hiveInspections.map(function(r){
-    var s=0;
-    var qmap={'Spotted':20,'Signs only':14,'Not seen':8,'Queenless':0};
-    s+=parseInt(r.brood)*3;
-    s+=parseInt(r.honey)*2;
-    s+=(qmap[r.queen]||10);
-    if(r.overall==='Thriving')s+=10;else if(r.overall==='Stable')s+=6;
-    return Math.min(100,Math.round(s));
-  }).reverse();
-  var labels=hiveInspections.map(function(r){return r.dateStr;}).reverse();
-
-  // Varroa history
-  var varroaLevels=hiveInspections.map(function(r){
-    if(!r.varroa||r.varroa==='Not recorded')return null;
-    if(r.varroa.indexOf('Low')>=0)return 1;
-    if(r.varroa.indexOf('Moderate')>=0)return 2;
-    if(r.varroa.indexOf('High')>=0)return 3;
-    return 4;
-  }).reverse();
-
-  body.scrollTop=0;
-  body.innerHTML=
-    '<div style="padding:0 16px 100px">'+
-
-    // Back button
-    '<div onclick="renderInspMain()" style="display:inline-flex;align-items:center;gap:6px;color:#D5A144;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px">'+
-      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="#D5A144" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
-      'All hives'+
-    '</div>'+
-
-    // ① Hive Detail header
-    '<div style="background:#222E2A;border-radius:18px;padding:18px;margin-bottom:12px">'+
-      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'+
-        '<div style="width:52px;height:52px;border-radius:14px;background:#1C2321;display:flex;align-items:center;justify-content:center;font-size:26px">🐝</div>'+
-        '<div style="flex:1">'+
-          '<div style="font-size:18px;font-weight:800;color:#F4F0E8;letter-spacing:-.5px">'+h.name+(h.breed&&h.breed!=='Unknown'?' · '+h.breed:'')+'</div>'+
-          '<div style="font-size:12px;color:#4A6A5A;margin-top:3px">'+a.name+(a.location?' · '+a.location:'')+'</div>'+
-        '</div>'+
-        '<button onclick="startInspection()" style="padding:8px 14px;border-radius:10px;border:none;background:#D5A144;color:#1C2321;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Inspect</button>'+
-      '</div>'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
-        _statCell('Total inspections',hiveInspections.length,'times')+
-        _statCell('Last inspection',latest?latest.dateStr:'Never','')+
-        _statCell('Status',h.status||'New','')+
-      '</div>'+
-    '</div>'+
-
-    // ② 4 data cards
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Latest Data</div>'+
-    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
-      _dataCard('🌡','Brood Temp',isF?'93.5 °F':'34.2 °C','Optimal ✓','#3A9A5C')+
-      _dataCard('🍯','Honey Stores',(latest?latest.honey:5)+'/10','Adequate','#D5A144')+
-      _dataCard('👑','Queen Status',latest?latest.queen:'—',latest?'Last seen '+latest.dateStr:'Not recorded','#6E8A78')+
-      _dataCard('🔬','Varroa Load',latest?latest.varroa:'—','Mite level','#B83A2A')+
-    '</div>'+
-
-    // ③ Queen Records
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Queen Records</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:14px 16px;margin-bottom:12px">'+
-    (hiveInspections.length===0
-      ? '<div style="color:#4A6A5A;font-size:12px;font-style:italic;text-align:center;padding:8px">No records yet</div>'
-      : hiveInspections.slice(0,5).map(function(r){
-          var qc=r.queen==='Spotted'?'#3A9A5C':r.queen==='Not seen'?'#D5A144':r.queen==='Queenless'?'#B83A2A':'#6E8A78';
-          return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2E3A36">'+
-            '<div style="width:8px;height:8px;border-radius:50%;background:'+qc+';flex-shrink:0"></div>'+
-            '<div style="flex:1;font-size:12px;color:#E8E2D8;font-weight:500">'+r.queen+'</div>'+
-            '<div style="font-size:11px;color:#4A6A5A">'+r.dateStr+'</div>'+
-          '</div>';
-        }).join('')
-    )+'</div>'+
-
-    // ④ Treatment history
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Treatment History</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:14px 16px;margin-bottom:12px">'+
-    (function(){
-      var treated=hiveInspections.filter(function(r){return r.mgmt&&r.mgmt.indexOf('Treatment')>=0;});
-      if(treated.length===0) return '<div style="color:#4A6A5A;font-size:12px;font-style:italic;text-align:center;padding:8px">No treatments recorded</div>';
-      return treated.map(function(r){
-        return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2E3A36">'+
-          '<div style="font-size:16px">💊</div>'+
-          '<div style="flex:1"><div style="font-size:12px;color:#E8E2D8;font-weight:500">Treatment applied</div>'+
-          '<div style="font-size:11px;color:#4A6A5A;margin-top:1px">'+r.dateStr+'</div></div>'+
-        '</div>';
-      }).join('');
-    }())+'</div>'+
-
-    // ⑤ Health score trend chart
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Health Score Trend</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
-      _lineChart(scores,labels,'#3A9A5C',100)+
-    '</div>'+
-
-    // ⑥ Varroa tracking chart
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Varroa Mite Tracking</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
-      _barChart(varroaLevels,labels,['#3A9A5C','#D5A144','#C4974A','#B83A2A'],['Low','Mod','High','Crit'],4)+
-    '</div>'+
-
-    // ⑦ Per-hive brood trend
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Brood Trend</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
-      _lineChart(hiveInspections.map(function(r){return parseInt(r.brood)*10;}).reverse(),labels,'#D5A144',100)+
-    '</div>'+
-
-    // ⑧ Inspection activity stats
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Inspection Activity</div>'+
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
-      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">'+
-        _statCell('Total',hiveInspections.length,'inspections')+
-        _statCell('This month',hiveInspections.filter(function(r){return new Date(r.date).getMonth()===new Date().getMonth();}).length,'sessions')+
-        _statCell('Streak',_calcStreak(hiveInspections),'weeks')+
-      '</div>'+
-      _activityGrid(hiveInspections)+
-    '</div>'+
-
-    // ⑨ Export PDF
-    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Export</div>'+
-    '<button onclick="exportInspectionPDF('+hiveId+')" style="width:100%;padding:15px;border-radius:16px;border:2px solid #D5A144;background:transparent;color:#D5A144;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:8px">'+
-      '<span style="font-size:18px">📄</span> Export PDF Hive Journal'+
-    '</button>'+
-
-    '</div>';
-}
-
-/* ── Chart helpers ── */
-function _lineChart(data, labels, color, maxVal){
-  if(!data||data.length===0) return '<div style="color:#4A6A5A;font-size:12px;text-align:center;padding:20px;font-style:italic">Not enough data yet</div>';
-  var w=280,h=80,pad=10;
-  var points=data.map(function(v,i){
-    var x=pad+i*(w-pad*2)/(Math.max(data.length-1,1));
-    var y=h-pad-(v/maxVal)*(h-pad*2);
-    return x.toFixed(1)+','+y.toFixed(1);
-  });
-  var path='M'+points.join(' L');
-  var areaPath=path+' L'+(pad+(data.length-1)*(w-pad*2)/Math.max(data.length-1,1)).toFixed(1)+','+(h-pad)+' L'+pad+','+(h-pad)+' Z';
-  return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" style="overflow:visible">'+
-    '<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity=".3"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+
-    '<path d="'+areaPath+'" fill="url(#lg)"/>'+
-    '<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
-    points.map(function(pt,i){
-      var xy=pt.split(','); return '<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="3" fill="'+color+'"/>';
-    }).join('')+
-    (data.length>0?'<text x="'+pad+'" y="'+(h-2)+'" fill="#4A6A5A" font-size="8">'+data[0]+'</text>':'')+ 
-    (data.length>1?'<text x="'+(w-pad)+'" y="'+(h-2)+'" fill="#4A6A5A" font-size="8" text-anchor="end">'+data[data.length-1]+'</text>':'')+
-  '</svg>';
-}
-function _barChart(data,labels,colors,levelLabels,maxVal){
-  if(!data||data.filter(Boolean).length===0) return '<div style="color:#4A6A5A;font-size:12px;text-align:center;padding:20px;font-style:italic">Not enough data yet</div>';
-  var bw=24,gap=8,h=70,pad=10;
-  var totalW=data.length*(bw+gap)+pad*2;
-  return '<svg width="100%" viewBox="0 0 '+totalW+' '+h+'" style="overflow:visible">'+
-    data.map(function(v,i){
-      if(v===null) return '';
-      var x=pad+i*(bw+gap);
-      var barH=(v/maxVal)*(h-pad*2);
-      var y=h-pad-barH;
-      var c=colors[Math.min(v-1,colors.length-1)];
-      return '<rect x="'+x+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+barH.toFixed(1)+'" rx="4" fill="'+c+'"/>'+
-        (labels[i]?'<text x="'+(x+bw/2)+'" y="'+(h-1)+'" fill="#4A6A5A" font-size="7" text-anchor="middle">'+labels[i].split(' ')[0]+'</text>':'');
-    }).join('')+
-  '</svg>';
-}
-function _statCell(label,value,unit){
-  return '<div style="background:#1C2321;border-radius:12px;padding:12px 10px;text-align:center">'+
-    '<div style="font-size:20px;font-weight:800;color:#D5A144;letter-spacing:-.5px">'+value+'</div>'+
-    '<div style="font-size:9px;color:#4A6A5A;margin-top:3px;text-transform:uppercase;letter-spacing:.06em">'+label+'</div>'+
-    (unit?'<div style="font-size:9px;color:#4A6A5A">'+unit+'</div>':'')+
-  '</div>';
-}
-function _dataCard(emoji,label,value,note,color){
-  return '<div style="background:#222E2A;border-radius:14px;padding:14px">'+
-    '<div style="font-size:22px;margin-bottom:6px">'+emoji+'</div>'+
-    '<div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">'+label+'</div>'+
-    '<div style="font-size:17px;font-weight:800;color:'+color+';letter-spacing:-.3px">'+value+'</div>'+
-    '<div style="font-size:10px;color:#6E8A78;margin-top:3px">'+note+'</div>'+
-  '</div>';
-}
-function _activityGrid(inspections){
-  // 12-week activity heatmap
-  var cells='';
-  var now=Date.now();
-  var week=7*24*3600*1000;
-  for(var w=11;w>=0;w--){
-    var weekStart=now-w*week;
-    var weekEnd=weekStart+week;
-    var count=inspections.filter(function(r){return r.date>=weekStart&&r.date<weekEnd;}).length;
-    var opacity=count===0?0.08:count===1?0.4:0.85;
-    cells+='<div style="width:18px;height:18px;border-radius:4px;background:rgba(213,161,68,'+opacity+')"></div>';
-  }
-  return '<div><div style="font-size:9px;color:#4A6A5A;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Last 12 weeks</div>'+
-    '<div style="display:flex;gap:4px;flex-wrap:wrap">'+cells+'</div></div>';
-}
-function _calcStreak(inspections){
-  if(inspections.length===0) return 0;
-  var streak=0;
-  var now=Date.now();
-  var week=7*24*3600*1000;
-  for(var w=0;w<52;w++){
-    var start=now-(w+1)*week;
-    var end=now-w*week;
-    if(inspections.some(function(r){return r.date>=start&&r.date<end;})) streak++;
-    else break;
-  }
-  return streak;
-}
-function exportInspectionPDF(hiveId){
-  showToast('Preparing PDF journal… 📄');
-  setTimeout(function(){
-    var all=getAllHives();
-    var item=all.find(function(x){return x.h.id===hiveId;});
-    if(!item){ showToast('Hive not found'); return; }
-    var h=item.h;
-    var records=INSPECTIONS.filter(function(r){return r.hiveId===hiveId;});
-    var content='HIVEDASH — HIVE JOURNAL\n';
-    content+='Hive: '+h.name+(h.breed&&h.breed!=='Unknown'?' ('+h.breed+')':'')+'\n';
-    content+='Exported: '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+'\n\n';
-    records.forEach(function(r){
-      content+='── '+r.dateStr+' ──\n';
-      content+='Queen: '+r.queen+'\n';
-      content+='Brood: '+r.brood+'/10\n';
-      content+='Honey: '+r.honey+'/10\n';
-      content+='Varroa: '+r.varroa+'\n';
-      content+='Overall: '+r.overall+'\n';
-      if(r.notes) content+='Notes: '+r.notes+'\n';
-      content+='\n';
-    });
-    var blob=new Blob([content],{type:'text/plain'});
-    var url=URL.createObjectURL(blob);
-    var a=document.createElement('a');
-    a.href=url; a.download=h.name.replace(/\s+/g,'_')+'_journal.txt';
-    a.click(); URL.revokeObjectURL(url);
-    showToast('Journal exported ✓');
-  },600);
 }
 
 

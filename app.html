@@ -3257,11 +3257,14 @@ function renderInspMain(){
           if(h.status==='Healthy')dot='#3A9A5C';
           else if(h.status==='Due soon')dot='#D5A144';
           else if(h.status==='Needs attention')dot='#B83A2A';
-          return '<div onclick="selectInspHive('+i+')" style="flex-shrink:0;min-width:140px;background:'+(active?'#D5A144':'#222E2A')+';border-radius:14px;padding:14px;cursor:pointer;transition:.2s;border:2px solid '+(active?'#D5A144':'#2E3A36')+'">'+
-            '<div style="font-size:18px;margin-bottom:6px">🐝</div>'+
-            '<div style="font-size:13px;font-weight:700;color:'+(active?'#1C2321':'#E8E2D8')+';letter-spacing:-.2px">'+h.name+'</div>'+
-            '<div style="font-size:11px;color:'+(active?'rgba(28,35,33,.6)':'#4A6A5A')+';margin-top:2px">'+a.name+'</div>'+
-            '<div style="display:flex;align-items:center;gap:4px;margin-top:8px"><div style="width:5px;height:5px;border-radius:50%;background:'+dot+'"></div><span style="font-size:10px;font-weight:600;color:'+(active?'rgba(28,35,33,.7)':dot)+'">'+(h.status||'New')+'</span></div>'+
+          return '<div style="flex-shrink:0;min-width:140px;background:'+(active?'#D5A144':'#222E2A')+';border-radius:14px;padding:14px;cursor:pointer;transition:.2s;border:2px solid '+(active?'#D5A144':'#2E3A36')+'">'+
+            '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:6px">'+
+              '<div style="font-size:18px">🐝</div>'+
+              '<div onclick="event.stopPropagation();openHiveDetail('+h.id+')" style="font-size:9px;font-weight:700;color:'+(active?'#1C2321':'#D5A144')+';background:'+(active?'rgba(0,0,0,.1)':'rgba(213,161,68,.15)')+';padding:3px 7px;border-radius:6px;cursor:pointer">Detail ›</div>'+
+            '</div>'+
+            '<div onclick="selectInspHive('+i+')" style="font-size:13px;font-weight:700;color:'+(active?'#1C2321':'#E8E2D8')+';letter-spacing:-.2px">'+h.name+'</div>'+
+            '<div onclick="selectInspHive('+i+')" style="font-size:11px;color:'+(active?'rgba(28,35,33,.6)':'#4A6A5A')+';margin-top:2px">'+a.name+'</div>'+
+            '<div onclick="selectInspHive('+i+')" style="display:flex;align-items:center;gap:4px;margin-top:8px"><div style="width:5px;height:5px;border-radius:50%;background:'+dot+'"></div><span style="font-size:10px;font-weight:600;color:'+(active?'rgba(28,35,33,.7)':dot)+'">'+(h.status||'New')+'</span></div>'+
           '</div>';
         }).join('')+
       '</div>';
@@ -3641,6 +3644,260 @@ function showInspectComplete(record){
     '<div class="f7" style="width:100%;margin-top:24px"><button onclick="document.getElementById(\'inspCompleteOv\').remove();renderInspMain()" style="width:100%;padding:15px;border-radius:14px;background:#D5A144;border:none;font-family:Inter,sans-serif;font-size:14px;font-weight:700;color:#1C2321;cursor:pointer;letter-spacing:-.2px">Back to hive yard</button></div>'+
     '</div>';
   document.body.appendChild(ov);
+}
+
+
+/* ══════════════════════════════════════
+   INSPECT LEVEL 2 — Hive Detail Pages
+══════════════════════════════════════ */
+
+function openHiveDetail(hiveId){
+  var all=getAllHives();
+  var item=all.find(function(x){return x.h.id===hiveId;});
+  if(!item) return;
+  var h=item.h, a=item.a;
+  var hiveInspections=INSPECTIONS.filter(function(r){return r.hiveId===hiveId;});
+  var latest=hiveInspections[0]||null;
+  var body=document.getElementById('inspBody'); if(!body) return;
+
+  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent=h.name;
+  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
+  var dl=document.getElementById('inspDateLbl'); if(dl){ dl.style.display='none'; }
+
+  // Health score history for charts
+  var scores=hiveInspections.map(function(r){
+    var s=0;
+    var qmap={'Spotted':20,'Signs only':14,'Not seen':8,'Queenless':0};
+    s+=parseInt(r.brood)*3;
+    s+=parseInt(r.honey)*2;
+    s+=(qmap[r.queen]||10);
+    if(r.overall==='Thriving')s+=10;else if(r.overall==='Stable')s+=6;
+    return Math.min(100,Math.round(s));
+  }).reverse();
+  var labels=hiveInspections.map(function(r){return r.dateStr;}).reverse();
+
+  // Varroa history
+  var varroaLevels=hiveInspections.map(function(r){
+    if(!r.varroa||r.varroa==='Not recorded')return null;
+    if(r.varroa.indexOf('Low')>=0)return 1;
+    if(r.varroa.indexOf('Moderate')>=0)return 2;
+    if(r.varroa.indexOf('High')>=0)return 3;
+    return 4;
+  }).reverse();
+
+  body.scrollTop=0;
+  body.innerHTML=
+    '<div style="padding:0 16px 100px">'+
+
+    // Back button
+    '<div onclick="renderInspMain()" style="display:inline-flex;align-items:center;gap:6px;color:#D5A144;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px">'+
+      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="#D5A144" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      'All hives'+
+    '</div>'+
+
+    // ① Hive Detail header
+    '<div style="background:#222E2A;border-radius:18px;padding:18px;margin-bottom:12px">'+
+      '<div style="display:flex;align-items:center;gap:14px;margin-bottom:14px">'+
+        '<div style="width:52px;height:52px;border-radius:14px;background:#1C2321;display:flex;align-items:center;justify-content:center;font-size:26px">🐝</div>'+
+        '<div style="flex:1">'+
+          '<div style="font-size:18px;font-weight:800;color:#F4F0E8;letter-spacing:-.5px">'+h.name+(h.breed&&h.breed!=='Unknown'?' · '+h.breed:'')+'</div>'+
+          '<div style="font-size:12px;color:#4A6A5A;margin-top:3px">'+a.name+(a.location?' · '+a.location:'')+'</div>'+
+        '</div>'+
+        '<button onclick="startInspection()" style="padding:8px 14px;border-radius:10px;border:none;background:#D5A144;color:#1C2321;font-size:12px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Inspect</button>'+
+      '</div>'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+        _statCell('Total inspections',hiveInspections.length,'times')+
+        _statCell('Last inspection',latest?latest.dateStr:'Never','')+
+        _statCell('Status',h.status||'New','')+
+      '</div>'+
+    '</div>'+
+
+    // ② 4 data cards
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Latest Data</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:12px">'+
+      _dataCard('🌡','Brood Temp',isF?'93.5 °F':'34.2 °C','Optimal ✓','#3A9A5C')+
+      _dataCard('🍯','Honey Stores',(latest?latest.honey:5)+'/10','Adequate','#D5A144')+
+      _dataCard('👑','Queen Status',latest?latest.queen:'—',latest?'Last seen '+latest.dateStr:'Not recorded','#6E8A78')+
+      _dataCard('🔬','Varroa Load',latest?latest.varroa:'—','Mite level','#B83A2A')+
+    '</div>'+
+
+    // ③ Queen Records
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Queen Records</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:14px 16px;margin-bottom:12px">'+
+    (hiveInspections.length===0
+      ? '<div style="color:#4A6A5A;font-size:12px;font-style:italic;text-align:center;padding:8px">No records yet</div>'
+      : hiveInspections.slice(0,5).map(function(r){
+          var qc=r.queen==='Spotted'?'#3A9A5C':r.queen==='Not seen'?'#D5A144':r.queen==='Queenless'?'#B83A2A':'#6E8A78';
+          return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2E3A36">'+
+            '<div style="width:8px;height:8px;border-radius:50%;background:'+qc+';flex-shrink:0"></div>'+
+            '<div style="flex:1;font-size:12px;color:#E8E2D8;font-weight:500">'+r.queen+'</div>'+
+            '<div style="font-size:11px;color:#4A6A5A">'+r.dateStr+'</div>'+
+          '</div>';
+        }).join('')
+    )+'</div>'+
+
+    // ④ Treatment history
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Treatment History</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:14px 16px;margin-bottom:12px">'+
+    (function(){
+      var treated=hiveInspections.filter(function(r){return r.mgmt&&r.mgmt.indexOf('Treatment')>=0;});
+      if(treated.length===0) return '<div style="color:#4A6A5A;font-size:12px;font-style:italic;text-align:center;padding:8px">No treatments recorded</div>';
+      return treated.map(function(r){
+        return '<div style="display:flex;align-items:center;gap:12px;padding:8px 0;border-bottom:1px solid #2E3A36">'+
+          '<div style="font-size:16px">💊</div>'+
+          '<div style="flex:1"><div style="font-size:12px;color:#E8E2D8;font-weight:500">Treatment applied</div>'+
+          '<div style="font-size:11px;color:#4A6A5A;margin-top:1px">'+r.dateStr+'</div></div>'+
+        '</div>';
+      }).join('');
+    }())+'</div>'+
+
+    // ⑤ Health score trend chart
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Health Score Trend</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
+      _lineChart(scores,labels,'#3A9A5C',100)+
+    '</div>'+
+
+    // ⑥ Varroa tracking chart
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Varroa Mite Tracking</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
+      _barChart(varroaLevels,labels,['#3A9A5C','#D5A144','#C4974A','#B83A2A'],['Low','Mod','High','Crit'],4)+
+    '</div>'+
+
+    // ⑦ Per-hive brood trend
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Brood Trend</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
+      _lineChart(hiveInspections.map(function(r){return parseInt(r.brood)*10;}).reverse(),labels,'#D5A144',100)+
+    '</div>'+
+
+    // ⑧ Inspection activity stats
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Inspection Activity</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:12px">'+
+      '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;margin-bottom:14px">'+
+        _statCell('Total',hiveInspections.length,'inspections')+
+        _statCell('This month',hiveInspections.filter(function(r){return new Date(r.date).getMonth()===new Date().getMonth();}).length,'sessions')+
+        _statCell('Streak',_calcStreak(hiveInspections),'weeks')+
+      '</div>'+
+      _activityGrid(hiveInspections)+
+    '</div>'+
+
+    // ⑨ Export PDF
+    '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">Export</div>'+
+    '<button onclick="exportInspectionPDF('+hiveId+')" style="width:100%;padding:15px;border-radius:16px;border:2px solid #D5A144;background:transparent;color:#D5A144;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;display:flex;align-items:center;justify-content:center;gap:8px">'+
+      '<span style="font-size:18px">📄</span> Export PDF Hive Journal'+
+    '</button>'+
+
+    '</div>';
+}
+
+/* ── Chart helpers ── */
+function _lineChart(data, labels, color, maxVal){
+  if(!data||data.length===0) return '<div style="color:#4A6A5A;font-size:12px;text-align:center;padding:20px;font-style:italic">Not enough data yet</div>';
+  var w=280,h=80,pad=10;
+  var points=data.map(function(v,i){
+    var x=pad+i*(w-pad*2)/(Math.max(data.length-1,1));
+    var y=h-pad-(v/maxVal)*(h-pad*2);
+    return x.toFixed(1)+','+y.toFixed(1);
+  });
+  var path='M'+points.join(' L');
+  var areaPath=path+' L'+(pad+(data.length-1)*(w-pad*2)/Math.max(data.length-1,1)).toFixed(1)+','+(h-pad)+' L'+pad+','+(h-pad)+' Z';
+  return '<svg width="100%" viewBox="0 0 '+w+' '+h+'" style="overflow:visible">'+
+    '<defs><linearGradient id="lg" x1="0" y1="0" x2="0" y2="1"><stop offset="0%" stop-color="'+color+'" stop-opacity=".3"/><stop offset="100%" stop-color="'+color+'" stop-opacity="0"/></linearGradient></defs>'+
+    '<path d="'+areaPath+'" fill="url(#lg)"/>'+
+    '<path d="'+path+'" fill="none" stroke="'+color+'" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>'+
+    points.map(function(pt,i){
+      var xy=pt.split(','); return '<circle cx="'+xy[0]+'" cy="'+xy[1]+'" r="3" fill="'+color+'"/>';
+    }).join('')+
+    (data.length>0?'<text x="'+pad+'" y="'+(h-2)+'" fill="#4A6A5A" font-size="8">'+data[0]+'</text>':'')+ 
+    (data.length>1?'<text x="'+(w-pad)+'" y="'+(h-2)+'" fill="#4A6A5A" font-size="8" text-anchor="end">'+data[data.length-1]+'</text>':'')+
+  '</svg>';
+}
+function _barChart(data,labels,colors,levelLabels,maxVal){
+  if(!data||data.filter(Boolean).length===0) return '<div style="color:#4A6A5A;font-size:12px;text-align:center;padding:20px;font-style:italic">Not enough data yet</div>';
+  var bw=24,gap=8,h=70,pad=10;
+  var totalW=data.length*(bw+gap)+pad*2;
+  return '<svg width="100%" viewBox="0 0 '+totalW+' '+h+'" style="overflow:visible">'+
+    data.map(function(v,i){
+      if(v===null) return '';
+      var x=pad+i*(bw+gap);
+      var barH=(v/maxVal)*(h-pad*2);
+      var y=h-pad-barH;
+      var c=colors[Math.min(v-1,colors.length-1)];
+      return '<rect x="'+x+'" y="'+y.toFixed(1)+'" width="'+bw+'" height="'+barH.toFixed(1)+'" rx="4" fill="'+c+'"/>'+
+        (labels[i]?'<text x="'+(x+bw/2)+'" y="'+(h-1)+'" fill="#4A6A5A" font-size="7" text-anchor="middle">'+labels[i].split(' ')[0]+'</text>':'');
+    }).join('')+
+  '</svg>';
+}
+function _statCell(label,value,unit){
+  return '<div style="background:#1C2321;border-radius:12px;padding:12px 10px;text-align:center">'+
+    '<div style="font-size:20px;font-weight:800;color:#D5A144;letter-spacing:-.5px">'+value+'</div>'+
+    '<div style="font-size:9px;color:#4A6A5A;margin-top:3px;text-transform:uppercase;letter-spacing:.06em">'+label+'</div>'+
+    (unit?'<div style="font-size:9px;color:#4A6A5A">'+unit+'</div>':'')+
+  '</div>';
+}
+function _dataCard(emoji,label,value,note,color){
+  return '<div style="background:#222E2A;border-radius:14px;padding:14px">'+
+    '<div style="font-size:22px;margin-bottom:6px">'+emoji+'</div>'+
+    '<div style="font-size:10px;color:#4A6A5A;font-weight:600;text-transform:uppercase;letter-spacing:.06em;margin-bottom:4px">'+label+'</div>'+
+    '<div style="font-size:17px;font-weight:800;color:'+color+';letter-spacing:-.3px">'+value+'</div>'+
+    '<div style="font-size:10px;color:#6E8A78;margin-top:3px">'+note+'</div>'+
+  '</div>';
+}
+function _activityGrid(inspections){
+  // 12-week activity heatmap
+  var cells='';
+  var now=Date.now();
+  var week=7*24*3600*1000;
+  for(var w=11;w>=0;w--){
+    var weekStart=now-w*week;
+    var weekEnd=weekStart+week;
+    var count=inspections.filter(function(r){return r.date>=weekStart&&r.date<weekEnd;}).length;
+    var opacity=count===0?0.08:count===1?0.4:0.85;
+    cells+='<div style="width:18px;height:18px;border-radius:4px;background:rgba(213,161,68,'+opacity+')"></div>';
+  }
+  return '<div><div style="font-size:9px;color:#4A6A5A;margin-bottom:6px;text-transform:uppercase;letter-spacing:.06em">Last 12 weeks</div>'+
+    '<div style="display:flex;gap:4px;flex-wrap:wrap">'+cells+'</div></div>';
+}
+function _calcStreak(inspections){
+  if(inspections.length===0) return 0;
+  var streak=0;
+  var now=Date.now();
+  var week=7*24*3600*1000;
+  for(var w=0;w<52;w++){
+    var start=now-(w+1)*week;
+    var end=now-w*week;
+    if(inspections.some(function(r){return r.date>=start&&r.date<end;})) streak++;
+    else break;
+  }
+  return streak;
+}
+function exportInspectionPDF(hiveId){
+  showToast('Preparing PDF journal… 📄');
+  setTimeout(function(){
+    var all=getAllHives();
+    var item=all.find(function(x){return x.h.id===hiveId;});
+    if(!item){ showToast('Hive not found'); return; }
+    var h=item.h;
+    var records=INSPECTIONS.filter(function(r){return r.hiveId===hiveId;});
+    var content='HIVEDASH — HIVE JOURNAL\n';
+    content+='Hive: '+h.name+(h.breed&&h.breed!=='Unknown'?' ('+h.breed+')':'')+'\n';
+    content+='Exported: '+new Date().toLocaleDateString('en-US',{year:'numeric',month:'long',day:'numeric'})+'\n\n';
+    records.forEach(function(r){
+      content+='── '+r.dateStr+' ──\n';
+      content+='Queen: '+r.queen+'\n';
+      content+='Brood: '+r.brood+'/10\n';
+      content+='Honey: '+r.honey+'/10\n';
+      content+='Varroa: '+r.varroa+'\n';
+      content+='Overall: '+r.overall+'\n';
+      if(r.notes) content+='Notes: '+r.notes+'\n';
+      content+='\n';
+    });
+    var blob=new Blob([content],{type:'text/plain'});
+    var url=URL.createObjectURL(blob);
+    var a=document.createElement('a');
+    a.href=url; a.download=h.name.replace(/\s+/g,'_')+'_journal.txt';
+    a.click(); URL.revokeObjectURL(url);
+    showToast('Journal exported ✓');
+  },600);
 }
 
 

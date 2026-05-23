@@ -3664,13 +3664,6 @@ function showInspectComplete(record){
   document.body.appendChild(ov);
 }
 
-// Hook: open inspect page init
-var _origOpenSub = openSub;
-function openSub(id){
-  _origOpenSub(id);
-  if(id==='inspectPage') initInspectPage();
-}
-
 function exportData(fmt){
   var data = { apiaries: APIARIES, exportDate: new Date().toISOString() };
   var str, mime, ext;
@@ -3731,7 +3724,7 @@ function setNav(idx){
   // Open corresponding full pages
   if(idx===3) openSub('harvestPage');
   if(idx!==3) closeSub('harvestPage');
-  if(idx===1) openSub('inspectPage');
+  if(idx===1) { openSub('inspectPage'); initInspectPage(); }
   if(idx!==1) closeSub('inspectPage');
   if(idx===2) openSub('journalPage');
   if(idx!==2) closeSub('journalPage');

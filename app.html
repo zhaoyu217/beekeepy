@@ -3714,8 +3714,8 @@ function openDrawer(){document.getElementById('dov').classList.add('open');docum
 function closeDrawer(){document.getElementById('dov').classList.remove('open');document.getElementById('drawer').classList.remove('open')}
 
 /* SUBPAGES */
-function openSub(id){closeDrawer();document.getElementById(id).classList.add('open')}
-function closeSub(id){document.getElementById(id).classList.remove('open')}
+function openSub(id){var el=document.getElementById(id);if(el){closeDrawer();el.classList.add('open');}}
+function closeSub(id){var el=document.getElementById(id);if(el)el.classList.remove('open');}
 
 /* NAV */
 function setNav(idx){

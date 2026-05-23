@@ -3333,7 +3333,10 @@ function renderInspStep1(){
     ]))+
 
     // 2. Brood
-    dc('🐣 Brood pattern', slider('ibroodv','brood',0,100,50,'Poor','Excellent'))+
+    dc('🐣 Brood pattern',
+      slider('ibroodv','brood',0,100,50,'Poor','Excellent')+
+      '<div id="ibroodCaption" style="margin-top:10px;font-size:12px;color:#6E8A78;font-style:italic;line-height:1.5;background:#1C2321;border-radius:8px;padding:8px 12px;border-left:2px solid #D5A144">Moderate pattern · keep monitoring</div>'
+    )+
 
     // 3. Honey stores
     dc('🍯 Honey stores', slider('ihoneyv','honey',0,100,50,'Empty','Full'))+
@@ -3416,6 +3419,20 @@ function renderInspStep1(){
       '<textarea id="inspNotes" placeholder="Any observations…" oninput="_IS.notes=this.value" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box;placeholder-color:#4A6A5A"></textarea>'+
     '</div>'+
 
+    // Score card
+    '<div id="inspScoreCard" style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px;display:none">'+
+      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">📊 Inspection score</div>'+
+      '<div style="display:flex;align-items:center;gap:16px">'+
+        '<div id="inspScoreCircle" style="width:64px;height:64px;border-radius:50%;background:#1C2321;border:3px solid #D5A144;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
+          '<span id="inspScoreNum" style="font-size:22px;font-weight:800;color:#D5A144">—</span>'+
+        '</div>'+
+        '<div style="flex:1">'+
+          '<div id="inspScoreLabel" style="font-size:14px;font-weight:700;color:#E8E2D8;margin-bottom:4px">—</div>'+
+          '<div id="inspScoreDetail" style="font-size:11px;color:#6E8A78;line-height:1.6">Select queen, varroa & overall to calculate</div>'+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+
     // Buttons
     '<div style="display:flex;gap:10px">'+
       '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:14px;border-radius:14px;border:1px solid #2E3A36;background:#222E2A;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>'+
@@ -3474,9 +3491,67 @@ function pickPill(el){
 }
 
 
+function pickBlock(el){
+  var group=el.dataset.group, val=el.dataset.val;
+  document.querySelectorAll('[data-group="'+group+'"]').forEach(function(b){ b.style.border='2px solid #2E3A36'; });
+  el.style.border='2px solid #D5A144';
+  _IS[group]=val;
+  calcInspScore();
+}
+
 function islide(inp){
   var el=document.getElementById(inp.dataset.eid); if(el) el.textContent=inp.value+'%';
   _IS[inp.dataset.key]=inp.value;
+  if(inp.dataset.key==='brood') updateBroodCaption(inp.value);
+  calcInspScore();
+}
+function updateBroodCaption(v){
+  var el=document.getElementById('ibroodCaption'); if(!el) return;
+  v=parseInt(v);
+  var msg = v<20 ? 'Very poor pattern · urgent attention needed' :
+            v<40 ? 'Weak pattern · monitor closely' :
+            v<60 ? 'Moderate pattern · keep monitoring' :
+            v<80 ? 'Good solid pattern · colony looking healthy' :
+                   'Excellent pattern · colony thriving 🌟';
+  el.textContent=msg;
+}
+function calcInspScore(){
+  var score=0, factors=0;
+  // Brood 0-30pts
+  if(_IS.brood){ score+=parseInt(_IS.brood)*0.3; factors++; }
+  // Honey 0-20pts
+  if(_IS.honey){ score+=parseInt(_IS.honey)*0.2; factors++; }
+  // Queen 0-20pts
+  var qmap={'Seen':20,'Signs only':14,'Not seen':8,'Queenless':0};
+  if(_IS.queen!==undefined){ score+=qmap[_IS.queen]||0; factors++; }
+  // Varroa 0-20pts
+  var vmap={'Low <1%':20,'Moderate 1-2%':14,'High 2-4%':6,'Critical >4%':0};
+  // match loosely
+  if(_IS.varroa){
+    var vk=Object.keys(vmap).find(function(k){ return _IS.varroa.indexOf(k.split(' ')[0])>=0; });
+    score+=(vk?vmap[vk]:10); factors++;
+  }
+  // Overall 0-10pts
+  var omap={'Thriving':10,'Stable':6,'Needs care':0};
+  if(_IS.overall!==undefined){ score+=omap[_IS.overall]||0; factors++; }
+  if(factors<3) return;
+  score=Math.min(100,Math.round(score));
+  var label=score>=80?'Excellent':score>=60?'Good':score>=40?'Fair':'Needs attention';
+  var color=score>=80?'#3A9A5C':score>=60?'#D5A144':score>=40?'#C4974A':'#B83A2A';
+  var detail=score>=80?'Colony is in great shape. Keep up the good work!':
+             score>=60?'Colony is stable. Monitor regularly.':
+             score>=40?'Some concerns noted. Investigate soon.':
+             'Immediate attention required.';
+  var card=document.getElementById('inspScoreCard');
+  var circle=document.getElementById('inspScoreCircle');
+  var num=document.getElementById('inspScoreNum');
+  var lbl=document.getElementById('inspScoreLabel');
+  var det=document.getElementById('inspScoreDetail');
+  if(card) card.style.display='block';
+  if(circle) circle.style.borderColor=color;
+  if(num){ num.textContent=score; num.style.color=color; }
+  if(lbl){ lbl.textContent=label; lbl.style.color=color; }
+  if(det) det.textContent=detail;
 }
 function itempslide(val){
   var ls=['Aggressive','Nervous','Calm','Calm','Very calm','Docile'];

@@ -3231,7 +3231,7 @@ function openInspectPage(){
   if(dl){ dl.textContent=new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}); dl.style.display=''; }
   var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
   _IS={};
-  renderInspStep0();
+  setTimeout(renderInspStep0, 0);
 }
 
 function renderInspStep0(){

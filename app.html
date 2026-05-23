@@ -1450,8 +1450,11 @@ function loadData(){
       ACTIVE_APIARY_ID = 1;
       _nextApiaryId = 2;
     } else {
-      // Fresh start — create default apiary
-      const def = {id:1, name:'My Apiary', location:'', hives:[], nextHiveId:1};
+      // Fresh start — create default apiary with sample hives
+      var def = {id:1, name:'Backyard Apiary', location:'', nextHiveId:3, hives:[
+        {id:1, name:'Hive-1', breed:'Italian', status:'Healthy', sub:'Added today · not yet inspected', iconColor:'#F5F4F2', strokeColor:'#B7B1A7', photo:null},
+        {id:2, name:'Hive-2', breed:'Carniolan', status:'Due soon', sub:'Added today · not yet inspected', iconColor:'#F5F4F2', strokeColor:'#B7B1A7', photo:null}
+      ]};
       APIARIES.push(def);
       ACTIVE_APIARY_ID = 1;
       _nextApiaryId = 2;
@@ -3278,169 +3281,267 @@ function renderInspStep1(){
   var body = document.getElementById('inspBody'); if(!body) return;
   var page = document.getElementById('inspectPage');
   if(page) page.style.background='#1C2321';
+
+  // Header: dark bg, Save btn
   var hd = document.querySelector('#inspectPage .sub-hd');
-  if(hd){ hd.style.background='#1C2321'; hd.style.borderBottom='1px solid #2E3A36'; }
+  if(hd){
+    hd.style.background='#1C2321';
+    hd.style.borderBottom='none';
+    hd.style.paddingBottom='8px';
+  }
   var ttl = document.getElementById('inspTitle');
   if(ttl){ ttl.style.color='#F4F0E8'; }
   var bp = document.querySelector('#inspectPage .back');
-  if(bp){ bp.style.background='#222E2A'; var bpath=bp.querySelector('path'); if(bpath) bpath.setAttribute('stroke','#D5A144'); }
+  if(bp){ bp.style.background='rgba(255,255,255,.08)'; bp.style.borderRadius='10px'; var bpath=bp.querySelector('path'); if(bpath) bpath.setAttribute('stroke','#F4F0E8'); }
   var dl = document.getElementById('inspDateLbl');
-  if(dl) dl.style.color='#4A6A5A';
+  if(dl){ dl.textContent='Save'; dl.style.color='#D5A144'; dl.style.fontWeight='600'; dl.style.fontSize='14px'; dl.style.cursor='pointer'; dl.onclick=function(){ finishInspection('complete'); }; }
 
   body.style.padding='0';
   body.scrollTop=0;
-  _IS.brood=50; _IS.honey=50; _IS.temp=70;
+  _IS.brood=6; _IS.honey=5; _IS.temp=70; _IS.broodMax=10;
 
-  // Dark card builder
-  function dc(label,inner,extra){
-    return '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px'+(extra?';'+extra:'')+'">'+
-      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">'+label+'</div>'+
-      inner+'</div>';
+  // Quote messages per queen selection
+  var quotes = {
+    default: '"Your girls had a full week — let\'s see what they\'ve been up to."',
+    Spotted: '"She\'s here and looking strong. The colony is in good hands."',
+    'Not seen': '"No queen spotted today. Check for eggs — she may just be hiding."',
+    'Eggs only': '"Fresh eggs confirm her presence. She\'s doing her job."',
+    Queenless: '"No signs of the queen. Act fast — the colony needs her."'
+  };
+
+  function renderQueen(){
+    var q = _IS.queen;
+    var options = [
+      {val:'Spotted', sub:'Saw her on the comb', emoji:'👑'},
+      {val:'Not seen', sub:'Signs still present', emoji:'🔍'},
+      {val:'Eggs only', sub:'Fresh eggs confirm presence', emoji:'🥚'},
+      {val:'Queenless', sub:'No signs at all', emoji:'⚠️'},
+    ];
+    return options.map(function(o){
+      var active = q===o.val;
+      if(active){
+        return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#D5A144;border-radius:16px;padding:16px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
+          '<div style="font-size:28px">'+o.emoji+'</div>'+
+          '<div><div style="font-size:15px;font-weight:700;color:#1C2321;letter-spacing:-.3px">'+o.val+'</div>'+
+          '<div style="font-size:12px;color:rgba(28,35,33,.6);margin-top:2px">'+o.sub+'</div></div>'+
+        '</div>';
+      } else {
+        return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#222E2A;border-radius:14px;padding:13px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
+          '<div style="font-size:22px;opacity:.7">'+o.emoji+'</div>'+
+          '<div style="font-size:13px;font-weight:500;color:#8AA898">'+o.val+'</div>'+
+        '</div>';
+      }
+    }).join('');
   }
-  // 2-col grid
-  function g2(items){ return '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+items.join('')+'</div>'; }
-  // 3-col grid
-  function g3(items){ return '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+items.join('')+'</div>'; }
-  // Block button
-  function blk(group,val,emoji,accent){
-    var id='ib_'+group+'_'+val.replace(/\W/g,'');
-    return '<div id="'+id+'" data-group="'+group+'" data-val="'+val+'" onclick="pickBlock(this)" style="background:#1C2321;border:2px solid #2E3A36;border-radius:12px;padding:14px 8px;cursor:pointer;text-align:center;transition:.15s;user-select:none">'+
-      '<div style="font-size:22px;margin-bottom:6px">'+emoji+'</div>'+
-      '<div style="font-size:11px;font-weight:600;color:#E8E2D8;line-height:1.3">'+val+'</div>'+
+
+  function renderBrood(){
+    var v=_IS.brood||6, mx=_IS.broodMax||10;
+    var captions=['Very poor — urgent attention','Weak — monitor closely','Below average','Moderate — keep watching','Solid pattern','Good coverage','Very good','Excellent pattern 🌟'];
+    var capIdx=Math.min(7,Math.floor(v/mx*8));
+    return '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+      '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ibroodCaption">'+captions[capIdx]+'</div>'+
+      '<div style="font-size:22px;font-weight:800;color:#D5A144;letter-spacing:-.5px"><span id="ibroodv">'+v+'</span><span style="font-size:13px;color:#4A6A5A;font-weight:500">/'+mx+'</span></div>'+
+    '</div>'+
+    '<div style="position:relative;height:8px;background:#1C2321;border-radius:4px;overflow:hidden">'+
+      '<div id="ibroodBar" style="position:absolute;left:0;top:0;height:100%;background:#D5A144;border-radius:4px;width:'+(v/mx*100)+'%;transition:.2s"></div>'+
+    '</div>'+
+    '<div style="display:flex;justify-content:space-between;margin-top:6px">'+
+      '<button onclick="adjBrood(-1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#222E2A;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">−</button>'+
+      '<div style="display:flex;gap:6px;align-items:center">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
+        return '<div onclick="setBrood('+n+')" style="width:8px;height:8px;border-radius:50%;background:'+(n<=v?'#D5A144':'#2E3A36')+';cursor:pointer;transition:.2s" id="ibdot_'+n+'"></div>';
+      }).join('')+'</div>'+
+      '<button onclick="adjBrood(1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#222E2A;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">+</button>'+
     '</div>';
   }
-  // Fat slider
-  function slider(eid,key,min,max,val,leftL,rightL,color){
-    return '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>'+leftL+'</span><span id="'+eid+'" style="color:#D5A144;font-weight:700">'+val+'%</span><span>'+rightL+'</span></div>'+
-      '<input type="range" min="'+min+'" max="'+max+'" value="'+val+'" oninput="islide(this)" data-eid="'+eid+'" data-key="'+key+'" style="width:100%;height:12px;border-radius:6px;accent-color:'+(color||'#D5A144')+';cursor:pointer">';
-  }
-  // Pill toggle
-  function pills(group,opts){
-    return '<div style="display:flex;flex-wrap:wrap;gap:6px">'+opts.map(function(o){
-      var id='ip_'+group+'_'+o.replace(/\W/g,'');
-      return '<div id="'+id+'" data-group="'+group+'" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer;user-select:none;transition:.15s">'+o+'</div>';
-    }).join('')+'</div>';
+
+  function sectionLabel(icon, text){
+    return '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.1em;margin:20px 0 10px;display:flex;align-items:center;gap:6px">'+
+      '<span>'+icon+'</span><span>'+text+'</span>'+
+    '</div>';
   }
 
-  body.innerHTML = '<div style="padding:0 16px 120px">'+
+  body.innerHTML =
+    '<div style="padding:0 16px 120px">'+
 
-    // 1. Queen
-    dc('👑 Queen status', g2([
-      blk('queen','Seen','✅'),
-      blk('queen','Not seen','👀'),
-      blk('queen','Signs only','🥚'),
-      blk('queen','Queenless','⚠️'),
-    ]))+
+    // Emotional quote
+    '<div id="inspQuote" style="background:#222E2A;border-radius:14px;padding:14px 16px;border-left:3px solid #D5A144;margin-bottom:20px">'+
+      '<div style="font-size:13px;font-weight:500;color:#E8E2D8;line-height:1.6;font-style:italic" id="inspQuoteText">'+quotes['default']+'</div>'+
+    '</div>'+
 
-    // 2. Brood
-    dc('🐣 Brood pattern',
-      slider('ibroodv','brood',0,100,50,'Poor','Excellent')+
-      '<div id="ibroodCaption" style="margin-top:10px;font-size:12px;color:#6E8A78;font-style:italic;line-height:1.5;background:#1C2321;border-radius:8px;padding:8px 12px;border-left:2px solid #D5A144">Moderate pattern · keep monitoring</div>'
-    )+
+    // Step dots
+    '<div style="display:flex;justify-content:center;gap:6px;margin-bottom:20px" id="inspStepDots">'+
+      '<div style="width:24px;height:4px;border-radius:2px;background:#D5A144"></div>'+
+      '<div style="width:8px;height:4px;border-radius:2px;background:#2E3A36"></div>'+
+      '<div style="width:8px;height:4px;border-radius:2px;background:#2E3A36"></div>'+
+      '<div style="width:8px;height:4px;border-radius:2px;background:#2E3A36"></div>'+
+    '</div>'+
 
-    // 3. Honey stores
-    dc('🍯 Honey stores', slider('ihoneyv','honey',0,100,50,'Empty','Full'))+
+    // Queen status
+    sectionLabel('👑','Queen Status')+
+    '<div id="queenCards">'+renderQueen()+'</div>'+
 
-    // 4. Varroa
-    dc('🔬 Varroa mite load', g2([
-      blk('varroa','Low &lt;1%','🟢'),
-      blk('varroa','Moderate 1-2%','🟡'),
-      blk('varroa','High 2-4%','🟠'),
-      blk('varroa','Critical &gt;4%','🔴'),
-    ]))+
+    // Brood frames
+    sectionLabel('🐣','Brood Frames')+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px" id="broodCard">'+renderBrood()+'</div>'+
 
-    // 5. Temperament
-    dc('😤 Temperament',
-      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
-      '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#3A9A5C;cursor:pointer">'
-    )+
+    // Honey stores
+    sectionLabel('🍯','Honey Stores')+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
+      '<div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:8px">'+
+        '<div style="font-size:12px;color:#6E8A78;font-style:italic" id="ihoneyCaption">Half full — adequate</div>'+
+        '<div style="font-size:22px;font-weight:800;color:#D5A144"><span id="ihoneyv">5</span><span style="font-size:13px;color:#4A6A5A;font-weight:500">/10</span></div>'+
+      '</div>'+
+      '<div style="position:relative;height:8px;background:#1C2321;border-radius:4px;overflow:hidden">'+
+        '<div id="ihoneyBar" style="position:absolute;left:0;top:0;height:100%;background:#D5A144;border-radius:4px;width:50%;transition:.2s"></div>'+
+      '</div>'+
+      '<div style="display:flex;justify-content:space-between;margin-top:6px">'+
+        '<button onclick="adjHoney(-1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">−</button>'+
+        '<div style="display:flex;gap:6px;align-items:center">'+[1,2,3,4,5,6,7,8,9,10].map(function(n){
+          return '<div onclick="setHoney('+n+')" style="width:8px;height:8px;border-radius:50%;background:'+(n<=5?'#D5A144':'#2E3A36')+';cursor:pointer" id="ihdot_'+n+'"></div>';
+        }).join('')+'</div>'+
+        '<button onclick="adjHoney(1)" style="width:36px;height:36px;border-radius:10px;border:none;background:#1C2321;color:#D5A144;font-size:20px;cursor:pointer;font-weight:300">+</button>'+
+      '</div>'+
+    '</div>'+
 
-    // 6. Overall
-    dc('⭐ Overall impression', g3([
-      blk('overall','Thriving','🌟'),
-      blk('overall','Stable','✅'),
-      blk('overall','Needs care','🚨'),
-    ]))+
+    // Varroa
+    sectionLabel('🔬','Varroa Mite Load')+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:8px">'+
+      ['Low &lt;1%|🟢','Moderate 1-2%|🟡','High 2-4%|🟠','Critical &gt;4%|🔴'].map(function(s){
+        var parts=s.split('|'); var val=parts[0]; var emoji=parts[1];
+        return '<div data-group="varroa" data-val="'+val+'" onclick="pickBlock(this)" style="background:#222E2A;border:2px solid #2E3A36;border-radius:14px;padding:16px 10px;text-align:center;cursor:pointer;transition:.15s">'+
+          '<div style="font-size:24px;margin-bottom:6px">'+emoji+'</div>'+
+          '<div style="font-size:11px;font-weight:600;color:#8AA898">'+val+'</div>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
 
-    // 7. More checks (expandable)
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px">'+
+    // Temperament
+    sectionLabel('😤','Temperament')+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px">'+
+      '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:10px"><span>Aggressive</span><span id="itempv" style="color:#D5A144;font-weight:700">Calm</span><span>Docile</span></div>'+
+      '<input type="range" min="0" max="100" value="70" oninput="itempslide(this.value)" style="width:100%;height:8px;border-radius:4px;accent-color:#3A9A5C;cursor:pointer">'+
+    '</div>'+
+
+    // Overall
+    sectionLabel('⭐','Overall Impression')+
+    '<div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px">'+
+      [['Thriving','🌟','#3A9A5C'],['Stable','✅','#D5A144'],['Needs care','🚨','#B83A2A']].map(function(o){
+        return '<div data-group="overall" data-val="'+o[0]+'" onclick="pickBlock(this)" style="background:#222E2A;border:2px solid #2E3A36;border-radius:14px;padding:14px 8px;text-align:center;cursor:pointer;transition:.15s">'+
+          '<div style="font-size:22px;margin-bottom:6px">'+o[1]+'</div>'+
+          '<div style="font-size:11px;font-weight:600;color:#8AA898">'+o[0]+'</div>'+
+        '</div>';
+      }).join('')+
+    '</div>'+
+
+    // More checks
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:20px">'+
       '<div onclick="toggleInspMore()" style="display:flex;align-items:center;justify-content:space-between;cursor:pointer">'+
-        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em">More checks</div>'+
-        '<span id="inspMoreArrow" style="color:#4A6A5A;font-size:16px;transition:.2s">›</span>'+
+        '<div style="font-size:13px;font-weight:600;color:#8AA898">More checks</div>'+
+        '<span id="inspMoreArrow" style="color:#4A6A5A;font-size:18px">›</span>'+
       '</div>'+
-      '<div id="inspMore" style="display:none;margin-top:14px">'+
-
-        // Pollen
-        '<div style="margin-bottom:16px">'+
-          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🌸 Pollen stores</div>'+
-          slider('ipollenNav','pollen',0,100,50,'None','Abundant')+
-        '</div>'+
-
-        // Queen cells
-        '<div style="margin-bottom:16px">'+
-          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">👑 Queen cells</div>'+
-          pills('qcell',['None','Swarm cells','Supersedure','Emergency'])+
-        '</div>'+
-
-        // Hive weight
-        '<div style="margin-bottom:16px">'+
-          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">⚖️ Hive weight</div>'+
-          '<div style="display:flex;align-items:center;gap:12px">'+
-            '<button onclick="adjWeight(-5)" style="width:40px;height:40px;border-radius:10px;border:1px solid #2E3A36;background:#1C2321;font-size:20px;color:#D5A144;cursor:pointer;font-weight:300">−</button>'+
-            '<div id="inspWtVal" style="flex:1;text-align:center;font-size:26px;font-weight:800;color:#D5A144;letter-spacing:-.5px">—</div>'+
-            '<button onclick="adjWeight(5)" style="width:40px;height:40px;border-radius:10px;border:1px solid #2E3A36;background:#1C2321;font-size:20px;color:#D5A144;cursor:pointer;font-weight:300">+</button>'+
-          '</div>'+
-        '</div>'+
-
-        // Management actions
-        '<div>'+
-          '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">🛠 Management actions</div>'+
-          pills('mgmt',['Fed colony','Treatment applied','Added super','Split colony','Requeened'])+
-        '</div>'+
-
+      '<div id="inspMore" style="display:none;margin-top:16px">'+
+        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">🌸 Pollen stores</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+['Low','Moderate','Abundant'].map(function(o){
+          return '<div data-group="pollen" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer">'+o+'</div>';
+        }).join('')+'</div>'+
+        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">👑 Queen cells</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap;margin-bottom:16px">'+['None','Swarm','Supersedure','Emergency'].map(function(o){
+          return '<div data-group="qcell" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(o==='None'?'#D5A144':'#2E3A36')+';background:'+(o==='None'?'#2A2416':'#1C2321')+';font-size:12px;font-weight:500;color:'+(o==='None'?'#D5A144':'#6E8A78')+';cursor:pointer" data-on="'+(o==='None'?'1':'')+'"">'+o+'</div>';
+        }).join('')+'</div>'+
+        '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">🛠 Actions taken</div>'+
+        '<div style="display:flex;gap:6px;flex-wrap:wrap">'+['Fed colony','Treatment','Added super','Split','Requeened'].map(function(o){
+          return '<div data-group="mgmt" data-val="'+o+'" onclick="pickPill(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid #2E3A36;background:#1C2321;font-size:12px;font-weight:500;color:#6E8A78;cursor:pointer">'+o+'</div>';
+        }).join('')+'</div>'+
       '</div>'+
     '</div>'+
 
-    // 8. Photo
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px">'+
-      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">📷 Photos</div>'+
-      '<div id="inspPhotos" style="display:flex;gap:8px;flex-wrap:wrap">'+
-        '<label style="width:80px;height:80px;border-radius:12px;border:2px dashed #2E3A36;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#1C2321">'+
-          '<span style="font-size:22px">📷</span>'+
-          '<span style="font-size:9px;color:#4A6A5A;margin-top:2px">Add</span>'+
-          '<input type="file" accept="image/*" multiple style="display:none" onchange="addInspPhotos(this)">'+
-        '</label>'+
-      '</div>'+
-    '</div>'+
-
-    // 9. Notes
-    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px">'+
+    // Notes
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-top:12px">'+
       '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:10px">📝 Notes</div>'+
-      '<textarea id="inspNotes" placeholder="Any observations…" oninput="_IS.notes=this.value" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box;placeholder-color:#4A6A5A"></textarea>'+
+      '<textarea id="inspNotes" placeholder="Any observations…" oninput="_IS.notes=this.value" style="width:100%;min-height:80px;padding:12px;border:1px solid #2E3A36;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#E8E2D8;outline:none;background:#1C2321;resize:none;box-sizing:border-box"></textarea>'+
     '</div>'+
 
-    // Score card
-    '<div id="inspScoreCard" style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:10px;display:none">'+
-      '<div style="font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:12px">📊 Inspection score</div>'+
-      '<div style="display:flex;align-items:center;gap:16px">'+
-        '<div id="inspScoreCircle" style="width:64px;height:64px;border-radius:50%;background:#1C2321;border:3px solid #D5A144;display:flex;align-items:center;justify-content:center;flex-shrink:0">'+
-          '<span id="inspScoreNum" style="font-size:22px;font-weight:800;color:#D5A144">—</span>'+
-        '</div>'+
-        '<div style="flex:1">'+
-          '<div id="inspScoreLabel" style="font-size:14px;font-weight:700;color:#E8E2D8;margin-bottom:4px">—</div>'+
-          '<div id="inspScoreDetail" style="font-size:11px;color:#6E8A78;line-height:1.6">Select queen, varroa & overall to calculate</div>'+
-        '</div>'+
-      '</div>'+
-    '</div>'+
+    // Save button
+    '<button onclick="finishInspection(&quot;complete&quot;)" style="width:100%;padding:16px;border-radius:16px;border:none;background:#D5A144;color:#1C2321;font-size:15px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.3px;margin-top:16px">Save inspection ✓</button>'+
+    '<button onclick="finishInspection(&quot;draft&quot;)" style="width:100%;padding:13px;border-radius:14px;border:1px solid #2E3A36;background:transparent;color:#4A6A5A;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px">Save as draft</button>'+
 
-    // Buttons
-    '<div style="display:flex;gap:10px">'+
-      '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:14px;border-radius:14px;border:1px solid #2E3A36;background:#222E2A;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>'+
-      '<button onclick="finishInspection(&quot;complete&quot;)" style="flex:2;padding:14px;border-radius:14px;border:none;background:#D5A144;color:#1C2321;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.2px">Complete ✓</button>'+
-    '</div>'+
-
-  '</div>';
+    '</div>';
 }
+
+function pickQueenCard(el){
+  var val = el.dataset.val;
+  _IS.queen = val;
+  // Re-render queen cards
+  var container = document.getElementById('queenCards');
+  if(!container) return;
+  var quotes = {
+    Spotted: '"She\'s here and looking strong. The colony is in good hands."',
+    'Not seen': '"No queen spotted today. Check for eggs — she may just be hiding."',
+    'Eggs only': '"Fresh eggs confirm her presence. She\'s doing her job."',
+    Queenless: '"No signs of the queen. Act fast — the colony needs her."'
+  };
+  var options = [
+    {val:'Spotted', sub:'Saw her on the comb', emoji:'👑'},
+    {val:'Not seen', sub:'Signs still present', emoji:'🔍'},
+    {val:'Eggs only', sub:'Fresh eggs confirm presence', emoji:'🥚'},
+    {val:'Queenless', sub:'No signs at all', emoji:'⚠️'},
+  ];
+  container.innerHTML = options.map(function(o){
+    var active = val===o.val;
+    if(active){
+      return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#D5A144;border-radius:16px;padding:16px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
+        '<div style="font-size:28px">'+o.emoji+'</div>'+
+        '<div><div style="font-size:15px;font-weight:700;color:#1C2321;letter-spacing:-.3px">'+o.val+'</div>'+
+        '<div style="font-size:12px;color:rgba(28,35,33,.6);margin-top:2px">'+o.sub+'</div></div>'+
+      '</div>';
+    } else {
+      return '<div data-group="queen" data-val="'+o.val+'" onclick="pickQueenCard(this)" style="background:#222E2A;border-radius:14px;padding:13px 18px;margin-bottom:8px;cursor:pointer;display:flex;align-items:center;gap:14px">'+
+        '<div style="font-size:22px;opacity:.7">'+o.emoji+'</div>'+
+        '<div style="font-size:13px;font-weight:500;color:#8AA898">'+o.val+'</div>'+
+      '</div>';
+    }
+  }).join('');
+  // Update quote
+  var qt = document.getElementById('inspQuoteText');
+  if(qt) qt.textContent = quotes[val] || quotes['Spotted'];
+  calcInspScore();
+}
+
+function adjBrood(d){
+  var v=Math.max(0,Math.min(10,(_IS.brood||6)+d));
+  setBrood(v);
+}
+function setBrood(v){
+  _IS.brood=v;
+  var el=document.getElementById('ibroodv'); if(el) el.textContent=v;
+  var bar=document.getElementById('ibroodBar'); if(bar) bar.style.width=(v/10*100)+'%';
+  var captions=['Very poor — urgent','Weak — monitor','Below average','Moderate','Solid pattern','Good coverage','Very good','Excellent 🌟'];
+  var cap=document.getElementById('ibroodCaption');
+  if(cap) cap.textContent=captions[Math.min(7,Math.floor(v/10*8))];
+  for(var i=1;i<=10;i++){
+    var dot=document.getElementById('ibdot_'+i);
+    if(dot) dot.style.background=i<=v?'#D5A144':'#2E3A36';
+  }
+  calcInspScore();
+}
+function adjHoney(d){
+  var v=Math.max(0,Math.min(10,(_IS.honey||5)+d));
+  setHoney(v);
+}
+function setHoney(v){
+  _IS.honey=v;
+  var el=document.getElementById('ihoneyv'); if(el) el.textContent=v;
+  var bar=document.getElementById('ihoneyBar'); if(bar) bar.style.width=(v/10*100)+'%';
+  var captions=['Empty — urgent','Very low','Low','Below half','Half full','Adequate','Good','Full — excellent'];
+  var cap=document.getElementById('ihoneyCaption');
+  if(cap) cap.textContent=captions[Math.min(7,Math.floor(v/10*8))];
+  for(var i=1;i<=10;i++){
+    var dot=document.getElementById('ihdot_'+i);
+    if(dot) dot.style.background=i<=v?'#D5A144':'#2E3A36';
+  }
+  calcInspScore();
+}
+
 
 function toggleInspMore(){
   var el=document.getElementById('inspMore');

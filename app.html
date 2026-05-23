@@ -539,7 +539,208 @@ body.bright *{-webkit-font-smoothing:auto}
   </div>
 </div>
 
-<!-- SUB: HARVEST PAGE -->
+<!-- SUB: INSPECT PAGE -->
+<div class="sub" id="inspectPage">
+  <div class="sub-hd">
+    <div class="back" onclick="closeSub('inspectPage');setNav(0)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+    <div class="sub-title">Inspect</div>
+    <div style="font-size:12px;font-weight:600;color:#B7B1A7;margin-left:auto" id="inspectDateLabel"></div>
+  </div>
+  <div class="sp" id="inspectFlow">
+
+    <!-- Step 0: Select hive -->
+    <div id="inspStep0">
+      <div style="font-size:13px;font-weight:700;color:#1A1A1A;margin-bottom:12px">Select hive to inspect</div>
+      <div id="inspHiveList" style="display:flex;flex-direction:column;gap:8px;margin-bottom:20px"></div>
+      <div style="font-size:11px;color:#B7B1A7;text-align:center;margin-bottom:8px">Today's weather</div>
+      <div id="inspWeatherRow" style="background:#F9F7F3;border-radius:12px;padding:10px 14px;font-size:12px;color:#5A5550;margin-bottom:20px;text-align:center">—</div>
+      <button id="inspStartBtn" onclick="inspectStart()" style="width:100%;padding:14px;border-radius:14px;border:none;background:#1F2A24;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;opacity:.4" disabled>Begin inspection →</button>
+    </div>
+
+    <!-- Step 1: Main checks (hidden until hive selected) -->
+    <div id="inspStep1" style="display:none">
+
+      <!-- Queen status -->
+      <div class="sp-card">
+        <div class="sp-lbl">👑 Queen status</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px" id="queenBtns">
+          <div onclick="selectQueen(this,'Seen')" class="insp-block" style="background:#EEF5EF;border:2px solid transparent">
+            <div style="font-size:22px;margin-bottom:4px">✅</div>
+            <div style="font-size:12px;font-weight:700;color:#1A1A1A">Seen</div>
+          </div>
+          <div onclick="selectQueen(this,'Not seen')" class="insp-block" style="background:#FBF3E3;border:2px solid transparent">
+            <div style="font-size:22px;margin-bottom:4px">👀</div>
+            <div style="font-size:12px;font-weight:700;color:#1A1A1A">Not seen</div>
+          </div>
+          <div onclick="selectQueen(this,'Signs only')" class="insp-block" style="background:#F9F7F3;border:2px solid transparent">
+            <div style="font-size:22px;margin-bottom:4px">🥚</div>
+            <div style="font-size:12px;font-weight:700;color:#1A1A1A">Signs only</div>
+          </div>
+          <div onclick="selectQueen(this,'Queenless')" class="insp-block" style="background:#FDF0EE;border:2px solid transparent">
+            <div style="font-size:22px;margin-bottom:4px">⚠️</div>
+            <div style="font-size:12px;font-weight:700;color:#1A1A1A">Queenless</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Brood -->
+      <div class="sp-card">
+        <div class="sp-lbl">🐣 Brood pattern</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#B7B1A7;margin-bottom:6px;margin-top:4px">
+          <span>Poor</span><span id="broodVal" style="font-weight:700;color:#1A1A1A">50%</span><span>Excellent</span>
+        </div>
+        <input type="range" min="0" max="100" value="50" id="broodSlider" oninput="document.getElementById('broodVal').textContent=this.value+'%'" style="width:100%;height:8px;border-radius:4px;accent-color:#C79B3B;cursor:pointer">
+        <div style="margin-top:10px;font-size:12px;color:#5A5550;background:#F9F7F3;border-radius:8px;padding:8px 10px" id="broodCaption">Solid brood pattern · looking good</div>
+      </div>
+
+      <!-- Honey stores -->
+      <div class="sp-card">
+        <div class="sp-lbl">🍯 Honey stores</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#B7B1A7;margin-bottom:6px;margin-top:4px">
+          <span>Empty</span><span id="honeyVal" style="font-weight:700;color:#1A1A1A">50%</span><span>Full</span>
+        </div>
+        <input type="range" min="0" max="100" value="50" id="honeySlider" oninput="document.getElementById('honeyVal').textContent=this.value+'%'" style="width:100%;height:8px;border-radius:4px;accent-color:#C79B3B;cursor:pointer">
+      </div>
+
+      <!-- Varroa -->
+      <div class="sp-card">
+        <div class="sp-lbl">🔬 Varroa mite load</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:4px" id="varroaBtns">
+          <div onclick="selectVarroa(this,'Low &lt;1%')" class="insp-block" style="background:#EEF5EF;border:2px solid transparent">
+            <div style="font-size:18px;margin-bottom:3px">🟢</div>
+            <div style="font-size:11px;font-weight:700;color:#1A1A1A">Low &lt;1%</div>
+          </div>
+          <div onclick="selectVarroa(this,'Moderate 1-2%')" class="insp-block" style="background:#FBF3E3;border:2px solid transparent">
+            <div style="font-size:18px;margin-bottom:3px">🟡</div>
+            <div style="font-size:11px;font-weight:700;color:#1A1A1A">Moderate 1-2%</div>
+          </div>
+          <div onclick="selectVarroa(this,'High 2-4%')" class="insp-block" style="background:#FDF0EE;border:2px solid transparent">
+            <div style="font-size:18px;margin-bottom:3px">🟠</div>
+            <div style="font-size:11px;font-weight:700;color:#1A1A1A">High 2-4%</div>
+          </div>
+          <div onclick="selectVarroa(this,'Critical &gt;4%')" class="insp-block" style="background:#FDE8E8;border:2px solid transparent">
+            <div style="font-size:18px;margin-bottom:3px">🔴</div>
+            <div style="font-size:11px;font-weight:700;color:#1A1A1A">Critical &gt;4%</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Temperament -->
+      <div class="sp-card">
+        <div class="sp-lbl">😤 Temperament</div>
+        <div style="display:flex;justify-content:space-between;font-size:11px;color:#B7B1A7;margin-bottom:6px;margin-top:4px">
+          <span>Aggressive</span><span id="tempVal" style="font-weight:700;color:#1A1A1A">Calm</span><span>Docile</span>
+        </div>
+        <input type="range" min="0" max="100" value="70" id="tempSlider" oninput="updateTempLabel(this.value)" style="width:100%;height:8px;border-radius:4px;accent-color:#5E7A63;cursor:pointer">
+      </div>
+
+      <!-- Overall impression -->
+      <div class="sp-card">
+        <div class="sp-lbl">⭐ Overall impression</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:8px;margin-top:4px" id="overallBtns">
+          <div onclick="selectOverall(this,'Thriving')" class="insp-block" style="background:#EEF5EF;border:2px solid transparent">
+            <div style="font-size:22px;margin-bottom:3px">🌟</div>
+            <div style="font-size:11px;font-weight:700;color:#5E7A63">Thriving</div>
+          </div>
+          <div onclick="selectOverall(this,'Stable')" class="insp-block" style="background:#FBF3E3;border:2px solid transparent">
+            <div style="font-size:22px;margin-bottom:3px">✅</div>
+            <div style="font-size:11px;font-weight:700;color:#7A5C1E">Stable</div>
+          </div>
+          <div onclick="selectOverall(this,'Needs care')" class="insp-block" style="background:#FDE8E8;border:2px solid transparent">
+            <div style="font-size:22px;margin-bottom:3px">🚨</div>
+            <div style="font-size:11px;font-weight:700;color:#B83A2A">Needs care</div>
+          </div>
+        </div>
+      </div>
+
+      <!-- Secondary checks (expandable) -->
+      <div class="sp-card">
+        <div style="display:flex;align-items:center;justify-content:space-between;cursor:pointer" onclick="toggleInspExtra()">
+          <div class="sp-lbl" style="margin-bottom:0">More checks</div>
+          <span id="inspExtraArrow" style="color:#B7B1A7;font-size:16px">›</span>
+        </div>
+        <div id="inspExtra" style="display:none;margin-top:14px">
+
+          <!-- Pollen / Bee bread -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">🌸 Pollen stores</div>
+            <div style="display:flex;justify-content:space-between;font-size:10px;color:#B7B1A7;margin-bottom:4px"><span>None</span><span id="pollenVal">50%</span><span>Abundant</span></div>
+            <input type="range" min="0" max="100" value="50" id="pollenSlider" oninput="document.getElementById('pollenVal').textContent=this.value+'%'" style="width:100%;height:6px;border-radius:3px;accent-color:#C79B3B;cursor:pointer">
+          </div>
+
+          <!-- Queen cells -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">👑 Queen cells</div>
+            <div style="display:flex;gap:8px" id="qcellBtns">
+              <div onclick="selectQCell(this,'None')" class="insp-pill active-pill">None</div>
+              <div onclick="selectQCell(this,'Swarm')" class="insp-pill">Swarm</div>
+              <div onclick="selectQCell(this,'Supersedure')" class="insp-pill">Supersedure</div>
+              <div onclick="selectQCell(this,'Emergency')" class="insp-pill">Emergency</div>
+            </div>
+          </div>
+
+          <!-- Hive weight -->
+          <div style="margin-bottom:14px">
+            <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">⚖️ Hive weight (<span id="inspWeightUnit">lbs</span>)</div>
+            <div style="display:flex;align-items:center;gap:10px">
+              <button onclick="changeInspWeight(-5)" style="width:36px;height:36px;border-radius:10px;border:1px solid #EDE8E0;background:#F9F7F3;font-size:18px;color:#C79B3B;cursor:pointer;font-weight:600">−</button>
+              <div style="flex:1;text-align:center;font-size:24px;font-weight:800;color:#1A1A1A" id="inspWeightVal">—</div>
+              <button onclick="changeInspWeight(5)" style="width:36px;height:36px;border-radius:10px;border:1px solid #EDE8E0;background:#F9F7F3;font-size:18px;color:#C79B3B;cursor:pointer;font-weight:600">+</button>
+            </div>
+          </div>
+
+          <!-- Management actions -->
+          <div>
+            <div style="font-size:11px;font-weight:600;color:#B7B1A7;text-transform:uppercase;letter-spacing:.06em;margin-bottom:8px">🛠 Management actions</div>
+            <div style="display:flex;flex-wrap:wrap;gap:6px" id="mgmtBtns">
+              <div onclick="toggleMgmt(this,'Fed')" class="insp-pill">Fed colony</div>
+              <div onclick="toggleMgmt(this,'Treated')" class="insp-pill">Treatment applied</div>
+              <div onclick="toggleMgmt(this,'Supered')" class="insp-pill">Added super</div>
+              <div onclick="toggleMgmt(this,'Split')" class="insp-pill">Split colony</div>
+              <div onclick="toggleMgmt(this,'Requeened')" class="insp-pill">Requeened</div>
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      <!-- Photo -->
+      <div class="sp-card">
+        <div class="sp-lbl">📷 Photos</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap;margin-top:4px" id="inspPhotos">
+          <label style="width:80px;height:80px;border-radius:12px;border:2px dashed #EDE8E0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#F9F7F3">
+            <span style="font-size:22px">📷</span>
+            <span style="font-size:9px;color:#B7B1A7;margin-top:2px">Add photo</span>
+            <input type="file" accept="image/*" multiple style="display:none" onchange="addInspPhotos(this)">
+          </label>
+        </div>
+      </div>
+
+      <!-- Notes -->
+      <div class="sp-card">
+        <div class="sp-lbl">📝 Notes</div>
+        <textarea id="inspNotes" placeholder="Any observations, concerns, or next steps…" style="width:100%;min-height:80px;padding:10px;border:1.5px solid #EDE8E0;border-radius:10px;font-size:13px;font-family:Inter,sans-serif;color:#1A1A1A;outline:none;background:#F9F7F3;resize:none;box-sizing:border-box" onfocus="this.style.borderColor='#C79B3B'" onblur="this.style.borderColor='#EDE8E0'"></textarea>
+      </div>
+
+      <!-- Save buttons -->
+      <div style="display:flex;gap:10px;margin-bottom:8px">
+        <button onclick="saveInspection('draft')" style="flex:1;padding:13px;border-radius:13px;border:1px solid #EDE8E0;background:#fff;font-size:13px;font-weight:600;color:#B7B1A7;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>
+        <button onclick="saveInspection('complete')" style="flex:2;padding:13px;border-radius:13px;border:none;background:#1F2A24;color:#fff;font-size:13px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif">Complete ✓</button>
+      </div>
+
+    </div>
+  </div>
+</div>
+
+<!-- INSPECT CSS -->
+<style>
+.insp-block{padding:14px 10px;border-radius:14px;cursor:pointer;text-align:center;transition:.15s;user-select:none}
+.insp-block:active{transform:scale(.96)}
+.insp-pill{padding:7px 14px;border-radius:20px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:12px;font-weight:500;color:#5A5550;cursor:pointer;transition:.15s;white-space:nowrap;user-select:none}
+.active-pill{border-color:#C79B3B!important;background:#FBF5E6!important;color:#7A5C1E!important;font-weight:600!important}
+</style>
+
+
 <div class="sub" id="harvestPage">
   <div class="sub-hd">
     <div class="back" onclick="closeSub('harvestPage');setNav(0)"><svg width="16" height="16" viewBox="0 0 16 16" fill="none"><path d="M10 13L5 8l5-5" stroke="#1A1A1A" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
@@ -1290,31 +1491,23 @@ function openNectarPicker(){
   ov.style.cssText = 'position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10001;display:flex;align-items:flex-end;justify-content:center';
   ov.onclick = function(e){ if(e.target===ov) ov.remove(); };
 
-  // Build regions — current lang first, then rest
-  var regions = Object.keys(NECTAR_SOURCES);
-  var curIdx = regions.indexOf(CURRENT_LANG);
-  if(curIdx > 0){ regions.splice(curIdx,1); regions.unshift(CURRENT_LANG); }
-
-  var sectionsHtml = regions.map(function(lang){
-    var r = NECTAR_SOURCES[lang];
-    var pills = r.sources.map(function(s){
-      return '<div onclick="selectNectar(\''+s+'\')" style="display:inline-block;padding:7px 13px;border-radius:20px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:12px;font-weight:500;color:#1A1A1A;cursor:pointer;margin:3px 3px 3px 0;transition:.15s" onmouseover="this.style.borderColor=\'#C79B3B\';this.style.background=\'#FBF5E6\'" onmouseout="this.style.borderColor=\'#EDE8E0\';this.style.background=\'#F9F7F3\'">'+s+'</div>';
-    }).join('');
-    return '<div style="margin-bottom:14px">'+
-      '<div style="font-size:10px;font-weight:700;color:#B7B1A7;text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px">'+r.label+'</div>'+
-      '<div>'+pills+'</div>'+
-    '</div>';
+  var region = NECTAR_SOURCES[CURRENT_LANG] || NECTAR_SOURCES['en-US'];
+  var pills = region.sources.map(function(s){
+    return '<div onclick="selectNectar(\''+s+'\')" style="display:inline-block;padding:8px 16px;border-radius:20px;border:1.5px solid #EDE8E0;background:#F9F7F3;font-size:13px;font-weight:500;color:#1A1A1A;cursor:pointer;margin:4px 4px 4px 0;transition:.15s" onmouseover="this.style.borderColor=\'#C79B3B\';this.style.background=\'#FBF5E6\'" onmouseout="this.style.borderColor=\'#EDE8E0\';this.style.background=\'#F9F7F3\'">'+s+'</div>';
   }).join('');
 
-  ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:80vh;display:flex;flex-direction:column">'+
+  ov.innerHTML = '<div style="background:#fff;border-radius:24px 24px 0 0;width:100%;max-width:430px;max-height:70vh;display:flex;flex-direction:column">'+
     '<div style="padding:16px 20px 12px;border-bottom:1px solid #EDE8E0;flex-shrink:0">'+
       '<div style="width:36px;height:4px;background:#EDE8E0;border-radius:2px;margin:0 auto 14px"></div>'+
       '<div style="display:flex;align-items:center;justify-content:space-between">'+
-        '<div style="font-size:15px;font-weight:700;color:#1A1A1A">Nectar source</div>'+
-        '<div onclick="selectNectar(\'\')" style="font-size:12px;color:#B7B1A7;cursor:pointer">Clear</div>'+
+        '<div>'+
+          '<div style="font-size:15px;font-weight:700;color:#1A1A1A">Nectar source</div>'+
+          '<div style="font-size:11px;color:#B7B1A7;margin-top:2px">'+region.label+'</div>'+
+        '</div>'+
+        '<div onclick="selectNectar(\'\')" style="font-size:12px;color:#B7B1A7;cursor:pointer;padding:4px 8px">Clear</div>'+
       '</div>'+
     '</div>'+
-    '<div style="overflow-y:auto;padding:16px 20px 32px">'+sectionsHtml+'</div>'+
+    '<div style="overflow-y:auto;padding:16px 20px 32px">'+pills+'</div>'+
   '</div>';
   document.body.appendChild(ov);
 }
@@ -3187,6 +3380,216 @@ function toggleBrightMode(){
   showToast(on ? '☀️ Bright light mode on' : 'Bright light mode off');
 }
 
+/* ── INSPECT PAGE ── */
+var INSPECT_STATE = { hiveId:null, hiveName:'', queen:null, varroa:null, overall:null, qcell:'None', mgmt:[], weight:null, photos:[] };
+var INSPECTIONS = [];
+var _inspNextId = 1;
+
+function initInspectPage(){
+  // Set date label
+  var d = new Date();
+  var lbl = document.getElementById('inspectDateLabel');
+  if(lbl) lbl.textContent = d.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+  // Set weather
+  var wRow = document.getElementById('inspWeatherRow');
+  var wTop = document.getElementById('weatherDescEl');
+  if(wRow && wTop) wRow.textContent = wTop.textContent || '—';
+  // Set weight unit
+  var wu = document.getElementById('inspWeightUnit'); if(wu) wu.textContent = isF ? 'lbs' : 'kg';
+  // Render hive list
+  renderInspHiveList();
+  // Reset state
+  INSPECT_STATE = { hiveId:null, hiveName:'', queen:null, varroa:null, overall:null, qcell:'None', mgmt:[], weight:null, photos:[] };
+  document.getElementById('inspStep0').style.display = '';
+  document.getElementById('inspStep1').style.display = 'none';
+  // Reset sliders
+  ['broodSlider','honeySlider','tempSlider','pollenSlider'].forEach(function(id){
+    var el=document.getElementById(id); if(el) el.value=id==='tempSlider'?70:50;
+  });
+  document.getElementById('broodVal').textContent='50%';
+  document.getElementById('honeyVal').textContent='50%';
+  document.getElementById('pollenVal').textContent='50%';
+  updateTempLabel(70);
+  document.getElementById('inspNotes').value='';
+  document.getElementById('inspPhotos').innerHTML='<label style="width:80px;height:80px;border-radius:12px;border:2px dashed #EDE8E0;display:flex;flex-direction:column;align-items:center;justify-content:center;cursor:pointer;background:#F9F7F3"><span style="font-size:22px">📷</span><span style="font-size:9px;color:#B7B1A7;margin-top:2px">Add photo</span><input type="file" accept="image/*" multiple style="display:none" onchange="addInspPhotos(this)"></label>';
+  // Reset blocks
+  document.querySelectorAll('#queenBtns .insp-block,#varroaBtns .insp-block,#overallBtns .insp-block').forEach(function(b){ b.style.border='2px solid transparent'; });
+  document.querySelectorAll('#qcellBtns .insp-pill').forEach(function(p,i){ p.className='insp-pill'+(i===0?' active-pill':''); });
+  document.querySelectorAll('#mgmtBtns .insp-pill').forEach(function(p){ p.className='insp-pill'; });
+  var inspExtra = document.getElementById('inspExtra'); if(inspExtra) inspExtra.style.display='none';
+  var inspExtraArrow = document.getElementById('inspExtraArrow'); if(inspExtraArrow) inspExtraArrow.textContent='›';
+  document.getElementById('inspWeightVal').textContent='—';
+  INSPECT_STATE.weight = null;
+}
+
+function renderInspHiveList(){
+  var container = document.getElementById('inspHiveList'); if(!container) return;
+  var all = [];
+  APIARIES.forEach(function(a){ a.hives.forEach(function(h){ all.push({hive:h,apiary:a}); }); });
+  if(all.length === 0){
+    container.innerHTML='<div style="text-align:center;padding:20px;color:#B7B1A7;font-size:13px">No hives yet.<br>Add a hive first.</div>';
+    return;
+  }
+  container.innerHTML = all.map(function(item){
+    var h=item.hive, a=item.apiary;
+    var statusColor = h.status==='Healthy'?'#EEF5EF':h.status==='Due soon'?'#FBF3E3':'#FDE8E8';
+    var statusText  = h.status==='Healthy'?'#5E7A63':h.status==='Due soon'?'#7A5C1E':'#B83A2A';
+    return '<div onclick="selectInspHive('+h.id+',\''+h.name+(h.breed?' · '+h.breed:'')+'\')" id="inspHiveCard_'+h.id+'" style="display:flex;align-items:center;gap:12px;padding:12px 14px;border-radius:14px;border:2px solid #EDE8E0;background:#F9F7F3;cursor:pointer;transition:.15s">'+
+      '<div style="width:40px;height:40px;border-radius:12px;background:'+statusColor+';display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0">🐝</div>'+
+      '<div style="flex:1"><div style="font-size:13px;font-weight:600;color:#1A1A1A">'+h.name+(h.breed?' · '+h.breed:'')+'</div>'+
+      '<div style="font-size:11px;color:#B7B1A7;margin-top:1px">'+a.name+'</div></div>'+
+      '<div style="font-size:10px;font-weight:600;color:'+statusText+';background:'+statusColor+';padding:3px 8px;border-radius:6px">'+h.status+'</div>'+
+    '</div>';
+  }).join('');
+}
+
+function selectInspHive(id, name){
+  INSPECT_STATE.hiveId = id;
+  INSPECT_STATE.hiveName = name;
+  document.querySelectorAll('[id^="inspHiveCard_"]').forEach(function(c){
+    c.style.border = '2px solid #EDE8E0'; c.style.background = '#F9F7F3';
+  });
+  var sel = document.getElementById('inspHiveCard_'+id);
+  if(sel){ sel.style.border='2px solid #C79B3B'; sel.style.background='#FBF5E6'; }
+  var btn = document.getElementById('inspStartBtn');
+  if(btn){ btn.disabled=false; btn.style.opacity='1'; }
+}
+
+function inspectStart(){
+  if(!INSPECT_STATE.hiveId) return;
+  document.getElementById('inspStep0').style.display='none';
+  document.getElementById('inspStep1').style.display='';
+  // Scroll to top
+  var sp = document.querySelector('#inspectPage .sp'); if(sp) sp.scrollTop=0;
+}
+
+function selectQueen(el, val){
+  INSPECT_STATE.queen = val;
+  document.querySelectorAll('#queenBtns .insp-block').forEach(function(b){ b.style.border='2px solid transparent'; });
+  el.style.border='2px solid #C79B3B';
+}
+function selectVarroa(el, val){
+  INSPECT_STATE.varroa = val;
+  document.querySelectorAll('#varroaBtns .insp-block').forEach(function(b){ b.style.border='2px solid transparent'; });
+  el.style.border='2px solid #C79B3B';
+}
+function selectOverall(el, val){
+  INSPECT_STATE.overall = val;
+  document.querySelectorAll('#overallBtns .insp-block').forEach(function(b){ b.style.border='2px solid transparent'; });
+  el.style.border='2px solid #C79B3B';
+}
+function selectQCell(el, val){
+  INSPECT_STATE.qcell = val;
+  document.querySelectorAll('#qcellBtns .insp-pill').forEach(function(p){ p.className='insp-pill'; });
+  el.className='insp-pill active-pill';
+}
+function toggleMgmt(el, val){
+  var idx = INSPECT_STATE.mgmt.indexOf(val);
+  if(idx>=0){ INSPECT_STATE.mgmt.splice(idx,1); el.className='insp-pill'; }
+  else { INSPECT_STATE.mgmt.push(val); el.className='insp-pill active-pill'; }
+}
+function updateTempLabel(v){
+  var labels=['Very aggressive','Aggressive','Nervous','Calm','Very calm','Docile'];
+  var idx=Math.min(5,Math.floor(v/17));
+  var el=document.getElementById('tempVal'); if(el) el.textContent=labels[idx];
+}
+function toggleInspExtra(){
+  var el=document.getElementById('inspExtra');
+  var ar=document.getElementById('inspExtraArrow');
+  var open=el.style.display==='none';
+  el.style.display=open?'':'none';
+  if(ar) ar.textContent=open?'‹':'›';
+}
+var _inspWeight = null;
+function changeInspWeight(delta){
+  if(_inspWeight===null) _inspWeight = isF ? 60 : 27;
+  _inspWeight = Math.max(0, _inspWeight+delta);
+  INSPECT_STATE.weight = _inspWeight;
+  document.getElementById('inspWeightVal').textContent = _inspWeight + ' ' + (isF?'lbs':'kg');
+}
+function addInspPhotos(input){
+  if(!input.files) return;
+  var container = document.getElementById('inspPhotos');
+  Array.from(input.files).forEach(function(file){
+    var reader=new FileReader();
+    reader.onload=function(e){
+      var img=document.createElement('div');
+      img.style.cssText='width:80px;height:80px;border-radius:12px;overflow:hidden;flex-shrink:0;position:relative';
+      img.innerHTML='<img src="'+e.target.result+'" style="width:100%;height:100%;object-fit:cover">';
+      container.insertBefore(img, container.querySelector('label'));
+    };
+    reader.readAsDataURL(file);
+  });
+}
+
+function saveInspection(mode){
+  var notes = document.getElementById('inspNotes').value.trim();
+  var now = new Date();
+  var record = {
+    id: _inspNextId++,
+    hiveId: INSPECT_STATE.hiveId,
+    hiveName: INSPECT_STATE.hiveName,
+    date: now.getTime(),
+    dateStr: now.toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'}),
+    queen: INSPECT_STATE.queen || 'Not recorded',
+    brood: document.getElementById('broodSlider').value,
+    honey: document.getElementById('honeySlider').value,
+    varroa: INSPECT_STATE.varroa || 'Not recorded',
+    temp: document.getElementById('tempSlider').value,
+    overall: INSPECT_STATE.overall || 'Not recorded',
+    qcell: INSPECT_STATE.qcell,
+    mgmt: INSPECT_STATE.mgmt.slice(),
+    weight: INSPECT_STATE.weight,
+    pollen: document.getElementById('pollenSlider').value,
+    notes: notes,
+    draft: mode==='draft'
+  };
+  INSPECTIONS.unshift(record);
+  // Update hive status
+  APIARIES.forEach(function(a){ a.hives.forEach(function(h){
+    if(h.id===record.hiveId){
+      h.status = record.overall==='Thriving'||record.overall==='Stable' ? 'Healthy' : 'Needs attention';
+      h.sub = (record.overall||'Inspected')+' · '+record.dateStr;
+      h.lastInspection = record.dateStr;
+    }
+  }); });
+  updateCounters();
+
+  if(mode==='draft'){
+    showToast('Draft saved · '+record.hiveName);
+    closeSub('inspectPage'); setNav(0);
+  } else {
+    // Completion animation
+    showInspectComplete(record);
+  }
+}
+
+function showInspectComplete(record){
+  var ov=document.createElement('div'); ov.id='inspCompleteOv';
+  ov.style.cssText='position:fixed;inset:0;background:#1F2A24;z-index:10000;display:flex;flex-direction:column;align-items:center;justify-content:center;text-align:center;padding:32px';
+  var scoreColor = record.overall==='Thriving'?'#5E7A63':record.overall==='Stable'?'#C79B3B':'#B83A2A';
+  ov.innerHTML=
+    '<div style="font-size:60px;margin-bottom:16px">🐝</div>'+
+    '<div style="font-size:22px;font-weight:800;color:#fff;letter-spacing:-.5px;margin-bottom:8px">Inspection complete!</div>'+
+    '<div style="font-size:13px;color:rgba(255,255,255,.6);margin-bottom:24px">'+record.hiveName+' · '+record.dateStr+'</div>'+
+    '<div style="background:rgba(255,255,255,.08);border-radius:18px;padding:20px 24px;margin-bottom:28px;width:100%;max-width:280px">'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-size:12px;color:rgba(255,255,255,.5)">Queen</span><span style="font-size:12px;font-weight:600;color:#fff">'+record.queen+'</span></div>'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-size:12px;color:rgba(255,255,255,.5)">Brood</span><span style="font-size:12px;font-weight:600;color:#fff">'+record.brood+'%</span></div>'+
+      '<div style="display:flex;justify-content:space-between;margin-bottom:10px"><span style="font-size:12px;color:rgba(255,255,255,.5)">Honey</span><span style="font-size:12px;font-weight:600;color:#fff">'+record.honey+'%</span></div>'+
+      '<div style="display:flex;justify-content:space-between"><span style="font-size:12px;color:rgba(255,255,255,.5)">Overall</span><span style="font-size:12px;font-weight:700;color:'+scoreColor+'">'+record.overall+'</span></div>'+
+    '</div>'+
+    '<button onclick="document.getElementById(\'inspCompleteOv\').remove();closeSub(\'inspectPage\');setNav(0)" style="width:100%;max-width:280px;padding:14px;border-radius:14px;border:none;background:#C79B3B;color:#fff;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;margin-bottom:10px">Done 🍯</button>'+
+    '<div onclick="document.getElementById(\'inspCompleteOv\').remove();closeSub(\'inspectPage\');setNav(0)" style="font-size:12px;color:rgba(255,255,255,.4);cursor:pointer">Back to home</div>';
+  document.body.appendChild(ov);
+}
+
+// Hook: open inspect page init
+var _origOpenSub = openSub;
+function openSub(id){
+  _origOpenSub(id);
+  if(id==='inspectPage') initInspectPage();
+}
+
 function exportData(fmt){
   var data = { apiaries: APIARIES, exportDate: new Date().toISOString() };
   var str, mime, ext;
@@ -3247,6 +3650,12 @@ function setNav(idx){
   // Open corresponding full pages
   if(idx===3) openSub('harvestPage');
   if(idx!==3) closeSub('harvestPage');
+  if(idx===1) openSub('inspectPage');
+  if(idx!==1) closeSub('inspectPage');
+  if(idx===2) openSub('journalPage');
+  if(idx!==2) closeSub('journalPage');
+  if(idx===4) openSub('bloomPage');
+  if(idx!==4) closeSub('bloomPage');
 }
 for(let i=0;i<5;i++){const p=document.querySelector('#ni'+i+' .ni-pip');if(p)p.style.display=i===0?'block':'none';}
 

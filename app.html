@@ -3701,6 +3701,42 @@ function calcScore(){
   if(lbl){ lbl.textContent=label; lbl.style.color=color; }
   if(det) det.textContent=detail;
   _IS.finalScore=score;
+  // Smart alert below score card
+  var alertEl=document.getElementById('inspScoreAlert');
+  if(!alertEl){
+    var scoreCard=document.getElementById('inspScoreRing');
+    if(scoreCard){
+      var card=scoreCard.closest('div[style*="border-radius:16px"]')||scoreCard.parentElement.parentElement.parentElement;
+      alertEl=document.createElement('div');
+      alertEl.id='inspScoreAlert';
+      if(card&&card.parentElement) card.parentElement.insertBefore(alertEl,card.nextSibling);
+    }
+  }
+  if(alertEl){
+    if(score<40){
+      var alerts=[];
+      if(_IS.varroa==='bomb'||(_IS.varroaPct&&_IS.varroaPct>=3)) alerts.push('nearby mite surge detected');
+      if(_IS.broodAlert) alerts.push('sunken cappings found');
+      if(_IS.honey<30) alerts.push('critically low honey stores');
+      if(_IS.queen==='Queenless') alerts.push('queenless colony');
+      var alertText = alerts.length>0
+        ? 'Due to '+alerts.join(' and ')+', immediate alcohol wash testing and reporting is strongly recommended.'
+        : 'Multiple risk factors detected. Perform alcohol wash test and inspect brood frames immediately.';
+      alertEl.innerHTML=
+        '<div style="background:#2A1A1A;border-radius:12px;padding:12px 14px;margin-top:8px;border-left:3px solid #B83A2A;display:flex;align-items:flex-start;gap:10px">'+
+          '<div style="font-size:18px;flex-shrink:0">🚨</div>'+
+          '<div style="font-size:12px;color:#E8A898;line-height:1.6">'+alertText+'</div>'+
+        '</div>';
+    } else if(score<60){
+      alertEl.innerHTML=
+        '<div style="background:#2A2416;border-radius:12px;padding:12px 14px;margin-top:8px;border-left:3px solid #D5A144;display:flex;align-items:flex-start;gap:10px">'+
+          '<div style="font-size:18px;flex-shrink:0">⚠️</div>'+
+          '<div style="font-size:12px;color:#D5A144;line-height:1.6">Some concerns noted. Schedule a thorough inspection within 3 days.</div>'+
+        '</div>';
+    } else {
+      alertEl.innerHTML='';
+    }
+  }
 }
 
 /* ══ SAVE ══ */

@@ -3386,6 +3386,8 @@ var INSPECTIONS = [];
 var _inspNextId = 1;
 
 function initInspectPage(){
+  var container = document.getElementById('inspHiveList');
+  if(!container){ setTimeout(initInspectPage, 100); return; }
   // Set date label
   var d = new Date();
   var lbl = document.getElementById('inspectDateLabel');
@@ -3731,7 +3733,7 @@ function setNav(idx){
   // Open corresponding full pages
   if(idx===3) openSub('harvestPage');
   if(idx!==3) closeSub('harvestPage');
-  if(idx===1) { openSub('inspectPage'); setTimeout(initInspectPage, 50); }
+  if(idx===1) { openSub('inspectPage'); setTimeout(initInspectPage, 150); }
   if(idx!==1) closeSub('inspectPage');
   if(idx===2) openSub('journalPage');
   if(idx!==2) closeSub('journalPage');

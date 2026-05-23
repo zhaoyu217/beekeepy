@@ -3459,6 +3459,9 @@ function renderInspPage(){
       '<button onclick="finishInspection(&quot;draft&quot;)" style="flex:1;padding:14px;border-radius:14px;border:1px solid #2E3A36;background:transparent;font-size:13px;font-weight:600;color:#4A6A5A;cursor:pointer;font-family:Inter,sans-serif">Save draft</button>'+
       '<button onclick="finishInspection(&quot;complete&quot;)" style="flex:2;padding:14px;border-radius:14px;border:none;background:#D5A144;color:#1C2321;font-size:14px;font-weight:700;cursor:pointer;font-family:Inter,sans-serif;letter-spacing:-.2px">Complete ✓</button>'+
     '</div>'+
+    '<button onclick="openInspLevel2()" style="width:100%;padding:13px;border-radius:14px;border:1px solid #3A9A5C;background:transparent;color:#3A9A5C;font-size:13px;font-weight:600;cursor:pointer;font-family:Inter,sans-serif;margin-top:8px;display:flex;align-items:center;justify-content:center;gap:6px">'+
+      '⚙️ Management & Advanced Checks →'+
+    '</button>'+
 
     '</div>'+
     '<style>@keyframes varroapulse{0%,100%{border-color:#B83A2A}50%{border-color:#ff6b6b;box-shadow:0 0 12px rgba(184,58,42,.5)}}</style>';
@@ -3839,6 +3842,286 @@ function showInspectComplete(record){
     '</div>'+
     '</div>';
   document.body.appendChild(ov);
+}
+
+
+/* ══════════════════════════════════════
+   INSPECT LEVEL 2 — Smart Management
+══════════════════════════════════════ */
+
+function openInspLevel2(){
+  var body=document.getElementById('inspBody'); if(!body) return;
+  var ttl=document.getElementById('inspTitle'); if(ttl) ttl.textContent='Management';
+  var sb=document.getElementById('inspSaveBtn'); if(sb) sb.style.display='none';
+
+  // Get current weather temp
+  var wEl=document.getElementById('weatherDescEl');
+  var wText=wEl?wEl.textContent:'';
+  var tempMatch=wText.match(/(\d+)°([FC])/);
+  var tempF=75;
+  if(tempMatch){
+    tempF=parseInt(tempMatch[1]);
+    if(tempMatch[2]==='C') tempF=Math.round(tempF*9/5+32);
+  }
+
+  // Season & false spring detection
+  var month=new Date().getMonth();
+  var isEarlySpring=(month>=1&&month<=3);
+  var isLateAutumn=(month>=9&&month<=10);
+  var falseSpringSuspect=isEarlySpring&&tempF>65;
+  var season=getSeason();
+
+  // Varroa level from level 1
+  var varroaPct=_IS.varroaPct||0;
+  var varroaType=_IS.varroa||'not-tested';
+  var pollenLow=(_IS.pollen||50)<30;
+
+  body.scrollTop=0;
+  body.innerHTML=
+    '<div style="padding:0 16px 100px">'+
+
+    // Back button
+    '<div onclick="renderInspPage()" style="display:inline-flex;align-items:center;gap:6px;color:#D5A144;font-size:13px;font-weight:600;cursor:pointer;margin-bottom:16px">'+
+      '<svg width="14" height="14" viewBox="0 0 14 14" fill="none"><path d="M9 11L5 7l4-4" stroke="#D5A144" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/></svg>'+
+      'Back to inspection'+
+    '</div>'+
+
+    // ⑤ Hive Weight
+    _l2Section('⚖️ Hive Weight', _renderWeightModule(tempF))+
+
+    // ⑥ Treatment — smart drug recommendations
+    _l2Section('💊 Treatment', _renderTreatmentModule(tempF, varroaPct, varroaType))+
+
+    // ⑦ Pollen / Bee Bread
+    _l2Section('🌸 Pollen & Bee Bread', _renderPollenModule(pollenLow, tempF, season))+
+
+    // ⑧ Weather Intelligence
+    _l2Section('🌤 Weather Intelligence', _renderWeatherModule(tempF, isEarlySpring, isLateAutumn, falseSpringSuspect))+
+
+    '</div>';
+}
+
+function _l2Section(title, content){
+  return '<div style="font-size:10px;font-weight:700;color:#D5A144;text-transform:uppercase;letter-spacing:.12em;margin-bottom:10px">'+title+'</div>'+
+    '<div style="background:#222E2A;border-radius:16px;padding:16px;margin-bottom:20px">'+content+'</div>';
+}
+
+/* ── ⑤ Hive Weight Module ── */
+function _renderWeightModule(tempF){
+  var unit=isF?'lbs':'kg';
+  var emptyHiveWeight=isF?40:18; // typical empty hive weight
+  var netHoney=_IS.hiveWeight?((_IS.hiveWeight-emptyHiveWeight)):null;
+  var weightAlert='';
+  if(_IS.hiveWeight){
+    var lbs=isF?_IS.hiveWeight:_IS.hiveWeight*2.205;
+    if(lbs>130) weightAlert='<div style="margin-top:10px;background:#2A2416;border-radius:8px;padding:10px 12px;border-left:2px solid #D5A144;font-size:12px;color:#D5A144;line-height:1.5">⚠️ Total weight '+_IS.hiveWeight+' '+unit+'. When extracting next week, protect your back — consider using a super to distribute the load.</div>';
+  }
+  var crossCheck='';
+  if(netHoney!==null&&_IS.honey!==undefined){
+    var netPct=Math.min(100,Math.round((netHoney/(isF?90:41))*100));
+    var diff=Math.abs(netPct-_IS.honey);
+    if(diff>25) crossCheck='<div style="margin-top:8px;font-size:11px;color:#D5A144;background:#2A2416;border-radius:8px;padding:8px 10px">⚡ Weight data suggests '+netPct+'% stores vs your visual estimate of '+_IS.honey+'%. Consider re-evaluating frames.</div>';
+    else crossCheck='<div style="margin-top:8px;font-size:11px;color:#3A9A5C">✓ Weight confirms visual estimate (±'+diff+'%)</div>';
+  }
+  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:12px;line-height:1.5">Objective weight cross-validates your visual honey estimate.</div>'+
+    '<div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px">'+
+      '<div>'+
+        '<div style="font-size:10px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Total hive weight ('+unit+')</div>'+
+        '<input id="hiveWeightInput" type="number" placeholder="e.g. 120" value="'+(_IS.hiveWeight||'')+'"'+
+          ' oninput="_IS.hiveWeight=parseFloat(this.value)||null;updateWeightCalc()"'+
+          ' style="width:100%;padding:12px;border:1px solid #2E3A36;border-radius:10px;background:#1C2321;color:#E8E2D8;font-size:18px;font-weight:700;text-align:center;font-family:Inter,sans-serif;outline:none;box-sizing:border-box">'+
+      '</div>'+
+      '<div>'+
+        '<div style="font-size:10px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.06em;margin-bottom:6px">Net honey weight</div>'+
+        '<div id="netHoneyDisplay" style="padding:12px;border:1px solid #2E3A36;border-radius:10px;background:#1C2321;font-size:18px;font-weight:700;color:#D5A144;text-align:center">'+
+          (netHoney!==null?Math.max(0,netHoney.toFixed(1))+' '+unit:'—')+
+        '</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#1C2321;border-radius:10px;padding:10px 12px;display:flex;align-items:center;gap:10px;cursor:pointer;border:1px dashed #2E3A36" onclick="connectBluetooth()">'+
+      '<div style="font-size:22px">📡</div>'+
+      '<div>'+
+        '<div style="font-size:13px;font-weight:600;color:#E8E2D8">Connect Bluetooth Scale</div>'+
+        '<div style="font-size:11px;color:#4A6A5A;margin-top:2px">Auto-capture weight via BLE</div>'+
+      '</div>'+
+      '<div style="margin-left:auto;font-size:11px;font-weight:600;color:#D5A144">Pair →</div>'+
+    '</div>'+
+    weightAlert+crossCheck;
+}
+
+function updateWeightCalc(){
+  var unit=isF?'lbs':'kg';
+  var emptyHive=isF?40:18;
+  var net=_IS.hiveWeight?Math.max(0,_IS.hiveWeight-emptyHive):null;
+  var el=document.getElementById('netHoneyDisplay');
+  if(el) el.textContent=net!==null?net.toFixed(1)+' '+unit:'—';
+}
+
+function connectBluetooth(){
+  if(navigator.bluetooth){
+    showToast('Searching for BLE scales…');
+    navigator.bluetooth.requestDevice({filters:[{services:['weight_scale']}]})
+      .then(function(device){ showToast('Connected: '+device.name+' ✓'); })
+      .catch(function(){ showToast('No BLE scale found nearby'); });
+  } else {
+    showToast('Bluetooth not available in this browser');
+  }
+}
+
+/* ── ⑥ Treatment Module ── */
+function _renderTreatmentModule(tempF, varroaPct, varroaType){
+  var treatments=[
+    {name:'Apiguard (Thymol)',minT:59,maxT:105,days:42,varroa:'low-mod',desc:'Effective for moderate mite loads. Place on top bars.',icon:'🌿'},
+    {name:'Formic Pro',minT:50,maxT:84,days:14,varroa:'mod-high',desc:'Fast-acting, can be used with honey supers.',icon:'⚗️'},
+    {name:'Apivar (Amitraz)',minT:32,maxT:105,days:42,varroa:'high',desc:'Effective year-round. Remove before honey flow.',icon:'💊'},
+    {name:'OA Vapor',minT:32,maxT:105,days:1,varroa:'all',desc:'Best for broodless period. 3 treatments, 5 days apart.',icon:'💨'},
+    {name:'OA Dribble',minT:32,maxT:105,days:1,varroa:'low',desc:'For small colonies or nucs. Do not use with brood.',icon:'💧'},
+    {name:'Mite-Away Quick Strips',minT:50,maxT:92,days:7,varroa:'high',desc:'High-efficacy formic acid. Keep entrance open.',icon:'📋'},
+  ];
+  var rec=varroaPct>=3?'high':varroaPct>=1?'mod-high':'low';
+  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:4px;line-height:1.5">'+
+    'Based on your varroa data'+(varroaPct?(' ('+varroaPct.toFixed(1)+'%)'):'')+' and today\'s temperature ('+tempF+'°F):'+
+  '</div>'+
+  '<div style="font-size:10px;font-weight:600;color:#D5A144;margin-bottom:10px">Today: '+tempF+'°F · Recommended treatments highlighted</div>'+
+  treatments.map(function(t){
+    var tooHot=tempF>t.maxT;
+    var tooCold=tempF<t.minT;
+    var tempOk=!tooHot&&!tooCold;
+    var varroaMatch=t.varroa==='all'||t.varroa.indexOf(rec)>=0||rec==='low'&&t.varroa==='low';
+    var best=tempOk&&varroaMatch;
+    var bg=tooHot||tooCold?'#1C2321':best?'#1E2E1A':'#1C2321';
+    var border=tooHot||tooCold?'#2E3A36':best?'#3A9A5C':'#2E3A36';
+    var nameColor=tooHot||tooCold?'#4A6A5A':best?'#3A9A5C':'#E8E2D8';
+    var warning=tooHot?'🔴 Too hot (max '+t.maxT+'°F) — risk of queen loss or absconding':
+                tooCold?'🔵 Too cold (min '+t.minT+'°F) — insufficient efficacy':'';
+    return '<div style="background:'+bg+';border:1.5px solid '+border+';border-radius:12px;padding:12px 14px;margin-bottom:8px;opacity:'+(tooHot||tooCold?'.55':'1')+'">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:4px">'+
+        '<span style="font-size:18px">'+t.icon+'</span>'+
+        '<div style="flex:1">'+
+          '<div style="font-size:13px;font-weight:700;color:'+nameColor+'">'+t.name+'</div>'+
+          '<div style="font-size:10px;color:#4A6A5A">'+t.days+' day treatment</div>'+
+        '</div>'+
+        (best?'<div style="font-size:10px;font-weight:700;color:#3A9A5C;background:rgba(58,154,92,.15);padding:3px 8px;border-radius:6px">✓ Recommended</div>':'')+
+      '</div>'+
+      '<div style="font-size:11px;color:#6E8A78;line-height:1.5">'+t.desc+'</div>'+
+      (warning?'<div style="font-size:11px;color:#B83A2A;margin-top:6px;font-style:italic">'+warning+'</div>':'')+
+    '</div>';
+  }).join('');
+}
+
+/* ── ⑦ Pollen Module ── */
+function _renderPollenModule(pollenLow, tempF, season){
+  var pollenVal=_IS.pollen||50;
+  var droughtSuspect=tempF>85&&(season==='summer'||season==='autumn');
+  var nutritionAlert=pollenLow&&droughtSuspect;
+  return '<div style="font-size:11px;color:#6E8A78;margin-bottom:12px;line-height:1.5">Pollen availability affects brood development and winter preparation.</div>'+
+    '<div style="display:flex;justify-content:space-between;font-size:11px;color:#4A6A5A;margin-bottom:8px"><span>None</span><span id="l2pollenV" style="color:#D5A144;font-weight:700">'+pollenVal+'%</span><span>Abundant</span></div>'+
+    '<input type="range" min="0" max="100" value="'+pollenVal+'" oninput="updatePollen(this.value)" style="width:100%;height:12px;border-radius:6px;accent-color:#D5A144;cursor:pointer">'+
+    '<div id="pollenCaption" style="margin-top:10px;font-size:12px;color:#6E8A78;font-style:italic">'+_pollenCap(pollenVal)+'</div>'+
+    (nutritionAlert?
+      '<div style="margin-top:12px;background:#2A1A1A;border-radius:10px;padding:12px 14px;border-left:2px solid #B83A2A">'+
+        '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:6px">🌵 Green Desert Alert</div>'+
+        '<div style="font-size:11px;color:#E8A898;line-height:1.5;margin-bottom:8px">High temp ('+tempF+'°F) combined with low pollen suggests local drought stress. Colony nutrition at risk.</div>'+
+        '<div style="background:#222E2A;border-radius:8px;padding:10px 12px;border:1px solid #D5A144">'+
+          '<div style="font-size:11px;font-weight:700;color:#D5A144;margin-bottom:4px">💡 Nutrition Prescription</div>'+
+          '<div style="font-size:11px;color:#E8E2D8;line-height:1.6">'+
+            '• Add <strong>Pollen Patty</strong> (1.5 lb patty directly on frames)<br>'+
+            '• Feed 1:1 sugar syrup to stimulate foraging<br>'+
+            '• Consider planting borage or phacelia nearby'+
+          '</div>'+
+        '</div>'+
+      '</div>'
+    :pollenVal<30?
+      '<div style="margin-top:10px;background:#2A2416;border-radius:8px;padding:10px 12px;border-left:2px solid #D5A144;font-size:12px;color:#D5A144;line-height:1.5">'+
+        '⚠️ Low pollen detected. Add Pollen Patty and consider supplemental feeding.'+
+      '</div>':
+      '<div style="margin-top:8px;font-size:11px;color:#3A9A5C">✓ Pollen levels adequate</div>')+
+    '<div style="margin-top:12px;font-size:10px;font-weight:700;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Feeding Actions</div>'+
+    '<div style="display:flex;flex-wrap:wrap;gap:6px" id="feedingActions">'+
+      ['Sugar syrup 1:1','Sugar syrup 2:1','Pollen Patty','Fondant','Dry sugar'].map(function(f){
+        var hl=pollenLow&&f==='Pollen Patty';
+        return '<div onclick="toggleFeedingAction(this)" style="padding:7px 14px;border-radius:20px;border:1.5px solid '+(hl?'#D5A144':'#2E3A36')+';background:'+(hl?'#2A2416':'#1C2321')+';font-size:12px;font-weight:500;color:'+(hl?'#D5A144':'#6E8A78')+';cursor:pointer;transition:.15s">'+f+'</div>';
+      }).join('')+
+    '</div>';
+}
+
+function updatePollen(v){
+  _IS.pollen=parseInt(v);
+  var el=document.getElementById('l2pollenV'); if(el) el.textContent=v+'%';
+  var cap=document.getElementById('pollenCaption'); if(cap) cap.textContent=_pollenCap(v);
+}
+function _pollenCap(v){
+  v=parseInt(v);
+  if(v<20) return 'Critically low — supplement immediately';
+  if(v<40) return 'Low — consider pollen patty';
+  if(v<60) return 'Moderate — monitor weekly';
+  if(v<80) return 'Good — natural foraging sufficient';
+  return 'Abundant — colony well-nourished 🌸';
+}
+function toggleFeedingAction(el){
+  var on=el.dataset.on==='1'; el.dataset.on=on?'':'1';
+  el.style.borderColor=on?'#2E3A36':'#D5A144';
+  el.style.color=on?'#6E8A78':'#D5A144';
+  el.style.background=on?'#1C2321':'#2A2416';
+}
+
+/* ── ⑧ Weather Intelligence Module ── */
+function _renderWeatherModule(tempF, isEarlySpring, isLateAutumn, falseSpringSuspect){
+  var wEl=document.getElementById('weatherDescEl');
+  var wText=wEl?wEl.textContent:'Overcast';
+  // Simulated 7-day trend (in real app would come from weather API)
+  var trend=[tempF-8,tempF-5,tempF-2,tempF+1,tempF+3,tempF+1,tempF];
+  var trendBars=trend.map(function(t,i){
+    var h=Math.round((t/120)*60);
+    var c=t>85?'#B83A2A':t>65?'#D5A144':'#6EB5FF';
+    var days=['Mon','Tue','Wed','Thu','Fri','Sat','Sun'];
+    return '<div style="display:flex;flex-direction:column;align-items:center;gap:4px;flex:1">'+
+      '<div style="font-size:10px;font-weight:600;color:'+(i===6?'#D5A144':'#4A6A5A')+'">'+t+'°</div>'+
+      '<div style="height:'+h+'px;width:8px;background:'+c+';border-radius:4px;min-height:4px"></div>'+
+      '<div style="font-size:9px;color:#4A6A5A">'+days[i]+'</div>'+
+    '</div>';
+  }).join('');
+
+  var falseSpringAlert=falseSpringSuspect?
+    '<div style="background:#2A2014;border-radius:10px;padding:12px 14px;border:1px solid #D5A144;margin-bottom:12px">'+
+      '<div style="display:flex;align-items:center;gap:8px;margin-bottom:6px">'+
+        '<span style="font-size:20px">⚠️</span>'+
+        '<div style="font-size:13px;font-weight:700;color:#D5A144">False Spring Alert</div>'+
+      '</div>'+
+      '<div style="font-size:12px;color:#E8D8A8;line-height:1.6">Unseasonably warm in early spring detected. Risk of sudden cold snap after colony expands. When managing supers & drawn comb, keep cluster size conservative — avoid oversized broodnest that bees cannot heat.</div>'+
+    '</div>':'';
+
+  var heatAlert=tempF>90?
+    '<div style="background:#2A1A1A;border-radius:10px;padding:12px 14px;border:1px solid #B83A2A;margin-bottom:12px">'+
+      '<div style="font-size:12px;font-weight:700;color:#B83A2A;margin-bottom:4px">🌡 Extreme Heat ('+tempF+'°F)</div>'+
+      '<div style="font-size:11px;color:#E8A898;line-height:1.5">Ensure adequate ventilation and water supply. Avoid inspections during peak heat (11am–3pm). Some treatments are contraindicated — see Treatment tab.</div>'+
+    '</div>':'';
+
+  var coldAlert=tempF<45?
+    '<div style="background:#1A1A2A;border-radius:10px;padding:12px 14px;border:1px solid #6EB5FF;margin-bottom:12px">'+
+      '<div style="font-size:12px;font-weight:700;color:#6EB5FF;margin-bottom:4px">❄️ Cold Weather ('+tempF+'°F)</div>'+
+      '<div style="font-size:11px;color:#A8C8E8;line-height:1.5">Minimize hive opening time. Keep inspection under 5 minutes. Cluster may have broken — check for winter stores access rather than brood.</div>'+
+    '</div>':'';
+
+  return falseSpringAlert+heatAlert+coldAlert+
+    '<div style="margin-bottom:10px">'+
+      '<div style="font-size:10px;color:#4A6A5A;text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px">Today vs 7-day trend</div>'+
+      '<div style="background:#1C2321;border-radius:10px;padding:12px">'+
+        '<div style="display:flex;align-items:flex-end;gap:4px;height:80px">'+trendBars+'</div>'+
+      '</div>'+
+    '</div>'+
+    '<div style="background:#1C2321;border-radius:10px;padding:12px 14px">'+
+      '<div style="display:flex;align-items:center;gap:10px">'+
+        '<span style="font-size:24px">'+(tempF>85?'☀️':tempF>65?'⛅':'🌨')+'</span>'+
+        '<div>'+
+          '<div style="font-size:14px;font-weight:700;color:#E8E2D8">'+wText+'</div>'+
+          '<div style="font-size:11px;color:#4A6A5A;margin-top:2px">'+
+            (isEarlySpring?'Early spring · watch for false spring':isLateAutumn?'Late autumn · winter prep mode':'Current conditions')+
+          '</div>'+
+        '</div>'+
+        (falseSpringSuspect?'<div style="margin-left:auto;font-size:20px" title="False spring risk">⚠️</div>':'')+
+      '</div>'+
+    '</div>';
 }
 
 

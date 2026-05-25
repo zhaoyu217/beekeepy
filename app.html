@@ -791,10 +791,10 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
   </div>
   <div class="scroll"><div class="dbody">
     <div class="hero a0">
-      <div class="hero-top"><div><div class="hero-lbl">Apiary Status</div><div class="hero-loc">4 Hives · Portland, OR</div></div><div class="hero-badge"><div class="hbdot"></div><div class="hbtxt">3 Healthy</div></div></div>
+      <div class="hero-top"><div><div class="hero-lbl">Apiary Status</div><div class="hero-loc" id="heroLoc">4 Hives · Portland, OR</div></div><div class="hero-badge"><div class="hbdot"></div><div class="hbtxt" id="heroBadge">3 Healthy</div></div></div>
       <div class="hero-stats">
         <div class="hstat"><div class="hstat-num">84<span class="hstat-u">lb</span></div><div class="hstat-l">Honey</div><div class="hstat-trend trend-up">▲ +14lb</div></div>
-        <div class="hstat"><div class="hstat-num">1.8<span class="hstat-u">%</span></div><div class="hstat-l">Avg mites</div><div class="hstat-trend trend-down">▼ −0.6%</div></div>
+        <div class="hstat"><div class="hstat-num" id="statMites">1.8<span class="hstat-u">%</span></div><div class="hstat-l">Avg mites</div><div class="hstat-trend trend-down">▼ −0.6%</div></div>
         <div class="hstat"><div class="hstat-num">73<span class="hstat-u">%</span></div><div class="hstat-l">Compliance</div><div class="hstat-trend trend-up">▲ +5%</div></div>
       </div>
     </div>
@@ -857,7 +857,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 <!-- HIVES -->
 <div class="page" id="pg-hives">
   <div class="fhdr sage"><div class="hrow"><div><div class="htitle w">My <em>Hives</em></div><div class="hsub w">4 hives · Portland, OR</div></div><button class="ibtn bg-honey"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button></div></div>
-  <div class="htabs-bar">
+  <div class="htabs-bar" id="hiveTabs">
     <button class="htab on" onclick="selH(0,this)"><span class="hdot2" style="background:#2E7D52"></span>Clover</button>
     <button class="htab" onclick="selH(1,this)"><span class="hdot2" style="background:#B86800"></span>Wildflower</button>
     <button class="htab" onclick="selH(2,this)"><span class="hdot2" style="background:#B83030"></span>Buckwheat</button>
@@ -879,7 +879,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
       <button class="ctabtn cta-ghost" id="inspectBtn" aria-label="Start hive inspection"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>Start Inspection</button>
     </div>
     <div><span class="slbl">Inspection History</span>
-      <div class="tl">
+      <div class="tl" id="inspTimeline">
         <div class="tl-row"><div class="tl-l"><div class="tl-dot"></div><div class="tl-line"></div></div><div class="tl-card"><div class="tl-d">May 21, 2025 · 9:14 AM</div><div class="tl-t">Routine inspection — Queen seen ✓</div><div class="tl-tags"><span class="tlt tlt-ok">Queen OK</span><span class="tlt tlt-i">8 frames</span><span class="tlt tlt-ok">Mites 1.2%</span></div><div class="tl-n">Good brood pattern. No queen cells. Added super.</div></div></div>
         <div class="tl-row"><div class="tl-l"><div class="tl-dot w"></div><div class="tl-line"></div></div><div class="tl-card"><div class="tl-d">May 12, 2025</div><div class="tl-t">Varroa sugar roll — 1.8% mite load</div><div class="tl-tags"><span class="tlt tlt-w">Mite check</span><span class="tlt tlt-i">7 frames</span></div><div class="tl-n">Within threshold. Recheck in 2 weeks.</div></div></div>
         <div class="tl-row"><div class="tl-l"><div class="tl-dot h"></div><div class="tl-line"></div></div><div class="tl-card"><div class="tl-d">May 3, 2025</div><div class="tl-t">First harvest of season 🍯 — 14lb</div><div class="tl-tags"><span class="tlt tlt-h">Harvest 14lb</span><span class="tlt tlt-i">Clover</span></div></div></div>
@@ -982,15 +982,15 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
         </div>
       </div>
     </div>
-    <div><span class="slbl">Today — May 24</span>
-      <div class="ftl">
+    <div><span class="slbl">Today</span>
+      <div class="ftl" id="tasksTodayList">
         <div class="fti a1" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Record Hive 2 treatment result</div><div class="fi-mt">Oxalic acid ends today</div></div><div class="fr"><div class="ttag tg-urg">Urgent</div><div class="fr-hv">Hive 2</div></div></div>
         <div class="fti a2" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Inspect Hive 3 — overdue</div><div class="fi-mt">Last checked May 12 · Varroa needed</div></div><div class="fr"><div class="ttag tg-urg">Urgent</div><div class="fr-hv">Hive 3</div></div></div>
         <div class="fti a3" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Check Hive 1 for swarm cells</div><div class="fi-mt">Swarm season · every 7 days</div></div><div class="fr"><div class="ttag tg-tod">Today</div><div class="fr-hv">Hive 1</div></div></div>
       </div>
     </div>
-    <div><span class="slbl">Upcoming This Week</span>
-      <div class="ftl">
+    <div><span class="slbl">Completed</span>
+      <div class="ftl" id="tasksUpcomingList">
         <div class="fti a1" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Top up feeder — Hive 4</div><div class="fi-mt">Nectar flow slowing · May 26</div></div><div class="fr"><div class="pill p-sage" style="font-size:10px;padding:2px 8px">May 26</div><div class="fr-hv">Hive 4</div></div></div>
         <div class="fti a2" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Open Hive 1 inspection window</div><div class="fi-mt">Cool-down ends May 28</div></div><div class="fr"><div class="pill p-sage" style="font-size:10px;padding:2px 8px">May 28</div><div class="fr-hv">Hive 1</div></div></div>
       </div>
@@ -1092,6 +1092,32 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 
 </div><!-- /shell -->
 
+
+<!-- HIVE ADD/EDIT MODAL -->
+<div class="mover" id="hiveModal">
+  <div class="modal">
+    <div class="mhnd"></div>
+    <div class="mttl" id="hiveFormTitle">Add New Hive</div>
+    <div class="msub">Enter your hive details below</div>
+    <input type="hidden" id="hiveFormId">
+    <div class="fgrp"><label class="flbl">Hive Name</label><input class="finp" id="hiveName" placeholder="e.g. Hive 5"></div>
+    <div class="fgrp"><label class="flbl">Nickname</label><input class="finp" id="hiveNickname" placeholder="e.g. Clover, Sunflower…"></div>
+    <div class="fgrp"><label class="flbl">Location</label><input class="finp" id="hiveLocation" placeholder="e.g. Portland, OR"></div>
+    <div class="fgrp"><label class="flbl">Hive Type</label>
+      <select class="fsel" id="hiveType">
+        <option>Langstroth 10-frame</option>
+        <option>Langstroth 8-frame</option>
+        <option>Warré</option>
+        <option>Top-Bar</option>
+        <option>Flow Hive</option>
+        <option>Other</option>
+      </select>
+    </div>
+    <button class="msave" onclick="saveHiveForm()">Save Hive ✓</button>
+    <button class="mcancel" onclick="closeM('hiveModal')">Cancel</button>
+  </div>
+</div>
+
 <!-- Global toast -->
 <div class="toast" id="globalToast"></div>
 
@@ -1127,10 +1153,10 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
     <select class="qa-input" id="qaHive" style="margin-bottom:10px;font-size:13px;color:var(--ink)">
       <option value="">No specific hive</option>
-      <option value="hive1">🍯 Hive 1 — Clover</option>
-      <option value="hive2">💊 Hive 2 — Wildflower</option>
-      <option value="hive3">⚠️ Hive 3 — Buckwheat</option>
-      <option value="hive4">🌸 Hive 4 — Lavender</option>
+      <option value="h1">🍯 Hive 1 — Clover</option>
+      <option value="h2">💊 Hive 2 — Wildflower</option>
+      <option value="h3">⚠️ Hive 3 — Buckwheat</option>
+      <option value="h4">🌸 Hive 4 — Lavender</option>
     </select>
     <div class="qa-chips">
       <button class="qa-chip on" onclick="selChip(this)">Inspection</button>
@@ -1985,6 +2011,497 @@ loadState().then(s => {
     }
   }
 }).catch(() => {});
+
+
+// ══════════════════════════════════════════════════════
+// REAL DATA MODULE
+// Hives, Tasks, Inspections — all dynamic, stored in IDB
+// ══════════════════════════════════════════════════════
+
+// ── DEFAULT DATA (first run only) ──
+const DEFAULT_HIVES = [
+  {id:'h1', name:'Hive 1', nickname:'Clover',    type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-04-01', frames:8,  strength:'Strong',   mites:1.2, status:'healthy',  queenSeen:'2025-05-21', queenBreed:'Italian',   queenSource:'Willamette Apiaries'},
+  {id:'h2', name:'Hive 2', nickname:'Wildflower', type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-04-01', frames:7,  strength:'Moderate', mites:3.8, status:'treatment', queenSeen:'2025-05-10', queenBreed:'Carniolan',  queenSource:'Local breeder'},
+  {id:'h3', name:'Hive 3', nickname:'Buckwheat',  type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-06-01', frames:6,  strength:'Weak',     mites:null,status:'overdue',   queenSeen:'2025-05-01', queenBreed:'Buckfast',   queenSource:'Oregon Bees'},
+  {id:'h4', name:'Hive 4', nickname:'Lavender',   type:'Langstroth 10-frame', location:'Portland, OR', est:'2024-03-01', frames:9,  strength:'Strong',   mites:0.8, status:'healthy',  queenSeen:'2025-05-19', queenBreed:'Italian',   queenSource:'Willamette Apiaries'},
+];
+const DEFAULT_TASKS = [
+  {id:'t1', text:'Record Hive 2 treatment result', sub:'Oxalic acid ends today', hiveId:'h2', category:'Treatment', dateISO:new Date().toISOString(), done:false, urgent:true},
+  {id:'t2', text:'Inspect Hive 3 — overdue 12 days', sub:'Varroa check recommended', hiveId:'h3', category:'Inspection', dateISO:new Date().toISOString(), done:false, urgent:true},
+  {id:'t3', text:'Check Hive 1 for swarm cells', sub:'Swarm season — every 7 days', hiveId:'h1', category:'Inspection', dateISO:new Date().toISOString(), done:false, urgent:false},
+];
+const DEFAULT_INSPECTIONS = [
+  {id:'i1', hiveId:'h1', dateISO:'2025-05-21T09:14:00Z', frames:8, mites:1.2, queenSeen:true, notes:'Good brood pattern. No queen cells. Added super.', tags:['Queen OK','8 frames','Mites 1.2%']},
+  {id:'i2', hiveId:'h1', dateISO:'2025-05-12T10:32:00Z', frames:7, mites:1.8, queenSeen:false, notes:'Within threshold. Recheck in 2 weeks.', tags:['Mite check','7 frames']},
+  {id:'i3', hiveId:'h1', dateISO:'2025-05-03T08:50:00Z', frames:8, mites:null, queenSeen:true, notes:'First harvest of season — 14lb Clover.', tags:['Harvest 14lb','Clover']},
+];
+
+// ── APP STATE ──
+let APP = { hives:[], tasks:[], inspections:[] };
+
+async function initAppData() {
+  const saved = await loadState();
+  if (saved.hives && saved.hives.length > 0) {
+    APP.hives       = saved.hives;
+    APP.tasks       = saved.tasks       || [];
+    APP.inspections = saved.inspections || [];
+  } else {
+    // First run — seed with defaults
+    APP.hives       = DEFAULT_HIVES;
+    APP.tasks       = DEFAULT_TASKS;
+    APP.inspections = DEFAULT_INSPECTIONS;
+    await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections });
+  }
+  renderAll();
+}
+
+async function persistApp() {
+  setSyncStatus('saving');
+  await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections });
+}
+
+// ══════════════════════════════════════════════════════
+// RENDER ENGINE
+// ══════════════════════════════════════════════════════
+
+function renderAll() {
+  renderDashboard();
+  renderHiveTabs();
+  renderTasksPage();
+}
+
+// ── STATUS HELPERS ──
+function hiveStatusClass(h) {
+  if (h.status === 'treatment') return 'p-warn';
+  if (h.status === 'overdue')   return 'p-alert';
+  return 'p-ok';
+}
+function hiveStatusText(h) {
+  if (h.status === 'treatment') return '⚠ Treatment';
+  if (h.status === 'overdue')   return '! Overdue';
+  return '● Healthy';
+}
+function hiveEmoji(h) {
+  if (h.status === 'treatment') return '💊';
+  if (h.status === 'overdue')   return '⚠️';
+  const emojis = ['🍯','🌸','🌿','🦋','🌻','🍀'];
+  return emojis[APP.hives.indexOf(h) % emojis.length];
+}
+
+// ── DASHBOARD ──
+function renderDashboard() {
+  const totalHives   = APP.hives.length;
+  const healthyCount = APP.hives.filter(h => h.status === 'healthy').length;
+  const avgMites     = APP.hives.filter(h => h.mites !== null).reduce((a,h,_,arr) => a + h.mites/arr.length, 0);
+  const pendingTasks = APP.tasks.filter(t => !t.done);
+  const urgentCount  = pendingTasks.filter(t => t.urgent).length;
+
+  // Update hero stats
+  const heroLoc = document.getElementById('heroLoc');
+  if (heroLoc) heroLoc.textContent = `${totalHives} Hives · Portland, OR`;
+  const heroBadge = document.getElementById('heroBadge');
+  if (heroBadge) heroBadge.textContent = `${healthyCount} Healthy`;
+  const statMites = document.getElementById('statMites');
+  if (statMites) statMites.textContent = avgMites.toFixed(1) + '%';
+
+  // Render tasks
+  const taskList = document.getElementById('dashTasks');
+  const emptyEl  = document.getElementById('emptyTasks');
+  if (!taskList) return;
+
+  if (pendingTasks.length === 0) {
+    taskList.style.display = 'none';
+    if (emptyEl) emptyEl.classList.add('show');
+    return;
+  }
+  taskList.style.display = '';
+  if (emptyEl) emptyEl.classList.remove('show');
+
+  taskList.innerHTML = pendingTasks.slice(0,5).map(t => {
+    const hive = APP.hives.find(h => h.id === t.hiveId);
+    return `<div class="titem" onclick="toggleTask('${t.id}')">
+      <div class="tchk ${t.done?'on':''}">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3">
+          <use href="#ic-check"/>
+        </svg>
+      </div>
+      <div class="tt">
+        <div class="tt-nm ${t.done?'done':''}">${t.text}</div>
+        <div class="tt-sub">${t.sub || (hive ? hive.nickname : '')}</div>
+      </div>
+      <div class="ttag ${t.urgent?'tg-urg':'tg-tod'}">${t.urgent?'Urgent':'Today'}</div>
+    </div>`;
+  }).join('');
+
+  // Recent activity
+  renderRecentActivity();
+}
+
+function renderRecentActivity() {
+  const recList = document.getElementById('recList');
+  if (!recList) return;
+  const recent = [...APP.inspections]
+    .sort((a,b) => new Date(b.dateISO) - new Date(a.dateISO))
+    .slice(0,3);
+  if (recent.length === 0) { recList.innerHTML = ''; return; }
+  recList.innerHTML = recent.map(insp => {
+    const hive = APP.hives.find(h => h.id === insp.hiveId);
+    const date = new Date(insp.dateISO);
+    const daysAgo = Math.floor((Date.now() - date) / 86400000);
+    const timeStr = daysAgo === 0 ? 'Today' : daysAgo === 1 ? '1d ago' : daysAgo + 'd ago';
+    const dotClass = insp.mites > 2 ? 'rd-warn' : 'rd-ok';
+    return `<div class="ritem">
+      <div class="rdot ${dotClass}"></div>
+      <div class="ri">
+        <div class="ri-nm">${hive ? hive.nickname : 'Unknown'} — ${insp.tags[0] || 'Inspection'}</div>
+        <div class="ri-mt">${insp.notes ? insp.notes.substring(0,50) + (insp.notes.length>50?'…':'') : ''}</div>
+      </div>
+      <div class="ri-t">${timeStr}</div>
+    </div>`;
+  }).join('');
+}
+
+// ── HIVE TABS ──
+let currentHiveIdx = 0;
+function renderHiveTabs() {
+  const bar = document.getElementById('hiveTabs');
+  if (!bar) return;
+  bar.innerHTML = APP.hives.map((h,i) => `
+    <button class="htab ${i===currentHiveIdx?'on':''}" onclick="selH(${i},this)">
+      <span class="hdot2" style="background:${h.status==='healthy'?'#2E7D52':h.status==='treatment'?'#B86800':'#B83030'}"></span>
+      ${h.nickname}
+    </button>`).join('');
+  renderHiveDetail(currentHiveIdx);
+}
+
+function selH(i, btn) {
+  currentHiveIdx = i;
+  document.querySelectorAll('.htab').forEach(t => t.classList.remove('on'));
+  if (btn) btn.classList.add('on');
+  renderHiveDetail(i);
+}
+
+function renderHiveDetail(i) {
+  const h = APP.hives[i];
+  if (!h) return;
+  const av = document.getElementById('hav'); if(av) av.textContent = hiveEmoji(h);
+  const hn = document.getElementById('hn');  if(hn) hn.textContent = `${h.name} — ${h.nickname}`;
+  const hb = document.getElementById('hbadge');
+  if (hb) { hb.className = 'pill '+hiveStatusClass(h); hb.textContent = hiveStatusText(h); }
+  const hfr = document.getElementById('hfr'); if(hfr) hfr.textContent = h.frames;
+  const hst = document.getElementById('hst'); if(hst) hst.textContent = h.strength;
+  const hmt = document.getElementById('hmt'); if(hmt) hmt.textContent = h.mites !== null ? h.mites+'%' : 'N/A';
+  const hm  = document.querySelector('.hm');
+  if(hm) hm.innerHTML = `${h.type} · Est. ${new Date(h.est).getFullYear()}<br>${h.location}`;
+  // Queen info
+  const qv = document.querySelectorAll('.qf-v');
+  if (qv.length >= 5) {
+    qv[0].textContent = h.queenSeen ? '✓ Seen ' + new Date(h.queenSeen).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Not seen recently';
+    qv[0].style.color = h.queenSeen ? 'var(--ok)' : 'var(--danger)';
+    qv[2].textContent = h.queenBreed || '—';
+    qv[3].textContent = h.queenSource || '—';
+  }
+  // CTA message
+  const ctaMsg = document.querySelector('.cta-msg');
+  const inspections = APP.inspections.filter(insp => insp.hiveId === h.id)
+    .sort((a,b) => new Date(b.dateISO) - new Date(a.dateISO));
+  if (ctaMsg) {
+    if (inspections.length > 0) {
+      const lastDate = new Date(inspections[0].dateISO);
+      const daysAgo  = Math.floor((Date.now() - lastDate) / 86400000);
+      const daysStr  = daysAgo === 0 ? 'Today' : daysAgo + ' days ago';
+      const nextOpen = Math.max(0, 7 - daysAgo);
+      ctaMsg.innerHTML = `${daysStr} — Last check<br>Next window: <em>${nextOpen > 0 ? 'in '+nextOpen+' days' : 'Open now'}</em>`;
+      const coolbar = document.getElementById('coolbar');
+      if (coolbar) coolbar.style.display = nextOpen > 0 ? 'flex' : 'none';
+    } else {
+      ctaMsg.innerHTML = 'No inspections yet — <em>start your first</em>';
+      const coolbar = document.getElementById('coolbar');
+      if (coolbar) coolbar.style.display = 'none';
+    }
+  }
+  // Timeline
+  renderInspectionTimeline(h.id);
+}
+
+function renderInspectionTimeline(hiveId) {
+  const tl = document.getElementById('inspTimeline');
+  if (!tl) return;
+  const inspections = APP.inspections.filter(i => i.hiveId === hiveId)
+    .sort((a,b) => new Date(b.dateISO) - new Date(a.dateISO))
+    .slice(0, 5);
+
+  if (inspections.length === 0) {
+    tl.innerHTML = `<div class="list-empty show" style="padding:20px">
+      <div class="le-emoji">🔍</div>
+      <div class="le-title">No inspections yet</div>
+      <div class="le-desc">Tap "Start Inspection" to record your first check.</div>
+    </div>`;
+    return;
+  }
+
+  tl.innerHTML = inspections.map((insp, idx) => {
+    const date  = new Date(insp.dateISO).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const isLast = idx === inspections.length - 1;
+    const dotClass = insp.mites > 2 ? 'w' : insp.tags.some(t=>t.includes('Harvest')) ? 'h' : '';
+    return `<div class="tl-row">
+      <div class="tl-l"><div class="tl-dot ${dotClass}"></div>${isLast?'':'<div class="tl-line"></div>'}</div>
+      <div class="tl-card">
+        <div class="tl-d">${date}</div>
+        <div class="tl-t">${insp.notes ? insp.notes.substring(0,60) : 'Inspection recorded'}</div>
+        <div class="tl-tags">${insp.tags.map(tag=>`<span class="tlt tlt-i">${tag}</span>`).join('')}</div>
+        <div style="display:flex;gap:6px;margin-top:6px">
+          <button onclick="editInspection('${insp.id}')" style="font-size:11px;color:var(--sage-mid);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif;font-weight:600">Edit</button>
+          <button onclick="deleteInspection('${insp.id}')" style="font-size:11px;color:var(--danger);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif;font-weight:600">Delete</button>
+        </div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+// ── TASKS PAGE ──
+function renderTasksPage() {
+  const todayList = document.getElementById('tasksTodayList');
+  const upcomingList = document.getElementById('tasksUpcomingList');
+  if (!todayList) return;
+
+  const today    = APP.tasks.filter(t => !t.done);
+  const done     = APP.tasks.filter(t => t.done).slice(0,3);
+
+  todayList.innerHTML = today.length === 0
+    ? `<div class="list-empty show"><div class="le-emoji">✅</div><div class="le-title">All done!</div><div class="le-desc">No pending tasks.</div></div>`
+    : today.map(t => {
+        const hive = APP.hives.find(h => h.id === t.hiveId);
+        return `<div class="fti" onclick="toggleTask('${t.id}')">
+          <div class="fchk ${t.done?'on':''}"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+          <div class="fi">
+            <div class="fi-nm ${t.done?'done':''}">${t.text}</div>
+            <div class="fi-mt">${t.sub||''}</div>
+          </div>
+          <div class="fr">
+            <div class="ttag ${t.urgent?'tg-urg':'tg-tod'}">${t.urgent?'Urgent':'Today'}</div>
+            <div class="fr-hv">${hive?hive.nickname:''}</div>
+            <button onclick="event.stopPropagation();deleteTask('${t.id}')" style="font-size:10px;color:var(--danger);background:none;border:none;cursor:pointer;margin-top:2px">✕</button>
+          </div>
+        </div>`;
+      }).join('');
+
+  if (upcomingList) {
+    upcomingList.innerHTML = done.length === 0 ? '' : done.map(t => `
+      <div class="fti" style="opacity:.6" onclick="toggleTask('${t.id}')">
+        <div class="fchk on"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div>
+        <div class="fi"><div class="fi-nm done">${t.text}</div></div>
+        <div class="fr"><button onclick="event.stopPropagation();deleteTask('${t.id}')" style="font-size:10px;color:var(--danger);background:none;border:none;cursor:pointer">✕</button></div>
+      </div>`).join('');
+  }
+}
+
+// ── TASK ACTIONS ──
+function toggleTask(id) {
+  const task = APP.tasks.find(t => t.id === id);
+  if (!task) return;
+  task.done = !task.done;
+  persistApp();
+  renderDashboard();
+  renderTasksPage();
+}
+
+function deleteTask(id) {
+  APP.tasks = APP.tasks.filter(t => t.id !== id);
+  persistApp();
+  renderDashboard();
+  renderTasksPage();
+  showToast('Task deleted');
+}
+
+// ── HIVE CRUD ──
+function openAddHive() {
+  document.getElementById('hiveFormTitle').textContent = 'Add New Hive';
+  document.getElementById('hiveFormId').value = '';
+  document.getElementById('hiveName').value = '';
+  document.getElementById('hiveNickname').value = '';
+  document.getElementById('hiveLocation').value = 'Portland, OR';
+  document.getElementById('hiveType').value = 'Langstroth 10-frame';
+  openM('hiveModal');
+}
+
+function editHive(id) {
+  const h = APP.hives.find(h => h.id === id);
+  if (!h) return;
+  document.getElementById('hiveFormTitle').textContent = 'Edit Hive';
+  document.getElementById('hiveFormId').value = h.id;
+  document.getElementById('hiveName').value = h.name;
+  document.getElementById('hiveNickname').value = h.nickname;
+  document.getElementById('hiveLocation').value = h.location;
+  document.getElementById('hiveType').value = h.type;
+  openM('hiveModal');
+}
+
+function saveHiveForm() {
+  const id       = document.getElementById('hiveFormId').value;
+  const name     = document.getElementById('hiveName').value.trim();
+  const nickname = document.getElementById('hiveNickname').value.trim();
+  const location = document.getElementById('hiveLocation').value.trim();
+  const type     = document.getElementById('hiveType').value;
+
+  if (!name || !nickname) {
+    showToast('Please fill in name and nickname');
+    return;
+  }
+
+  if (id) {
+    const h = APP.hives.find(h => h.id === id);
+    if (h) { h.name = name; h.nickname = nickname; h.location = location; h.type = type; }
+  } else {
+    APP.hives.push({
+      id: 'h' + Date.now(), name, nickname, type, location,
+      est: new Date().toISOString(), frames: 8, strength: 'Strong',
+      mites: null, status: 'healthy',
+      queenSeen: null, queenBreed: '', queenSource: ''
+    });
+  }
+
+  persistApp();
+  closeM('hiveModal');
+  renderHiveTabs();
+  renderDashboard();
+  showToast(id ? '✓ Hive updated' : '✓ New hive added');
+}
+
+function deleteHive(id) {
+  if (APP.hives.length <= 1) { showToast('Must have at least one hive'); return; }
+  if (!confirm('Delete this hive and all its inspections?')) return;
+  APP.hives       = APP.hives.filter(h => h.id !== id);
+  APP.inspections = APP.inspections.filter(i => i.hiveId !== id);
+  APP.tasks       = APP.tasks.filter(t => t.hiveId !== id);
+  currentHiveIdx  = 0;
+  persistApp();
+  renderHiveTabs();
+  renderDashboard();
+  showToast('Hive deleted');
+}
+
+// ── INSPECTION CRUD ──
+let editingInspectionId = null;
+
+function openInspectionModal(hiveId) {
+  editingInspectionId = null;
+  const h = APP.hives.find(h => h.id === hiveId) || APP.hives[currentHiveIdx];
+  document.querySelector('#inspectModal .mttl').textContent = 'Inspect ' + (h ? h.nickname : 'Hive');
+  document.querySelector('#inspectModal .msub').textContent = (h ? h.name : '') + ' · ' + new Date().toLocaleDateString('en-US',{month:'long',day:'numeric',year:'numeric'});
+  // Reset checklist
+  document.querySelectorAll('.chk-b').forEach(b => { b.classList.remove('on'); b.closest('.chk-i')?.querySelector('.chk-lbl')?.classList.remove('done'); });
+  document.querySelectorAll('.star').forEach((s,i) => s.classList.toggle('on', i < 2));
+  document.getElementById('inspNotes').value = '';
+  openM('inspectModal');
+}
+
+function saveInspection() {
+  const btn = document.querySelector('#inspectModal .msave');
+  btn.classList.add('btn-saving');
+  btn.innerHTML = '<div class="spinner" style="margin:0 auto"></div>';
+
+  const h = APP.hives[currentHiveIdx];
+  const notes = document.getElementById('inspNotes').value.trim();
+
+  // Collect checked items as tags
+  const tags = [];
+  document.querySelectorAll('.chk-i').forEach(item => {
+    if (item.querySelector('.chk-b.on')) {
+      tags.push(item.querySelector('.chk-lbl')?.textContent?.trim().substring(0,20) || '');
+    }
+  });
+
+  // Mite count from calculator if filled
+  const miteInput = document.getElementById('miteCount');
+  const beeInput  = document.getElementById('beeCount');
+  const mites = miteInput && beeInput && beeInput.value
+    ? parseFloat((parseFloat(miteInput.value)/parseFloat(beeInput.value)*100).toFixed(1))
+    : h.mites;
+
+  const insp = {
+    id:      editingInspectionId || ('i' + Date.now()),
+    hiveId:  h.id,
+    dateISO: new Date().toISOString(),
+    frames:  h.frames,
+    mites:   mites,
+    queenSeen: tags.some(t => t.toLowerCase().includes('queen')),
+    notes:   notes || 'Inspection completed',
+    tags:    tags.length > 0 ? tags : ['Inspection recorded'],
+  };
+
+  if (editingInspectionId) {
+    const idx = APP.inspections.findIndex(i => i.id === editingInspectionId);
+    if (idx >= 0) APP.inspections[idx] = insp;
+  } else {
+    APP.inspections.unshift(insp);
+    // Update hive mites
+    if (mites !== null) h.mites = mites;
+  }
+
+  setTimeout(() => {
+    persistApp();
+    btn.classList.remove('btn-saving');
+    btn.classList.add('btn-saved');
+    btn.textContent = 'Saved ✓';
+    setTimeout(() => {
+      closeM('inspectModal');
+      btn.classList.remove('btn-saved');
+      btn.textContent = 'Save Inspection ✓';
+      renderAll();
+      showToast('🐝 Inspection saved');
+    }, 700);
+  }, 600);
+}
+
+function editInspection(id) {
+  editingInspectionId = id;
+  const insp = APP.inspections.find(i => i.id === id);
+  if (!insp) return;
+  document.getElementById('inspNotes').value = insp.notes || '';
+  openM('inspectModal');
+}
+
+function deleteInspection(id) {
+  APP.inspections = APP.inspections.filter(i => i.id !== id);
+  persistApp();
+  renderInspectionTimeline(APP.hives[currentHiveIdx].id);
+  showToast('Inspection deleted');
+}
+
+// ── SAVE QA TASK (override old version) ──
+async function saveQA() {
+  const v    = document.getElementById('qaInput').value.trim();
+  const hive = document.getElementById('qaHive').value;
+  if (!v) { document.getElementById('qaInput').style.borderColor='var(--danger)'; return; }
+  document.getElementById('qaInput').style.borderColor = '';
+  closeQA();
+  const category = document.querySelector('.qa-chip.on')?.textContent || 'Task';
+  const task = {
+    id:      't' + Date.now(),
+    text:    v,
+    sub:     hive ? (APP.hives.find(h=>h.id===hive)?.nickname || '') : '',
+    category,
+    hiveId:  hive || null,
+    dateISO: new Date().toISOString(),
+    done:    false,
+    urgent:  false,
+  };
+  APP.tasks.push(task);
+  await persistApp();
+  renderDashboard();
+  renderTasksPage();
+  showToast('✓ Task added' + (hive ? ' · ' + (APP.hives.find(h=>h.id===hive)?.nickname||'') : ''));
+}
+
+// ── WIRE INSPECT BUTTON ──
+const origInspectBtn = document.getElementById('inspectBtn');
+if (origInspectBtn) {
+  origInspectBtn.onclick = () => openInspectionModal(APP.hives[currentHiveIdx]?.id);
+}
+
+// ── INIT ──
+initAppData();
 
 </script>
 </body>

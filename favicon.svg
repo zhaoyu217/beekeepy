@@ -1,0 +1,16 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100">
+  <!-- Center hex -->
+  <polygon points="50,18 72,30 72,54 50,66 28,54 28,30" fill="#E8A020"/>
+  <!-- Top hex -->
+  <polygon points="50,0 66,9 66,27 50,36 34,27 34,9" fill="#C8580A"/>
+  <!-- Bottom-left hex -->
+  <polygon points="28,36 44,45 44,63 28,72 12,63 12,45" fill="#F5C96A"/>
+  <!-- Bottom-right hex -->
+  <polygon points="72,36 88,45 88,63 72,72 56,63 56,45" fill="#C8580A" opacity="0.85"/>
+  <!-- Bottom-left lower -->
+  <polygon points="28,54 44,63 44,81 28,90 12,81 12,63" fill="#C8580A" opacity="0.7"/>
+  <!-- Bottom-right lower -->
+  <polygon points="72,54 88,63 88,81 72,90 56,81 56,63" fill="#F5C96A" opacity="0.7"/>
+  <!-- Center dot -->
+  <circle cx="50" cy="42" r="5" fill="#FAF6F0" opacity="0.7"/>
+</svg>

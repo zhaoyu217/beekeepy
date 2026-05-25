@@ -66,7 +66,7 @@
   --sh-sm:0 2px 10px rgba(0,0,0,.3);--sh-md:0 4px 20px rgba(0,0,0,.4);
 }
 .shell.dark .fhdr.cream{background:var(--cream)}
-.shell.dark .htabs-bar{background:var(--cream);padding:8px 16px 12px;display:flex;gap:5px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--stone-light);-webkit-overflow-scrolling:touch}
+.shell.dark .htabs-bar{background:var(--cream);padding:8px 20px 12px 20px;display:flex;gap:6px;overflow-x:scroll;overflow-y:hidden;flex-shrink:0;border-bottom:1px solid var(--stone-light);-webkit-overflow-scrolling:touch;scroll-padding-right:20px}
 .shell.dark .sync-bar{background:var(--cream);border-bottom-color:var(--stone-light)}
 .shell.dark .bnav{background:#1A1612;border-top-color:var(--stone-light)}
 .shell.dark .modal{background:var(--cream)}
@@ -371,6 +371,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 /* ═══ HIVES ═══ */
 .htabs-bar{background:var(--cream);padding:8px 20px 12px;display:flex;gap:7px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--stone-light)}
 .htabs-bar::-webkit-scrollbar{display:none}
+.htabs-bar::after{content:'';display:block;flex-shrink:0;width:20px;height:1px}
 .htab{flex-shrink:0;padding:5px 11px;min-height:36px;border-radius:var(--r-pill);border:1.5px solid var(--stone-light);background:transparent;font-family:'Nunito',sans-serif;font-size:11px;font-weight:600;color:var(--stone);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .htab.on{background:var(--sage-deep);border-color:var(--sage-deep);color:var(--white)}
 .hdot2{width:6px;height:6px;border-radius:50%}
@@ -865,7 +866,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
   </div>
   <div class="scroll"><div class="hvbody">
     <div class="hcard a0">
-      <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="pill p-ok" id="hbadge">● Healthy</div><div style="display:flex;gap:5px"><button onclick="editHive(APP.hives[currentHiveIdx]?.id)" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:var(--sage-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Edit</button><button onclick="deleteHive(APP.hives[currentHiveIdx]?.id)" style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Delete</button></div></div></div>
+      <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="pill p-ok" id="hbadge">● Healthy</div><div style="display:flex;gap:5px"><button id="hiveEditBtn" onclick="editHive(document.getElementById('hiveEditBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:var(--sage-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Edit</button><button id="hiveDeleteBtn" onclick="deleteHive(document.getElementById('hiveDeleteBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Delete</button></div></div></div>
       <div class="hstats"><div class="hsb"><div class="hsb-v" id="hfr">8</div><div class="hsb-l">Frames</div></div><div class="hsb"><div class="hsb-v" id="hst" style="font-size:14px;padding-top:4px">Strong</div><div class="hsb-l">Strength</div></div><div class="hsb"><div class="hsb-v" id="hmt">1.2%</div><div class="hsb-l">Mites</div></div></div>
     </div>
     <div class="qcard a1">
@@ -2178,6 +2179,11 @@ function selH(i, btn) {
 function renderHiveDetail(i) {
   const h = APP.hives[i];
   if (!h) return;
+  // Wire edit/delete buttons with current hive id
+  const editBtn = document.getElementById('hiveEditBtn');
+  const delBtn  = document.getElementById('hiveDeleteBtn');
+  if (editBtn) editBtn.dataset.id = h.id;
+  if (delBtn)  delBtn.dataset.id  = h.id;
   const av = document.getElementById('hav'); if(av) av.textContent = hiveEmoji(h);
   const hn = document.getElementById('hn');  if(hn) hn.textContent = `${h.name} — ${h.nickname}`;
   const hb = document.getElementById('hbadge');

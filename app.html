@@ -1586,8 +1586,10 @@ function saveInspection(){
   if('serviceWorker' in navigator){
     // Inline SW as blob for single-file PWA
     const sw=`
-const CACHE='hk-v3';
+const CACHE='hk-v4';
 const PRECACHE=[
+  '/',
+  '/app.html',
   'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;500;600;700&display=swap',
   'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
 ];

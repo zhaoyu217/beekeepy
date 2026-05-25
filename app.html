@@ -869,7 +869,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
       <div class="hstats"><div class="hsb"><div class="hsb-v" id="hfr">8</div><div class="hsb-l">Frames</div></div><div class="hsb"><div class="hsb-v" id="hst" style="font-size:14px;padding-top:4px">Strong</div><div class="hsb-l">Strength</div></div><div class="hsb"><div class="hsb-v" id="hmt">1.2%</div><div class="hsb-l">Mites</div></div></div>
     </div>
     <div class="qcard a1">
-      <div class="chead"><div class="ctitle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>Queen Management</div><div class="cedit">Edit</div></div>
+      <div class="chead"><div class="ctitle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>Queen Management</div><div class="cedit" onclick="editHive(APP.hives[currentHiveIdx]?.id)">Edit</div></div>
       <div class="qgrid"><div class="qf"><div class="qf-l">Status</div><div class="qf-v" style="color:var(--ok)">✓ Seen May 21</div></div><div class="qf"><div class="qf-l">Year</div><div class="qf-v">2023 · 2nd yr</div></div><div class="qf"><div class="qf-l">Breed</div><div class="qf-v">Italian</div></div><div class="qf"><div class="qf-l">Source</div><div class="qf-v">Willamette Apiaries</div></div><div class="qf" style="grid-column:1/-1"><div class="qf-l">Lineage</div><div class="qf-v it">Carniolan × Italian F2 — gentle, prolific</div></div></div>
     </div>
     <div class="cta-card a2">
@@ -1646,28 +1646,10 @@ document.getElementById('pwaInstall').addEventListener('click',async()=>{
 // ── QUICK-ADD MODAL ──
 function closeQA(){document.getElementById('qaModal').classList.remove('open');}
 function selChip(b){document.querySelectorAll('.qa-chip').forEach(c=>c.classList.remove('on'));b.classList.add('on');}
-function saveQA(){
-  const v=document.getElementById('qaInput').value.trim();
-  if(!v){document.getElementById('qaInput').style.borderColor='var(--danger)';return;}
-  closeQA();
-  setSyncStatus('saving');
-  const tasks=loadState().customTasks||[];
-  tasks.push({
-      id: Date.now(),
-      text: v,
-      category: document.querySelector('.qa-chip.on')?.textContent||'Task',
-      hiveId: document.getElementById('qaHive')?.value||null,
-      dateISO: new Date().toISOString(),
-      dateDisplay: document.getElementById('qaDate').textContent,
-      done: false
-    });
-  setTimeout(()=>{saveState({customTasks:tasks});showToast('✓ Task added');},300);
-}
+// saveQA replaced by real data version below
 
 // ── INIT CHART ON FIRST LOAD ──
-document.addEventListener('DOMContentLoaded',()=>{
-  setTimeout(()=>buildChart('honey'),400);
-});
+// buildChart called after initAppData renders
 
 // ══════════════════════════════════════════════════════
 // VOICE INPUT MODULE
@@ -2135,6 +2117,11 @@ function renderDashboard() {
 
   // Recent activity
   renderRecentActivity();
+  // Init chart after first render
+  if (typeof buildChart === 'function' && !window._chartBuilt) {
+    window._chartBuilt = true;
+    setTimeout(() => buildChart('honey'), 400);
+  }
 }
 
 function renderRecentActivity() {
@@ -2494,14 +2481,17 @@ async function saveQA() {
   showToast('✓ Task added' + (hive ? ' · ' + (APP.hives.find(h=>h.id===hive)?.nickname||'') : ''));
 }
 
-// ── WIRE INSPECT BUTTON ──
-const origInspectBtn = document.getElementById('inspectBtn');
-if (origInspectBtn) {
-  origInspectBtn.onclick = () => openInspectionModal(APP.hives[currentHiveIdx]?.id);
-}
-
-// ── INIT ──
-initAppData();
+// ── WIRE BUTTONS after DOM ready ──
+document.addEventListener('DOMContentLoaded', () => {
+  if (_appInited) return;
+  _appInited = true;
+  initAppData();
+  // Wire inspect button
+  const btn = document.getElementById('inspectBtn');
+  if (btn) btn.onclick = () => openInspectionModal(APP.hives[currentHiveIdx]?.id);
+});
+// Guard against double init
+let _appInited = false;
 
 </script>
 </body>

@@ -66,7 +66,7 @@
   --sh-sm:0 2px 10px rgba(0,0,0,.3);--sh-md:0 4px 20px rgba(0,0,0,.4);
 }
 .shell.dark .fhdr.cream{background:var(--cream)}
-.shell.dark .htabs-bar{background:var(--cream);padding:8px 20px 12px 20px;display:flex;gap:6px;overflow-x:scroll;overflow-y:hidden;flex-shrink:0;border-bottom:1px solid var(--stone-light);-webkit-overflow-scrolling:touch;scroll-padding-right:20px}
+.shell.dark .htabs-bar{background:var(--cream);padding:8px 0 12px 20px;display:flex;gap:6px;overflow-x:auto;overflow-y:hidden;flex-shrink:0;border-bottom:1px solid var(--stone-light);-webkit-overflow-scrolling:touch;box-sizing:border-box}
 .shell.dark .sync-bar{background:var(--cream);border-bottom-color:var(--stone-light)}
 .shell.dark .bnav{background:#1A1612;border-top-color:var(--stone-light)}
 .shell.dark .modal{background:var(--cream)}
@@ -371,7 +371,8 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 /* ═══ HIVES ═══ */
 .htabs-bar{background:var(--cream);padding:8px 20px 12px;display:flex;gap:7px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--stone-light)}
 .htabs-bar::-webkit-scrollbar{display:none}
-.htabs-bar::after{content:'';display:block;flex-shrink:0;width:20px;height:1px}
+.htabs-bar::after{content:'';display:block;flex-shrink:0;min-width:24px;height:1px}
+.htabs-wrap{flex-shrink:0;overflow:hidden}
 .htab{flex-shrink:0;padding:5px 11px;min-height:36px;border-radius:var(--r-pill);border:1.5px solid var(--stone-light);background:transparent;font-family:'Nunito',sans-serif;font-size:11px;font-weight:600;color:var(--stone);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .htab.on{background:var(--sage-deep);border-color:var(--sage-deep);color:var(--white)}
 .hdot2{width:6px;height:6px;border-radius:50%}
@@ -858,12 +859,12 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 <!-- HIVES -->
 <div class="page" id="pg-hives">
   <div class="fhdr sage"><div class="hrow"><div><div class="htitle w">My <em>Hives</em></div><div class="hsub w" id="hivesSubtitle">4 hives · Portland, OR</div></div><button class="ibtn bg-honey" onclick="openAddHive()" aria-label="Add hive"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button></div></div>
-  <div class="htabs-bar" id="hiveTabs">
+  <div class="htabs-wrap"><div class="htabs-bar" id="hiveTabs">
     <button class="htab on" onclick="selH(0,this)"><span class="hdot2" style="background:#2E7D52"></span>Clover</button>
     <button class="htab" onclick="selH(1,this)"><span class="hdot2" style="background:#B86800"></span>Wildflower</button>
     <button class="htab" onclick="selH(2,this)"><span class="hdot2" style="background:#B83030"></span>Buckwheat</button>
     <button class="htab" onclick="selH(3,this)"><span class="hdot2" style="background:#2E7D52"></span>Lavender</button>
-  </div>
+  </div></div>
   <div class="scroll"><div class="hvbody">
     <div class="hcard a0">
       <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo" style="flex:1;min-width:0"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0"><div class="pill p-ok" id="hbadge">● Healthy</div><div style="display:flex;gap:5px"><button id="hiveEditBtn" onclick="editHive(document.getElementById('hiveEditBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:var(--sage-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Edit</button><button id="hiveDeleteBtn" onclick="deleteHive(document.getElementById('hiveDeleteBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Delete</button></div></div></div>

@@ -1,0 +1,2009 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+<meta name="theme-color" content="#3D5C3D">
+<link rel="manifest" href="data:application/manifest+json,{
+  %22name%22:%22HiveKeeper%22,
+  %22short_name%22:%22HiveKeeper%22,
+  %22description%22:%22Smart beekeeping management%22,
+  %22start_url%22:%22/%22,
+  %22display%22:%22standalone%22,
+  %22background_color%22:%22%23FAF6F0%22,
+  %22theme_color%22:%22%233D5C3D%22,
+  %22icons%22:[{%22src%22:%22data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E🐝%3C/text%3E%3C/svg%3E%22,%22sizes%22:%22any%22,%22type%22:%22image/svg+xml%22}]
+}">
+<meta name="description" content="HiveKeeper — Smart beekeeping management for hobbyists">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>HiveKeeper</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="preload" href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" as="style">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js" defer></script>
+<style>
+/* font-display:swap via Google Fonts ?display=swap already in URL above.
+   Fallback stacks ensure text renders immediately while fonts load. */
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+:root{
+  --sage:#5A7A5A;--sage-mid:#7A9E7A;--sage-light:#EEF4EE;--sage-deep:#3D5C3D;
+  --honey:#E8A020;--honey-light:#FDF3DC;--honey-mid:#F5C96A;
+  --amber:#C8580A;
+  --cream:#FAF6F0;
+  --stone:#8A7968;--stone-light:#EDE6DC;
+  --ink:#1E1916;
+  --ok:#2E7D52;--ok-light:#E2F4EB;
+  --warn:#B86800;--warn-light:#FEF0D8;
+  --danger:#B83030;--danger-light:#FDECEC;
+  --white:#FFFFFF;
+  --r-xl:22px;--r-lg:16px;--r-md:12px;--r-sm:8px;--r-pill:999px;
+  --sh-sm:0 2px 10px rgba(30,25,22,.07);
+  --sh-md:0 4px 20px rgba(30,25,22,.11);
+  --sh-lg:0 8px 36px rgba(30,25,22,.16);
+}
+/* ── DARK MODE ── */
+@media(prefers-color-scheme:dark){:root{
+  --cream:#1A1612;--cream-deep:#221E19;
+  --stone-light:#2E2820;--stone:#9A8B7A;--stone-aa:#A89880;
+  --ink:#F0EAE2;--ink-soft:#D4C8BC;
+  --white:#242018;
+  --sage-light:#1A2E1A;--sage-mid:#5A8A5A;
+  --ok-light:#0E2A1A;--warn-light:#2A1E08;--danger-light:#2A0E0E;
+  --honey-light:#2A1E08;
+  --sh-sm:0 2px 10px rgba(0,0,0,.3);--sh-md:0 4px 20px rgba(0,0,0,.4);
+}}
+.shell.dark{
+  --cream:#1A1612;--cream-deep:#221E19;
+  --stone-light:#2E2820;--stone:#9A8B7A;--stone-aa:#A89880;
+  --ink:#F0EAE2;--ink-soft:#D4C8BC;
+  --white:#242018;
+  --sage-light:#1A2E1A;--sage-mid:#5A8A5A;
+  --ok-light:#0E2A1A;--warn-light:#2A1E08;--danger-light:#2A0E0E;
+  --honey-light:#2A1E08;
+  --sh-sm:0 2px 10px rgba(0,0,0,.3);--sh-md:0 4px 20px rgba(0,0,0,.4);
+}
+.shell.dark .fhdr.cream{background:var(--cream)}
+.shell.dark .htabs-bar{background:var(--cream)}
+.shell.dark .sync-bar{background:var(--cream);border-bottom-color:var(--stone-light)}
+.shell.dark .bnav{background:#1A1612;border-top-color:var(--stone-light)}
+.shell.dark .modal{background:var(--cream)}
+.shell.dark .spanel{background:var(--cream)}
+.shell.dark .qa-box{background:var(--cream)}
+.shell.dark .nbtn.on .niw{background:var(--sage-light)}
+/* Dark mode toggle in settings */
+.dm-toggle{display:flex;align-items:center;justify-content:space-between;background:var(--white);border-radius:var(--r-lg);padding:12px 13px;box-shadow:var(--sh-sm);margin-bottom:6px}
+.dm-toggle-l{display:flex;align-items:center;gap:9px}
+.dm-ico{width:29px;height:29px;border-radius:var(--r-sm);background:#221E19;display:flex;align-items:center;justify-content:center;font-size:16px}
+.dm-nm{font-size:13px;font-weight:700;color:var(--ink)}
+.dm-sb{font-size:11px;color:var(--stone-aa);margin-top:1px}
+html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
+.shell{max-width:390px;height:100vh;max-height:844px;margin:0 auto;background:var(--cream);display:flex;flex-direction:column;overflow:hidden;position:relative}
+@media(min-height:900px){.shell{margin:20px auto;border-radius:44px;box-shadow:var(--sh-lg)}}
+.page{display:none;flex-direction:column;height:100%;overflow:hidden}
+.page{opacity:0;transition:opacity .18s ease}
+.page.active{display:flex;opacity:1}
+.page.active.instant{transition:none}
+.scroll{flex:1;overflow-y:auto;-webkit-overflow-scrolling:touch}
+.scroll::-webkit-scrollbar{display:none}
+/* HEADER */
+.fhdr{flex-shrink:0;padding:50px 20px 14px;z-index:10}
+.fhdr.sage{background:var(--sage-deep)}
+.fhdr.cream{background:var(--cream);border-bottom:1px solid var(--stone-light)}
+.hrow{display:flex;align-items:center;justify-content:space-between}
+.htitle{font-family:'Lora',serif;font-size:22px;font-weight:400;line-height:1.2}
+.htitle.w{color:var(--white)}.htitle.d{color:var(--ink)}
+.htitle em{font-style:italic;color:var(--honey-mid)}
+.htitle.d em{color:var(--honey)}
+.hsub{font-size:12px;margin-top:2px}
+.hsub.w{color:rgba(255,255,255,.55)}.hsub.d{color:var(--stone)}
+.hbtns{display:flex;gap:8px}
+.ibtn{width:36px;height:36px;min-width:44px;min-height:44px;border-radius:var(--r-md);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s;position:relative;flex-shrink:0}
+.ibtn:active{transform:scale(.9)}
+.ibtn svg{width:17px;height:17px}
+.bg-ghost{background:rgba(255,255,255,.15);color:var(--white)}
+.bg-honey{background:var(--honey);color:var(--ink)}
+.bg-sage{background:var(--sage-light);color:var(--sage)}
+.bg-light{background:var(--stone-light);color:var(--stone)}
+.ndot{width:7px;height:7px;border-radius:50%;background:var(--honey);border:1.5px solid var(--sage-deep);position:absolute;top:5px;right:5px}
+/* COMMON */
+.slbl{font-size:10px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--stone);margin-bottom:9px;display:block}
+.pill{display:inline-flex;align-items:center;gap:3px;padding:3px 8px;border-radius:var(--r-pill);font-size:10px;font-weight:700}
+.p-ok{background:var(--ok-light);color:var(--ok)}
+.p-warn{background:var(--warn-light);color:var(--warn)}
+.p-alert{background:var(--danger-light);color:var(--danger)}
+.p-honey{background:var(--honey-light);color:var(--amber)}
+.p-sage{background:var(--sage-light);color:var(--sage)}
+.viewall{width:100%;padding:11px;background:none;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;color:var(--stone);cursor:pointer;display:flex;align-items:center;justify-content:center;gap:5px;transition:all .18s}
+.viewall:active{background:var(--stone-light)}
+.viewall svg{width:14px;height:14px}
+@keyframes fu{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:translateY(0)}}
+.a0{animation:fu .35s ease both}
+.a1{animation:fu .35s .06s ease both}
+.a2{animation:fu .35s .12s ease both}
+.a3{animation:fu .35s .18s ease both}
+.a4{animation:fu .35s .24s ease both}
+
+/* ── ACCESSIBILITY: higher contrast ratios ── */
+/* Ensure 4.5:1 minimum for body text */
+:root{--stone-aa:#6B5D50;--stone-light-aa:#DDD4C8}
+.ri-mt,.tt-sub,.fi-mt,.gc-meta,.hm,.hsub.d,.wb-sub,.tl-n,.ai-d,.ci-ds,.dc-ds,.msub{color:var(--stone-aa)}
+.slbl{color:var(--stone-aa)}
+
+/* ── LOADING SKELETON ── */
+@keyframes shimmer{0%{background-position:-400px 0}100%{background-position:400px 0}}
+.skeleton{background:linear-gradient(90deg,var(--stone-light) 25%,var(--cream-sk,#EDE6DC) 50%,var(--stone-light) 75%);background-size:800px 100%;animation:shimmer 1.4s infinite linear;border-radius:var(--r-sm)}
+.skel-text{height:13px;margin-bottom:6px}
+.skel-text.sm{height:10px;width:60%}
+.skel-block{height:80px;border-radius:var(--r-md)}
+
+/* ── LOADING SPINNER (for async ops) ── */
+@keyframes spin{to{transform:rotate(360deg)}}
+.spinner{width:20px;height:20px;border:2.5px solid rgba(255,255,255,.3);border-top-color:var(--white);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0}
+.spinner.dark{border-color:rgba(61,92,61,.2);border-top-color:var(--sage-deep)}
+
+/* ── SAVE STATE BUTTON ── */
+.btn-saving{opacity:.7;pointer-events:none}
+.btn-saved{background:var(--ok)!important}
+
+/* ── CHART CONTAINERS ── */
+.chart-card{background:var(--white);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-md)}
+.chart-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}
+.chart-title{font-size:13px;font-weight:700;color:var(--ink)}
+.chart-tabs{display:flex;gap:4px;background:var(--cream);border-radius:var(--r-pill);padding:2px}
+.ctab{padding:4px 10px;border-radius:var(--r-pill);border:none;background:transparent;font-family:'Nunito',sans-serif;font-size:11px;font-weight:600;color:var(--stone-aa);cursor:pointer;transition:all .18s}
+.ctab.on{background:var(--white);color:var(--sage-deep);box-shadow:0 1px 4px rgba(30,25,22,.1)}
+.chart-wrap{position:relative;height:160px}
+
+/* ── PWA INSTALL BANNER ── */
+.pwa-banner{background:var(--sage-deep);border-radius:var(--r-lg);padding:13px 14px;display:flex;align-items:center;gap:11px;margin-bottom:14px;animation:fu .4s ease both}
+.pwa-banner.hidden{display:none}
+.pwa-ico{width:36px;height:36px;border-radius:var(--r-md);background:rgba(255,255,255,.15);display:flex;align-items:center;justify-content:center;font-size:18px;flex-shrink:0}
+.pwa-tx{flex:1}
+.pwa-title{font-size:13px;font-weight:700;color:var(--white)}
+.pwa-sub{font-size:11px;color:rgba(255,255,255,.6);margin-top:1px}
+.pwa-btns{display:flex;gap:6px;flex-shrink:0}
+.pwa-install{padding:6px 12px;background:var(--honey);border:none;border-radius:var(--r-pill);font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:var(--ink);cursor:pointer;transition:opacity .18s}
+.pwa-install:active{opacity:.8}
+.pwa-dismiss{padding:6px 8px;background:transparent;border:none;color:rgba(255,255,255,.5);cursor:pointer;font-size:16px;line-height:1}
+
+/* ── DATA PERSISTENCE INDICATOR ── */
+.sync-bar{display:flex;align-items:center;gap:6px;padding:0 20px;height:28px;background:var(--cream);border-bottom:1px solid var(--stone-light);flex-shrink:0}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);flex-shrink:0}
+.sync-dot.syncing{background:var(--warn);animation:pulse 1s ease infinite}
+.sync-spinner{width:11px;height:11px;border:2px solid rgba(61,92,61,.2);border-top-color:var(--sage-deep);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;display:none}
+.sync-bar.saving-bar .sync-spinner{display:block}
+.sync-bar.saving-bar .sync-dot{display:none}
+.sync-dot.error{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-txt{font-size:10px;font-weight:600;color:var(--stone-aa)}
+
+/* ── TOAST NOTIFICATION ── */
+.toast{position:fixed;bottom:90px;left:50%;transform:translateX(-50%) translateY(10px);background:var(--ink);color:var(--white);font-family:'Nunito',sans-serif;font-size:13px;font-weight:600;padding:9px 18px;border-radius:var(--r-pill);z-index:900;opacity:0;transition:opacity .25s,transform .25s;pointer-events:none;white-space:nowrap;max-width:320px;text-align:center}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+
+/* ── 1. SYNC BAR — offline/error guidance text ── */
+.sync-bar{display:flex;align-items:center;gap:6px;padding:0 20px;height:32px;background:var(--cream);border-bottom:1px solid var(--stone-light);flex-shrink:0;transition:background .3s}
+.sync-bar.saving-bar{background:#E8F5E8;border-bottom-color:#A8D5A8}
+.sync-bar.offline{background:#FEF0D8;border-bottom-color:#EEC870}
+.sync-bar.error-bar{background:#FDECEC;border-bottom-color:#F09090}
+.sync-dot{width:6px;height:6px;border-radius:50%;background:var(--ok);flex-shrink:0;transition:background .3s}
+.sync-dot.syncing{background:var(--warn);animation:pulse 1s ease infinite}
+.sync-spinner{width:11px;height:11px;border:2px solid rgba(61,92,61,.2);border-top-color:var(--sage-deep);border-radius:50%;animation:spin .7s linear infinite;flex-shrink:0;display:none}
+.sync-bar.saving-bar .sync-spinner{display:block}
+.sync-bar.saving-bar .sync-dot{display:none}
+.sync-dot.offline-dot{background:var(--warn)}
+.sync-dot.error{background:var(--danger)}
+@keyframes pulse{0%,100%{opacity:1}50%{opacity:.4}}
+.sync-txt{font-size:10px;font-weight:600;color:var(--stone-aa);flex:1}
+.sync-retry{font-size:10px;font-weight:700;color:var(--sage-deep);cursor:pointer;text-decoration:underline;text-underline-offset:2px;white-space:nowrap}
+
+/* ── 2. HIGH-CONTRAST OUTDOOR MODE ── */
+.shell.hc{--cream:#FFFFFF;--stone-light:#C8C0B4;--ink:#000000;--sage-deep:#1E3A1E;--honey:#CC8000;--white:#FFFFFF}
+.shell.hc .fhdr.sage{background:#1E3A1E}
+.shell.hc .hero{background:#1E3A1E}
+.shell.hc .comp-card{background:#1E3A1E}
+.shell.hc .cta-card{background:#1E3A1E}
+.shell.hc .ai-card{background:#1E3A1E}
+.shell.hc .gc,.shell.hc .hcard,.shell.hc .qcard,.shell.hc .chart-card,.shell.hc .comply-card,.shell.hc .cal-card,.shell.hc .tcard,.shell.hc .push-card,.shell.hc .chk-grp,.shell.hc .rat-sec,.shell.hc .photo-sec,.shell.hc .notes-sec{box-shadow:0 0 0 1.5px #C8C0B4}
+.shell.hc .slbl,.shell.hc .sync-txt{color:#3A3028}
+.shell.hc .ri-mt,.shell.hc .tt-sub,.shell.hc .fi-mt,.shell.hc .gc-meta,.shell.hc .hm{color:#3A3028}
+/* HC toggle button in settings */
+.hc-toggle{display:flex;align-items:center;justify-content:space-between;background:var(--white);border-radius:var(--r-lg);padding:12px 13px;box-shadow:var(--sh-sm);margin-bottom:6px}
+.hc-toggle-l{display:flex;align-items:center;gap:9px}
+.hc-ico{width:29px;height:29px;border-radius:var(--r-sm);background:#FDF3DC;display:flex;align-items:center;justify-content:center;font-size:16px}
+.hc-nm{font-size:13px;font-weight:700;color:var(--ink)}
+.hc-sb{font-size:11px;color:var(--stone-aa);margin-top:1px}
+
+/* ── 3. ANTI-MISTOUCH — larger hit areas for edge buttons ── */
+.ibtn{width:36px;height:36px;min-width:44px;min-height:44px;border-radius:var(--r-md);border:none;display:flex;align-items:center;justify-content:center;cursor:pointer;transition:transform .15s,background .15s;position:relative;flex-shrink:0;-webkit-user-select:none;user-select:none}
+/* Extend touch target with pseudo element */
+.ibtn::before{content:'';position:absolute;inset:-8px;border-radius:var(--r-lg)}
+.ibtn:active{transform:scale(.9);filter:brightness(.85)}
+.ibtn svg{width:17px;height:17px;pointer-events:none}
+/* Bottom nav also gets larger hit areas */
+.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;padding:6px 0;transition:opacity .15s;-webkit-user-select:none;user-select:none}
+
+/* ── 4. AI DIAGNOSIS RATIONALE EXPAND ── */
+.ai-why{margin-top:8px;border-top:1px solid rgba(255,255,255,.1);padding-top:8px;display:none}
+.ai-why.open{display:block}
+.ai-why-btn{display:flex;align-items:center;gap:5px;background:none;border:none;color:rgba(255,255,255,.55);font-family:'Nunito',sans-serif;font-size:11px;font-weight:600;cursor:pointer;padding:0;margin-top:6px;transition:color .18s}
+.ai-why-btn:hover{color:rgba(255,255,255,.85)}
+.ai-why-btn svg{width:12px;height:12px;transition:transform .2s}
+.ai-why-btn.open svg{transform:rotate(180deg)}
+.ai-why-content{background:rgba(255,255,255,.06);border-radius:var(--r-sm);padding:10px;margin-top:6px}
+.ai-why-row{display:flex;gap:7px;font-size:11px;color:rgba(255,255,255,.65);margin:4px 0;line-height:1.5;align-items:flex-start}
+.ai-why-row::before{content:'📊';flex-shrink:0;font-size:12px}
+
+/* ── 5. CALENDAR DAY DETAIL PANEL ── */
+.cal-detail{background:var(--cream-deep,#F2EBE0);border-radius:var(--r-md);padding:12px 14px;margin-top:10px;display:none;animation:fu .22s ease both}
+.cal-detail.show{display:block}
+.cal-detail-hdr{display:flex;align-items:center;justify-content:space-between;margin-bottom:9px}
+.cal-detail-date{font-size:12px;font-weight:700;color:var(--sage-deep)}
+.cal-detail-add{display:flex;align-items:center;gap:5px;background:var(--sage-deep);color:var(--white);border:none;border-radius:var(--r-pill);padding:5px 11px;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;cursor:pointer;transition:opacity .18s}
+.cal-detail-add:active{opacity:.8}
+.cal-detail-add svg{width:11px;height:11px}
+.cal-detail-tasks{display:flex;flex-direction:column;gap:5px}
+.cd-task{font-size:12px;color:var(--ink);display:flex;align-items:center;gap:7px;padding:5px 0;border-bottom:.5px solid var(--stone-light)}
+.cd-task:last-child{border-bottom:none}
+.cd-task-dot{width:6px;height:6px;border-radius:50%;flex-shrink:0}
+.cd-task-empty{font-size:12px;color:var(--stone-aa);font-style:italic;padding:6px 0}
+
+/* ── 6. BUTTON ACTIVE DARKEN ── */
+.ctabtn:active{transform:scale(.97);filter:brightness(.88)}
+.msave:active{opacity:.88;transform:scale(.98);filter:brightness(.88)}
+.viewall:active{background:var(--stone-light);filter:brightness(.95)}
+.gc:active{transform:scale(.98);filter:brightness(.97)}
+
+/* ── 7. GLOBAL EMPTY STATES ── */
+.list-empty{background:var(--white);border-radius:var(--r-lg);padding:24px 20px;text-align:center;box-shadow:var(--sh-sm);display:none;flex-direction:column;align-items:center;gap:8px}
+.list-empty.show{display:flex}
+.le-emoji{font-size:32px}
+.le-title{font-size:14px;font-weight:700;color:var(--ink);font-family:'Lora',serif}
+.le-desc{font-size:12px;color:var(--stone-aa);line-height:1.6;max-width:220px}
+.le-btn{padding:8px 18px;background:var(--sage-deep);color:var(--white);border:none;border-radius:var(--r-pill);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;margin-top:4px;transition:opacity .18s}
+.le-btn:active{opacity:.8}
+
+/* ═══ DASHBOARD ═══ */
+/* 文件要求：1.5屏以内，状态区+警报+宫格+截断历史 */
+.dbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
+/* 状态监控区：大字体一眼看清 */
+.hero{background:var(--sage-deep);border-radius:var(--r-xl);padding:18px;position:relative;overflow:hidden}
+.hero::before{content:'';position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.05);top:-50px;right:-30px}
+.hero::after{content:'🐝';position:absolute;font-size:68px;opacity:.08;right:14px;bottom:-8px}
+.hero-top{display:flex;align-items:flex-start;justify-content:space-between;margin-bottom:14px}
+.hero-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:3px}
+.hero-loc{font-family:'Lora',serif;font-size:18px;color:var(--white)}
+.hero-badge{display:flex;align-items:center;gap:5px;background:rgba(255,255,255,.14);border-radius:var(--r-pill);padding:5px 11px}
+.hbdot{width:7px;height:7px;border-radius:50%;background:var(--honey-mid)}
+.hbtxt{font-size:11px;font-weight:600;color:var(--white)}
+.hero-stats{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
+.hstat{background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:10px 8px;text-align:center}
+.hstat-num{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--white);line-height:1}
+.hstat-u{font-size:10px;color:rgba(255,255,255,.55)}
+.hstat-l{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
+/* 2. 趋势指示器 */
+.hstat-trend{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;margin-top:3px}
+.trend-up{color:#7BE8A8}
+.trend-down{color:#F09090}
+.trend-flat{color:rgba(255,255,255,.4)}
+/* 3. 对比度优化 — 辅助文字从stone改为更深的ink-soft */
+.ri-mt{font-size:11px;color:#5C5448;margin-top:1px}
+.tt-sub{font-size:11px;color:#5C5448;margin-top:1px}
+.fi-mt{font-size:11px;color:#5C5448;margin-top:1px}
+.gc-meta{font-size:11px;color:#5C5448;line-height:1.4}
+/* 4. Modal底部固定按钮区（拇指区悬浮） */
+.modal-footer{position:sticky;bottom:0;background:var(--cream);padding:12px 0 0;margin-top:4px;border-top:1px solid var(--stone-light)}
+/* 5. AI置信度标识 */
+.ai-conf{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:var(--r-pill);padding:4px 10px;margin-top:8px}
+.ai-conf-bar{height:4px;border-radius:var(--r-pill);background:rgba(255,255,255,.2);width:80px;overflow:hidden}
+.ai-conf-fill{height:100%;border-radius:var(--r-pill);background:var(--honey-mid);transition:width .6s ease}
+.ai-conf-txt{font-size:10px;color:rgba(255,255,255,.7);white-space:nowrap}
+/* 6. 空状态设计 */
+.empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;text-align:center;gap:10px}
+.empty-emoji{font-size:38px;line-height:1}
+.empty-title{font-family:'Lora',serif;font-size:16px;font-weight:400;color:var(--ink)}
+.empty-desc{font-size:12px;color:var(--stone);line-height:1.6;max-width:220px}
+.empty-btn{margin-top:4px;padding:9px 20px;background:var(--sage-deep);color:var(--white);border:none;border-radius:var(--r-pill);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .18s}
+.empty-btn:active{opacity:.8}
+/* 7. 日历长按快速添加任务弹窗 */
+.quick-add-modal{position:fixed;inset:0;background:rgba(30,25,22,.45);z-index:550;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;max-width:390px;left:50%;transform:translateX(-50%)}
+.quick-add-modal.open{opacity:1;pointer-events:all}
+.qa-box{background:var(--cream);border-radius:var(--r-xl);padding:20px;width:calc(100% - 48px);box-shadow:var(--sh-lg);transform:scale(.92);transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
+.quick-add-modal.open .qa-box{transform:scale(1)}
+.qa-date{font-size:11px;font-weight:700;color:var(--sage-mid);text-transform:uppercase;letter-spacing:.07em;margin-bottom:8px}
+.qa-title{font-family:'Lora',serif;font-size:18px;color:var(--ink);margin-bottom:14px}
+.qa-input{width:100%;padding:11px 13px;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:14px;color:var(--ink);background:var(--white);outline:none;transition:border-color .2s;margin-bottom:10px}
+.qa-input:focus{border-color:var(--sage-mid)}
+.qa-chips{display:flex;gap:6px;flex-wrap:wrap;margin-bottom:14px}
+.qa-chip{padding:5px 12px;border-radius:var(--r-pill);border:1.5px solid var(--stone-light);background:transparent;font-family:'Nunito',sans-serif;font-size:11px;font-weight:600;color:var(--stone);cursor:pointer;transition:all .15s}
+.qa-chip.on{background:var(--sage-deep);border-color:var(--sage-deep);color:var(--white)}
+.qa-btns{display:flex;gap:8px}
+.qa-save{flex:1;padding:12px;background:var(--sage-deep);border:none;border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--white);cursor:pointer;transition:opacity .18s}
+.qa-save:active{opacity:.85}
+.qa-cancel{padding:12px 16px;background:none;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;color:var(--stone);cursor:pointer}
+/* 文件要求：醒目Warning Banner，连接Health */
+.wbanner{background:var(--warn-light);border:1px solid #EEC870;border-radius:var(--r-lg);padding:12px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:opacity .18s}
+.wbanner:active{opacity:.8}
+.wb-ico{width:32px;height:32px;border-radius:var(--r-sm);background:var(--warn);display:flex;align-items:center;justify-content:center;flex-shrink:0}
+.wb-ico svg{width:15px;height:15px;color:var(--white)}
+.wb-tx{flex:1}
+.wb-title{font-size:13px;font-weight:700;color:var(--warn)}
+.wb-sub{font-size:11px;color:var(--stone);margin-top:1px}
+.wb-arr svg{width:14px;height:14px;color:var(--warn)}
+/* 文件要求：2x2宫格功能入口 */
+.g22{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+.gc{background:var(--white);border-radius:var(--r-lg);padding:14px;box-shadow:var(--sh-sm);cursor:pointer;transition:transform .18s;display:flex;flex-direction:column;gap:7px}
+.gc:active{transform:scale(.98)}
+.gc-ico{width:36px;height:36px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:18px}
+.gi-sage{background:var(--sage-light)}.gi-honey{background:var(--honey-light)}
+.gi-warn{background:var(--warn-light)}.gi-ok{background:var(--ok-light)}
+.gc-name{font-size:13px;font-weight:700;color:var(--ink)}
+.gc-meta{font-size:11px;color:var(--stone);line-height:1.4}
+/* 文件要求：截断历史3条+View All */
+.rec-list{display:flex;flex-direction:column;gap:7px}
+.ritem{background:var(--white);border-radius:var(--r-md);padding:11px 13px;display:flex;align-items:center;gap:11px;box-shadow:var(--sh-sm)}
+.rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
+.rd-ok{background:var(--ok)}.rd-warn{background:var(--warn)}.rd-alert{background:var(--danger)}
+.ri{flex:1}
+.ri-nm{font-size:13px;font-weight:600;color:var(--ink)}
+.ri-mt{font-size:11px;color:var(--stone);margin-top:1px}
+.ri-t{font-size:10px;color:var(--stone)}
+/* 文件要求：今日待办半屏 */
+.tasklist{display:flex;flex-direction:column;gap:7px}
+.titem{background:var(--white);border-radius:var(--r-md);padding:11px 13px;display:flex;align-items:center;gap:11px;box-shadow:var(--sh-sm);cursor:pointer;transition:transform .15s}
+.titem:active{transform:scale(.99)}
+.tchk{width:22px;height:22px;border-radius:var(--r-sm);border:1.5px solid var(--stone-light);background:var(--white);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s}
+.tchk.on{background:var(--ok);border-color:var(--ok)}
+.tchk svg{width:12px;height:12px;color:var(--white);opacity:0;transition:opacity .15s}
+.tchk.on svg{opacity:1}
+.tt{flex:1}
+.tt-nm{font-size:13px;font-weight:600;color:var(--ink);transition:all .2s}
+.tt-nm.done{color:var(--stone);text-decoration:line-through}
+.tt-sub{font-size:11px;color:var(--stone);margin-top:1px}
+.ttag{font-size:10px;font-weight:700;padding:2px 8px;border-radius:var(--r-pill)}
+.tg-urg{background:var(--danger-light);color:var(--danger)}
+.tg-tod{background:var(--honey-light);color:var(--amber)}
+.tg-done{background:var(--ok-light);color:var(--ok)}
+
+/* ═══ HIVES ═══ */
+.htabs-bar{background:var(--cream);padding:8px 20px 12px;display:flex;gap:7px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--stone-light)}
+.htabs-bar::-webkit-scrollbar{display:none}
+.htab{flex-shrink:0;padding:6px 13px;min-height:44px;border-radius:var(--r-pill);border:1.5px solid var(--stone-light);background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;color:var(--stone);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px}
+.htab.on{background:var(--sage-deep);border-color:var(--sage-deep);color:var(--white)}
+.hdot2{width:6px;height:6px;border-radius:50%}
+.hvbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:13px}
+.hcard{background:var(--white);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-md)}
+.hcard-top{display:flex;gap:13px;align-items:flex-start;margin-bottom:13px}
+.hav{width:52px;height:52px;border-radius:var(--r-lg);background:var(--honey-light);display:flex;align-items:center;justify-content:center;font-size:26px;flex-shrink:0}
+.hnfo{flex:1}
+.hn{font-family:'Lora',serif;font-size:18px;color:var(--ink)}
+.hm{font-size:11px;color:var(--stone);margin-top:3px;line-height:1.6}
+.hstats{display:grid;grid-template-columns:repeat(3,1fr);gap:7px}
+.hsb{background:var(--cream);border-radius:var(--r-md);padding:9px;text-align:center}
+.hsb-v{font-family:'Lora',serif;font-size:19px;font-weight:600;color:var(--sage-deep);line-height:1}
+.hsb-l{font-size:10px;color:var(--stone);margin-top:2px}
+.qcard{background:var(--white);border-radius:var(--r-xl);padding:15px;box-shadow:var(--sh-sm)}
+.chead{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.ctitle{font-size:13px;font-weight:700;color:var(--ink);display:flex;align-items:center;gap:6px}
+.ctitle svg{width:14px;height:14px;color:var(--honey)}
+.cedit{font-size:11px;font-weight:700;color:var(--sage-mid);cursor:pointer}
+.qgrid{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.qf{background:var(--cream);border-radius:var(--r-md);padding:9px 11px}
+.qf-l{font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.05em}
+.qf-v{font-size:13px;font-weight:600;color:var(--ink);margin-top:2px}
+.qf-v.it{font-family:'Lora',serif;font-style:italic;font-weight:400;color:var(--sage-mid)}
+/* 文件要求：核心操作区最高视觉权重，按钮在拇指区 */
+.cta-card{background:var(--sage-deep);border-radius:var(--r-xl);padding:16px;position:relative;overflow:hidden}
+.cta-card::after{content:'🔍';position:absolute;font-size:56px;opacity:.08;right:12px;top:50%;transform:translateY(-50%)}
+.cta-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.cta-msg{font-family:'Lora',serif;font-size:16px;color:var(--white);line-height:1.5;margin-bottom:10px}
+.cta-msg em{color:var(--honey-mid);font-style:italic}
+.coolbar{background:rgba(255,255,255,.1);border-radius:var(--r-sm);padding:8px 11px;display:flex;align-items:flex-start;gap:7px;margin-bottom:11px}
+.coolbar svg{width:14px;height:14px;color:var(--honey-mid);flex-shrink:0;margin-top:1px}
+.coolbar p{font-size:11px;color:rgba(255,255,255,.7);line-height:1.5}
+.coolbar strong{color:var(--white)}
+.ctabtn{width:100%;padding:13px;min-height:44px;border:none;border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:7px;transition:all .18s;position:relative;z-index:1}
+.ctabtn:active{transform:scale(.97);opacity:.9}
+.ctabtn svg{width:16px;height:16px}
+.cta-ghost{background:rgba(255,255,255,.14);color:var(--white)}
+.tl{display:flex;flex-direction:column}
+.tl-row{display:flex;gap:11px}
+.tl-l{display:flex;flex-direction:column;align-items:center;width:30px;flex-shrink:0}
+.tl-dot{width:10px;height:10px;border-radius:50%;border:2px solid var(--white);box-shadow:0 0 0 2px var(--sage-mid);background:var(--sage-mid);margin-top:4px;flex-shrink:0}
+.tl-dot.w{background:var(--warn);box-shadow:0 0 0 2px var(--warn)}
+.tl-dot.h{background:var(--honey);box-shadow:0 0 0 2px var(--honey)}
+.tl-line{width:1.5px;flex:1;background:var(--stone-light);margin:3px 0;min-height:10px}
+.tl-row:last-child .tl-line{display:none}
+.tl-card{flex:1;background:var(--white);border-radius:var(--r-md);padding:10px 12px;margin-bottom:8px;box-shadow:var(--sh-sm)}
+.tl-d{font-size:10px;color:var(--stone);margin-bottom:3px}
+.tl-t{font-size:13px;font-weight:600;color:var(--ink);line-height:1.3}
+.tl-tags{display:flex;flex-wrap:wrap;gap:4px;margin-top:5px}
+.tlt{font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill)}
+.tlt-ok{background:var(--ok-light);color:var(--ok)}
+.tlt-w{background:var(--warn-light);color:var(--warn)}
+.tlt-i{background:var(--sage-light);color:var(--sage)}
+.tlt-h{background:var(--honey-light);color:var(--amber)}
+.tl-n{font-size:11px;color:var(--stone);margin-top:3px;line-height:1.5}
+
+/* ═══ HEALTH ═══ */
+.hbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
+/* 文件要求：合规评分可视化进度条 */
+.comp-card{background:var(--sage-deep);border-radius:var(--r-xl);padding:18px;position:relative;overflow:hidden}
+.comp-card::before{content:'';position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04);top:-40px;right:-20px}
+.comp-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
+.comp-row{display:flex;align-items:flex-end;gap:8px;margin-bottom:10px}
+.comp-num{font-family:'Lora',serif;font-size:46px;font-weight:600;color:var(--white);line-height:1}
+.comp-pct{font-size:18px;color:rgba(255,255,255,.55);margin-bottom:5px}
+.comp-desc{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5}
+.comp-track{height:8px;background:rgba(255,255,255,.14);border-radius:var(--r-pill);overflow:hidden;margin-bottom:8px}
+.comp-fill{height:100%;background:var(--honey);border-radius:var(--r-pill);width:73%;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.comp-flags{display:flex;gap:6px;flex-wrap:wrap}
+.cflag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:var(--r-pill);background:rgba(255,255,255,.12);color:rgba(255,255,255,.8)}
+.calc-card{background:var(--white);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-md)}
+.calc-hrow{display:flex;align-items:center;gap:7px;margin-bottom:3px}
+.calc-em{font-size:19px}
+.calc-ttl{font-size:15px;font-weight:700;color:var(--ink)}
+.calc-sub{font-size:11px;color:var(--stone);margin-bottom:13px;line-height:1.5}
+.mpills{display:flex;gap:6px;margin-bottom:13px;overflow-x:auto}
+.mpills::-webkit-scrollbar{display:none}
+.mpill{flex-shrink:0;padding:5px 13px;border-radius:var(--r-pill);border:1.5px solid var(--stone-light);background:transparent;font-family:'Nunito',sans-serif;font-size:11px;font-weight:700;color:var(--stone);cursor:pointer;transition:all .18s}
+.mpill.on{background:var(--sage-deep);border-color:var(--sage-deep);color:var(--white)}
+.calc-ins{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-bottom:13px}
+.cig label{font-size:11px;color:var(--stone);display:block;margin-bottom:4px}
+.cig input{width:100%;padding:9px;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--ink);background:var(--cream);text-align:center;outline:none;transition:border-color .2s;-webkit-appearance:none}
+.cig input:focus{border-color:var(--sage-mid)}
+.cres{border-radius:var(--r-md);padding:13px;display:flex;align-items:center;justify-content:space-between;transition:background .3s}
+.cres.ok{background:var(--ok-light)}.cres.warn{background:var(--warn-light)}.cres.alert{background:var(--danger-light)}
+.cres-p{font-family:'Lora',serif;font-size:36px;font-weight:600;line-height:1;transition:color .3s}
+.cres.ok .cres-p{color:var(--ok)}.cres.warn .cres-p{color:var(--warn)}.cres.alert .cres-p{color:var(--danger)}
+.cres-r{text-align:right;max-width:145px}
+.cres-s{font-size:12px;font-weight:700;transition:color .3s}
+.cres.ok .cres-s{color:var(--ok)}.cres.warn .cres-s{color:var(--warn)}.cres.alert .cres-s{color:var(--danger)}
+.cres-rec{font-size:11px;color:var(--stone);margin-top:2px;line-height:1.4}
+.th-bar{margin-top:11px}
+.th-track{height:6px;border-radius:var(--r-pill);background:linear-gradient(to right,var(--ok) 0%,var(--ok) 33%,var(--warn) 33%,var(--warn) 66%,var(--danger) 66%);position:relative}
+.th-ptr{position:absolute;top:-4px;width:14px;height:14px;border-radius:50%;background:var(--white);border:2px solid var(--ink);transform:translateX(-50%);transition:left .5s cubic-bezier(.4,0,.2,1);box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.th-lbls{display:flex;justify-content:space-between;margin-top:4px}
+.th-lbls span{font-size:9px;color:var(--stone)}
+.treat-list{display:flex;flex-direction:column;gap:9px}
+.tcard{background:var(--white);border-radius:var(--r-lg);padding:13px;box-shadow:var(--sh-sm);display:flex;gap:11px;align-items:center;cursor:pointer;transition:transform .18s}
+.tcard:active{transform:scale(.99)}
+.ticon{width:40px;height:40px;border-radius:var(--r-sm);display:flex;align-items:center;justify-content:center;font-size:19px;flex-shrink:0}
+.ti-a{background:var(--warn-light)}.ti-d{background:var(--ok-light)}.ti-s{background:var(--sage-light)}
+.ti-info{flex:1}
+.ti-nm{font-size:13px;font-weight:700;color:var(--ink)}
+.ti-hv{font-size:11px;color:var(--stone);margin-top:1px}
+.ti-tags{display:flex;gap:4px;margin-top:5px;flex-wrap:wrap}
+.ttg{font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill)}
+.ttg-a{background:var(--warn-light);color:var(--warn)}
+.ttg-d{background:var(--ok-light);color:var(--ok)}
+.ttg-s{background:var(--sage-light);color:var(--sage)}
+.ttg-w{background:var(--danger-light);color:var(--danger)}
+.tcount{text-align:right;flex-shrink:0}
+.tc-n{font-family:'Lora',serif;font-size:22px;font-weight:600;line-height:1}
+.tc-a{color:var(--warn)}.tc-d{color:var(--ok)}.tc-s{color:var(--sage)}
+.tc-l{font-size:10px;color:var(--stone);margin-top:1px}
+.dis-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.dcard{background:var(--white);border-radius:var(--r-md);padding:12px;box-shadow:var(--sh-sm);cursor:pointer;transition:transform .18s}
+.dcard:active{transform:scale(.95)}
+.dc-em{font-size:22px;margin-bottom:5px}
+.dc-nm{font-size:12px;font-weight:700;color:var(--ink);margin-bottom:2px}
+.dc-ds{font-size:10px;color:var(--stone);line-height:1.4}
+.dc-sv{display:inline-flex;align-items:center;gap:3px;font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill);margin-top:5px}
+.sv-h{background:var(--danger-light);color:var(--danger)}.sv-m{background:var(--warn-light);color:var(--warn)}.sv-l{background:var(--ok-light);color:var(--ok)}
+.ai-card{background:var(--sage-deep);border-radius:var(--r-xl);padding:16px;position:relative;overflow:hidden}
+.ai-card::before{content:'';position:absolute;width:130px;height:130px;border-radius:50%;background:rgba(255,255,255,.04);top:-30px;right:-20px}
+.ai-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
+.ai-t{font-family:'Lora',serif;font-size:17px;color:var(--white);line-height:1.4;margin-bottom:3px}
+.ai-t em{color:var(--honey-mid);font-style:italic}
+.ai-d{font-size:11px;color:rgba(255,255,255,.55);margin-bottom:13px;line-height:1.5}
+.ai-drop{border:1.5px dashed rgba(255,255,255,.22);border-radius:var(--r-md);padding:18px;text-align:center;cursor:pointer;transition:all .2s;position:relative;z-index:1}
+.ai-drop:active{border-color:var(--honey-mid);background:rgba(255,255,255,.06)}
+.ai-drop-ico{font-size:26px;margin-bottom:6px}
+.ai-drop p{font-size:13px;font-weight:600;color:rgba(255,255,255,.85)}
+.ai-drop span{font-size:11px;color:rgba(255,255,255,.4)}
+.ai-res{background:rgba(255,255,255,.1);border-radius:var(--r-md);padding:12px;margin-top:11px;display:none}
+.ai-res.show{display:block}
+.ai-res-t{font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px}
+.ai-res-i{font-size:11px;color:rgba(255,255,255,.75);margin:4px 0;display:flex;gap:6px;line-height:1.5}
+.ai-res-i::before{content:'→';color:var(--honey-mid);flex-shrink:0}
+/* 文件要求：合规导出独立卡片放Health底部 */
+.comply-card{background:var(--white);border-radius:var(--r-xl);padding:15px;box-shadow:var(--sh-sm)}
+.comply-ttl{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:11px;display:flex;align-items:center;gap:6px}
+.comply-ttl svg{width:14px;height:14px;color:var(--sage-mid)}
+.comply-g{display:grid;grid-template-columns:1fr 1fr;gap:7px}
+.ci{background:var(--cream);border-radius:var(--r-md);padding:11px;cursor:pointer;transition:all .18s;display:flex;flex-direction:column;gap:4px}
+.ci:active{background:var(--stone-light)}
+.ci-fl{font-size:17px}
+.ci-nm{font-size:12px;font-weight:700;color:var(--ink)}
+.ci-ds{font-size:10px;color:var(--stone);line-height:1.4}
+.ci-dl{display:flex;align-items:center;gap:4px;font-size:10px;font-weight:700;color:var(--sage-mid);margin-top:3px}
+.ci-dl svg{width:11px;height:11px}
+
+/* ═══ TASKS ═══ */
+.tbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
+/* 文件要求：Push通知 */
+.push-card{background:var(--honey-light);border:1px solid var(--honey-mid);border-radius:var(--r-lg);padding:13px;display:flex;gap:11px}
+.push-ico{width:34px;height:34px;border-radius:var(--r-sm);background:var(--honey);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
+.push-info{flex:1}
+.push-t{font-size:13px;font-weight:700;color:var(--amber)}
+.push-d{font-size:11px;color:var(--stone);margin-top:2px;line-height:1.5}
+.push-row{display:flex;align-items:center;justify-content:space-between;margin-top:9px}
+.push-rl{font-size:12px;font-weight:600;color:var(--ink)}
+.tog{width:38px;height:22px;background:var(--sage);border-radius:var(--r-pill);position:relative;cursor:pointer;transition:background .2s;flex-shrink:0}
+.tog.off{background:var(--stone-light)}
+.tog-k{width:18px;height:18px;border-radius:50%;background:var(--white);position:absolute;top:2px;right:2px;transition:right .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
+.tog.off .tog-k{right:18px}
+/* 文件要求：日历视图 */
+.cal-card{background:var(--white);border-radius:var(--r-xl);padding:15px;box-shadow:var(--sh-md)}
+.cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
+.cal-mo{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--ink)}
+.cal-nb{width:28px;height:28px;border-radius:var(--r-sm);border:none;background:var(--cream);display:flex;align-items:center;justify-content:center;cursor:pointer;color:var(--stone);transition:all .18s}
+.cal-nb:active{background:var(--stone-light)}
+.cal-nb svg{width:14px;height:14px}
+.cal-dh{display:grid;grid-template-columns:repeat(7,1fr);gap:2px;margin-bottom:5px}
+.cal-dh span{text-align:center;font-size:10px;font-weight:700;color:var(--stone)}
+.cal-g{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+.cd{aspect-ratio:1;display:flex;flex-direction:column;align-items:center;justify-content:center;border-radius:var(--r-sm);font-size:12px;font-weight:500;color:var(--ink);cursor:pointer;transition:all .15s;position:relative}
+.cd:active{background:var(--stone-light)}
+.cd.today{background:var(--sage-deep);color:var(--white);font-weight:700}
+.cd.has-t::after{content:'';width:4px;height:4px;border-radius:50%;background:var(--honey);position:absolute;bottom:2px}
+.cd.today.has-t::after{background:var(--white)}
+.cd.om{color:var(--stone-light)}
+.cd.selected{background:var(--sage-light);color:var(--sage-deep);font-weight:700}
+.cd.today.selected{background:var(--sage-mid)}
+/* 文件要求：可勾选清单 */
+.ftl{display:flex;flex-direction:column;gap:7px}
+.fti{background:var(--white);border-radius:var(--r-lg);padding:12px 13px;display:flex;gap:11px;align-items:flex-start;box-shadow:var(--sh-sm);cursor:pointer;transition:transform .18s}
+.fti:active{transform:scale(.99)}
+.fchk{width:22px;height:22px;border-radius:var(--r-sm);border:1.5px solid var(--stone-light);background:var(--white);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .2s;margin-top:1px}
+.fchk.on{background:var(--ok);border-color:var(--ok)}
+.fchk svg{width:11px;height:11px;color:var(--white);opacity:0;transition:opacity .15s}
+.fchk.on svg{opacity:1}
+.fi{flex:1}
+.fi-nm{font-size:13px;font-weight:600;color:var(--ink);line-height:1.3;transition:all .2s}
+.fi-nm.done{color:var(--stone);text-decoration:line-through}
+.fi-mt{font-size:11px;color:var(--stone);margin-top:1px}
+.fr{display:flex;flex-direction:column;align-items:flex-end;gap:4px;flex-shrink:0}
+.fr-hv{font-size:10px;color:var(--stone)}
+
+/* ═══ MODALS ═══ */
+.mover{position:fixed;inset:0;background:rgba(30,25,22,.55);z-index:500;display:flex;align-items:flex-end;opacity:0;pointer-events:none;transition:opacity .25s;max-width:390px;left:50%;transform:translateX(-50%)}
+.mover.open{opacity:1;pointer-events:all}
+.modal{background:var(--cream);border-radius:var(--r-xl) var(--r-xl) 0 0;width:100%;max-height:90vh;overflow-y:auto;padding:22px 20px 40px;transform:translateY(100%);transition:transform .3s cubic-bezier(.4,0,.2,1)}
+.mover.open .modal{transform:translateY(0)}
+.modal::-webkit-scrollbar{display:none}
+.mhnd{width:36px;height:4px;border-radius:2px;background:var(--stone-light);margin:0 auto 18px}
+.mttl{font-family:'Lora',serif;font-size:21px;color:var(--ink);margin-bottom:3px}
+.msub{font-size:12px;color:var(--stone);margin-bottom:18px}
+.chk-grp{background:var(--white);border-radius:var(--r-lg);padding:13px 15px;box-shadow:var(--sh-sm);margin-bottom:9px}
+.chk-gt{font-size:11px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px;display:flex;align-items:center;gap:5px}
+.chk-gt svg{width:12px;height:12px}
+.chk-i{display:flex;align-items:center;gap:9px;padding:7px 0;border-bottom:.5px solid var(--stone-light);cursor:pointer}
+.chk-i:last-child{border-bottom:none;padding-bottom:0}
+.chk-i:first-child{padding-top:0}
+.chk-b{width:20px;height:20px;border-radius:6px;border:1.5px solid var(--stone-light);background:var(--white);flex-shrink:0;display:flex;align-items:center;justify-content:center;transition:all .15s}
+.chk-b.on{background:var(--sage);border-color:var(--sage)}
+.chk-b svg{width:11px;height:11px;color:var(--white);opacity:0;transition:opacity .15s}
+.chk-b.on svg{opacity:1}
+.chk-lbl{font-size:13px;color:var(--ink);flex:1}
+.chk-lbl.done{color:var(--stone);text-decoration:line-through}
+.rat-sec{background:var(--white);border-radius:var(--r-lg);padding:13px 15px;box-shadow:var(--sh-sm);margin-bottom:9px}
+.rat-lbl{font-size:11px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.07em;margin-bottom:9px}
+.stars{display:flex;gap:7px}
+.star{font-size:24px;opacity:.3;cursor:pointer;transition:opacity .15s,transform .15s}
+.star.on{opacity:1}
+.star:active{transform:scale(1.2)}
+.photo-sec{background:var(--white);border-radius:var(--r-lg);padding:13px 15px;box-shadow:var(--sh-sm);margin-bottom:9px}
+.pp{display:flex;gap:7px;flex-wrap:wrap;margin-bottom:9px}
+.pprev{width:62px;height:62px;border-radius:var(--r-sm);background:var(--stone-light);display:flex;align-items:center;justify-content:center;font-size:22px}
+.pdrop{border:1.5px dashed var(--stone-light);border-radius:var(--r-md);padding:16px;text-align:center;cursor:pointer;transition:all .2s}
+.pdrop:active{border-color:var(--sage-mid);background:var(--sage-light)}
+.pdrop svg{width:24px;height:24px;color:var(--stone);display:block;margin:0 auto 6px}
+.pdrop p{font-size:12px;color:var(--stone);font-weight:600}
+.pdrop span{font-size:10px;color:var(--stone-light)}
+.notes-sec{background:var(--white);border-radius:var(--r-lg);padding:13px 15px;box-shadow:var(--sh-sm);margin-bottom:9px}
+.nta{width:100%;padding:9px;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;color:var(--ink);background:var(--cream);resize:none;outline:none;min-height:75px;transition:border-color .2s}
+.nta:focus{border-color:var(--sage-mid)}
+/* 文件要求：Save按钮在底部拇指区 */
+.msave{width:100%;padding:13px;min-height:44px;background:var(--sage-deep);border:none;border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:var(--white);cursor:pointer;margin-top:7px;transition:all .18s}
+.msave:active{opacity:.88;transform:scale(.98)}
+.msave.red{background:var(--danger)}
+.mcancel{width:100%;padding:11px;min-height:44px;background:none;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;color:var(--stone);cursor:pointer;margin-top:7px}
+.fgrp{margin-bottom:12px}
+.flbl{font-size:11px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.05em;display:block;margin-bottom:5px}
+.fsel,.finp{width:100%;padding:10px 12px;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;color:var(--ink);background:var(--white);outline:none;-webkit-appearance:none}
+.frow{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+.dd-img{width:100%;height:120px;border-radius:var(--r-md);background:var(--stone-light);display:flex;align-items:center;justify-content:center;font-size:50px;margin-bottom:15px}
+.dd-sec{margin-bottom:13px}
+.dd-sec h4{font-size:11px;font-weight:700;color:var(--stone);text-transform:uppercase;letter-spacing:.07em;margin-bottom:6px}
+.ddl{list-style:none}
+.ddl li{font-size:13px;color:var(--ink);padding:5px 0;border-bottom:.5px solid var(--stone-light);display:flex;gap:7px;line-height:1.5}
+.ddl li:last-child{border-bottom:none}
+.ddl li::before{content:'•';color:var(--danger);font-weight:700;flex-shrink:0}
+/* Settings */
+.sover{position:fixed;inset:0;background:rgba(30,25,22,.5);z-index:600;opacity:0;pointer-events:none;transition:opacity .25s;max-width:390px;left:50%;transform:translateX(-50%)}
+.sover.open{opacity:1;pointer-events:all}
+.spanel{position:absolute;top:0;right:0;width:85%;height:100%;background:var(--cream);transform:translateX(100%);transition:transform .3s cubic-bezier(.4,0,.2,1);padding:58px 20px 40px;overflow-y:auto;display:flex;flex-direction:column;gap:6px}
+.sover.open .spanel{transform:translateX(0)}
+.spanel::-webkit-scrollbar{display:none}
+.sttl{font-family:'Lora',serif;font-size:22px;color:var(--ink);margin-bottom:15px}
+.si{background:var(--white);border-radius:var(--r-lg);padding:12px 13px;display:flex;align-items:center;justify-content:space-between;cursor:pointer;box-shadow:var(--sh-sm);transition:opacity .15s}
+.si:active{opacity:.75}
+.si-l{display:flex;align-items:center;gap:9px}
+.si-ico{width:29px;height:29px;border-radius:var(--r-sm);background:var(--sage-light);display:flex;align-items:center;justify-content:center}
+.si-ico svg{width:14px;height:14px;color:var(--sage)}
+.si-nm{font-size:13px;font-weight:700;color:var(--ink)}
+.si-sb{font-size:11px;color:var(--stone);margin-top:1px}
+.si-ch svg{width:14px;height:14px;color:var(--stone-light)}
+.sclose{margin-top:auto;padding:11px;border-radius:var(--r-md);border:1.5px solid var(--stone-light);background:none;font-family:'Nunito',sans-serif;font-size:13px;color:var(--stone);cursor:pointer;text-align:center}
+/* BOTTOM NAV */
+.bnav{flex-shrink:0;background:var(--white);border-top:1px solid var(--stone-light);display:flex;padding:8px 0 26px;box-shadow:0 -4px 18px rgba(30,25,22,.07)}
+.nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;padding:0;transition:opacity .15s}
+.nbtn:active{opacity:.6}
+.niw{width:44px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);transition:background .2s}
+.niw svg{width:22px;height:22px;color:var(--stone);transition:color .2s}
+.nbtn.on .niw{background:var(--sage-light)}
+.nbtn.on .niw svg{color:var(--sage-deep)}
+.nlbl{font-size:10px;color:var(--stone);font-weight:500}
+.nbtn.on .nlbl{color:var(--sage-deep);font-weight:700}
+
+/* ══════════════════════════════════════
+   VOICE INPUT COMPONENT
+   3 states: idle → listening → done
+   Works in HC + Dark mode
+══════════════════════════════════════ */
+@keyframes voicePulse{0%,100%{box-shadow:0 0 0 0 rgba(232,160,32,.5)}60%{box-shadow:0 0 0 10px rgba(232,160,32,0)}}
+@keyframes waveBar{0%,100%{transform:scaleY(.4)}50%{transform:scaleY(1)}}
+
+/* Mic button — base */
+.mic-btn{
+  width:44px;height:44px;border-radius:var(--r-pill);border:none;
+  background:var(--sage-light);color:var(--sage-deep);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;transition:all .2s;flex-shrink:0;position:relative;
+}
+.mic-btn svg{width:18px;height:18px;pointer-events:none}
+.mic-btn:active{transform:scale(.93)}
+
+/* State 1 — listening */
+.mic-btn.listening{
+  background:var(--honey);color:var(--ink);
+  animation:voicePulse 1.2s ease infinite;
+}
+
+/* State 2 — done */
+.mic-btn.done{background:var(--ok);color:var(--white)}
+
+/* HC override */
+.shell.hc .mic-btn{background:#DDD4C8;color:#000}
+.shell.hc .mic-btn.listening{background:var(--honey);color:#000}
+.shell.dark .mic-btn{background:var(--sage-light);color:var(--sage-mid)}
+
+/* Voice status banner (shown below input when listening) */
+.voice-status{
+  display:none;align-items:center;gap:8px;
+  background:var(--honey-light);border:1px solid var(--honey-mid);
+  border-radius:var(--r-sm);padding:8px 11px;margin-top:6px;
+  font-size:12px;color:var(--amber);font-weight:600;
+}
+.voice-status.show{display:flex}
+.voice-waves{display:flex;align-items:center;gap:2px;height:16px;flex-shrink:0}
+.voice-waves span{
+  width:3px;border-radius:2px;background:var(--amber);
+  animation:waveBar .6s ease infinite;transform-origin:bottom;
+}
+.voice-waves span:nth-child(1){height:8px;animation-delay:0s}
+.voice-waves span:nth-child(2){height:14px;animation-delay:.1s}
+.voice-waves span:nth-child(3){height:10px;animation-delay:.2s}
+.voice-waves span:nth-child(4){height:16px;animation-delay:.15s}
+.voice-waves span:nth-child(5){height:8px;animation-delay:.05s}
+.voice-status-txt{flex:1;font-size:11px;color:var(--amber);line-height:1.4;font-weight:500}
+
+/* Input listening state */
+.qa-input.voice-active{
+  border-color:var(--honey);
+  background:var(--honey-light);
+  animation:voicePulse 1.5s ease infinite;
+}
+.nta.voice-active{
+  border-color:var(--honey);
+  background:var(--honey-light);
+}
+
+/* Global voice FAB (priority 3) */
+.voice-fab{
+  position:fixed;bottom:92px;right:calc(50% - 195px + 16px);
+  width:48px;height:48px;border-radius:50%;
+  background:var(--sage-deep);color:var(--white);
+  border:none;box-shadow:var(--sh-md);
+  display:flex;align-items:center;justify-content:center;
+  cursor:pointer;z-index:200;transition:all .2s;
+  -webkit-user-select:none;
+}
+.voice-fab:active{transform:scale(.9)}
+.voice-fab svg{width:20px;height:20px}
+.voice-fab.listening{
+  background:var(--honey);color:var(--ink);
+  animation:voicePulse 1.2s ease infinite;
+}
+/* Command result toast */
+.cmd-overlay{
+  position:fixed;bottom:160px;left:50%;transform:translateX(-50%);
+  background:var(--sage-deep);color:var(--white);
+  border-radius:var(--r-xl);padding:14px 20px;
+  z-index:800;opacity:0;transition:opacity .25s,transform .25s;
+  transform:translateX(-50%) translateY(8px);
+  min-width:260px;text-align:center;pointer-events:none;
+  box-shadow:var(--sh-lg);
+}
+.cmd-overlay.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.cmd-overlay-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.07em;margin-bottom:4px}
+.cmd-overlay-txt{font-size:14px;font-weight:600;color:var(--white);line-height:1.4}
+
+</style>
+</head>
+<body>
+<div class="shell">
+
+<!-- SVG Symbol Sprite — reusable icon defs -->
+<svg xmlns="http://www.w3.org/2000/svg" style="display:none" aria-hidden="true" focusable="false">
+  <symbol id="ic-check" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"><path d="M5 13l4 4L19 7"/></symbol>
+  <symbol id="ic-chev-r" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M9 5l7 7-7 7"/></symbol>
+  <symbol id="ic-plus" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 4v16m8-8H4"/></symbol>
+  <symbol id="ic-mic" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><path d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/><path d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/></symbol>
+  <symbol id="ic-dl" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></symbol>
+  <symbol id="ic-list" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M4 6h16M4 10h16M4 14h16M4 18h16"/></symbol>
+  <symbol id="ic-warn" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></symbol>
+  <symbol id="ic-clock" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></symbol>
+</svg>
+
+<!-- PWA Install Banner -->
+<div class="pwa-banner hidden" id="pwaBanner">
+  <div class="pwa-ico">🐝</div>
+  <div class="pwa-tx"><div class="pwa-title">Add to Home Screen</div><div class="pwa-sub">Use HiveKeeper offline in the field</div></div>
+  <div class="pwa-btns">
+    <button class="pwa-install" id="pwaInstall">Install</button>
+    <button class="pwa-dismiss" onclick="document.getElementById('pwaBanner').classList.add('hidden')">✕</button>
+  </div>
+</div>
+
+<!-- Sync status bar -->
+<div class="sync-bar" id="syncBar">
+  <div class="sync-dot" id="syncDot"></div>
+  <span class="sync-txt" id="syncTxt">All data saved locally</span>
+  <span class="sync-retry" id="syncRetry" style="display:none" onclick="retrySave()">Retry</span>
+</div>
+
+<!-- DASHBOARD -->
+<div class="page active" id="pg-dashboard">
+  <div class="fhdr sage">
+    <div class="hrow">
+      <div><div class="htitle w">Good morning,<br><em>Beekeeper</em> 🐝</div></div>
+      <div class="hbtns">
+        <button class="ibtn bg-ghost" aria-label="Notifications"><div class="ndot"></div><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></button>
+        <button class="ibtn bg-ghost" id="settingsBtn" aria-label="Open settings"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"/></svg></button>
+      </div>
+    </div>
+  </div>
+  <div class="scroll"><div class="dbody">
+    <div class="hero a0">
+      <div class="hero-top"><div><div class="hero-lbl">Apiary Status</div><div class="hero-loc">4 Hives · Portland, OR</div></div><div class="hero-badge"><div class="hbdot"></div><div class="hbtxt">3 Healthy</div></div></div>
+      <div class="hero-stats">
+        <div class="hstat"><div class="hstat-num">84<span class="hstat-u">lb</span></div><div class="hstat-l">Honey</div><div class="hstat-trend trend-up">▲ +14lb</div></div>
+        <div class="hstat"><div class="hstat-num">1.8<span class="hstat-u">%</span></div><div class="hstat-l">Avg mites</div><div class="hstat-trend trend-down">▼ −0.6%</div></div>
+        <div class="hstat"><div class="hstat-num">73<span class="hstat-u">%</span></div><div class="hstat-l">Compliance</div><div class="hstat-trend trend-up">▲ +5%</div></div>
+      </div>
+    </div>
+    <div class="wbanner a1" onclick="goTo('health')">
+      <div class="wb-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
+      <div class="wb-tx"><div class="wb-title">Hive 2 treatment ends today</div><div class="wb-sub">Oxalic acid — record results now</div></div>
+      <div class="wb-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
+    </div>
+    <div><span class="slbl">Quick Access</span>
+      <div class="g22">
+        <div class="gc a1" onclick="goTo('hives')"><div class="gc-ico gi-sage">🏠</div><div class="gc-name">My Hives</div><div class="gc-meta">4 hives · 3 healthy</div><div class="pill p-ok">● All monitored</div></div>
+        <div class="gc a2" onclick="goTo('health')"><div class="gc-ico gi-warn">🔬</div><div class="gc-name">Health</div><div class="gc-meta">Avg mite load 1.8%</div><div class="pill p-warn">⚠ Treatment active</div></div>
+        <div class="gc a3" onclick="goTo('tasks')"><div class="gc-ico gi-honey">📋</div><div class="gc-name">Tasks</div><div class="gc-meta">3 pending today</div><div class="pill p-alert">2 urgent</div></div>
+        <div class="gc a4"><div class="gc-ico gi-ok">🍯</div><div class="gc-name">Harvest Log</div><div class="gc-meta">Last: May 3 · 14lb</div><div class="pill p-ok">84lb this season</div></div>
+      </div>
+    </div>
+    <div><span class="slbl">Today's Tasks</span>
+      <div class="tasklist" id="dashTasks">
+        <div class="titem a1" onclick="togDT(this)"><div class="tchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="tt"><div class="tt-nm">Record Hive 2 treatment result</div><div class="tt-sub">Oxalic acid ends today</div></div><div class="ttag tg-urg">Urgent</div></div>
+        <div class="titem a2" onclick="togDT(this)"><div class="tchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="tt"><div class="tt-nm">Inspect Hive 3 — overdue 12 days</div><div class="tt-sub">Varroa check recommended</div></div><div class="ttag tg-urg">Urgent</div></div>
+        <div class="titem a3" onclick="togDT(this)"><div class="tchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="tt"><div class="tt-nm">Check Hive 1 for swarm cells</div><div class="tt-sub">Swarm season — every 7 days</div></div><div class="ttag tg-tod">Today</div></div>
+      </div>
+      <div class="empty-state" id="emptyTasks" style="display:none">
+        <div class="empty-emoji">☀️</div>
+        <div class="empty-title">All done for today!</div>
+        <div class="empty-desc">No pending tasks. Go enjoy the sunshine and check on your bees.</div>
+        <button class="empty-btn" onclick="goTo('tasks')">View upcoming tasks</button>
+      </div>
+    </div>
+    <div>
+      <div class="chart-card a3">
+        <div class="chart-header">
+          <div class="chart-title">Season Trends</div>
+          <div class="chart-tabs">
+            <button class="ctab on" onclick="switchChart('honey',this)">Honey</button>
+            <button class="ctab" onclick="switchChart('mites',this)">Mites</button>
+          </div>
+        </div>
+        <div class="chart-wrap"><canvas id="trendChart"></canvas></div>
+      </div>
+    </div>
+
+    <div><span class="slbl">Recent Activity</span>
+      <div class="rec-list" id="recList">
+        <div class="ritem a1"><div class="rdot rd-ok"></div><div class="ri"><div class="ri-nm">Hive 1 — Routine inspection</div><div class="ri-mt">Queen seen · 8 frames · Mites 1.2%</div></div><div class="ri-t">3d ago</div></div>
+        <div class="ritem a2"><div class="rdot rd-warn"></div><div class="ri"><div class="ri-nm">Hive 2 — Oxalic acid started</div><div class="ri-mt">Mites 3.8% → treatment begun</div></div><div class="ri-t">7d ago</div></div>
+        <div class="ritem a3"><div class="rdot rd-ok"></div><div class="ri"><div class="ri-nm">Hive 1 — Harvest 14lb 🍯</div><div class="ri-mt">Clover honey · 17.2% moisture</div></div><div class="ri-t">22d ago</div></div>
+      </div>
+      <div class="list-empty" id="recEmpty">
+        <div class="le-emoji">📋</div>
+        <div class="le-title">No activity yet</div>
+        <div class="le-desc">Your inspection history will appear here after your first hive check.</div>
+        <button class="le-btn" onclick="goTo('hives')">Start first inspection</button>
+      </div>
+      <button class="viewall" style="margin-top:8px" onclick="goTo('hives')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>View All History</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- HIVES -->
+<div class="page" id="pg-hives">
+  <div class="fhdr sage"><div class="hrow"><div><div class="htitle w">My <em>Hives</em></div><div class="hsub w">4 hives · Portland, OR</div></div><button class="ibtn bg-honey"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button></div></div>
+  <div class="htabs-bar">
+    <button class="htab on" onclick="selH(0,this)"><span class="hdot2" style="background:#2E7D52"></span>Clover</button>
+    <button class="htab" onclick="selH(1,this)"><span class="hdot2" style="background:#B86800"></span>Wildflower</button>
+    <button class="htab" onclick="selH(2,this)"><span class="hdot2" style="background:#B83030"></span>Buckwheat</button>
+    <button class="htab" onclick="selH(3,this)"><span class="hdot2" style="background:#2E7D52"></span>Lavender</button>
+  </div>
+  <div class="scroll"><div class="hvbody">
+    <div class="hcard a0">
+      <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div class="pill p-ok" id="hbadge">● Healthy</div></div>
+      <div class="hstats"><div class="hsb"><div class="hsb-v" id="hfr">8</div><div class="hsb-l">Frames</div></div><div class="hsb"><div class="hsb-v" id="hst" style="font-size:14px;padding-top:4px">Strong</div><div class="hsb-l">Strength</div></div><div class="hsb"><div class="hsb-v" id="hmt">1.2%</div><div class="hsb-l">Mites</div></div></div>
+    </div>
+    <div class="qcard a1">
+      <div class="chead"><div class="ctitle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>Queen Management</div><div class="cedit">Edit</div></div>
+      <div class="qgrid"><div class="qf"><div class="qf-l">Status</div><div class="qf-v" style="color:var(--ok)">✓ Seen May 21</div></div><div class="qf"><div class="qf-l">Year</div><div class="qf-v">2023 · 2nd yr</div></div><div class="qf"><div class="qf-l">Breed</div><div class="qf-v">Italian</div></div><div class="qf"><div class="qf-l">Source</div><div class="qf-v">Willamette Apiaries</div></div><div class="qf" style="grid-column:1/-1"><div class="qf-l">Lineage</div><div class="qf-v it">Carniolan × Italian F2 — gentle, prolific</div></div></div>
+    </div>
+    <div class="cta-card a2">
+      <div class="cta-lbl">Last inspected</div>
+      <div class="cta-msg">3 days ago — <em>May 21st</em><br>Next window opens in <em>4 days</em></div>
+      <div class="coolbar" id="coolbar"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p><strong>Cool-down active.</strong> Inspecting too soon disrupts temperature &amp; pheromone balance. Wait until May 28.</p></div>
+      <button class="ctabtn cta-ghost" id="inspectBtn" aria-label="Start hive inspection"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z"/></svg>Start Inspection</button>
+    </div>
+    <div><span class="slbl">Inspection History</span>
+      <div class="tl">
+        <div class="tl-row"><div class="tl-l"><div class="tl-dot"></div><div class="tl-line"></div></div><div class="tl-card"><div class="tl-d">May 21, 2025 · 9:14 AM</div><div class="tl-t">Routine inspection — Queen seen ✓</div><div class="tl-tags"><span class="tlt tlt-ok">Queen OK</span><span class="tlt tlt-i">8 frames</span><span class="tlt tlt-ok">Mites 1.2%</span></div><div class="tl-n">Good brood pattern. No queen cells. Added super.</div></div></div>
+        <div class="tl-row"><div class="tl-l"><div class="tl-dot w"></div><div class="tl-line"></div></div><div class="tl-card"><div class="tl-d">May 12, 2025</div><div class="tl-t">Varroa sugar roll — 1.8% mite load</div><div class="tl-tags"><span class="tlt tlt-w">Mite check</span><span class="tlt tlt-i">7 frames</span></div><div class="tl-n">Within threshold. Recheck in 2 weeks.</div></div></div>
+        <div class="tl-row"><div class="tl-l"><div class="tl-dot h"></div><div class="tl-line"></div></div><div class="tl-card"><div class="tl-d">May 3, 2025</div><div class="tl-t">First harvest of season 🍯 — 14lb</div><div class="tl-tags"><span class="tlt tlt-h">Harvest 14lb</span><span class="tlt tlt-i">Clover</span></div></div></div>
+      </div>
+      <button class="viewall" style="margin-top:4px"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 6h16M4 10h16M4 14h16M4 18h16"/></svg>View All Inspections</button>
+    </div>
+  </div></div>
+</div>
+
+<!-- HEALTH -->
+<div class="page" id="pg-health">
+  <div class="fhdr cream"><div class="hrow"><div><div class="htitle d">Hive <em>Health</em></div><div class="hsub d">Varroa · Treatments · Disease · Compliance</div></div><button class="ibtn bg-sage" onclick="openM('treatModal')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button></div></div>
+  <div class="scroll"><div class="hbody">
+    <div class="comp-card a0"><div class="comp-lbl">Compliance Score</div><div class="comp-row"><div class="comp-num">73</div><div class="comp-pct">%</div><div class="comp-desc">Records meet 73%<br>of requirements</div></div><div class="comp-track"><div class="comp-fill"></div></div><div class="comp-flags"><div class="cflag">🇦🇺 AU: 2 missing</div><div class="cflag">🇩🇪 DE: Compliant</div><div class="cflag">🇺🇸 US: Up to date</div></div></div>
+    <div><span class="slbl">Varroa Calculator</span>
+      <div class="calc-card a1"><div class="calc-hrow"><div class="calc-em">🔬</div><div class="calc-ttl">Mite Load Calculator</div></div><div class="calc-sub">Enter your alcohol wash or sugar roll counts below.</div>
+        <div class="mpills"><button class="mpill on" onclick="setMeth(this)">Alcohol Wash</button><button class="mpill" onclick="setMeth(this)">Sugar Roll</button><button class="mpill" onclick="setMeth(this)">Sticky Board</button></div>
+        <div class="calc-ins"><div class="cig"><label>Mites counted</label><input type="number" id="miteCount" value="3" min="0" oninput="calcM()"></div><div class="cig"><label>Bees in sample</label><input type="number" id="beeCount" value="300" min="1" oninput="calcM()"></div></div>
+        <div class="cres ok" id="cres"><div class="cres-p" id="cresP">1.0%</div><div class="cres-r"><div class="cres-s" id="cresS">✓ Safe threshold</div><div class="cres-rec" id="cresR">Monitor monthly. No treatment needed.</div></div></div>
+        <div class="th-bar"><div class="th-track"><div class="th-ptr" id="thPtr" style="left:10%"></div></div><div class="th-lbls"><span>0%</span><span>2% treat</span><span>4% urgent</span><span>8%+</span></div></div>
+      </div>
+    </div>
+    <div><span class="slbl">Treatment Log</span>
+      <div class="treat-list">
+        <div class="tcard a1"><div class="ticon ti-a">🧪</div><div class="ti-info"><div class="ti-nm">Oxalic Acid Vaporization</div><div class="ti-hv">Hive 2 — Wildflower</div><div class="ti-tags"><span class="ttg ttg-a">Active</span><span class="ttg ttg-w">Withdraw ends Jun 1</span></div></div><div class="tcount"><div class="tc-n tc-a">7</div><div class="tc-l">days left</div></div></div>
+        <div class="tcard a2"><div class="ticon ti-d">✅</div><div class="ti-info"><div class="ti-nm">Formic Acid (MAQS)</div><div class="ti-hv">Hive 3 — Buckwheat</div><div class="ti-tags"><span class="ttg ttg-d">Completed May 10–17</span></div></div><div class="tcount"><div class="tc-n tc-d">✓</div><div class="tc-l">done</div></div></div>
+        <div class="tcard a3"><div class="ticon ti-s">📅</div><div class="ti-info"><div class="ti-nm">Apivar (Amitraz strips)</div><div class="ti-hv">Hive 1 — Scheduled</div><div class="ti-tags"><span class="ttg ttg-s">Scheduled Jun 15</span></div></div><div class="tcount"><div class="tc-n tc-s">22</div><div class="tc-l">days away</div></div></div>
+      </div>
+      <button class="viewall" style="margin-top:8px" onclick="openM('treatModal')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Log New Treatment</button>
+    </div>
+    <div><span class="slbl">AI Photo Diagnosis</span>
+      <div class="ai-card a2"><div class="ai-lbl">Powered by AI</div><div class="ai-t">Snap a photo, get an <em>instant diagnosis</em></div><div class="ai-d">Upload a photo of brood, bees, or frames to identify diseases and pests.</div>
+        <div class="ai-drop" onclick="simAI()"><div class="ai-drop-ico">📸</div><p>Take or upload a photo</p><span>Brood · Adult bees · Frames</span></div>
+        <div class="ai-res" id="aiRes">
+          <div class="ai-res-t">Analysis complete — Hive 3 frame</div>
+          <div class="ai-conf"><span class="ai-conf-txt">Confidence</span><div class="ai-conf-bar"><div class="ai-conf-fill" style="width:87%"></div></div><span class="ai-conf-txt">87%</span></div>
+          <div class="ai-res-i" style="margin-top:8px">No AFB signs detected</div>
+          <div class="ai-res-i">Possible Varroa damage — deformed wings on 2 bees</div>
+          <div class="ai-res-i">Slightly spotty brood — monitor queen health</div>
+          <div class="ai-res-i">Recommend alcohol wash within 7 days</div>
+          <!-- AI rationale expand -->
+          <button class="ai-why-btn" id="aiWhyBtn" onclick="toggleAIWhy()">
+            <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+            Why does AI say this?
+          </button>
+          <div class="ai-why" id="aiWhy">
+            <div class="ai-why-content">
+              <div class="ai-why-row">Honey production dropped 10% vs last 7-day average (56lb → 50lb)</div>
+              <div class="ai-why-row">Mite count on 2 bees matches DWV deformity pattern (96% match)</div>
+              <div class="ai-why-row">Brood spotting rate: 18% empty cells — threshold for concern is 15%</div>
+              <div class="ai-why-row">Based on 4,200 similar hive images in training dataset</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+    <div><span class="slbl">Disease &amp; Pest Library</span>
+      <div class="dis-grid">
+        <div class="dcard a1" onclick="openDis('varroa')"><div class="dc-em">🕷️</div><div class="dc-nm">Varroa Mites</div><div class="dc-ds">#1 colony killer</div><div class="dc-sv sv-h">● High risk</div></div>
+        <div class="dcard a2" onclick="openDis('dwv')"><div class="dc-em">🦟</div><div class="dc-nm">Deformed Wing Virus</div><div class="dc-ds">Varroa-transmitted</div><div class="dc-sv sv-h">● High risk</div></div>
+        <div class="dcard a3" onclick="openDis('afb')"><div class="dc-em">💀</div><div class="dc-nm">American Foulbrood</div><div class="dc-ds">Notifiable in AU &amp; DE</div><div class="dc-sv sv-h">● Critical</div></div>
+        <div class="dcard a4" onclick="openDis('efb')"><div class="dc-em">⚠️</div><div class="dc-nm">European Foulbrood</div><div class="dc-ds">Bacterial disease</div><div class="dc-sv sv-m">● Medium</div></div>
+        <div class="dcard" onclick="openDis('shb')"><div class="dc-em">🪲</div><div class="dc-nm">Small Hive Beetle</div><div class="dc-ds">Warm climate pest</div><div class="dc-sv sv-m">● Medium</div></div>
+        <div class="dcard" onclick="openDis('waxmoth')"><div class="dc-em">🦋</div><div class="dc-nm">Wax Moth</div><div class="dc-ds">Attacks weak colonies</div><div class="dc-sv sv-l">● Low–Med</div></div>
+      </div>
+    </div>
+    <div><span class="slbl">Compliance Reports</span>
+      <div class="comply-card a3"><div class="comply-ttl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg>Export Records</div>
+        <div class="comply-g">
+          <div class="ci"><div class="ci-fl">🇦🇺</div><div class="ci-nm">AU Govt Report</div><div class="ci-ds">NSW/VIC Varroa format</div><div class="ci-dl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export PDF</div></div>
+          <div class="ci"><div class="ci-fl">🇩🇪</div><div class="ci-nm">DE EU Compliance</div><div class="ci-ds">Veterinäramt records</div><div class="ci-dl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export PDF</div></div>
+          <div class="ci"><div class="ci-fl">🇺🇸</div><div class="ci-nm">US Treatment Log</div><div class="ci-ds">State apiary records</div><div class="ci-dl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export CSV</div></div>
+          <div class="ci"><div class="ci-fl">📊</div><div class="ci-nm">Full Health Report</div><div class="ci-ds">All hives summary</div><div class="ci-dl"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-4l-4 4m0 0l-4-4m4 4V4"/></svg>Export PDF</div></div>
+        </div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- TASKS -->
+<div class="page" id="pg-tasks">
+  <div class="fhdr cream"><div class="hrow"><div><div class="htitle d">Tasks &amp; <em>Calendar</em></div><div class="hsub d">May 2025 · 3 pending today</div></div><button class="ibtn bg-honey"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button></div></div>
+  <div class="scroll"><div class="tbody">
+    <div class="push-card a0"><div class="push-ico">🔔</div><div class="push-info"><div class="push-t">Smart Reminders</div><div class="push-d">Get notified 2 days before treatments end, inspection windows open, and seasonal tasks begin.</div><div class="push-row"><span class="push-rl">Push Notifications</span><div class="tog" onclick="this.classList.toggle('off')"><div class="tog-k"></div></div></div></div></div>
+    <div><span class="slbl">May 2025</span>
+      <div class="cal-card a1">
+        <div class="cal-nav"><button class="cal-nb"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M15 19l-7-7 7-7"/></svg></button><div class="cal-mo">May 2025</div><button class="cal-nb"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></button></div>
+        <div class="cal-dh"><span>S</span><span>M</span><span>T</span><span>W</span><span>T</span><span>F</span><span>S</span></div>
+        <div class="cal-g" id="calGrid"></div>
+        <!-- 5. Calendar day detail panel -->
+        <div class="cal-detail" id="calDetail">
+          <div class="cal-detail-hdr">
+            <div class="cal-detail-date" id="calDetailDate">May 24</div>
+            <button class="cal-detail-add" onclick="openQAFromCal()">
+              <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+              Add task
+            </button>
+          </div>
+          <div class="cal-detail-tasks" id="calDetailTasks"></div>
+        </div>
+      </div>
+    </div>
+    <div><span class="slbl">Today — May 24</span>
+      <div class="ftl">
+        <div class="fti a1" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Record Hive 2 treatment result</div><div class="fi-mt">Oxalic acid ends today</div></div><div class="fr"><div class="ttag tg-urg">Urgent</div><div class="fr-hv">Hive 2</div></div></div>
+        <div class="fti a2" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Inspect Hive 3 — overdue</div><div class="fi-mt">Last checked May 12 · Varroa needed</div></div><div class="fr"><div class="ttag tg-urg">Urgent</div><div class="fr-hv">Hive 3</div></div></div>
+        <div class="fti a3" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Check Hive 1 for swarm cells</div><div class="fi-mt">Swarm season · every 7 days</div></div><div class="fr"><div class="ttag tg-tod">Today</div><div class="fr-hv">Hive 1</div></div></div>
+      </div>
+    </div>
+    <div><span class="slbl">Upcoming This Week</span>
+      <div class="ftl">
+        <div class="fti a1" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Top up feeder — Hive 4</div><div class="fi-mt">Nectar flow slowing · May 26</div></div><div class="fr"><div class="pill p-sage" style="font-size:10px;padding:2px 8px">May 26</div><div class="fr-hv">Hive 4</div></div></div>
+        <div class="fti a2" onclick="togFti(this)"><div class="fchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="fi"><div class="fi-nm">Open Hive 1 inspection window</div><div class="fi-mt">Cool-down ends May 28</div></div><div class="fr"><div class="pill p-sage" style="font-size:10px;padding:2px 8px">May 28</div><div class="fr-hv">Hive 1</div></div></div>
+      </div>
+    </div>
+  </div></div>
+</div>
+
+<!-- BOTTOM NAV -->
+<nav class="bnav">
+  <button class="nbtn on" id="nb-dashboard" onclick="goTo('dashboard')" aria-label="Dashboard" role="tab"><div class="niw"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3 12l2-2m0 0l7-7 7 7M5 10v10a1 1 0 001 1h3m10-11l2 2m-2-2v10a1 1 0 01-1 1h-3m-6 0a1 1 0 001-1v-4a1 1 0 011-1h2a1 1 0 011 1v4a1 1 0 001 1m-6 0h6"/></svg></div><span class="nlbl">Dashboard</span></button>
+  <button class="nbtn" id="nb-hives" onclick="goTo('hives')" aria-label="My Hives" role="tab"><div class="niw"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M19 21V5a2 2 0 00-2-2H7a2 2 0 00-2 2v16m14 0h2m-2 0h-5m-9 0H3m2 0h5M9 7h1m-1 4h1m4-4h1m-1 4h1m-5 10v-5a1 1 0 011-1h2a1 1 0 011 1v5m-4 0h4"/></svg></div><span class="nlbl">Hives</span></button>
+  <button class="nbtn" id="nb-health" onclick="goTo('health')" aria-label="Health" role="tab"><div class="niw"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M4.318 6.318a4.5 4.5 0 000 6.364L12 20.364l7.682-7.682a4.5 4.5 0 00-6.364-6.364L12 7.636l-1.318-1.318a4.5 4.5 0 00-6.364 0z"/></svg></div><span class="nlbl">Health</span></button>
+  <button class="nbtn" id="nb-tasks" onclick="goTo('tasks')" aria-label="Tasks and Calendar" role="tab"><div class="niw"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2m-6 9l2 2 4-4"/></svg></div><span class="nlbl">Tasks</span></button>
+</nav>
+
+<!-- MODALS -->
+<div class="mover" id="inspectModal" role="dialog" aria-modal="true" aria-label="Inspection form">
+  <div class="modal"><div class="mhnd"></div><div class="mttl">Inspect Hive 1</div><div class="msub">Hive 1 — Clover · May 24, 2025</div>
+    <div class="chk-grp"><div class="chk-gt"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>Queen Check</div>
+      <div class="chk-i" onclick="togChk(this)" role="checkbox" aria-checked="false"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">Queen spotted (eggs or queen seen)</span></div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">Healthy brood pattern</span></div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">No queen cells visible</span></div>
+    </div>
+    <div class="chk-grp"><div class="chk-gt"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M17 20h5v-2a3 3 0 00-5.356-1.857M17 20H7m10 0v-2c0-.656-.126-1.283-.356-1.857M7 20H2v-2a3 3 0 015.356-1.857M7 20v-2c0-.656.126-1.283.356-1.857m0 0a5.002 5.002 0 019.288 0M15 7a3 3 0 11-6 0 3 3 0 016 0z"/></svg>Colony &amp; Frames</div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">Population strong (6+ frames)</span></div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">Honey stores adequate</span></div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">Bees calm and non-aggressive</span></div>
+    </div>
+    <div class="chk-grp"><div class="chk-gt"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>Health &amp; Pests</div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">No disease signs (chalk, foulbrood)</span></div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">No wax moths or small hive beetles</span></div>
+      <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">No deformed wings (DWV)</span></div>
+    </div>
+    <div class="rat-sec"><div class="rat-lbl">Colony Strength</div><div class="stars" id="stars"><span class="star" onclick="setR(1)">🐝</span><span class="star" onclick="setR(2)">🐝</span><span class="star on" onclick="setR(3)">🐝</span><span class="star on" onclick="setR(4)">🐝</span><span class="star on" onclick="setR(5)">🐝</span></div></div>
+    <div class="photo-sec"><div class="rat-lbl">Photos</div><div class="pp"><div class="pprev" role="img" aria-label="Photo preview placeholder">🖼️</div></div><div class="pdrop" onclick="alert('Camera / photo library')" data-lazy="true" aria-label="Add photo — tap to open camera or photo library"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg><p>Add a photo</p><span>Camera or library</span></div></div>
+    <div class="notes-sec">
+      <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
+        <div class="rat-lbl" style="margin-bottom:0">Notes</div>
+        <button class="mic-btn" id="notesMicBtn" onclick="toggleVoiceNotes()" title="Voice notes" aria-label="Dictate notes" style="width:36px;height:36px">
+          <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+            <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+            <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+          </svg>
+        </button>
+      </div>
+      <div class="voice-status" id="notesVoiceStatus" style="margin-bottom:6px">
+        <div class="voice-waves"><span></span><span></span><span></span><span></span><span></span></div>
+        <div class="voice-status-txt" id="notesVoiceTxt">Listening… describe the hive</div>
+      </div>
+      <textarea class="nta" id="inspNotes" placeholder="Observations, concerns, actions taken…"></textarea>
+    </div>
+    <button class="msave" onclick="saveInspection()">Save Inspection ✓</button>
+    <button class="mcancel" onclick="closeM('inspectModal')">Cancel</button>
+  </div>
+</div>
+
+<div class="mover" id="treatModal" role="dialog" aria-modal="true" aria-label="Log treatment">
+  <div class="modal"><div class="mhnd"></div><div class="mttl">Log Treatment</div><div class="msub">Record a varroa or disease treatment</div>
+    <div class="fgrp"><label class="flbl">Hive</label><select class="fsel"><option>Hive 1 — Clover</option><option>Hive 2 — Wildflower</option><option>Hive 3 — Buckwheat</option><option>Hive 4 — Lavender</option><option>All hives</option></select></div>
+    <div class="fgrp"><label class="flbl">Treatment</label><select class="fsel"><option>Oxalic Acid Vaporization</option><option>Formic Acid (MAQS)</option><option>Apivar (Amitraz strips)</option><option>Apiguard (Thymol)</option><option>Other…</option></select></div>
+    <div class="frow fgrp"><div><label class="flbl">Start</label><input class="finp" type="date" value="2025-05-24"></div><div><label class="flbl">End</label><input class="finp" type="date" value="2025-06-07"></div></div>
+    <div class="fgrp"><label class="flbl">Mite count before (%)</label><input class="finp" type="number" placeholder="e.g. 3.2" step="0.1"></div>
+    <div class="fgrp"><label class="flbl">Withdrawal period ends</label><input class="finp" type="date" value="2025-07-01"></div>
+    <button class="msave" onclick="closeM('treatModal')">Save Treatment Record</button>
+    <button class="mcancel" onclick="closeM('treatModal')">Cancel</button>
+  </div>
+</div>
+
+<div class="mover" id="diseaseModal" role="dialog" aria-modal="true" aria-label="Disease information">
+  <div class="modal"><div class="mhnd"></div>
+    <div class="dd-img" id="ddImg">🕷️</div>
+    <div class="mttl" id="ddName">Varroa Mites</div><div class="msub" id="ddSub">Varroa destructor</div>
+    <div class="dd-sec"><h4>Signs to look for</h4><ul class="ddl" id="ddSigns"></ul></div>
+    <div class="dd-sec"><h4>Treatment options</h4><ul class="ddl" id="ddTreat"></ul></div>
+    <button class="msave red" onclick="closeM('diseaseModal')">Close</button>
+  </div>
+</div>
+
+<div class="sover" id="sover" onclick="closeSett(event)">
+  <div class="spanel"><div class="sttl">Settings</div>
+    <!-- High-contrast outdoor mode -->
+    <div class="hc-toggle"><div class="hc-toggle-l"><div class="hc-ico">☀️</div><div><div class="hc-nm">Outdoor High-Contrast</div><div class="hc-sb">Boost readability in sunlight</div></div></div><div class="tog" id="hcTog" onclick="toggleHC()"><div class="tog-k"></div></div></div>
+    <!-- Dark mode -->
+    <div class="dm-toggle"><div class="dm-toggle-l"><div class="dm-ico">🌙</div><div><div class="dm-nm">Dark Mode</div><div class="dm-sb">Easy on eyes at dusk &amp; dawn</div></div></div><div class="tog off" id="dmTog" onclick="toggleDM()"><div class="tog-k"></div></div></div>
+    <div class="si"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div><div><div class="si-nm">Profile &amp; Apiary</div><div class="si-sb">Alex · 4 hives · Portland OR</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="si" onclick="openLangPicker()" style="cursor:pointer"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064"/></svg></div><div><div class="si-nm">Region &amp; Voice Language</div><div class="si-sb" id="langLabel">🇺🇸 United States · English</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
+    <!-- Language picker (inline expand) -->
+    <div id="langPicker" style="display:none;background:var(--white);border-radius:var(--r-md);padding:8px;box-shadow:var(--sh-sm);margin-top:-4px">
+      <div style="font-size:10px;font-weight:700;color:var(--stone-aa);text-transform:uppercase;letter-spacing:.07em;padding:4px 8px 8px">Voice Recognition Language</div>
+      <div id="langOpts"></div>
+    </div>
+    <div class="si"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M15 17h5l-1.405-1.405A2.032 2.032 0 0118 14.158V11a6 6 0 10-12 0v3.159c0 .538-.214 1.055-.595 1.436L4 17h5m6 0v1a3 3 0 11-6 0v-1m6 0H9"/></svg></div><div><div class="si-nm">Notifications</div><div class="si-sb">Treatments, inspections, alerts</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="si"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"/></svg></div><div><div class="si-nm">Compliance Export</div><div class="si-sb">AU report · DE EU PDF</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="si"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M8 7H5a2 2 0 00-2 2v9a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-3m-1 4l-3 3m0 0l-3-3m3 3V4"/></svg></div><div><div class="si-nm">Data Backup &amp; Export</div><div class="si-sb">Last backed up today</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="si"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"/></svg></div><div><div class="si-nm">Subscription</div><div class="si-sb">Pro Plan · Renews Jun 1</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
+    <button class="sclose" onclick="closeSett()">Close</button>
+  </div>
+</div>
+
+</div><!-- /shell -->
+
+<!-- Global toast -->
+<div class="toast" id="globalToast"></div>
+
+<!-- Global Voice FAB — Priority 3: hands-free commands -->
+<button class="voice-fab" id="globalVoiceFab" onclick="toggleGlobalVoice()" aria-label="Voice command — say a command" role="button" aria-label="Voice command">
+  <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+    <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+    <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+  </svg>
+</button>
+<div class="cmd-overlay" id="cmdOverlay">
+  <div class="cmd-overlay-lbl">Command recognized</div>
+  <div class="cmd-overlay-txt" id="cmdOverlayTxt"></div>
+</div>
+
+</div><!-- /shell -->
+<div class="quick-add-modal" id="qaModal" onclick="if(event.target===this)closeQA()">
+  <div class="qa-box">
+    <div class="qa-date" id="qaDate">May 24</div>
+    <div class="qa-title">Quick add task</div>
+    <div style="display:flex;gap:8px;align-items:flex-start;margin-bottom:10px">
+      <input class="qa-input" id="qaInput" type="text" placeholder="e.g. Check for swarm cells…" style="margin-bottom:0;flex:1">
+      <button class="mic-btn" id="qaMicBtn" onclick="toggleVoiceQA()" title="Voice input" aria-label="Start voice input">
+        <svg id="qaMicIcon" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8">
+          <path stroke-linecap="round" stroke-linejoin="round" d="M12 1a3 3 0 00-3 3v8a3 3 0 006 0V4a3 3 0 00-3-3z"/>
+          <path stroke-linecap="round" stroke-linejoin="round" d="M19 10v2a7 7 0 01-14 0v-2M12 19v4M8 23h8"/>
+        </svg>
+      </button>
+    </div>
+    <div class="voice-status" id="qaVoiceStatus">
+      <div class="voice-waves"><span></span><span></span><span></span><span></span><span></span></div>
+      <div class="voice-status-txt" id="qaVoiceTxt">Listening… say your task</div>
+    </div>
+    <select class="qa-input" id="qaHive" style="margin-bottom:10px;font-size:13px;color:var(--ink)">
+      <option value="">No specific hive</option>
+      <option value="hive1">🍯 Hive 1 — Clover</option>
+      <option value="hive2">💊 Hive 2 — Wildflower</option>
+      <option value="hive3">⚠️ Hive 3 — Buckwheat</option>
+      <option value="hive4">🌸 Hive 4 — Lavender</option>
+    </select>
+    <div class="qa-chips">
+      <button class="qa-chip on" onclick="selChip(this)">Inspection</button>
+      <button class="qa-chip" onclick="selChip(this)">Treatment</button>
+      <button class="qa-chip" onclick="selChip(this)">Harvest</button>
+      <button class="qa-chip" onclick="selChip(this)">Feeding</button>
+    </div>
+    <div class="qa-btns">
+      <button class="qa-cancel" onclick="closeQA()">Cancel</button>
+      <button class="qa-save" onclick="saveQA()">Add Task ✓</button>
+    </div>
+  </div>
+</div>
+<script>
+function goTo(id){
+  const cur=document.querySelector('.page.active');
+  if(cur)cur.style.opacity='0';
+  setTimeout(()=>{
+    document.querySelectorAll('.page').forEach(p=>{p.classList.remove('active');p.style.opacity='';});
+    document.querySelectorAll('.nbtn').forEach(b=>b.classList.remove('on'));
+    const next=document.getElementById('pg-'+id);
+    next.classList.add('active');
+    document.getElementById('nb-'+id).classList.add('on');
+    const s=next.querySelector('.scroll');
+    if(s)s.scrollTop=0;
+  },120);
+}
+const HV=[{av:'🍯',nm:'Hive 1 — Clover',bc:'p-ok',bt:'● Healthy',fr:'8',st:'Strong',mt:'1.2%',last:'3 days ago',nxt:'4 days',cd:true},{av:'💊',nm:'Hive 2 — Wildflower',bc:'p-warn',bt:'⚠ Treatment',fr:'7',st:'Moderate',mt:'3.8%',last:'7 days ago',nxt:'now',cd:false},{av:'⚠️',nm:'Hive 3 — Buckwheat',bc:'p-alert',bt:'! Overdue',fr:'6',st:'Weak',mt:'N/A',last:'12 days ago',nxt:'now',cd:false},{av:'🌸',nm:'Hive 4 — Lavender',bc:'p-ok',bt:'● Healthy',fr:'9',st:'Strong',mt:'0.8%',last:'5 days ago',nxt:'2 days',cd:true}];
+function selH(i,b){document.querySelectorAll('.htab').forEach(t=>t.classList.remove('on'));b.classList.add('on');const h=HV[i];document.getElementById('hav').textContent=h.av;document.getElementById('hn').textContent=h.nm;const bd=document.getElementById('hbadge');bd.className='pill '+h.bc;bd.textContent=h.bt;document.getElementById('hfr').textContent=h.fr;document.getElementById('hst').textContent=h.st;document.getElementById('hmt').textContent=h.mt;document.querySelector('.cta-msg').innerHTML=h.last+' — Last check<br>Next window: <em>'+h.nxt+'</em>';document.getElementById('coolbar').style.display=h.cd?'flex':'none';}
+function calcM(){const m=parseFloat(document.getElementById('miteCount').value)||0,b=parseFloat(document.getElementById('beeCount').value)||300,p=b>0?(m/b*100):0;document.getElementById('cresP').textContent=p.toFixed(1)+'%';document.getElementById('thPtr').style.left=Math.min(p/8*100,98)+'%';const r=document.getElementById('cres');if(p<2){r.className='cres ok';document.getElementById('cresS').textContent='✓ Safe threshold';document.getElementById('cresR').textContent='Monitor monthly. No treatment needed.';}else if(p<4){r.className='cres warn';document.getElementById('cresS').textContent='⚠ Treatment recommended';document.getElementById('cresR').textContent='Mite load rising. Plan treatment in 1–2 weeks.';}else{r.className='cres alert';document.getElementById('cresS').textContent='🚨 Treat immediately';document.getElementById('cresR').textContent='High infestation. Colony at risk. Act now.';}}
+calcM();
+function setMeth(b){document.querySelectorAll('.mpill').forEach(x=>x.classList.remove('on'));b.classList.add('on');}
+function simAI(){document.getElementById('aiRes').classList.add('show');document.querySelector('.ai-drop p').textContent='✓ Photo analyzed';document.querySelector('.ai-drop span').textContent='Tap to analyze another';}
+const DIS={varroa:{e:'🕷️',n:'Varroa Mites',s:'Varroa destructor · External parasite',si:['Reddish-brown dots on adult bees or larvae','Bees with deformed or missing wings','Crawling bees unable to fly at entrance','Colony collapse in autumn'],tr:['Oxalic acid vaporization (broodless period)','Formic acid pads (MAQS)','Apivar amitraz strips — 6–8 weeks','Apiguard thymol gel — summer use']},dwv:{e:'🦟',n:'Deformed Wing Virus',s:'DWV · Transmitted by Varroa',si:['Wings crumpled, shortened or missing','Bees crawling at entrance unable to fly','Shortened abdomen on affected bees','High Varroa load is primary indicator'],tr:['Control Varroa — DWV has no direct cure','Requeen with hygienic or VSH queens','Remove heavily infected brood frames','Maintain strong, low-mite colonies']},afb:{e:'💀',n:'American Foulbrood',s:'Paenibacillus larvae · NOTIFIABLE',si:['Sunken discolored perforated cappings','Ropy brown stringy material when probed','Sour fermented smell from hive','Spotty brood with collapsed larvae'],tr:['NOTIFIABLE — report to authorities (AU/DE)','No cure — infected equipment must be burned','Colony destruction may be legally required','Never feed unverified honey to colonies']},efb:{e:'⚠️',n:'European Foulbrood',s:'Melissococcus plutonius · Bacterial',si:['Twisted discolored larvae (yellow-brown)','Larvae die before capping','Slight sour smell','Spotty brood pattern'],tr:['Oxytetracycline where permitted','Requeen with young hygienic queen','Feed 1:1 sugar syrup to stimulate cleanup','Remove heavily infected frames']},shb:{e:'🪲',n:'Small Hive Beetle',s:'Aethina tumida · Warm climates',si:['Dark beetles (5–7mm) fleeing light','Fermented slimy honey with foul smell','Larvae tunneling through comb','Bees absconding in severe cases'],tr:['Beetle traps (Freeman board or oil traps)','Strong colonies control small infestations','Reduce entrance size','Freeze stored combs when unoccupied']},waxmoth:{e:'🦋',n:'Wax Moth',s:'Galleria mellonella · Weak colonies',si:['Silky webbing across comb surfaces','Larvae tunneling through brood comb','Empty moth-damaged frames in storage'],tr:['Strong bees naturally repel moths','Freeze stored combs at -15°C for 24h','Bacillus thuringiensis (BT) for stored comb','Never leave unguarded drawn comb']}};
+function openDis(k){const d=DIS[k];document.getElementById('ddImg').textContent=d.e;document.getElementById('ddName').textContent=d.n;document.getElementById('ddSub').textContent=d.s;document.getElementById('ddSigns').innerHTML=d.si.map(s=>'<li>'+s+'</li>').join('');document.getElementById('ddTreat').innerHTML=d.tr.map(t=>'<li>'+t+'</li>').join('');openM('diseaseModal');}
+function openM(id){document.getElementById(id).classList.add('open');}
+function closeM(id){document.getElementById(id).classList.remove('open');}
+document.querySelectorAll('.mover').forEach(el=>el.addEventListener('click',function(e){if(e.target===this)this.classList.remove('open');}));
+document.getElementById('inspectBtn').addEventListener('click',()=>openM('inspectModal'));
+document.getElementById('settingsBtn').addEventListener('click',()=>document.getElementById('sover').classList.add('open'));
+function closeSett(e){if(!e||e.target===document.getElementById('sover'))document.getElementById('sover').classList.remove('open');}
+function togDT(item){
+  const c=item.querySelector('.tchk'),n=item.querySelector('.tt-nm'),t=item.querySelector('.ttag');
+  c.classList.toggle('on');n.classList.toggle('done');
+  if(c.classList.contains('on')){t.className='ttag tg-done';t.textContent='Done ✓';}
+  else{t.className='ttag tg-urg';t.textContent='Urgent';}
+  // Empty state: classList-based (respects .show CSS rule)
+  const all=document.querySelectorAll('#dashTasks .tchk');
+  const done=[...all].every(x=>x.classList.contains('on'));
+  document.getElementById('dashTasks').style.display = done ? 'none' : '';
+  const et=document.getElementById('emptyTasks');
+  if(done){et.classList.add('show');}else{et.classList.remove('show');}
+}
+
+// ── DARK MODE ──
+function toggleDM(){
+  const sh=document.getElementById('shell');
+  const tog=document.getElementById('dmTog');
+  const on=sh.classList.toggle('dark');
+  tog.classList.toggle('off',!on);
+  if(typeof buildChart==='function')buildChart(_currentChartType||'honey');
+  saveState({darkMode:on});
+  showToast(on?'🌙 Dark mode on':'☀️ Light mode restored');
+}
+function toggleHC(){
+  const sh=document.getElementById('shell');
+  const tog=document.getElementById('hcTog');
+  const on=sh.classList.toggle('hc');
+  tog.classList.toggle('off',!on);
+  saveState({hcMode:on});
+  showToast(on?'☀️ High-contrast on':'🌿 Normal mode restored');
+}
+// ── HIGH-CONTRAST OUTDOOR MODE ──
+function toggleHC(){
+  const shell=document.querySelector('.shell');
+  const tog=document.getElementById('hcTog');
+  const isHC=shell.classList.toggle('hc');
+  tog.classList.toggle('off',!isHC);
+  saveState({hcMode:isHC});
+  showToast(isHC?'☀️ High-contrast mode on':'🌿 Normal mode restored');
+}
+(function restoreHC(){
+  const s=loadState();
+  if(s.hcMode){
+    document.querySelector('.shell').classList.add('hc');
+    const tog=document.getElementById('hcTog');
+    if(tog)tog.classList.remove('off');
+  }
+})();
+
+// ── AI RATIONALE EXPAND ──
+function toggleAIWhy(){
+  const btn=document.getElementById('aiWhyBtn');
+  const panel=document.getElementById('aiWhy');
+  btn.classList.toggle('open');
+  panel.classList.toggle('open');
+}
+
+// ── CALENDAR DAY DETAIL PANEL ──
+const CAL_TASKS={
+  3:['Sugar syrup refill — all hives'],
+  7:['Varroa alcohol wash — Hive 2'],
+  10:['Formic acid treatment started — Hive 3'],
+  12:['Varroa check — Hive 1 & 4'],
+  15:['Routine inspection — Hive 4'],
+  17:['Queen check — Hive 3'],
+  21:['Full inspection — Hive 1'],
+  24:['Record Hive 2 treatment result','Inspect Hive 3 overdue','Check Hive 1 for swarm cells'],
+  26:['Top up feeder — Hive 4'],
+  28:['Open Hive 1 inspection window'],
+  31:['Monthly mite count — all hives'],
+};
+let selectedCalDay=null;
+function selectCalDay(day,el){
+  // Deselect previous
+  document.querySelectorAll('.cd.selected').forEach(c=>c.classList.remove('selected'));
+  if(selectedCalDay===day){
+    selectedCalDay=null;
+    document.getElementById('calDetail').classList.remove('show');
+    return;
+  }
+  selectedCalDay=day;
+  el.classList.add('selected');
+  const detail=document.getElementById('calDetail');
+  const dateEl=document.getElementById('calDetailDate');
+  const tasksEl=document.getElementById('calDetailTasks');
+  dateEl.textContent='May '+day+', 2025';
+  const tasks=CAL_TASKS[parseInt(day)]||[];
+  if(tasks.length===0){
+    tasksEl.innerHTML='<div class="cd-task-empty">No tasks scheduled — long press to add one</div>';
+  } else {
+    tasksEl.innerHTML=tasks.map(t=>`<div class="cd-task"><div class="cd-task-dot" style="background:var(--sage-mid)"></div>${t}</div>`).join('');
+  }
+  detail.classList.add('show');
+  document.getElementById('qaDate').textContent='May '+day+', 2025';
+}
+function openQAFromCal(){
+  document.getElementById('qaInput').value='';
+  document.getElementById('qaModal').classList.add('open');
+  setTimeout(()=>document.getElementById('qaInput').focus(),300);
+}
+
+// ── TOGFTI WITH EMPTY STATE ──
+function togFti(item){
+  const c=item.querySelector('.fchk'),n=item.querySelector('.fi-nm');
+  c.classList.toggle('on');n.classList.toggle('done');
+}
+function togChk(item){const b=item.querySelector('.chk-b'),l=item.querySelector('.chk-lbl');b.classList.toggle('on');l.classList.toggle('done');}
+function setR(n){document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<n));}
+(function(){
+  const g=document.getElementById('calGrid');
+  const td=[3,7,10,12,15,17,21,24,26,28,31];
+  const ud=[24];
+  let h='';
+  for(let i=0;i<4;i++)h+='<div class="cd om">'+(31-4+i+1)+'</div>';
+  for(let d=1;d<=31;d++){
+    let c='cd';
+    if(d===24)c+=' today';
+    if(td.includes(d))c+=' has-t';
+    if(ud.includes(d)&&d!==24)c+=' urg';
+    h+='<div class="'+c+'" data-day="'+d+'">'+d+'</div>';
+  }
+  g.innerHTML=h;
+
+  // Single tap → show day detail panel
+  // Long press (500ms) → quick-add task modal
+  let lpTimer=null;
+  let lpFired=false;
+  g.addEventListener('pointerdown',function(e){
+    const cd=e.target.closest('.cd');
+    if(!cd||cd.classList.contains('om'))return;
+    lpFired=false;
+    lpTimer=setTimeout(()=>{
+      lpFired=true;
+      const day=cd.dataset.day;
+      document.getElementById('qaDate').textContent='May '+day+', 2025';
+      document.getElementById('qaInput').value='';
+      document.getElementById('qaModal').classList.add('open');
+      setTimeout(()=>document.getElementById('qaInput').focus(),300);
+    },500);
+  });
+  g.addEventListener('pointerup',function(e){
+    clearTimeout(lpTimer);
+    if(!lpFired){
+      const cd=e.target.closest('.cd');
+      if(cd&&!cd.classList.contains('om')) selectCalDay(cd.dataset.day, cd);
+    }
+    lpTimer=null; lpFired=false;
+  });
+  g.addEventListener('pointercancel',()=>{clearTimeout(lpTimer);lpTimer=null;lpFired=false;});
+})();
+// ── TOAST UTILITY ──
+function showToast(msg,duration=2000){
+  const t=document.getElementById('globalToast');
+  t.textContent=msg;t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),duration);
+}
+
+// ── STORAGE: IDB primary → localStorage fallback → memory safety net ──
+const STORE_KEY='hivekeeper_v2';
+const IDB_DB='hivekeeperDB';
+const IDB_KV='kv';
+let _mem={};
+let _idb=null;
+let _lastData={};
+(function openIDB(){
+  if(!window.indexedDB)return;
+  const req=indexedDB.open(IDB_DB,1);
+  req.onupgradeneeded=e=>e.target.result.createObjectStore(IDB_KV);
+  req.onsuccess=e=>{_idb=e.target.result;};
+  req.onerror=()=>{};
+})();
+// Expected schema — guards against stale/corrupt data from old versions
+const STATE_SCHEMA = {
+  dashTasks:   v => Array.isArray(v),
+  inspection:  v => Array.isArray(v),
+  darkMode:    v => typeof v === 'boolean',
+  hcMode:      v => typeof v === 'boolean',
+  voiceLang:   v => typeof v === 'string',
+  customTasks: v => Array.isArray(v),
+  lastInspection: v => typeof v === 'string',
+};
+function validateState(raw) {
+  if (!raw || typeof raw !== 'object') return {};
+  const clean = {};
+  for (const [k, v] of Object.entries(raw)) {
+    const validator = STATE_SCHEMA[k];
+    // Keep known fields that pass type check; drop corrupted ones
+    if (!validator || validator(v)) clean[k] = v;
+    else console.warn('[HiveKeeper] Dropped invalid state field:', k, v);
+  }
+  return clean;
+}
+async function loadState(){
+  if(_idb){
+    try{
+      const raw=await new Promise((res,rej)=>{
+        const tx=_idb.transaction(IDB_KV,'readonly');
+        const r=tx.objectStore(IDB_KV).get('root');
+        r.onsuccess=()=>res(r.result||{});
+        r.onerror=()=>rej(r.error);
+      });
+      return validateState(raw);
+    }catch(e){}
+  }
+  try{
+    const raw=localStorage.getItem(STORE_KEY);
+    return validateState(raw ? JSON.parse(raw) : {});
+  }catch(e){}
+  return validateState({..._mem});
+}
+async function saveState(data){
+  // Outer guard: any unexpected error (private mode, quota, IDB locked)
+  // falls to memory-only and shows appropriate status — never throws
+  try{
+    setSyncStatus('saving');
+    _lastData=data;
+    let merged;
+    try{merged=Object.assign({},await loadState(),data);}catch(e){merged=Object.assign({},_mem,data);}
+    _mem=merged;
+    let ok=false;
+    if(_idb){
+      try{
+        await new Promise((res,rej)=>{
+          const tx=_idb.transaction(IDB_KV,'readwrite');
+          tx.objectStore(IDB_KV).put(merged,'root');
+          tx.oncomplete=res;
+          tx.onerror=()=>rej(tx.error);
+        });
+        ok=true;
+      }catch(e){}  // IDB write failed — fall through to localStorage
+    }
+    try{
+    localStorage.setItem(STORE_KEY,JSON.stringify(merged));
+    ok=true;
+  }catch(e){
+    // QuotaExceededError — storage full
+    if(e.name==='QuotaExceededError'||e.code===22){
+      showToast('⚠️ Storage full — older records may not be saved');
+    }
+  }
+    // Classify failure reason for user-visible feedback
+    if(ok)setSyncStatus('saved');
+    else if(!navigator.onLine)setSyncStatus('offline');
+    else setSyncStatus('error');
+  }catch(e){
+    // Last-resort catch: data is in _mem, user sees error state
+    _mem=Object.assign({},_mem,data);
+    setSyncStatus('error');
+    console.warn('[HiveKeeper] saveState failed completely:',e);
+  }
+}
+function retrySave(){setSyncStatus('saving');setTimeout(()=>saveState(_lastData),400);}
+window.addEventListener('offline',()=>setSyncStatus('offline'));
+window.addEventListener('online',()=>{setSyncStatus('saving');setTimeout(()=>saveState({}),600);});
+function setSyncStatus(status){
+  const dot=document.getElementById('syncDot');
+  const txt=document.getElementById('syncTxt');
+  const bar=document.getElementById('syncBar');
+  const retry=document.getElementById('syncRetry');
+  retry.style.display='none';
+  bar.className='sync-bar';
+  if(status==='saving'){
+    dot.className='sync-dot syncing';
+    txt.textContent='Saving…';
+  } else if(status==='saved'){
+    dot.className='sync-dot';
+    txt.textContent='All data saved locally';
+  } else if(status==='offline'){
+    dot.className='sync-dot offline-dot';
+    txt.textContent='Offline — data saved · Voice recognition limited';
+    bar.classList.add('offline');
+  } else if(status==='error'){
+    dot.className='sync-dot error';
+    txt.textContent='Save failed — storage may be full';
+    bar.classList.add('error-bar');
+    retry.style.display='inline';
+  }
+}
+
+
+// ── CHART.JS VISUALIZATION ──
+let trendChartInstance=null;
+const CHART_DATA={
+  honey:{
+    labels:['Jan','Feb','Mar','Apr','May','Jun'],
+    datasets:[{
+      label:'Honey (lb)',
+      data:[0,0,12,28,56,84],
+      fill:true,
+      borderColor:'#E8A020',
+      backgroundColor:'rgba(232,160,32,.12)',
+      borderWidth:2,
+      pointBackgroundColor:'#E8A020',
+      pointRadius:4,
+      tension:.4
+    }]
+  },
+  mites:{
+    labels:['Jan','Feb','Mar','Apr','May','Jun'],
+    datasets:[{
+      label:'Avg Mite Load (%)',
+      data:[1.1,1.3,1.8,2.4,3.1,1.8],
+      fill:true,
+      borderColor:'#B83030',
+      backgroundColor:'rgba(184,48,48,.1)',
+      borderWidth:2,
+      pointBackgroundColor:'#B83030',
+      pointRadius:4,
+      tension:.4
+    }]
+  }
+};
+function buildChart(type){
+  const ctx=document.getElementById('trendChart');
+  if(!ctx)return;
+  if(trendChartInstance)trendChartInstance.destroy();trendChartInstance=null;window.myChart=null;
+  trendChartInstance=window.myChart=new Chart(ctx,{
+    type:'line',
+    data:CHART_DATA[type],
+    options:{
+      responsive:true,
+      maintainAspectRatio:false,
+      plugins:{legend:{display:false},tooltip:{
+        backgroundColor:'#1E1916',
+        titleFont:{family:'Nunito',size:11},
+        bodyFont:{family:'Nunito',size:12},
+        padding:10,cornerRadius:8
+      }},
+      scales:{
+        x:{grid:{display:false},ticks:{font:{family:'Nunito',size:10},color:'#6B5D50'}},
+        y:{grid:{color:'rgba(0,0,0,.05)'},ticks:{font:{family:'Nunito',size:10},color:'#6B5D50'}}
+      }
+    }
+  });
+}
+function switchChart(type,btn){
+  document.querySelectorAll('.ctab').forEach(b=>b.classList.remove('on'));
+  btn.classList.add('on');
+  buildChart(type);
+}
+
+// ── PERSIST TASKS ──
+function togDT(item){
+  const c=item.querySelector('.tchk'),n=item.querySelector('.tt-nm'),t=item.querySelector('.ttag');
+  c.classList.toggle('on');n.classList.toggle('done');
+  if(c.classList.contains('on')){t.className='ttag tg-done';t.textContent='Done ✓';}
+  else{t.className='ttag tg-urg';t.textContent='Urgent';}
+  // Empty state: classList-based (respects .show CSS rule)
+  const all=document.querySelectorAll('#dashTasks .tchk');
+  const done=[...all].every(x=>x.classList.contains('on'));
+  document.getElementById('dashTasks').style.display = done ? 'none' : '';
+  const et=document.getElementById('emptyTasks');
+  if(done){et.classList.add('show');}else{et.classList.remove('show');}
+  // Persist
+  setSyncStatus('saving');
+  const tasks=[...all].map(x=>x.classList.contains('on'));
+  setTimeout(()=>saveState({dashTasks:tasks}),300);
+}
+
+// ── RESTORE PERSISTED TASKS ──
+(function restoreTasks(){
+  const state=loadState();
+  if(state.dashTasks){
+    const checks=document.querySelectorAll('#dashTasks .tchk');
+    state.dashTasks.forEach((done,i)=>{
+      if(done&&checks[i]){
+        checks[i].classList.add('on');
+        const nm=checks[i].closest('.titem').querySelector('.tt-nm');
+        const tg=checks[i].closest('.titem').querySelector('.ttag');
+        if(nm)nm.classList.add('done');
+        if(tg){tg.className='ttag tg-done';tg.textContent='Done ✓';}
+      }
+    });
+    const all=[...checks];
+    const allDone=all.every(x=>x.classList.contains('on'));
+    document.getElementById('dashTasks').style.display=allDone?'none':'flex';
+    document.getElementById('emptyTasks').style.display=allDone?'flex':'none';
+  }
+})();
+
+// ── PERSIST INSPECTION CHECKLIST ──
+function togChk(item){
+  const b=item.querySelector('.chk-b'),l=item.querySelector('.chk-lbl');
+  b.classList.toggle('on');l.classList.toggle('done');
+  setSyncStatus('saving');
+  const groups=[...document.querySelectorAll('.chk-grp')].map(g=>
+    [...g.querySelectorAll('.chk-b')].map(b=>b.classList.contains('on'))
+  );
+  setTimeout(()=>saveState({inspection:groups}),300);
+}
+
+// ── ENHANCED SAVE WITH ANIMATION ──
+function saveInspection(){
+  const btn=document.querySelector('#inspectModal .msave');
+  btn.classList.add('btn-saving');
+  btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
+  setSyncStatus('saving');
+  setTimeout(()=>{
+    btn.classList.remove('btn-saving');
+    btn.classList.add('btn-saved');
+    btn.textContent='Saved ✓';
+    saveState({lastInspection:new Date().toISOString()});
+    setTimeout(()=>{
+      closeM('inspectModal');
+      btn.classList.remove('btn-saved');
+      btn.textContent='Save Inspection ✓';
+      showToast('🐝 Inspection saved successfully');
+    },700);
+  },900);
+}
+
+// ── PWA SERVICE WORKER ──
+(function registerSW(){
+  if('serviceWorker' in navigator){
+    // Inline SW as blob for single-file PWA
+    const sw=`
+const CACHE='hk-v3';
+const PRECACHE=[
+  'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;500;600;700&display=swap',
+  'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
+];
+self.addEventListener('install',e=>{
+  e.waitUntil(caches.open(CACHE).then(c=>c.addAll(PRECACHE).catch(()=>{})));
+  self.skipWaiting();
+});
+self.addEventListener('activate',e=>{
+  e.waitUntil(caches.keys().then(ks=>Promise.all(ks.filter(k=>k!==CACHE).map(k=>caches.delete(k)))));
+  self.clients.claim();
+});
+self.addEventListener('fetch',e=>{
+  if(e.request.method!=='GET')return;
+  e.respondWith(
+    caches.match(e.request).then(cached=>{
+      if(cached)return cached;
+      return fetch(e.request).then(resp=>{
+        if(resp&&resp.status===200){const clone=resp.clone();caches.open(CACHE).then(c=>c.put(e.request,clone));}
+        return resp;
+      }).catch(()=>cached||new Response('Offline',{status:503}));
+    })
+  );
+});`;
+    const blob=new Blob([sw],{type:'application/javascript'});
+    const url=URL.createObjectURL(blob);
+    navigator.serviceWorker.register(url).then(()=>{
+      setSyncStatus('saved');
+    }).catch(()=>{});
+  }
+})();
+
+// ── PWA INSTALL PROMPT ──
+let deferredPrompt=null;
+window.addEventListener('beforeinstallprompt',e=>{
+  e.preventDefault();
+  deferredPrompt=e;
+  document.getElementById('pwaBanner').classList.remove('hidden');
+});
+document.getElementById('pwaInstall').addEventListener('click',async()=>{
+  if(!deferredPrompt)return;
+  deferredPrompt.prompt();
+  const{outcome}=await deferredPrompt.userChoice;
+  deferredPrompt=null;
+  document.getElementById('pwaBanner').classList.add('hidden');
+  if(outcome==='accepted')showToast('🐝 HiveKeeper installed!');
+});
+
+// ── QUICK-ADD MODAL ──
+function closeQA(){document.getElementById('qaModal').classList.remove('open');}
+function selChip(b){document.querySelectorAll('.qa-chip').forEach(c=>c.classList.remove('on'));b.classList.add('on');}
+function saveQA(){
+  const v=document.getElementById('qaInput').value.trim();
+  if(!v){document.getElementById('qaInput').style.borderColor='var(--danger)';return;}
+  closeQA();
+  setSyncStatus('saving');
+  const tasks=loadState().customTasks||[];
+  tasks.push({
+      id: Date.now(),
+      text: v,
+      category: document.querySelector('.qa-chip.on')?.textContent||'Task',
+      hiveId: document.getElementById('qaHive')?.value||null,
+      dateISO: new Date().toISOString(),
+      dateDisplay: document.getElementById('qaDate').textContent,
+      done: false
+    });
+  setTimeout(()=>{saveState({customTasks:tasks});showToast('✓ Task added');},300);
+}
+
+// ── INIT CHART ON FIRST LOAD ──
+document.addEventListener('DOMContentLoaded',()=>{
+  setTimeout(()=>buildChart('honey'),400);
+});
+
+// ══════════════════════════════════════════════════════
+// VOICE INPUT MODULE
+// Web Speech API — 3 priority levels
+// Degrades gracefully if browser lacks support
+// ══════════════════════════════════════════════════════
+
+const SpeechRecognition = window.SpeechRecognition || window.webkitSpeechRecognition;
+const VOICE_SUPPORTED   = !!SpeechRecognition;
+
+// ── Shared recognizer factory ──
+// Detect user's preferred language for voice recognition
+// Falls back to browser language, then en-US
+function getVoiceLang() {
+  const saved = _mem?.voiceLang;
+  if (saved) return saved;
+  const browser = navigator.language || navigator.userLanguage || 'en-US';
+  // Map common browser locales to best SR locale
+  const map = {
+    'de': 'de-DE', 'en': 'en-US', 'en-AU': 'en-AU',
+  };
+  return map[browser] || map[browser.split('-')[0]] || 'en-US';
+}
+
+function makeRecognizer(opts = {}) {
+  if (!VOICE_SUPPORTED) return null;
+  const rec         = new SpeechRecognition();
+  rec.lang          = opts.lang      || getVoiceLang();
+  rec.continuous    = opts.continuous || false;
+  rec.interimResults= opts.interim   !== false;
+  rec.maxAlternatives = 1;
+  return rec;
+}
+
+// ── State 0→1→2 helper ──
+function setVoiceState(micBtn, statusEl, state, txt) {
+  // state: 'idle' | 'listening' | 'done'
+  if (!micBtn) return;
+  micBtn.classList.remove('listening','done');
+  if (statusEl) statusEl.classList.remove('show');
+  if (state === 'listening') {
+    micBtn.classList.add('listening');
+    if (statusEl) {
+      statusEl.classList.add('show');
+      const tEl = statusEl.querySelector('.voice-status-txt');
+      if (tEl) tEl.textContent = txt || 'Listening…';
+    }
+  } else if (state === 'done') {
+    micBtn.classList.add('done');
+    setTimeout(() => micBtn.classList.remove('done'), 1200);
+  }
+}
+
+// ══════════════════════════════════════════════════════
+// PRIORITY 1 — Quick-Add Task (qaModal)
+// ══════════════════════════════════════════════════════
+let _qaRec = null;
+
+function toggleVoiceQA() {
+  if (!VOICE_SUPPORTED) {
+    showToast('🎤 Voice input not supported in this browser');
+    return;
+  }
+  const btn      = document.getElementById('qaMicBtn');
+  const input    = document.getElementById('qaInput');
+  const statusEl = document.getElementById('qaVoiceStatus');
+
+  // If already listening — stop
+  if (_qaRec) {
+    _qaRec.stop();
+    _qaRec = null;
+    setVoiceState(btn, statusEl, 'idle');
+    return;
+  }
+
+  _qaRec = makeRecognizer();
+  input.classList.add('voice-active');
+  // Offline: Web Speech API needs network for cloud recognition
+  if (!navigator.onLine) {
+    showToast('🎤 Offline — voice recognition may be limited', 3000);
+  }
+  setVoiceState(btn, statusEl, 'listening', 'Listening… say your task');
+
+  // Real-time interim display
+  _qaRec.onresult = e => {
+    let interim = '', final = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) final += e.results[i][0].transcript;
+      else interim += e.results[i][0].transcript;
+    }
+    input.value = final || interim;
+    const tEl = statusEl.querySelector('.voice-status-txt');
+    if (tEl) tEl.textContent = final
+      ? `Got: "${final}" — tap ✓ to save`
+      : `Hearing: "${interim}"`;
+  };
+
+  // State 2: done → focus save button
+  _qaRec.onend = () => {
+    _qaRec = null;
+    input.classList.remove('voice-active');
+    setVoiceState(btn, statusEl, 'done');
+    if (input.value.trim()) {
+      // Auto-focus save button for "say-fill-save" loop
+      setTimeout(() => {
+        const saveBtn = document.querySelector('#qaModal .qa-save');
+        if (saveBtn) saveBtn.focus();
+      }, 300);
+    }
+    setTimeout(() => statusEl.classList.remove('show'), 2000);
+  };
+
+  _qaRec.onerror = e => {
+    _qaRec = null;
+    input.classList.remove('voice-active');
+    setVoiceState(btn, statusEl, 'idle');
+    const msgs = {
+      'not-allowed':  '🎤 Microphone permission denied',
+      'no-speech':    '🎤 No speech detected — try again',
+      'network':      '🎤 Network error — check connection',
+    };
+    showToast(msgs[e.error] || '🎤 Voice error: ' + e.error);
+  };
+
+  try { _qaRec.start(); }
+  catch(e) { _qaRec = null; showToast('🎤 Could not start microphone'); }
+}
+
+// ══════════════════════════════════════════════════════
+// PRIORITY 2 — Inspection Notes (continuous + smart extract)
+// ══════════════════════════════════════════════════════
+let _notesRec = null;
+
+// Simple keyword extractor for beekeeping terms
+function extractBeekeepingTags(text) {
+  const t    = text.toLowerCase();
+  const tags = [];
+  if (/queen|egg|laying|brood/.test(t))        tags.push('Queen OK');
+  if (/swarm|cell|superse/.test(t))            tags.push('Swarm risk');
+  if (/mite|varroa/.test(t))                   tags.push('Mite check');
+  if (/honey|harvest|full|super/.test(t))      tags.push('Honey ready');
+  if (/calm|gentle|peaceful/.test(t))          tags.push('Calm colony');
+  if (/aggress|sting|defensive/.test(t))       tags.push('Aggressive');
+  if (/disease|sick|dead|smell/.test(t))       tags.push('Health concern');
+  return tags;
+}
+
+function toggleVoiceNotes() {
+  if (!VOICE_SUPPORTED) {
+    showToast('🎤 Voice input not supported in this browser');
+    return;
+  }
+  const btn      = document.getElementById('notesMicBtn');
+  const textarea = document.getElementById('inspNotes');
+  const statusEl = document.getElementById('notesVoiceStatus');
+
+  if (_notesRec) {
+    _notesRec.stop();
+    _notesRec = null;
+    setVoiceState(btn, statusEl, 'idle');
+    textarea.classList.remove('voice-active');
+    return;
+  }
+
+  _notesRec = makeRecognizer({ continuous: true });
+  textarea.classList.add('voice-active');
+  setVoiceState(btn, statusEl, 'listening', 'Listening… describe the hive');
+
+  let accumulated = textarea.value;  // preserve existing text
+
+  _notesRec.onresult = e => {
+    let newText = '';
+    for (let i = e.resultIndex; i < e.results.length; i++) {
+      if (e.results[i].isFinal) newText += e.results[i][0].transcript + ' ';
+    }
+    if (newText.trim()) {
+      accumulated += (accumulated ? ' ' : '') + newText.trim();
+      textarea.value = accumulated;
+      // Auto-extract tags and show them
+      const tags = extractBeekeepingTags(accumulated);
+      const tEl  = statusEl.querySelector('.voice-status-txt');
+      if (tEl) tEl.textContent = tags.length
+        ? 'Detected: ' + tags.join(' · ')
+        : 'Listening… keep going';
+    }
+  };
+
+  _notesRec.onend = () => {
+    // continuous mode — auto-restart if mic btn still active
+    if (btn.classList.contains('listening') && _notesRec) {
+      try { _notesRec.start(); return; } catch(e) {}
+    }
+    _notesRec = null;
+    textarea.classList.remove('voice-active');
+    setVoiceState(btn, statusEl, 'done');
+    setTimeout(() => statusEl.classList.remove('show'), 3000);
+  };
+
+  _notesRec.onerror = e => {
+    if (e.error === 'no-speech') return; // ignore in continuous mode
+    _notesRec = null;
+    textarea.classList.remove('voice-active');
+    setVoiceState(btn, statusEl, 'idle');
+    showToast('🎤 ' + (e.error === 'not-allowed' ? 'Mic permission denied' : 'Voice error'));
+  };
+
+  try { _notesRec.start(); }
+  catch(e) { _notesRec = null; showToast('🎤 Could not start microphone'); }
+}
+
+// ══════════════════════════════════════════════════════
+// PRIORITY 3 — Global Voice Commands
+// ══════════════════════════════════════════════════════
+let _globalRec = null;
+
+// Command registry — extensible
+const VOICE_COMMANDS = [
+  { pattern: /hive(s| list|keeper.*hive)/i,     action: () => { goTo('hives');     return 'Opening hive list…'; } },
+  { pattern: /dashboard|home/i,                  action: () => { goTo('dashboard'); return 'Going to dashboard…'; } },
+  { pattern: /health/i,                           action: () => { goTo('health');   return 'Opening health…'; } },
+  { pattern: /task|calendar/i,                    action: () => { goTo('tasks');    return 'Opening tasks…'; } },
+  { pattern: /inspect/i,                          action: () => { openM('inspectModal'); return 'Starting inspection…'; } },
+  { pattern: /add task/i,                         action: () => { openQA();          return 'Quick-add task ready…'; } },
+  { pattern: /check.*done|completed|finished/i,  action: () => {
+      const first = document.querySelector('#dashTasks .titem:not(.done-item)');
+      if (first) { first.click(); return 'Task marked complete ✓'; }
+      return 'No pending tasks found';
+  }},
+  { pattern: /dark mode/i,    action: () => { toggleDM();  return 'Dark mode toggled'; } },
+  { pattern: /high contrast/i,action: () => { toggleHC();  return 'High-contrast toggled'; } },
+];
+
+function showCmdOverlay(text) {
+  const el = document.getElementById('cmdOverlay');
+  const tx = document.getElementById('cmdOverlayTxt');
+  if (!el || !tx) return;
+  tx.textContent = text;
+  el.classList.add('show');
+  setTimeout(() => el.classList.remove('show'), 2800);
+}
+
+function toggleGlobalVoice() {
+  if (!VOICE_SUPPORTED) {
+    showToast('🎤 Voice commands not supported in this browser');
+    return;
+  }
+  const fab = document.getElementById('globalVoiceFab');
+
+  if (_globalRec) {
+    _globalRec.stop();
+    _globalRec = null;
+    fab.classList.remove('listening');
+    return;
+  }
+
+  _globalRec = makeRecognizer({ continuous: false, interim: false });
+  fab.classList.add('listening');
+  showToast('🎤 Listening for command…', 3000);
+
+  _globalRec.onresult = e => {
+    const transcript = e.results[0][0].transcript.trim();
+    fab.classList.remove('listening');
+    // Match against command registry
+    let matched = false;
+    for (const cmd of VOICE_COMMANDS) {
+      if (cmd.pattern.test(transcript)) {
+        const result = cmd.action();
+        showCmdOverlay(result);
+        matched = true;
+        break;
+      }
+    }
+    if (!matched) {
+      showCmdOverlay(`"${transcript}" — command not recognized`);
+    }
+  };
+
+  _globalRec.onend = () => {
+    _globalRec = null;
+    fab.classList.remove('listening');
+  };
+
+  _globalRec.onerror = e => {
+    _globalRec = null;
+    fab.classList.remove('listening');
+    if (e.error !== 'no-speech') showToast('🎤 ' + (e.error === 'not-allowed' ? 'Mic permission denied' : 'Voice error'));
+  };
+
+  try { _globalRec.start(); }
+  catch(e) { _globalRec = null; showToast('🎤 Could not start microphone'); }
+}
+
+// Stop all voice on modal close (prevent orphan recognizers)
+const _origCloseM = window.closeM;
+window.closeM = function(id) {
+  if (id === 'inspectModal') {
+    if (_notesRec) { try{_notesRec.stop();}catch(e){} _notesRec=null; }
+    const nb=document.getElementById('notesMicBtn');
+    const ns=document.getElementById('notesVoiceStatus');
+    if(nb)nb.classList.remove('listening','done');
+    if(ns)ns.classList.remove('show');
+  }
+  if (_origCloseM) _origCloseM(id);
+};
+
+
+// ── LANGUAGE PICKER ──
+const VOICE_LANGS = [
+  { code:'en-US', flag:'🇺🇸', label:'English (US)' },
+  { code:'en-AU', flag:'🇦🇺', label:'English (AU)' },
+  { code:'de-DE', flag:'🇩🇪', label:'Deutsch (DE)' },
+];
+function openLangPicker() {
+  const picker = document.getElementById('langPicker');
+  const opts   = document.getElementById('langOpts');
+  if (!picker || !opts) return;
+  const current = getVoiceLang();
+  opts.innerHTML = VOICE_LANGS.map(l => `
+    <div onclick="setVoiceLang('${l.code}','${l.flag} ${l.label}')"
+      style="display:flex;align-items:center;gap:8px;padding:8px 8px;border-radius:var(--r-sm);cursor:pointer;font-size:13px;font-weight:${l.code===current?'700':'500'};color:var(--ink);background:${l.code===current?'var(--sage-light)':'transparent'}">
+      <span style="font-size:16px">${l.flag}</span>${l.label}
+      ${l.code===current?'<span style="margin-left:auto;color:var(--sage)">✓</span>':''}
+    </div>`).join('');
+  picker.style.display = picker.style.display === 'none' ? 'block' : 'none';
+}
+function setVoiceLang(code, label) {
+  _mem.voiceLang = code;
+  saveState({ voiceLang: code });
+  const el = document.getElementById('langLabel');
+  if (el) el.textContent = label;
+  document.getElementById('langPicker').style.display = 'none';
+  showToast('🎤 Voice language: ' + label);
+}
+// Init language label on load
+loadState().then(s => {
+  if (s.voiceLang) {
+    const found = VOICE_LANGS.find(l => l.code === s.voiceLang);
+    if (found) {
+      const el = document.getElementById('langLabel');
+      if (el) el.textContent = found.flag + ' ' + found.label;
+    }
+  }
+}).catch(() => {});
+
+</script>
+</body>
+</html>

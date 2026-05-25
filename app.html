@@ -866,7 +866,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
   </div>
   <div class="scroll"><div class="hvbody">
     <div class="hcard a0">
-      <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="pill p-ok" id="hbadge">● Healthy</div><div style="display:flex;gap:5px"><button id="hiveEditBtn" onclick="editHive(document.getElementById('hiveEditBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:var(--sage-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Edit</button><button id="hiveDeleteBtn" onclick="deleteHive(document.getElementById('hiveDeleteBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Delete</button></div></div></div>
+      <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo" style="flex:1;min-width:0"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px;flex-shrink:0"><div class="pill p-ok" id="hbadge">● Healthy</div><div style="display:flex;gap:5px"><button id="hiveEditBtn" onclick="editHive(document.getElementById('hiveEditBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:var(--sage-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Edit</button><button id="hiveDeleteBtn" onclick="deleteHive(document.getElementById('hiveDeleteBtn').dataset.id)" style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Delete</button></div></div></div>
       <div class="hstats"><div class="hsb"><div class="hsb-v" id="hfr">8</div><div class="hsb-l">Frames</div></div><div class="hsb"><div class="hsb-v" id="hst" style="font-size:14px;padding-top:4px">Strong</div><div class="hsb-l">Strength</div></div><div class="hsb"><div class="hsb-v" id="hmt">1.2%</div><div class="hsb-l">Mites</div></div></div>
     </div>
     <div class="qcard a1">
@@ -1357,8 +1357,8 @@ function showToast(msg,duration=2000){
 }
 
 // ── STORAGE: IDB primary → localStorage fallback → memory safety net ──
-const STORE_KEY='hivekeeper_v2';
-const IDB_DB='hivekeeperDB';
+const STORE_KEY='hivekeeper_v3';
+const IDB_DB='hivekeeperDB3';
 const IDB_KV='kv';
 let _mem={};
 let _idb=null;
@@ -2007,6 +2007,7 @@ const DEFAULT_HIVES = [
   {id:'h2', name:'Hive 2', nickname:'Wildflower', type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-04-01', frames:7,  strength:'Moderate', mites:3.8, status:'treatment', queenSeen:'2025-05-10', queenBreed:'Carniolan',  queenSource:'Local breeder'},
   {id:'h3', name:'Hive 3', nickname:'Buckwheat',  type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-06-01', frames:6,  strength:'Weak',     mites:null,status:'overdue',   queenSeen:'2025-05-01', queenBreed:'Buckfast',   queenSource:'Oregon Bees'},
   {id:'h4', name:'Hive 4', nickname:'Lavender',   type:'Langstroth 10-frame', location:'Portland, OR', est:'2024-03-01', frames:9,  strength:'Strong',   mites:0.8, status:'healthy',  queenSeen:'2025-05-19', queenBreed:'Italian',   queenSource:'Willamette Apiaries'},
+  {id:'h5', name:'Hive 5', nickname:'Sunflower',  type:'Langstroth 10-frame', location:'Portland, OR', est:'2024-06-01', frames:7,  strength:'Moderate', mites:1.5, status:'healthy',  queenSeen:'2025-05-18', queenBreed:'Buckfast',  queenSource:'Oregon Bees'},
 ];
 const DEFAULT_TASKS = [
   {id:'t1', text:'Record Hive 2 treatment result', sub:'Oxalic acid ends today', hiveId:'h2', category:'Treatment', dateISO:new Date().toISOString(), done:false, urgent:true},

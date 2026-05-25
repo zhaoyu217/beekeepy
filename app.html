@@ -66,7 +66,7 @@
   --sh-sm:0 2px 10px rgba(0,0,0,.3);--sh-md:0 4px 20px rgba(0,0,0,.4);
 }
 .shell.dark .fhdr.cream{background:var(--cream)}
-.shell.dark .htabs-bar{background:var(--cream)}
+.shell.dark .htabs-bar{background:var(--cream);padding:8px 16px 12px;display:flex;gap:5px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--stone-light);-webkit-overflow-scrolling:touch}
 .shell.dark .sync-bar{background:var(--cream);border-bottom-color:var(--stone-light)}
 .shell.dark .bnav{background:#1A1612;border-top-color:var(--stone-light)}
 .shell.dark .modal{background:var(--cream)}
@@ -371,7 +371,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 /* ═══ HIVES ═══ */
 .htabs-bar{background:var(--cream);padding:8px 20px 12px;display:flex;gap:7px;overflow-x:auto;flex-shrink:0;border-bottom:1px solid var(--stone-light)}
 .htabs-bar::-webkit-scrollbar{display:none}
-.htab{flex-shrink:0;padding:6px 13px;min-height:44px;border-radius:var(--r-pill);border:1.5px solid var(--stone-light);background:transparent;font-family:'Nunito',sans-serif;font-size:12px;font-weight:600;color:var(--stone);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:5px}
+.htab{flex-shrink:0;padding:5px 11px;min-height:36px;border-radius:var(--r-pill);border:1.5px solid var(--stone-light);background:transparent;font-family:'Nunito',sans-serif;font-size:11px;font-weight:600;color:var(--stone);cursor:pointer;transition:all .18s;display:flex;align-items:center;gap:4px;white-space:nowrap}
 .htab.on{background:var(--sage-deep);border-color:var(--sage-deep);color:var(--white)}
 .hdot2{width:6px;height:6px;border-radius:50%}
 .hvbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:13px}
@@ -865,7 +865,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
   </div>
   <div class="scroll"><div class="hvbody">
     <div class="hcard a0">
-      <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div class="pill p-ok" id="hbadge">● Healthy</div></div>
+      <div class="hcard-top"><div class="hav" id="hav">🍯</div><div class="hnfo"><div class="hn" id="hn">Hive 1 — Clover</div><div class="hm">Langstroth 10-frame · Est. Apr 2023<br>Portland, OR · Backyard</div></div><div style="display:flex;flex-direction:column;align-items:flex-end;gap:6px"><div class="pill p-ok" id="hbadge">● Healthy</div><div style="display:flex;gap:5px"><button onclick="editHive(APP.hives[currentHiveIdx]?.id)" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:var(--sage-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Edit</button><button onclick="deleteHive(APP.hives[currentHiveIdx]?.id)" style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-light);border:none;border-radius:var(--r-sm);padding:4px 9px;cursor:pointer;font-family:Nunito,sans-serif">Delete</button></div></div></div>
       <div class="hstats"><div class="hsb"><div class="hsb-v" id="hfr">8</div><div class="hsb-l">Frames</div></div><div class="hsb"><div class="hsb-v" id="hst" style="font-size:14px;padding-top:4px">Strong</div><div class="hsb-l">Strength</div></div><div class="hsb"><div class="hsb-v" id="hmt">1.2%</div><div class="hsb-l">Mites</div></div></div>
     </div>
     <div class="qcard a1">
@@ -2154,12 +2154,17 @@ function renderHiveTabs() {
   const bar = document.getElementById('hiveTabs');
   if (!bar) return;
   const sub = document.getElementById('hivesSubtitle');
-  if (sub) sub.textContent = APP.hives.length + ' hives · Portland, OR';
+  if (sub) sub.textContent = APP.hives.length + ' hive' + (APP.hives.length===1?'':'s') + ' · Portland, OR';
   bar.innerHTML = APP.hives.map((h,i) => `
     <button class="htab ${i===currentHiveIdx?'on':''}" onclick="selH(${i},this)">
       <span class="hdot2" style="background:${h.status==='healthy'?'#2E7D52':h.status==='treatment'?'#B86800':'#B83030'}"></span>
       ${h.nickname}
     </button>`).join('');
+  // Scroll active tab into view
+  setTimeout(() => {
+    const active = bar.querySelector('.htab.on');
+    if (active) active.scrollIntoView({behavior:'smooth',block:'nearest',inline:'center'});
+  }, 50);
   renderHiveDetail(currentHiveIdx);
 }
 

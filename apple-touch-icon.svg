@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 180 180">
+  <!-- Background -->
+  <rect width="180" height="180" rx="40" fill="#3D5C3D"/>
+  <!-- Center hex -->
+  <polygon points="90,42 124,62 124,102 90,122 56,102 56,62" fill="#E8A020"/>
+  <!-- Top hex -->
+  <polygon points="90,8 118,24 118,56 90,72 62,56 62,24" fill="#C8580A"/>
+  <!-- Bottom-left hex -->
+  <polygon points="56,72 84,88 84,120 56,136 28,120 28,88" fill="#F5C96A"/>
+  <!-- Bottom-right hex -->
+  <polygon points="124,72 152,88 152,120 124,136 96,120 96,88" fill="#C8580A"/>
+  <!-- Center dot -->
+  <circle cx="90" cy="82" r="10" fill="#FAF6F0" opacity="0.6"/>
+</svg>

@@ -1583,68 +1583,20 @@ function saveInspection(){
 
 // ── PWA SERVICE WORKER ──
 // ── OFFLINE CACHE: directly cache this page and assets on load ──
-(function setupOfflineCache() {
-  const CACHE = 'hk-v5';
-  const ASSETS = [
-    location.href,  // cache current page URL (works on any domain)
-    'https://fonts.googleapis.com/css2?family=Lora:ital,wght@0,400;0,600;1,400&family=Nunito:wght@400;500;600;700&display=swap',
-    'https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js'
-  ];
-
-  // Cache assets immediately after page loads
-  if ('caches' in window) {
-    window.addEventListener('load', () => {
-      caches.open(CACHE).then(cache => {
-        ASSETS.forEach(url => {
-          fetch(url).then(resp => {
-            if (resp && resp.status === 200) cache.put(url, resp);
-          }).catch(() => {});
-        });
-      });
-    });
-  }
-
-  // Register SW with blob URL (Cache-First for all requests)
+// ── SERVICE WORKER: registered from real sw.js file ──
+(function registerSW() {
   if (!('serviceWorker' in navigator)) return;
-  const sw = `
-const CACHE='hk-v5';
-self.addEventListener('install', e => { self.skipWaiting(); });
-self.addEventListener('activate', e => {
-  e.waitUntil(caches.keys().then(ks =>
-    Promise.all(ks.filter(k => k !== CACHE).map(k => caches.delete(k)))
-  ));
-  self.clients.claim();
-});
-self.addEventListener('fetch', e => {
-  if (e.request.method !== 'GET') return;
-  e.respondWith(
-    caches.match(e.request).then(cached => {
-      // Cache-First: serve from cache if available
-      if (cached) return cached;
-      // Network fallback: fetch and cache for next time
-      return fetch(e.request).then(resp => {
-        if (resp && resp.status === 200 && resp.type !== 'opaque') {
-          const clone = resp.clone();
-          caches.open(CACHE).then(c => c.put(e.request, clone));
-        }
-        return resp;
-      }).catch(() => {
-        // Offline fallback: try cache one more time
-        return caches.match(e.request);
-      });
+  navigator.serviceWorker.register('/sw.js', { scope: '/' })
+    .then(reg => {
+      if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
+      // Also cache current page via Cache API as backup
+      if ('caches' in window) {
+        caches.open('hk-v5').then(cache => {
+          cache.add(location.href).catch(() => {});
+        });
+      }
     })
-  );
-});`;
-  try {
-    const blob = new Blob([sw], { type: 'application/javascript' });
-    const url  = URL.createObjectURL(blob);
-    navigator.serviceWorker.register(url, { scope: '/' })
-      .then(reg => {
-        // Force SW to take control immediately
-        if (reg.waiting) reg.waiting.postMessage({ type: 'SKIP_WAITING' });
-      })
-      .catch(() => {});
-  } catch (e) {}
+    .catch(() => {});
 })();
 
 // ── PWA INSTALL PROMPT ──

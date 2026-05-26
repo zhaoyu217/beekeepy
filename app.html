@@ -1119,6 +1119,30 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
         <option>Other</option>
       </select>
     </div>
+    <div class="frow fgrp">
+      <div><label class="flbl">Frames</label><input class="finp" id="hiveFrames" type="number" min="1" max="20" placeholder="e.g. 8"></div>
+      <div><label class="flbl">Mite Load (%)</label><input class="finp" id="hiveMites" type="number" min="0" max="100" step="0.1" placeholder="e.g. 1.2"></div>
+    </div>
+    <div class="frow fgrp">
+      <div><label class="flbl">Colony Strength</label>
+        <select class="fsel" id="hiveStrength">
+          <option>Strong</option>
+          <option>Moderate</option>
+          <option>Weak</option>
+        </select>
+      </div>
+      <div><label class="flbl">Status</label>
+        <select class="fsel" id="hiveStatus">
+          <option value="healthy">Healthy</option>
+          <option value="treatment">Treatment</option>
+          <option value="overdue">Overdue</option>
+        </select>
+      </div>
+    </div>
+    <div class="frow fgrp">
+      <div><label class="flbl">Queen Breed</label><input class="finp" id="hiveQueenBreed" placeholder="e.g. Italian"></div>
+      <div><label class="flbl">Queen Source</label><input class="finp" id="hiveQueenSource" placeholder="e.g. Local breeder"></div>
+    </div>
     <button class="msave" onclick="saveHiveForm()">Save Hive ✓</button>
     <button class="mcancel" onclick="closeM('hiveModal')">Cancel</button>
   </div>
@@ -2335,11 +2359,17 @@ function editHive(id) {
   const h = APP.hives.find(h => h.id === id);
   if (!h) return;
   document.getElementById('hiveFormTitle').textContent = 'Edit Hive';
-  document.getElementById('hiveFormId').value = h.id;
-  document.getElementById('hiveName').value = h.name;
+  document.getElementById('hiveFormId').value   = h.id;
+  document.getElementById('hiveName').value     = h.name;
   document.getElementById('hiveNickname').value = h.nickname;
   document.getElementById('hiveLocation').value = h.location;
-  document.getElementById('hiveType').value = h.type;
+  document.getElementById('hiveType').value     = h.type;
+  document.getElementById('hiveFrames').value   = h.frames || '';
+  document.getElementById('hiveMites').value    = h.mites !== null ? h.mites : '';
+  document.getElementById('hiveStrength').value = h.strength || 'Strong';
+  document.getElementById('hiveStatus').value   = h.status || 'healthy';
+  document.getElementById('hiveQueenBreed').value  = h.queenBreed || '';
+  document.getElementById('hiveQueenSource').value = h.queenSource || '';
   openM('hiveModal');
 }
 
@@ -2355,15 +2385,27 @@ function saveHiveForm() {
     return;
   }
 
+  const frames   = parseInt(document.getElementById('hiveFrames').value)   || 8;
+  const mites    = parseFloat(document.getElementById('hiveMites').value);
+  const strength = document.getElementById('hiveStrength').value   || 'Strong';
+  const status   = document.getElementById('hiveStatus').value     || 'healthy';
+  const queenBreed   = document.getElementById('hiveQueenBreed').value.trim();
+  const queenSource  = document.getElementById('hiveQueenSource').value.trim();
+
   if (id) {
     const h = APP.hives.find(h => h.id === id);
-    if (h) { h.name = name; h.nickname = nickname; h.location = location; h.type = type; }
+    if (h) {
+      h.name = name; h.nickname = nickname; h.location = location; h.type = type;
+      h.frames = frames; h.mites = isNaN(mites) ? null : mites;
+      h.strength = strength; h.status = status;
+      h.queenBreed = queenBreed; h.queenSource = queenSource;
+    }
   } else {
     APP.hives.push({
       id: 'h' + Date.now(), name, nickname, type, location,
-      est: new Date().toISOString(), frames: 8, strength: 'Strong',
-      mites: null, status: 'healthy',
-      queenSeen: null, queenBreed: '', queenSource: ''
+      est: new Date().toISOString(), frames, strength,
+      mites: isNaN(mites) ? null : mites,
+      status, queenSeen: null, queenBreed, queenSource
     });
   }
 

@@ -1314,15 +1314,15 @@ async function runAIDiagnosis() {
         contents: [{
           parts: [
             { inline_data: { mime_type: _aiImageType, data: _aiImageBase64 } },
-            { text: `你是一位经验丰富的养蜂病害诊断专家。请仔细分析这张蜂箱照片，用中文回答，格式严格为 JSON，不要有任何其他文字和代码块标记：
+            { text: `You are an expert beekeeping disease and pest diagnostician. Carefully analyze this hive photo and respond ONLY with valid JSON, no other text or code fences:
 {
-  "summary": "一句话总结（15字以内）",
-  "findings": ["发现1", "发现2", "发现3"],
-  "risk": "low或medium或high或critical",
-  "recommendations": ["建议1", "建议2"],
-  "diseases_detected": ["病害名称"]
+  "summary": "One-line summary (max 10 words)",
+  "findings": ["finding 1", "finding 2", "finding 3"],
+  "risk": "low or medium or high or critical",
+  "recommendations": ["recommendation 1", "recommendation 2"],
+  "diseases_detected": ["disease name"] or []
 }
-如果图片不清晰或不是蜂箱相关内容，请在 summary 中说明，diseases_detected 返回空数组。` }
+If the image is unclear or not hive-related, state that in summary and return empty diseases_detected.` }
           ]
         }],
         generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
@@ -1331,7 +1331,7 @@ async function runAIDiagnosis() {
 
     if (!response.ok) {
       const err = await response.json().catch(()=>({}));
-      showToast('⚠ 分析失败：' + (err.error?.message || response.status));
+      showToast('Analysis failed: ' + (err.error?.message || response.status));
       document.getElementById('aiLoading').style.display = 'none';
       document.getElementById('aiAnalyzeBtn').style.display = 'block';
       return;
@@ -1345,7 +1345,7 @@ async function runAIDiagnosis() {
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       result = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
     } catch {
-      document.getElementById('aiResTitle').textContent = '分析完成';
+      document.getElementById('aiResTitle').textContent = 'Analysis complete';
       document.getElementById('aiResBody').innerHTML = `<div class="ai-res-i" style="margin-top:6px">${raw}</div>`;
       document.getElementById('aiLoading').style.display = 'none';
       document.getElementById('aiRes').style.display = 'block';
@@ -1353,7 +1353,7 @@ async function runAIDiagnosis() {
     }
 
     const riskColor = { low:'var(--ok)', medium:'var(--warn)', high:'var(--danger)', critical:'var(--danger)' };
-    const riskLabel = { low:'✓ 风险低', medium:'⚠ 需关注', high:'🚨 风险高', critical:'🚨 紧急处理' };
+    const riskLabel = { low:'✓ Low risk', medium:'⚠ Monitor closely', high:'🚨 High risk', critical:'🚨 Act immediately' };
     const risk = result.risk || 'low';
 
     let html = '';
@@ -1369,11 +1369,11 @@ async function runAIDiagnosis() {
       html += result.findings.map(f=>`<div class="ai-res-i">${f}</div>`).join('');
     }
     if (result.recommendations?.length) {
-      html += `<div style="margin-top:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em">建议措施</div>`;
+      html += `<div style="margin-top:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em">Recommendations</div>`;
       html += result.recommendations.map(r=>`<div class="ai-res-i" style="color:var(--honey-mid)">${r}</div>`).join('');
     }
 
-    document.getElementById('aiResTitle').textContent = result.summary || '分析完成';
+    document.getElementById('aiResTitle').textContent = result.summary || 'Analysis complete';
     document.getElementById('aiResBody').innerHTML = html;
     document.getElementById('aiLoading').style.display = 'none';
     document.getElementById('aiRes').style.display = 'block';
@@ -1381,7 +1381,7 @@ async function runAIDiagnosis() {
   } catch (err) {
     document.getElementById('aiLoading').style.display = 'none';
     document.getElementById('aiAnalyzeBtn').style.display = 'block';
-    showToast('⚠ 网络错误，请检查连接');
+    showToast('⚠ Network error — check connection');
   }
 }
 

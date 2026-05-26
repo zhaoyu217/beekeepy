@@ -441,7 +441,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .comp-pct{font-size:18px;color:rgba(255,255,255,.55);margin-bottom:5px}
 .comp-desc{font-size:12px;color:rgba(255,255,255,.6);line-height:1.5}
 .comp-track{height:8px;background:rgba(255,255,255,.14);border-radius:var(--r-pill);overflow:hidden;margin-bottom:8px}
-.comp-fill{height:100%;background:var(--honey);border-radius:var(--r-pill);width:73%;transition:width .8s cubic-bezier(.4,0,.2,1)}
+.comp-fill{height:100%;background:var(--honey);border-radius:var(--r-pill);width:0%;transition:width .8s cubic-bezier(.4,0,.2,1)}
 .comp-flags{display:flex;gap:6px;flex-wrap:wrap}
 .cflag{font-size:10px;font-weight:600;padding:3px 8px;border-radius:var(--r-pill);background:rgba(255,255,255,.12);color:rgba(255,255,255,.8)}
 .calc-card{background:var(--white);border-radius:var(--r-xl);padding:16px;box-shadow:var(--sh-md)}
@@ -800,25 +800,21 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
         <div class="hstat"><div class="hstat-num" id="statCompliance">—<span class="hstat-u">%</span></div><div class="hstat-l">Compliance</div><div class="hstat-trend trend-up" id="statCompTrend"></div></div>
       </div>
     </div>
-    <div class="wbanner a1" onclick="goTo('health')">
+    <div class="wbanner a1" id="warnBanner" onclick="goTo('health')" style="display:none">
       <div class="wb-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"/></svg></div>
-      <div class="wb-tx"><div class="wb-title">Hive 2 treatment ends today</div><div class="wb-sub">Oxalic acid — record results now</div></div>
+      <div class="wb-tx"><div class="wb-title" id="warnBannerTitle"></div><div class="wb-sub" id="warnBannerSub"></div></div>
       <div class="wb-arr"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div>
     </div>
     <div><span class="slbl">Quick Access</span>
       <div class="g22">
-        <div class="gc a1" onclick="goTo('hives')"><div class="gc-ico gi-sage">🏠</div><div class="gc-name">My Hives</div><div class="gc-meta" id="gcHivesMeta">4 hives · 3 healthy</div><div class="pill p-ok" id="gcHivesPill">● All monitored</div></div>
-        <div class="gc a2" onclick="goTo('health')"><div class="gc-ico gi-warn">🔬</div><div class="gc-name">Health</div><div class="gc-meta" id="gcHealthMeta">Avg mite load 1.8%</div><div class="pill" id="gcHealthPill">⚠ Treatment active</div></div>
-        <div class="gc a3" onclick="goTo('tasks')"><div class="gc-ico gi-honey">📋</div><div class="gc-name">Tasks</div><div class="gc-meta" id="gcTasksMeta">3 pending today</div><div class="pill" id="gcTasksPill">2 urgent</div></div>
-        <div class="gc a4"><div class="gc-ico gi-ok">🍯</div><div class="gc-name">Harvest Log</div><div class="gc-meta" id="gcHarvestMeta">Last: May 3 · 14lb</div><div class="pill p-ok" id="gcHarvestPill">84lb this season</div></div>
+        <div class="gc a1" onclick="goTo('hives')"><div class="gc-ico gi-sage">🏠</div><div class="gc-name">My Hives</div><div class="gc-meta" id="gcHivesMeta">—</div><div class="pill p-ok" id="gcHivesPill">● All monitored</div></div>
+        <div class="gc a2" onclick="goTo('health')"><div class="gc-ico gi-warn">🔬</div><div class="gc-name">Health</div><div class="gc-meta" id="gcHealthMeta">—</div><div class="pill" id="gcHealthPill">—</div></div>
+        <div class="gc a3" onclick="goTo('tasks')"><div class="gc-ico gi-honey">📋</div><div class="gc-name">Tasks</div><div class="gc-meta" id="gcTasksMeta">—</div><div class="pill" id="gcTasksPill">—</div></div>
+        <div class="gc a4"><div class="gc-ico gi-ok">🍯</div><div class="gc-name">Harvest Log</div><div class="gc-meta" id="gcHarvestMeta">—</div><div class="pill p-ok" id="gcHarvestPill">—</div></div>
       </div>
     </div>
     <div><span class="slbl">Today's Tasks</span>
-      <div class="tasklist" id="dashTasks">
-        <div class="titem a1" onclick="togDT(this)"><div class="tchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="tt"><div class="tt-nm">Record Hive 2 treatment result</div><div class="tt-sub">Oxalic acid ends today</div></div><div class="ttag tg-urg">Urgent</div></div>
-        <div class="titem a2" onclick="togDT(this)"><div class="tchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="tt"><div class="tt-nm">Inspect Hive 3 — overdue 12 days</div><div class="tt-sub">Varroa check recommended</div></div><div class="ttag tg-urg">Urgent</div></div>
-        <div class="titem a3" onclick="togDT(this)"><div class="tchk"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><div class="tt"><div class="tt-nm">Check Hive 1 for swarm cells</div><div class="tt-sub">Swarm season — every 7 days</div></div><div class="ttag tg-tod">Today</div></div>
-      </div>
+      <div class="tasklist" id="dashTasks"></div>
       <div class="empty-state" id="emptyTasks" style="display:none">
         <div class="empty-emoji">☀️</div>
         <div class="empty-title">All done for today!</div>
@@ -840,11 +836,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
 
     <div><span class="slbl">Recent Activity</span>
-      <div class="rec-list" id="recList">
-        <div class="ritem a1"><div class="rdot rd-ok"></div><div class="ri"><div class="ri-nm">Hive 1 — Routine inspection</div><div class="ri-mt">Queen seen · 8 frames · Mites 1.2%</div></div><div class="ri-t">3d ago</div></div>
-        <div class="ritem a2"><div class="rdot rd-warn"></div><div class="ri"><div class="ri-nm">Hive 2 — Oxalic acid started</div><div class="ri-mt">Mites 3.8% → treatment begun</div></div><div class="ri-t">7d ago</div></div>
-        <div class="ritem a3"><div class="rdot rd-ok"></div><div class="ri"><div class="ri-nm">Hive 1 — Harvest 14lb 🍯</div><div class="ri-mt">Clover honey · 17.2% moisture</div></div><div class="ri-t">22d ago</div></div>
-      </div>
+      <div class="rec-list" id="recList"></div>
       <div class="list-empty" id="recEmpty">
         <div class="le-emoji">📋</div>
         <div class="le-title">No activity yet</div>
@@ -895,7 +887,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 <div class="page" id="pg-health">
   <div class="fhdr cream"><div class="hrow"><div><div class="htitle d">Hive <em>Health</em></div><div class="hsub d">Varroa · Treatments · Disease · Compliance</div></div><button class="ibtn bg-sage" onclick="openM('treatModal')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button></div></div>
   <div class="scroll"><div class="hbody">
-    <div class="comp-card a0"><div class="comp-lbl">Compliance Score</div><div class="comp-row"><div class="comp-num">73</div><div class="comp-pct">%</div><div class="comp-desc">Records meet 73%<br>of requirements</div></div><div class="comp-track"><div class="comp-fill"></div></div><div class="comp-flags"><div class="cflag">🇦🇺 AU: 2 missing</div><div class="cflag">🇩🇪 DE: Compliant</div><div class="cflag">🇺🇸 US: Up to date</div></div></div>
+    <div class="comp-card a0"><div class="comp-lbl">Compliance Score</div><div class="comp-row"><div class="comp-num" id="compNum">—</div><div class="comp-pct">%</div><div class="comp-desc" id="compDesc">Inspections in last 30 days</div></div><div class="comp-track"><div class="comp-fill" id="compFill" style="width:0%"></div></div><div class="comp-flags" id="compFlags"></div></div>
     <div><span class="slbl">Varroa Calculator</span>
       <div class="calc-card a1"><div class="calc-hrow"><div class="calc-em">🔬</div><div class="calc-ttl">Mite Load Calculator</div></div><div class="calc-sub">Enter your alcohol wash or sugar roll counts below.</div>
         <div class="mpills"><button class="mpill on" onclick="setMeth(this)">Alcohol Wash</button><button class="mpill" onclick="setMeth(this)">Sugar Roll</button><button class="mpill" onclick="setMeth(this)">Sticky Board</button></div>
@@ -1137,7 +1129,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     <div class="hc-toggle"><div class="hc-toggle-l"><div class="hc-ico">☀️</div><div><div class="hc-nm">Outdoor High-Contrast</div><div class="hc-sb">Boost readability in sunlight</div></div></div><div class="tog" id="hcTog" onclick="toggleHC()"><div class="tog-k"></div></div></div>
     <!-- Dark mode -->
     <div class="dm-toggle"><div class="dm-toggle-l"><div class="dm-ico">🌙</div><div><div class="dm-nm">Dark Mode</div><div class="dm-sb">Easy on eyes at dusk &amp; dawn</div></div></div><div class="tog off" id="dmTog" onclick="toggleDM()"><div class="tog-k"></div></div></div>
-    <div class="si"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div><div><div class="si-nm">Profile &amp; Apiary</div><div class="si-sb">Alex · 4 hives · Portland OR</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
+    <div class="si"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"/></svg></div><div><div class="si-nm">Profile &amp; Apiary</div><div class="si-sb" id="profileSub">—</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
     <div class="si" onclick="openLangPicker()" style="cursor:pointer"><div class="si-l"><div class="si-ico"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M3.055 11H5a2 2 0 012 2v1a2 2 0 002 2 2 2 0 012 2v2.945M8 3.935V5.5A2.5 2.5 0 0010.5 8h.5a2 2 0 012 2 2 2 0 104 0 2 2 0 012-2h1.064"/></svg></div><div><div class="si-nm">Region &amp; Voice Language</div><div class="si-sb" id="langLabel">🇺🇸 United States · English</div></div></div><div class="si-ch"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7"/></svg></div></div>
     <!-- Language picker (inline expand) -->
     <div id="langPicker" style="display:none;background:var(--white);border-radius:var(--r-md);padding:8px;box-shadow:var(--sh-sm);margin-top:-4px">
@@ -1262,8 +1254,6 @@ function goTo(id){
     if(s)s.scrollTop=0;
   },120);
 }
-const HV=[{av:'🍯',nm:'Hive 1 — Clover',bc:'p-ok',bt:'● Healthy',fr:'8',st:'Strong',mt:'1.2%',last:'3 days ago',nxt:'4 days',cd:true},{av:'💊',nm:'Hive 2 — Wildflower',bc:'p-warn',bt:'⚠ Treatment',fr:'7',st:'Moderate',mt:'3.8%',last:'7 days ago',nxt:'now',cd:false},{av:'⚠️',nm:'Hive 3 — Buckwheat',bc:'p-alert',bt:'! Overdue',fr:'6',st:'Weak',mt:'N/A',last:'12 days ago',nxt:'now',cd:false},{av:'🌸',nm:'Hive 4 — Lavender',bc:'p-ok',bt:'● Healthy',fr:'9',st:'Strong',mt:'0.8%',last:'5 days ago',nxt:'2 days',cd:true}];
-function selH(i,b){document.querySelectorAll('.htab').forEach(t=>t.classList.remove('on'));b.classList.add('on');const h=HV[i];document.getElementById('hav').textContent=h.av;document.getElementById('hn').textContent=h.nm;const bd=document.getElementById('hbadge');bd.className='pill '+h.bc;bd.textContent=h.bt;document.getElementById('hfr').textContent=h.fr;document.getElementById('hst').textContent=h.st;document.getElementById('hmt').textContent=h.mt;document.querySelector('.cta-msg').innerHTML=h.last+' — Last check<br>Next window: <em>'+h.nxt+'</em>';document.getElementById('coolbar').style.display=h.cd?'flex':'none';}
 function calcM(){const m=parseFloat(document.getElementById('miteCount').value)||0,b=parseFloat(document.getElementById('beeCount').value)||300,p=b>0?(m/b*100):0;document.getElementById('cresP').textContent=p.toFixed(1)+'%';document.getElementById('thPtr').style.left=Math.min(p/8*100,98)+'%';const r=document.getElementById('cres');if(p<2){r.className='cres ok';document.getElementById('cresS').textContent='✓ Safe threshold';document.getElementById('cresR').textContent='Monitor monthly. No treatment needed.';}else if(p<4){r.className='cres warn';document.getElementById('cresS').textContent='⚠ Treatment recommended';document.getElementById('cresR').textContent='Mite load rising. Plan treatment in 1–2 weeks.';}else{r.className='cres alert';document.getElementById('cresS').textContent='🚨 Treat immediately';document.getElementById('cresR').textContent='High infestation. Colony at risk. Act now.';}}
 calcM();
 function setMeth(b){document.querySelectorAll('.mpill').forEach(x=>x.classList.remove('on'));b.classList.add('on');}
@@ -1404,19 +1394,6 @@ document.querySelectorAll('.mover').forEach(el=>el.addEventListener('click',func
 document.getElementById('inspectBtn').addEventListener('click',()=>openM('inspectModal'));
 document.getElementById('settingsBtn').addEventListener('click',()=>document.getElementById('sover').classList.add('open'));
 function closeSett(e){if(!e||e.target===document.getElementById('sover'))document.getElementById('sover').classList.remove('open');}
-function togDT(item){
-  const c=item.querySelector('.tchk'),n=item.querySelector('.tt-nm'),t=item.querySelector('.ttag');
-  c.classList.toggle('on');n.classList.toggle('done');
-  if(c.classList.contains('on')){t.className='ttag tg-done';t.textContent='Done ✓';}
-  else{t.className='ttag tg-urg';t.textContent='Urgent';}
-  // Empty state: classList-based (respects .show CSS rule)
-  const all=document.querySelectorAll('#dashTasks .tchk');
-  const done=[...all].every(x=>x.classList.contains('on'));
-  document.getElementById('dashTasks').style.display = done ? 'none' : '';
-  const et=document.getElementById('emptyTasks');
-  if(done){et.classList.add('show');}else{et.classList.remove('show');}
-}
-
 // ── DARK MODE ──
 function toggleDM(){
   const sh=document.getElementById('shell');
@@ -1426,14 +1403,6 @@ function toggleDM(){
   if(typeof buildChart==='function')buildChart(_currentChartType||'honey');
   saveState({darkMode:on});
   showToast(on?'🌙 Dark mode on':'☀️ Light mode restored');
-}
-function toggleHC(){
-  const sh=document.getElementById('shell');
-  const tog=document.getElementById('hcTog');
-  const on=sh.classList.toggle('hc');
-  tog.classList.toggle('off',!on);
-  saveState({hcMode:on});
-  showToast(on?'☀️ High-contrast on':'🌿 Normal mode restored');
 }
 // ── HIGH-CONTRAST OUTDOOR MODE ──
 function toggleHC(){
@@ -1510,7 +1479,6 @@ function togFti(item){
   const c=item.querySelector('.fchk'),n=item.querySelector('.fi-nm');
   c.classList.toggle('on');n.classList.toggle('done');
 }
-function togChk(item){const b=item.querySelector('.chk-b'),l=item.querySelector('.chk-lbl');b.classList.toggle('on');l.classList.toggle('done');}
 function setR(n){document.querySelectorAll('.star').forEach((s,i)=>s.classList.toggle('on',i<n));}
 (function(){
   const g=document.getElementById('calGrid');
@@ -1796,25 +1764,6 @@ function togChk(item){
 }
 
 // ── ENHANCED SAVE WITH ANIMATION ──
-function saveInspection(){
-  const btn=document.querySelector('#inspectModal .msave');
-  btn.classList.add('btn-saving');
-  btn.innerHTML='<div class="spinner" style="margin:0 auto"></div>';
-  setSyncStatus('saving');
-  setTimeout(()=>{
-    btn.classList.remove('btn-saving');
-    btn.classList.add('btn-saved');
-    btn.textContent='Saved ✓';
-    saveState({lastInspection:new Date().toISOString()});
-    setTimeout(()=>{
-      closeM('inspectModal');
-      btn.classList.remove('btn-saved');
-      btn.textContent='Save Inspection ✓';
-      showToast('🐝 Inspection saved successfully');
-    },700);
-  },900);
-}
-
 // ── PWA SERVICE WORKER ──
 // ── OFFLINE CACHE: directly cache this page and assets on load ──
 // ── SERVICE WORKER: registered from real sw.js file ──
@@ -2304,7 +2253,10 @@ function renderDashboard() {
 
   // Update hero stats
   const heroLoc = document.getElementById('heroLoc');
-  if (heroLoc) heroLoc.textContent = `${totalHives} Hive${totalHives===1?'':'s'} · Portland, OR`;
+  if (heroLoc) {
+    const locs = [...new Set(APP.hives.map(h => h.location).filter(Boolean))];
+    heroLoc.textContent = `${totalHives} Hive${totalHives===1?'':'s'} · ${locs[0] || 'My Apiary'}`;
+  }
   const heroBadge = document.getElementById('heroBadge');
   if (heroBadge) heroBadge.textContent = `${healthyCount} Healthy`;
   const statMites = document.getElementById('statMites');
@@ -2352,6 +2304,14 @@ function renderDashboard() {
   renderHeroStats();
   // Quick access cards — dynamic
   renderQuickAccess();
+  // Warning banner
+  renderWarnBanner();
+  // Dashboard tasks
+  renderDashTasks();
+  // Recent activity
+  renderRecentActivity();
+  // Settings profile
+  renderSettingsProfile();
   // Init chart after first render
   if (typeof buildChart === 'function' && !window._chartBuilt) {
     window._chartBuilt = true;
@@ -2541,6 +2501,84 @@ function deleteTreatment(id) {
   showToast('Treatment deleted');
 }
 
+function renderWarnBanner() {
+  const banner = document.getElementById('warnBanner');
+  const title  = document.getElementById('warnBannerTitle');
+  const sub    = document.getElementById('warnBannerSub');
+  if (!banner) return;
+
+  const today = new Date(); today.setHours(0,0,0,0);
+
+  // Check active treatments ending soon
+  const endingSoon = (APP.treatments || []).find(t => {
+    if (!t.endISO) return false;
+    const end = new Date(t.endISO); end.setHours(0,0,0,0);
+    const diff = Math.ceil((end - today) / 86400000);
+    return diff >= 0 && diff <= 3;
+  });
+
+  // Check overdue hives
+  const overdueHives = APP.hives.filter(h => h.status === 'overdue');
+
+  if (endingSoon) {
+    const hive = APP.hives.find(h => h.id === endingSoon.hiveId);
+    const end  = new Date(endingSoon.endISO);
+    const diff = Math.ceil((end - today) / 86400000);
+    const daysTxt = diff === 0 ? 'ends today' : `ends in ${diff} day${diff===1?'':'s'}`;
+    title.textContent = `${hive ? hive.name : 'Hive'} treatment ${daysTxt}`;
+    sub.textContent   = `${endingSoon.product} — record results now`;
+    banner.style.display = 'flex';
+  } else if (overdueHives.length > 0) {
+    title.textContent = `${overdueHives.length} hive${overdueHives.length>1?'s':''} overdue for inspection`;
+    sub.textContent   = `${overdueHives.map(h=>h.name).join(', ')} — check now`;
+    banner.style.display = 'flex';
+  } else {
+    banner.style.display = 'none';
+  }
+}
+
+function renderDashTasks() {
+  const container = document.getElementById('dashTasks');
+  const emptyEl   = document.getElementById('emptyTasks');
+  if (!container) return;
+
+  const pending = (APP.tasks || []).filter(t => !t.done).slice(0, 4);
+  const checkSvg = `<svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>`;
+
+  if (pending.length === 0) {
+    container.innerHTML = '';
+    if (emptyEl) emptyEl.style.display = 'flex';
+    return;
+  }
+  if (emptyEl) emptyEl.style.display = 'none';
+
+  const colors = ['a1','a2','a3','a4'];
+  container.innerHTML = pending.map((t, i) => {
+    const hive = APP.hives.find(h => h.id === t.hiveId);
+    const hiveName = hive ? hive.name : '';
+    const tag  = t.urgent
+      ? `<div class="ttag tg-urg">Urgent</div>`
+      : `<div class="ttag tg-tod">Today</div>`;
+    return `<div class="titem ${colors[i%4]}" onclick="toggleTask('${t.id}');renderDashboard()">
+      <div class="tchk">${checkSvg}</div>
+      <div class="tt">
+        <div class="tt-nm">${t.text}</div>
+        ${t.sub || hiveName ? `<div class="tt-sub">${t.sub || hiveName}</div>` : ''}
+      </div>
+      ${tag}
+    </div>`;
+  }).join('');
+}
+
+function renderSettingsProfile() {
+  const el = document.getElementById('profileSub');
+  if (!el) return;
+  const total = APP.hives.length;
+  const locs  = [...new Set(APP.hives.map(h => h.location).filter(Boolean))];
+  const loc   = locs[0] || 'My Apiary';
+  el.textContent = `${total} hive${total===1?'':'s'} · ${loc}`;
+}
+
 function renderQuickAccess() {
   const total   = APP.hives.length;
   const healthy = APP.hives.filter(h => h.status === 'healthy').length;
@@ -2657,12 +2695,39 @@ function renderHeroStats() {
   }
 
   // ── Compliance card on Health page
-  const compNum  = document.querySelector('.comp-num');
-  const compDesc = document.querySelector('.comp-desc');
-  const compFill = document.querySelector('.comp-fill');
+  const compNum  = document.getElementById('compNum');
+  const compDesc = document.getElementById('compDesc');
+  const compFill = document.getElementById('compFill');
+  const compFlags= document.getElementById('compFlags');
   if (compNum)  compNum.textContent = compPct;
-  if (compDesc) compDesc.innerHTML = `${compliantHives} of ${APP.hives.length} hives<br>inspected in last 30 days`;
+  if (compDesc) compDesc.innerHTML  = `${compliantHives} of ${APP.hives.length} hive${APP.hives.length===1?'':'s'}<br>inspected in last 30 days`;
   if (compFill) compFill.style.width = compPct + '%';
+  if (compFlags) {
+    const overdueList = APP.hives.filter(h => {
+      const lastInsp = (APP.inspections||[])
+        .filter(i => i.hiveId === h.id)
+        .sort((a,b) => new Date(b.dateISO)-new Date(a.dateISO))[0];
+      return !lastInsp || new Date(lastInsp.dateISO) < thirtyDaysAgo;
+    });
+    const flags = [];
+    if (overdueList.length === 0) {
+      flags.push(`<div class="cflag">✓ All hives inspected</div>`);
+    } else {
+      overdueList.slice(0,3).forEach(h => {
+        flags.push(`<div class="cflag">⚠ ${h.name} overdue</div>`);
+      });
+    }
+    const activeTreat = (APP.treatments||[]).filter(t => {
+      const today2 = new Date(); today2.setHours(0,0,0,0);
+      const start = new Date(t.startISO);
+      const end   = t.endISO ? new Date(t.endISO) : null;
+      return start <= today2 && (!end || end >= today2);
+    });
+    if (activeTreat.length > 0) {
+      flags.push(`<div class="cflag">💊 ${activeTreat.length} active treatment${activeTreat.length>1?'s':''}</div>`);
+    }
+    compFlags.innerHTML = flags.join('');
+  }
 }
 
 function renderRecentActivity() {
@@ -2695,7 +2760,10 @@ function renderHiveTabs() {
   const bar = document.getElementById('hiveTabs');
   if (!bar) return;
   const sub = document.getElementById('hivesSubtitle');
-  if (sub) sub.textContent = APP.hives.length + ' hive' + (APP.hives.length===1?'':'s') + ' · Portland, OR';
+  if (sub) {
+    const locs = [...new Set(APP.hives.map(h => h.location).filter(Boolean))];
+    sub.textContent = APP.hives.length + ' hive' + (APP.hives.length===1?'':'s') + ' · ' + (locs[0] || 'My Apiary');
+  }
   bar.innerHTML = APP.hives.map((h,i) => `
     <button class="htab ${i===currentHiveIdx?'on':''}" onclick="selH(${i},this)">
       <span class="hdot2" style="background:${h.status==='healthy'?'#2E7D52':h.status==='treatment'?'#B86800':'#B83030'}"></span>
@@ -2880,7 +2948,8 @@ function openAddHive() {
   document.getElementById('hiveFormId').value = '';
   document.getElementById('hiveName').value = '';
   document.getElementById('hiveNickname').value = '';
-  document.getElementById('hiveLocation').value = 'Portland, OR';
+  const locs = [...new Set(APP.hives.map(h => h.location).filter(Boolean))];
+  document.getElementById('hiveLocation').value = locs[0] || '';
   document.getElementById('hiveType').value = 'Langstroth 10-frame';
   document.getElementById('hiveStatus').value = 'healthy';
   document.getElementById('hiveEstYear').value = new Date().getFullYear();

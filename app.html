@@ -2399,9 +2399,9 @@ function renderTreatments() {
     const tagClass= st==='active' ? 'ttg-a' : st==='done' ? 'ttg-d' : 'ttg-s';
     const tagTxt  = st==='active' ? 'Active' : st==='done' ? 'Completed' : 'Scheduled';
 
-    const startFmt = t.startISO ? new Date(t.startISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'}) : '';
-    const endFmt   = t.endISO   ? new Date(t.endISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})   : '';
-    const wdFmt    = t.withdrawISO ? new Date(t.withdrawISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'}) : '';
+    const startFmt = t.startISO ? new Date(t.startISO).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
+    const endFmt   = t.endISO   ? new Date(t.endISO).toLocaleDateString('en-US',{month:'short',day:'numeric'})   : '';
+    const wdFmt    = t.withdrawISO ? new Date(t.withdrawISO).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : '';
     const dateRange = endFmt ? `${startFmt}–${endFmt}` : startFmt;
 
     let countHtml = '';

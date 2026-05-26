@@ -2235,7 +2235,7 @@ function renderHiveDetail(i) {
   if(hm) hm.innerHTML = `${h.type} · Est. ${new Date(h.est).getFullYear()}<br>${h.location}`;
   // Queen info
   const qv = document.querySelectorAll('.qf-v');
-  if (qv.length >= 5) {
+  if (qv.length >= 4) {
     qv[0].textContent = h.queenSeen ? '✓ Seen ' + new Date(h.queenSeen).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Not seen recently';
     qv[0].style.color = h.queenSeen ? 'var(--ok)' : 'var(--danger)';
     const estYear = h.est ? new Date(h.est).getFullYear() : '—';
@@ -2439,6 +2439,7 @@ function saveHiveForm() {
   persistApp();
   closeM('hiveModal');
   renderHiveTabs();
+  renderHiveDetail(currentHiveIdx);
   renderDashboard();
   showToast(id ? '✓ Hive updated' : '✓ New hive added');
 }

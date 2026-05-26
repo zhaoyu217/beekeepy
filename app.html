@@ -1027,7 +1027,11 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
       <div class="chk-i" onclick="togChk(this)"><div class="chk-b"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="3"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg></div><span class="chk-lbl">No deformed wings (DWV)</span></div>
     </div>
     <div class="rat-sec"><div class="rat-lbl">Colony Strength</div><div class="stars" id="stars"><span class="star" onclick="setR(1)">🐝</span><span class="star" onclick="setR(2)">🐝</span><span class="star on" onclick="setR(3)">🐝</span><span class="star on" onclick="setR(4)">🐝</span><span class="star on" onclick="setR(5)">🐝</span></div></div>
-    <div class="photo-sec"><div class="rat-lbl">Photos</div><div class="pp"><div class="pprev" role="img" aria-label="Photo preview placeholder">🖼️</div></div><div class="pdrop" onclick="alert('Camera / photo library')" data-lazy="true" aria-label="Add photo — tap to open camera or photo library"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg><p>Add a photo</p><span>Camera or library</span></div></div>
+    <div class="photo-sec"><div class="rat-lbl">Photos</div><div class="pp" id="photoPreviewContainer"><div class="pprev" role="img" aria-label="Photo preview placeholder" style="display:none"></div></div><div class="pdrop" onclick="document.getElementById('photoFileInput').click()" aria-label="Add photo">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M3 9a2 2 0 012-2h.93a2 2 0 001.664-.89l.812-1.22A2 2 0 0110.07 4h3.86a2 2 0 011.664.89l.812 1.22A2 2 0 0018.07 7H19a2 2 0 012 2v9a2 2 0 01-2 2H5a2 2 0 01-2-2V9z"/><path stroke-linecap="round" stroke-linejoin="round" d="M15 13a3 3 0 11-6 0 3 3 0 016 0z"/></svg>
+        <p>Add a photo</p><span>Camera or library</span>
+      </div>
+      <input type="file" id="photoFileInput" accept="image/*" capture="environment" multiple style="display:none" onchange="handlePhotoUpload(this)"></div>
     <div class="notes-sec">
       <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:9px">
         <div class="rat-lbl" style="margin-bottom:0">Notes</div>
@@ -2530,6 +2534,61 @@ async function saveQA() {
     run();
   }
 })();
+
+// ── PHOTO UPLOAD ──
+let _inspPhotos = [];  // stores base64 photos for current inspection
+
+function handlePhotoUpload(input) {
+  const files = Array.from(input.files);
+  if (!files.length) return;
+
+  const container = document.getElementById('photoPreviewContainer');
+  if (!container) return;
+
+  files.forEach(file => {
+    if (!file.type.startsWith('image/')) return;
+
+    const reader = new FileReader();
+    reader.onload = e => {
+      const base64 = e.target.result;
+      _inspPhotos.push(base64);
+
+      // Add preview thumbnail
+      const thumb = document.createElement('div');
+      thumb.className = 'pprev';
+      thumb.style.cssText = 'position:relative;overflow:hidden;cursor:pointer';
+      thumb.innerHTML = `<img src="${base64}" style="width:100%;height:100%;object-fit:cover;border-radius:var(--r-sm)" alt="Inspection photo">
+        <button onclick="removePhoto(this,'${_inspPhotos.length-1}')" style="position:absolute;top:2px;right:2px;width:18px;height:18px;border-radius:50%;background:rgba(30,25,22,.7);color:white;border:none;font-size:10px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>`;
+      container.appendChild(thumb);
+    };
+    reader.readAsDataURL(file);
+  });
+
+  // Reset input so same file can be re-selected
+  input.value = '';
+  showToast(`✓ ${files.length} photo${files.length>1?'s':''} added`);
+}
+
+function removePhoto(btn, idx) {
+  _inspPhotos.splice(parseInt(idx), 1);
+  btn.closest('.pprev').remove();
+}
+
+// Reset photos when inspection modal closes
+const _origCloseMForPhotos = window.closeM;
+window.closeM = function(id) {
+  if (id === 'inspectModal') {
+    _inspPhotos = [];
+    const container = document.getElementById('photoPreviewContainer');
+    if (container) {
+      // Remove all dynamic thumbs, keep only the placeholder
+      container.querySelectorAll('.pprev:not([role="img"])').forEach(el => el.remove());
+    }
+    document.getElementById('photoFileInput').value = '';
+  }
+  if (_origCloseMForPhotos) _origCloseMForPhotos(id);
+};
+
 </script>
 </body>
 </html>

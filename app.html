@@ -2229,12 +2229,13 @@ function renderHiveDetail(i) {
     qv[0].style.color = h.queenSeen ? 'var(--ok)' : 'var(--danger)';
     const estYear = h.est ? new Date(h.est).getFullYear() : '—';
     const age = h.est ? (new Date().getFullYear() - new Date(h.est).getFullYear()) : 0;
-    qv[1].textContent = estYear + ' · ' + age + (age===1?' yr':' yrs');
+    const ageStr = age <= 0 ? '1st yr' : age + (age===1?' yr':' yrs');
+    qv[1].textContent = estYear + ' · ' + ageStr;
     qv[2].textContent = h.queenBreed  || '—';
     qv[3].textContent = h.queenSource || '—';
   }
   const hLineage = document.getElementById('hLineage');
-  if (hLineage) hLineage.textContent = h.lineage || (h.queenBreed ? h.queenBreed + ' — ' + (h.strength||'') : '—');
+  if (hLineage) hLineage.textContent = h.lineage || '—';
   // CTA message
   const ctaMsg = document.querySelector('.cta-msg');
   const inspections = APP.inspections.filter(insp => insp.hiveId === h.id)

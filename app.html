@@ -918,20 +918,20 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
     <div><span class="slbl">AI 照片诊断</span>
       <div class="ai-card a2">
-        <div class="ai-lbl">由 Claude AI 驱动</div>
+        <div class="ai-lbl">由 Gemini AI 驱动</div>
         <div class="ai-t">拍张照片，<em>立即诊断</em></div>
         <div class="ai-d">上传幼虫、蜜蜂或相框的照片，以识别病害。</div>
 
-        <!-- Upload zone — triggers hidden file input -->
+        <!-- Upload zone -->
         <input type="file" id="aiFileInput" accept="image/*" capture="environment"
                style="display:none" onchange="handleAIPhoto(this)">
         <div class="ai-drop" id="aiDrop" onclick="document.getElementById('aiFileInput').click()">
-          <div class="ai-drop-ico" id="aiDropIco">📸</div>
+          <div class="ai-drop-ico">📸</div>
           <p id="aiDropTxt">拍照或上传图片</p>
-          <span id="aiDropSub">幼虫 · 成蜂 · 相框</span>
+          <span>幼虫 · 成蜂 · 相框</span>
         </div>
 
-        <!-- Preview of selected image -->
+        <!-- Preview -->
         <div id="aiPreviewWrap" style="display:none;margin-top:10px;position:relative">
           <img id="aiPreview" style="width:100%;border-radius:var(--r-md);max-height:180px;object-fit:cover" alt="上传的图片">
           <button onclick="resetAIDiag()" style="position:absolute;top:6px;right:6px;background:rgba(30,25,22,.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
@@ -939,11 +939,11 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 
         <!-- Analyze button -->
         <button id="aiAnalyzeBtn" onclick="runAIDiagnosis()"
-          style="display:none;width:100%;margin-top:10px;padding:11px;background:var(--honey);border:none;border-radius:var(--r-md);font-family:Nunito,sans-serif;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;transition:opacity .18s;position:relative;z-index:1">
+          style="display:none;width:100%;margin-top:10px;padding:11px;background:var(--honey);border:none;border-radius:var(--r-md);font-family:Nunito,sans-serif;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;position:relative;z-index:1">
           🔬 开始 AI 分析
         </button>
 
-        <!-- Loading state -->
+        <!-- Loading -->
         <div id="aiLoading" style="display:none;text-align:center;padding:16px 0;position:relative;z-index:1">
           <div style="display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,.7);font-size:12px">
             <div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></div>
@@ -1268,8 +1268,9 @@ function calcM(){const m=parseFloat(document.getElementById('miteCount').value)|
 calcM();
 function setMeth(b){document.querySelectorAll('.mpill').forEach(x=>x.classList.remove('on'));b.classList.add('on');}
 // ══════════════════════════════════════════════════════
-// AI PHOTO DIAGNOSIS — real Claude vision API
+// AI PHOTO DIAGNOSIS — via Cloudflare Worker proxy
 // ══════════════════════════════════════════════════════
+const AI_PROXY = 'https://hivekeeper-proxy.takepea1123.workers.dev';
 let _aiImageBase64 = null;
 let _aiImageType   = 'image/jpeg';
 
@@ -1280,7 +1281,6 @@ function handleAIPhoto(input) {
   const reader = new FileReader();
   reader.onload = e => {
     _aiImageBase64 = e.target.result.split(',')[1];
-    // Show preview
     document.getElementById('aiPreview').src = e.target.result;
     document.getElementById('aiPreviewWrap').style.display = 'block';
     document.getElementById('aiAnalyzeBtn').style.display  = 'block';
@@ -1307,9 +1307,131 @@ async function runAIDiagnosis() {
   document.getElementById('aiRes').style.display        = 'none';
 
   try {
-    const response = await fetch('https://api.anthropic.com/v1/messages', {
+    const response = await fetch(AI_PROXY, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{
+          parts: [
+            { inline_data: { mime_type: _aiImageType, data: _aiImageBase64 } },
+            { text: `你是一位经验丰富的养蜂病害诊断专家。请仔细分析这张蜂箱照片，用中文回答，格式严格为 JSON，不要有任何其他文字和代码块标记：
+{
+  "summary": "一句话总结（15字以内）",
+  "findings": ["发现1", "发现2", "发现3"],
+  "risk": "low或medium或high或critical",
+  "recommendations": ["建议1", "建议2"],
+  "diseases_detected": ["病害名称"]
+}
+如果图片不清晰或不是蜂箱相关内容，请在 summary 中说明，diseases_detected 返回空数组。` }
+          ]
+        }],
+        generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+      })
+    });
+
+    if (!response.ok) {
+      const err = await response.json().catch(()=>({}));
+      showToast('⚠ 分析失败：' + (err.error?.message || response.status));
+      document.getElementById('aiLoading').style.display = 'none';
+      document.getElementById('aiAnalyzeBtn').style.display = 'block';
+      return;
+    }
+
+    const data = await response.json();
+    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+
+    let result;
+    try {
+      const jsonMatch = raw.match(/\{[\s\S]*\}/);
+      result = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
+    } catch {
+      document.getElementById('aiResTitle').textContent = '分析完成';
+      document.getElementById('aiResBody').innerHTML = `<div class="ai-res-i" style="margin-top:6px">${raw}</div>`;
+      document.getElementById('aiLoading').style.display = 'none';
+      document.getElementById('aiRes').style.display = 'block';
+      return;
+    }
+
+    const riskColor = { low:'var(--ok)', medium:'var(--warn)', high:'var(--danger)', critical:'var(--danger)' };
+    const riskLabel = { low:'✓ 风险低', medium:'⚠ 需关注', high:'🚨 风险高', critical:'🚨 紧急处理' };
+    const risk = result.risk || 'low';
+
+    let html = '';
+    if (result.diseases_detected?.length > 0) {
+      html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin:8px 0">
+        ${result.diseases_detected.map(d=>`<span style="background:var(--danger-light);color:var(--danger);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${d}</span>`).join('')}
+      </div>`;
+    }
+    html += `<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:99px;padding:4px 10px;margin-bottom:8px">
+      <span style="font-size:11px;font-weight:700;color:${riskColor[risk]}">${riskLabel[risk]}</span>
+    </div>`;
+    if (result.findings?.length) {
+      html += result.findings.map(f=>`<div class="ai-res-i">${f}</div>`).join('');
+    }
+    if (result.recommendations?.length) {
+      html += `<div style="margin-top:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em">建议措施</div>`;
+      html += result.recommendations.map(r=>`<div class="ai-res-i" style="color:var(--honey-mid)">${r}</div>`).join('');
+    }
+
+    document.getElementById('aiResTitle').textContent = result.summary || '分析完成';
+    document.getElementById('aiResBody').innerHTML = html;
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiRes').style.display = 'block';
+
+  } catch (err) {
+    document.getElementById('aiLoading').style.display = 'none';
+    document.getElementById('aiAnalyzeBtn').style.display = 'block';
+    showToast('⚠ 网络错误，请检查连接');
+  }
+}
+
+
+
+
+function handleAIPhoto(input) {
+  const file = input.files[0];
+  if (!file) return;
+  _aiImageType = file.type || 'image/jpeg';
+  const reader = new FileReader();
+  reader.onload = e => {
+    _aiImageBase64 = e.target.result.split(',')[1];
+    document.getElementById('aiPreview').src = e.target.result;
+    document.getElementById('aiPreviewWrap').style.display = 'block';
+    document.getElementById('aiAnalyzeBtn').style.display  = 'block';
+    document.getElementById('aiDrop').style.display        = 'none';
+    document.getElementById('aiRes').style.display         = 'none';
+  };
+  reader.readAsDataURL(file);
+  input.value = '';
+}
+
+function resetAIDiag() {
+  _aiImageBase64 = null;
+  document.getElementById('aiPreviewWrap').style.display = 'none';
+  document.getElementById('aiAnalyzeBtn').style.display  = 'none';
+  document.getElementById('aiLoading').style.display     = 'none';
+  document.getElementById('aiRes').style.display         = 'none';
+  document.getElementById('aiDrop').style.display        = 'block';
+}
+
+async function runAIDiagnosis() {
+  if (!_aiImageBase64) return;
+  const key = getAIKey();
+  if (!key) { showToast('⚠ 请先设置 API Key'); return; }
+
+  document.getElementById('aiAnalyzeBtn').style.display = 'none';
+  document.getElementById('aiLoading').style.display    = 'block';
+  document.getElementById('aiRes').style.display        = 'none';
+
+  try {
+    const response = await fetch('https://api.anthropic.com/v1/messages', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'x-api-key': key,
+        'anthropic-version': '2023-06-01',
+        'anthropic-dangerous-direct-browser-access': 'true'
+      },
       body: JSON.stringify({
         model: 'claude-sonnet-4-20250514',
         max_tokens: 1000,
@@ -1322,7 +1444,7 @@ async function runAIDiagnosis() {
             },
             {
               type: 'text',
-              text: `你是一位经验丰富的养蜂病害诊断专家。请仔细分析这张蜂箱照片，用中文回答以下内容，格式严格为 JSON，不要有任何其他文字：
+              text: `你是一位经验丰富的养蜂病害诊断专家。请仔细分析这张蜂箱照片，用中文回答，格式严格为 JSON，不要有任何其他文字：
 {
   "summary": "一句话总结（15字以内）",
   "findings": ["发现1", "发现2", "发现3"],
@@ -1337,6 +1459,15 @@ async function runAIDiagnosis() {
       })
     });
 
+    if (!response.ok) {
+      const err = await response.json().catch(()=>({}));
+      if (response.status === 401) { showToast('⚠ API Key 无效，请重新设置'); clearAIKey(); }
+      else showToast('⚠ 分析失败：' + (err.error?.message || response.status));
+      document.getElementById('aiLoading').style.display = 'none';
+      document.getElementById('aiAnalyzeBtn').style.display = 'block';
+      return;
+    }
+
     const data = await response.json();
     const raw = data.content?.map(c => c.text || '').join('') || '';
 
@@ -1345,10 +1476,8 @@ async function runAIDiagnosis() {
       const jsonMatch = raw.match(/\{[\s\S]*\}/);
       result = JSON.parse(jsonMatch ? jsonMatch[0] : raw);
     } catch {
-      // Fallback: show raw text
       document.getElementById('aiResTitle').textContent = '分析完成';
-      document.getElementById('aiResBody').innerHTML =
-        `<div class="ai-res-i" style="margin-top:6px">${raw}</div>`;
+      document.getElementById('aiResBody').innerHTML = `<div class="ai-res-i" style="margin-top:6px">${raw}</div>`;
       document.getElementById('aiLoading').style.display = 'none';
       document.getElementById('aiRes').style.display = 'block';
       return;
@@ -1361,18 +1490,18 @@ async function runAIDiagnosis() {
     let html = '';
     if (result.diseases_detected?.length > 0) {
       html += `<div style="display:flex;flex-wrap:wrap;gap:4px;margin:8px 0">
-        ${result.diseases_detected.map(d => `<span style="background:var(--danger-light);color:var(--danger);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${d}</span>`).join('')}
+        ${result.diseases_detected.map(d=>`<span style="background:var(--danger-light);color:var(--danger);padding:2px 8px;border-radius:99px;font-size:10px;font-weight:700">${d}</span>`).join('')}
       </div>`;
     }
     html += `<div style="display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:99px;padding:4px 10px;margin-bottom:8px">
       <span style="font-size:11px;font-weight:700;color:${riskColor[risk]}">${riskLabel[risk]}</span>
     </div>`;
     if (result.findings?.length) {
-      html += result.findings.map(f => `<div class="ai-res-i">${f}</div>`).join('');
+      html += result.findings.map(f=>`<div class="ai-res-i">${f}</div>`).join('');
     }
     if (result.recommendations?.length) {
       html += `<div style="margin-top:8px;font-size:10px;font-weight:700;color:rgba(255,255,255,.4);text-transform:uppercase;letter-spacing:.07em">建议措施</div>`;
-      html += result.recommendations.map(r => `<div class="ai-res-i" style="color:var(--honey-mid)">${r}</div>`).join('');
+      html += result.recommendations.map(r=>`<div class="ai-res-i" style="color:var(--honey-mid)">${r}</div>`).join('');
     }
 
     document.getElementById('aiResTitle').textContent = result.summary || '分析完成';
@@ -1383,7 +1512,7 @@ async function runAIDiagnosis() {
   } catch (err) {
     document.getElementById('aiLoading').style.display = 'none';
     document.getElementById('aiAnalyzeBtn').style.display = 'block';
-    showToast('⚠ AI 分析失败，请检查网络连接');
+    showToast('⚠ 网络错误，请检查连接');
   }
 }
 const DIS={varroa:{e:'🕷️',n:'Varroa Mites',s:'Varroa destructor · External parasite',si:['Reddish-brown dots on adult bees or larvae','Bees with deformed or missing wings','Crawling bees unable to fly at entrance','Colony collapse in autumn'],tr:['Oxalic acid vaporization (broodless period)','Formic acid pads (MAQS)','Apivar amitraz strips — 6–8 weeks','Apiguard thymol gel — summer use']},dwv:{e:'🦟',n:'Deformed Wing Virus',s:'DWV · Transmitted by Varroa',si:['Wings crumpled, shortened or missing','Bees crawling at entrance unable to fly','Shortened abdomen on affected bees','High Varroa load is primary indicator'],tr:['Control Varroa — DWV has no direct cure','Requeen with hygienic or VSH queens','Remove heavily infected brood frames','Maintain strong, low-mite colonies']},afb:{e:'💀',n:'American Foulbrood',s:'Paenibacillus larvae · NOTIFIABLE',si:['Sunken discolored perforated cappings','Ropy brown stringy material when probed','Sour fermented smell from hive','Spotty brood with collapsed larvae'],tr:['NOTIFIABLE — report to authorities (AU/DE)','No cure — infected equipment must be burned','Colony destruction may be legally required','Never feed unverified honey to colonies']},efb:{e:'⚠️',n:'European Foulbrood',s:'Melissococcus plutonius · Bacterial',si:['Twisted discolored larvae (yellow-brown)','Larvae die before capping','Slight sour smell','Spotty brood pattern'],tr:['Oxytetracycline where permitted','Requeen with young hygienic queen','Feed 1:1 sugar syrup to stimulate cleanup','Remove heavily infected frames']},shb:{e:'🪲',n:'Small Hive Beetle',s:'Aethina tumida · Warm climates',si:['Dark beetles (5–7mm) fleeing light','Fermented slimy honey with foul smell','Larvae tunneling through comb','Bees absconding in severe cases'],tr:['Beetle traps (Freeman board or oil traps)','Strong colonies control small infestations','Reduce entrance size','Freeze stored combs when unoccupied']},waxmoth:{e:'🦋',n:'Wax Moth',s:'Galleria mellonella · Weak colonies',si:['Silky webbing across comb surfaces','Larvae tunneling through brood comb','Empty moth-damaged frames in storage'],tr:['Strong bees naturally repel moths','Freeze stored combs at -15°C for 24h','Bacillus thuringiensis (BT) for stored comb','Never leave unguarded drawn comb']}};

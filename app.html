@@ -872,7 +872,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
     <div class="qcard a1">
       <div class="chead"><div class="ctitle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>Queen Management</div><div class="cedit" onclick="editHive(APP.hives[currentHiveIdx]?.id)">Edit</div></div>
-      <div class="qgrid"><div class="qf"><div class="qf-l">Status</div><div class="qf-v" style="color:var(--ok)">✓ Seen May 21</div></div><div class="qf"><div class="qf-l">Year</div><div class="qf-v">2023 · 2nd yr</div></div><div class="qf"><div class="qf-l">Breed</div><div class="qf-v">Italian</div></div><div class="qf"><div class="qf-l">Source</div><div class="qf-v">Willamette Apiaries</div></div><div class="qf" style="grid-column:1/-1"><div class="qf-l">Lineage</div><div class="qf-v it">Carniolan × Italian F2 — gentle, prolific</div></div></div>
+      <div class="qgrid"><div class="qf"><div class="qf-l">Status</div><div class="qf-v" style="color:var(--ok)">✓ Seen May 21</div></div><div class="qf"><div class="qf-l">Year</div><div class="qf-v">2023 · 2nd yr</div></div><div class="qf"><div class="qf-l">Breed</div><div class="qf-v">Italian</div></div><div class="qf"><div class="qf-l">Source</div><div class="qf-v">Willamette Apiaries</div></div><div class="qf" style="grid-column:1/-1"><div class="qf-l">Lineage</div><div class="qf-v it" id="hLineage">Carniolan × Italian F2 — gentle, prolific</div></div></div>
     </div>
     <div class="cta-card a2">
       <div class="cta-lbl">Last inspected</div>
@@ -1109,41 +1109,21 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     <div class="fgrp"><label class="flbl">Hive Name</label><input class="finp" id="hiveName" placeholder="e.g. Hive 5"></div>
     <div class="fgrp"><label class="flbl">Nickname</label><input class="finp" id="hiveNickname" placeholder="e.g. Clover, Sunflower…"></div>
     <div class="fgrp"><label class="flbl">Location</label><input class="finp" id="hiveLocation" placeholder="e.g. Portland, OR"></div>
-    <div class="fgrp"><label class="flbl">Hive Type</label>
-      <select class="fsel" id="hiveType">
-        <option>Langstroth 10-frame</option>
-        <option>Langstroth 8-frame</option>
-        <option>Warré</option>
-        <option>Top-Bar</option>
-        <option>Flow Hive</option>
-        <option>Other</option>
-      </select>
-    </div>
     <div class="frow fgrp">
-      <div><label class="flbl">Frames</label><input class="finp" id="hiveFrames" type="number" min="1" max="20" placeholder="e.g. 8"></div>
-      <div><label class="flbl">Mite Load (%)</label><input class="finp" id="hiveMites" type="number" min="0" max="100" step="0.1" placeholder="e.g. 1.2"></div>
-    </div>
-    <div class="frow fgrp">
-      <div><label class="flbl">Colony Strength</label>
-        <select class="fsel" id="hiveStrength">
-          <option>Strong</option>
-          <option>Moderate</option>
-          <option>Weak</option>
-        </select>
-      </div>
       <div><label class="flbl">Status</label>
         <select class="fsel" id="hiveStatus">
-          <option value="healthy">Healthy</option>
-          <option value="treatment">Treatment</option>
-          <option value="overdue">Overdue</option>
+          <option value="healthy">● Healthy</option>
+          <option value="treatment">⚠ Treatment</option>
+          <option value="overdue">! Overdue</option>
         </select>
       </div>
+      <div><label class="flbl">Est. Year</label><input class="finp" id="hiveEstYear" type="number" min="2000" max="2099" placeholder="e.g. 2023"></div>
     </div>
     <div class="frow fgrp">
-      <div><label class="flbl">Honey This Season (lb)</label><input class="finp" id="hiveHoney" type="number" min="0" step="0.1" placeholder="e.g. 42"></div>
       <div><label class="flbl">Queen Breed</label><input class="finp" id="hiveQueenBreed" placeholder="e.g. Italian"></div>
+      <div><label class="flbl">Queen Source</label><input class="finp" id="hiveQueenSource" placeholder="e.g. Local breeder"></div>
     </div>
-    <div class="fgrp"><label class="flbl">Queen Source</label><input class="finp" id="hiveQueenSource" placeholder="e.g. Local breeder"></div>
+    <div class="fgrp"><label class="flbl">Lineage / Notes</label><input class="finp" id="hiveLineage" placeholder="e.g. Carniolan × Italian F2 — gentle, prolific"></div>
     <button class="msave" onclick="saveHiveForm()">Save Hive ✓</button>
     <button class="mcancel" onclick="closeM('hiveModal')">Cancel</button>
   </div>
@@ -2247,9 +2227,14 @@ function renderHiveDetail(i) {
   if (qv.length >= 5) {
     qv[0].textContent = h.queenSeen ? '✓ Seen ' + new Date(h.queenSeen).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Not seen recently';
     qv[0].style.color = h.queenSeen ? 'var(--ok)' : 'var(--danger)';
-    qv[2].textContent = h.queenBreed || '—';
+    const estYear = h.est ? new Date(h.est).getFullYear() : '—';
+    const age = h.est ? (new Date().getFullYear() - new Date(h.est).getFullYear()) : 0;
+    qv[1].textContent = estYear + ' · ' + age + (age===1?' yr':' yrs');
+    qv[2].textContent = h.queenBreed  || '—';
     qv[3].textContent = h.queenSource || '—';
   }
+  const hLineage = document.getElementById('hLineage');
+  if (hLineage) hLineage.textContent = h.lineage || (h.queenBreed ? h.queenBreed + ' — ' + (h.strength||'') : '—');
   // CTA message
   const ctaMsg = document.querySelector('.cta-msg');
   const inspections = APP.inspections.filter(insp => insp.hiveId === h.id)
@@ -2378,18 +2363,15 @@ function editHive(id) {
   const h = APP.hives.find(h => h.id === id);
   if (!h) return;
   document.getElementById('hiveFormTitle').textContent = 'Edit Hive';
-  document.getElementById('hiveFormId').value   = h.id;
-  document.getElementById('hiveName').value     = h.name;
-  document.getElementById('hiveNickname').value = h.nickname;
-  document.getElementById('hiveLocation').value = h.location;
-  document.getElementById('hiveType').value     = h.type;
-  document.getElementById('hiveFrames').value   = h.frames || '';
-  document.getElementById('hiveMites').value    = h.mites !== null ? h.mites : '';
-  document.getElementById('hiveStrength').value = h.strength || 'Strong';
-  document.getElementById('hiveStatus').value   = h.status || 'healthy';
-  document.getElementById('hiveHoney').value       = h.honey !== undefined ? h.honey : '';
+  document.getElementById('hiveFormId').value      = h.id;
+  document.getElementById('hiveName').value        = h.name;
+  document.getElementById('hiveNickname').value    = h.nickname;
+  document.getElementById('hiveLocation').value    = h.location;
+  document.getElementById('hiveStatus').value      = h.status || 'healthy';
+  document.getElementById('hiveEstYear').value     = h.est ? new Date(h.est).getFullYear() : new Date().getFullYear();
   document.getElementById('hiveQueenBreed').value  = h.queenBreed || '';
   document.getElementById('hiveQueenSource').value = h.queenSource || '';
+  document.getElementById('hiveLineage').value     = h.lineage || '';
   openM('hiveModal');
 }
 
@@ -2405,28 +2387,27 @@ function saveHiveForm() {
     return;
   }
 
-  const frames   = parseInt(document.getElementById('hiveFrames').value)   || 8;
-  const mites    = parseFloat(document.getElementById('hiveMites').value);
-  const strength = document.getElementById('hiveStrength').value   || 'Strong';
-  const status   = document.getElementById('hiveStatus').value     || 'healthy';
-  const honey        = parseFloat(document.getElementById('hiveHoney').value) || 0;
-  const queenBreed   = document.getElementById('hiveQueenBreed').value.trim();
-  const queenSource  = document.getElementById('hiveQueenSource').value.trim();
+  const status      = document.getElementById('hiveStatus').value || 'healthy';
+  const estYear     = parseInt(document.getElementById('hiveEstYear').value) || new Date().getFullYear();
+  const queenBreed  = document.getElementById('hiveQueenBreed').value.trim();
+  const queenSource = document.getElementById('hiveQueenSource').value.trim();
+  const lineage     = document.getElementById('hiveLineage').value.trim();
 
   if (id) {
     const h = APP.hives.find(h => h.id === id);
     if (h) {
-      h.name = name; h.nickname = nickname; h.location = location; h.type = type;
-      h.frames = frames; h.mites = isNaN(mites) ? null : mites;
-      h.strength = strength; h.status = status;
-      h.honey = honey; h.queenBreed = queenBreed; h.queenSource = queenSource;
+      h.name = name; h.nickname = nickname; h.location = location;
+      h.status = status;
+      h.est = new Date(estYear, 0, 1).toISOString();
+      h.queenBreed = queenBreed; h.queenSource = queenSource; h.lineage = lineage;
     }
   } else {
     APP.hives.push({
-      id: 'h' + Date.now(), name, nickname, type, location,
-      est: new Date().toISOString(), frames, strength,
-      mites: isNaN(mites) ? null : mites,
-      status, queenSeen: null, honey, queenBreed, queenSource
+      id: 'h' + Date.now(), name, nickname, location,
+      type: 'Langstroth 10-frame',
+      est: new Date(estYear, 0, 1).toISOString(),
+      frames: 8, strength: 'Strong', mites: null, honey: 0,
+      status, queenSeen: null, queenBreed, queenSource, lineage
     });
   }
 

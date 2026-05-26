@@ -267,9 +267,9 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .le-btn:active{opacity:.8}
 
 /* ═══ DASHBOARD ═══ */
-/* 文件要求：1.5屏以内，状态区+警报+宫格+截断历史 */
+/* Dashboard: hero + alert + grid + truncated history */
 .dbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
-/* 状态监控区：大字体一眼看清 */
+/* Status area: large readable numbers */
 .hero{background:var(--sage-deep);border-radius:var(--r-xl);padding:18px;position:relative;overflow:hidden}
 .hero::before{content:'';position:absolute;width:160px;height:160px;border-radius:50%;background:rgba(255,255,255,.05);top:-50px;right:-30px}
 .hero::after{content:'🐝';position:absolute;font-size:68px;opacity:.08;right:14px;bottom:-8px}
@@ -284,31 +284,31 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .hstat-num{font-family:'Lora',serif;font-size:22px;font-weight:600;color:var(--white);line-height:1}
 .hstat-u{font-size:10px;color:rgba(255,255,255,.55)}
 .hstat-l{font-size:10px;color:rgba(255,255,255,.5);margin-top:2px}
-/* 2. 趋势指示器 */
+/* 2. Trend indicators */
 .hstat-trend{display:inline-flex;align-items:center;gap:2px;font-size:10px;font-weight:700;margin-top:3px}
 .trend-up{color:#7BE8A8}
 .trend-down{color:#F09090}
 .trend-flat{color:rgba(255,255,255,.4)}
-/* 3. 对比度优化 — 辅助文字从stone改为更深的ink-soft */
+/* 3. Contrast: secondary text uses deeper ink-soft */
 .ri-mt{font-size:11px;color:#5C5448;margin-top:1px}
 .tt-sub{font-size:11px;color:#5C5448;margin-top:1px}
 .fi-mt{font-size:11px;color:#5C5448;margin-top:1px}
 .gc-meta{font-size:11px;color:#5C5448;line-height:1.4}
-/* 4. Modal底部固定按钮区（拇指区悬浮） */
+/* 4. Modal sticky footer button (thumb zone) */
 .modal-footer{position:sticky;bottom:0;background:var(--cream);padding:12px 0 0;margin-top:4px;border-top:1px solid var(--stone-light)}
-/* 5. AI置信度标识 */
+/* 5. AI confidence badge */
 .ai-conf{display:inline-flex;align-items:center;gap:5px;background:rgba(255,255,255,.1);border-radius:var(--r-pill);padding:4px 10px;margin-top:8px}
 .ai-conf-bar{height:4px;border-radius:var(--r-pill);background:rgba(255,255,255,.2);width:80px;overflow:hidden}
 .ai-conf-fill{height:100%;border-radius:var(--r-pill);background:var(--honey-mid);transition:width .6s ease}
 .ai-conf-txt{font-size:10px;color:rgba(255,255,255,.7);white-space:nowrap}
-/* 6. 空状态设计 */
+/* 6. Empty state design */
 .empty-state{display:flex;flex-direction:column;align-items:center;justify-content:center;padding:28px 20px;text-align:center;gap:10px}
 .empty-emoji{font-size:38px;line-height:1}
 .empty-title{font-family:'Lora',serif;font-size:16px;font-weight:400;color:var(--ink)}
 .empty-desc{font-size:12px;color:var(--stone);line-height:1.6;max-width:220px}
 .empty-btn{margin-top:4px;padding:9px 20px;background:var(--sage-deep);color:var(--white);border:none;border-radius:var(--r-pill);font-family:'Nunito',sans-serif;font-size:12px;font-weight:700;cursor:pointer;transition:opacity .18s}
 .empty-btn:active{opacity:.8}
-/* 7. 日历长按快速添加任务弹窗 */
+/* 7. Calendar long-press quick-add modal */
 .quick-add-modal{position:fixed;inset:0;background:rgba(30,25,22,.45);z-index:550;display:flex;align-items:center;justify-content:center;opacity:0;pointer-events:none;transition:opacity .2s;max-width:390px;left:50%;transform:translateX(-50%)}
 .quick-add-modal.open{opacity:1;pointer-events:all}
 .qa-box{background:var(--cream);border-radius:var(--r-xl);padding:20px;width:calc(100% - 48px);box-shadow:var(--sh-lg);transform:scale(.92);transition:transform .22s cubic-bezier(.34,1.56,.64,1)}
@@ -324,7 +324,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .qa-save{flex:1;padding:12px;background:var(--sage-deep);border:none;border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;font-weight:700;color:var(--white);cursor:pointer;transition:opacity .18s}
 .qa-save:active{opacity:.85}
 .qa-cancel{padding:12px 16px;background:none;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;color:var(--stone);cursor:pointer}
-/* 文件要求：醒目Warning Banner，连接Health */
+/* Warning banner linked to Health */
 .wbanner{background:var(--warn-light);border:1px solid #EEC870;border-radius:var(--r-lg);padding:12px 13px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:opacity .18s}
 .wbanner:active{opacity:.8}
 .wb-ico{width:32px;height:32px;border-radius:var(--r-sm);background:var(--warn);display:flex;align-items:center;justify-content:center;flex-shrink:0}
@@ -333,7 +333,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .wb-title{font-size:13px;font-weight:700;color:var(--warn)}
 .wb-sub{font-size:11px;color:var(--stone);margin-top:1px}
 .wb-arr svg{width:14px;height:14px;color:var(--warn)}
-/* 文件要求：2x2宫格功能入口 */
+/* 2x2 quick-access grid */
 .g22{display:grid;grid-template-columns:1fr 1fr;gap:10px}
 .gc{background:var(--white);border-radius:var(--r-lg);padding:14px;box-shadow:var(--sh-sm);cursor:pointer;transition:transform .18s;display:flex;flex-direction:column;gap:7px}
 .gc:active{transform:scale(.98)}
@@ -342,7 +342,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .gi-warn{background:var(--warn-light)}.gi-ok{background:var(--ok-light)}
 .gc-name{font-size:13px;font-weight:700;color:var(--ink)}
 .gc-meta{font-size:11px;color:var(--stone);line-height:1.4}
-/* 文件要求：截断历史3条+View All */
+/* Truncated history 3 items + View All */
 .rec-list{display:flex;flex-direction:column;gap:7px}
 .ritem{background:var(--white);border-radius:var(--r-md);padding:11px 13px;display:flex;align-items:center;gap:11px;box-shadow:var(--sh-sm)}
 .rdot{width:8px;height:8px;border-radius:50%;flex-shrink:0}
@@ -351,7 +351,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .ri-nm{font-size:13px;font-weight:600;color:var(--ink)}
 .ri-mt{font-size:11px;color:var(--stone);margin-top:1px}
 .ri-t{font-size:10px;color:var(--stone)}
-/* 文件要求：今日待办半屏 */
+/* Today tasks half-screen */
 .tasklist{display:flex;flex-direction:column;gap:7px}
 .titem{background:var(--white);border-radius:var(--r-md);padding:11px 13px;display:flex;align-items:center;gap:11px;box-shadow:var(--sh-sm);cursor:pointer;transition:transform .15s}
 .titem:active{transform:scale(.99)}
@@ -397,7 +397,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .qf-l{font-size:10px;color:var(--stone);text-transform:uppercase;letter-spacing:.05em}
 .qf-v{font-size:13px;font-weight:600;color:var(--ink);margin-top:2px}
 .qf-v.it{font-family:'Lora',serif;font-style:italic;font-weight:400;color:var(--sage-mid)}
-/* 文件要求：核心操作区最高视觉权重，按钮在拇指区 */
+/* Primary action area, button in thumb zone */
 .cta-card{background:var(--sage-deep);border-radius:var(--r-xl);padding:16px;position:relative;overflow:hidden}
 .cta-card::after{content:'🔍';position:absolute;font-size:56px;opacity:.08;right:12px;top:50%;transform:translateY(-50%)}
 .cta-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:4px}
@@ -432,7 +432,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 
 /* ═══ HEALTH ═══ */
 .hbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
-/* 文件要求：合规评分可视化进度条 */
+/* Compliance score progress bar */
 .comp-card{background:var(--sage-deep);border-radius:var(--r-xl);padding:18px;position:relative;overflow:hidden}
 .comp-card::before{content:'';position:absolute;width:140px;height:140px;border-radius:50%;background:rgba(255,255,255,.04);top:-40px;right:-20px}
 .comp-lbl{font-size:10px;color:rgba(255,255,255,.5);text-transform:uppercase;letter-spacing:.08em;margin-bottom:7px}
@@ -512,7 +512,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .ai-res-t{font-size:12px;font-weight:700;color:var(--white);margin-bottom:6px}
 .ai-res-i{font-size:11px;color:rgba(255,255,255,.75);margin:4px 0;display:flex;gap:6px;line-height:1.5}
 .ai-res-i::before{content:'→';color:var(--honey-mid);flex-shrink:0}
-/* 文件要求：合规导出独立卡片放Health底部 */
+/* Compliance export card at Health bottom */
 .comply-card{background:var(--white);border-radius:var(--r-xl);padding:15px;box-shadow:var(--sh-sm)}
 .comply-ttl{font-size:13px;font-weight:700;color:var(--ink);margin-bottom:11px;display:flex;align-items:center;gap:6px}
 .comply-ttl svg{width:14px;height:14px;color:var(--sage-mid)}
@@ -527,7 +527,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 
 /* ═══ TASKS ═══ */
 .tbody{padding:16px 20px 20px;display:flex;flex-direction:column;gap:14px}
-/* 文件要求：Push通知 */
+/* Push notifications */
 .push-card{background:var(--honey-light);border:1px solid var(--honey-mid);border-radius:var(--r-lg);padding:13px;display:flex;gap:11px}
 .push-ico{width:34px;height:34px;border-radius:var(--r-sm);background:var(--honey);display:flex;align-items:center;justify-content:center;flex-shrink:0;font-size:17px}
 .push-info{flex:1}
@@ -539,7 +539,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .tog.off{background:var(--stone-light)}
 .tog-k{width:18px;height:18px;border-radius:50%;background:var(--white);position:absolute;top:2px;right:2px;transition:right .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .tog.off .tog-k{right:18px}
-/* 文件要求：日历视图 */
+/* Calendar view */
 .cal-card{background:var(--white);border-radius:var(--r-xl);padding:15px;box-shadow:var(--sh-md)}
 .cal-nav{display:flex;align-items:center;justify-content:space-between;margin-bottom:11px}
 .cal-mo{font-family:'Lora',serif;font-size:16px;font-weight:600;color:var(--ink)}
@@ -557,7 +557,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .cd.om{color:var(--stone-light)}
 .cd.selected{background:var(--sage-light);color:var(--sage-deep);font-weight:700}
 .cd.today.selected{background:var(--sage-mid)}
-/* 文件要求：可勾选清单 */
+/* Checklist */
 .ftl{display:flex;flex-direction:column;gap:7px}
 .fti{background:var(--white);border-radius:var(--r-lg);padding:12px 13px;display:flex;gap:11px;align-items:flex-start;box-shadow:var(--sh-sm);cursor:pointer;transition:transform .18s}
 .fti:active{transform:scale(.99)}
@@ -610,7 +610,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .notes-sec{background:var(--white);border-radius:var(--r-lg);padding:13px 15px;box-shadow:var(--sh-sm);margin-bottom:9px}
 .nta{width:100%;padding:9px;border:1.5px solid var(--stone-light);border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:13px;color:var(--ink);background:var(--cream);resize:none;outline:none;min-height:75px;transition:border-color .2s}
 .nta:focus{border-color:var(--sage-mid)}
-/* 文件要求：Save按钮在底部拇指区 */
+/* Save button in thumb zone */
 .msave{width:100%;padding:13px;min-height:44px;background:var(--sage-deep);border:none;border-radius:var(--r-md);font-family:'Nunito',sans-serif;font-size:14px;font-weight:700;color:var(--white);cursor:pointer;margin-top:7px;transition:all .18s}
 .msave:active{opacity:.88;transform:scale(.98)}
 .msave.red{background:var(--danger)}
@@ -904,59 +904,59 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
         <div class="th-bar"><div class="th-track"><div class="th-ptr" id="thPtr" style="left:10%"></div></div><div class="th-lbls"><span>0%</span><span>2% treat</span><span>4% urgent</span><span>8%+</span></div></div>
       </div>
     </div>
-    <div><span class="slbl">治疗日志</span>
+    <div><span class="slbl">Treatment Log</span>
       <div class="treat-list" id="treatList"></div>
       <div class="list-empty" id="treatEmpty">
         <div class="le-emoji">💊</div>
-        <div class="le-title">暂无治疗记录</div>
-        <div class="le-desc">点击下方按钮记录蜂箱治疗情况</div>
+        <div class="le-title">No treatments yet</div>
+        <div class="le-desc">Tap the button below to log your first treatment.</div>
       </div>
       <button class="viewall" style="margin-top:8px" onclick="openTreatModal()">
         <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
-        新增治疗记录
+        Log New Treatment
       </button>
     </div>
-    <div><span class="slbl">AI 照片诊断</span>
+    <div><span class="slbl">AI Photo Diagnosis</span>
       <div class="ai-card a2">
-        <div class="ai-lbl">由 Gemini AI 驱动</div>
-        <div class="ai-t">拍张照片，<em>立即诊断</em></div>
-        <div class="ai-d">上传幼虫、蜜蜂或相框的照片，以识别病害。</div>
+        <div class="ai-lbl">Powered by Gemini AI</div>
+        <div class="ai-t">Snap a photo, get an <em>instant diagnosis</em></div>
+        <div class="ai-d">Upload a photo of brood, bees, or frames to identify diseases and pests.</div>
 
         <!-- Upload zone -->
         <input type="file" id="aiFileInput" accept="image/*" capture="environment"
                style="display:none" onchange="handleAIPhoto(this)">
         <div class="ai-drop" id="aiDrop" onclick="document.getElementById('aiFileInput').click()">
           <div class="ai-drop-ico">📸</div>
-          <p id="aiDropTxt">拍照或上传图片</p>
-          <span>幼虫 · 成蜂 · 相框</span>
+          <p id="aiDropTxt">Take or upload a photo</p>
+          <span>Brood · Adult bees · Frames</span>
         </div>
 
         <!-- Preview -->
         <div id="aiPreviewWrap" style="display:none;margin-top:10px;position:relative">
-          <img id="aiPreview" style="width:100%;border-radius:var(--r-md);max-height:180px;object-fit:cover" alt="上传的图片">
+          <img id="aiPreview" style="width:100%;border-radius:var(--r-md);max-height:180px;object-fit:cover" alt="Uploaded photo">
           <button onclick="resetAIDiag()" style="position:absolute;top:6px;right:6px;background:rgba(30,25,22,.6);color:#fff;border:none;border-radius:50%;width:22px;height:22px;font-size:12px;cursor:pointer;display:flex;align-items:center;justify-content:center">✕</button>
         </div>
 
         <!-- Analyze button -->
         <button id="aiAnalyzeBtn" onclick="runAIDiagnosis()"
           style="display:none;width:100%;margin-top:10px;padding:11px;background:var(--honey);border:none;border-radius:var(--r-md);font-family:Nunito,sans-serif;font-size:13px;font-weight:700;color:var(--ink);cursor:pointer;position:relative;z-index:1">
-          🔬 开始 AI 分析
+          🔬 Analyze with AI
         </button>
 
         <!-- Loading -->
         <div id="aiLoading" style="display:none;text-align:center;padding:16px 0;position:relative;z-index:1">
           <div style="display:inline-flex;align-items:center;gap:8px;color:rgba(255,255,255,.7);font-size:12px">
             <div style="width:14px;height:14px;border:2px solid rgba(255,255,255,.3);border-top-color:#fff;border-radius:50%;animation:spin .7s linear infinite"></div>
-            AI 正在分析图片…
+            AI is analyzing your photo…
           </div>
         </div>
 
         <!-- Results -->
         <div class="ai-res" id="aiRes" style="display:none">
-          <div class="ai-res-t" id="aiResTitle">分析完成</div>
+          <div class="ai-res-t" id="aiResTitle">Analysis complete</div>
           <div id="aiResBody"></div>
           <button onclick="resetAIDiag()" style="margin-top:10px;font-size:11px;color:rgba(255,255,255,.5);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif;position:relative;z-index:1">
-            ↩ 分析另一张
+            ↩ Analyze another
           </button>
         </div>
       </div>
@@ -1079,45 +1079,45 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 <div class="mover" id="treatModal" role="dialog" aria-modal="true" aria-label="Log treatment">
   <div class="modal">
     <div class="mhnd"></div>
-    <div class="mttl" id="treatFormTitle">新增治疗记录</div>
-    <div class="msub">记录蜂箱螨虫或疾病治疗</div>
+    <div class="mttl" id="treatFormTitle">Log New Treatment</div>
+    <div class="msub">Record a varroa or disease treatment</div>
     <input type="hidden" id="treatFormId">
     <div class="fgrp">
-      <label class="flbl">蜂箱</label>
+      <label class="flbl">Hive</label>
       <select class="fsel" id="treatHive"></select>
     </div>
     <div class="fgrp">
-      <label class="flbl">治疗产品</label>
+      <label class="flbl">Treatment Product</label>
       <select class="fsel" id="treatProduct" onchange="onTreatProductChange()">
-        <option value="草酸汽化">草酸汽化 (Oxalic Acid)</option>
-        <option value="甲酸 (MAQS)">甲酸 MAQS (Formic Acid)</option>
-        <option value="Apivar (氨基甲酸盐条)">Apivar 氨基甲酸盐条</option>
-        <option value="Apiguard (百里香酚)">Apiguard 百里香酚</option>
-        <option value="其他">其他…</option>
+        <option value="Oxalic Acid Vaporization">Oxalic Acid Vaporization</option>
+        <option value="Formic Acid (MAQS)">Formic Acid (MAQS)</option>
+        <option value="Apivar (Amitraz strips)">Apivar (Amitraz strips)</option>
+        <option value="Apiguard (Thymol)">Apiguard (Thymol)</option>
+        <option value="Other">Other…</option>
       </select>
     </div>
     <div class="fgrp" id="treatCustomWrap" style="display:none">
-      <label class="flbl">自定义产品名称</label>
-      <input class="finp" id="treatCustomName" placeholder="输入产品名称">
+      <label class="flbl">Custom Product Name</label>
+      <input class="finp" id="treatCustomName" placeholder="Enter product name">
     </div>
     <div class="frow fgrp">
-      <div><label class="flbl">开始日期</label><input class="finp" id="treatStart" type="date"></div>
-      <div><label class="flbl">结束日期</label><input class="finp" id="treatEnd" type="date"></div>
+      <div><label class="flbl">Start Date</label><input class="finp" id="treatStart" type="date"></div>
+      <div><label class="flbl">End Date</label><input class="finp" id="treatEnd" type="date"></div>
     </div>
     <div class="fgrp">
-      <label class="flbl">停药期结束日期 <span style="color:var(--stone);font-weight:400;font-size:10px">（采蜜前须等待）</span></label>
+      <label class="flbl">Withdrawal Period Ends <span style="color:var(--stone);font-weight:400;font-size:10px">(wait before harvesting honey)</span></label>
       <input class="finp" id="treatWithdraw" type="date">
     </div>
     <div class="fgrp">
-      <label class="flbl">治疗前螨虫载荷 (%)</label>
-      <input class="finp" id="treatMiteBefore" type="number" placeholder="例：3.2" step="0.1" min="0">
+      <label class="flbl">Mite Load Before Treatment (%)</label>
+      <input class="finp" id="treatMiteBefore" type="number" placeholder="e.g. 3.2" step="0.1" min="0">
     </div>
     <div class="fgrp">
-      <label class="flbl">备注</label>
-      <input class="finp" id="treatNotes" placeholder="可选：剂量、天气、观察记录等">
+      <label class="flbl">Notes</label>
+      <input class="finp" id="treatNotes" placeholder="Optional: dosage, weather, observations…">
     </div>
-    <button class="msave" onclick="saveTreatment()">保存治疗记录 ✓</button>
-    <button class="mcancel" onclick="closeM('treatModal')">取消</button>
+    <button class="msave" onclick="saveTreatment()">Save Treatment ✓</button>
+    <button class="mcancel" onclick="closeM('treatModal')">Cancel</button>
   </div>
 </div>
 
@@ -2218,9 +2218,9 @@ const DEFAULT_INSPECTIONS = [
 ];
 
 const DEFAULT_TREATMENTS = [
-  {id:'tr1', hiveId:'h2', product:'草酸汽化', startISO:'2025-05-17', endISO:'2025-06-01', withdrawISO:'2025-07-01', miteBefore:3.8, notes:'', createdISO:new Date().toISOString()},
-  {id:'tr2', hiveId:'h3', product:'甲酸 (MAQS)', startISO:'2025-05-10', endISO:'2025-05-17', withdrawISO:'2025-06-17', miteBefore:2.1, notes:'', createdISO:new Date().toISOString()},
-  {id:'tr3', hiveId:'h1', product:'Apivar (氨基甲酸盐条)', startISO:'2025-06-15', endISO:'2025-08-15', withdrawISO:'2025-09-15', miteBefore:null, notes:'计划中', createdISO:new Date().toISOString()},
+  {id:'tr1', hiveId:'h2', product:'Oxalic Acid Vaporization', startISO:'2025-05-17', endISO:'2025-06-01', withdrawISO:'2025-07-01', miteBefore:3.8, notes:'', createdISO:new Date().toISOString()},
+  {id:'tr2', hiveId:'h3', product:'Formic Acid (MAQS)', startISO:'2025-05-10', endISO:'2025-05-17', withdrawISO:'2025-06-17', miteBefore:2.1, notes:'', createdISO:new Date().toISOString()},
+  {id:'tr3', hiveId:'h1', product:'Apivar (Amitraz strips)', startISO:'2025-06-15', endISO:'2025-08-15', withdrawISO:'2025-09-15', miteBefore:null, notes:'Scheduled', createdISO:new Date().toISOString()},
 ];
 
 // ── APP STATE ──
@@ -2390,14 +2390,14 @@ function renderTreatments() {
 
   list.innerHTML = treats.map(t => {
     const hive    = APP.hives.find(h => h.id === t.hiveId);
-    const hiveName = hive ? `${hive.name} — ${hive.nickname}` : '全部蜂箱';
+    const hiveName = hive ? `${hive.name} — ${hive.nickname}` : 'All hives';
     const st      = treatStatus(t);
     const daysLeft = treatDaysLeft(t);
 
     const stIcon  = st==='active' ? '🧪' : st==='done' ? '✅' : '📅';
     const stClass = st==='active' ? 'ti-a' : st==='done' ? 'ti-d' : 'ti-s';
     const tagClass= st==='active' ? 'ttg-a' : st==='done' ? 'ttg-d' : 'ttg-s';
-    const tagTxt  = st==='active' ? '进行中' : st==='done' ? '已完成' : '计划中';
+    const tagTxt  = st==='active' ? 'Active' : st==='done' ? 'Completed' : 'Scheduled';
 
     const startFmt = t.startISO ? new Date(t.startISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'}) : '';
     const endFmt   = t.endISO   ? new Date(t.endISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})   : '';
@@ -2406,18 +2406,18 @@ function renderTreatments() {
 
     let countHtml = '';
     if (st === 'done') {
-      countHtml = `<div class="tcount"><div class="tc-n tc-d">✓</div><div class="tc-l">完成</div></div>`;
+      countHtml = `<div class="tcount"><div class="tc-n tc-d">✓</div><div class="tc-l">Done</div></div>`;
     } else if (st === 'active' && daysLeft !== null) {
       const cls = daysLeft <= 3 ? 'tc-a' : 'tc-s';
-      countHtml = `<div class="tcount"><div class="tc-n ${cls}">${Math.max(0,daysLeft)}</div><div class="tc-l">天后到期</div></div>`;
+      countHtml = `<div class="tcount"><div class="tc-n ${cls}">${Math.max(0,daysLeft)}</div><div class="tc-l">days left</div></div>`;
     } else if (st === 'scheduled' && daysLeft !== null) {
-      countHtml = `<div class="tcount"><div class="tc-n tc-s">${Math.abs(daysLeft)}</div><div class="tc-l">天后开始</div></div>`;
+      countHtml = `<div class="tcount"><div class="tc-n tc-s">${Math.abs(daysLeft)}</div><div class="tc-l">days away</div></div>`;
     }
 
     const withdrawTag = wdFmt && st !== 'done'
-      ? `<span class="ttg ttg-w">停药期至 ${wdFmt}</span>` : '';
+      ? `<span class="ttg ttg-w">Withdraw ends ${wdFmt}</span>` : '';
     const miteTag = t.miteBefore !== null && t.miteBefore !== undefined && t.miteBefore !== ''
-      ? `<span class="ttg" style="background:var(--danger-light);color:var(--danger)">治疗前 ${t.miteBefore}%</span>` : '';
+      ? `<span class="ttg" style="background:var(--danger-light);color:var(--danger)">Before: ${t.miteBefore}%</span>` : '';
 
     return `<div class="tcard">
       <div class="ticon ${stClass}">${stIcon}</div>
@@ -2430,8 +2430,8 @@ function renderTreatments() {
         </div>
         ${t.notes ? `<div style="font-size:11px;color:var(--stone-aa);margin-top:4px">${t.notes}</div>` : ''}
         <div style="display:flex;gap:8px;margin-top:6px">
-          <button onclick="editTreatment('${t.id}')" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">编辑</button>
-          <button onclick="deleteTreatment('${t.id}')" style="font-size:11px;font-weight:700;color:var(--danger);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">删除</button>
+          <button onclick="editTreatment('${t.id}')" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">Edit</button>
+          <button onclick="deleteTreatment('${t.id}')" style="font-size:11px;font-weight:700;color:var(--danger);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">Delete</button>
         </div>
       </div>
       ${countHtml}
@@ -2441,13 +2441,13 @@ function renderTreatments() {
 
 function openTreatModal(id) {
   editingTreatmentId = null;
-  document.getElementById('treatFormTitle').textContent = '新增治疗记录';
+  document.getElementById('treatFormTitle').textContent = 'Log New Treatment';
   document.getElementById('treatFormId').value = '';
   // Populate hive select
   const sel = document.getElementById('treatHive');
   sel.innerHTML = APP.hives.map(h => `<option value="${h.id}">${h.name} — ${h.nickname}</option>`).join('');
   // Reset fields
-  document.getElementById('treatProduct').value = '草酸汽化';
+  document.getElementById('treatProduct').value = 'Oxalic Acid Vaporization';
   document.getElementById('treatCustomWrap').style.display = 'none';
   document.getElementById('treatCustomName').value = '';
   const today = new Date().toISOString().substring(0,10);
@@ -2463,13 +2463,13 @@ function editTreatment(id) {
   const t = APP.treatments.find(t => t.id === id);
   if (!t) return;
   editingTreatmentId = id;
-  document.getElementById('treatFormTitle').textContent = '编辑治疗记录';
+  document.getElementById('treatFormTitle').textContent = 'Edit Treatment';
   document.getElementById('treatFormId').value = id;
   const sel = document.getElementById('treatHive');
   sel.innerHTML = APP.hives.map(h => `<option value="${h.id}" ${h.id===t.hiveId?'selected':''}>${h.name} — ${h.nickname}</option>`).join('');
-  const knownProducts = ['草酸汽化','甲酸 (MAQS)','Apivar (氨基甲酸盐条)','Apiguard (百里香酚)'];
+  const knownProducts = ['Oxalic Acid Vaporization','Formic Acid (MAQS)','Apivar (Amitraz strips)','Apiguard (Thymol)'];
   const isKnown = knownProducts.includes(t.product);
-  document.getElementById('treatProduct').value = isKnown ? t.product : '其他';
+  document.getElementById('treatProduct').value = isKnown ? t.product : 'Other';
   document.getElementById('treatCustomWrap').style.display = isKnown ? 'none' : 'block';
   document.getElementById('treatCustomName').value = isKnown ? '' : t.product;
   document.getElementById('treatStart').value    = t.startISO    || '';
@@ -2482,14 +2482,14 @@ function editTreatment(id) {
 
 function onTreatProductChange() {
   const val = document.getElementById('treatProduct').value;
-  document.getElementById('treatCustomWrap').style.display = val === '其他' ? 'block' : 'none';
+  document.getElementById('treatCustomWrap').style.display = val === 'Other' ? 'block' : 'none';
 }
 
 function saveTreatment() {
   const hiveId      = document.getElementById('treatHive').value;
   const productSel  = document.getElementById('treatProduct').value;
-  const product     = productSel === '其他'
-    ? (document.getElementById('treatCustomName').value.trim() || '其他')
+  const product     = productSel === 'Other'
+    ? (document.getElementById('treatCustomName').value.trim() || 'Other')
     : productSel;
   const startISO    = document.getElementById('treatStart').value;
   const endISO      = document.getElementById('treatEnd').value || null;
@@ -2498,7 +2498,7 @@ function saveTreatment() {
   const miteBefore  = miteRaw !== '' ? parseFloat(miteRaw) : null;
   const notes       = document.getElementById('treatNotes').value.trim();
 
-  if (!startISO) { showToast('请填写开始日期'); return; }
+  if (!startISO) { showToast('Please enter a start date'); return; }
 
   const rec = {
     id:          editingTreatmentId || ('tr' + Date.now()),
@@ -2521,16 +2521,16 @@ function saveTreatment() {
   renderTreatments();
   renderDashboard();
   renderHiveTabs();
-  showToast('✓ 治疗记录已保存');
+  showToast('✓ Treatment saved');
 }
 
 function deleteTreatment(id) {
-  if (!confirm('确认删除该治疗记录？')) return;
+  if (!confirm('Delete this treatment record?')) return;
   APP.treatments = APP.treatments.filter(t => t.id !== id);
   persistApp();
   renderTreatments();
   renderDashboard();
-  showToast('治疗记录已删除');
+  showToast('Treatment deleted');
 }
 
 function renderQuickAccess() {
@@ -2679,9 +2679,9 @@ function renderHiveDetail(i) {
   const qBreed     = document.getElementById('qBreed');
   const qSource    = document.getElementById('qSource');
   if (qStatus) {
-    const statusMap = { healthy: '● 健康', treatment: '⚠ 治疗中', overdue: '! 逾期' };
+    const statusMap = { healthy: '● Healthy', treatment: '⚠ Treatment', overdue: '! Overdue' };
     const colorMap  = { healthy: 'var(--ok)', treatment: 'var(--warn)', overdue: 'var(--danger)' };
-    qStatus.textContent = statusMap[h.status] || '● 健康';
+    qStatus.textContent = statusMap[h.status] || '● Healthy';
     qStatus.style.color = colorMap[h.status]  || 'var(--ok)';
   }
   if (qQueenSeen) {

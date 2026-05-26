@@ -918,7 +918,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
     <div><span class="slbl">AI Photo Diagnosis</span>
       <div class="ai-card a2">
-        <div class="ai-lbl">Powered by DeepSeek AI</div>
+        <div class="ai-lbl">Powered by GPT-4o mini</div>
         <div class="ai-t">Snap a photo, get an <em>instant diagnosis</em></div>
         <div class="ai-d">Upload a photo of brood, bees, or frames to identify diseases and pests.</div>
 
@@ -1311,7 +1311,7 @@ async function runAIDiagnosis() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        model: 'deepseek-vl2',
+        model: 'gpt-4o-mini',
         max_tokens: 1000,
         messages: [{
           role: 'user',

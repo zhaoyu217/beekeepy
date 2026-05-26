@@ -904,13 +904,17 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
         <div class="th-bar"><div class="th-track"><div class="th-ptr" id="thPtr" style="left:10%"></div></div><div class="th-lbls"><span>0%</span><span>2% treat</span><span>4% urgent</span><span>8%+</span></div></div>
       </div>
     </div>
-    <div><span class="slbl">Treatment Log</span>
-      <div class="treat-list">
-        <div class="tcard a1"><div class="ticon ti-a">🧪</div><div class="ti-info"><div class="ti-nm">Oxalic Acid Vaporization</div><div class="ti-hv">Hive 2 — Wildflower</div><div class="ti-tags"><span class="ttg ttg-a">Active</span><span class="ttg ttg-w">Withdraw ends Jun 1</span></div></div><div class="tcount"><div class="tc-n tc-a">7</div><div class="tc-l">days left</div></div></div>
-        <div class="tcard a2"><div class="ticon ti-d">✅</div><div class="ti-info"><div class="ti-nm">Formic Acid (MAQS)</div><div class="ti-hv">Hive 3 — Buckwheat</div><div class="ti-tags"><span class="ttg ttg-d">Completed May 10–17</span></div></div><div class="tcount"><div class="tc-n tc-d">✓</div><div class="tc-l">done</div></div></div>
-        <div class="tcard a3"><div class="ticon ti-s">📅</div><div class="ti-info"><div class="ti-nm">Apivar (Amitraz strips)</div><div class="ti-hv">Hive 1 — Scheduled</div><div class="ti-tags"><span class="ttg ttg-s">Scheduled Jun 15</span></div></div><div class="tcount"><div class="tc-n tc-s">22</div><div class="tc-l">days away</div></div></div>
+    <div><span class="slbl">治疗日志</span>
+      <div class="treat-list" id="treatList"></div>
+      <div class="list-empty" id="treatEmpty">
+        <div class="le-emoji">💊</div>
+        <div class="le-title">暂无治疗记录</div>
+        <div class="le-desc">点击下方按钮记录蜂箱治疗情况</div>
       </div>
-      <button class="viewall" style="margin-top:8px" onclick="openM('treatModal')"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>Log New Treatment</button>
+      <button class="viewall" style="margin-top:8px" onclick="openTreatModal()">
+        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg>
+        新增治疗记录
+      </button>
     </div>
     <div><span class="slbl">AI Photo Diagnosis</span>
       <div class="ai-card a2"><div class="ai-lbl">Powered by AI</div><div class="ai-t">Snap a photo, get an <em>instant diagnosis</em></div><div class="ai-d">Upload a photo of brood, bees, or frames to identify diseases and pests.</div>
@@ -1054,14 +1058,47 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 </div>
 
 <div class="mover" id="treatModal" role="dialog" aria-modal="true" aria-label="Log treatment">
-  <div class="modal"><div class="mhnd"></div><div class="mttl">Log Treatment</div><div class="msub">Record a varroa or disease treatment</div>
-    <div class="fgrp"><label class="flbl">Hive</label><select class="fsel"><option>Hive 1 — Clover</option><option>Hive 2 — Wildflower</option><option>Hive 3 — Buckwheat</option><option>Hive 4 — Lavender</option><option>All hives</option></select></div>
-    <div class="fgrp"><label class="flbl">Treatment</label><select class="fsel"><option>Oxalic Acid Vaporization</option><option>Formic Acid (MAQS)</option><option>Apivar (Amitraz strips)</option><option>Apiguard (Thymol)</option><option>Other…</option></select></div>
-    <div class="frow fgrp"><div><label class="flbl">Start</label><input class="finp" type="date" value="2025-05-24"></div><div><label class="flbl">End</label><input class="finp" type="date" value="2025-06-07"></div></div>
-    <div class="fgrp"><label class="flbl">Mite count before (%)</label><input class="finp" type="number" placeholder="e.g. 3.2" step="0.1"></div>
-    <div class="fgrp"><label class="flbl">Withdrawal period ends</label><input class="finp" type="date" value="2025-07-01"></div>
-    <button class="msave" onclick="closeM('treatModal')">Save Treatment Record</button>
-    <button class="mcancel" onclick="closeM('treatModal')">Cancel</button>
+  <div class="modal">
+    <div class="mhnd"></div>
+    <div class="mttl" id="treatFormTitle">新增治疗记录</div>
+    <div class="msub">记录蜂箱螨虫或疾病治疗</div>
+    <input type="hidden" id="treatFormId">
+    <div class="fgrp">
+      <label class="flbl">蜂箱</label>
+      <select class="fsel" id="treatHive"></select>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">治疗产品</label>
+      <select class="fsel" id="treatProduct" onchange="onTreatProductChange()">
+        <option value="草酸汽化">草酸汽化 (Oxalic Acid)</option>
+        <option value="甲酸 (MAQS)">甲酸 MAQS (Formic Acid)</option>
+        <option value="Apivar (氨基甲酸盐条)">Apivar 氨基甲酸盐条</option>
+        <option value="Apiguard (百里香酚)">Apiguard 百里香酚</option>
+        <option value="其他">其他…</option>
+      </select>
+    </div>
+    <div class="fgrp" id="treatCustomWrap" style="display:none">
+      <label class="flbl">自定义产品名称</label>
+      <input class="finp" id="treatCustomName" placeholder="输入产品名称">
+    </div>
+    <div class="frow fgrp">
+      <div><label class="flbl">开始日期</label><input class="finp" id="treatStart" type="date"></div>
+      <div><label class="flbl">结束日期</label><input class="finp" id="treatEnd" type="date"></div>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">停药期结束日期 <span style="color:var(--stone);font-weight:400;font-size:10px">（采蜜前须等待）</span></label>
+      <input class="finp" id="treatWithdraw" type="date">
+    </div>
+    <div class="fgrp">
+      <label class="flbl">治疗前螨虫载荷 (%)</label>
+      <input class="finp" id="treatMiteBefore" type="number" placeholder="例：3.2" step="0.1" min="0">
+    </div>
+    <div class="fgrp">
+      <label class="flbl">备注</label>
+      <input class="finp" id="treatNotes" placeholder="可选：剂量、天气、观察记录等">
+    </div>
+    <button class="msave" onclick="saveTreatment()">保存治疗记录 ✓</button>
+    <button class="mcancel" onclick="closeM('treatModal')">取消</button>
   </div>
 </div>
 
@@ -2041,8 +2078,14 @@ const DEFAULT_INSPECTIONS = [
   {id:'i3', hiveId:'h1', dateISO:'2025-05-03T08:50:00Z', frames:8, mites:null, queenSeen:true, notes:'First harvest of season — 14lb Clover.', tags:['Harvest 14lb','Clover']},
 ];
 
+const DEFAULT_TREATMENTS = [
+  {id:'tr1', hiveId:'h2', product:'草酸汽化', startISO:'2025-05-17', endISO:'2025-06-01', withdrawISO:'2025-07-01', miteBefore:3.8, notes:'', createdISO:new Date().toISOString()},
+  {id:'tr2', hiveId:'h3', product:'甲酸 (MAQS)', startISO:'2025-05-10', endISO:'2025-05-17', withdrawISO:'2025-06-17', miteBefore:2.1, notes:'', createdISO:new Date().toISOString()},
+  {id:'tr3', hiveId:'h1', product:'Apivar (氨基甲酸盐条)', startISO:'2025-06-15', endISO:'2025-08-15', withdrawISO:'2025-09-15', miteBefore:null, notes:'计划中', createdISO:new Date().toISOString()},
+];
+
 // ── APP STATE ──
-let APP = { hives:[], tasks:[], inspections:[] };
+let APP = { hives:[], tasks:[], inspections:[], treatments:[] };
 
 async function initAppData() {
   const saved = await loadState();
@@ -2050,19 +2093,20 @@ async function initAppData() {
     APP.hives       = saved.hives;
     APP.tasks       = saved.tasks       || [];
     APP.inspections = saved.inspections || [];
+    APP.treatments  = saved.treatments  || [];
   } else {
-    // First run — seed with defaults
     APP.hives       = DEFAULT_HIVES;
     APP.tasks       = DEFAULT_TASKS;
     APP.inspections = DEFAULT_INSPECTIONS;
-    await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections });
+    APP.treatments  = DEFAULT_TREATMENTS;
+    await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections, treatments: APP.treatments });
   }
   renderAll();
 }
 
 async function persistApp() {
   setSyncStatus('saving');
-  await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections });
+  await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections, treatments: APP.treatments });
 }
 
 // ══════════════════════════════════════════════════════
@@ -2073,6 +2117,7 @@ function renderAll() {
   renderDashboard();
   renderHiveTabs();
   renderTasksPage();
+  renderTreatments();
 }
 
 // ── STATUS HELPERS ──
@@ -2165,6 +2210,188 @@ function renderDashboard() {
     window._chartBuilt = true;
     setTimeout(() => buildChart('honey'), 400);
   }
+}
+
+// ══════════════════════════════════════════════════════
+// TREATMENT LOG CRUD
+// ══════════════════════════════════════════════════════
+let editingTreatmentId = null;
+
+function treatStatus(t) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const start = new Date(t.startISO);
+  const end   = t.endISO ? new Date(t.endISO) : null;
+  if (start > today) return 'scheduled';
+  if (!end || end >= today) return 'active';
+  return 'done';
+}
+
+function treatDaysLeft(t) {
+  const today = new Date(); today.setHours(0,0,0,0);
+  const withdraw = t.withdrawISO ? new Date(t.withdrawISO) : null;
+  const end = t.endISO ? new Date(t.endISO) : null;
+  const ref = withdraw || end;
+  if (!ref) return null;
+  return Math.ceil((ref - today) / 86400000);
+}
+
+function renderTreatments() {
+  const list  = document.getElementById('treatList');
+  const empty = document.getElementById('treatEmpty');
+  if (!list) return;
+
+  const treats = [...(APP.treatments || [])].sort((a,b) => new Date(b.createdISO) - new Date(a.createdISO));
+
+  if (treats.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.classList.add('show');
+    return;
+  }
+  if (empty) empty.classList.remove('show');
+
+  list.innerHTML = treats.map(t => {
+    const hive    = APP.hives.find(h => h.id === t.hiveId);
+    const hiveName = hive ? `${hive.name} — ${hive.nickname}` : '全部蜂箱';
+    const st      = treatStatus(t);
+    const daysLeft = treatDaysLeft(t);
+
+    const stIcon  = st==='active' ? '🧪' : st==='done' ? '✅' : '📅';
+    const stClass = st==='active' ? 'ti-a' : st==='done' ? 'ti-d' : 'ti-s';
+    const tagClass= st==='active' ? 'ttg-a' : st==='done' ? 'ttg-d' : 'ttg-s';
+    const tagTxt  = st==='active' ? '进行中' : st==='done' ? '已完成' : '计划中';
+
+    const startFmt = t.startISO ? new Date(t.startISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'}) : '';
+    const endFmt   = t.endISO   ? new Date(t.endISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'})   : '';
+    const wdFmt    = t.withdrawISO ? new Date(t.withdrawISO).toLocaleDateString('zh-CN',{month:'short',day:'numeric'}) : '';
+    const dateRange = endFmt ? `${startFmt}–${endFmt}` : startFmt;
+
+    let countHtml = '';
+    if (st === 'done') {
+      countHtml = `<div class="tcount"><div class="tc-n tc-d">✓</div><div class="tc-l">完成</div></div>`;
+    } else if (st === 'active' && daysLeft !== null) {
+      const cls = daysLeft <= 3 ? 'tc-a' : 'tc-s';
+      countHtml = `<div class="tcount"><div class="tc-n ${cls}">${Math.max(0,daysLeft)}</div><div class="tc-l">天后到期</div></div>`;
+    } else if (st === 'scheduled' && daysLeft !== null) {
+      countHtml = `<div class="tcount"><div class="tc-n tc-s">${Math.abs(daysLeft)}</div><div class="tc-l">天后开始</div></div>`;
+    }
+
+    const withdrawTag = wdFmt && st !== 'done'
+      ? `<span class="ttg ttg-w">停药期至 ${wdFmt}</span>` : '';
+    const miteTag = t.miteBefore !== null && t.miteBefore !== undefined && t.miteBefore !== ''
+      ? `<span class="ttg" style="background:var(--danger-light);color:var(--danger)">治疗前 ${t.miteBefore}%</span>` : '';
+
+    return `<div class="tcard">
+      <div class="ticon ${stClass}">${stIcon}</div>
+      <div class="ti-info">
+        <div class="ti-nm">${t.product}</div>
+        <div class="ti-hv">${hiveName}</div>
+        <div class="ti-tags">
+          <span class="ttg ${tagClass}">${tagTxt} · ${dateRange}</span>
+          ${withdrawTag}${miteTag}
+        </div>
+        ${t.notes ? `<div style="font-size:11px;color:var(--stone-aa);margin-top:4px">${t.notes}</div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button onclick="editTreatment('${t.id}')" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">编辑</button>
+          <button onclick="deleteTreatment('${t.id}')" style="font-size:11px;font-weight:700;color:var(--danger);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">删除</button>
+        </div>
+      </div>
+      ${countHtml}
+    </div>`;
+  }).join('');
+}
+
+function openTreatModal(id) {
+  editingTreatmentId = null;
+  document.getElementById('treatFormTitle').textContent = '新增治疗记录';
+  document.getElementById('treatFormId').value = '';
+  // Populate hive select
+  const sel = document.getElementById('treatHive');
+  sel.innerHTML = APP.hives.map(h => `<option value="${h.id}">${h.name} — ${h.nickname}</option>`).join('');
+  // Reset fields
+  document.getElementById('treatProduct').value = '草酸汽化';
+  document.getElementById('treatCustomWrap').style.display = 'none';
+  document.getElementById('treatCustomName').value = '';
+  const today = new Date().toISOString().substring(0,10);
+  document.getElementById('treatStart').value = today;
+  document.getElementById('treatEnd').value = '';
+  document.getElementById('treatWithdraw').value = '';
+  document.getElementById('treatMiteBefore').value = '';
+  document.getElementById('treatNotes').value = '';
+  openM('treatModal');
+}
+
+function editTreatment(id) {
+  const t = APP.treatments.find(t => t.id === id);
+  if (!t) return;
+  editingTreatmentId = id;
+  document.getElementById('treatFormTitle').textContent = '编辑治疗记录';
+  document.getElementById('treatFormId').value = id;
+  const sel = document.getElementById('treatHive');
+  sel.innerHTML = APP.hives.map(h => `<option value="${h.id}" ${h.id===t.hiveId?'selected':''}>${h.name} — ${h.nickname}</option>`).join('');
+  const knownProducts = ['草酸汽化','甲酸 (MAQS)','Apivar (氨基甲酸盐条)','Apiguard (百里香酚)'];
+  const isKnown = knownProducts.includes(t.product);
+  document.getElementById('treatProduct').value = isKnown ? t.product : '其他';
+  document.getElementById('treatCustomWrap').style.display = isKnown ? 'none' : 'block';
+  document.getElementById('treatCustomName').value = isKnown ? '' : t.product;
+  document.getElementById('treatStart').value    = t.startISO    || '';
+  document.getElementById('treatEnd').value      = t.endISO      || '';
+  document.getElementById('treatWithdraw').value = t.withdrawISO || '';
+  document.getElementById('treatMiteBefore').value = t.miteBefore !== null && t.miteBefore !== undefined ? t.miteBefore : '';
+  document.getElementById('treatNotes').value    = t.notes       || '';
+  openM('treatModal');
+}
+
+function onTreatProductChange() {
+  const val = document.getElementById('treatProduct').value;
+  document.getElementById('treatCustomWrap').style.display = val === '其他' ? 'block' : 'none';
+}
+
+function saveTreatment() {
+  const hiveId      = document.getElementById('treatHive').value;
+  const productSel  = document.getElementById('treatProduct').value;
+  const product     = productSel === '其他'
+    ? (document.getElementById('treatCustomName').value.trim() || '其他')
+    : productSel;
+  const startISO    = document.getElementById('treatStart').value;
+  const endISO      = document.getElementById('treatEnd').value || null;
+  const withdrawISO = document.getElementById('treatWithdraw').value || null;
+  const miteRaw     = document.getElementById('treatMiteBefore').value;
+  const miteBefore  = miteRaw !== '' ? parseFloat(miteRaw) : null;
+  const notes       = document.getElementById('treatNotes').value.trim();
+
+  if (!startISO) { showToast('请填写开始日期'); return; }
+
+  const rec = {
+    id:          editingTreatmentId || ('tr' + Date.now()),
+    hiveId, product, startISO, endISO, withdrawISO, miteBefore, notes,
+    createdISO:  new Date().toISOString(),
+  };
+
+  if (editingTreatmentId) {
+    const idx = APP.treatments.findIndex(t => t.id === editingTreatmentId);
+    if (idx >= 0) APP.treatments[idx] = rec;
+  } else {
+    APP.treatments.unshift(rec);
+    // Auto-update hive status to treatment
+    const hive = APP.hives.find(h => h.id === hiveId);
+    if (hive && treatStatus(rec) === 'active') hive.status = 'treatment';
+  }
+
+  persistApp();
+  closeM('treatModal');
+  renderTreatments();
+  renderDashboard();
+  renderHiveTabs();
+  showToast('✓ 治疗记录已保存');
+}
+
+function deleteTreatment(id) {
+  if (!confirm('确认删除该治疗记录？')) return;
+  APP.treatments = APP.treatments.filter(t => t.id !== id);
+  persistApp();
+  renderTreatments();
+  renderDashboard();
+  showToast('治疗记录已删除');
 }
 
 function renderQuickAccess() {
@@ -2677,6 +2904,11 @@ async function saveQA() {
   window.editInspection   = editInspection;
   window.deleteInspection = deleteInspection;
   window.openInspectionModal = openInspectionModal;
+  window.openTreatModal   = openTreatModal;
+  window.editTreatment    = editTreatment;
+  window.deleteTreatment  = deleteTreatment;
+  window.saveTreatment    = saveTreatment;
+  window.onTreatProductChange = onTreatProductChange;
 
   function run() {
     initAppData().then(() => {

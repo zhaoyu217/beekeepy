@@ -1109,6 +1109,16 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     <div class="fgrp"><label class="flbl">Hive Name</label><input class="finp" id="hiveName" placeholder="e.g. Hive 5"></div>
     <div class="fgrp"><label class="flbl">Nickname</label><input class="finp" id="hiveNickname" placeholder="e.g. Clover, Sunflower…"></div>
     <div class="fgrp"><label class="flbl">Location</label><input class="finp" id="hiveLocation" placeholder="e.g. Portland, OR"></div>
+    <div class="fgrp"><label class="flbl">Hive Type</label>
+      <select class="fsel" id="hiveType">
+        <option value="Langstroth 10-frame">Langstroth 10-frame</option>
+        <option value="Langstroth 8-frame">Langstroth 8-frame</option>
+        <option value="Warré">Warré</option>
+        <option value="Top-bar">Top-bar</option>
+        <option value="Flow Hive">Flow Hive</option>
+        <option value="Other">Other</option>
+      </select>
+    </div>
     <div class="frow fgrp">
       <div><label class="flbl">Status</label>
         <select class="fsel" id="hiveStatus">
@@ -1123,6 +1133,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
       <div><label class="flbl">Queen Breed</label><input class="finp" id="hiveQueenBreed" placeholder="e.g. Italian"></div>
       <div><label class="flbl">Queen Source</label><input class="finp" id="hiveQueenSource" placeholder="e.g. Local breeder"></div>
     </div>
+    <div class="fgrp"><label class="flbl">Queen Last Seen</label><input class="finp" id="hiveQueenSeen" type="date" placeholder="Date queen was last seen"></div>
     <div class="fgrp"><label class="flbl">Lineage / Notes</label><input class="finp" id="hiveLineage" placeholder="e.g. Carniolan × Italian F2 — gentle, prolific"></div>
     <button class="msave" onclick="saveHiveForm()">Save Hive ✓</button>
     <button class="mcancel" onclick="closeM('hiveModal')">Cancel</button>
@@ -2357,6 +2368,12 @@ function openAddHive() {
   document.getElementById('hiveNickname').value = '';
   document.getElementById('hiveLocation').value = 'Portland, OR';
   document.getElementById('hiveType').value = 'Langstroth 10-frame';
+  document.getElementById('hiveStatus').value = 'healthy';
+  document.getElementById('hiveEstYear').value = new Date().getFullYear();
+  document.getElementById('hiveQueenBreed').value = '';
+  document.getElementById('hiveQueenSource').value = '';
+  document.getElementById('hiveQueenSeen').value = '';
+  document.getElementById('hiveLineage').value = '';
   openM('hiveModal');
 }
 
@@ -2368,10 +2385,12 @@ function editHive(id) {
   document.getElementById('hiveName').value        = h.name;
   document.getElementById('hiveNickname').value    = h.nickname;
   document.getElementById('hiveLocation').value    = h.location;
+  document.getElementById('hiveType').value        = h.type || 'Langstroth 10-frame';
   document.getElementById('hiveStatus').value      = h.status || 'healthy';
   document.getElementById('hiveEstYear').value     = h.est ? new Date(h.est).getFullYear() : new Date().getFullYear();
   document.getElementById('hiveQueenBreed').value  = h.queenBreed || '';
   document.getElementById('hiveQueenSource').value = h.queenSource || '';
+  document.getElementById('hiveQueenSeen').value   = h.queenSeen ? h.queenSeen.substring(0, 10) : '';
   document.getElementById('hiveLineage').value     = h.lineage || '';
   openM('hiveModal');
 }
@@ -2392,23 +2411,28 @@ function saveHiveForm() {
   const estYear     = parseInt(document.getElementById('hiveEstYear').value) || new Date().getFullYear();
   const queenBreed  = document.getElementById('hiveQueenBreed').value.trim();
   const queenSource = document.getElementById('hiveQueenSource').value.trim();
+  const queenSeenVal = document.getElementById('hiveQueenSeen').value;
+  const queenSeen   = queenSeenVal ? new Date(queenSeenVal).toISOString() : null;
   const lineage     = document.getElementById('hiveLineage').value.trim();
 
   if (id) {
     const h = APP.hives.find(h => h.id === id);
     if (h) {
       h.name = name; h.nickname = nickname; h.location = location;
+      h.type = type;
       h.status = status;
       h.est = new Date(estYear, 0, 1).toISOString();
-      h.queenBreed = queenBreed; h.queenSource = queenSource; h.lineage = lineage;
+      h.queenBreed = queenBreed; h.queenSource = queenSource;
+      h.queenSeen = queenSeen !== null ? queenSeen : h.queenSeen;
+      h.lineage = lineage;
     }
   } else {
     APP.hives.push({
       id: 'h' + Date.now(), name, nickname, location,
-      type: 'Langstroth 10-frame',
+      type,
       est: new Date(estYear, 0, 1).toISOString(),
       frames: 8, strength: 'Strong', mites: null, honey: 0,
-      status, queenSeen: null, queenBreed, queenSource, lineage
+      status, queenSeen, queenBreed, queenSource, lineage
     });
   }
 

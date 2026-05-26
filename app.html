@@ -918,7 +918,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
     <div><span class="slbl">AI Photo Diagnosis</span>
       <div class="ai-card a2">
-        <div class="ai-lbl">Powered by Gemini AI</div>
+        <div class="ai-lbl">Powered by GPT-4o mini</div>
         <div class="ai-t">Snap a photo, get an <em>instant diagnosis</em></div>
         <div class="ai-d">Upload a photo of brood, bees, or frames to identify diseases and pests.</div>
 
@@ -1311,10 +1311,18 @@ async function runAIDiagnosis() {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({
-        contents: [{
-          parts: [
-            { inline_data: { mime_type: _aiImageType, data: _aiImageBase64 } },
-            { text: `You are an expert beekeeping disease and pest diagnostician. Carefully analyze this hive photo and respond ONLY with valid JSON, no other text or code fences:
+        model: 'gpt-4o-mini',
+        max_tokens: 1000,
+        messages: [{
+          role: 'user',
+          content: [
+            {
+              type: 'image_url',
+              image_url: { url: `data:${_aiImageType};base64,${_aiImageBase64}` }
+            },
+            {
+              type: 'text',
+              text: `You are an expert beekeeping disease and pest diagnostician specializing in US apiaries. Carefully analyze this hive photo and respond ONLY with valid JSON, no other text or code fences:
 {
   "summary": "One-line summary (max 10 words)",
   "findings": ["finding 1", "finding 2", "finding 3"],
@@ -1322,10 +1330,10 @@ async function runAIDiagnosis() {
   "recommendations": ["recommendation 1", "recommendation 2"],
   "diseases_detected": ["disease name"] or []
 }
-If the image is unclear or not hive-related, state that in summary and return empty diseases_detected.` }
+If the image is unclear or not hive-related, state that in summary and return empty diseases_detected.`
+            }
           ]
-        }],
-        generationConfig: { temperature: 0.1, maxOutputTokens: 1000 }
+        }]
       })
     });
 
@@ -1338,7 +1346,7 @@ If the image is unclear or not hive-related, state that in summary and return em
     }
 
     const data = await response.json();
-    const raw = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
+    const raw = data.choices?.[0]?.message?.content || '';
 
     let result;
     try {

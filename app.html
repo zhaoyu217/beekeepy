@@ -2348,8 +2348,8 @@ function renderDashboard() {
     </div>`;
   }).join('');
 
-  // Recent activity
-  renderRecentActivity();
+  // Hero stats — dynamic
+  renderHeroStats();
   // Quick access cards — dynamic
   renderQuickAccess();
   // Init chart after first render
@@ -2610,6 +2610,59 @@ function renderQuickAccess() {
     gcHarvestPill.className = 'pill p-ok';
     gcHarvestPill.textContent = totalHoney > 0 ? `${totalHoney}lb total` : '—';
   }
+}
+
+function renderHeroStats() {
+  // ── Honey: sum all hives
+  const totalHoney = APP.hives.reduce((a, h) => a + (h.honey || 0), 0);
+  const statHoney = document.getElementById('statHoney');
+  if (statHoney) statHoney.innerHTML = `${totalHoney}<span class="hstat-u">lb</span>`;
+
+  // ── Avg mites: average of all miteBefore from treatments
+  const miteVals = (APP.treatments || [])
+    .filter(t => t.miteBefore !== null && t.miteBefore !== undefined && t.miteBefore !== '')
+    .map(t => parseFloat(t.miteBefore));
+  const avgMites = miteVals.length > 0
+    ? (miteVals.reduce((a, b) => a + b, 0) / miteVals.length).toFixed(1)
+    : null;
+  const statMites = document.getElementById('statMites');
+  const statMitesTrend = document.getElementById('statMitesTrend');
+  if (statMites) {
+    statMites.innerHTML = avgMites !== null
+      ? `${avgMites}<span class="hstat-u">%</span>`
+      : `—<span class="hstat-u">%</span>`;
+  }
+  if (statMitesTrend && avgMites !== null) {
+    const mv = parseFloat(avgMites);
+    if (mv < 2) { statMitesTrend.className = 'hstat-trend trend-up'; statMitesTrend.textContent = '✓ Safe range'; }
+    else if (mv < 4) { statMitesTrend.className = 'hstat-trend trend-warn'; statMitesTrend.textContent = '⚠ Monitor'; }
+    else { statMitesTrend.className = 'hstat-trend trend-down'; statMitesTrend.textContent = '▲ Treat now'; }
+  }
+
+  // ── Compliance: hives inspected in last 30 days / total hives
+  const thirtyDaysAgo = new Date(); thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30);
+  const compliantHives = APP.hives.filter(h =>
+    (APP.inspections || []).some(i => i.hiveId === h.id && new Date(i.dateISO) >= thirtyDaysAgo)
+  ).length;
+  const compPct = APP.hives.length > 0
+    ? Math.round((compliantHives / APP.hives.length) * 100)
+    : 0;
+  const statComp = document.getElementById('statCompliance');
+  const statCompTrend = document.getElementById('statCompTrend');
+  if (statComp) statComp.innerHTML = `${compPct}<span class="hstat-u">%</span>`;
+  if (statCompTrend) {
+    if (compPct >= 80) { statCompTrend.className = 'hstat-trend trend-up'; statCompTrend.textContent = '✓ On track'; }
+    else if (compPct >= 50) { statCompTrend.className = 'hstat-trend trend-warn'; statCompTrend.textContent = '⚠ Needs attention'; }
+    else { statCompTrend.className = 'hstat-trend trend-down'; statCompTrend.textContent = '▲ Overdue'; }
+  }
+
+  // ── Compliance card on Health page
+  const compNum  = document.querySelector('.comp-num');
+  const compDesc = document.querySelector('.comp-desc');
+  const compFill = document.querySelector('.comp-fill');
+  if (compNum)  compNum.textContent = compPct;
+  if (compDesc) compDesc.innerHTML = `${compliantHives} of ${APP.hives.length} hives<br>inspected in last 30 days`;
+  if (compFill) compFill.style.width = compPct + '%';
 }
 
 function renderRecentActivity() {

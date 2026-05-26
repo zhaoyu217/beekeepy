@@ -807,10 +807,10 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
     <div><span class="slbl">Quick Access</span>
       <div class="g22">
-        <div class="gc a1" onclick="goTo('hives')"><div class="gc-ico gi-sage">🏠</div><div class="gc-name">My Hives</div><div class="gc-meta">4 hives · 3 healthy</div><div class="pill p-ok">● All monitored</div></div>
-        <div class="gc a2" onclick="goTo('health')"><div class="gc-ico gi-warn">🔬</div><div class="gc-name">Health</div><div class="gc-meta">Avg mite load 1.8%</div><div class="pill p-warn">⚠ Treatment active</div></div>
-        <div class="gc a3" onclick="goTo('tasks')"><div class="gc-ico gi-honey">📋</div><div class="gc-name">Tasks</div><div class="gc-meta">3 pending today</div><div class="pill p-alert">2 urgent</div></div>
-        <div class="gc a4"><div class="gc-ico gi-ok">🍯</div><div class="gc-name">Harvest Log</div><div class="gc-meta">Last: May 3 · 14lb</div><div class="pill p-ok">84lb this season</div></div>
+        <div class="gc a1" onclick="goTo('hives')"><div class="gc-ico gi-sage">🏠</div><div class="gc-name">My Hives</div><div class="gc-meta" id="gcHivesMeta">4 hives · 3 healthy</div><div class="pill p-ok" id="gcHivesPill">● All monitored</div></div>
+        <div class="gc a2" onclick="goTo('health')"><div class="gc-ico gi-warn">🔬</div><div class="gc-name">Health</div><div class="gc-meta" id="gcHealthMeta">Avg mite load 1.8%</div><div class="pill" id="gcHealthPill">⚠ Treatment active</div></div>
+        <div class="gc a3" onclick="goTo('tasks')"><div class="gc-ico gi-honey">📋</div><div class="gc-name">Tasks</div><div class="gc-meta" id="gcTasksMeta">3 pending today</div><div class="pill" id="gcTasksPill">2 urgent</div></div>
+        <div class="gc a4"><div class="gc-ico gi-ok">🍯</div><div class="gc-name">Harvest Log</div><div class="gc-meta" id="gcHarvestMeta">Last: May 3 · 14lb</div><div class="pill p-ok" id="gcHarvestPill">84lb this season</div></div>
       </div>
     </div>
     <div><span class="slbl">Today's Tasks</span>
@@ -2158,10 +2158,83 @@ function renderDashboard() {
 
   // Recent activity
   renderRecentActivity();
+  // Quick access cards — dynamic
+  renderQuickAccess();
   // Init chart after first render
   if (typeof buildChart === 'function' && !window._chartBuilt) {
     window._chartBuilt = true;
     setTimeout(() => buildChart('honey'), 400);
+  }
+}
+
+function renderQuickAccess() {
+  const total   = APP.hives.length;
+  const healthy = APP.hives.filter(h => h.status === 'healthy').length;
+  const treatment = APP.hives.filter(h => h.status === 'treatment').length;
+  const overdue = APP.hives.filter(h => h.status === 'overdue').length;
+
+  // My Hives card
+  const gcHivesMeta = document.getElementById('gcHivesMeta');
+  const gcHivesPill = document.getElementById('gcHivesPill');
+  if (gcHivesMeta) gcHivesMeta.textContent = `${total} hive${total===1?'':'s'} · ${healthy} healthy`;
+  if (gcHivesPill) {
+    if (overdue > 0) {
+      gcHivesPill.className = 'pill p-alert';
+      gcHivesPill.textContent = `! ${overdue} overdue`;
+    } else if (treatment > 0) {
+      gcHivesPill.className = 'pill p-warn';
+      gcHivesPill.textContent = `⚠ ${treatment} in treatment`;
+    } else {
+      gcHivesPill.className = 'pill p-ok';
+      gcHivesPill.textContent = '● All monitored';
+    }
+  }
+
+  // Health card
+  const hivesWithMites = APP.hives.filter(h => h.mites !== null);
+  const avgMites = hivesWithMites.length > 0
+    ? (hivesWithMites.reduce((a,h) => a + h.mites, 0) / hivesWithMites.length).toFixed(1)
+    : '—';
+  const gcHealthMeta = document.getElementById('gcHealthMeta');
+  const gcHealthPill = document.getElementById('gcHealthPill');
+  if (gcHealthMeta) gcHealthMeta.textContent = `Avg mite load ${avgMites}%`;
+  if (gcHealthPill) {
+    if (treatment > 0) {
+      gcHealthPill.className = 'pill p-warn';
+      gcHealthPill.textContent = `⚠ Treatment active`;
+    } else {
+      gcHealthPill.className = 'pill p-ok';
+      gcHealthPill.textContent = '● All clear';
+    }
+  }
+
+  // Tasks card
+  const pending = APP.tasks.filter(t => !t.done);
+  const urgent  = pending.filter(t => t.urgent);
+  const gcTasksMeta = document.getElementById('gcTasksMeta');
+  const gcTasksPill = document.getElementById('gcTasksPill');
+  if (gcTasksMeta) gcTasksMeta.textContent = `${pending.length} pending today`;
+  if (gcTasksPill) {
+    if (urgent.length > 0) {
+      gcTasksPill.className = 'pill p-alert';
+      gcTasksPill.textContent = `${urgent.length} urgent`;
+    } else if (pending.length > 0) {
+      gcTasksPill.className = 'pill p-honey';
+      gcTasksPill.textContent = `${pending.length} to do`;
+    } else {
+      gcTasksPill.className = 'pill p-ok';
+      gcTasksPill.textContent = '✓ All done';
+    }
+  }
+
+  // Harvest card
+  const totalHoney = APP.hives.reduce((a,h) => a + (h.honey||0), 0);
+  const gcHarvestMeta = document.getElementById('gcHarvestMeta');
+  const gcHarvestPill = document.getElementById('gcHarvestPill');
+  if (gcHarvestMeta) gcHarvestMeta.textContent = totalHoney > 0 ? `${totalHoney}lb this season` : 'No harvest yet';
+  if (gcHarvestPill) {
+    gcHarvestPill.className = 'pill p-ok';
+    gcHarvestPill.textContent = totalHoney > 0 ? `${totalHoney}lb total` : '—';
   }
 }
 

@@ -866,7 +866,16 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
       <div class="chead"><div class="ctitle"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.8"><path stroke-linecap="round" stroke-linejoin="round" d="M11.049 2.927c.3-.921 1.603-.921 1.902 0l1.519 4.674a1 1 0 00.95.69h4.915c.969 0 1.371 1.24.588 1.81l-3.976 2.888a1 1 0 00-.363 1.118l1.518 4.674c.3.922-.755 1.688-1.538 1.118l-3.976-2.888a1 1 0 00-1.176 0l-3.976 2.888c-.783.57-1.838-.197-1.538-1.118l1.518-4.674a1 1 0 00-.363-1.118l-3.976-2.888c-.784-.57-.38-1.81.588-1.81h4.914a1 1 0 00.951-.69l1.519-4.674z"/></svg>Queen Management</div><div class="cedit" onclick="editHive(APP.hives[currentHiveIdx]?.id)">Edit</div></div>
       <div class="qgrid"><div class="qf"><div class="qf-l">Status</div><div class="qf-v" id="qStatus">● Healthy</div></div><div class="qf"><div class="qf-l">Queen Last Seen</div><div class="qf-v" style="color:var(--ok)" id="qQueenSeen">✓ Seen May 21</div></div><div class="qf"><div class="qf-l">Breed</div><div class="qf-v" id="qBreed">Italian</div></div><div class="qf"><div class="qf-l">Source</div><div class="qf-v" id="qSource">Willamette Apiaries</div></div><div class="qf"><div class="qf-l">Est. Year</div><div class="qf-v" id="qYear">2023 · 2nd yr</div></div><div class="qf" style="grid-column:1/-1"><div class="qf-l">Lineage</div><div class="qf-v it" id="hLineage">Carniolan × Italian F2 — gentle, prolific</div></div></div>
     </div>
-    <div class="cta-card a2">
+    <div class="qcard a1" style="margin-top:10px">
+      <div class="chead">
+        <div class="ctitle">🍯 Harvest Log</div>
+        <div class="cedit" onclick="openHarvestModal(currentHiveIdx)">+ Add</div>
+      </div>
+      <div id="hiveHarvestList"></div>
+      <div id="hiveHarvestEmpty" style="text-align:center;padding:16px 0;color:var(--stone);font-size:12px;display:none">
+        No harvests recorded for this hive yet.
+      </div>
+    </div>
       <div class="cta-lbl">Last inspected</div>
       <div class="cta-msg">3 days ago — <em>May 21st</em><br>Next window opens in <em>4 days</em></div>
       <div class="coolbar" id="coolbar"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"/></svg><p><strong>Cool-down active.</strong> Inspecting too soon disrupts temperature &amp; pheromone balance. Wait until May 28.</p></div>
@@ -975,8 +984,6 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
   </div></div>
 </div>
-
-<!-- TASKS -->
 <div class="page" id="pg-tasks">
   <div class="fhdr cream"><div class="hrow"><div><div class="htitle d">Tasks &amp; <em>Calendar</em></div><div class="hsub d">May 2025 · 3 pending today</div></div><button class="ibtn bg-honey"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button></div></div>
   <div class="scroll"><div class="tbody">
@@ -1065,6 +1072,48 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     </div>
     <button class="msave" onclick="saveInspection()">Save Inspection ✓</button>
     <button class="mcancel" onclick="closeM('inspectModal')">Cancel</button>
+  </div>
+</div>
+
+<!-- HARVEST MODAL -->
+<div class="mover" id="harvestModal" role="dialog" aria-modal="true">
+  <div class="modal">
+    <div class="mhnd"></div>
+    <div class="mttl" id="harvestFormTitle">Log New Harvest</div>
+    <div class="msub">Record a honey harvest from your hive</div>
+    <input type="hidden" id="harvestFormId">
+    <div class="fgrp">
+      <label class="flbl">Hive</label>
+      <select class="fsel" id="harvestHive"></select>
+    </div>
+    <div class="frow fgrp">
+      <div><label class="flbl">Date</label><input class="finp" id="harvestDate" type="date"></div>
+      <div><label class="flbl">Weight (lb)</label><input class="finp" id="harvestWeight" type="number" min="0" step="0.1" placeholder="e.g. 14.5"></div>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">Floral Source</label>
+      <select class="fsel" id="harvestFloral">
+        <option value="Clover">Clover</option>
+        <option value="Wildflower">Wildflower</option>
+        <option value="Buckwheat">Buckwheat</option>
+        <option value="Lavender">Lavender</option>
+        <option value="Orange Blossom">Orange Blossom</option>
+        <option value="Manuka">Manuka</option>
+        <option value="Acacia">Acacia</option>
+        <option value="Sunflower">Sunflower</option>
+        <option value="Mixed">Mixed / Unknown</option>
+      </select>
+    </div>
+    <div class="frow fgrp">
+      <div><label class="flbl">Moisture (%)</label><input class="finp" id="harvestMoisture" type="number" min="0" max="25" step="0.1" placeholder="e.g. 17.2"></div>
+      <div><label class="flbl">Frames</label><input class="finp" id="harvestFrames" type="number" min="0" placeholder="e.g. 4"></div>
+    </div>
+    <div class="fgrp">
+      <label class="flbl">Notes</label>
+      <input class="finp" id="harvestNotes" placeholder="Optional: color, texture, observations…">
+    </div>
+    <button class="msave" onclick="saveHarvest()">Save Harvest 🍯</button>
+    <button class="mcancel" onclick="closeM('harvestModal')">Cancel</button>
   </div>
 </div>
 
@@ -2180,8 +2229,13 @@ const DEFAULT_TREATMENTS = [
   {id:'tr3', hiveId:'h1', product:'Apivar (Amitraz strips)', startISO:'2025-06-15', endISO:'2025-08-15', withdrawISO:'2025-09-15', miteBefore:null, notes:'Scheduled', createdISO:new Date().toISOString()},
 ];
 
+const DEFAULT_HARVESTS = [
+  {id:'hv1', hiveId:'h1', dateISO:'2025-05-03', weight:14, floral:'Clover', moisture:17.2, frames:4, notes:'First harvest of season', createdISO:new Date().toISOString()},
+  {id:'hv2', hiveId:'h4', dateISO:'2025-04-20', weight:28, floral:'Wildflower', moisture:18.0, frames:6, notes:'', createdISO:new Date().toISOString()},
+];
+
 // ── APP STATE ──
-let APP = { hives:[], tasks:[], inspections:[], treatments:[] };
+let APP = { hives:[], tasks:[], inspections:[], treatments:[], harvests:[] };
 
 async function initAppData() {
   const saved = await loadState();
@@ -2190,19 +2244,21 @@ async function initAppData() {
     APP.tasks       = saved.tasks       || [];
     APP.inspections = saved.inspections || [];
     APP.treatments  = saved.treatments  || [];
+    APP.harvests    = saved.harvests    || [];
   } else {
     APP.hives       = DEFAULT_HIVES;
     APP.tasks       = DEFAULT_TASKS;
     APP.inspections = DEFAULT_INSPECTIONS;
     APP.treatments  = DEFAULT_TREATMENTS;
-    await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections, treatments: APP.treatments });
+    APP.harvests    = DEFAULT_HARVESTS;
+    await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections, treatments: APP.treatments, harvests: APP.harvests });
   }
   renderAll();
 }
 
 async function persistApp() {
   setSyncStatus('saving');
-  await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections, treatments: APP.treatments });
+  await saveState({ hives: APP.hives, tasks: APP.tasks, inspections: APP.inspections, treatments: APP.treatments, harvests: APP.harvests });
 }
 
 // ══════════════════════════════════════════════════════
@@ -2501,6 +2557,152 @@ function deleteTreatment(id) {
   showToast('Treatment deleted');
 }
 
+// ══════════════════════════════════════════════════════
+// HARVEST LOG CRUD
+// ══════════════════════════════════════════════════════
+let editingHarvestId = null;
+
+function renderHarvests() {
+  const list  = document.getElementById('harvestList');
+  const empty = document.getElementById('harvestEmpty');
+  if (!list) return;
+
+  const harvests = [...(APP.harvests || [])].sort((a,b) => new Date(b.dateISO) - new Date(a.dateISO));
+
+  if (harvests.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.classList.add('show');
+    return;
+  }
+  if (empty) empty.classList.remove('show');
+
+  list.innerHTML = harvests.map(h => {
+    const hive = APP.hives.find(hv => hv.id === h.hiveId);
+    const hiveName = hive ? `${hive.name} — ${hive.nickname}` : '—';
+    const dateFmt  = new Date(h.dateISO).toLocaleDateString('en-US', {month:'short', day:'numeric', year:'numeric'});
+    const details  = [
+      h.floral,
+      h.moisture ? `${h.moisture}% moisture` : null,
+      h.frames   ? `${h.frames} frames` : null,
+    ].filter(Boolean).join(' · ');
+
+    return `<div class="tcard">
+      <div class="ticon ti-d">🍯</div>
+      <div class="ti-info">
+        <div class="ti-nm">${h.weight} lb harvest</div>
+        <div class="ti-hv">${hiveName}</div>
+        <div class="ti-tags">
+          <span class="ttg ttg-d">${dateFmt}</span>
+          ${details ? `<span class="ttg">${details}</span>` : ''}
+        </div>
+        ${h.notes ? `<div style="font-size:11px;color:var(--stone-aa);margin-top:4px">${h.notes}</div>` : ''}
+        <div style="display:flex;gap:8px;margin-top:6px">
+          <button onclick="editHarvest('${h.id}')" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">Edit</button>
+          <button onclick="deleteHarvest('${h.id}')" style="font-size:11px;font-weight:700;color:var(--danger);background:none;border:none;cursor:pointer;font-family:Nunito,sans-serif">Delete</button>
+        </div>
+      </div>
+      <div class="tcount">
+        <div class="tc-n tc-d" style="font-size:16px">${h.weight}</div>
+        <div class="tc-l">lb</div>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openHarvestModal(hiveIdx) {
+  editingHarvestId = null;
+  document.getElementById('harvestFormTitle').textContent = 'Log New Harvest';
+  document.getElementById('harvestFormId').value = '';
+  const sel = document.getElementById('harvestHive');
+  sel.innerHTML = APP.hives.map(h => `<option value="${h.id}">${h.name} — ${h.nickname}</option>`).join('');
+  // Pre-select current hive if index provided
+  if (hiveIdx !== undefined && APP.hives[hiveIdx]) {
+    sel.value = APP.hives[hiveIdx].id;
+  }
+  document.getElementById('harvestDate').value    = new Date().toISOString().substring(0,10);
+  document.getElementById('harvestWeight').value  = '';
+  document.getElementById('harvestFloral').value  = 'Clover';
+  document.getElementById('harvestMoisture').value= '';
+  document.getElementById('harvestFrames').value  = '';
+  document.getElementById('harvestNotes').value   = '';
+  openM('harvestModal');
+}
+
+function editHarvest(id) {
+  const h = APP.harvests.find(h => h.id === id);
+  if (!h) return;
+  editingHarvestId = id;
+  document.getElementById('harvestFormTitle').textContent = 'Edit Harvest';
+  document.getElementById('harvestFormId').value = id;
+  const sel = document.getElementById('harvestHive');
+  sel.innerHTML = APP.hives.map(hv => `<option value="${hv.id}" ${hv.id===h.hiveId?'selected':''}>${hv.name} — ${hv.nickname}</option>`).join('');
+  document.getElementById('harvestDate').value     = h.dateISO || '';
+  document.getElementById('harvestWeight').value   = h.weight  || '';
+  document.getElementById('harvestFloral').value   = h.floral  || 'Clover';
+  document.getElementById('harvestMoisture').value = h.moisture || '';
+  document.getElementById('harvestFrames').value   = h.frames  || '';
+  document.getElementById('harvestNotes').value    = h.notes   || '';
+  openM('harvestModal');
+}
+
+function saveHarvest() {
+  const hiveId   = document.getElementById('harvestHive').value;
+  const dateISO  = document.getElementById('harvestDate').value;
+  const weightRaw= document.getElementById('harvestWeight').value;
+  const weight   = weightRaw !== '' ? parseFloat(weightRaw) : 0;
+  const floral   = document.getElementById('harvestFloral').value;
+  const moistureRaw = document.getElementById('harvestMoisture').value;
+  const moisture = moistureRaw !== '' ? parseFloat(moistureRaw) : null;
+  const framesRaw= document.getElementById('harvestFrames').value;
+  const frames   = framesRaw !== '' ? parseInt(framesRaw) : null;
+  const notes    = document.getElementById('harvestNotes').value.trim();
+
+  if (!dateISO)  { showToast('Please enter a harvest date'); return; }
+  if (!weight)   { showToast('Please enter the harvest weight'); return; }
+
+  const rec = {
+    id:          editingHarvestId || ('hv' + Date.now()),
+    hiveId, dateISO, weight, floral, moisture, frames, notes,
+    createdISO:  new Date().toISOString(),
+  };
+
+  if (editingHarvestId) {
+    const idx = APP.harvests.findIndex(h => h.id === editingHarvestId);
+    if (idx >= 0) APP.harvests[idx] = rec;
+  } else {
+    APP.harvests.unshift(rec);
+  }
+
+  // Update hive honey total
+  const hiveHarvests = APP.harvests.filter(h => h.hiveId === hiveId);
+  const hive = APP.hives.find(hv => hv.id === hiveId);
+  if (hive) hive.honey = Math.round(hiveHarvests.reduce((a,h) => a + (h.weight||0), 0) * 10) / 10;
+
+  persistApp();
+  closeM('harvestModal');
+  renderHarvests();
+  renderHiveDetail(currentHiveIdx);
+  renderDashboard();
+  showToast('🍯 Harvest saved!');
+}
+
+function deleteHarvest(id) {
+  if (!confirm('Delete this harvest record?')) return;
+  const h = APP.harvests.find(h => h.id === id);
+  APP.harvests = APP.harvests.filter(h => h.id !== id);
+  // Recalculate hive honey total
+  if (h) {
+    const hiveHarvests = APP.harvests.filter(hv => hv.hiveId === h.hiveId);
+    const hive = APP.hives.find(hv => hv.id === h.hiveId);
+    if (hive) hive.honey = Math.round(hiveHarvests.reduce((a,hv) => a + (hv.weight||0), 0) * 10) / 10;
+  }
+  persistApp();
+  renderHarvests();
+  renderHiveDetail(currentHiveIdx);
+  renderDashboard();
+  showToast('Harvest deleted');
+}
+
 function renderWarnBanner() {
   const banner = document.getElementById('warnBanner');
   const title  = document.getElementById('warnBannerTitle');
@@ -2640,21 +2842,31 @@ function renderQuickAccess() {
   }
 
   // Harvest card
-  const totalHoney = APP.hives.reduce((a,h) => a + (h.honey||0), 0);
+  const harvests = APP.harvests || [];
+  const totalHarvestHoney = Math.round(harvests.reduce((a,h) => a + (h.weight||0), 0) * 10) / 10;
+  const lastHarvest = [...harvests].sort((a,b) => new Date(b.dateISO)-new Date(a.dateISO))[0];
   const gcHarvestMeta = document.getElementById('gcHarvestMeta');
   const gcHarvestPill = document.getElementById('gcHarvestPill');
-  if (gcHarvestMeta) gcHarvestMeta.textContent = totalHoney > 0 ? `${totalHoney}lb this season` : 'No harvest yet';
+  if (gcHarvestMeta) {
+    if (lastHarvest) {
+      const dateFmt = new Date(lastHarvest.dateISO).toLocaleDateString('en-US',{month:'short',day:'numeric'});
+      gcHarvestMeta.textContent = `Last: ${dateFmt} · ${lastHarvest.weight}lb`;
+    } else {
+      gcHarvestMeta.textContent = 'No harvests yet';
+    }
+  }
   if (gcHarvestPill) {
     gcHarvestPill.className = 'pill p-ok';
-    gcHarvestPill.textContent = totalHoney > 0 ? `${totalHoney}lb total` : '—';
+    gcHarvestPill.textContent = totalHarvestHoney > 0 ? `${totalHarvestHoney}lb total` : '—';
   }
 }
 
 function renderHeroStats() {
-  // ── Honey: sum all hives
-  const totalHoney = APP.hives.reduce((a, h) => a + (h.honey || 0), 0);
+  // ── Honey: sum from harvest log
+  const totalHoney = (APP.harvests || []).reduce((a, h) => a + (h.weight || 0), 0);
+  const roundedHoney = Math.round(totalHoney * 10) / 10;
   const statHoney = document.getElementById('statHoney');
-  if (statHoney) statHoney.innerHTML = `${totalHoney}<span class="hstat-u">lb</span>`;
+  if (statHoney) statHoney.innerHTML = `${roundedHoney}<span class="hstat-u">lb</span>`;
 
   // ── Avg mites: average of all miteBefore from treatments
   const miteVals = (APP.treatments || [])
@@ -2850,6 +3062,47 @@ function renderHiveDetail(i) {
   }
   // Timeline
   renderInspectionTimeline(h.id);
+  // Hive harvest list
+  renderHiveHarvestList(h.id);
+}
+
+function renderHiveHarvestList(hiveId) {
+  const list  = document.getElementById('hiveHarvestList');
+  const empty = document.getElementById('hiveHarvestEmpty');
+  if (!list) return;
+
+  const harvests = (APP.harvests || [])
+    .filter(h => h.hiveId === hiveId)
+    .sort((a,b) => new Date(b.dateISO) - new Date(a.dateISO));
+
+  if (harvests.length === 0) {
+    list.innerHTML = '';
+    if (empty) empty.style.display = 'block';
+    return;
+  }
+  if (empty) empty.style.display = 'none';
+
+  const totalLb = Math.round(harvests.reduce((a,h) => a + (h.weight||0), 0) * 10) / 10;
+
+  list.innerHTML = `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:8px 0 4px;border-bottom:1px solid var(--border);margin-bottom:8px">
+      <span style="font-size:11px;color:var(--stone);font-weight:600">${harvests.length} harvest${harvests.length>1?'s':''}</span>
+      <span style="font-size:13px;font-weight:700;color:var(--honey-mid)">${totalLb} lb total</span>
+    </div>
+    ${harvests.map(h => {
+      const dateFmt = new Date(h.dateISO).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+      return `<div style="display:flex;align-items:center;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border-light)">
+        <div>
+          <div style="font-size:13px;font-weight:700;color:var(--ink)">${h.weight} lb · ${h.floral}</div>
+          <div style="font-size:11px;color:var(--stone)">${dateFmt}${h.moisture ? ` · ${h.moisture}% moisture` : ''}</div>
+          ${h.notes ? `<div style="font-size:11px;color:var(--stone-aa);margin-top:2px">${h.notes}</div>` : ''}
+        </div>
+        <div style="display:flex;gap:6px;flex-shrink:0">
+          <button onclick="editHarvest('${h.id}')" style="font-size:11px;font-weight:700;color:var(--sage-mid);background:var(--sage-light);border:none;border-radius:var(--r-sm);padding:4px 8px;cursor:pointer;font-family:Nunito,sans-serif">Edit</button>
+          <button onclick="deleteHarvest('${h.id}')" style="font-size:11px;font-weight:700;color:var(--danger);background:var(--danger-light);border:none;border-radius:var(--r-sm);padding:4px 8px;cursor:pointer;font-family:Nunito,sans-serif">Delete</button>
+        </div>
+      </div>`;
+    }).join('')}`;
 }
 
 function renderInspectionTimeline(hiveId) {
@@ -3173,6 +3426,10 @@ async function saveQA() {
   window.editInspection   = editInspection;
   window.deleteInspection = deleteInspection;
   window.openInspectionModal = openInspectionModal;
+  window.openHarvestModal  = openHarvestModal;
+  window.editHarvest       = editHarvest;
+  window.deleteHarvest     = deleteHarvest;
+  window.saveHarvest       = saveHarvest;
   window.openTreatModal   = openTreatModal;
   window.editTreatment    = editTreatment;
   window.deleteTreatment  = deleteTreatment;

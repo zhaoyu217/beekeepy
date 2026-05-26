@@ -80,8 +80,8 @@
 .dm-nm{font-size:13px;font-weight:700;color:var(--ink)}
 .dm-sb{font-size:11px;color:var(--stone-aa);margin-top:1px}
 html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:var(--ink);-webkit-font-smoothing:antialiased}
-.shell{max-width:390px;height:100vh;max-height:844px;margin:0 auto;background:var(--cream);display:flex;flex-direction:column;overflow:hidden;position:relative}
-@media(min-height:900px){.shell{margin:20px auto;border-radius:44px;box-shadow:var(--sh-lg)}}
+.shell{max-width:390px;width:100%;height:100vh;max-height:844px;margin:0 auto;background:var(--cream);display:flex;flex-direction:column;overflow:hidden;position:relative;left:0;right:0}
+@media(min-height:900px){.shell{margin:20px auto;border-radius:44px;box-shadow:var(--sh-lg);height:calc(100vh - 40px)}}
 .page{display:none;flex-direction:column;height:100%;overflow:hidden}
 .page{opacity:0;transition:opacity .18s ease}
 .page.active{display:flex;opacity:1}
@@ -643,7 +643,7 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
 .si-ch svg{width:14px;height:14px;color:var(--stone-light)}
 .sclose{margin-top:auto;padding:11px;border-radius:var(--r-md);border:1.5px solid var(--stone-light);background:none;font-family:'Nunito',sans-serif;font-size:13px;color:var(--stone);cursor:pointer;text-align:center}
 /* BOTTOM NAV */
-.bnav{flex-shrink:0;background:var(--white);border-top:1px solid var(--stone-light);display:flex;padding:8px 0 26px;box-shadow:0 -4px 18px rgba(30,25,22,.07);width:100%;max-width:390px}
+.bnav{flex-shrink:0;background:var(--white);border-top:1px solid var(--stone-light);display:flex;padding:8px 0 26px;box-shadow:0 -4px 18px rgba(30,25,22,.07);width:100%}
 .nbtn{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;cursor:pointer;border:none;background:none;padding:0;transition:opacity .15s}
 .nbtn:active{opacity:.6}
 .niw{width:44px;height:32px;display:flex;align-items:center;justify-content:center;border-radius:var(--r-md);transition:background .2s}

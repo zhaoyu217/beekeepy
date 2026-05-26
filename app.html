@@ -795,9 +795,9 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
     <div class="hero a0">
       <div class="hero-top"><div><div class="hero-lbl">Apiary Status</div><div class="hero-loc" id="heroLoc">4 Hives · Portland, OR</div></div><div class="hero-badge"><div class="hbdot"></div><div class="hbtxt" id="heroBadge">3 Healthy</div></div></div>
       <div class="hero-stats">
-        <div class="hstat"><div class="hstat-num">84<span class="hstat-u">lb</span></div><div class="hstat-l">Honey</div><div class="hstat-trend trend-up">▲ +14lb</div></div>
-        <div class="hstat"><div class="hstat-num" id="statMites">1.8<span class="hstat-u">%</span></div><div class="hstat-l">Avg mites</div><div class="hstat-trend trend-down">▼ −0.6%</div></div>
-        <div class="hstat"><div class="hstat-num">73<span class="hstat-u">%</span></div><div class="hstat-l">Compliance</div><div class="hstat-trend trend-up">▲ +5%</div></div>
+        <div class="hstat"><div class="hstat-num" id="statHoney">—<span class="hstat-u">lb</span></div><div class="hstat-l">Honey</div><div class="hstat-trend trend-up" id="statHoneyTrend"></div></div>
+        <div class="hstat"><div class="hstat-num" id="statMites">1.8<span class="hstat-u">%</span></div><div class="hstat-l">Avg mites</div><div class="hstat-trend" id="statMitesTrend"></div></div>
+        <div class="hstat"><div class="hstat-num" id="statCompliance">—<span class="hstat-u">%</span></div><div class="hstat-l">Compliance</div><div class="hstat-trend trend-up" id="statCompTrend"></div></div>
       </div>
     </div>
     <div class="wbanner a1" onclick="goTo('health')">
@@ -1140,9 +1140,10 @@ html,body{height:100%;background:#C8BFB4;font-family:'Nunito',sans-serif;color:v
       </div>
     </div>
     <div class="frow fgrp">
+      <div><label class="flbl">Honey This Season (lb)</label><input class="finp" id="hiveHoney" type="number" min="0" step="0.1" placeholder="e.g. 42"></div>
       <div><label class="flbl">Queen Breed</label><input class="finp" id="hiveQueenBreed" placeholder="e.g. Italian"></div>
-      <div><label class="flbl">Queen Source</label><input class="finp" id="hiveQueenSource" placeholder="e.g. Local breeder"></div>
     </div>
+    <div class="fgrp"><label class="flbl">Queen Source</label><input class="finp" id="hiveQueenSource" placeholder="e.g. Local breeder"></div>
     <button class="msave" onclick="saveHiveForm()">Save Hive ✓</button>
     <button class="mcancel" onclick="closeM('hiveModal')">Cancel</button>
   </div>
@@ -2032,11 +2033,11 @@ loadState().then(s => {
 
 // ── DEFAULT DATA (first run only) ──
 const DEFAULT_HIVES = [
-  {id:'h1', name:'Hive 1', nickname:'Clover',    type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-04-01', frames:8,  strength:'Strong',   mites:1.2, status:'healthy',  queenSeen:'2025-05-21', queenBreed:'Italian',   queenSource:'Willamette Apiaries'},
-  {id:'h2', name:'Hive 2', nickname:'Wildflower', type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-04-01', frames:7,  strength:'Moderate', mites:3.8, status:'treatment', queenSeen:'2025-05-10', queenBreed:'Carniolan',  queenSource:'Local breeder'},
-  {id:'h3', name:'Hive 3', nickname:'Buckwheat',  type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-06-01', frames:6,  strength:'Weak',     mites:null,status:'overdue',   queenSeen:'2025-05-01', queenBreed:'Buckfast',   queenSource:'Oregon Bees'},
-  {id:'h4', name:'Hive 4', nickname:'Lavender',   type:'Langstroth 10-frame', location:'Portland, OR', est:'2024-03-01', frames:9,  strength:'Strong',   mites:0.8, status:'healthy',  queenSeen:'2025-05-19', queenBreed:'Italian',   queenSource:'Willamette Apiaries'},
-  {id:'h5', name:'Hive 5', nickname:'Sunflower',  type:'Langstroth 10-frame', location:'Portland, OR', est:'2024-06-01', frames:7,  strength:'Moderate', mites:1.5, status:'healthy',  queenSeen:'2025-05-18', queenBreed:'Buckfast',  queenSource:'Oregon Bees'},
+  {id:'h1', name:'Hive 1', nickname:'Clover',    type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-04-01', frames:8,  strength:'Strong',   mites:1.2, status:'healthy',  queenSeen:'2025-05-21', queenBreed:'Italian',   queenSource:'Willamette Apiaries', honey:42},
+  {id:'h2', name:'Hive 2', nickname:'Wildflower', type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-04-01', frames:7,  strength:'Moderate', mites:3.8, status:'treatment', queenSeen:'2025-05-10', queenBreed:'Carniolan',  queenSource:'Local breeder', honey:28},
+  {id:'h3', name:'Hive 3', nickname:'Buckwheat',  type:'Langstroth 10-frame', location:'Portland, OR', est:'2023-06-01', frames:6,  strength:'Weak',     mites:null,status:'overdue',   queenSeen:'2025-05-01', queenBreed:'Buckfast',   queenSource:'Oregon Bees', honey:0},
+  {id:'h4', name:'Hive 4', nickname:'Lavender',   type:'Langstroth 10-frame', location:'Portland, OR', est:'2024-03-01', frames:9,  strength:'Strong',   mites:0.8, status:'healthy',  queenSeen:'2025-05-19', queenBreed:'Italian',   queenSource:'Willamette Apiaries', honey:14},
+  {id:'h5', name:'Hive 5', nickname:'Sunflower',  type:'Langstroth 10-frame', location:'Portland, OR', est:'2024-06-01', frames:7,  strength:'Moderate', mites:1.5, status:'healthy',  queenSeen:'2025-05-18', queenBreed:'Buckfast',  queenSource:'Oregon Bees', honey:0},
 ];
 const DEFAULT_TASKS = [
   {id:'t1', text:'Record Hive 2 treatment result', sub:'Oxalic acid ends today', hiveId:'h2', category:'Treatment', dateISO:new Date().toISOString(), done:false, urgent:true},
@@ -2109,13 +2110,31 @@ function renderDashboard() {
   const pendingTasks = APP.tasks.filter(t => !t.done);
   const urgentCount  = pendingTasks.filter(t => t.urgent).length;
 
+  // Calculate totals from real hive data
+  const totalHoney  = APP.hives.reduce((a,h) => a + (h.honey||0), 0);
+  const inspCount   = APP.inspections.length;
+  const compliance  = inspCount > 0 ? Math.min(100, Math.round(60 + inspCount * 5)) : 0;
+  const hivesWithMites = APP.hives.filter(h => h.mites !== null);
+  const realAvgMites = hivesWithMites.length > 0
+    ? hivesWithMites.reduce((a,h) => a + h.mites, 0) / hivesWithMites.length
+    : 0;
+
   // Update hero stats
   const heroLoc = document.getElementById('heroLoc');
-  if (heroLoc) heroLoc.textContent = `${totalHives} Hives · Portland, OR`;
+  if (heroLoc) heroLoc.textContent = `${totalHives} Hive${totalHives===1?'':'s'} · Portland, OR`;
   const heroBadge = document.getElementById('heroBadge');
   if (heroBadge) heroBadge.textContent = `${healthyCount} Healthy`;
   const statMites = document.getElementById('statMites');
-  if (statMites) statMites.textContent = avgMites.toFixed(1) + '%';
+  if (statMites) statMites.innerHTML = realAvgMites.toFixed(1) + '<span class="hstat-u">%</span>';
+  const statHoney = document.getElementById('statHoney');
+  if (statHoney) statHoney.innerHTML = totalHoney + '<span class="hstat-u">lb</span>';
+  const statComp  = document.getElementById('statCompliance');
+  if (statComp) statComp.innerHTML = compliance + '<span class="hstat-u">%</span>';
+  const mitesTrend = document.getElementById('statMitesTrend');
+  if (mitesTrend) {
+    mitesTrend.className = 'hstat-trend ' + (realAvgMites > 2 ? 'trend-down' : 'trend-up');
+    mitesTrend.textContent = realAvgMites > 2 ? '▼ High — treat' : '▲ Safe range';
+  }
 
   // Render tasks
   const taskList = document.getElementById('dashTasks');
@@ -2368,6 +2387,7 @@ function editHive(id) {
   document.getElementById('hiveMites').value    = h.mites !== null ? h.mites : '';
   document.getElementById('hiveStrength').value = h.strength || 'Strong';
   document.getElementById('hiveStatus').value   = h.status || 'healthy';
+  document.getElementById('hiveHoney').value       = h.honey !== undefined ? h.honey : '';
   document.getElementById('hiveQueenBreed').value  = h.queenBreed || '';
   document.getElementById('hiveQueenSource').value = h.queenSource || '';
   openM('hiveModal');
@@ -2389,6 +2409,7 @@ function saveHiveForm() {
   const mites    = parseFloat(document.getElementById('hiveMites').value);
   const strength = document.getElementById('hiveStrength').value   || 'Strong';
   const status   = document.getElementById('hiveStatus').value     || 'healthy';
+  const honey        = parseFloat(document.getElementById('hiveHoney').value) || 0;
   const queenBreed   = document.getElementById('hiveQueenBreed').value.trim();
   const queenSource  = document.getElementById('hiveQueenSource').value.trim();
 
@@ -2398,14 +2419,14 @@ function saveHiveForm() {
       h.name = name; h.nickname = nickname; h.location = location; h.type = type;
       h.frames = frames; h.mites = isNaN(mites) ? null : mites;
       h.strength = strength; h.status = status;
-      h.queenBreed = queenBreed; h.queenSource = queenSource;
+      h.honey = honey; h.queenBreed = queenBreed; h.queenSource = queenSource;
     }
   } else {
     APP.hives.push({
       id: 'h' + Date.now(), name, nickname, type, location,
       est: new Date().toISOString(), frames, strength,
       mites: isNaN(mites) ? null : mites,
-      status, queenSeen: null, queenBreed, queenSource
+      status, queenSeen: null, honey, queenBreed, queenSource
     });
   }
 

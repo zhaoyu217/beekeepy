@@ -268,6 +268,18 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;heigh
 .tog-k{width:20px;height:20px;border-radius:50%;background:#fff;position:absolute;top:3px;left:3px;transition:transform .2s;box-shadow:0 1px 4px rgba(0,0,0,.2)}
 .tog.on .tog-k{transform:translateX(18px)}
 @keyframes spin{to{transform:rotate(360deg)}}
+/* TIMELINE PHOTO CARD */
+.tl-photo{width:100%;border-radius:var(--r-md);max-height:160px;object-fit:cover;margin-top:8px}
+.tl-chips{display:flex;flex-wrap:wrap;gap:4px;margin-top:6px}
+.tl-chip{font-size:10px;font-weight:700;padding:2px 7px;border-radius:var(--r-pill);background:var(--stone-light);color:var(--stone)}
+.tl-chip.ok{background:var(--ok-light);color:var(--ok)}
+.tl-chip.warn{background:var(--warn-light);color:var(--warn)}
+.tl-chip.danger{background:var(--danger-light);color:var(--danger)}
+/* QUEEN BAR */
+.queen-stat{display:flex;flex-direction:column;align-items:center;gap:2px;flex:1;min-width:0}
+.queen-stat-val{font-size:13px;font-weight:800;color:var(--ink);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:100%;text-align:center}
+.queen-stat-lbl{font-size:9px;color:var(--stone);text-transform:uppercase;letter-spacing:.06em;text-align:center}
+.queen-divider{width:1px;height:32px;background:var(--stone-light);flex-shrink:0}
 </style>
 </head>
 <body>
@@ -314,6 +326,7 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;heigh
         <div><div class="phdr-title">My <em>Hives</em></div><div class="phdr-sub" id="hivesSubtitle">—</div></div>
         <button class="phdr-btn" onclick="openAddHive()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.2"><path stroke-linecap="round" stroke-linejoin="round" d="M12 4v16m8-8H4"/></svg></button>
       </div>
+      <div class="apiary-tabs" id="apiaryTabs" style="margin-top:10px"></div>
     </div>
     <div class="scroll"><div class="hives-body">
       <div class="hive-grid" id="hiveGrid"></div>
@@ -327,7 +340,11 @@ input[type=range]::-webkit-slider-thumb{-webkit-appearance:none;width:28px;heigh
         <button class="hd-back" onclick="openHiveInfoDrawer()" style="margin-left:auto;font-size:16px;background:rgba(255,255,255,.12)">ℹ️</button>
         <button class="hd-back" onclick="editCurrentHive()"><svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"/></svg></button>
       </div>
-      <div class="hd-scroll"><div id="hiveTL"></div></div>
+      <div class="hd-scroll">
+        <div id="hiveQueenBar" style="background:var(--white);border-radius:var(--r-lg);padding:12px 14px;box-shadow:var(--sh-sm);margin-bottom:14px;display:flex;gap:14px;align-items:center"></div>
+        <div class="slbl" style="margin-bottom:8px">Timeline</div>
+        <div id="hiveTL"></div>
+      </div>
       <div class="info-drawer" id="hiveInfoDrawer" onclick="if(event.target===this)closeHiveInfoDrawer()">
         <div class="info-panel"><div class="mhnd"></div><div id="hiveInfoContent"></div></div>
       </div>
@@ -658,56 +675,180 @@ function drawHealthRing(healthy,total){
 // TAB 2: HIVES
 // ══════════════════════════════════════════════════════
 let currentHiveId=null;
-function renderHiveGrid(){
-  document.getElementById('hivesSubtitle').textContent=`${APP.hives.length} hive${APP.hives.length===1?'':'s'} · ${APP.hives[0]?.location||'My Apiary'}`;
-  const grid=document.getElementById('hiveGrid');
-  const empty=document.getElementById('hiveEmpty');
-  if(APP.hives.length===0){grid.innerHTML='';empty.style.display='flex';return;}
-  empty.style.display='none';
-  const sc={healthy:'var(--ok)',treatment:'var(--warn)',overdue:'var(--danger)'};
-  const bc=['var(--sage)','var(--honey)','var(--ok)','var(--sage-mid)','var(--amber)'];
-  const bl=['Pop','Brood','Honey','Temp','Queen'];
-  grid.innerHTML=APP.hives.map(h=>{
-    const bars=[
-      Math.min(100,(h.frames||0)/10*100),
-      h.strength==='Strong'?90:h.strength==='Moderate'?60:30,
-      Math.min(100,(h.honey||0)/50*100),
-      75,
-      h.queenSeen?95:40
+let currentApiary = 'all';
+
+function renderApiaryTabs() {
+  const tabs = document.getElementById('apiaryTabs');
+  if (!tabs) return;
+  // Get unique apiary names from hive locations
+  const apiaries = ['all', ...new Set(APP.hives.map(h => h.location).filter(Boolean))];
+  tabs.innerHTML = apiaries.map(a => `
+    <button class="apiary-tab ${a===currentApiary?'on':''}" onclick="selectApiary('${a}')">
+      ${a==='all'?'All Apiaries':a}
+    </button>`).join('');
+}
+
+function selectApiary(name) {
+  currentApiary = name;
+  renderApiaryTabs();
+  renderHiveGrid();
+}
+
+function renderHiveGrid() {
+  renderApiaryTabs();
+  const filtered = currentApiary==='all' ? APP.hives : APP.hives.filter(h=>h.location===currentApiary);
+  const total = filtered.length;
+  document.getElementById('hivesSubtitle').textContent = `${total} hive${total===1?'':'s'} · ${currentApiary==='all'?'All Apiaries':currentApiary}`;
+  const grid = document.getElementById('hiveGrid');
+  const empty = document.getElementById('hiveEmpty');
+  if (total === 0) { grid.innerHTML = ''; empty.style.display = 'flex'; return; }
+  empty.style.display = 'none';
+
+  const sc = {healthy:'var(--ok)', treatment:'var(--warn)', overdue:'var(--danger)'};
+
+  grid.innerHTML = filtered.map(h => {
+    // 5D health scores (0-100)
+    const scores = calcHive5D(h);
+    const dims = [
+      {lbl:'Pop', val:scores.population, color:'var(--sage)'},
+      {lbl:'Brood', val:scores.brood, color:'var(--honey)'},
+      {lbl:'Honey', val:scores.honey, color:'var(--amber)'},
+      {lbl:'Temper', val:scores.temper, color:'var(--sage-mid)'},
+      {lbl:'Queen', val:scores.queen, color:'var(--ok)'},
     ];
+    const dotColor = sc[h.status] || 'var(--stone)';
+    const barHtml = dims.map(d => {
+      const h_px = Math.max(3, Math.round(d.val / 5));
+      const opacity = 0.4 + (d.val / 160);
+      return `<div class="hbar" style="background:${d.color};height:${h_px}px;opacity:${opacity}"></div>`;
+    }).join('');
+    const lblHtml = dims.map(d => `<div class="hbar-l">${d.lbl}</div>`).join('');
     return `<div class="hive-card" onclick="openHiveDetail('${h.id}')">
-      <div class="hive-card-top"><div class="hive-num">${h.name}</div><div class="hive-status-dot" style="background:${sc[h.status]||'var(--stone)'}"></div></div>
+      <div class="hive-card-top">
+        <div class="hive-num">${h.name}</div>
+        <div class="hive-status-dot" style="background:${dotColor}"></div>
+      </div>
       <div class="hive-nick">${h.nickname}</div>
-      <div class="health-bars">${bars.map((v,i)=>`<div class="hbar" style="background:${bc[i]};height:${Math.max(4,v/5)}px"></div>`).join('')}</div>
-      <div class="hbar-lbl">${bl.map(l=>`<div class="hbar-l">${l}</div>`).join('')}</div>
+      <div class="health-bars">${barHtml}</div>
+      <div class="hbar-lbl">${lblHtml}</div>
     </div>`;
   }).join('');
 }
-function openHiveDetail(hiveId){
-  currentHiveId=hiveId;
-  const h=APP.hives.find(h=>h.id===hiveId);
-  if(!h)return;
-  document.getElementById('hdTitle').textContent=`${h.name} — ${h.nickname}`;
+
+function calcHive5D(h) {
+  // Population: based on frames (10 frames = 100%)
+  const population = Math.min(100, Math.round((h.frames||0) / 10 * 100));
+  // Brood: based on strength
+  const brood = h.strength==='Strong'?90 : h.strength==='Moderate'?60 : h.strength==='Weak'?30 : 20;
+  // Honey: based on honey yield (50lb = 100%)
+  const honey = Math.min(100, Math.round((h.honey||0) / 50 * 100));
+  // Temper: based on mite load (0 mites = 100%, 5%+ mites = 0%)
+  const miteLoad = h.mites !== null && h.mites !== undefined ? h.mites : 2;
+  const temper = Math.max(0, Math.round(100 - (miteLoad * 15)));
+  // Queen: based on queen seen recency
+  let queen = 50;
+  if (h.queenSeen) {
+    const daysSince = Math.floor((Date.now() - new Date(h.queenSeen)) / 86400000);
+    queen = daysSince <= 7 ? 100 : daysSince <= 14 ? 85 : daysSince <= 30 ? 65 : 40;
+  }
+  return {population, brood, honey, temper, queen};
+}
+function openHiveDetail(hiveId) {
+  currentHiveId = hiveId;
+  const h = APP.hives.find(h => h.id === hiveId);
+  if (!h) return;
+  document.getElementById('hdTitle').textContent = `${h.name} — ${h.nickname}`;
+  renderHiveQueenBar(h);
   renderHiveTimeline(hiveId);
-  const pg=document.getElementById('hiveDetailPage');
-  pg.style.display='flex';
-  requestAnimationFrame(()=>pg.classList.add('open'));
+  const pg = document.getElementById('hiveDetailPage');
+  pg.style.display = 'flex';
+  requestAnimationFrame(() => pg.classList.add('open'));
+}
+
+function renderHiveQueenBar(h) {
+  const bar = document.getElementById('hiveQueenBar');
+  if (!bar) return;
+  const est = h.est ? new Date(h.est).getFullYear() : '—';
+  const age = h.est ? (new Date().getFullYear() - new Date(h.est).getFullYear()) : '—';
+  const qs = h.queenSeen ? new Date(h.queenSeen).toLocaleDateString('en-US',{month:'short',day:'numeric'}) : 'Unknown';
+  const daysSince = h.queenSeen ? Math.floor((Date.now()-new Date(h.queenSeen))/86400000) : null;
+  const queenStatus = daysSince===null ? '—' : daysSince<=7 ? '✓ Recent' : daysSince<=30 ? `${daysSince}d ago` : '⚠ Long ago';
+  const queenColor = daysSince===null ? 'var(--stone)' : daysSince<=7 ? 'var(--ok)' : daysSince<=30 ? 'var(--warn)' : 'var(--danger)';
+
+  bar.innerHTML = `
+    <div class="queen-stat"><div class="queen-stat-val">${h.queenBreed||'—'}</div><div class="queen-stat-lbl">Breed</div></div>
+    <div class="queen-divider"></div>
+    <div class="queen-stat"><div class="queen-stat-val">${est}</div><div class="queen-stat-lbl">Est.</div></div>
+    <div class="queen-divider"></div>
+    <div class="queen-stat"><div class="queen-stat-val" style="color:${queenColor}">${queenStatus}</div><div class="queen-stat-lbl">Queen Seen</div></div>
+    <div class="queen-divider"></div>
+    <div class="queen-stat"><div class="queen-stat-val">${h.type||'—'}</div><div class="queen-stat-lbl">Type</div></div>`;
 }
 function closeHiveDetail(){
   const pg=document.getElementById('hiveDetailPage');
   pg.classList.remove('open');
   setTimeout(()=>{pg.style.display='none';},320);
 }
-function renderHiveTimeline(hiveId){
-  const inspections=APP.inspections.filter(i=>i.hiveId===hiveId).map(i=>({type:'inspect',date:i.dateISO,title:i.title||'Inspection',body:i.notes,icon:'🔍'}));
-  const harvests=APP.harvests.filter(hv=>hv.hiveId===hiveId).map(hv=>({type:'harvest',date:hv.dateISO+'T00:00:00Z',title:`Harvest ${hv.weight}lb`,body:`${hv.floral}${hv.moisture?' · '+hv.moisture+'% moisture':''}`,icon:'🍯'}));
-  const treatments=APP.treatments.filter(t=>t.hiveId===hiveId).map(t=>({type:'treat',date:t.startISO+'T00:00:00Z',title:t.product,body:'Treatment started',icon:'💊'}));
-  const events=[...inspections,...harvests,...treatments].sort((a,b)=>new Date(b.date)-new Date(a.date));
-  const tl=document.getElementById('hiveTL');
-  if(events.length===0){tl.innerHTML='<div class="le-empty"><div class="le-emoji">📋</div><div class="le-title">No history yet</div><div class="le-desc">Use Record tab to log your first inspection</div></div>';return;}
-  tl.innerHTML=events.map(e=>{
-    const date=new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
-    return `<div class="tl-item"><div class="tl-dot">${e.icon}</div><div class="tl-content"><div class="tl-date">${date}</div><div class="tl-title">${e.title}</div>${e.body?`<div class="tl-body">${e.body}</div>`:''}</div></div>`;
+function renderHiveTimeline(hiveId) {
+  const inspections = APP.inspections.filter(i => i.hiveId===hiveId).map(i => {
+    const chips = [];
+    if (i.queenSeen===true) chips.push({txt:'Queen ✓', cls:'ok'});
+    if (i.queenCells===true) chips.push({txt:'Queen Cells ⚠', cls:'warn'});
+    if (i.miteCount>=3) chips.push({txt:`Mites ${i.miteCount}%`, cls:'danger'});
+    else if (i.miteCount>0) chips.push({txt:`Mites ${i.miteCount}%`, cls:''});
+    if (i.broodFrames) chips.push({txt:`${i.broodFrames} brood`, cls:''});
+    if (i.honeyFrames) chips.push({txt:`${i.honeyFrames} honey`, cls:''});
+    return {
+      type:'inspect', date:i.dateISO,
+      title: i.title||'Inspection', body:i.notes||'',
+      icon:'🔍', chips,
+      photo: i.photos && i.photos[0] ? i.photos[0] : null,
+    };
+  });
+  const harvests = APP.harvests.filter(hv=>hv.hiveId===hiveId).map(hv => ({
+    type:'harvest', date:hv.dateISO+'T00:00:00Z',
+    title:`Harvest ${hv.weight} lb`, body:hv.notes||'',
+    icon:'🍯',
+    chips:[
+      {txt:hv.floral, cls:''},
+      ...(hv.moisture?[{txt:`${hv.moisture}% moisture`, cls:''}]:[]),
+      ...(hv.frames?[{txt:`${hv.frames} frames`, cls:''}]:[]),
+    ],
+    photo: null,
+  }));
+  const treatments = APP.treatments.filter(t=>t.hiveId===hiveId).map(t => ({
+    type:'treat', date:t.startISO+'T00:00:00Z',
+    title:t.product, body:t.notes||'',
+    icon:'💊',
+    chips:[
+      {txt:'Treatment started', cls:'warn'},
+      ...(t.miteBefore!=null?[{txt:`Before: ${t.miteBefore}%`, cls:'danger'}]:[]),
+    ],
+    photo: null,
+  }));
+
+  const events = [...inspections,...harvests,...treatments].sort((a,b)=>new Date(b.date)-new Date(a.date));
+  const tl = document.getElementById('hiveTL');
+
+  if (events.length===0) {
+    tl.innerHTML = '<div class="le-empty"><div class="le-emoji">📋</div><div class="le-title">No history yet</div><div class="le-desc">Use Record tab to log your first inspection</div></div>';
+    return;
+  }
+
+  tl.innerHTML = events.map(e => {
+    const date = new Date(e.date).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'});
+    const chipsHtml = e.chips?.length ? `<div class="tl-chips">${e.chips.map(c=>`<span class="tl-chip ${c.cls||''}">${c.txt}</span>`).join('')}</div>` : '';
+    const photoHtml = e.photo ? `<img class="tl-photo" src="${e.photo}" alt="inspection photo">` : '';
+    return `<div class="tl-item">
+      <div class="tl-dot">${e.icon}</div>
+      <div class="tl-content">
+        <div class="tl-date">${date}</div>
+        <div class="tl-title">${e.title}</div>
+        ${e.body ? `<div class="tl-body">${e.body}</div>` : ''}
+        ${chipsHtml}
+        ${photoHtml}
+      </div>
+    </div>`;
   }).join('');
 }
 function openHiveInfoDrawer(){
@@ -1159,6 +1300,7 @@ async function runAIDiagnosis(){
 // BOOTSTRAP
 // ══════════════════════════════════════════════════════
 (async function bootstrap(){
+  window.selectApiary=selectApiary;window.calcHive5D=calcHive5D;
   window.goTo=goTo;window.openM=openM;window.closeM=closeM;
   window.openAddHive=openAddHive;window.saveHiveForm=saveHiveForm;window.editHive=editHive;window.deleteHive=deleteHive;
   window.openHiveDetail=openHiveDetail;window.closeHiveDetail=closeHiveDetail;

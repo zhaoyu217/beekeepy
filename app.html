@@ -4963,7 +4963,7 @@ async function saveBatchInspection(){
       mite_count:mc,score,notes,
       hive_weight:document.getElementById('insp-weight')?.value?parseFloat(document.getElementById('insp-weight').value):null
     };
-    const _itok=await getAuthToken();const _ir=await fetch(SUPABASE_URL+'/rest/v1/inspections',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_itok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(record)});const _ij=await _ir.json();const data=Array.isArray(_ij)?_ij[0]:_ij;const error=_ir.ok?null:{message:_ij?.message||_ir.status};
+    const { data, error } = await sb.from('inspections').insert(record).select().single();
     if(!error&&data)inspections.unshift(data);
     done++;
     progressText.textContent=done+'/'+total;
@@ -5022,7 +5022,7 @@ async function saveInspectionTreatment(){
     reason: document.getElementById('insp-treat-reason')?.value||null,
     note: '',
   };
-  const _ttok=await getAuthToken();const _tr2=await fetch(SUPABASE_URL+'/rest/v1/treatments',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_ttok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(payload)});const _tj2=await _tr2.json();const data=Array.isArray(_tj2)?_tj2[0]:_tj2;const error=_tr2.ok?null:{message:_tj2?.message||_tr2.status};
+  const { data, error } = await sb.from('treatments').insert(payload).select().single();
   if(error){setSyncing('error');showToast('Error: '+error.message,'error');return;}
   treatments.unshift(data);
   setSyncing('saved');
@@ -5107,22 +5107,21 @@ async function saveInspection(mode){
   };
   let data,error;
   if(editingInspectionId){
-    {const _itok=await getAuthToken();const _ir=await fetch(SUPABASE_URL+'/rest/v1/inspections?id=eq.'+editingInspectionId,{method:'PATCH',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_itok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(record)});const _ij=await _ir.json();data=Array.isArray(_ij)?_ij[0]:_ij;error=_ir.ok?null:{message:_ij?.message||_ir.status};}
+    {const _res=await sb.from('inspections').update(record).eq('id', editingInspectionId).select().single();data=_res.data;error=_res.error;}
     if(!error&&data){const idx=inspections.findIndex(i=>i.id===editingInspectionId);if(idx>=0)inspections[idx]={...inspections[idx],...data};}
     editingInspectionId=null;
     document.getElementById('single-save-btns').innerHTML=`<button class="btn btn-outline" onclick="saveInspection('draft')" ><span data-i18n="save_draft">Save Draft</span></button><button class="btn btn-primary" onclick="saveInspection('done')"><span data-i18n="complete">Complete ✓</span></button>`;
   } else {
-    {const _itok=await getAuthToken();const _ir=await fetch(SUPABASE_URL+'/rest/v1/inspections',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_itok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(record)});const _ij=await _ir.json();data=Array.isArray(_ij)?_ij[0]:_ij;error=_ir.ok?null:{message:_ij?.message||_ir.status};console.log('[saveInspection] data:',data,'error:',error);}
+    {const _res=await sb.from('inspections').insert(record).select().single();data=_res.data;error=_res.error;console.log('[saveInspection] data:',data,'error:',error);}
     if(error){setSyncing('error');showToast('Error saving: '+(error.message||'unknown'),'error');return;}
     if(data)inspections.unshift(data);
   }
   // Link pending photos to this inspection
   if(pendingPhotos.length>0 && data?.id){
-    const _ptok=await getAuthToken();
-    for(const p of pendingPhotos){
-      await fetch(SUPABASE_URL+'/rest/v1/photos?id=eq.'+p.id,{method:'PATCH',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_ptok,'Content-Type':'application/json'},body:JSON.stringify({inspection_id:data.id})});
-      p.inspection_id=data.id;
-    }
+      for(const p of pendingPhotos){
+        await sb.from('photos').update({inspection_id:data.id}).eq('id', p.id);
+        p.inspection_id=data.id;
+      }
   }
   setSyncing('saved');
   showToast((mode==='draft'?t('toast_draft_saved'):t('toast_insp_complete'))+' '+score+(mc>=3?' '+t('toast_mite_warn')+' '+mc+'%!':''), mc>=3?'warning':'success');
@@ -5168,7 +5167,7 @@ async function addTreatment(){
     reason:document.getElementById('treat-reason').value||null,
   };
   if(editingTreatId){
-    const _ttok=await getAuthToken();const _tr2=await fetch(SUPABASE_URL+'/rest/v1/treatments?id=eq.'+editingTreatId,{method:'PATCH',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_ttok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(payload)});const _tj2=await _tr2.json();const data=Array.isArray(_tj2)?_tj2[0]:_tj2;const error=_tr2.ok?null:{message:_tj2?.message||_tr2.status};
+    const { data, error } = await sb.from('treatments').update(payload).eq('id', editingTreatId).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
     const idx=treatments.findIndex(t=>t.id===editingTreatId);
     if(idx>=0)treatments[idx]={...treatments[idx],...data};
@@ -5177,7 +5176,7 @@ async function addTreatment(){
     document.querySelector('#pg-treatment .card-title span').textContent='Log Treatment';
     setSyncing('saved');renderTreatments();showToast('Treatment updated ✓');
   } else {
-    const _ttok=await getAuthToken();const _tr2=await fetch(SUPABASE_URL+'/rest/v1/treatments',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_ttok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({user_id:currentUser.id,...payload})});const _tj2=await _tr2.json();const data=Array.isArray(_tj2)?_tj2[0]:_tj2;const error=_tr2.ok?null:{message:_tj2?.message||_tr2.status};
+    const { data, error } = await sb.from('treatments').insert({user_id:currentUser.id,...payload}).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
     treatments.unshift(data);setSyncing('saved');renderTreatments();
     showToast(t('toast_treatment_saved'));
@@ -5211,7 +5210,7 @@ async function addHarvest(){
   setSyncing('syncing');
   const payload={hive_id:document.getElementById('harv-hive').value,honey_lbs:+document.getElementById('honey-val').textContent,wax_oz:+document.getElementById('wax-val').textContent,honey_type:document.getElementById('harv-type').value,harvest_date:document.getElementById('harv-date').value||new Date().toISOString().split('T')[0],note:document.getElementById('harv-note').value};
   if(editingHarvestId){
-    const _hvtok=await getAuthToken();const _hvr=await fetch(SUPABASE_URL+'/rest/v1/harvests?id=eq.'+editingHarvestId,{method:'PATCH',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_hvtok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(payload)});const _hvj=await _hvr.json();const data=Array.isArray(_hvj)?_hvj[0]:_hvj;const error=_hvr.ok?null:{message:_hvj?.message||_hvr.status};
+    const { data, error } = await sb.from('harvests').update(payload).eq('id', editingHarvestId).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
     const idx=harvests.findIndex(h=>h.id===editingHarvestId);
     if(idx>=0)harvests[idx]={...harvests[idx],...data};
@@ -5220,7 +5219,7 @@ async function addHarvest(){
     document.querySelector('#pg-harvest .card-title span').textContent='Record Harvest';
     setSyncing('saved');renderHarvests();renderHome();showToast('Harvest updated ✓');
   } else {
-    const _hvtok=await getAuthToken();const _hvr=await fetch(SUPABASE_URL+'/rest/v1/harvests',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_hvtok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify({user_id:currentUser.id,...payload})});const _hvj=await _hvr.json();const data=Array.isArray(_hvj)?_hvj[0]:_hvj;const error=_hvr.ok?null:{message:_hvj?.message||_hvr.status};
+    const { data, error } = await sb.from('harvests').insert({user_id:currentUser.id,...payload}).select().single();
     if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
     harvests.unshift(data);setSyncing('saved');renderHarvests();showToast(t('toast_harvest_saved'));
   }
@@ -5252,10 +5251,10 @@ async function saveQueen(){
     };
     // Save to queen_history table (create if needed)
     await sb.from('queen_history').insert(historyEntry).then(()=>{});
-    {const _qtok=await getAuthToken();const _qr=await fetch(SUPABASE_URL+'/rest/v1/queens?id=eq.'+existing.id,{method:'PATCH',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_qtok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(record)});const _qj=await _qr.json();data=Array.isArray(_qj)?_qj[0]:_qj;error=_qr.ok?null:{message:_qj?.message||_qr.status};}
+    {const _res=await sb.from('queens').update(record).eq('id', existing.id).select().single();data=_res.data;error=_res.error;}
     if(!error){const idx=queens.findIndex(q=>q.id===existing.id);queens[idx]=data;}
   } else {
-    {const _qtok=await getAuthToken();const _qr=await fetch(SUPABASE_URL+'/rest/v1/queens',{method:'POST',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_qtok,'Content-Type':'application/json','Prefer':'return=representation'},body:JSON.stringify(record)});const _qj=await _qr.json();data=Array.isArray(_qj)?_qj[0]:_qj;error=_qr.ok?null:{message:_qj?.message||_qr.status};}
+    {const _res=await sb.from('queens').insert(record).select().single();data=_res.data;error=_res.error;}
     if(!error)queens.push(data);
   }
   if(error){setSyncing('error');showToast(t('error_lbl')+': '+error.message,'error');return;}
@@ -5297,9 +5296,8 @@ function confirmDeleteApiary(apiaryId){
 async function deleteApiary(apiaryId){
   document.getElementById('modal-delete-apiary')?.remove();
   setSyncing('syncing');
-  const _datok=await getAuthToken();const _dah={'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_datok,'Content-Type':'application/json'};
-  await fetch(SUPABASE_URL+'/rest/v1/hives?apiary_id=eq.'+apiaryId,{method:'PATCH',headers:_dah,body:JSON.stringify({apiary_id:null})});
-  const _dar=await fetch(SUPABASE_URL+'/rest/v1/apiaries?id=eq.'+apiaryId,{method:'DELETE',headers:_dah});const error=_dar.ok?null:{message:_dar.status};
+  await sb.from('hives').update({apiary_id:null}).eq('apiary_id', apiaryId);
+  const { error } = await sb.from('apiaries').delete().eq('id', apiaryId);
   if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
   apiaries=apiaries.filter(a=>a.id!==apiaryId);
   hives=hives.map(h=>h.apiary_id===apiaryId?{...h,apiary_id:null}:h);
@@ -5335,30 +5333,16 @@ async function saveApiary(){
   }
 
   if(editingApiaryId){
-    const _tok2 = await getAuthToken();
-    const _res2 = await fetch(SUPABASE_URL+'/rest/v1/apiaries?id=eq.'+editingApiaryId, {
-      method:'PATCH',
-      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok2,'Content-Type':'application/json','Prefer':'return=representation'},
-      body:JSON.stringify(payload)
-    });
-    const _json2 = await _res2.json();
-    if(!_res2.ok){setSyncing('error');showToast('Error: '+(_json2?.message||_res2.status),'error');return;}
-    const _updated = Array.isArray(_json2)?_json2[0]:_json2;
+    const { data: _updated, error: _err2 } = await sb.from('apiaries').update(payload).eq('id', editingApiaryId).select().single();
+    if(_err2){setSyncing('error');showToast('Error: '+(_err2.message||_err2.code),'error');return;}
     const idx=apiaries.findIndex(a=>a.id===editingApiaryId);
     if(idx>=0)apiaries[idx]={...apiaries[idx],..._updated};
     editingApiaryId=null;
     setSyncing('saved');closeModal('modal-apiary');renderSettings();renderHome();showToast('Apiary updated ✓');
   } else {
     try {
-    const _tok = await getAuthToken();
-    const _res = await fetch(SUPABASE_URL+'/rest/v1/apiaries', {
-      method:'POST',
-      headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok,'Content-Type':'application/json','Prefer':'return=representation'},
-      body:JSON.stringify({user_id:currentUser.id,...payload})
-    });
-    const _json = await _res.json();
-    if(!_res.ok){setSyncing('error');showToast('Error: '+(_json?.message||_res.status),'error');return;}
-    const data = Array.isArray(_json)?_json[0]:_json;
+    const { data, error: _err } = await sb.from('apiaries').insert({user_id:currentUser.id,...payload}).select().single();
+    if(_err){setSyncing('error');showToast('Error: '+(_err.message||_err.code),'error');return;}
     if(!data){setSyncing('error');showToast('Save failed','error');return;}
     apiaries.push(data);setSyncing('saved');closeModal('modal-apiary');renderSettings();showToast(t('toast_apiary_saved'));
     if (hives.length === 0) {
@@ -5490,13 +5474,9 @@ async function saveHive(){
   }
 
   try {
-  const _tok = await getAuthToken();
-  const _hdr = {'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_tok,'Content-Type':'application/json','Prefer':'return=representation'};
   if(editingHiveId){
-    const _r=await fetch(SUPABASE_URL+'/rest/v1/hives?id=eq.'+editingHiveId,{method:'PATCH',headers:_hdr,body:JSON.stringify(payload)});
-    const _j=await _r.json();
-    if(!_r.ok){setSyncing('error');showToast('Error: '+(_j?.message||_r.status),'error');return;}
-    const _d=Array.isArray(_j)?_j[0]:_j;
+    const { data: _d, error: _e } = await sb.from('hives').update(payload).eq('id', editingHiveId).select().single();
+    if(_e){setSyncing('error');showToast('Error: '+(_e.message||_e.code),'error');return;}
     const idx=hives.findIndex(h=>h.id===editingHiveId);
     if(idx>=0)hives[idx]={...hives[idx],..._d};
     editingHiveId=null;
@@ -5505,10 +5485,8 @@ async function saveHive(){
     if(hives.length >= 3 && !userIsPro()) {
       setSyncing('saved');closeModal('modal-hive');showUpgradeModal('hive_limit');return;
     }
-    const _r=await fetch(SUPABASE_URL+'/rest/v1/hives',{method:'POST',headers:_hdr,body:JSON.stringify({user_id:currentUser.id,...payload,status:'ok'})});
-    const _j=await _r.json();
-    if(!_r.ok){setSyncing('error');showToast('Error: '+(_j?.message||_r.status),'error');return;}
-    const _d=Array.isArray(_j)?_j[0]:_j;
+    const { data: _d, error: _e } = await sb.from('hives').insert({user_id:currentUser.id,...payload,status:'ok'}).select().single();
+    if(_e){setSyncing('error');showToast('Error: '+(_e.message||_e.code),'error');return;}
     if(!_d){setSyncing('error');showToast('Save failed','error');return;}
     hives.push(_d);setSyncing('saved');closeModal('modal-hive');renderHivesPage();showPage('hives-mgmt',document.getElementById('nav-hives'));showToast(t('toast_hive_saved'));
   }
@@ -5564,7 +5542,7 @@ function confirmDeleteTreatment(id){
 async function deleteTreatment(id){
   document.getElementById('modal-del-treat')?.remove();
   setSyncing('syncing');
-  const _dtok=await getAuthToken();const _dr=await fetch(SUPABASE_URL+'/rest/v1/treatments?id=eq.'+id,{method:'DELETE',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_dtok}});const error=_dr.ok?null:{message:_dr.status};
+  const { error } = await sb.from('treatments').delete().eq('id', id);
   if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
   treatments=treatments.filter(t=>t.id!==id);
   setSyncing('saved');showToast('🗑 Treatment deleted','success');renderTreatments();
@@ -5580,7 +5558,7 @@ function confirmDeleteHarvest(id){
 async function deleteHarvest(id){
   document.getElementById('modal-del-harv')?.remove();
   setSyncing('syncing');
-  const _dtok=await getAuthToken();const _dr=await fetch(SUPABASE_URL+'/rest/v1/harvests?id=eq.'+id,{method:'DELETE',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_dtok}});const error=_dr.ok?null:{message:_dr.status};
+  const { error } = await sb.from('harvests').delete().eq('id', id);
   if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
   harvests=harvests.filter(h=>h.id!==id);
   setSyncing('saved');showToast('🗑 Harvest deleted','success');renderHarvests();renderHome();
@@ -5596,7 +5574,7 @@ function confirmDeleteQueen(id){
 async function deleteQueen(id){
   document.getElementById('modal-del-queen')?.remove();
   setSyncing('syncing');
-  const _dtok=await getAuthToken();const _dr=await fetch(SUPABASE_URL+'/rest/v1/queens?id=eq.'+id,{method:'DELETE',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_dtok}});const error=_dr.ok?null:{message:_dr.status};
+  const { error } = await sb.from('queens').delete().eq('id', id);
   if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
   queens=queens.filter(q=>q.id!==id);
   setSyncing('saved');showToast('🗑 Queen record deleted','success');renderQueens();
@@ -5612,7 +5590,7 @@ function confirmDeleteInspection(inspId){
 async function deleteInspection(inspId){
   document.getElementById('modal-delete-insp')?.remove();
   setSyncing('syncing');
-  const _dtok=await getAuthToken();const _dr=await fetch(SUPABASE_URL+'/rest/v1/inspections?id=eq.'+inspId,{method:'DELETE',headers:{'apikey':SUPABASE_ANON_KEY,'Authorization':'Bearer '+_dtok}});const error=_dr.ok?null:{message:_dr.status};
+  const { error } = await sb.from('inspections').delete().eq('id', inspId);
   if(error){setSyncing('saved');showToast('Delete failed: '+error.message,'error');return;}
   inspections=inspections.filter(i=>i.id!==inspId);
   setSyncing('saved');showToast('🗑 Inspection deleted','success');

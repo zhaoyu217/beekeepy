@@ -872,28 +872,22 @@ details>summary::-webkit-details-marker{display:none}
 <div class="singlescreen" style="gap:7px">
 
   <!-- HERO HEADER -->
-  <div id="today-hero" style="flex-shrink:0;background:linear-gradient(135deg,#2E5D2E 0%,#1A3D1A 100%);border-radius:var(--radius);padding:14px 16px;color:#fff;position:relative;overflow:hidden">
+  <div id="today-hero" style="flex-shrink:0;background:linear-gradient(135deg,#2E5D2E 0%,#1A3D1A 100%);border-radius:var(--radius);padding:11px 16px;color:#fff;position:relative;overflow:hidden">
     <!-- Background texture dots -->
-    <div style="position:absolute;top:-10px;right:-10px;width:80px;height:80px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
-    <div style="position:absolute;bottom:-20px;right:20px;width:50px;height:50px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
-    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.65);letter-spacing:.05em;margin-bottom:8px" id="today-greeting">🐝 Good Morning</div>
-    <div style="display:flex;gap:12px;align-items:flex-start">
-      <div style="text-align:center;flex:1">
-        <div id="hero-total" style="font-size:34px;font-weight:800;font-family:'Lora',serif;line-height:1;color:#fff">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;text-transform:uppercase;letter-spacing:.06em">Hives</div>
-      </div>
-      <div style="width:1px;background:rgba(255,255,255,.15);align-self:stretch;margin:2px 0"></div>
-      <div style="text-align:center;flex:1">
-        <div id="hero-healthy" style="font-size:34px;font-weight:800;font-family:'Lora',serif;line-height:1;color:#7AE8A0">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;text-transform:uppercase;letter-spacing:.06em">Healthy</div>
-      </div>
-      <div style="width:1px;background:rgba(255,255,255,.15);align-self:stretch;margin:2px 0"></div>
-      <div style="text-align:center;flex:1">
-        <div id="hero-attention" style="font-size:34px;font-weight:800;font-family:'Lora',serif;line-height:1;color:#FFCC80">—</div>
-        <div style="font-size:10px;color:rgba(255,255,255,.6);margin-top:2px;text-transform:uppercase;letter-spacing:.06em">Need Action</div>
-      </div>
+    <div style="position:absolute;top:-12px;right:-12px;width:72px;height:72px;border-radius:50%;background:rgba(255,255,255,.05)"></div>
+    <div style="position:absolute;bottom:-22px;right:22px;width:46px;height:46px;border-radius:50%;background:rgba(255,255,255,.04)"></div>
+    <div style="font-size:11px;font-weight:600;color:rgba(255,255,255,.6);letter-spacing:.04em;margin-bottom:3px" id="today-greeting">🐝 Good Morning</div>
+    <div style="display:flex;align-items:baseline;gap:6px">
+      <span id="hero-total" style="font-size:27px;font-weight:800;font-family:'Lora',serif;line-height:1;color:#fff">—</span>
+      <span style="font-size:14px;font-weight:600;color:rgba(255,255,255,.85)">Hives</span>
+    </div>
+    <div style="font-size:12.5px;color:rgba(255,255,255,.72);margin-top:5px">
+      <span id="hero-healthy" style="color:#7AE8A0;font-weight:700">—</span> Healthy<span style="opacity:.45;margin:0 5px">·</span><span id="hero-attention" style="color:#FFCC80;font-weight:700">—</span> Need Action
     </div>
   </div>
+
+  <!-- Status-driven vibe line (populated by renderTodayHero) -->
+  <div id="today-vibe" style="display:none;flex-shrink:0;font-size:13px;font-weight:600;padding:7px 13px;border-radius:12px;margin-top:2px"></div>
 
   <!-- ① AI TODAY STATUS — SSS -->
   <div id="today-ai-status" class="ss-ai-banner" onclick="showPage('ai-center',document.getElementById('nav-ai'));renderAIPage()"></div>
@@ -11097,6 +11091,39 @@ function renderTodayHero() {
     heroEl.style.background = 'linear-gradient(135deg,#2E5D2E 0%,#1A3D1A 100%)';
   } else if (heroEl && needsAction > 0) {
     heroEl.style.background = 'linear-gradient(135deg,#4A2A1A 0%,#2E1A1A 100%)';
+  }
+
+  // Status-driven vibe line — real data: hive count, attention count, current season
+  const vibeEl = document.getElementById('today-vibe');
+  if (vibeEl) {
+    const m = new Date().getMonth() + 1;
+    let icon = '✅', text = 'All colonies stable', bg = 'rgba(46,93,46,.12)', col = '#2E5D2E';
+    if (total === 0) {
+      icon = '🐝'; text = 'Add your first hive to get started';
+      bg = 'rgba(0,0,0,.04)'; col = 'var(--text-2)';
+    } else if (needsAction > 0) {
+      icon = '⚠️'; text = needsAction + ' hive' + (needsAction > 1 ? 's' : '') + ' need attention today';
+      bg = 'rgba(245,166,35,.16)'; col = '#8A5A00';
+    } else if (m === 4) {
+      icon = '⚠️'; text = 'Swarm season is active — inspect weekly';
+      bg = 'rgba(245,166,35,.16)'; col = '#8A5A00';
+    } else if (m === 3 || m === 5) {
+      icon = '🐝'; text = 'Spring nectar flow is building';
+    } else if (m === 6) {
+      icon = '☀️'; text = 'Summer flow — keep your supers on';
+    } else if (m === 7 || m === 8) {
+      icon = '🕷️'; text = 'Monitor Varroa as brood peaks';
+      bg = 'rgba(245,166,35,.16)'; col = '#8A5A00';
+    } else if (m === 9 || m === 10) {
+      icon = '🍂'; text = 'Time to prep colonies for winter';
+    } else {
+      icon = '❄️'; text = 'Winter — keep disturbance minimal';
+      bg = 'rgba(70,110,180,.14)'; col = '#3A4A7A';
+    }
+    vibeEl.textContent = icon + '  ' + text;
+    vibeEl.style.background = bg;
+    vibeEl.style.color = col;
+    vibeEl.style.display = 'block';
   }
 }
 

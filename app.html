@@ -843,6 +843,45 @@ details>summary::-webkit-details-marker{display:none}
   <div style="font-size:13px;color:var(--text-3);font-family:'Nunito',sans-serif"><span data-i18n="loading">Loading...</span></div>
 </div>
 
+<!-- ══ IN-APP LOGIN SCREEN (no separate index.html needed) ══ -->
+<div id="login-screen" style="display:none;position:fixed;inset:0;z-index:10000;background:linear-gradient(160deg,#FBF7EF 0%,#F3E7CF 100%);overflow-y:auto;-webkit-overflow-scrolling:touch">
+  <div style="max-width:380px;margin:0 auto;padding:0 22px 32px">
+    <div style="text-align:center;padding-top:9vh;margin-bottom:22px">
+      <div style="font-size:42px;line-height:1">🐝</div>
+      <div style="font-size:27px;font-weight:800;font-family:'Lora',serif;color:var(--ink);margin-top:4px">HiveDash</div>
+      <div style="font-size:13px;color:var(--text-2);margin-top:3px">Smart beekeeping, simplified</div>
+    </div>
+    <div style="background:var(--surface);border:1px solid var(--border);border-radius:18px;padding:20px 18px;box-shadow:0 6px 22px rgba(0,0,0,.06)">
+      <div id="login-title" style="font-size:16px;font-weight:700;color:var(--ink);font-family:'Lora',serif;margin-bottom:14px">Sign in</div>
+      <button onclick="signInWithGoogle()" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:12px;background:#fff;color:#3c4043;border:1.5px solid #dadce0;border-radius:12px;font-size:14px;font-weight:600;font-family:'Nunito',sans-serif;cursor:pointer">
+        <svg width="17" height="17" viewBox="0 0 48 48" style="flex-shrink:0"><path fill="#FFC107" d="M43.611 20.083H42V20H24v8h11.303c-1.649 4.657-6.08 8-11.303 8c-6.627 0-12-5.373-12-12s5.373-12 12-12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C12.955 4 4 12.955 4 24s8.955 20 20 20s20-8.955 20-20c0-1.341-.138-2.65-.389-3.917z"/><path fill="#FF3D00" d="M6.306 14.691l6.571 4.819C14.655 15.108 18.961 12 24 12c3.059 0 5.842 1.154 7.961 3.039l5.657-5.657C34.046 6.053 29.268 4 24 4C16.318 4 9.656 8.337 6.306 14.691z"/><path fill="#4CAF50" d="M24 44c5.166 0 9.86-1.977 13.409-5.192l-6.19-5.238A11.91 11.91 0 0 1 24 36c-5.202 0-9.619-3.317-11.283-7.946l-6.522 5.025C9.505 39.556 16.227 44 24 44z"/><path fill="#1976D2" d="M43.611 20.083H42V20H24v8h11.303a12.04 12.04 0 0 1-4.087 5.571l.003-.002l6.19 5.238C36.971 39.205 44 34 44 24c0-1.341-.138-2.65-.389-3.917z"/></svg>
+        Continue with Google
+      </button>
+      <div style="display:flex;align-items:center;gap:10px;margin:14px 0">
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+        <div style="font-size:11px;color:var(--text-3)">or</div>
+        <div style="flex:1;height:1px;background:var(--border)"></div>
+      </div>
+      <input id="login-email" type="email" inputmode="email" autocomplete="email" placeholder="Email"
+        style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:'Nunito',sans-serif;background:var(--bg,#fff);color:var(--ink);outline:none;margin-bottom:10px"
+        onkeydown="if(event.key==='Enter')document.getElementById('login-password').focus()">
+      <input id="login-password" type="password" autocomplete="current-password" placeholder="Password"
+        style="width:100%;box-sizing:border-box;padding:12px 14px;border:1.5px solid var(--border);border-radius:12px;font-size:15px;font-family:'Nunito',sans-serif;background:var(--bg,#fff);color:var(--ink);outline:none"
+        onkeydown="if(event.key==='Enter')doLogin()">
+      <div id="login-msg" style="font-size:12px;line-height:1.4;min-height:16px;margin:9px 2px 4px;color:var(--text-2)"></div>
+      <button id="login-submit" onclick="doLogin()"
+        style="width:100%;padding:13px;background:var(--honey);color:#fff;border:none;border-radius:12px;font-size:15px;font-weight:700;font-family:'Nunito',sans-serif;cursor:pointer">Sign In</button>
+      <button onclick="doMagicLink()"
+        style="width:100%;padding:10px;margin-top:8px;background:none;color:var(--text-2);border:none;font-size:12.5px;font-family:'Nunito',sans-serif;cursor:pointer;text-decoration:underline">Email me a magic link instead</button>
+      <div style="text-align:center;margin-top:10px;font-size:12.5px;color:var(--text-2)">
+        <span id="login-toggle-text">New here?</span>
+        <span id="login-toggle" onclick="toggleAuthMode()" style="color:var(--honey);font-weight:700;cursor:pointer;margin-left:4px">Create an account</span>
+      </div>
+    </div>
+    <div style="text-align:center;font-size:11px;color:var(--text-3);margin-top:16px;line-height:1.5">Your hive data is private and synced securely.</div>
+  </div>
+</div>
+
 <div class="shell">
 
 <!-- ── Topbar ── -->
@@ -2347,10 +2386,11 @@ async function init() {
       clearTimeout(loadTimeout);
       const hiveParam=new URLSearchParams(location.search).get('hive');
       if(hiveParam){try{sessionStorage.setItem('qr_hive',hiveParam);}catch(e){}}
-      window.location.href='index.html';
+      showLoginScreen();
       return;
     }
     try{
+      hideLoginScreen();
       currentUser=session.user;
       currentUser._accessToken=session.access_token;
       const initials=(currentUser.user_metadata?.full_name||currentUser.email||'?')[0].toUpperCase();
@@ -2402,7 +2442,7 @@ async function init() {
       appStarted = true;
       await startApp(session);
     } else if(event==='SIGNED_OUT'){
-      window.location.href='index.html';
+      showLoginScreen();
     }
   });
 
@@ -2426,6 +2466,7 @@ async function init() {
           }
         }
       } catch(e2){ console.warn('localStorage session fallback error:', e2); }
+      if(!appStarted){ clearTimeout(loadTimeout); showLoginScreen(); }
     }
   }catch(e){
     console.warn('init error:',e);
@@ -2445,21 +2486,100 @@ async function init() {
     } catch(e2){ console.warn('localStorage session fallback error:', e2); }
     clearTimeout(loadTimeout);
     document.getElementById('loading-overlay').style.display='none';
+    if(!appStarted) showLoginScreen();
   }
 }
 
-async function signOut() {
-  // Clear auth token directly, bypass sb.auth lock
-  const key = 'sb-ydrawqnkwdvfhauansdf-auth-token';
-  const token = JSON.parse(localStorage.getItem(key)||'{}')?.access_token||'';
-  if(token) {
-    fetch('https://ydrawqnkwdvfhauansdf.supabase.co/auth/v1/logout',{
-      method:'POST',
-      headers:{'Authorization':'Bearer '+token,'apikey':SUPABASE_ANON_KEY}
-    }).catch(()=>{});
+// ══ IN-APP LOGIN ══
+let authMode = 'signin';
+function showLoginScreen() {
+  try { const lo = document.getElementById('loading-overlay'); if (lo) lo.style.display = 'none'; } catch(e) {}
+  const ls = document.getElementById('login-screen'); if (ls) ls.style.display = 'block';
+}
+function hideLoginScreen() {
+  const ls = document.getElementById('login-screen'); if (ls) ls.style.display = 'none';
+}
+function setLoginMsg(msg, isErr) {
+  const m = document.getElementById('login-msg'); if (!m) return;
+  m.textContent = msg || '';
+  m.style.color = isErr ? 'var(--danger,#B82020)' : 'var(--text-2)';
+}
+function toggleAuthMode() {
+  authMode = authMode === 'signin' ? 'signup' : 'signin';
+  const signin = authMode === 'signin';
+  document.getElementById('login-title').textContent = signin ? 'Sign in' : 'Create account';
+  document.getElementById('login-submit').textContent = signin ? 'Sign In' : 'Create Account';
+  document.getElementById('login-toggle-text').textContent = signin ? 'New here?' : 'Already have an account?';
+  document.getElementById('login-toggle').textContent = signin ? 'Create an account' : 'Sign in';
+  const pw = document.getElementById('login-password');
+  if (pw) pw.setAttribute('autocomplete', signin ? 'current-password' : 'new-password');
+  setLoginMsg('');
+}
+async function doLogin() {
+  const email = (document.getElementById('login-email').value || '').trim();
+  const pw = document.getElementById('login-password').value || '';
+  if (!email || !pw) { setLoginMsg('Enter your email and password.', true); return; }
+  if (authMode === 'signup' && pw.length < 6) { setLoginMsg('Password must be at least 6 characters.', true); return; }
+  const btn = document.getElementById('login-submit');
+  if (btn) btn.disabled = true;
+  setLoginMsg('Please wait…');
+  try {
+    let res;
+    if (authMode === 'signup') {
+      res = await sb.auth.signUp({ email, password: pw });
+      if (!res.error && res.data && !res.data.session) {
+        setLoginMsg('✓ Account created — check your email to confirm, then sign in.');
+        authMode = 'signin'; toggleAuthMode(); toggleAuthMode(); // reset labels to signin
+        if (btn) btn.disabled = false; return;
+      }
+    } else {
+      res = await sb.auth.signInWithPassword({ email, password: pw });
+    }
+    if (res.error) { setLoginMsg(res.error.message || 'Sign in failed.', true); if (btn) btn.disabled = false; return; }
+    // Success → onAuthStateChange (SIGNED_IN) starts the app; hide the login overlay
+    hideLoginScreen();
+  } catch (e) {
+    setLoginMsg('Something went wrong. Please try again.', true);
+    if (btn) btn.disabled = false;
   }
-  localStorage.removeItem(key);
-  window.location.href = 'index.html';
+}
+async function signInWithGoogle() {
+  setLoginMsg('Redirecting to Google…');
+  try {
+    const { error } = await sb.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo: location.origin + location.pathname }
+    });
+    if (error) setLoginMsg(error.message || 'Google sign-in failed.', true);
+    // On success the browser redirects to Google, then back here with a code that PKCE exchanges automatically.
+  } catch (e) { setLoginMsg('Google sign-in failed. Please try again.', true); }
+}
+async function doMagicLink() {
+  const email = (document.getElementById('login-email').value || '').trim();
+  if (!email) { setLoginMsg('Enter your email first.', true); return; }
+  setLoginMsg('Sending link…');
+  try {
+    const { error } = await sb.auth.signInWithOtp({ email, options: { emailRedirectTo: location.origin + location.pathname } });
+    if (error) { setLoginMsg(error.message || 'Could not send the link.', true); return; }
+    setLoginMsg('✓ Magic link sent — check your email and tap it to sign in.');
+  } catch (e) { setLoginMsg('Could not send the link.', true); }
+}
+
+async function signOut() {
+  // Clear in-memory auth state first
+  currentUser = null;
+  // Sign out via the Supabase client, but never let the known Web-Locks hang block us
+  try {
+    await Promise.race([
+      sb.auth.signOut({ scope: 'local' }),
+      new Promise(res => setTimeout(res, 1200))
+    ]);
+  } catch(e) {}
+  // Belt-and-suspenders: purge every Supabase auth key so the session can't survive a reload
+  try { Object.keys(localStorage).forEach(k => { if (k.indexOf('sb-') === 0 || k.indexOf('-auth-token') >= 0) localStorage.removeItem(k); }); } catch(e) {}
+  try { Object.keys(sessionStorage).forEach(k => { if (k.indexOf('sb-') === 0) sessionStorage.removeItem(k); }); } catch(e) {}
+  // Reload this same page with no query (drops any ?code=); with no session the in-app login screen shows
+  window.location.replace(location.pathname);
 }
 
 // Sync 

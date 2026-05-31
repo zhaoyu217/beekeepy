@@ -1,0 +1,511 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+<meta name="theme-color" content="#3C5E3A">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="HiveDash">
+<link id="manifest" rel="manifest">
+<link id="touch-icon" rel="apple-touch-icon">
+<title>HiveDash</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet">
+<style>
+:root{
+  --bg:#FFFFFF; --card:#FFFFFF; --card2:#FFFFFF; --wax:#FCF1D6;
+  --ink:#0E2A47; --ink-2:#37475A; --muted:#6B7280; --faint:#AAB3BD;
+  --line:#EEF0F2; --line-2:#E1E4E8;
+  --green:#2E9E5B; --green-d:#23804A; --green-soft:#E3F4EA; --green-mid:#5BB37E;
+  --gold:#EEB73C; --gold-d:#D69E22; --gold-soft:#FBEBC4;
+  --warn:#E8932A; --red:#E0584B; --red-soft:#FBE3E0;
+  --shadow:0 1px 2px rgba(16,42,67,.05), 0 10px 26px -12px rgba(16,42,67,.16);
+}
+*,*::before,*::after{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%}
+body{font-family:"Plus Jakarta Sans",system-ui,sans-serif;color:var(--ink);background:#E4E7EB;-webkit-font-smoothing:antialiased;overscroll-behavior:none}
+.shell{display:flex;flex-direction:column;height:100vh;height:100dvh;width:100%;max-width:460px;margin:0 auto;background:var(--bg);position:relative;overflow:hidden;box-shadow:0 24px 70px -22px rgba(50,40,15,.45)}
+
+.topbar{flex:none;display:flex;align-items:center;justify-content:space-between;padding:calc(13px + env(safe-area-inset-top)) 18px 11px;background:var(--bg);z-index:30}
+.brand{display:flex;align-items:center;gap:9px}
+.brand .mark{width:30px;height:30px;display:flex;align-items:center;justify-content:center}
+.brand h1{font-weight:800;font-size:20px;letter-spacing:-.02em;color:var(--ink)}
+.tb-right{display:flex;align-items:center;gap:9px}
+.iconbtn{width:38px;height:38px;border-radius:50%;border:1.5px solid var(--line-2);background:transparent;color:var(--ink-2);display:flex;align-items:center;justify-content:center;position:relative}
+.iconbtn .badge{position:absolute;top:-3px;right:-3px;background:var(--red);color:#fff;font-size:9px;font-weight:800;border-radius:50%;width:16px;height:16px;display:flex;align-items:center;justify-content:center;border:2px solid var(--bg)}
+.avatar{width:38px;height:38px;border-radius:50%;background:var(--ink);color:#fff;font-weight:800;display:flex;align-items:center;justify-content:center;font-size:13px}
+
+.main{flex:1;overflow:hidden;position:relative}
+.page{display:none;padding:4px 18px 16px;width:100%}
+.page.active{display:block;animation:f .26s ease}
+@keyframes f{from{opacity:0;transform:translateY(5px)}to{opacity:1;transform:none}}
+
+.tabbar{flex:none;display:flex;justify-content:space-around;background:var(--card);border-top:1px solid var(--line);padding:7px 4px calc(8px + env(safe-area-inset-bottom))}
+.tab{flex:1;border:none;background:none;display:flex;flex-direction:column;align-items:center;gap:4px;color:var(--green);opacity:.45;font-size:10px;font-weight:700;font-family:inherit;cursor:pointer;position:relative;padding-top:7px}
+.tab.active{opacity:1}
+.tab.active::before{content:"";position:absolute;top:0;width:22px;height:3px;border-radius:3px;background:var(--green)}
+.tab svg{width:23px;height:23px}
+
+.h-page{font-weight:800;font-size:26px;letter-spacing:-.02em;line-height:1.05;color:var(--ink)}
+.sub{color:var(--muted);font-size:13.5px;margin-top:3px}
+.sec{font-weight:800;font-size:12px;letter-spacing:.09em;text-transform:uppercase;color:var(--ink-2);margin:20px 2px 11px}
+.muted{color:var(--muted)}
+.row{display:flex;align-items:center}
+.dot{width:9px;height:9px;border-radius:50%;flex:none}
+.chev{color:var(--faint)}
+
+.card{background:var(--card);border-radius:18px;box-shadow:var(--shadow);overflow:hidden;border:1px solid var(--line)}
+.card.pad{padding:16px}
+.card+.card{margin-top:12px}
+.hexbg{background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='56' height='48' viewBox='0 0 56 48'%3E%3Cg fill='none' stroke='%233C5E3A' stroke-opacity='0.06' stroke-width='1.4'%3E%3Cpolygon points='14,4 26,4 32,14 26,24 14,24 8,14'/%3E%3Cpolygon points='42,4 54,4 60,14 54,24 42,24 36,14'/%3E%3Cpolygon points='28,24 40,24 46,34 40,44 28,44 22,34'/%3E%3C/g%3E%3C/svg%3E")}
+.pill{display:inline-flex;align-items:center;gap:5px;border-radius:999px;font-weight:800;font-size:11px;padding:5px 10px}
+.btn{display:flex;align-items:center;justify-content:center;gap:8px;border-radius:14px;font-weight:800;font-size:15px;padding:16px;border:none;width:100%;font-family:inherit;cursor:pointer;transition:transform .1s;letter-spacing:.02em}
+.btn:active{transform:scale(.98)}
+.btn.gold{background:var(--gold);color:#fff;text-transform:uppercase;letter-spacing:.05em;box-shadow:0 10px 22px -9px rgba(194,146,14,.7)}
+.btn.green{background:var(--green);color:#fff;box-shadow:0 10px 22px -9px rgba(60,94,58,.6)}
+.btn.ghost{background:transparent;border:1.5px solid var(--green);color:var(--green)}
+.btn.soft{background:var(--green-soft);color:var(--green-d)}
+.chip{font-size:12.5px;font-weight:700;padding:8px 15px;border-radius:999px;border:1.5px solid var(--line-2);color:var(--muted);background:transparent;cursor:pointer;flex:none}
+.chip.on{background:var(--green);color:#fff;border-color:var(--green)}
+.seam{border-top:2px dashed var(--line-2);margin:14px 0}
+
+.lico{width:44px;height:44px;border-radius:13px;display:flex;align-items:center;justify-content:center;flex:none}
+.lrow{display:flex;align-items:center;gap:13px;padding:14px 16px;border-bottom:1px solid var(--line);cursor:pointer}
+.lrow:last-child{border-bottom:none}
+
+.backbar{display:flex;align-items:center;gap:10px;margin:2px 0 12px;color:var(--ink-2)}
+.backbar button{border:none;background:none;color:inherit;display:flex;cursor:pointer;padding:4px 2px}
+.backbar h2{font-weight:800;font-size:19px;letter-spacing:-.01em}
+.tabs{display:flex;gap:20px;border-bottom:1px solid var(--line);margin:6px 2px 16px;font-size:14px;font-weight:700}
+.tabs span{padding-bottom:10px;color:var(--faint);cursor:pointer;border-bottom:2px solid transparent}
+.tabs span.on{color:var(--green);border-color:var(--green)}
+
+.opt{border:1.5px solid var(--line-2);background:transparent;border-radius:13px;padding:12px 6px;font-weight:700;font-size:13px;color:var(--ink-2);cursor:pointer;text-align:center;font-family:inherit}
+.opt.on{background:var(--green);border-color:var(--green);color:#fff}
+.prob{text-align:center;cursor:pointer}
+.prob .ico{height:46px;border-radius:14px;display:flex;align-items:center;justify-content:center;background:var(--card2);border:1.5px solid var(--line);color:var(--muted)}
+.prob.on .ico{background:var(--sb);border-color:var(--sf);color:var(--sf)}
+.prob span{font-size:10px;font-weight:700;color:var(--muted);display:block;margin-top:5px}
+
+.fld{width:100%;border:none;border-bottom:1.5px solid var(--line-2);border-radius:0;padding:10px 2px;font-family:inherit;font-size:15px;color:var(--ink);background:transparent;margin-top:3px}
+.fld:focus{outline:none;border-color:var(--gold)}
+.flbl{font-size:11px;font-weight:800;letter-spacing:.05em;text-transform:uppercase;color:var(--muted)}
+.sw{width:50px;height:28px;border-radius:999px;background:var(--line-2);position:relative;flex:none;transition:.2s;cursor:pointer}
+.sw.on{background:var(--green)}
+.sw::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;box-shadow:0 1px 3px rgba(0,0,0,.3)}
+.sw.on::after{left:25px}
+.setrow{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 16px;border-bottom:1px solid var(--line)}
+.setrow:last-child{border-bottom:none}
+.seg{display:flex;background:var(--green-soft);border-radius:12px;padding:3px;flex:none}
+.seg button{border:none;background:none;font-family:inherit;font-weight:800;font-size:13px;padding:7px 16px;border-radius:9px;color:var(--green-d);cursor:pointer}
+.seg button.on{background:var(--green);color:#fff}
+.tl{position:relative;padding-left:22px}
+.tl::before{content:"";position:absolute;left:6px;top:6px;bottom:8px;width:2px;background:var(--line-2)}
+.node{position:relative;margin-bottom:16px}
+.node::before{content:"";position:absolute;left:-19px;top:4px;width:12px;height:12px;border-radius:50%;background:var(--c,var(--green));border:2.5px solid var(--card);box-shadow:0 0 0 1.5px var(--c,var(--green))}
+.menubtn{width:38px;height:38px;border-radius:11px;border:1.5px solid var(--line-2);background:transparent;color:var(--ink-2);display:flex;align-items:center;justify-content:center;flex:none}
+.fab{position:absolute;right:18px;bottom:calc(22px + env(safe-area-inset-bottom));width:62px;height:62px;border-radius:20px;background:var(--gold);color:#fff;border:none;display:flex;align-items:center;justify-content:center;box-shadow:0 16px 32px -8px rgba(194,146,14,.85);z-index:40;cursor:pointer;transition:transform .12s}
+.fab:active{transform:scale(.92)}
+.fab svg{width:28px;height:28px}
+.scrim{position:absolute;inset:0;background:rgba(25,20,8,.45);opacity:0;pointer-events:none;transition:.25s;z-index:50}
+.scrim.open{opacity:1;pointer-events:auto}
+.drawer{position:absolute;top:0;left:0;bottom:0;width:80%;max-width:322px;background:var(--bg);transform:translateX(-104%);transition:transform .28s cubic-bezier(.4,0,.2,1);z-index:60;display:flex;flex-direction:column;box-shadow:0 0 60px rgba(0,0,0,.3);padding:calc(20px + env(safe-area-inset-top)) 0 calc(16px + env(safe-area-inset-bottom))}
+.drawer.open{transform:none}
+.drawer .dhead{display:flex;align-items:center;gap:11px;padding:4px 20px 16px;border-bottom:1px solid var(--line)}
+.drawer .dhead .m{width:42px;height:42px;border-radius:13px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;flex:none}
+.drawer .ditem{display:flex;align-items:center;gap:14px;padding:14px 20px;font-weight:700;font-size:15px;color:var(--ink-2);cursor:pointer}
+.drawer .ditem.on{color:var(--green-d);background:var(--green-soft)}
+.drawer .ditem svg{color:var(--green);flex:none}
+.dgrp{font-size:11px;font-weight:800;letter-spacing:.08em;text-transform:uppercase;color:var(--faint);padding:14px 20px 4px}
+.sheet-scrim{position:absolute;inset:0;background:rgba(25,25,20,.44);opacity:0;pointer-events:none;transition:.25s;z-index:70}
+.sheet-scrim.open{opacity:1;pointer-events:auto}
+.sheet{position:absolute;left:0;right:0;bottom:0;background:var(--card);border-radius:24px 24px 0 0;transform:translateY(103%);transition:transform .32s cubic-bezier(.4,0,.2,1);z-index:71;padding:18px 20px calc(22px + env(safe-area-inset-bottom));box-shadow:0 -12px 44px rgba(0,0,0,.28)}
+.sheet.open{transform:none}
+.sheet .grab{width:42px;height:4px;border-radius:4px;background:var(--line-2);margin:0 auto 14px}
+.fld2{width:100%;border:1px solid var(--line-2);border-radius:13px;padding:12px 14px;font-family:inherit;font-size:15px;color:var(--ink);background:#E9EAEC;margin-top:5px}
+.sel{width:100%;border:1px solid var(--line-2);border-radius:13px;padding:12px 14px;font-family:inherit;font-size:15px;font-weight:600;color:var(--ink);background:#FAFAF8;margin-top:5px;-webkit-appearance:none;appearance:none;background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='16' height='16' viewBox='0 0 24 24' fill='none' stroke='%238B8D85' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'%3E%3Cpath d='M6 9l6 6 6-6'/%3E%3C/svg%3E");background-repeat:no-repeat;background-position:right 12px center}
+.fld2:focus,.sel:focus{outline:none;border-color:var(--gold);box-shadow:0 0 0 3px var(--gold-soft)}
+.toast{position:fixed;left:50%;bottom:96px;transform:translateX(-50%) translateY(20px);background:var(--ink);color:#fff;padding:12px 18px;border-radius:13px;font-weight:700;font-size:13px;opacity:0;pointer-events:none;transition:.3s;z-index:90;white-space:nowrap}
+.toast.show{opacity:1;transform:translateX(-50%) translateY(0)}
+.snackbar{position:fixed;left:50%;bottom:92px;transform:translateX(-50%) translateY(24px);min-width:280px;max-width:92%;display:flex;align-items:center;justify-content:space-between;gap:14px;background:var(--ink);color:#fff;padding:14px 14px 14px 18px;border-radius:15px;font-weight:700;font-size:13px;opacity:0;pointer-events:none;transition:.28s;z-index:95;box-shadow:0 16px 34px -10px rgba(0,0,0,.5)}
+.snackbar.show{opacity:1;transform:translateX(-50%) translateY(0);pointer-events:auto}
+.snackbar button{border:none;background:none;color:var(--gold-soft);font-weight:800;font-size:13px;font-family:inherit;cursor:pointer;padding:4px 6px}
+</style>
+</head>
+<body>
+<div class="shell">
+  <header class="topbar">
+    <div class="brand"><button class="menubtn" onclick="openDrawer()"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M4 7h16M4 12h16M4 17h16"/></svg></button><span class="mark" id="brand-mark"></span><h1>HiveDash</h1></div>
+    <div class="tb-right">
+      <button class="iconbtn" onclick="go('reminder')"><svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6Z"/><path d="M10 20a2 2 0 0 0 4 0"/></svg><span class="badge" id="bell-badge">1</span></button>
+      <div class="avatar" id="avatar">JD</div>
+    </div>
+  </header>
+  <main class="main" id="main">
+    <section class="page" id="page-today"></section>
+    <section class="page" id="page-inspect"></section>
+    <section class="page" id="page-hives"></section>
+    <section class="page" id="page-timeline"></section>
+    <section class="page" id="page-more"></section>
+    <section class="page" id="page-inspect-form"></section>
+    <section class="page" id="page-inspect-detail"></section>
+    <section class="page" id="page-hive"></section>
+    <section class="page" id="page-reminder"></section>
+    <section class="page" id="page-safety"></section>
+    <section class="page" id="page-add-entry"></section>
+    <section class="page" id="page-set-apiary"></section>
+    <section class="page" id="page-set-reminders"></section>
+    <section class="page" id="page-set-weather"></section>
+    <section class="page" id="page-set-data"></section>
+    <section class="page" id="page-set-help"></section>
+    <section class="page" id="page-set-about"></section>
+  </main>
+  <button class="fab" id="fab" onclick="go('inspect')" aria-label="New inspection"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg></button>
+  <div class="scrim" id="scrim" onclick="closeDrawer()"></div>
+  <aside class="drawer" id="drawer">
+    <div class="dhead"><span class="m" id="drawer-mark"></span><div><div style="font-weight:800;font-size:16px">HiveDash</div><div class="muted" style="font-size:12px" id="drawer-name">Jordan Doe</div></div></div>
+    <div id="drawer-list" style="flex:1;overflow-y:auto;padding-top:6px"></div>
+  </aside>
+  <div class="sheet-scrim" id="sheet-scrim" onclick="closeAddSheet()"></div>
+  <div class="sheet" id="sheet"></div>
+</div>
+<div class="toast" id="toast"></div>
+<div class="snackbar" id="snackbar"></div>
+<script>
+const _mem={};
+const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v)}catch(e){return k in _mem?_mem[k]:d}},set(k,v){try{localStorage.setItem(k,JSON.stringify(v))}catch(e){_mem[k]=v}}};
+const $=s=>document.querySelector(s);
+const setHTML=(id,h)=>{$('#page-'+id).innerHTML=h};
+function toast(m){const t=$('#toast');t.textContent=m;t.classList.add('show');clearTimeout(t._t);t._t=setTimeout(function(){t.classList.remove('show')},1700)}
+const I={today:'M4 10c0-3 3.6-5 8-5s8 2 8 5M4 10h16M4 10v9h16v-9M6 13.5h12M6 16.5h12',inspect:'M9 4h6a1 1 0 0 1 1 1v15l-4-2.2L8 20V5a1 1 0 0 1 1-1Z',hives:'M5 4h14v4H5zM5 10h14v4H5zM5 16h14v4H5z',timeline:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7v5l3.5 2',more:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M19 12a7 7 0 0 0-.1-1l2-1.6-2-3.4-2.4 1a7 7 0 0 0-1.7-1L14.5 2h-4l-.4 2.4a7 7 0 0 0-1.7 1l-2.4-1-2 3.4L4 9.9a7 7 0 0 0 0 2l-2 1.6 2 3.4 2.4-1a7 7 0 0 0 1.7 1l.4 2.6h4l.4-2.4a7 7 0 0 0 1.7-1l2.4 1 2-3.4-2-1.6a7 7 0 0 0 .1-1Z'};
+const IP={back:'M15 5l-7 7 7 7',chev:'M9 5l7 7-7 7',plus:'M12 5v14M5 12h14',check:'M5 13l4 4L19 7',crown:'M4 8.5l3.8 3 4.2-6 4.2 6 3.8-3-1.6 9.5h-12.8z',comb:'M12 3l7 4v8l-7 4-7-4V7z',drop:'M12 3.5C12 3.5 18 10 18 14a6 6 0 0 1-12 0c0-4 6-10.5 6-10.5z',pop:'M8 9a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4M16 9a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4M12 13.5a2.2 2.2 0 1 0 0 4.4 2.2 2.2 0 0 0 0-4.4',bug:'M9 7.5a3 3 0 0 1 6 0M8 11a4 4 0 0 1 8 0v3a4 4 0 0 1-8 0zM8 12H4M16 12h4M8 16l-3 2M16 16l3 2',noeggs:'M12 4a8 8 0 1 0 0 16 8 8 0 0 0 0-16M6.5 6.5l11 11',alert:'M12 4 2.5 20h19zM12 10v4M12 17h.01',swap:'M5 9h11l-3-3M19 15H8l3 3',dots:'M6 12h.01M12 12h.01M18 12h.01',checkc:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M8.5 12l2.5 2.5L16 9',search:'M11 4a7 7 0 1 0 0 14 7 7 0 0 0 0-14M20.5 20.5 16.2 16.2',layers:'M12 3l9 5-9 5-9-5zM3 13l9 5 9-5M3 17l9 5 9-5',cup:'M6 8h12l-1.2 9.6a3 3 0 0 1-3 2.4h-3.6a3 3 0 0 1-3-2.4zM9 8V5h6v3',pill:'M10.5 3.5l-7 7a4 4 0 0 0 6 6l7-7a4 4 0 0 0-6-6zM7 7l6 6',home:'M3 10l9-7 9 7v10a1 1 0 0 1-1 1h-5v-6H9v6H4a1 1 0 0 1-1-1z',bell:'M6 9a6 6 0 1 1 12 0c0 5 2 6 2 6H4s2-1 2-6zM10 20a2 2 0 0 0 4 0',sun:'M12 8a4 4 0 1 0 0 8 4 4 0 0 0 0-8M12 3v2M12 19v2M3 12h2M19 12h2M5.6 5.6 7 7M17 17l1.4 1.4M18.4 5.6 17 7M7 17l-1.4 1.4',db:'M5 6c0-1.7 3.1-3 7-3s7 1.3 7 3-3.1 3-7 3-7-1.3-7-3zM5 6v6c0 1.7 3.1 3 7 3s7-1.3 7-3V6M5 12v6c0 1.7 3.1 3 7 3s7-1.3 7-3v-6',chat:'M4 5h16v11H8l-4 4z',note:'M5 4h10l4 4v12H5zM14 4v5h5M8 13h8M8 17h5',flask:'M9 3h6M10 3v5l-5 9a2 2 0 0 0 2 3h10a2 2 0 0 0 2-3l-5-9V3',trash:'M4 7h16M9 7V5a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v2m2 0v13a1 1 0 0 1-1 1H7a1 1 0 0 1-1-1V7M10 11v6M14 11v6',camera:'M4 8h3l1.5-2h7L17 8h3v11H4zM12 11.5a3 3 0 1 0 0 6 3 3 0 0 0 0-6',mic:'M12 4a2.5 2.5 0 0 1 2.5 2.5v5a2.5 2.5 0 0 1-5 0v-5A2.5 2.5 0 0 1 12 4zM6.5 11.5a5.5 5.5 0 0 0 11 0M12 17v3',play:'M8 5v14l11-7z',clock:'M12 3a9 9 0 1 0 0 18 9 9 0 0 0 0-18M12 7v5l3.5 2',gear:'M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6M19.4 12.9a7.6 7.6 0 0 0 0-1.8l2-1.5-2-3.4-2.3 1a7.6 7.6 0 0 0-1.6-.9L14.9 4H9.1l-.6 2.3a7.6 7.6 0 0 0-1.6.9l-2.3-1-2 3.4 2 1.5a7.6 7.6 0 0 0 0 1.8l-2 1.5 2 3.4 2.3-1a7.6 7.6 0 0 0 1.6.9l.6 2.3h5.8l.6-2.3a7.6 7.6 0 0 0 1.6-.9l2.3 1 2-3.4z'};
+const oi=(n,s,w)=>'<svg width="'+(s||20)+'" height="'+(s||20)+'" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="'+(w||2)+'" stroke-linecap="round" stroke-linejoin="round"><path d="'+(IP[n]||IP.dots)+'"/></svg>';
+const navico=n=>'<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"><path d="'+I[n]+'"/></svg>';
+function LOGO(px,fill){fill=fill||'#EEB73C';var R=10.4,s=.866;function hex(cx,cy){var p=[[R,0],[R/2,R*s],[-R/2,R*s],[-R,0],[-R/2,-R*s],[R/2,-R*s]].map(function(a){return (cx+a[0]).toFixed(1)+','+(cy+a[1]).toFixed(1)}).join(' ');return '<polygon points="'+p+'" fill="'+fill+'" stroke="'+fill+'" stroke-width="1.4" stroke-linejoin="round"/>'}var C=[[0,0],[18,-10.4],[18,10.4],[-18,-10.4],[-18,10.4],[0,-20.8],[0,20.8]];var dots=[[-30,-25,1.7],[31,-19,1.5],[30,28,1.9],[-27,29,1.6],[34,9,1.3]];return '<svg width="'+px+'" height="'+px+'" viewBox="-38 -38 76 76">'+C.map(function(c){return hex(c[0],c[1])}).join('')+dots.map(function(d){return '<circle cx="'+d[0]+'" cy="'+d[1]+'" r="'+d[2]+'" fill="'+fill+'"/>'}).join('')+'</svg>'}
+
+/* ---- apiary map (organic blobs + hex pins) ---- */
+function hexPts(cx,cy,r){var s='';for(var i=0;i<6;i++){var a=Math.PI/180*(60*i-90);s+=(cx+r*Math.cos(a)).toFixed(1)+','+(cy+r*Math.sin(a)).toFixed(1)+' '}return s.trim()}
+function pin(cx,cy,st){var ring=st==='critical'?'#B23A2E':st==='watch'?'#C2920E':'#3C5E3A';var ic;
+  if(st==='critical'){ic='<circle cx="'+cx+'" cy="'+cy+'" r="2.8" fill="#B23A2E"/><path d="M'+(cx-4)+' '+(cy-3.4)+'l8 6.8M'+(cx+4)+' '+(cy-3.4)+'l-8 6.8" stroke="#B23A2E" stroke-width="1.1" stroke-linecap="round"/>';}
+  else{ic='<g fill="#C2920E"><circle cx="'+(cx-2.3)+'" cy="'+(cy-1)+'" r="1.9"/><circle cx="'+(cx+2.3)+'" cy="'+(cy-1)+'" r="1.9"/><circle cx="'+cx+'" cy="'+(cy+2.3)+'" r="1.9"/></g>';}
+  return '<polygon points="'+hexPts(cx,cy,12.5)+'" fill="#FBF8EF" stroke="'+ring+'" stroke-width="1.7"/>'+ic;}
+function apiaryMap(list){
+  var coords=[[78,66],[120,104],[158,58],[150,128],[212,82],[250,116],[96,150],[270,60]];
+  var pins=list.slice(0,8).map(function(h,i){return pin(coords[i][0],coords[i][1],h.status)}).join('');
+  return '<svg viewBox="0 0 320 196" preserveAspectRatio="xMidYMid slice" xmlns="http://www.w3.org/2000/svg">'
+    +'<rect width="320" height="196" fill="#EFE7D4"/>'
+    +'<path d="M14 70 C2 40 52 20 104 30 C150 39 156 86 126 120 C96 152 30 150 20 108 Z" fill="#3C5E3A" opacity="0.92"/>'
+    +'<path d="M104 44 C150 18 214 40 206 84 C200 120 150 132 126 112 C100 90 86 64 104 44 Z" fill="#C2920E" opacity="0.92"/>'
+    +'<path d="M196 36 C252 16 312 44 300 96 C291 138 236 146 212 118 C190 92 176 58 196 36 Z" fill="#B23A2E" opacity="0.9"/>'
+    +'<path d="M40 150 C90 132 150 150 200 140 C240 132 280 146 300 150 L300 196 L40 196 Z" fill="#2C472B" opacity="0.5"/>'
+    +pins+'</svg>';
+}
+
+/* ---- data ---- */
+var CC={green:'var(--green)',amber:'var(--warn)',red:'var(--red)',honey:'var(--gold)',muted:'var(--muted)'};
+var STC={healthy:'var(--green)',watch:'var(--warn)',critical:'var(--red)'};
+var STL={healthy:'Healthy',watch:'Watch',critical:'Critical'};
+var KEMO={inspect:'search',super:'layers',harvest:'drop',feed:'cup',treat:'pill'};
+function statusFrom(p){if(p.indexOf('Disease')>=0||p.indexOf('No eggs')>=0)return 'critical';if(p.indexOf('Queen cells')>=0||p.indexOf('Mites')>=0||p.indexOf('Robbing')>=0)return 'watch';return 'healthy'}
+function ent(date,kind,title,time,desc,c){return{date:date,kind:kind,title:title,time:time,desc:desc,c:c||CC.green}}
+function seed(){return[]}
+var DATA_VER='blank-1';
+try{if(localStorage.getItem('hd_ver')!==DATA_VER){['hd_hives','hd_events','hd_reminders','hd_treatment'].forEach(function(k){localStorage.removeItem(k)});localStorage.setItem('hd_ver',DATA_VER)}}catch(e){}
+var hives=store.get('hd_hives',seed());
+var events=store.get('hd_events',[]);
+var reminders=store.get('hd_reminders',[]);
+var treatment=store.get('hd_treatment',{dosage:'2 strips',notes:'None'});
+var profile=store.get('hd_profile',{beekeeper:'Jordan Doe',apiary:'Backyard Apiary',location:'Austin, TX'});
+var prefs=store.get('hd_prefs',{inspectReminders:true,inspectInterval:10,treatmentAlerts:true,unit:'F',windAlert:15,minTemp:55});
+function saveAll(){store.set('hd_hives',hives);store.set('hd_events',events);store.set('hd_reminders',reminders);store.set('hd_treatment',treatment);updateBadge()}
+function hiveById(id){for(var i=0;i<hives.length;i++)if(hives[i].id===+id)return hives[i];return hives[0]||null}
+function counts(){return{total:hives.length,healthy:hives.filter(function(h){return h.status==='healthy'}).length,watch:hives.filter(function(h){return h.status==='watch'}).length,critical:hives.filter(function(h){return h.status==='critical'}).length}}
+function updateBadge(){var n=reminders.filter(function(r){return !r.done}).length;var b=$('#bell-badge');if(b){b.style.display=n?'flex':'none';b.textContent=n}}
+function updateAvatar(){var ini=(profile.beekeeper||'').split(/\s+/).filter(Boolean).map(function(w){return w[0]}).slice(0,2).join('').toUpperCase()||'JD';var els=document.querySelectorAll('.avatar');for(var i=0;i<els.length;i++)els[i].textContent=ini}
+
+/* ---- router ---- */
+var DRAWER=[['home','Home','today'],['layers','My Hives','hives'],['clock','Timeline','timeline'],['pill','Treatment Safety','safety'],['bell','Reminders','reminder'],['gear','Settings','more']];
+$('#drawer-list').innerHTML=DRAWER.map(function(d){return '<div class="ditem" data-route="'+d[2]+'" onclick="nav(\''+d[2]+'\')">'+oi(d[0],21)+'<span>'+d[1]+'</span></div>'}).join('')+'<div class="dgrp">Info</div><div class="ditem" onclick="nav(\'set-about\')">'+LOGO(20,'#EEB73C')+'<span>About HiveDash</span></div>';
+$('#drawer-mark').innerHTML=LOGO(24);
+$('#drawer-name').textContent=profile.beekeeper;
+function openDrawer(){$('#drawer').classList.add('open');$('#scrim').classList.add('open')}
+function closeDrawer(){$('#drawer').classList.remove('open');$('#scrim').classList.remove('open')}
+function nav(r){closeDrawer();go(r)}
+$('#brand-mark').innerHTML=LOGO(28);
+function go(r){location.hash=r}
+function parse(){return (location.hash.replace(/^#/,'')||'today').split('/')}
+var hiveTab='overview';
+function render(){
+  var p=parse(),id=p[0],arg=p[1];
+  var map={today:['today','today'],inspect:['inspect','inspect'],hives:['hives','hives'],timeline:['timeline','timeline'],more:['more','more'],'inspect-form':['inspect-form','inspect'],'inspect-detail':['inspect-detail','inspect'],hive:['hive','hives'],reminder:['reminder','today'],safety:['safety','more'],'add-entry':['add-entry','hives'],'set-apiary':['set-apiary','more'],'set-reminders':['set-reminders','more'],'set-weather':['set-weather','more'],'set-data':['set-data','more'],'set-help':['set-help','more'],'set-about':['set-about','more']};
+  var m=map[id]||map.today,pid=m[0],tab=m[1];
+  var fns={today:renderToday,inspect:renderInspectList,'inspect-form':function(){openInspectForm(+arg||3)},'inspect-detail':renderInspectDetail,hives:renderHives,hive:function(){hiveTab='overview';renderHive(+arg||3)},timeline:renderTimeline,more:renderMore,reminder:renderReminder,safety:renderSafety,'add-entry':function(){openAddEntry(arg)},'set-apiary':renderSetApiary,'set-reminders':renderSetReminders,'set-weather':renderSetWeather,'set-data':renderSetData,'set-help':renderSetHelp,'set-about':renderSetAbout};
+  (fns[pid]||renderToday)();
+  var pgs=document.querySelectorAll('.page');for(var i=0;i<pgs.length;i++)pgs[i].classList.remove('active');
+  $('#page-'+pid).classList.add('active');
+  var ditems=document.querySelectorAll('.ditem');for(var j=0;j<ditems.length;j++)ditems[j].classList.toggle('on',ditems[j].dataset.route===tab);
+  var fab=$('#fab');if(fab)fab.style.display=(['today','hives','timeline'].indexOf(pid)>=0)?'flex':'none';
+  closeDrawer();
+  requestAnimationFrame(fit);
+}
+window.addEventListener('hashchange',render);
+function fit(){var pg=document.querySelector('.page.active');if(!pg)return;pg.style.transform='none';pg.style.width='100%';var av=$('#main').clientHeight,nd=pg.scrollHeight;if(nd>av+1){var k=Math.max(av/nd,.5);pg.style.transformOrigin='top left';pg.style.width=(100/k)+'%';pg.style.transform='scale('+k+')'}}
+window.addEventListener('resize',function(){requestAnimationFrame(fit)});
+window.addEventListener('orientationchange',function(){setTimeout(fit,200)});
+
+/* ---- 1 TODAY ---- */
+function renderToday(){
+  var c=counts();
+  if(!hives.length){
+    setHTML('today',
+     '<div style="margin:8px 2px 16px"><div class="h-page">Welcome to<br>HiveDash</div><div class="sub">Add your first hive to get started.</div></div>'
+     +'<div class="card pad" style="text-align:center;padding:36px 20px"><div style="width:66px;height:66px;border-radius:20px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 14px;color:var(--green)">'+oi('layers',30)+'</div><div style="font-weight:800;font-size:16px">No hives yet</div><div class="muted" style="font-size:13px;margin-top:6px;line-height:1.5">Track inspections, treatments and reminders so you never forget what your bees need.</div></div>'
+     +'<button class="btn gold" style="margin-top:16px" onclick="addHive()">'+oi('plus',18)+' Add your first hive</button>'
+    );return;
+  }
+  var att=hives.filter(function(h){return h.status!=='healthy'}).map(function(h){return {n:h.name,col:STC[h.status],sub:h.last==='never'?'Not inspected yet':'Last inspected '+h.last,act:h.status==='critical'?'Inspect today':'Keep an eye on it',link:'hive/'+h.id}});
+  setHTML('today',
+   '<div style="margin:8px 2px 14px"><div class="h-page">Good morning,<br>Beekeeper</div><div class="sub">'+(c.critical+c.watch>0?(c.critical+c.watch)+' hive'+((c.critical+c.watch)>1?'s':'')+' need attention.':'Your apiary is looking strong.')+'</div></div>'
+   +'<div class="card pad" style="background:var(--wax);border:1px solid #F2DFA6"><div class="row" style="justify-content:space-between;align-items:flex-end"><div><div style="font-size:44px;font-weight:800;line-height:1;color:var(--gold)">'+c.total+'</div><div class="muted" style="font-size:12px;font-weight:700;margin-top:2px">'+(c.total===1?'colony':'colonies')+'</div></div>'
+     +'<div style="display:flex;gap:20px;text-align:center">'+[['Healthy',c.healthy,'var(--green)'],['Watch',c.watch,'var(--warn)'],['Critical',c.critical,'var(--red)']].map(function(s){return '<div><div style="font-size:22px;font-weight:800;color:'+s[2]+'">'+s[1]+'</div><div class="muted" style="font-size:10.5px;font-weight:700;margin-top:1px"><span class="dot" style="background:'+s[2]+';display:inline-block;margin-right:4px"></span>'+s[0]+'</div></div>'}).join('')+'</div></div></div>'
+   +(att.length?'<div class="sec">Needs attention</div><div class="card">'+att.map(function(a,i){return '<div class="lrow" style="'+(i===att.length-1?'border-bottom:none':'')+'" onclick="go(\''+a.link+'\')"><span class="dot" style="background:'+a.col+';width:11px;height:11px"></span><div style="flex:1;line-height:1.3"><b style="font-size:14.5px">'+a.n+'</b><div class="muted" style="font-size:12px">'+a.sub+'</div><div style="color:'+a.col+';font-weight:700;font-size:12.5px;margin-top:1px">'+a.act+'</div></div>'+oi('chev',16)+'</div>'}).join('')+'</div>':'')
+   +'<div class="sec">My hives</div>'
+   +'<div class="row" style="gap:11px;overflow-x:auto;padding-bottom:2px">'+hives.map(function(h){return '<div onclick="go(\'hive/'+h.id+'\')" style="flex:none;width:92px;cursor:pointer"><div style="height:62px;border-radius:14px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;color:var(--green);box-shadow:var(--shadow)">'+oi('layers',26)+'</div><div style="font-weight:700;font-size:12px;margin-top:6px">'+h.name+'</div><div style="font-size:10.5px;font-weight:700;color:'+STC[h.status]+'">● '+STL[h.status]+'</div></div>'}).join('')+'</div>'
+   +'<button class="btn gold" style="margin-top:16px" onclick="go(\'inspect\')">'+oi('search',18)+' Start an inspection</button>'
+  );
+}
+function todayLine(c){return c.critical>0?(c.critical+' hive'+(c.critical>1?'s':'')+' need'+(c.critical>1?'':'s')+' attention today.'):'Your apiary is looking strong today.'}
+
+/* ---- 2 INSPECT LIST ---- */
+function renderInspectList(){
+  if(!hives.length){setHTML('inspect','<div style="margin:8px 2px 4px"><div class="sec" style="margin:0 0 4px">Hive Inspection</div><div class="h-page">Inspect</div></div><div class="card pad" style="text-align:center;padding:40px 20px;margin-top:14px"><div class="muted" style="font-size:13px">Add a hive first, then you can log inspections.</div></div><button class="btn gold" style="margin-top:16px" onclick="go(\'hives\')">'+oi('plus',18)+' Add a hive</button>');return}
+  setHTML('inspect',
+   '<div style="margin:6px 2px 4px"><div class="sec" style="margin:0 0 4px">Hive Inspection</div><div class="h-page">Pick a hive</div></div>'
+   +'<div class="card" style="margin-top:14px">'+hives.map(function(h,i){return '<div class="lrow" style="'+(i===hives.length-1?'border-bottom:none':'')+'" onclick="go(\'inspect-form/'+h.id+'\')"><div class="lico" style="background:'+STC[h.status]+'1A;color:'+STC[h.status]+'">'+oi('layers',20)+'</div><div style="flex:1"><b style="font-size:15px">'+h.name+'</b><div class="muted" style="font-size:12px;margin-top:1px"><span style="color:'+STC[h.status]+';font-weight:700">'+STL[h.status]+'</span> · '+h.last+'</div></div>'+oi('chev',16)+'</div>'}).join('')+'</div>'
+   +'<button class="btn gold" style="margin-top:16px" onclick="go(\'inspect-form/3\')">'+oi('plus',18)+' New inspection</button>'
+  );
+}
+
+/* ---- 3 HIVES ---- */
+function renderHives(){
+  if(!hives.length){
+    setHTML('hives',
+     '<div style="margin:8px 2px 4px"><div class="sec" style="margin:0 0 4px">My Apiary</div><div class="h-page">Hives</div></div>'
+     +'<div class="card pad" style="text-align:center;padding:40px 20px;margin-top:14px"><div style="width:62px;height:62px;border-radius:18px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--green)">'+oi('layers',28)+'</div><div style="font-weight:800;font-size:16px">No hives yet</div><div class="muted" style="font-size:13px;margin-top:5px">Add a hive to start tracking it.</div></div>'
+     +'<button class="btn gold" style="margin-top:16px" onclick="addHive()">'+oi('plus',18)+' Add a hive</button>'
+    );return;
+  }
+  setHTML('hives',
+   '<div style="margin:8px 2px 4px"><div class="sec" style="margin:0 0 4px">My Apiary</div><div class="h-page">Hives</div><div class="sub">'+hives.length+' '+(hives.length===1?'colony':'colonies')+' · '+profile.apiary+'</div></div>'
+   +'<div style="display:grid;gap:12px;margin-top:14px">'+hives.map(function(h){return '<div class="card pad" style="cursor:pointer" onclick="go(\'hive/'+h.id+'\')"><div class="row" style="gap:13px"><div class="lico" style="background:'+STC[h.status]+'1A;color:'+STC[h.status]+'">'+oi('layers',22)+'</div><div style="flex:1"><div class="row" style="justify-content:space-between"><b style="font-size:16px">'+h.name+'</b><span class="pill" style="background:'+STC[h.status]+'1A;color:'+STC[h.status]+'">● '+STL[h.status]+'</span></div><div class="muted" style="font-size:12px;margin-top:3px">'+qLabel(h)+' · '+(h.last==='never'?'not inspected yet':'last '+h.last)+'</div></div><button onclick="event.stopPropagation();softDelete('+h.id+')" style="border:none;background:var(--red-soft);color:var(--red);cursor:pointer;width:34px;height:34px;border-radius:11px;display:flex;align-items:center;justify-content:center;flex:none">'+oi('trash',18)+'</button></div></div>'}).join('')+'</div>'
+   +'<button class="btn soft" style="margin-top:16px" onclick="addHive()">'+oi('plus',18)+' Add a hive</button>'
+  );
+}
+function apiaryMapMini(h){var col=h.status==='critical'?'#B23A2E':h.status==='watch'?'#C2920E':'#3C5E3A';
+  return '<svg viewBox="0 0 96 96" preserveAspectRatio="xMidYMid slice" style="position:absolute;inset:0;width:100%;height:100%"><rect width="96" height="96" fill="#EFE7D4"/><path d="M6 30 C0 12 28 6 48 14 C68 22 70 50 52 64 C32 80 8 70 8 46 Z" fill="'+col+'" opacity="0.9"/><path d="M52 40 C72 26 96 40 90 64 C86 84 58 86 50 70 C42 56 40 50 52 40Z" fill="#C2920E" opacity="0.45"/>'+pin(48,48,h.status)+'</svg>'}
+var _undoFn=null,_ut=null;
+function showUndo(m,fn){var sb=$('#snackbar');_undoFn=fn;sb.innerHTML='<span>'+m+'</span><button onclick="doUndo()">Undo</button>';sb.classList.add('show');clearTimeout(_ut);_ut=setTimeout(hideUndo,5000)}
+function doUndo(){var fn=_undoFn;_undoFn=null;hideUndo();if(fn)fn()}
+function hideUndo(){clearTimeout(_ut);$('#snackbar').classList.remove('show')}
+function softDelete(id){var idx=-1;for(var i=0;i<hives.length;i++)if(hives[i].id===id)idx=i;if(idx<0)return;var h=hives[idx];var rem=events.filter(function(e){return e.link==='hive/'+id});hives.splice(idx,1);events=events.filter(function(e){return e.link!=='hive/'+id});saveAll();if(parse()[0]==='hive')go('hives');else{renderHives();requestAnimationFrame(fit)}showUndo(h.name+' deleted',function(){hives.splice(Math.min(idx,hives.length),0,h);events=rem.concat(events);saveAll();renderHives();requestAnimationFrame(fit);toast(h.name+' restored')})}
+function qLabel(h){return h.queenStatus||(h.queenright?'Queenright':'Queenless')}
+var addState=null;
+function addHive(){openAddSheet()}
+function openAddSheet(){
+  addState={name:'',section:'Apiary Section B',status:'healthy',queen:'Queenright'};
+  $('#sheet').innerHTML=
+   '<div class="grab"></div>'
+   +'<div class="row" style="justify-content:space-between;margin-bottom:16px"><h3 style="font-weight:800;font-size:18px">Add New Hive</h3><button onclick="closeAddSheet()" style="border:none;background:var(--line);color:var(--ink-2);width:30px;height:30px;border-radius:50%;display:flex;align-items:center;justify-content:center;cursor:pointer"><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" stroke-linecap="round"><path d="M6 6l12 12M18 6L6 18"/></svg></button></div>'
+   +'<div class="flbl">Hive name</div><input class="fld2" id="ah-name" placeholder="e.g. Hive #6, Apple Orchard" oninput="addState.name=this.value">'
+   +'<div style="height:14px"></div><div class="flbl">Storage sector / section</div><input class="fld2" id="ah-sec" value="'+addState.section+'" oninput="addState.section=this.value">'
+   +'<div style="height:14px"></div><div style="display:grid;grid-template-columns:1fr 1fr;gap:12px">'
+     +'<div><div class="flbl">Status</div><select class="sel" onchange="addState.status=this.value"><option value="healthy">Healthy</option><option value="watch">Watch</option><option value="critical">Critical</option></select></div>'
+     +'<div><div class="flbl">Queen status</div><select class="sel" onchange="addState.queen=this.value"><option value="Queenright">Queenright</option><option value="No Queen">No Queen</option><option value="Missing">Missing</option></select></div>'
+   +'</div>'
+   +'<button class="btn gold" style="margin-top:22px" onclick="submitNewHive()">'+oi('plus',18)+' Create hive</button>';
+  $('#sheet').classList.add('open');$('#sheet-scrim').classList.add('open');
+  setTimeout(function(){var n=$('#ah-name');if(n&&n.focus)n.focus()},120);
+}
+function closeAddSheet(){$('#sheet').classList.remove('open');$('#sheet-scrim').classList.remove('open')}
+function submitNewHive(){
+  var name=(addState.name||'').trim();if(!name){toast('Enter a hive name');return}
+  var mx=0;hives.forEach(function(h){if(h.id>mx)mx=h.id});var id=mx+1;
+  hives.push({id:id,name:name,section:addState.section.trim()||'—',status:addState.status,queenright:addState.queen==='Queenright',queenStatus:addState.queen,last:'never',insp:{queen:'Not seen',brood:'Average',honey:'Low',population:'Normal',problems:['No issues'],date:'\u2014',time:'\u2014'},entries:[],treatments:[],feedings:[]});
+  saveAll();closeAddSheet();toast(name+' added');
+  if(parse()[0]==='today'){renderToday();requestAnimationFrame(fit)}else{go('hives')}
+}
+
+/* ---- 4 INSPECT FORM ---- */
+var CYC={queen:['Not seen','Queen seen','Eggs seen'],brood:['Poor','Average','Strong'],honey:['Low','Medium','High'],population:['Weak','Normal','Strong']};
+var GICO={queen:'crown',brood:'comb',honey:'drop',population:'pop'};
+var GLBL={queen:'Queen',brood:'Brood',honey:'Honey',population:'Population'};
+var PROBS=[['comb','Queen cells','Queen cells','var(--red-soft)','var(--red)'],['noeggs','No eggs','No eggs','var(--green-soft)','var(--muted)'],['bug','Mites','Mites','var(--red-soft)','var(--red)'],['alert','Disease','Disease','var(--red-soft)','var(--red)'],['swap','Robbing','Robbing','var(--gold-soft)','var(--gold-d)'],['dots','Other','Other','var(--green-soft)','var(--muted)'],['checkc','No issues','No issues','var(--green-soft)','var(--green)']];
+var formState=null;
+function openInspectForm(id){if(!hives.length){go('hives');return}var h=hiveById(id);formState={id:h.id,queen:h.insp.queen,brood:h.insp.brood,honey:h.insp.honey,population:h.insp.population,problems:h.insp.problems.slice()};drawForm()}
+function cycleCard(g){var arr=CYC[g],i=arr.indexOf(formState[g]);formState[g]=arr[(i+1)%arr.length];drawForm()}
+function toggleProb(n){var p=formState.problems,i=p.indexOf(n);if(n==='No issues'){formState.problems=i>=0?[]:['No issues']}else{if(i>=0)p.splice(i,1);else{var k=p.indexOf('No issues');if(k>=0)p.splice(k,1);p.push(n)}}drawForm()}
+function drawForm(){var h=hiveById(formState.id);
+  setHTML('inspect-form',
+   '<div class="backbar"><button onclick="go(\'inspect\')">'+oi('back',22)+'</button><h2>Inspect '+h.name+'</h2></div>'
+   +'<div class="sec" style="margin-top:4px">Colony status · tap to set</div>'
+   +'<div style="display:grid;grid-template-columns:1fr 1fr;gap:11px">'+['queen','brood','honey','population'].map(function(g){var v=formState[g];var col=(g==='queen'&&v==='Not seen')||(g==='honey'&&v==='Low')||(g==='brood'&&v==='Poor')||(g==='population'&&v==='Weak')?'var(--red)':((g==='honey'&&v==='Medium')||(g==='brood'&&v==='Average')||(g==='population'&&v==='Normal'))?'var(--gold-d)':'var(--green)';return '<div class="card pad" style="cursor:pointer" onclick="cycleCard(\''+g+'\')"><div class="row" style="justify-content:space-between"><span class="flbl">'+GLBL[g]+'</span><span style="color:'+col+'">'+oi(GICO[g],20)+'</span></div><div style="font-weight:800;font-size:15px;margin-top:8px;color:'+col+'">'+v+'</div></div>'}).join('')+'</div>'
+   +'<div class="sec">Problems / Notes</div>'
+   +'<div style="display:grid;grid-template-columns:repeat(4,1fr);gap:9px">'+PROBS.map(function(p){var on=formState.problems.indexOf(p[1])>=0;return '<div class="prob '+(on?'on':'')+'" style="--sb:'+p[3]+';--sf:'+p[4]+'" onclick="toggleProb(\''+p[1]+'\')"><div class="ico" style="color:'+p[4]+'">'+oi(p[0],22)+'</div><span>'+p[2]+'</span></div>'}).join('')+'</div>'
+   +'<div class="sec">Evidence</div>'
+   +'<div class="row" style="gap:9px"><div style="width:54px;height:54px;border-radius:13px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;color:var(--gold-d);flex:none" onclick="toast(\'Camera (demo)\')">'+oi('camera',24)+'</div><div class="card" style="flex:1;height:54px;display:flex;align-items:center;gap:10px;padding:0 14px;cursor:pointer" onclick="toast(\'Recording (demo)\')"><span style="color:var(--green)">'+oi('mic',20)+'</span><span class="muted" style="font-size:13px">Tap to record a voice note</span></div></div>'
+   +'<button class="btn gold" style="margin-top:18px" onclick="saveInspection()">'+oi('check',18)+' Save inspection</button>'
+  );
+}
+function saveInspection(){var h=hiveById(formState.id);h.insp.queen=formState.queen;h.insp.brood=formState.brood;h.insp.honey=formState.honey;h.insp.population=formState.population;h.insp.problems=formState.problems.length?formState.problems.slice():['No issues'];h.insp.date=monthNow();h.insp.time='just now';h.status=statusFrom(h.insp.problems);h.last='just now';
+  var desc=h.insp.problems.indexOf('No issues')>=0?'Queen seen, healthy':h.insp.problems.join(', ');
+  h.entries.unshift(ent(h.insp.date,'inspect','Inspection','just now',desc,STC[h.status]));
+  events.unshift({day:'Today',kind:'inspect',title:'Inspection · '+h.name,time:'just now',desc:desc,c:STC[h.status],link:'hive/'+h.id});
+  saveAll();toast('Inspection saved');go('inspect-detail');
+}
+function monthNow(){var M=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];var d=new Date();return M[d.getMonth()]+' '+d.getDate()+', '+d.getFullYear()}
+
+/* ---- 5 INSPECT DETAIL ---- */
+function renderInspectDetail(){if(!hives.length){go('inspect');return}var h=hiveById(formState?formState.id:hives[0].id);if(!h){go('inspect');return}var i=h.insp;var pt=i.problems.indexOf('No issues')>=0?'No issues':i.problems.join(', ');
+  var rows=[['Queen','crown',i.queen,'var(--green)'],['Brood','comb',i.brood,'var(--green)'],['Honey','drop',i.honey,'var(--gold-d)'],['Population','pop',i.population,'var(--green)'],['Problems','alert',pt,pt==='No issues'?'var(--green)':'var(--red)']];
+  setHTML('inspect-detail',
+   '<div class="backbar"><button onclick="go(\'inspect\')">'+oi('back',22)+'</button><h2>Inspection saved</h2></div>'
+   +'<div class="card hexbg pad" style="text-align:center"><div style="width:54px;height:54px;border-radius:50%;background:var(--green);color:#fff;display:flex;align-items:center;justify-content:center;margin:4px auto 10px">'+oi('check',26,2.5)+'</div><div style="font-weight:800;font-size:17px">'+h.name+'</div><div class="muted" style="font-size:12.5px">'+i.date+' · '+i.time+'</div></div>'
+   +'<div class="sec">Summary</div>'
+   +'<div class="card" style="padding:4px 16px">'+rows.map(function(r,k){return '<div class="row" style="justify-content:space-between;padding:11px 0;'+(k<rows.length-1?'border-bottom:1px solid var(--line)':'')+'"><span class="row muted" style="gap:8px;font-weight:600"><span style="color:var(--faint)">'+oi(r[1],17)+'</span>'+r[0]+'</span><b style="color:'+r[3]+'">'+r[2]+'</b></div>'}).join('')+'</div>'
+   +'<button class="btn green" style="margin-top:16px" onclick="go(\'hive/'+h.id+'\')">View hive</button>'
+   +'<button class="btn ghost" style="margin-top:9px" onclick="go(\'inspect\')">Done</button>'
+  );
+}
+
+/* ---- 6 HIVE DETAIL ---- */
+function renderHive(id){var h=hiveById(id);if(!h){go('hives');return}
+  setHTML('hive',
+   '<div class="backbar"><button onclick="go(\'hives\')">'+oi('back',22)+'</button><h2>'+h.name+'</h2></div>'
+   +'<div class="card" style="padding:0"><div style="height:84px;background:linear-gradient(135deg,var(--green),var(--green-d))"></div><div class="row" style="justify-content:space-between;padding:12px 15px"><div><div style="font-weight:800;font-size:16px">'+h.name+'</div><div class="muted" style="font-size:12px">'+qLabel(h)+' · '+(h.section?h.section+' · ':'')+(h.last==='never'?'not inspected yet':'Last '+h.last)+'</div></div><span class="pill" style="background:'+STC[h.status]+'1A;color:'+STC[h.status]+'">● '+STL[h.status]+'</span></div></div>'
+   +'<div class="tabs" style="margin-top:14px">'+[['overview','Overview'],['records','Records']].map(function(t){return '<span class="'+(hiveTab===t[0]?'on':'')+'" onclick="hiveTab=\''+t[0]+'\';renderHive('+id+');requestAnimationFrame(fit)">'+t[1]+'</span>'}).join('')+'</div>'
+   +'<div id="hivebody"></div>'
+  );
+  $('#hivebody').innerHTML=hiveBody(h);
+}
+function hiveBody(h){
+  if(hiveTab==='records'){
+    var tr=h.treatments,fd=h.feedings;
+    return '<div class="sec" style="margin-top:4px">Treatments</div>'+(tr.length?tr.map(function(x){return '<div class="card pad"><div class="row" style="justify-content:space-between"><div class="row" style="gap:9px"><span style="color:var(--gold-d)">'+oi('pill',18)+'</span><b>'+x.name+'</b></div>'+(x.badge?'<span class="pill" style="background:var(--gold-soft);color:var(--gold-d)">'+x.badge+'</span>':'<span class="muted" style="font-size:12px">'+(x.date||'')+'</span>')+'</div>'+(x.lines?'<div class="muted" style="font-size:12px;margin-top:8px;line-height:1.7">'+x.lines.join('<br>')+'</div>':'')+'</div>'}).join(''):'<div class="muted" style="font-size:13px;padding:4px 2px">No treatments logged.</div>')
+      +'<div class="sec">Feedings</div>'+(fd.length?fd.map(function(x){return '<div class="card pad row" style="justify-content:space-between"><div class="row" style="gap:9px"><span style="color:var(--muted)">'+oi('cup',18)+'</span><div><b>'+x.name+'</b><div class="muted" style="font-size:12px">'+x.date+'</div></div></div><b class="muted">'+x.amt+'</b></div>'}).join(''):'<div class="muted" style="font-size:13px;padding:4px 2px">No feedings logged.</div>')
+      +'<button class="btn soft" style="margin-top:16px" onclick="go(\'add-entry/'+h.id+'\')">'+oi('plus',18)+' Add treatment / feeding</button>';
+  }
+  return '<div class="card pad"><div class="row" style="justify-content:space-between"><span class="flbl">Health trend</span><span class="muted" style="font-size:11px">last 6 visits</span></div>'+chartSVG()
+    +'<div class="row" style="gap:14px;margin-top:10px;font-size:11px;font-weight:700;color:var(--muted)"><span><span class="dot" style="background:var(--green);display:inline-block;margin-right:5px"></span>Population</span><span><span class="dot" style="background:var(--gold);display:inline-block;margin-right:5px"></span>Honey</span></div></div>'
+    +'<div class="sec">Recent inspections</div><div class="card">'+h.entries.slice(0,4).map(function(e,i){return '<div class="lrow" style="'+(i===Math.min(h.entries.length,4)-1?'border-bottom:none':'')+'"><div class="lico" style="width:34px;height:34px;border-radius:10px;background:'+e.c+'1A;color:'+e.c+'">'+oi(KEMO[e.kind]||'dots',17)+'</div><div style="flex:1"><b style="font-size:13.5px">'+e.title+'</b><div class="muted" style="font-size:11.5px">'+e.desc+'</div></div><span class="muted" style="font-size:11px">'+shortD(e.date)+'</span></div>'}).join('')+'</div>'
+    +'<button class="btn gold" style="margin-top:16px" onclick="go(\'inspect-form/'+h.id+'\')">'+oi('plus',18)+' New inspection</button>';
+}
+function shortD(d){return (d||'').replace(/,\s*\d{4}$/,'')}
+function chartSVG(){var pop=[2,2.4,3,3.3,3.1,3.6],hon=[1.4,1.8,2.2,2.6,2.4,3.0];var W=280,H=84,pad=6;function pts(a){var mx=4;return a.map(function(v,i){return (pad+i*(W-2*pad)/(a.length-1)).toFixed(1)+','+(H-pad-(v/mx)*(H-2*pad)).toFixed(1)}).join(' ')}
+  return '<svg viewBox="0 0 '+W+' '+H+'" style="width:100%;height:84px;margin-top:8px;overflow:visible"><polyline points="'+pts(pop)+'" fill="none" stroke="var(--green)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><polyline points="'+pts(hon)+'" fill="none" stroke="var(--gold)" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round" stroke-dasharray="1 5"/></svg>'}
+
+/* ---- 7 TIMELINE ---- */
+var tlFilter='all';
+function renderTimeline(){var filters=[['all','All'],['inspect','Inspect'],['treat','Treat'],['feed','Feed'],['harvest','Harvest']];var list=events.filter(function(e){return tlFilter==='all'||e.kind===tlFilter});
+  setHTML('timeline',
+   '<div style="margin:6px 2px 4px"><div class="sec" style="margin:0 0 4px">Activity</div><div class="h-page">Timeline</div></div>'
+   +'<div class="row" style="gap:8px;overflow-x:auto;padding:12px 0 4px">'+filters.map(function(f){return '<span class="chip '+(tlFilter===f[0]?'on':'')+'" onclick="tlFilter=\''+f[0]+'\';renderTimeline();requestAnimationFrame(fit)">'+f[1]+'</span>'}).join('')+'</div>'
+   +(list.length?'<div class="card">'+list.map(function(e,i){return '<div class="lrow" style="'+(i===list.length-1?'border-bottom:none':'')+'" onclick="go(\''+(e.link||'timeline')+'\')"><div class="lico" style="width:36px;height:36px;border-radius:11px;background:'+e.c+'1A;color:'+e.c+'">'+oi(KEMO[e.kind]||'dots',18)+'</div><div style="flex:1;line-height:1.3"><b style="font-size:13.5px">'+e.title+'</b><div style="color:'+e.c+';font-weight:700;font-size:12px">'+e.desc+'</div></div><div style="text-align:right"><div class="muted" style="font-size:10px;font-weight:700">'+e.day+'</div>'+(e.time?'<div class="muted" style="font-size:10px">'+e.time+'</div>':'')+'</div></div>'}).join('')+'</div>':'<div class="muted" style="text-align:center;padding:40px 0">No '+tlFilter+' events yet.</div>')
+  );
+}
+
+/* ---- 8 REMINDER ---- */
+function renderReminder(){var r=reminders[0];
+  if(!r){setHTML('reminder','<div class="backbar"><button onclick="go(\'today\')">'+oi('back',22)+'</button><h2>Reminders</h2></div><div class="card pad" style="text-align:center;padding:40px 20px"><div style="width:60px;height:60px;border-radius:18px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--green)">'+oi('bell',26)+'</div><div style="font-weight:800;font-size:16px">No reminders</div><div class="muted" style="font-size:13px;margin-top:5px">Reminders appear after inspections flag something to follow up on.</div></div>');return}
+  setHTML('reminder',
+   '<div class="backbar"><button onclick="go(\'today\')">'+oi('back',22)+'</button><h2>Reminder</h2></div>'
+   +'<div class="card hexbg pad" style="text-align:center"><div style="width:64px;height:64px;border-radius:50%;background:'+(r.done?'var(--green)':'var(--gold)')+';color:#fff;display:flex;align-items:center;justify-content:center;margin:6px auto 12px">'+(r.done?oi('checkc',30,2.3):oi('bell',28,2.2))+'</div><div style="font-weight:800;font-size:18px">'+r.hive+'</div><div style="color:'+(r.done?'var(--green)':'var(--red)')+';font-weight:700;font-size:13px;margin-top:2px">'+(r.done?'Resolved':r.title)+'</div></div>'
+   +'<div class="card pad" style="margin-top:12px"><div class="flbl">Due</div><div style="font-weight:700;margin-top:3px">'+r.date+' · within '+r.within+'</div><div class="seam"></div><div class="flbl">Why</div><div class="muted" style="font-size:13px;margin-top:4px;line-height:1.55">'+r.why+'</div></div>'
+   +(r.done?'<button class="btn ghost" style="margin-top:16px" onclick="toggleReminder()">Mark as not done</button>':'<button class="btn gold" style="margin-top:16px" onclick="toggleReminder()">'+oi('check',18)+' Mark as done</button>')
+  );
+}
+function toggleReminder(){var r=reminders[0];r.done=!r.done;saveAll();toast(r.done?'Marked done':'Reopened');renderReminder();requestAnimationFrame(fit)}
+
+/* ---- 9 SAFETY ---- */
+function renderSafety(){var h=hives[0];var t=h&&h.treatments&&h.treatments[0];
+  if(!t){setHTML('safety','<div class="backbar"><button onclick="go(\'today\')">'+oi('back',22)+'</button><h2>Treatment safety</h2></div><div class="card pad" style="text-align:center;padding:40px 20px"><div style="width:60px;height:60px;border-radius:18px;background:var(--green-soft);display:flex;align-items:center;justify-content:center;margin:0 auto 12px;color:var(--green)">'+oi('pill',26)+'</div><div style="font-weight:800;font-size:16px">No active treatments</div><div class="muted" style="font-size:13px;margin-top:5px">Add a treatment from a hive\u2019s Records tab to track withdrawal windows here.</div></div>');return}
+  if(!t.lines)t.lines=['Start: —','Remove: —','Honey-safe: —'];
+  setHTML('safety',
+   '<div class="backbar"><button onclick="go(\'today\')">'+oi('back',22)+'</button><h2>Treatment safety</h2></div>'
+   +'<div class="card pad" style="background:var(--green-soft);border:none"><div class="row" style="gap:9px;color:var(--green-d)"><span>'+oi('pill',18)+'</span><b>'+t.name+' · '+h.name+'</b></div><div style="margin-top:10px;font-weight:800;font-size:24px;color:var(--green-d)">'+(t.badge||'In progress')+'</div><div class="muted" style="font-size:12px">withdrawal window</div></div>'
+   +'<div class="tl" style="margin-top:18px">'+t.lines.map(function(l,i){var c=i===0?'var(--green)':i===1?'var(--gold)':'var(--red)';return '<div class="node" style="--c:'+c+'"><div style="font-weight:700;font-size:14px">'+l.split(':')[0]+'</div><div class="muted" style="font-size:12px">'+(l.split(':')[1]||'').trim()+'</div></div>'}).join('')+'</div>'
+   +'<div class="card pad row" style="gap:11px;margin-top:6px"><span style="color:var(--muted)">'+oi('flask',18)+'</span><div><b>Dosage</b><div class="muted" style="font-size:12px">'+treatment.dosage+'</div></div></div>'
+   +'<div class="card pad row" style="gap:11px"><span style="color:var(--muted)">'+oi('note',18)+'</span><div><b>Notes</b><div class="muted" style="font-size:12px">'+treatment.notes+'</div></div></div>'
+   +'<button class="btn ghost" style="margin-top:16px" onclick="editTreatment()">Edit dosage / notes</button>'
+  );
+}
+function editTreatment(){if(typeof prompt!=='function'){toast('Editing unavailable');return}var d=prompt('Dosage',treatment.dosage);if(d!==null)treatment.dosage=d.trim()||treatment.dosage;var n=prompt('Notes',treatment.notes);if(n!==null)treatment.notes=n.trim()||'None';saveAll();toast('Updated');renderSafety();requestAnimationFrame(fit)}
+
+/* ---- 10 ADD ENTRY ---- */
+var entryState=null;
+function openAddEntry(id){if(!hives.length){go('hives');return}var h=hiveById(id)||hives[0];entryState={id:h.id,type:'Treatment',name:'',amount:'',date:monthNow()};drawEntry()}
+function drawEntry(){var isT=entryState.type==='Treatment';
+  setHTML('add-entry',
+   '<div class="backbar"><button onclick="go(\'hive/'+entryState.id+'\')">'+oi('back',22)+'</button><h2>Add entry</h2></div>'
+   +'<div class="seg" style="width:100%;margin-bottom:16px">'+['Treatment','Feeding'].map(function(t){return '<button class="'+(entryState.type===t?'on':'')+'" style="flex:1" onclick="entryState.type=\''+t+'\';drawEntry()">'+t+'</button>'}).join('')+'</div>'
+   +'<div class="flbl">'+(isT?'Treatment name':'Feed type')+'</div><input class="fld" id="e-name" placeholder="'+(isT?'e.g. Apivar':'e.g. Syrup 1:1')+'" value="'+entryState.name+'" oninput="entryState.name=this.value">'
+   +'<div style="height:14px"></div><div class="flbl">'+(isT?'Duration / note':'Amount')+'</div><input class="fld" id="e-amt" placeholder="'+(isT?'e.g. Remove in 28 days':'e.g. 2.0 gal')+'" value="'+entryState.amount+'" oninput="entryState.amount=this.value">'
+   +'<div style="height:14px"></div><div class="flbl">Date</div><input class="fld" id="e-date" value="'+entryState.date+'" oninput="entryState.date=this.value">'
+   +'<button class="btn gold" style="margin-top:20px" onclick="saveEntry()">'+oi('check',18)+' Save '+entryState.type.toLowerCase()+'</button>'
+  );
+}
+function saveEntry(){var h=hiveById(entryState.id);var nm=(entryState.name||'').trim();if(!nm){toast('Enter a name');return}
+  if(entryState.type==='Treatment'){h.treatments.unshift({name:nm,date:entryState.date,badge:entryState.amount?entryState.amount:''});h.entries.unshift(ent(entryState.date,'treat','Treatment','',nm,'var(--gold)'));events.unshift({day:'Today',kind:'treat',title:'Treatment · '+h.name,time:'',desc:nm,c:'var(--gold)',link:'hive/'+h.id})}
+  else{h.feedings.unshift({name:nm,date:entryState.date,amt:entryState.amount||'—'});h.entries.unshift(ent(entryState.date,'feed','Fed','',nm,'var(--muted)'));events.unshift({day:'Today',kind:'feed',title:'Fed · '+h.name,time:'',desc:nm,c:'var(--muted)',link:'hive/'+h.id})}
+  saveAll();toast('Saved');hiveTab='records';go('hive/'+h.id)}
+
+/* ---- 11 MORE + SETTINGS ---- */
+function renderMore(){
+  var items=[['home','Apiary Management','set-apiary'],['bell','Reminders','set-reminders'],['sun','Weather Preferences','set-weather'],['db','Data & Backup','set-data'],['chat','Help & Support','set-help']];
+  setHTML('more',
+   '<div style="margin:6px 2px 4px"><div class="sec" style="margin:0 0 4px">Settings</div><div class="h-page">More</div></div>'
+   +'<div class="card" style="margin-top:14px">'+items.map(function(it){return '<div class="lrow" onclick="go(\''+it[2]+'\')"><div class="lico" style="background:var(--green-soft);color:var(--green-d)">'+oi(it[0],18)+'</div><div style="flex:1"><b style="font-size:14.5px">'+it[1]+'</b></div>'+oi('chev',16)+'</div>'}).join('')
+     +'<div class="lrow" onclick="go(\'set-about\')"><div class="lico" style="background:var(--gold-soft)">'+LOGO(18)+'</div><div style="flex:1"><b style="font-size:14.5px">About HiveDash</b><div class="muted" style="font-size:11px">Version 1.0.0</div></div>'+oi('chev',16)+'</div></div>'
+   +'<button class="btn ghost" style="margin-top:16px;color:var(--red);border-color:var(--red)" onclick="toast(\'Signed out (demo)\')">Sign out</button>'
+  );
+}
+function settingsPage(id,title,body){setHTML(id,'<div class="backbar"><button onclick="go(\'more\')">'+oi('back',22)+'</button><h2>'+title+'</h2></div>'+body)}
+function renderSetApiary(){settingsPage('set-apiary','Apiary Management',
+  '<div class="card pad"><div class="flbl">Beekeeper</div><input class="fld" id="p-keep" value="'+profile.beekeeper+'"><div style="height:12px"></div><div class="flbl">Apiary name</div><input class="fld" id="p-ap" value="'+profile.apiary+'"><div style="height:12px"></div><div class="flbl">Location</div><input class="fld" id="p-loc" value="'+profile.location+'"></div>'
+  +'<button class="btn gold" style="margin-top:16px" onclick="saveProfile()">'+oi('check',18)+' Save</button>')}
+function saveProfile(){profile.beekeeper=$('#p-keep').value.trim()||profile.beekeeper;profile.apiary=$('#p-ap').value.trim()||profile.apiary;profile.location=$('#p-loc').value.trim()||profile.location;store.set('hd_profile',profile);updateAvatar();toast('Saved');go('more')}
+function renderSetReminders(){settingsPage('set-reminders','Reminders',
+  '<div class="card">'
+  +'<div class="setrow"><div><b>Inspection reminders</b><div class="muted" style="font-size:12px">Remind me to inspect</div></div><div class="sw '+(prefs.inspectReminders?'on':'')+'" onclick="prefs.inspectReminders=!prefs.inspectReminders;store.set(\'hd_prefs\',prefs);renderSetReminders();requestAnimationFrame(fit)"></div></div>'
+  +'<div class="setrow"><div><b>Interval</b><div class="muted" style="font-size:12px">Every '+prefs.inspectInterval+' days</div></div><div class="seg">'+[7,10,14].map(function(n){return '<button class="'+(prefs.inspectInterval===n?'on':'')+'" onclick="prefs.inspectInterval='+n+';store.set(\'hd_prefs\',prefs);renderSetReminders();requestAnimationFrame(fit)">'+n+'d</button>'}).join('')+'</div></div>'
+  +'<div class="setrow"><div><b>Treatment alerts</b><div class="muted" style="font-size:12px">Withdrawal windows</div></div><div class="sw '+(prefs.treatmentAlerts?'on':'')+'" onclick="prefs.treatmentAlerts=!prefs.treatmentAlerts;store.set(\'hd_prefs\',prefs);renderSetReminders();requestAnimationFrame(fit)"></div></div>'
+  +'</div>')}
+function renderSetWeather(){settingsPage('set-weather','Weather Preferences',
+  '<div class="card">'
+  +'<div class="setrow"><b>Units</b><div class="seg">'+['F','C'].map(function(u){return '<button class="'+(prefs.unit===u?'on':'')+'" onclick="prefs.unit=\''+u+'\';store.set(\'hd_prefs\',prefs);renderSetWeather();requestAnimationFrame(fit)">°'+u+'</button>'}).join('')+'</div></div>'
+  +'<div class="setrow"><div><b>High-wind alert</b><div class="muted" style="font-size:12px">Above '+prefs.windAlert+' mph</div></div><div class="seg">'+[10,15,20].map(function(n){return '<button class="'+(prefs.windAlert===n?'on':'')+'" onclick="prefs.windAlert='+n+';store.set(\'hd_prefs\',prefs);renderSetWeather();requestAnimationFrame(fit)">'+n+'</button>'}).join('')+'</div></div>'
+  +'<div class="setrow"><div><b>Min inspection temp</b><div class="muted" style="font-size:12px">'+prefs.minTemp+'°'+prefs.unit+'</div></div><div class="seg">'+[50,55,60].map(function(n){return '<button class="'+(prefs.minTemp===n?'on':'')+'" onclick="prefs.minTemp='+n+';store.set(\'hd_prefs\',prefs);renderSetWeather();requestAnimationFrame(fit)">'+n+'</button>'}).join('')+'</div></div>'
+  +'</div>')}
+function renderSetData(){settingsPage('set-data','Data & Backup',
+  '<div class="card"><div class="lrow" onclick="exportData()"><div class="lico" style="background:var(--green-soft);color:var(--green-d)">'+oi('db',18)+'</div><div style="flex:1"><b style="font-size:14px">Export data</b><div class="muted" style="font-size:11px">Download a JSON backup</div></div>'+oi('chev',16)+'</div>'
+  +'<div class="lrow" onclick="resetDemo()"><div class="lico" style="background:var(--red-soft);color:var(--red)">'+oi('trash',18)+'</div><div style="flex:1"><b style="font-size:14px">Reset demo data</b><div class="muted" style="font-size:11px">Restore sample hives</div></div>'+oi('chev',16)+'</div></div>')}
+function exportData(){try{var blob=new Blob([JSON.stringify({hives:hives,events:events},null,2)],{type:'application/json'});var u=URL.createObjectURL(blob);var a=document.createElement('a');a.href=u;a.download='hivedash-backup.json';a.click();setTimeout(function(){URL.revokeObjectURL(u)},1000);toast('Exported')}catch(e){toast('Export unavailable')}}
+function resetDemo(){['hd_hives','hd_events','hd_reminders','hd_treatment'].forEach(function(k){try{localStorage.removeItem(k)}catch(e){}});hives=seed();events=store.get('hd_events',[]);location.hash='hives';toast('Demo data reset');setTimeout(function(){location.reload&&location.reload()},300)}
+function renderSetHelp(){settingsPage('set-help','Help & Support',
+  '<div class="card pad"><b>Getting started</b><div class="muted" style="font-size:13px;margin-top:6px;line-height:1.6">Tap a hive to see its detail, or use Inspect to log a visit. HiveDash reminds you about queen cells, treatment windows and feeding so you never forget what your bees need.</div></div>'
+  +'<div class="card pad" style="margin-top:12px"><b>Contact</b><div class="muted" style="font-size:13px;margin-top:6px">support@hivedash.app</div></div>')}
+function renderSetAbout(){settingsPage('set-about','About',
+  '<div class="card hexbg pad" style="text-align:center"><div style="width:60px;height:60px;border-radius:18px;background:var(--gold-soft);display:flex;align-items:center;justify-content:center;margin:6px auto 12px">'+LOGO(34)+'</div><div style="font-weight:800;font-size:18px">HiveDash</div><div class="muted" style="font-size:13px;margin-top:2px">Never forget what your bees need.</div><div class="muted" style="font-size:11px;margin-top:10px">Version 1.0.0</div></div>')}
+
+/* ---- PWA + boot ---- */
+(function(){try{
+  var icon='data:image/svg+xml,'+encodeURIComponent('<svg xmlns="http://www.w3.org/2000/svg" width="192" height="192" viewBox="0 0 192 192"><rect width="192" height="192" rx="42" fill="#102A43"/><g transform="translate(96,96) scale(1.7)">'+LOGO(76,'#EEB73C').replace(/^<svg[^>]*>/,'').replace(/<\/svg>$/,'')+'</g></svg>');
+  $('#touch-icon').href=icon;
+  var man={name:'HiveDash',short_name:'HiveDash',start_url:'.',display:'standalone',background_color:'#F1EADB',theme_color:'#3C5E3A',icons:[{src:icon,sizes:'192x192',type:'image/svg+xml'}]};
+  $('#manifest').href='data:application/json,'+encodeURIComponent(JSON.stringify(man));
+}catch(e){}})();
+updateBadge();updateAvatar();
+render();
+</script>
+</body>
+</html>

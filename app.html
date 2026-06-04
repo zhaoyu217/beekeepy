@@ -12,7 +12,7 @@
   .set-head h1,#drawer h2,.card h3,.pp-title{font-family:'Quicksand',sans-serif;}
   /* full-bleed device, consistent width across all screens */
   body{background:#dfe0e2;}
-  .device{position:relative;width:100%;max-width:440px;margin:0 auto;height:100vh;height:100dvh;background:#fff;overflow:hidden;}
+  .device{position:relative;width:100%;margin:0;height:100vh;height:100dvh;background:#fff;overflow:hidden;}
   .device iframe{width:100%;height:100vh;height:100dvh;border:0;display:block;}
   /* left drawer (home ≡) */
   #drawer{position:absolute;inset:0;pointer-events:none;z-index:25;}
@@ -428,11 +428,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -545,36 +546,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -863,11 +838,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -980,36 +956,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -1284,11 +1234,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -1401,36 +1352,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -1670,11 +1595,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -1787,36 +1713,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -2063,11 +1963,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -2180,36 +2081,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -2480,11 +2355,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -2597,36 +2473,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -2845,11 +2695,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -2962,36 +2813,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -3241,11 +3066,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -3358,36 +3184,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -3627,11 +3427,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -3744,36 +3545,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>
@@ -4009,11 +3784,12 @@
 <style>
   /* unified: no page scroll; horizontal padding 16px (matches home, CDN-independent) */
   /* responsive & adaptive: fit one screen when possible; scroll when content is taller */
-  html,body{margin:0!important;height:100%!important;overflow:hidden!important;}
+  html,body{margin:0!important;min-height:100%;overflow-x:hidden!important;overflow-y:auto!important;}
   /* neutralize fixed full-screen heights so content is never clipped */
   [class*="h-screen"]{height:auto!important;min-height:100vh;}
   .px-container-padding{padding-left:16px!important;padding-right:16px!important;}
   .p-container-padding{padding-left:16px!important;padding-right:16px!important;}
+  [class*="max-w-["]{max-width:100%!important;}
   .__wxhint{margin-top:8px;display:inline-flex;align-items:center;gap:6px;padding:5px 11px;border-radius:999px;font-weight:800;font-size:11px;align-self:flex-start;}
   .__wxhint.good{background:#e8f5e9;color:#1b5e20;} .__wxhint.warn{background:#fff3e0;color:#e65100;} .__wxhint.bad{background:#ffebee;color:#b71c1c;}
   .__wxdanger{box-shadow:inset 0 0 0 3px #ff5252!important;}
@@ -4126,36 +3902,10 @@
     if(e.data.__empty!==undefined) emptyMode(!!e.data.__empty);
   });
 
-  /* fill width naturally; allow vertical scroll only when content is taller than the screen */
-  /* wrap all content, then scale the WRAPPER to fit one screen in height; width compensated so it never becomes a narrow strip */
-  var __w=null;
-  function ensureWrap(){
-    if(__w) return __w;
-    var b=document.body; __w=document.createElement('div'); __w.id='__fit'; __w.style.willChange='transform';
-    var nodes=[]; for(var i=0;i<b.childNodes.length;i++){ var n=b.childNodes[i]; if(n.nodeType===1 && n.tagName==='SCRIPT') continue; nodes.push(n); }
-    nodes.forEach(function(n){ __w.appendChild(n); });
-    b.insertBefore(__w, b.firstChild);
-    return __w;
-  }
-  var __fitting=false;
-  function fit(){
-    if(__fitting) return; __fitting=true;
-    var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight;
-    w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
-    if(ch>vh){
-      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
-      w.style.width=(100/s)+'%';
-      w.style.transform='scale('+s+')';
-    }
-    setTimeout(function(){ __fitting=false; },0);
-  }
-  ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
-  if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
-  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
-  function init(){ deepClean(); weather(); fit(); }
-  init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
+  /* no whole-page scaling: fill width naturally, content flows top-to-bottom (scroll if taller) */
+  function fit(){ }
+  function init(){ deepClean(); weather(); }
+  init(); setTimeout(init,120); setTimeout(init,450);
 })();
 @@ENDSCRIPT@@
 </body></html>

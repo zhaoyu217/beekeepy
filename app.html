@@ -12,7 +12,7 @@
   .set-head h1,#drawer h2,.card h3,.pp-title{font-family:'Quicksand',sans-serif;}
   /* full-bleed device, consistent width across all screens */
   body{background:#dfe0e2;}
-  .device{position:relative;width:100%;max-width:440px;margin:0 auto;height:100vh;height:100dvh;background:#fff;overflow:hidden;box-shadow:0 0 30px rgba(0,0,0,.12);}
+  .device{position:relative;width:100%;max-width:440px;margin:0 auto;height:100vh;height:100dvh;background:#fff;overflow:hidden;}
   .device iframe{width:100%;height:100vh;height:100dvh;border:0;display:block;}
   /* left drawer (home ≡) */
   #drawer{position:absolute;inset:0;pointer-events:none;z-index:25;}
@@ -556,20 +556,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -988,20 +991,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -1406,20 +1412,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -1789,20 +1798,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -2179,20 +2191,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -2593,20 +2608,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -2955,20 +2973,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -3348,20 +3369,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -3731,20 +3755,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();
@@ -4110,20 +4137,23 @@
     b.insertBefore(__w, b.firstChild);
     return __w;
   }
+  var __fitting=false;
   function fit(){
+    if(__fitting) return; __fitting=true;
     var w=ensureWrap();
-    var vh=document.documentElement.clientHeight||window.innerHeight; var s=1;
+    var vh=document.documentElement.clientHeight||window.innerHeight;
     w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
-    for(var i=0;i<4;i++){                 /* iterate: width<->height<->scale until stable */
-      w.style.transform='none';
-      var ch=w.scrollHeight; var ns=vh/ch; if(ns>1) ns=1;
-      if(ns>=1){ s=1; w.style.width='100%'; break; }
-      s=ns; w.style.width=(100/s)+'%';
+    var ch=w.scrollHeight+6;               /* +6px safety so near-full pages never clip */
+    if(ch>vh){
+      var s=vh/ch;                         /* single pass: shrink to fit, widen to keep full width */
+      w.style.width=(100/s)+'%';
+      w.style.transform='scale('+s+')';
     }
-    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+    setTimeout(function(){ __fitting=false; },0);
   }
   ['resize','orientationchange'].forEach(function(ev){ window.addEventListener(ev,fit); });
   if(document.fonts && document.fonts.ready){ document.fonts.ready.then(fit); }
+  try{ var __ro=new ResizeObserver(function(){ fit(); }); setTimeout(function(){ var w=document.getElementById('__fit'); if(w) __ro.observe(w); },300); }catch(e){}
   function init(){ deepClean(); weather(); fit(); }
   init(); setTimeout(init,120); setTimeout(init,450); setTimeout(fit,800);
 })();

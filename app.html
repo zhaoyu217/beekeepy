@@ -20,6 +20,8 @@
   #drawer .sheet{position:absolute;top:0;left:0;bottom:0;width:74%;max-width:300px;background:#FFFFFF;transform:translateX(-100%);transition:.25s;padding:22px 16px;box-shadow:6px 0 24px rgba(0,0,0,.25);overflow-y:auto;}
   #drawer.open{pointer-events:auto;} #drawer.open .scrim{opacity:1;} #drawer.open .sheet{transform:translateX(0);}
   #drawer h2{font-size:18px;font-weight:800;color:#6E7D4F;margin:0 0 2px;}
+  .drw-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px;}
+  .drw-x{border:0;background:transparent;font-size:26px;line-height:1;color:#6E7D4F;cursor:pointer;}
   #drawer .sub{font-size:11px;color:#8a8f94;margin:0 0 16px;}
   .drw-item{display:block;width:100%;text-align:left;border:0;background:transparent;font-size:15px;font-weight:600;color:#231a10;padding:12px 10px;border-radius:10px;cursor:pointer;}
   .drw-item:hover{background:#EFF1F3;}
@@ -56,6 +58,21 @@
   .tg::after{content:"";position:absolute;top:3px;left:3px;width:22px;height:22px;border-radius:50%;background:#fff;transition:.2s;} .tg.on::after{transform:translateX(20px);}
   #stealthBanner{display:none;align-items:center;gap:8px;background:#241c10;color:#ffd66e;border-radius:12px;padding:10px 12px;margin-top:12px;font-size:12px;font-weight:700;line-height:1.4;}
   .logout{width:100%;border:0;background:#c62828;color:#fff;font-size:16px;font-weight:800;padding:15px;border-radius:14px;cursor:pointer;margin-top:4px;} .logout:active{transform:scale(.98);}
+  /* account & general preference rows */
+  .lrow{display:flex;align-items:center;gap:11px;padding:11px 2px;cursor:pointer;}
+  .lrow .li{width:22px;text-align:center;font-size:16px;flex:none;}
+  .lrow .ll{flex:1;font-size:14px;font-weight:600;color:#231a10;}
+  .lrow .lv{font-size:13px;color:#8a8f94;font-weight:600;display:flex;align-items:center;gap:4px;}
+  .lrow .lv.off{color:#b06a2c;}
+  .lrow.danger .ll{color:#c62828;}
+  .lsep{height:1px;background:var(--line,#E6E8EA);margin:2px 0;}
+  .prow{display:flex;align-items:center;gap:11px;padding:10px 2px;}
+  .prow .li{width:22px;text-align:center;font-size:16px;flex:none;}
+  .prow .ll{flex:1;font-size:14px;font-weight:600;color:#231a10;}
+  .seg{display:inline-flex;background:#EDEFF1;border-radius:10px;padding:3px;gap:2px;}
+  .segb{border:0;background:transparent;font-size:13px;font-weight:700;color:#52443a;padding:6px 12px;border-radius:8px;cursor:pointer;}
+  .segb.on{background:#fff;color:#6E7D4F;box-shadow:0 1px 3px rgba(0,0,0,.12);}
+  .sel{border:1px solid #E6E8EA;border-radius:10px;padding:7px 10px;font-size:13px;font-weight:700;color:#231a10;background:#fff;font-family:inherit;}
   /* black-gold Pro Pass (50/50, no scroll) */
   .set-sub{position:absolute;inset:0;transform:translateX(100%);transition:.28s;display:flex;flex-direction:column;} #settings.subopen .set-sub{transform:translateX(0);}
   .propass{background:radial-gradient(120% 80% at 50% 0%,#3a2f17 0%,#1c150b 62%);color:#f3e7c9;}
@@ -74,17 +91,9 @@
 <body>
 <div class="device">
   <iframe id="frame" title="app"></iframe>
-  <div id="drawer"><div class="scrim" onclick="closeDrawer()"></div><nav class="sheet"><h2>Sweetwater Apiary</h2><p class="sub">Jump to screen</p>
-<button class="drw-item" onclick="go('_1')">Apiary Home</button>
-<button class="drw-item" onclick="go('_2')">Development Timeline</button>
-<button class="drw-item" onclick="go('_3')">Inspection Detail</button>
-<button class="drw-item" onclick="go('inspection_home')">Hive Inspections</button>
-<button class="drw-item" onclick="go('core_metrics')">Quick Inspection</button>
-<button class="drw-item" onclick="go('summary_finish')">Inspection Summary</button>
-<button class="drw-item" onclick="go('mite_health_dashboard')">Mite & Health</button>
-<button class="drw-item" onclick="go('ai_disease_scanner')">AI Disease Scanner</button>
-<button class="drw-item" onclick="go('feeding_log')">Feeding Log</button>
-<button class="drw-item" onclick="go('treatment_configuration')">Treatment Config</button>
+  <div id="drawer"><div class="scrim" onclick="closeDrawer()"></div><nav class="sheet"><div class="drw-head"><h2>Sweetwater Apiary</h2><button class="drw-x" onclick="closeDrawer()">&times;</button></div>
+<button class="drw-item" onclick="go('addhive')">🐝 Hive Management<span style="float:right;color:#b79a63">›</span></button>
+<div id="drawerContent"><!-- drawer items added per user request --></div>
 </nav></div>
 
   <div id="settings">
@@ -97,8 +106,36 @@
           <input id="avInput" type="file" accept="image/*" capture="environment" style="display:none" onchange="onAvatar(event)">
           <div id="nameBox"></div>
         </div>
+        <div class="card"><h3>Account &amp; Security</h3>
+          <div class="lrow" onclick="acct('phone')"><span class="li">📱</span><span class="ll">Phone</span><span class="lv">+1 ••• ••• 4821<span class="chev">›</span></span></div>
+          <div class="lrow" onclick="acct('email')"><span class="li">✉️</span><span class="ll">Email</span><span class="lv">jo•••@mail.com<span class="chev">›</span></span></div>
+          <div class="lsep"></div>
+          <div class="lrow" onclick="acct('password')"><span class="li">🔑</span><span class="ll">Change password</span><span class="chev">›</span></div>
+          <div class="lrow" onclick="acct('2fa')"><span class="li">🛡️</span><span class="ll">Two-factor (2FA)</span><span class="lv off">Off<span class="chev">›</span></span></div>
+          <div class="lrow" onclick="acct('devices')"><span class="li">💻</span><span class="ll">Device login management</span><span class="chev">›</span></div>
+          <div class="lrow danger" onclick="acct('delete')"><span class="li">🗑️</span><span class="ll">Deactivate / Delete account</span><span class="chev">›</span></div>
+        </div>
         <div class="card"><h3>Subscription</h3>
           <div class="row" onclick="openSub()"><span class="lab">Current Plan</span><span class="val"><span id="planTxt">Apiary Pro</span><span class="chev">›</span></span></div>
+        </div>
+        <div class="card"><h3>General Preferences</h3>
+          <div class="prow"><span class="li">🌓</span><span class="ll">Appearance</span>
+            <span class="seg"><button id="segLight" class="segb" onclick="setTheme('light')">Light</button><button id="segDark" class="segb" onclick="setTheme('dark')">Dark</button></span>
+          </div>
+          <div class="lsep"></div>
+          <div class="prow"><span class="li">🌐</span><span class="ll">Language</span>
+            <select id="langSel" class="sel" onchange="setLang(this.value)"><option value="en">English</option><option value="zh">中文</option><option value="es">Español</option></select>
+          </div>
+          <div class="lsep"></div>
+          <div class="prow"><span class="li">🔤</span><span class="ll">Font size</span>
+            <span class="seg"><button class="segb" onclick="setFont('s')">A-</button><button id="segFontM" class="segb" onclick="setFont('m')">A</button><button class="segb" onclick="setFont('l')">A+</button></span>
+          </div>
+          <div class="lsep"></div>
+          <div class="prow"><span class="li">📍</span><span class="ll">Region / Timezone</span>
+            <select id="tzSel" class="sel" onchange="setTz(this.value)"><option value="auto">Auto</option><option value="us-e">US Eastern</option><option value="us-p">US Pacific</option><option value="cn">China (GMT+8)</option><option value="eu">Central Europe</option></select>
+          </div>
+          <div class="lsep"></div>
+          <div class="lrow" onclick="clearCache()"><span class="li">🧹</span><span class="ll">Clear cache</span><span id="cacheSz" class="lv">~ local data<span class="chev">›</span></span></div>
         </div>
         <div class="card"><h3>Local Regulations</h3>
           <div style="font-size:12px;font-weight:700;color:#52443a;margin-bottom:8px;">HOA / City Code status</div>
@@ -4093,6 +4130,101 @@
 @@ENDSCRIPT@@
 </body></html>
 </script>
+<script type="text/html" id="scr-addhive">
+<!doctype html><html lang="en"><head><meta charset="utf-8"/>
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"/>
+<style>
+  :root{--bg:#fff;--panel:#F4F5F6;--honey:#F0A500;--honey-d:#D98E00;--ink:#231a10;--muted:#8a7a5f;--olive:#7C8C5A;--olive-d:#6E7D4F;--line:#E6E8EA;}
+  *{box-sizing:border-box;margin:0;padding:0;}
+  html,body{height:100%;overflow:hidden;}
+  body{font-family:'Nunito',system-ui,sans-serif;background:var(--bg);color:var(--ink);display:flex;flex-direction:column;}
+  .hd{font-family:'Quicksand',sans-serif;}
+  .top{display:flex;align-items:center;gap:10px;padding:14px 16px;background:var(--panel);border-bottom:1px solid var(--line);}
+  .top .back{width:24px;height:24px;cursor:pointer;color:var(--ink);} .top .back svg{width:100%;height:100%;}
+  .top h1{flex:1;text-align:center;font-size:19px;font-weight:700;color:var(--olive-d);}
+  .top .rt{width:24px;}
+  .body{flex:1;min-height:0;padding:14px 16px;display:flex;flex-direction:column;gap:14px;overflow:hidden;}
+  .lbl{font-family:'Quicksand',sans-serif;font-size:12px;font-weight:700;letter-spacing:.08em;text-transform:uppercase;color:var(--muted);}
+  .apiaries{display:grid;grid-template-columns:1fr 1fr 64px;gap:10px;}
+  .ap{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:14px 8px;display:flex;flex-direction:column;align-items:center;gap:5px;cursor:pointer;font-size:13px;font-weight:700;}
+  .ap .pin{font-size:18px;color:var(--olive);} .ap.sel{border-color:var(--honey);background:#fff;box-shadow:0 3px 10px rgba(240,165,0,.16);}
+  .ap.add{border-style:dashed;color:var(--muted);justify-content:center;font-size:24px;color:var(--honey-d);}
+  .num{background:var(--panel);border:1px solid var(--line);border-radius:16px;padding:14px;display:flex;align-items:center;justify-content:space-between;}
+  .num .ttl{position:absolute;}
+  .numwrap{position:relative;text-align:center;}
+  .num .step{width:48px;height:48px;border-radius:50%;border:0;background:#EDEFF1;font-size:26px;color:var(--honey-d);cursor:pointer;font-weight:700;}
+  .num .val{font-family:'Quicksand',sans-serif;font-size:40px;font-weight:700;}
+  .num .cap{font-size:11px;font-weight:700;letter-spacing:.08em;color:var(--muted);text-transform:uppercase;margin-bottom:2px;}
+  .cfg{display:grid;grid-template-columns:1fr 1fr 1fr;gap:10px;}
+  .cfgc{background:var(--panel);border:2px solid var(--line);border-radius:14px;padding:13px 6px;display:flex;flex-direction:column;align-items:center;gap:6px;cursor:pointer;font-size:12px;font-weight:700;color:var(--muted);}
+  .cfgc .ci{width:34px;height:34px;border-radius:9px;background:var(--honey);display:flex;align-items:center;justify-content:center;color:#fff;font-size:17px;}
+  .cfgc.sel{border-color:var(--honey);background:#fff;color:var(--ink);}
+  .src{display:flex;flex-wrap:wrap;gap:9px;}
+  .pill{border:1.5px solid var(--line);border-radius:999px;padding:9px 18px;font-size:13px;font-weight:700;color:var(--muted);background:#fff;cursor:pointer;}
+  .pill.sel{background:var(--honey);border-color:var(--honey);color:#3a2a00;}
+  .tip{margin-top:auto;background:#FFF7E6;border:1px solid #F2E4C4;border-radius:14px;padding:12px 14px;position:relative;overflow:hidden;}
+  .tip b{font-size:12px;color:var(--honey-d);} .tip p{font-size:12px;color:var(--muted);margin-top:3px;line-height:1.4;}
+  .extlink{background:var(--panel);border:1px solid var(--line);border-radius:12px;padding:10px 14px;font-size:12px;color:var(--muted);}
+  .extlink a{color:var(--olive-d);font-weight:700;text-decoration:none;}
+  .btn{border:0;background:var(--honey);color:#3a2a00;font-family:'Quicksand',sans-serif;font-weight:700;font-size:17px;padding:15px;border-radius:16px;cursor:pointer;display:flex;align-items:center;justify-content:center;gap:8px;}
+</style></head>
+<body>
+  <div class="top"><div class="back">‹</div><h1 class="hd">Add New Hive</h1><div class="rt"></div></div>
+  <div class="body">
+    <div>
+      <div class="lbl" style="margin-bottom:8px;">Select Apiary</div>
+      <div class="apiaries">
+        <div class="ap sel"><span class="pin">📍</span>Sweetwater Apiary</div>
+        <div class="ap"><span class="pin">📍</span>Mountain View</div>
+        <div class="ap add">+</div>
+      </div>
+    </div>
+    <div class="numwrap">
+      <div class="num"><button class="step">−</button><div><div class="cap">Assign Number</div><div class="val hd">#43</div></div><button class="step">+</button></div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:8px;">Hive Configuration</div>
+      <div class="cfg">
+        <div class="cfgc sel"><span class="ci">▭</span>Single Deep</div>
+        <div class="cfgc"><span class="ci">◇</span>Double Deep</div>
+        <div class="cfgc"><span class="ci">▣</span>Nucleus (Nuc)</div>
+      </div>
+    </div>
+    <div>
+      <div class="lbl" style="margin-bottom:8px;">Colony Source</div>
+      <div class="src">
+        <div class="pill sel">Package</div><div class="pill">Nuc</div><div class="pill">Swarm</div><div class="pill">Split</div>
+      </div>
+    </div>
+    <div class="tip"><b>🐝 Pro Tip</b><p>Starting with a Nuc? They establish faster in warm weather.</p></div>
+    <div class="extlink">Need more equipment? Check the latest gear. <a href="#">Visit skoghive.com ↗</a></div>
+    <button class="btn">⊕ Create Hive</button>
+  </div>
+
+<script>
+(function(){
+  function single(list){ list.forEach(function(e){ e.addEventListener('click',function(){ list.forEach(function(x){x.classList.remove('sel');}); e.classList.add('sel'); }); }); }
+  single([].slice.call(document.querySelectorAll('.ap')).filter(function(e){return !e.classList.contains('add');}));
+  single([].slice.call(document.querySelectorAll('.cfgc')));
+  single([].slice.call(document.querySelectorAll('.src .pill')));
+  var n=43, val=document.querySelector('.num .val'), st=document.querySelectorAll('.num .step');
+  if(st[0]) st[0].addEventListener('click',function(){ if(n>1)n--; val.textContent='#'+n; });
+  if(st[1]) st[1].addEventListener('click',function(){ n++; val.textContent='#'+n; });
+  var bk=document.querySelector('.top .back'); if(bk) bk.style.cursor='pointer', bk.addEventListener('click',function(){ parent.postMessage({__nav:'__BACK__'},'*'); });
+  var cr=document.querySelector('.btn'); if(cr) cr.addEventListener('click',function(){ parent.postMessage({__nav:'_1'},'*'); });
+  /* fit one screen: wrap & scale with width compensation */
+  function fit(){
+    var b=document.body; if(!b) return; var w=document.getElementById('__fit');
+    if(!w){ w=document.createElement('div'); w.id='__fit'; var ns=[]; for(var i=0;i<b.childNodes.length;i++){var x=b.childNodes[i]; if(x.nodeType===1&&x.tagName==='SCRIPT')continue; ns.push(x);} ns.forEach(function(x){w.appendChild(x);}); b.insertBefore(w,b.firstChild); }
+    var vh=window.innerHeight, s=1; w.style.transformOrigin='top left'; w.style.transform='none'; w.style.width='100%';
+    for(var i=0;i<4;i++){ w.style.transform='none'; var ch=w.scrollHeight; var ns2=vh/ch; if(ns2>1)ns2=1; if(ns2>=1){s=1;w.style.width='100%';break;} s=ns2; w.style.width=(100/s)+'%'; }
+    w.style.transform = s<1 ? 'scale('+s+')' : 'none';
+  }
+  addEventListener('resize',fit); addEventListener('load',fit); setTimeout(fit,120); setTimeout(fit,400);
+})();
+@@ENDSCRIPT@@</body></html>
+
+</script>
 
 <script>
 
@@ -4100,7 +4232,8 @@
 function lg(k,d){try{var v=localStorage.getItem('bk_'+k);return v===null?d:JSON.parse(v);}catch(e){return d;}}
 function ls(k,v){try{localStorage.setItem('bk_'+k,JSON.stringify(v));}catch(e){}}
 var ST={name:lg('name','Sweetwater Apiary'),avatar:lg('avatar',''),plan:lg('plan','Apiary Pro'),
-        hoa:lg('hoa','legal'),water:lg('water',true),neighbor:lg('neighbor',false),notif:lg('notif',true)};
+        hoa:lg('hoa','legal'),water:lg('water',true),neighbor:lg('neighbor',false),notif:lg('notif',true),
+        theme:lg('theme','light'),lang:lg('lang','en'),font:lg('font','m'),tz:lg('tz','auto')};
 var EMPTYMODE=/[?&#]empty/.test(location.search+location.hash);
 var hist=[], cur=null;
 
@@ -4157,8 +4290,56 @@ function pickAvatar(){document.getElementById('avInput').click();}
 function onAvatar(e){var f=e.target.files&&e.target.files[0];if(!f)return;var r=new FileReader();r.onload=function(){ST.avatar=r.result;ls('avatar',ST.avatar);applyState();};r.readAsDataURL(f);}
 function logout(){closeSettings();go('_1');setTimeout(function(){alert('Logged out (demo).');},150);}
 
+/* —— General Preferences (front-end real effects) —— */
+function applyTheme(){
+  var dark=ST.theme==='dark';
+  document.documentElement.style.background=dark?'#15171a':'';
+  document.body.style.background=dark?'#15171a':'#dfe0e2';
+  var st=document.getElementById('__darkcss');
+  if(dark){ if(!st){st=document.createElement('style');st.id='__darkcss';
+    st.textContent='#settings .panel,#drawer .sheet{background:#1f2227!important;}'+
+      '#settings .card{background:#262a30!important;} .set-head h1,#drawer h2,.card h3{color:#9ec27a!important;}'+
+      '.lrow .ll,.prow .ll,#nameTxt,.drw-item{color:#e8eaed!important;} .seg{background:#33373d!important;} .segb.on{background:#1f2227!important;}'+
+      '.sel{background:#262a30!important;color:#e8eaed!important;border-color:#3a3f45!important;}';
+    document.head.appendChild(st);} }
+  else if(st){ st.remove(); }
+  var l=document.getElementById('segLight'),d=document.getElementById('segDark');
+  if(l&&d){ l.classList.toggle('on',!dark); d.classList.toggle('on',dark); }
+}
+function setTheme(v){ST.theme=v;ls('theme',v);applyTheme();}
+function applyFont(){
+  var map={s:'14px',m:'16px',l:'18px'}; document.documentElement.style.fontSize=map[ST.font]||'16px';
+  var m=document.getElementById('segFontM'); /* visual highlight kept simple */
+}
+function setFont(v){ST.font=v;ls('font',v);applyFont();}
+function setLang(v){ST.lang=v;ls('lang',v); var s=document.getElementById('langSel'); if(s)s.value=v;
+  alert('Language set to '+(v==='zh'?'中文':v==='es'?'Español':'English')+'. (UI text translation applies on supported screens.)'); }
+function setTz(v){ST.tz=v;ls('tz',v); var s=document.getElementById('tzSel'); if(s)s.value=v; }
+function clearCache(){
+  if(!confirm('Clear locally cached data on this device? Your account is not affected.')) return;
+  try{ var keep={}; Object.keys(ST).forEach(function(k){}); 
+    // clear local app cache (bk_* keys)
+    for(var i=localStorage.length-1;i>=0;i--){ var k=localStorage.key(i); if(k&&k.indexOf('bk_')===0) localStorage.removeItem(k); }
+    alert('Local cache cleared.');
+  }catch(e){ alert('Nothing to clear.'); }
+}
+/* —— Account & Security: front-end placeholders (backend later) —— */
+function acct(kind){
+  var msg={phone:'Update phone number — connect backend to enable.',
+           email:'Update email — connect backend to enable.',
+           password:'Change password — connect backend to enable.',
+           '2fa':'Two-factor authentication — connect backend to enable.',
+           devices:'Device login management — connect backend to enable.',
+           'delete':'Deactivate / delete account — connect backend to enable.'}[kind]||'';
+  /* sensitive items: per request, no real action on click — placeholder only */
+  alert(msg);
+}
+function applyPrefs(){ applyTheme(); applyFont();
+  var ls_=document.getElementById('langSel'); if(ls_)ls_.value=ST.lang;
+  var tz=document.getElementById('tzSel'); if(tz)tz.value=ST.tz; }
+
 /* boot */
-renderName(); applyState(); go('_1');
+renderName(); applyState(); applyPrefs(); go('_1');
 
 </script>
 </body>

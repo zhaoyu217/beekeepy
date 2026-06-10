@@ -40,7 +40,7 @@
   .ib{width:42px;height:42px;border-radius:999px;display:flex;align-items:center;justify-content:center;color:var(--green);transition:background .15s}
   .ib:active{background:var(--soft)}
   .ib.dot{position:relative}
-  .ib.dot::after{content:"";position:absolute;top:9px;right:10px;width:8px;height:8px;border-radius:999px;background:var(--gold);border:2px solid var(--bg)}
+  .ib.dot::after{content:"";position:absolute;top:7px;right:9px;width:9px;height:9px;border-radius:999px;background:#E0533F;border:2px solid var(--bg)}
   .topbar{display:grid;grid-template-columns:46px 1fr 46px;align-items:center;padding:10px 8px 8px}
   .topbar .ttl{text-align:center;font-size:17px;font-weight:700}
   .topbar .right{display:flex;justify-content:flex-end;align-items:center;gap:2px}
@@ -59,7 +59,7 @@
   .obtn{width:100%;background:var(--card);border:1.5px solid var(--line);color:var(--green-deep);border-radius:var(--r);padding:14px;display:flex;align-items:center;justify-content:center;gap:8px;font-size:15px;font-weight:700}
 
   .grid4{display:grid;grid-template-columns:1fr 1fr;gap:11px}
-  .qcard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 1px 3px rgba(40,50,30,.04);transition:transform .1s}
+  .qcard{background:#ECECEC;border:1px solid #E0E0E0;border-radius:var(--r);padding:14px;display:flex;flex-direction:column;gap:9px;box-shadow:0 1px 3px rgba(40,50,30,.04);transition:transform .1s}
   .qcard:active{transform:scale(.98)}
   .qcard .qi{width:42px;height:42px;border-radius:16px;background:var(--green-tint);color:var(--green);display:flex;align-items:center;justify-content:center}
   .qcard .qt{font-size:14px;font-weight:700}
@@ -70,7 +70,7 @@
   .sec .lk{margin-left:auto;font-size:12px;color:var(--muted);display:flex;align-items:center;gap:1px}
 
   .list{display:flex;flex-direction:column;gap:10px}
-  .item{display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;box-shadow:0 1px 3px rgba(40,50,30,.04);transition:background .15s}
+  .item{width:100%;display:flex;align-items:center;gap:13px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;box-shadow:0 1px 3px rgba(40,50,30,.04);transition:background .15s}
   .item:active{background:var(--soft)}
   .dot{width:9px;height:9px;border-radius:50%;flex:none}
   .item .t{flex:1;font-size:15px;font-weight:700}
@@ -80,8 +80,8 @@
   .tag.mid{background:var(--amber-tint);color:var(--amber-tx)}
   .tag.bad{background:var(--red-tint);color:var(--red-tx)}
 
-  .rec{display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;box-shadow:0 1px 3px rgba(40,50,30,.04)}
-  .rec .ri{width:38px;height:38px;border-radius:16px;background:var(--green-tint);color:var(--green);display:flex;align-items:center;justify-content:center;flex:none}
+  .rec{width:100%;display:flex;align-items:center;gap:12px;background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:13px 15px;box-shadow:0 1px 3px rgba(40,50,30,.04)}
+  .rec .ri{width:46px;height:46px;background:transparent;display:flex;align-items:center;justify-content:center;flex:none}
 
   .search{display:flex;align-items:center;gap:9px;background:var(--soft);border-radius:var(--r);padding:11px 14px;color:var(--muted);font-size:14px;margin:2px 0 14px}
   .hive-ico{width:40px;height:40px;border-radius:16px;display:flex;align-items:center;justify-content:center;flex:none;position:relative}
@@ -105,7 +105,7 @@
   .stepper .seg.on{background:var(--green)}
   .wz-title{text-align:center;font-size:21px;font-weight:800;margin-top:6px}
   .wz-q{text-align:center;font-size:14px;color:var(--muted);margin:6px 0 22px}
-  .optcard{display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:13px;transition:transform .08s}
+  .optcard{width:100%;display:flex;align-items:center;gap:14px;background:var(--card);border:1.5px solid var(--line);border-radius:var(--r);padding:16px;margin-bottom:13px;transition:transform .08s}
   .optcard:active{transform:scale(.99)}
   .optcard.on{border-color:var(--green);background:var(--green-tint)}
   .radio{width:26px;height:26px;border-radius:50%;border:2px solid #CDD1C5;flex:none;display:flex;align-items:center;justify-content:center;color:#fff}
@@ -146,7 +146,7 @@
   .tabbar .tb{flex:1;display:flex;flex-direction:column;align-items:center;gap:3px;color:var(--muted);font-size:11px;font-weight:600;padding:5px 0}
   .tabbar .tb.on{color:var(--green)}
 
-  .more-row{display:flex;align-items:center;gap:13px;padding:15px 16px;background:var(--card);border-bottom:1px solid var(--line)}
+  .more-row{width:100%;display:flex;align-items:center;gap:13px;padding:15px 16px;background:var(--card);border-bottom:1px solid var(--line)}
   .more-row:last-child{border-bottom:none}
   .more-wrap{border:1px solid var(--line);border-radius:var(--r);overflow:hidden;box-shadow:0 1px 3px rgba(40,50,30,.04);background:var(--card)}
 
@@ -184,6 +184,11 @@
   .efield .fi{width:24px;color:var(--green);display:flex;justify-content:center;flex:none}
   .efield .fk{width:70px;flex:none;color:var(--muted);font-size:14px}
   .einp{flex:1;background:var(--soft);border:none;border-radius:10px;padding:9px 12px;font-size:15px;font-weight:600;color:var(--text);font-family:inherit;outline:none;min-width:0;width:100%}
+  .hivecard{background:var(--card);border:1px solid var(--line);border-radius:var(--r);padding:14px 15px;margin-bottom:12px;box-shadow:0 1px 3px rgba(40,50,30,.04)}
+  .hivecard .htop{display:flex;align-items:center;gap:12px}
+  .hivecard .hrow{display:flex;align-items:center;gap:10px;margin-top:11px}
+  .hivecard .hlab{font-size:13px;font-weight:600;color:var(--muted);width:60px;flex:none}
+  .hv-select{flex:1;background:var(--soft);border:1px solid var(--line);border-radius:10px;padding:9px 12px;font-size:14px;font-weight:600;color:var(--text);font-family:inherit;outline:none;width:100%}
   .einp:focus{box-shadow:0 0 0 2px var(--green-tint)}
   .gps{width:38px;height:38px;border-radius:10px;background:var(--green-tint);color:var(--green);display:flex;align-items:center;justify-content:center;flex:none}
   .gps:active{filter:brightness(.95)}
@@ -323,7 +328,19 @@ function hiveArt(){return '<svg class="art" viewBox="0 0 130 110" fill="none" ar
   '<circle cx="103" cy="20" r="2.4" fill="#FAD978"/>'+
 '</svg>';}
 
+var HIVECOLORS=['#C7CBD1','#E8B84B','#7FA9CE','#D98A7E','#9CB58A','#D9BE84'];
+function hiveColor(id){var n=parseInt(String(id).replace(/[^0-9]/g,''),10);if(!n)n=1;return HIVECOLORS[(n-1)%HIVECOLORS.length];}
+function hiveIcon(col){return '<svg viewBox="0 0 32 32" style="width:40px;height:40px;display:block">'+
+  '<rect x="8.2" y="26" width="2.3" height="3.6" rx="1" fill="#9A8C73"/>'+
+  '<rect x="21.5" y="26" width="2.3" height="3.6" rx="1" fill="#9A8C73"/>'+
+  '<rect x="7" y="13" width="18" height="14" rx="2" fill="'+col+'"/>'+
+  '<line x1="7.6" y1="20" x2="24.4" y2="20" stroke="rgba(0,0,0,.13)" stroke-width="1"/>'+
+  '<rect x="13" y="23.6" width="6" height="2.2" rx="1.1" fill="rgba(60,45,25,.45)"/>'+
+  '<rect x="5.4" y="9.4" width="21.2" height="4.6" rx="1.6" fill="#CFD3D8"/>'+
+  '<rect x="8" y="6.4" width="16" height="3.7" rx="1.5" fill="#DDE1E6"/>'+
+  '</svg>';}
 function allHives(){var o=[];S.apiaries.forEach(function(a,ai){a.hl.forEach(function(h,hk){o.push({h:h,ai:ai,hk:hk,an:a.n});});});return o;}
+var HIVETYPES=['Langstroth 10-frame','Langstroth 8-frame','Top Bar Hive','Warr\u00e9 Hive','Nuc Box','Flow Hive','Swarm Trap','Other'];
 var TAGTX={ok:'Healthy',mid:'Fair',bad:'Needs attention'};
 var STEPS=[
  {k:'queen',t:'Queen',q:'Did you see the queen?',opts:[['Queen seen','bee'],['Queen not seen','bee'],['Unsure','hex']]},
@@ -333,9 +350,9 @@ var STEPS=[
  {k:'notes',t:'Notes & Photos',q:'Add notes and photos',notes:true}
 ];
 
-var S={stack:['home'],view:'home',tab:'home',step:1,curHive:{ai:0,hk:0},pro:false,modal:null,photos:{},apiaries:[{n:'Mountain Apiary',d:'Main apiary',hl:[{id:'#1',loc:'Backyard',st:'ok'}]}],curApiary:0,insp:{queen:'Queen seen',strength:'Medium',honey:'Medium',pest:'None'},eqTab:'Hives',trendTab:'Colony Strength',vTab:'All',rTab:'All',qTab:'QR Tags'};
+var S={stack:['home'],view:'home',tab:'home',step:1,curHive:{ai:0,hk:0},pro:false,modal:null,notif:0,set:{units:'Imperial',notifs:true,theme:'System',lang:'English',backup:'Backed up'},photos:{},apiaries:[{n:'Mountain Apiary',d:'Main apiary',hl:[{id:'#1',loc:'Backyard',type:'Langstroth 10-frame',frames:10,st:'ok'}]}],curApiary:0,insp:{queen:'Queen seen',strength:'Medium',honey:'Medium',pest:'None'},eqTab:'Hives',equipment:{Hives:[{n:'Langstroth 10-frame',q:12},{n:'Langstroth 8-frame',q:4},{n:'Top Bar Hive',q:2},{n:'Swarm Trap',q:3}],Frames:[{n:'Deep frame',q:86},{n:'Medium frame',q:40}],Feeders:[{n:'Frame feeder',q:8},{n:'Top feeder',q:5}],Other:[{n:'Queen excluder',q:6},{n:'Queen cage',q:3}]},trendTab:'Colony Strength',vTab:'All',rTab:'All',qTab:'QR Tags'};
 
-function statusbar(){return '<div class="statusbar"><span>9:41</span><span class="r">'+ic('bars',15,2)+ic('nfc',15)+'<span style="width:22px;height:11px;border:1.5px solid #9AA096;border-radius:3px;display:inline-block;position:relative;top:1px"><span style="position:absolute;left:1.5px;top:1.5px;bottom:1.5px;width:12px;background:#9AA096;border-radius:1px"></span></span></span></div>';}
+function statusbar(){return '';}
 function topbar(title,right){return '<div class="topbar"><button class="ib" data-act="back">'+ic('cleft',23)+'</button><div class="ttl">'+title+'</div><div class="right">'+(right||'')+'</div></div>';}
 function tabbar(){
   var t=[['home','Dashboard','home'],['hives','Hives','hive'],['records','Records','records'],['more','More','menu']];
@@ -345,6 +362,16 @@ function ring(v){var r=26,c=2*Math.PI*r,off=c*(1-v/100);
   return '<div class="ring"><svg width="74" height="74" viewBox="0 0 64 64"><circle cx="32" cy="32" r="26" fill="none" stroke="#E7ECDF" stroke-width="6"/><circle cx="32" cy="32" r="26" fill="none" stroke="var(--green)" stroke-width="6" stroke-linecap="round" stroke-dasharray="'+c.toFixed(1)+'" stroke-dashoffset="'+off.toFixed(1)+'" transform="rotate(-90 32 32)"/></svg><div class="ctr"><span class="nm">'+v+'</span><span class="u">pts</span></div></div>';
 }
 
+function optIcon(n){
+  if(n==='bee')return '<span style="font-size:28px;line-height:1;display:block">\uD83D\uDC1D</span>';
+  if(n==='hex')return '<svg viewBox="0 0 40 40" style="width:32px;height:32px;display:block">'+
+    '<g fill="#F0B43E" stroke="#C5921A" stroke-width="1.6" stroke-linejoin="round">'+
+    '<polygon points="10.75,8.37 17.25,8.37 20.5,14 17.25,19.63 10.75,19.63 7.5,14"/>'+
+    '<polygon points="22.75,8.37 29.25,8.37 32.5,14 29.25,19.63 22.75,19.63 19.5,14"/>'+
+    '<polygon points="16.75,18.37 23.25,18.37 26.5,24 23.25,29.63 16.75,29.63 13.5,24"/>'+
+    '</g></svg>';
+  return ic(n,30);
+}
 var V={};
 
 V.home=function(){
@@ -357,10 +384,10 @@ V.home=function(){
   var tasks=tHives.map(function(x,i){var m=taskMeta[i%3];return '<button class="item" data-act="hive" data-ai="'+x.ai+'" data-hk="'+x.hk+'"><span class="dot" style="background:'+m[0]+'"></span><span class="t">Hive '+x.h.id+'</span><span class="s">'+m[1]+'</span>'+ic('cright',18,2)+'</button>';}).join('')||'<div style="text-align:center;color:var(--muted);padding:20px 0">No tasks</div>';
   var tcount=tHives.length;
   var recHtml=ah[0]
-    ? '<button class="rec" data-act="rec" data-ai="'+ah[0].ai+'" data-hk="'+ah[0].hk+'"><span class="ri">'+ic('clipck',20)+'</span><span style="flex:1"><div style="font-size:15px;font-weight:700">Hive '+ah[0].h.id+' Inspection</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Jun 1, 10:30</div></span><span class="tag ok">Healthy</span></button>'
+    ? '<button class="rec" data-act="rec" data-ai="'+ah[0].ai+'" data-hk="'+ah[0].hk+'"><span class="ri">'+hiveIcon(hiveColor(ah[0].h.id))+'</span><span style="flex:1"><div style="font-size:15px;font-weight:700">Hive '+ah[0].h.id+' Inspection</div><div style="font-size:12px;color:var(--muted);margin-top:2px">Jun 1, 10:30</div></span><span class="tag ok">Healthy</span></button>'
     : '<div style="text-align:center;color:var(--muted);padding:20px 0">No records yet</div>';
   return statusbar()+
-  '<div class="home-top"><span class="logo">HiveDash</span><button class="ib dot" data-act="go" data-to="records">'+ic('bell',23)+'</button></div>'+
+  '<div class="home-top"><span class="logo">HiveDash</span><button class="ib'+(S.notif>0?' dot':'')+'" data-act="go" data-to="records">'+ic('bell',24)+'</button></div>'+
   '<div class="body">'+
     '<button class="hero" data-act="go" data-to="apiaries" style="display:flex;width:100%">'+
       '<div class="info"><div class="kick">CURRENT HIVE</div><div class="nm">Hive '+hid+' <span class="chev">'+ic('cdown',15)+'</span></div><div class="sub">'+asub+'</div></div>'+hiveArt()+
@@ -396,10 +423,10 @@ V.hives=function(){
     '<div class="list">'+rows+'</div>'+
     (S.pro
       ? '<button class="add-btn" data-act="addhive" style="margin-top:6px">'+ic('plus',20)+'Add Hive</button>'
-      : (ah.length<1
-         ? '<button class="add-btn" data-act="addhive" style="margin-top:6px">'+ic('plus',20)+'Add Hive</button>'
-         : '<div style="text-align:center;margin-top:16px;color:var(--muted);font-size:13px">Free plan · '+ah.length+' of 1 hive used</div>'+
-           '<button class="add-btn" data-act="addhive" style="margin-top:10px">'+ic('star',19)+'Upgrade for unlimited hives</button>'))+
+      : '<div style="text-align:center;margin-top:16px;color:var(--muted);font-size:13px">Free plan · '+ah.length+' of 3 hives used</div>'+
+        (ah.length<3
+         ? '<button class="add-btn" data-act="addhive" style="margin-top:10px">'+ic('plus',20)+'Add Hive</button>'
+         : '<button class="add-btn" data-act="addhive" style="margin-top:10px">'+ic('star',19)+'Upgrade for unlimited hives</button>'))+
   '</div>'+tabbar();
 };
 
@@ -416,9 +443,9 @@ V.hiveDetail=function(){
     '<div class="sec" style="margin-bottom:9px"><span class="h" style="font-size:15px">Health Status</span></div>'+
     '<div class="health"><div><span class="tag '+h.st+'">'+TAGTX[h.st]+'</span><div style="font-size:13px;color:var(--muted);margin-top:10px">'+(h.st==='ok'?'All good, keep it up!':h.st==='mid'?'Keep an eye on this one.':'Needs attention soon.')+'</div></div>'+ring(h.st==='ok'?85:h.st==='mid'?62:38)+'</div>'+
     '<div style="margin-top:8px">'+
-      '<div class="inforow"><span class="k">Location</span><span class="v">'+(h.loc||'—')+'</span></div>'+
+      '<div class="inforow"><span class="k">Type</span><span class="v">'+(h.type||'Langstroth 10-frame')+'</span></div>'+
+      '<div class="inforow"><span class="k">Frames</span><span class="v">'+((h.frames!=null)?h.frames:10)+'</span></div>'+
       '<div class="inforow"><span class="k">Last inspection</span><span class="v">Jun 1, 10:30</span></div>'+
-      '<div class="inforow"><span class="k">Last feeding</span><span class="v">May 28</span></div>'+
     '</div>'+
     '<div style="height:18px"></div>'+
     '<button class="gbtn" data-act="inspect">'+ic('clipck',21)+'Start Inspection</button>'+
@@ -447,7 +474,7 @@ V.inspect=function(){
     bodyHtml='<div class="wz-title">Step '+n+': '+step.t+'</div><div class="wz-q">'+step.q+'</div>'+
       step.opts.map(function(o){
         var on=S.insp[step.k]===o[0];
-        return '<button class="optcard'+(on?' on':'')+'" data-act="pick" data-k="'+step.k+'" data-v="'+o[0]+'"><span class="radio">'+(on?ic('check',16,3):'')+'</span><span class="ol">'+o[0]+'</span><span class="oi">'+ic(o[1],26)+'</span></button>';
+        return '<button class="optcard'+(on?' on':'')+'" data-act="pick" data-k="'+step.k+'" data-v="'+o[0]+'"><span class="radio">'+(on?ic('check',16,3):'')+'</span><span class="ol">'+o[0]+'</span><span class="oi">'+optIcon(o[1])+'</span></button>';
       }).join('');
   }
   var nextLabel=(n===5)?'Done':'Next';
@@ -460,7 +487,7 @@ V.inspect=function(){
 V.records=function(){
   var ah=allHives();
   var sample=[['Jun 1, 10:30',['ok','Healthy']],['May 30, 16:10',['bad','Needs attention']],['May 28, 09:40',['ok','Healthy']],['May 25, 11:20',['mid','Fair']],['May 22, 08:15',['ok','Healthy']]];
-  var rows=ah.length?sample.map(function(s,i){var x=ah[i%ah.length];return '<button class="rec" data-act="rec" data-ai="'+x.ai+'" data-hk="'+x.hk+'" style="width:100%;margin-bottom:10px"><span class="ri">'+ic('clipck',20)+'</span><span style="flex:1"><div style="font-size:15px;font-weight:700">Hive '+x.h.id+' Inspection</div><div style="font-size:12px;color:var(--muted);margin-top:2px">'+s[0]+'</div></span><span class="tag '+s[1][0]+'">'+s[1][1]+'</span></button>';}).join(''):'<div style="text-align:center;color:var(--muted);padding:36px 0">No records yet</div>';
+  var rows=ah.length?sample.map(function(s,i){var x=ah[i%ah.length];return '<button class="rec" data-act="rec" data-ai="'+x.ai+'" data-hk="'+x.hk+'" style="width:100%;margin-bottom:10px"><span class="ri">'+hiveIcon(hiveColor(x.h.id))+'</span><span style="flex:1"><div style="font-size:15px;font-weight:700">Hive '+x.h.id+' Inspection</div><div style="font-size:12px;color:var(--muted);margin-top:2px">'+s[0]+'</div></span><span class="tag '+s[1][0]+'">'+s[1][1]+'</span></button>';}).join(''):'<div style="text-align:center;color:var(--muted);padding:36px 0">No records yet</div>';
   return statusbar()+topbar('Records','')+
   '<div class="body">'+rows+'</div>'+tabbar();
 };
@@ -530,6 +557,7 @@ V.apiaries=function(){
 V.apiaryDetail=function(){
   var a=S.apiaries[S.curApiary]||S.apiaries[0]||{n:'Apiary',d:'',hl:[]};
   function esc(v){return String(v).replace(/"/g,'&quot;');}
+  var stepStyle='width:30px;height:30px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--text);font-size:19px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer';
   return statusbar()+topbar(a.n,'<button class="ib" data-act="delapiary" data-idx="'+S.curApiary+'" style="color:var(--red-tx)">'+ic('trash',20)+'</button>')+
    '<div class="body">'+
      '<div class="nimg" style="height:120px"></div>'+
@@ -540,7 +568,14 @@ V.apiaryDetail=function(){
      '</div>'+
      '<button class="add-btn" data-act="saveapiary" style="margin-top:14px">'+ic('check',20)+'Save Changes</button>'+
      '<div class="grp-label" style="margin-top:18px">Hives</div>'+
-     a.hl.map(function(h){return '<div class="lrow"><span class="hive-ico" style="background:#C9A86A22;color:#C9A86A">'+ic('hive',22)+'</span><span style="flex:1"><div class="lt">Hive '+h.id+'</div><div class="ls">'+h.loc+'</div></span><span class="tag '+h.st+'">'+TAGTX[h.st]+'</span></div>';}).join('')+
+     a.hl.map(function(h,hk){var ph=h.photo;var htype=h.type||'Langstroth 10-frame';var fr=(h.frames!=null)?h.frames:10;return '<div class="hivecard">'+
+       '<div class="htop"><span class="hive-ico" data-act="photo" data-ai="'+S.curApiary+'" data-hk="'+hk+'" style="background:#C9A86A22;color:#C9A86A">'+(ph?'<img src="'+ph+'" alt="">':ic('hive',22))+'<span class="cam">'+ic('camera',11)+'</span></span>'+
+       '<span style="flex:1;min-width:0"><div class="lt">Hive '+h.id+'</div></span>'+
+       '<button class="tag '+h.st+'" data-act="hvst" data-hk="'+hk+'" style="border:none;cursor:pointer">'+TAGTX[h.st]+'</button>'+
+       '<button class="trash" data-act="hvdel" data-hk="'+hk+'" style="margin-left:6px">'+ic('trash',18)+'</button></div>'+
+       '<div class="hrow"><span class="hlab">Type</span><select class="hv-select" data-field="hv-type" data-hk="'+hk+'">'+HIVETYPES.map(function(t){return '<option'+(t===htype?' selected':'')+'>'+t+'</option>';}).join('')+'</select></div>'+
+       '<div class="hrow"><span class="hlab">Frames</span><button data-act="hvfdec" data-hk="'+hk+'" style="'+stepStyle+'">\u2212</button><span style="min-width:32px;text-align:center;font-weight:800;font-size:15px">'+fr+'</span><button data-act="hvfinc" data-hk="'+hk+'" style="'+stepStyle+'">+</button></div>'+
+     '</div>';}).join('')+
      '<button class="add-btn" data-act="addhiveap" style="margin-top:4px">'+ic('plus',20)+'Add Hive</button>'+
      '<button class="logout" data-act="delapiary" data-idx="'+S.curApiary+'" style="margin-top:18px">Delete Apiary</button>'+
    '</div>'+tabbar();
@@ -548,15 +583,28 @@ V.apiaryDetail=function(){
 
 V.equipment=function(){
   var tabs=['Hives','Frames','Feeders','Other'];
-  var data={'Hives':[['Langstroth 10-frame','12'],['Langstroth 8-frame','4'],['Top Bar Hive','2'],['Swarm Trap','3']],
-    'Frames':[['Deep frame','86'],['Medium frame','40']],'Feeders':[['Frame feeder','8'],['Top feeder','5']],'Other':[['Queen excluder','6'],['Queen cage','3']]};
   var t=S.eqTab||'Hives';
-  return statusbar()+topbar('Equipment','<button class="ib" data-act="toast" data-msg="Add equipment">'+ic('plus',23)+'</button>')+
+  var list=(S.equipment&&S.equipment[t])||[];
+  function esc(v){return String(v).replace(/"/g,'&quot;');}
+  var stepStyle='width:30px;height:30px;border-radius:999px;border:1px solid var(--line);background:var(--soft);color:var(--text);font-size:19px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;flex:none;cursor:pointer';
+  var rows=list.length?list.map(function(d,i){
+    return '<div class="lrow">'+
+      '<span class="li" style="background:#C9A86A22;color:#B58A4A">'+ic('hive',22)+'</span>'+
+      '<input class="einp" data-field="eq-name" data-cat="'+t+'" data-i="'+i+'" value="'+esc(d.n)+'" placeholder="Item name" style="flex:1;min-width:0">'+
+      '<span style="display:flex;align-items:center;gap:6px;flex:none;margin-left:8px">'+
+        '<button data-act="eqdec" data-cat="'+t+'" data-i="'+i+'" style="'+stepStyle+'">\u2212</button>'+
+        '<span style="min-width:28px;text-align:center;font-weight:800;font-size:15px">'+d.q+'</span>'+
+        '<button data-act="eqinc" data-cat="'+t+'" data-i="'+i+'" style="'+stepStyle+'">+</button>'+
+        '<button class="trash" data-act="eqdel" data-cat="'+t+'" data-i="'+i+'" style="margin-left:2px">'+ic('trash',18)+'</button>'+
+      '</span>'+
+    '</div>';
+  }).join(''):'<div style="text-align:center;color:var(--muted);padding:30px 0">No items yet</div>';
+  return statusbar()+topbar('Equipment','<button class="ib" data-act="eqadd" data-cat="'+t+'">'+ic('plus',23)+'</button>')+
    '<div class="body">'+
      '<div class="segtabs">'+tabs.map(function(x){return '<button class="segtab'+(t===x?' on':'')+'" data-act="segtab" data-s="eqTab" data-v="'+x+'">'+x+'</button>';}).join('')+'</div>'+
-     (data[t]||[]).map(function(d){return '<div class="lrow"><span class="li" style="background:#C9A86A22;color:#B58A4A">'+ic('hive',22)+'</span><span style="flex:1"><div class="lt">'+d[0]+'</div></span><span class="lv">'+d[1]+'</span>'+ic('cright',18,2)+'</div>';}).join('')+
+     rows+
      '<a class="lrow" href="https://www.skoghive.com" target="_blank" rel="noopener" style="text-decoration:none;color:inherit;border-color:var(--gold)"><span class="li" style="background:var(--amber-tint);color:var(--gold)">'+ic('cart',22)+'</span><span style="flex:1"><div class="lt">Shop Beehives</div><div class="ls">skoghive.com</div></span><span style="color:var(--gold)">'+ic('extlink',19)+'</span></a>'+
-     '<button class="add-btn add-soft" data-act="toast" data-msg="Add equipment">'+ic('plus',20)+'Add Equipment</button></div>'+tabbar();
+     '<button class="add-btn add-soft" data-act="eqadd" data-cat="'+t+'">'+ic('plus',20)+'Add Equipment</button></div>'+tabbar();
 };
 
 V.queens=function(){
@@ -580,14 +628,16 @@ V.reports=function(){
 
 V.harvest=function(){
   var amt=[42,35,28,24];var dates=['Jun 1','May 28','May 25','May 20'];
+  var metric=S.set&&S.set.units==='Metric';var unit=metric?'kg':'lb';
+  function conv(lb){return metric?Math.round(lb*0.4536):lb;}
   var ah=allHives();var total=0;
-  var rows=ah.map(function(x,i){var lb=amt[i%amt.length];total+=lb;return '<div class="lrow"><span style="flex:1"><div class="lt">Hive '+x.h.id+'</div></span><span style="font-size:16px;font-weight:800;color:var(--text);margin-right:12px">'+lb+' lb</span><span class="lv" style="font-weight:500">'+dates[i%dates.length]+'</span></div>';}).join('');
+  var rows=ah.map(function(x,i){var lb=amt[i%amt.length];total+=lb;return '<div class="lrow"><span style="flex:1"><div class="lt">Hive '+x.h.id+'</div></span><span style="font-size:16px;font-weight:800;color:var(--text);margin-right:12px">'+conv(lb)+' '+unit+'</span><span class="lv" style="font-weight:500">'+dates[i%dates.length]+'</span></div>';}).join('');
   if(!ah.length){rows='<div style="text-align:center;color:var(--muted);padding:36px 0">No hives yet</div>';}
   return statusbar()+topbar('Harvest','<span class="ddchip">2025'+ic('cdown',14)+'</span>')+
    '<div class="body">'+
-     '<div class="more-wrap" style="padding:16px;margin-bottom:14px;text-align:center"><div style="font-size:12px;color:var(--muted)">Total Harvest</div><div class="bignum">'+total+' <span style="font-size:20px">lb</span></div></div>'+
+     '<div class="more-wrap" style="padding:16px;margin-bottom:14px;text-align:center"><div style="font-size:12px;color:var(--muted)">Total Harvest</div><div class="bignum">'+conv(total)+' <span style="font-size:20px">'+unit+'</span></div></div>'+
      rows+
-     (ah.length?'<div class="lrow" style="background:var(--green-tint);border-color:transparent"><span style="flex:1" class="lt">Total</span><span style="font-size:16px;font-weight:800;color:var(--green)">'+total+' lb</span></div>':'')+
+     (ah.length?'<div class="lrow" style="background:var(--green-tint);border-color:transparent"><span style="flex:1" class="lt">Total</span><span style="font-size:16px;font-weight:800;color:var(--green)">'+conv(total)+' '+unit+'</span></div>':'')+
    '</div>'+tabbar();
 };
 
@@ -718,14 +768,16 @@ V.pro=function(){
 };
 
 V.settings=function(){
-  function r(i,zh,v){return '<button class="more-row" data-act="toast" data-msg="'+zh+'"><span class="mr-ic">'+ic(i,20)+'</span><span style="flex:1;font-size:15px;font-weight:600">'+zh+'</span>'+(v?'<span style="color:var(--muted);font-size:13px;margin-right:8px">'+v+'</span>':'')+ic('cright',18,2)+'</button>';}
+  var s=S.set;
+  var units=s.units==='Metric'?'Metric (kg, \u00b0C)':'Imperial (lb, \u00b0F)';
+  function r(i,label,val,act,msg){return '<button class="more-row" data-act="'+act+'"'+(msg?' data-msg="'+msg+'"':'')+'><span class="mr-ic">'+ic(i,20)+'</span><span style="flex:1;font-size:15px;font-weight:600">'+label+'</span>'+(val?'<span style="color:var(--muted);font-size:13px;margin-right:8px">'+val+'</span>':'')+ic('cright',18,2)+'</button>';}
   return statusbar()+topbar('Settings','')+
    '<div class="body">'+
-     '<div class="more-wrap">'+r('user','Account & Security','')+r('globe','Units','Imperial (lb, °F)')+r('bell','Notifications','')+'</div>'+
+     '<div class="more-wrap">'+r('user','Account & Security','','toast','Account & Security')+r('globe','Units',units,'setunits')+r('bell','Notifications',(s.notifs?'On':'Off'),'setnotif')+'</div>'+
      '<div style="height:14px"></div>'+
-     '<div class="more-wrap">'+r('cloud','Data Backup','Backed up')+r('upload','Export Data','')+'</div>'+
+     '<div class="more-wrap">'+r('cloud','Data Backup',(s.backup||'Backed up'),'dobackup')+r('upload','Export Data','','doexport')+'</div>'+
      '<div style="height:14px"></div>'+
-     '<div class="more-wrap">'+r('moon','Theme','System')+r('globe','Language','English')+r('info','About HiveDash','v1.0.0')+'</div>'+
+     '<div class="more-wrap">'+r('moon','Theme',s.theme,'settheme')+r('globe','Language',s.lang,'setlang')+r('info','About HiveDash','v1.0.0','toast','HiveDash v1.0.0')+'</div>'+
      '<button class="logout" data-act="toast" data-msg="Logged out">Log Out</button>'+
    '</div>'+tabbar();
 };
@@ -791,8 +843,10 @@ function modalHTML(){
     '<button class="mlater" data-act="closemodal">Maybe later</button></div>'+
   '</div></div>';
 }
+function persist(){try{localStorage.setItem('hivedash_v1',JSON.stringify({apiaries:S.apiaries,equipment:S.equipment,set:S.set,pro:S.pro}));}catch(e){}}
+function loadState(){try{var raw=localStorage.getItem('hivedash_v1');if(!raw)return;var d=JSON.parse(raw);if(d&&Array.isArray(d.apiaries)&&d.apiaries.length)S.apiaries=d.apiaries;if(d&&d.equipment&&typeof d.equipment==='object')S.equipment=d.equipment;if(d&&d.set&&typeof d.set==='object')S.set=Object.assign(S.set,d.set);if(typeof d.pro==='boolean')S.pro=d.pro;if(S.curApiary>=S.apiaries.length)S.curApiary=0;}catch(e){}}
 var lastV='';
-function render(){var v=cur();S.view=v;S.tab=grp(v);app.innerHTML=(V[v]||V.home)()+(S.modal?modalHTML():'');if(v!==lastV){window.scrollTo(0,0);lastV=v;}}
+function render(){var v=cur();S.view=v;S.tab=grp(v);app.innerHTML=(V[v]||V.home)()+(S.modal?modalHTML():'');if(v!==lastV){window.scrollTo(0,0);lastV=v;}persist();}
 var tt;function toast(m){var t=document.getElementById('toast');t.innerHTML=ic('check',17)+'<span>'+m+'</span>';t.classList.add('show');clearTimeout(tt);tt=setTimeout(function(){t.classList.remove('show');},1600);}
 
 app.addEventListener('click',function(e){
@@ -811,44 +865,67 @@ app.addEventListener('click',function(e){
   else if(a==='apiary'){S.curApiary=+el.getAttribute('data-idx');go('apiaryDetail');}
   else if(a==='delapiary'){var di=+el.getAttribute('data-idx');S.apiaries.splice(di,1);if(cur()==='apiaryDetail'&&S.stack.length>1){S.stack.pop();}toast('Apiary deleted');render();}
   else if(a==='addapiary'){
-    if(S.pro||S.apiaries.length<1){ S.apiaries.push({n:'New Apiary',d:'Tap to edit location',hl:[{id:'#1',loc:'New hive',st:'ok'}]}); toast('Apiary added'); render(); }
+    if(S.pro||S.apiaries.length<1){ S.apiaries.push({n:'New Apiary',d:'Tap to edit location',hl:[{id:'#1',loc:'New hive',type:'Langstroth 10-frame',frames:10,st:'ok'}]}); toast('Apiary added'); render(); }
     else { S.modalTitle='Apiary limit reached'; S.modalMsg='The Free plan includes 1 apiary. Upgrade to HiveDash Pro for unlimited apiaries, hives and more.'; S.modal='upgrade'; render(); }
   }
   else if(a==='gps'){
     var ap=S.apiaries[S.curApiary];
-    if(navigator.geolocation){
+    var secure=(location.protocol==='https:'||location.hostname==='localhost'||location.hostname==='127.0.0.1');
+    if(navigator.geolocation&&secure){
       toast('Getting location…');
       navigator.geolocation.getCurrentPosition(function(pos){
         if(ap){ap.d=pos.coords.latitude.toFixed(4)+', '+pos.coords.longitude.toFixed(4);render();toast('Location updated');}
-      },function(){toast('Couldn\'t get GPS location');});
-    } else {toast('GPS not available');}
+      },function(e){toast(e&&e.code===1?'Location permission denied':'Couldn\'t get location');});
+    } else if(!secure){ toast('Location needs HTTPS'); }
+    else {toast('GPS not available');}
   }
   else if(a==='addhiveap'){
     var ap3=S.apiaries[S.curApiary]; if(!ap3)return;
-    if(S.pro||allHives().length<1){ ap3.hl.push({id:'#'+(ap3.hl.length+1),loc:'New hive',st:'ok'}); toast('Hive added'); render(); }
-    else { S.modalTitle='Hive limit reached'; S.modalMsg='The Free plan allows 1 hive. Upgrade to HiveDash Pro for unlimited hives, advanced stats and more.'; S.modal='upgrade'; render(); }
+    if(S.pro||allHives().length<3){ ap3.hl.push({id:'#'+(ap3.hl.length+1),loc:'New hive',type:'Langstroth 10-frame',frames:10,st:'ok'}); toast('Hive added'); render(); }
+    else { S.modalTitle='Hive limit reached'; S.modalMsg='The Free plan allows up to 3 hives. Upgrade to HiveDash Pro for unlimited apiaries and hives.'; S.modal='upgrade'; render(); }
   }
   else if(a==='saveapiary'){ toast('Apiary saved');render(); }
   else if(a==='addhive'){
-    if(S.pro||allHives().length<1){
+    if(S.pro||allHives().length<3){
       var ap4=S.apiaries[0];
       if(!ap4){toast('Add an apiary first');return;}
-      ap4.hl.push({id:'#'+(ap4.hl.length+1),loc:'New hive',st:'ok'}); toast('Hive added'); render();
-    } else { S.modalTitle='Hive limit reached';S.modalMsg='The Free plan allows 1 hive. Upgrade to HiveDash Pro for unlimited hives, advanced stats and more.';S.modal='upgrade';render(); }
+      ap4.hl.push({id:'#'+(ap4.hl.length+1),loc:'New hive',type:'Langstroth 10-frame',frames:10,st:'ok'}); toast('Hive added'); render();
+    } else { S.modalTitle='Hive limit reached';S.modalMsg='The Free plan allows up to 3 hives. Upgrade to HiveDash Pro for unlimited apiaries and hives.';S.modal='upgrade';render(); }
   }
+  else if(a==='eqadd'){var ecat=el.getAttribute('data-cat');if(!S.equipment[ecat])S.equipment[ecat]=[];S.equipment[ecat].push({n:'New item',q:1});toast('Equipment added');render();}
+  else if(a==='eqinc'){var ic2=el.getAttribute('data-cat'),ii=+el.getAttribute('data-i');if(S.equipment[ic2]&&S.equipment[ic2][ii])S.equipment[ic2][ii].q++;render();}
+  else if(a==='eqdec'){var dc=el.getAttribute('data-cat'),di2=+el.getAttribute('data-i');if(S.equipment[dc]&&S.equipment[dc][di2]&&S.equipment[dc][di2].q>0)S.equipment[dc][di2].q--;render();}
+  else if(a==='eqdel'){var xc=el.getAttribute('data-cat'),xi=+el.getAttribute('data-i');if(S.equipment[xc])S.equipment[xc].splice(xi,1);toast('Removed');render();}
+  else if(a==='hvfinc'){var af=S.apiaries[S.curApiary];var hf=+el.getAttribute('data-hk');if(af&&af.hl[hf]){af.hl[hf].frames=((af.hl[hf].frames!=null?af.hl[hf].frames:10))+1;render();}}
+  else if(a==='hvfdec'){var ag=S.apiaries[S.curApiary];var hg=+el.getAttribute('data-hk');if(ag&&ag.hl[hg]){var cf=(ag.hl[hg].frames!=null?ag.hl[hg].frames:10);if(cf>0)ag.hl[hg].frames=cf-1;render();}}
+  else if(a==='hvst'){var ap5=S.apiaries[S.curApiary];var hk5=+el.getAttribute('data-hk');if(ap5&&ap5.hl[hk5]){var ord=['ok','mid','bad'];ap5.hl[hk5].st=ord[(ord.indexOf(ap5.hl[hk5].st)+1)%3];render();}}
+  else if(a==='hvdel'){var ap6=S.apiaries[S.curApiary];var hk6=+el.getAttribute('data-hk');if(ap6)ap6.hl.splice(hk6,1);toast('Hive removed');render();}
+  else if(a==='setunits'){S.set.units=(S.set.units==='Metric'?'Imperial':'Metric');toast('Units: '+S.set.units);render();}
+  else if(a==='setnotif'){S.set.notifs=!S.set.notifs;toast('Notifications '+(S.set.notifs?'On':'Off'));render();}
+  else if(a==='settheme'){var ths=['System','Light','Dark'];S.set.theme=ths[(ths.indexOf(S.set.theme)+1)%3];toast('Theme: '+S.set.theme);render();}
+  else if(a==='setlang'){var lgs=['English','Espa\u00f1ol','Fran\u00e7ais','Deutsch'];S.set.lang=lgs[(lgs.indexOf(S.set.lang)+1)%lgs.length];toast('Language: '+S.set.lang);render();}
+  else if(a==='dobackup'){S.set.backup='Just now';toast('Backed up');render();}
+  else if(a==='doexport'){toast('Preparing export\u2026');}
   else if(a==='closemodal'){S.modal=null;render();}
   else if(a==='gopro'){S.modal=null;go('pro');}
   else if(a==='stop'){/* keep modal open */}
   else if(a==='back'){back();}
   else if(a==='toast'){toast(el.getAttribute('data-msg')||'');}
 });
+var saveTimer;
 app.addEventListener('input',function(e){
   var f=e.target.getAttribute&&e.target.getAttribute('data-field');
   if(!f)return;
-  var ap=S.apiaries[S.curApiary]; if(!ap)return;
-  if(f==='ap-name')ap.n=e.target.value;
-  else if(f==='ap-loc')ap.d=e.target.value;
+  if(f==='eq-name'){var ec=e.target.getAttribute('data-cat'),ei=+e.target.getAttribute('data-i');if(S.equipment[ec]&&S.equipment[ec][ei])S.equipment[ec][ei].n=e.target.value;}
+  else if(f==='hv-loc'){var aph=S.apiaries[S.curApiary];var hkk=+e.target.getAttribute('data-hk');if(aph&&aph.hl[hkk])aph.hl[hkk].loc=e.target.value;}
+  else {var ap=S.apiaries[S.curApiary]; if(!ap)return; if(f==='ap-name')ap.n=e.target.value; else if(f==='ap-loc')ap.d=e.target.value;}
+  clearTimeout(saveTimer);saveTimer=setTimeout(persist,400);
 });
+app.addEventListener('change',function(e){
+  var f=e.target.getAttribute&&e.target.getAttribute('data-field');
+  if(f==='hv-type'){var ap=S.apiaries[S.curApiary];var hk=+e.target.getAttribute('data-hk');if(ap&&ap.hl[hk]){ap.hl[hk].type=e.target.value;render();}}
+});
+loadState();
 render();
 </script>
 </body>

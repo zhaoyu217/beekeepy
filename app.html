@@ -273,6 +273,7 @@
     <button id="auth-google" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:10px;padding:14px;border:1px solid #DCD6C8;border-radius:999px;background:#fff;color:#2F3B33;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:14px"><svg width="19" height="19" viewBox="0 0 48 48" style="flex:none"><path fill="#FFC107" d="M43.6 20.5h-1.9V20H24v8h11.3c-1.6 4.7-6.1 8-11.3 8-6.6 0-12-5.4-12-12s5.4-12 12-12c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 7.3 29.3 5.5 24 5.5 13.8 5.5 5.5 13.8 5.5 24S13.8 42.5 24 42.5 42.5 34.2 42.5 24c0-1.2-.1-2.4-.4-3.5z"/><path fill="#FF3D00" d="M7.3 14.7l6.6 4.8C15.7 15.1 19.5 12.5 24 12.5c3.1 0 5.9 1.2 8 3.1l5.7-5.7C34 7.3 29.3 5.5 24 5.5 16.3 5.5 9.7 9.9 7.3 14.7z"/><path fill="#4CAF50" d="M24 42.5c5.2 0 9.8-1.7 13.3-4.7l-6.2-5.2c-2 1.5-4.5 2.4-7.1 2.4-5.2 0-9.6-3.3-11.3-7.9l-6.5 5C9.6 38.1 16.2 42.5 24 42.5z"/><path fill="#1976D2" d="M43.6 20.5H24v8h11.3c-.8 2.3-2.3 4.2-4.2 5.6l6.2 5.2c3.6-3.3 5.8-8.2 5.8-14.3 0-1.2-.1-2.4-.4-3.5z"/></svg><span data-i18n="google">Continue with Google</span></button>
     <button id="auth-register" type="button" style="width:100%;padding:15px;border:1px solid #CFC9BA;border-radius:999px;background:#fff;color:#6B6357;font-size:16px;font-weight:600;cursor:pointer;margin-bottom:14px" data-i18n="register">Registration</button>
     <button id="auth-demo" type="button" style="width:100%;padding:15px;border:1px solid #F2D894;border-radius:999px;background:#FCEFC9;color:#9A6E12;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px" data-i18n="demo">Try demo</button>
+    <button id="auth-install" type="button" style="width:100%;display:flex;align-items:center;justify-content:center;gap:9px;padding:15px;border:none;border-radius:999px;background:#5E7350;color:#fff;font-size:16px;font-weight:700;cursor:pointer;margin-bottom:10px"><span style="font-size:18px">📲</span><span>Add to Home Screen</span></button>
     <div style="text-align:center;color:#9A8F80;font-size:13.5px;margin-bottom:22px" data-i18n="local_note">Local data only. Create an account to sync.</div>
     <div style="text-align:center;margin-bottom:18px;position:relative"><button id="auth-lang" type="button" style="display:inline-flex;align-items:center;gap:8px;padding:9px 18px;border:1px solid #E3DFD3;border-radius:999px;background:#fff;color:#5E574C;font-size:15px;cursor:pointer"><span id="auth-lang-flag" style="font-size:17px"></span><span id="auth-lang-lbl">United States</span><svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" style="opacity:.6"><path d="M6 9l6 6 6-6"/></svg></button><div id="auth-lang-menu" style="display:none;position:absolute;left:50%;transform:translateX(-50%);bottom:50px;width:226px;max-height:240px;overflow:auto;background:#fff;border:1px solid #E3DFD3;border-radius:14px;box-shadow:0 10px 30px rgba(40,50,30,.18);padding:6px;z-index:5;text-align:left"></div></div>
     <div style="text-align:center;font-size:15px;color:#2563EB"><a href="https://www.skoghive.com" target="_blank" rel="noopener" style="color:#2563EB;text-decoration:underline">Website</a> <span style="color:#B9B3A4">&middot;</span> <a href="https://instagram.com" target="_blank" rel="noopener" style="color:#2563EB;text-decoration:underline">Instagram</a> <span style="color:#B9B3A4">&middot;</span> <a href="https://facebook.com" target="_blank" rel="noopener" style="color:#2563EB;text-decoration:underline">Facebook</a></div>
@@ -1441,6 +1442,29 @@ function initAuth(){
 }
 initAuth();
 if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+(function(){
+  var btn=document.getElementById('auth-install');if(!btn)return;
+  var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;
+  if(standalone){btn.style.display='none';return;}
+  var dp=null;
+  window.addEventListener('beforeinstallprompt',function(e){e.preventDefault();dp=e;});
+  window.addEventListener('appinstalled',function(){btn.style.display='none';});
+  function pop(html){
+    var o=document.createElement('div');
+    o.style.cssText='position:fixed;inset:0;z-index:99999;background:rgba(20,24,18,.55);display:flex;align-items:center;justify-content:center;padding:24px;font-family:Inter,system-ui,sans-serif';
+    o.innerHTML='<div style="background:#fff;border-radius:18px;max-width:340px;width:100%;padding:24px 22px;color:#2F3B33;box-shadow:0 20px 50px rgba(0,0,0,.3)">'+html+'<button id="_icok" type="button" style="margin-top:18px;width:100%;padding:13px;border:none;border-radius:999px;background:#5E7350;color:#fff;font-weight:700;font-size:15px;cursor:pointer">Got it</button></div>';
+    o.addEventListener('click',function(ev){if(ev.target===o||ev.target.id==='_icok'){document.body.removeChild(o);}});
+    document.body.appendChild(o);
+  }
+  btn.addEventListener('click',function(){
+    if(dp){dp.prompt();dp.userChoice.then(function(){dp=null;});return;}
+    if(/iPhone|iPad|iPod/i.test(navigator.userAgent)){
+      pop('<div style="font-size:34px;text-align:center;margin-bottom:6px">\uD83D\uDCF2</div><div style="font-weight:800;font-size:18px;text-align:center;margin-bottom:12px">Add HiveDash to your Home Screen</div><div style="font-size:14.5px;line-height:1.8;color:#4a5648">1. Open this page in <b>Safari</b>.<br>2. Tap the <b>Share</b> button <span style="font-size:18px">\u2B06\uFE0F</span> at the bottom.<br>3. Scroll down and tap <b>\u201CAdd to Home Screen\u201D</b>.<br>4. Tap <b>Add</b> \u2014 the HiveDash icon appears on your home screen.</div>');
+    } else {
+      pop('<div style="font-size:34px;text-align:center;margin-bottom:6px">\uD83D\uDCF2</div><div style="font-weight:800;font-size:18px;text-align:center;margin-bottom:12px">Install HiveDash</div><div style="font-size:14.5px;line-height:1.7;color:#4a5648">Open your browser menu <b>(\u22EE)</b> and choose <b>\u201CInstall app\u201D</b> or <b>\u201CAdd to Home screen\u201D</b>.<br><br>Use <b>Chrome, Edge or Safari</b> \u2014 in-app browsers (like WeChat) can\u2019t install apps.</div>');
+    }
+  });
+})();
 </script>
 </body>
 </html>

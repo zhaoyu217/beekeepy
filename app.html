@@ -1442,7 +1442,20 @@ function initAuth(){
   }catch(e){_offlineFallback();}
 }
 initAuth();
-if('serviceWorker' in navigator){window.addEventListener('load',function(){navigator.serviceWorker.register('/sw.js').catch(function(){});});}
+if('serviceWorker' in navigator){
+  var _swReloaded=false;
+  navigator.serviceWorker.addEventListener('controllerchange',function(){
+    if(_swReloaded)return;
+    if(location.search.indexOf('code=')>-1)return;
+    _swReloaded=true;window.location.reload();
+  });
+  window.addEventListener('load',function(){
+    navigator.serviceWorker.register('/sw.js').then(function(reg){
+      try{reg.update();}catch(e){}
+      setInterval(function(){try{reg.update();}catch(e){}},60*60*1000);
+    }).catch(function(){});
+  });
+}
 (function(){
   var btn=document.getElementById('auth-install');if(!btn)return;
   var standalone=(window.matchMedia&&window.matchMedia('(display-mode: standalone)').matches)||window.navigator.standalone===true;

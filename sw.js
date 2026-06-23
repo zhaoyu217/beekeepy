@@ -1,7 +1,7 @@
 // HiveDash service worker — network-first app shell, offline fallback.
 // v6: fixes stale-app bug (was cache-first for everything) and stops
 // intercepting cross-origin (Supabase / Google / CDN) requests.
-const CACHE = 'hivedash-v6';
+const CACHE = 'hivedash-v7';
 const SHELL = '/app.html';
 
 self.addEventListener('install', e => {

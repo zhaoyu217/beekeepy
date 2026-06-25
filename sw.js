@@ -58,3 +58,31 @@ self.addEventListener('fetch', e => {
     )
   );
 });
+
+// ---- Web Push ----
+self.addEventListener('push', function(e){
+  var data = {};
+  try { data = e.data ? e.data.json() : {}; } catch (_) { try { data = { body: e.data.text() }; } catch (e2) { data = {}; } }
+  var title = data.title || 'HiveDash';
+  var opts = {
+    body: data.body || 'A hive needs your attention.',
+    icon: '/icon-192.png',
+    badge: '/icon-192.png',
+    tag: data.tag || 'hivedash-reminder',
+    data: { url: data.url || '/app.html' }
+  };
+  e.waitUntil(self.registration.showNotification(title, opts));
+});
+
+self.addEventListener('notificationclick', function(e){
+  e.notification.close();
+  var url = (e.notification.data && e.notification.data.url) || '/app.html';
+  e.waitUntil(
+    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(wins){
+      for (var i = 0; i < wins.length; i++){
+        if (wins[i].url.indexOf('/app') > -1 && 'focus' in wins[i]) return wins[i].focus();
+      }
+      if (self.clients.openWindow) return self.clients.openWindow(url);
+    })
+  );
+});

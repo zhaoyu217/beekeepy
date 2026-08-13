@@ -209,3 +209,46 @@ button:disabled{opacity:.58;cursor:not-allowed}
   padding:0 10px;
   background:#fff;
 }
+
+/* V13.2 — Login polish */
+.google-mark{
+  width:24px;
+  height:24px;
+  display:grid;
+  place-items:center;
+  flex:0 0 24px;
+}
+.social-btn.google{
+  min-height:54px;
+  border-color:#DADCE0;
+  background:#fff;
+  color:#202124;
+}
+.social-btn.google:hover{
+  background:#F8FAFD;
+}
+.other-login-toggle{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:6px;
+}
+.toggle-chevron{
+  display:inline-block;
+  font-size:14px;
+  line-height:1;
+}
+.auth-legal{
+  margin-top:14px;
+  text-align:center;
+  line-height:1.55;
+}
+.legal-link{
+  border:0;
+  background:transparent;
+  color:var(--green);
+  font-size:inherit;
+  padding:0;
+  text-decoration:underline;
+  text-underline-offset:2px;
+}

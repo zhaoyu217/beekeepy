@@ -209,9 +209,22 @@ async function signInWithSocial(provider){
 function socialLoginSection(){
   return `
     <button type="button" class="social-btn google" id="googleLogin">
-      <span class="social-icon">G</span><span>Continue with Google</span>
+      <span class="google-mark" aria-hidden="true">
+        <svg viewBox="0 0 24 24" width="22" height="22">
+          <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z"/>
+          <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.07v2.59A10 10 0 0 0 12 22Z"/>
+          <path fill="#FBBC05" d="M6.41 13.91A6.01 6.01 0 0 1 6.1 12c0-.66.11-1.3.31-1.91V7.5H3.07A10 10 0 0 0 2 12c0 1.61.39 3.13 1.07 4.5l3.34-2.59Z"/>
+          <path fill="#EA4335" d="M12 5.96c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.96 2.96 14.7 2 12 2A10 10 0 0 0 3.07 7.5l3.34 2.59C7.2 7.72 9.4 5.96 12 5.96Z"/>
+        </svg>
+      </span>
+      <span>Continue with Google</span>
     </button>
-    <button type="button" class="other-login-toggle" id="otherLoginToggle">Other sign-in options</button>
+
+    <button type="button" class="other-login-toggle" id="otherLoginToggle">
+      Other sign-in options
+      <span class="toggle-chevron">⌄</span>
+    </button>
+
     <div class="other-login hidden" id="otherLogin">
       <button type="button" class="social-btn apple" id="appleLogin">
         <span class="social-icon"></span><span>Continue with Apple</span>
@@ -220,6 +233,7 @@ function socialLoginSection(){
         <span class="social-icon microsoft-mark"><i></i><i></i><i></i><i></i></span><span>Continue with Microsoft</span>
       </button>
     </div>
+
     <div class="auth-divider"><span>or use email</span></div>
   `;
 }
@@ -244,6 +258,12 @@ function renderAuth(mode='signin',message=''){
     <button type="button" class="btn primary block" id="authSubmit">${isSignUp?'Create Account':'Sign In'}</button>
     ${!isSignUp?`<button type="button" class="auth-link" id="forgotPassword">Forgot password?</button>`:''}
     <div class="auth-security"><span>☁️</span><div><b>Cloud sync enabled</b><div class="tiny muted">Your account only has access to its own HiveDash data.</div></div></div>
+    <div class="auth-legal tiny muted">
+      By continuing, you agree to the
+      <button type="button" class="legal-link" id="termsLink">Terms of Service</button>
+      and
+      <button type="button" class="legal-link" id="privacyLink">Privacy Policy</button>.
+    </div>
   `);
 
   document.getElementById('authSignInTab').onclick=()=>renderAuth('signin');
@@ -252,11 +272,15 @@ function renderAuth(mode='signin',message=''){
   document.getElementById('googleLogin').onclick=()=>signInWithSocial('google');
   document.getElementById('otherLoginToggle').onclick=()=>{
     const box=document.getElementById('otherLogin');
-    box.classList.toggle('hidden');
-    document.getElementById('otherLoginToggle').textContent=box.classList.contains('hidden')?'Other sign-in options':'Hide other sign-in options';
+    const hidden=box.classList.toggle('hidden');
+    document.getElementById('otherLoginToggle').innerHTML=hidden
+      ? 'Other sign-in options <span class="toggle-chevron">⌄</span>'
+      : 'Hide other sign-in options <span class="toggle-chevron">⌃</span>';
   };
   document.getElementById('appleLogin').onclick=()=>signInWithSocial('apple');
   document.getElementById('microsoftLogin').onclick=()=>signInWithSocial('azure');
+  document.getElementById('termsLink').onclick=()=>{location.hash='terms'};
+  document.getElementById('privacyLink').onclick=()=>{location.hash='privacy'};
   if(!isSignUp)document.getElementById('forgotPassword').onclick=handlePasswordReset;
 }
 
@@ -777,6 +801,16 @@ function infoPage(r,title){
 }
 
 window.addEventListener('hashchange',()=>{
+  const publicAuthRoutes=['terms','privacy'];
+  const current=(location.hash||'#home').slice(1).split('/')[0];
+  if(publicAuthRoutes.includes(current)){
+    const view=document.getElementById('view');
+    view.className='view secondary';
+    document.getElementById('bottomnav').classList.add('hidden');
+    infoPage(view,current==='terms'?'Terms of Service':'Privacy Policy');
+    document.getElementById('topbar').innerHTML='<button type="button" class="iconbtn" onclick="history.back()" aria-label="Back">←</button><div class="brand">HiveDash</div><div></div>';
+    return;
+  }
   if(!CLOUD_CONFIGURED || isAuthenticated() || CLOUD_CONFIG.REQUIRE_AUTH===false)render();
 });
 window.addEventListener('DOMContentLoaded',initializeCloudApp);

@@ -1,56 +1,41 @@
-# HiveDash One-Screen Build
+# HiveDash One-Screen V4
 
-This is the refactored one-screen version of HiveDash.
+Final compact build for the four main pages.
 
-## Core layout rule
-At a 393×852 mobile viewport, the four main pages are designed to fit their core content without page scrolling:
-- Home
-- Hives
-- Actions
-- Insights
+## Fixed in V4
+- Actions page no longer hides Record Action buttons behind the fixed bottom navigation.
+- More top spacing below the fixed header.
+- Height-responsive compression for shorter browser viewports (760px and 650px breakpoints).
+- Home / Hives / Actions / Insights remain fixed one-screen core pages.
+- Settings / notifications / hive detail remain scrollable secondary views.
+- Cache-busting query strings added for GitHub Pages updates.
 
-The header is fixed:
-- Left: Settings
-- Center: HiveDash
-- Right: Notifications
-
-The bottom navigation is fixed:
-- Home
-- Hives
-- Actions
-- Insights
-
-Secondary pages may scroll:
-- Settings
-- Notifications
-- Hive Detail
-- Action-entry bottom sheets
-
-## Included features
-- Overall hive-health gauge
-- Health status counts
-- Action Center
-- Risk Alerts
-- Season Intelligence
-- Hives list
-- Hive detail
-- Inspection / Feeding / Treatment / Harvest forms
-- Insights / trends / risk prototype / honey analytics
-- Settings
-- Notification center
-- Free / Pro plan UI
-- Beekeeping Store link to https://www.skoghive.com
-- LocalStorage data persistence
-- JSON data export
-
-## Upload to GitHub
-Upload these items to the repository root:
+Upload all four files to the repository root:
 - index.html
-- css/
-- js/
+- style.css
+- app.js
 - README.md
 
-Then enable GitHub Pages from the repository Settings → Pages.
 
-## Important
-This is a functional front-end prototype. Production still needs real authentication, cloud database, billing, push notifications, weather/bloom API, AI/photo-analysis backend, Privacy Policy and Terms.
+## V5 fix
+- Fixed bottom navigation safe-area overlap.
+- Compressed Actions cards slightly so Record Action is fully visible above the fixed nav.
+
+
+## V6 — Glove-first update
+- Primary touch targets are 48–56 px high.
+- Settings and notification header buttons increased to 52 px.
+- Bottom navigation increased and includes safe-area padding.
+- Actions now shows only the top two tasks on the one-screen view instead of squeezing three cards.
+- Record Action buttons stay fully above the bottom navigation.
+- On short screens secondary text is hidden before touch targets are reduced.
+
+
+## V7 — U.S. consumer visual redesign
+- Cleaner warm-gray background instead of yellow cream.
+- Deep forest green primary color for trust, outdoors, and premium feel.
+- Honey amber used only as an accent.
+- Near-black text for stronger daylight contrast.
+- Inter / SF Pro / Segoe UI system stack for a familiar U.S. mobile-app feel.
+- Reduced color noise and stronger visual hierarchy.
+- Glove-first touch targets from V6 retained.

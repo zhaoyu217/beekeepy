@@ -553,100 +553,17 @@ function render(){
 }
 
 function home(r){
-  const s=state();
-  const score=avgHealth(s);
-  const stat=score>=85?'Healthy':score>=70?'Attention':'Critical';
-  const primary=s.actions[0]||null;
-  const primaryHive=primary?hive(s,primary.hiveId):null;
-  const risks=[...s.hives].filter(h=>h.status!=='Healthy').sort((a,b)=>a.score-b.score).slice(0,2);
-  const healthy=s.hives.filter(h=>h.status==='Healthy').length;
-  const attention=s.hives.filter(h=>h.status==='Attention').length;
-  const critical=s.hives.filter(h=>h.status==='Critical').length;
-
-  r.innerHTML=`<div class="formal-home">
-
-    <section class="home-decision-zone">
-      <div class="home-intro">
-        <div>
-          <div class="home-kicker">TODAY</div>
-          <div class="home-message">${stat==='Healthy'?'Your apiary looks good.':stat==='Attention'?'Your apiary needs attention.':'Your apiary has a high-priority issue.'}</div>
-        </div>
-        <div class="weather-mini">
-          <span class="weather-symbol">☀️</span>
-          <div><strong>72°F</strong><span>Sunny</span></div>
-        </div>
-      </div>
-
-      <section class="health-summary card card-button" onclick="go('hives')">
-        <div class="health-summary-left">
-          <div class="health-score-line">
-            <span class="health-score-number">${score}</span>
-            <span class="health-score-label">Apiary Health</span>
-          </div>
-          <div class="health-status-copy">${stat==='Healthy'?'All colonies are within normal range.':stat==='Attention'?'Review the flagged colonies below.':'Address the highest-priority colony first.'}</div>
-        </div>
-        <div class="health-status-stack">
-          <div><strong>${healthy}</strong><span>Healthy</span></div>
-          <div class="warn"><strong>${attention}</strong><span>Attention</span></div>
-          <div class="danger"><strong>${critical}</strong><span>Critical</span></div>
-        </div>
-      </section>
-
-      <section class="priority-card ${primary?.priority==='High'?'priority-high':'priority-medium'}">
-        <div class="priority-head">
-          <div>
-            <div class="priority-label">${primary?.priority==='High'?'HIGH PRIORITY':'NEXT ACTION'}</div>
-            <div class="priority-title">${primary?`${esc(primaryHive?.name||'Hive')} · ${esc(primary.title)}`:'No urgent action'}</div>
-          </div>
-          <span class="priority-icon">${primary?'⚠️':'✓'}</span>
-        </div>
-        <div class="priority-reason">${primary?esc(primary.reason):'No generated action requires attention right now.'}</div>
-        ${primary?`<button type="button" class="btn primary block priority-cta" onclick="${primary.type==='Inspection'?"actionForm('inspection','"+primary.hiveId+"')":primary.type==='Feeding'?"actionForm('feeding','"+primary.hiveId+"')":"actionForm('treatment','"+primary.hiveId+"')"}">${primary.type==='Inspection'?'Start Inspection':primary.type==='Feeding'?'Record Feeding':'Start Treatment'}</button>`:`<button type="button" class="btn secondarybtn block priority-cta" onclick="go('hives')">Review Hives</button>`}
-      </section>
-
-      <section class="risk-row">
-        <div class="risk-row-head">
-          <div><div class="h3">Risk Alerts</div><div class="tiny muted">${risks.length?`${risks.length} colonies need review`:'No active risk flags'}</div></div>
-          <button type="button" class="text-action" onclick="go('hives')">View all</button>
-        </div>
-        ${risks.length?`<div class="risk-pills">${risks.map(h=>`<button type="button" class="risk-pill ${h.status==='Critical'?'critical':''}" onclick="go('hive/${h.id}')"><span>${esc(h.name)}</span><b>${h.score}</b></button>`).join('')}</div>`:`<div class="risk-empty">All current hive records are within your configured thresholds.</div>`}
-      </section>
-    </section>
-
-    <section class="below-fold">
-      <div class="section-title-row"><div><div class="h3">Your Hives</div><div class="tiny muted">${s.hives.length} colonies</div></div><button type="button" class="text-action" onclick="go('all-hives')">View all</button></div>
-      <div class="compact-hive-list">
-        ${[...s.hives].sort((a,b)=>a.score-b.score).slice(0,3).map(h=>`<button type="button" class="compact-hive" onclick="go('hive/${h.id}')"><div class="compact-hive-name"><span class="status-dot ${h.status==='Healthy'?'ok':h.status==='Attention'?'warn':'danger'}"></span><b>${esc(h.name)}</b></div><div class="compact-hive-meta">${h.status} · Last inspected ${daysSince(h.lastInspection)}d ago</div><div class="compact-hive-score">${h.score}</div></button>`).join('')}
-      </div>
-    </section>
-
-    <section class="below-fold">
-      <div class="section-title-row"><div><div class="h3">This Week</div><div class="tiny muted">Upcoming work generated from your records</div></div><button type="button" class="text-action" onclick="go('all-actions')">View all</button></div>
-      <div class="week-formal">
-        <button type="button" onclick="go('all-actions/inspection')"><span>🔎</span><div><strong>${s.actions.filter(x=>x.type==='Inspection').length}</strong><small>Inspections</small></div></button>
-        <button type="button" onclick="go('all-actions/feeding')"><span>🥣</span><div><strong>${s.actions.filter(x=>x.type==='Feeding').length}</strong><small>Feedings</small></div></button>
-        <button type="button" onclick="go('all-actions/treatment')"><span>🧪</span><div><strong>${s.actions.filter(x=>x.type==='Treatment').length}</strong><small>Treatments</small></div></button>
-      </div>
-    </section>
-
-    <section class="below-fold">
-      <div class="section-title-row"><div><div class="h3">Quick Log</div><div class="tiny muted">Fast field recording</div></div></div>
-      <div class="quick formal-quick">
-        <button type="button" class="qbtn" onclick="actionForm('inspection')"><span class="emo">🔎</span><b>Inspection</b></button>
-        <button type="button" class="qbtn" onclick="actionForm('feeding')"><span class="emo">🥣</span><b>Feeding</b></button>
-        <button type="button" class="qbtn" onclick="actionForm('treatment')"><span class="emo">🧪</span><b>Treatment</b></button>
-      </div>
-    </section>
-
-    <section class="below-fold season-formal card card-button" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
-      <div>
-        <div class="home-kicker">SEASONAL</div>
-        <div class="h3">Watch mite levels</div>
-        <div class="tiny muted">Season Intelligence uses your hive records and current seasonal context.</div>
-      </div>
-      <span class="chev">›</span>
-    </section>
-  </div>`
+ const s=state(),score=avgHealth(s),stat=score>=85?'Healthy':score>=70?'Attention':'Critical',a=s.actions[0],h=a?hive(s,a.hiveId):null;
+ const ordered=[...s.hives].sort((a,b)=>b.score-a.score),healthy=s.hives.filter(x=>x.status==='Healthy').length,attention=s.hives.filter(x=>x.status==='Attention').length,critical=s.hives.filter(x=>x.status==='Critical').length;
+ const c=2*Math.PI*52,d=(score/100)*c;
+ r.innerHTML=`<div class="screen home-screen">
+  <section class="home-greeting"><div><div class="h2">Good morning, Beekeeper 👋</div><div class="tiny muted">Your apiary ${stat==='Healthy'?'looks good today.':'needs some attention today.'}</div></div><div class="weather-chip"><strong>☀️ 72°F</strong><span>Sunny</span></div></section>
+  <section class="card pad card-button" onclick="go('hives')"><div class="row between"><div><div class="h3">Apiary Health</div><div class="tiny muted">Overall colony status</div></div>${statusPill(stat)}</div><div class="health-modern"><div class="health-ring"><svg viewBox="0 0 120 120"><circle cx="60" cy="60" r="52" stroke="#ECEFEA" stroke-width="11" fill="none"/><defs><linearGradient id="ringGrad" x1="0%" y1="0%" x2="100%" y2="100%"><stop offset="0%" stop-color="#D94E43"/><stop offset="30%" stop-color="#E6A117"/><stop offset="65%" stop-color="#86A658"/><stop offset="100%" stop-color="#176B55"/></linearGradient></defs><circle cx="60" cy="60" r="52" stroke="url(#ringGrad)" stroke-width="11" fill="none" stroke-linecap="round" stroke-dasharray="${d} ${c-d}"/></svg><div class="score-center"><div><strong>${score}</strong><span>${stat==='Healthy'?'Good':stat==='Attention'?'Needs Attention':'High Risk'}</span></div></div></div><div class="health-mini-grid"><div class="health-mini"><strong>${s.hives.length}</strong><span>Total Hives</span></div><div class="health-mini"><strong>${healthy}</strong><span>Healthy</span></div><div class="health-mini attn"><strong>${attention}</strong><span>Needs Attention</span></div><div class="health-mini crit"><strong>${critical}</strong><span>Critical</span></div></div></div></section>
+  <section><div class="row between"><div class="h3">Today</div><button type="button" class="pill" onclick="go('all-actions')">View all</button></div><div class="card pad today-card" style="margin-top:7px">${a?`<div class="task-hero row"><div class="task-icon">⚠️</div><div class="grow"><div class="h3">${esc(h.name)} needs an inspection</div><div class="tiny muted">${esc(a.reason)}</div></div><span class="chev">›</span></div><button type="button" class="btn primary block" style="margin-top:9px" onclick="actionForm('inspection','${a.hiveId}')">Start Inspection</button>`:`<div class="small">No urgent tasks today.</div>`}</div></section>
+  <section><div class="row between"><div class="h3">Your Hives</div><button type="button" class="pill" onclick="go('all-hives')">View all</button></div><div class="hive-strip" style="margin-top:7px">${ordered.slice(0,4).map(x=>`<button type="button" class="hive-mini" onclick="go('hive/${x.id}')"><div class="tiny"><b>${esc(x.name)}</b></div><div class="num">${x.score}</div><div class="status" style="color:${x.status==='Healthy'?'#2F8B64':x.status==='Attention'?'#E6A117':'#D94E43'}">${x.status}</div><div class="bee">🏠</div></button>`).join('')}</div></section>
+  <section><div class="h3">This Week</div><div class="week-grid" style="margin-top:7px"><button type="button" class="week-card card-button" onclick="go('all-actions/inspection')"><div class="tiny">🔎 Inspections</div><strong>${s.actions.filter(x=>x.type==='Inspection').length}</strong><span>Due this week</span></button><button type="button" class="week-card card-button" onclick="go('all-actions/feeding')"><div class="tiny">🥣 Feedings</div><strong>${s.actions.filter(x=>x.type==='Feeding').length}</strong><span>Due this week</span></button><button type="button" class="week-card card-button" onclick="go('all-actions/treatment')"><div class="tiny">🧪 Treatments</div><strong>${s.actions.filter(x=>x.type==='Treatment').length}</strong><span>Due this week</span></button></div></section>
+  <section class="card pad season-modern card-button" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><div class="row between"><div><div class="h3">Seasonal Insight</div><div class="tiny muted">Late Summer</div></div><span class="pill warn">${isPro(s)?'Season':'PRO'}</span></div><div class="row" style="margin-top:9px"><span style="font-size:22px">🍃</span><div class="grow"><div class="small"><b>Watch mite levels</b></div><div class="tiny muted">Ensure adequate food stores before the next transition.</div></div><span class="chev">›</span></div></section>
+ </div>`
 }
 
 function hives(r){

@@ -39,3 +39,6 @@ Upload all four files to the repository root:
 - Inter / SF Pro / Segoe UI system stack for a familiar U.S. mobile-app feel.
 - Reduced color noise and stronger visual hierarchy.
 - Glove-first touch targets from V6 retained.
+
+## V8 Navigation audit
+All visible navigation/action affordances were audited and missing routes were added.

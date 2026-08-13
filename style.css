@@ -624,3 +624,5 @@ input:focus,select:focus,textarea:focus{
     --green-soft:#24372F;
   }
 }
+
+.card-button{cursor:pointer}.card-button:active{transform:scale(.992)}

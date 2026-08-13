@@ -477,17 +477,28 @@ function icon(name){
 }
 
 function chrome(page,secondary){
-  const s=state();
-  idq('topbar').innerHTML=`<button type="button" class="iconbtn" onclick="go('settings')" aria-label="Open Settings">${icon('settings')}</button><div class="brand" aria-label="HiveDash">HiveDash</div><button type="button" class="iconbtn" onclick="go('notifications')" aria-label="Open Notifications">${icon('bell')}${unread(s)?`<span class="badge" aria-label="${unread(s)} unread notifications">${unread(s)}</span>`:''}</button>`;
-  idq('bottomnav').classList.toggle('hidden',secondary);
-  idq('bottomnav').innerHTML=[
+  const s=state(), top=idq('topbar'), bottom=idq('bottomnav');
+  top.className='topbar';
+  if(page==='home'){
+    top.innerHTML=`<button type="button" class="iconbtn" onclick="go('settings')" aria-label="Open Settings">${icon('settings')}</button><div class="brand" aria-label="HiveDash"><span class="brand-hive">${icon('hive')}</span><span>HiveDash</span></div><button type="button" class="iconbtn" onclick="go('notifications')" aria-label="Open Notifications">${icon('bell')}${unread(s)?`<span class="badge">${unread(s)}</span>`:''}</button>`;
+  }else if(page==='hives'){
+    top.innerHTML=`<span></span><div class="pagebar-title">Hives</div><button type="button" class="iconbtn plusbtn" onclick="addHive()" aria-label="Add Hive">+</button>`;
+  }else if(page==='actions'){
+    top.innerHTML=`<span></span><div class="pagebar-title">Actions</div><span></span>`;
+  }else if(page==='insights'){
+    top.innerHTML=`<span></span><div class="pagebar-title">Insights</div><button type="button" class="iconbtn plusbtn" onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}" aria-label="Open Health Analysis">+</button>`;
+  }else{
+    top.innerHTML=`<button type="button" class="iconbtn" onclick="history.back()" aria-label="Back">‹</button><div class="pagebar-title">${page==='hive'?'Hive Detail':page==='honey'?'Harvest':page==='trend'?'Trends':page==='risk'?'Risk Prediction':page==='analysis'?'Health Analysis':page==='settings'?'Settings':page==='notifications'?'Notifications':page==='subscription'?'HiveDash Pro':page==='season'?'Season Intelligence':''}</div><span></span>`;
+  }
+
+  bottom.classList.toggle('hidden',secondary);
+  bottom.innerHTML=[
     ['home','Home','home'],
     ['hives','Hives','hive'],
     ['actions','Actions','check'],
     ['insights','Insights','chart']
-  ].map(([key,label,ico])=>`<button class="navitem ${page===key?'active':''}" onclick="go('${key}')" aria-label="${label}" ${page===key?'aria-current="page"':''}>${icon(ico)}<span>${label}</span></button>`).join('')
+  ].map(([key,label,ico])=>`<button class="navitem ${page===key?'active':''}" onclick="go('${key}')" aria-label="${label}" ${page===key?'aria-current="page"':''}>${icon(ico)}<span>${label}</span>${key==='actions'&&s.actions.length?`<i class="nav-badge">${Math.min(9,s.actions.length)}</i>`:''}</button>`).join('')
 }
-
 function generateActions(s){
   const list=[];
   for(const h of s.hives){
@@ -553,194 +564,135 @@ function render(){
 }
 
 function home(r){
-  const s=state();
-  const score=avgHealth(s);
-  const stat=score>=85?'Healthy':score>=70?'Attention':'Critical';
-  const strong=s.hives.filter(x=>x.status==='Healthy').length;
-  const attention=s.hives.filter(x=>x.status==='Attention').length;
-  const critical=s.hives.filter(x=>x.status==='Critical').length;
-  const action=s.actions[0]||null;
-  const actionHive=action?hive(s,action.hiveId):null;
-  const risks=[...s.hives].filter(x=>x.status!=='Healthy').sort((a,b)=>a.score-b.score);
-  const riskCards=risks.length?risks:[...s.hives].sort((a,b)=>a.score-b.score).slice(0,3);
-  const C=2*Math.PI*47;
-  const D=(score/100)*C;
+  const s=state(),score=avgHealth(s);
+  const strong=s.hives.filter(h=>h.status==='Healthy').length;
+  const attention=s.hives.filter(h=>h.status==='Attention').length;
+  const critical=s.hives.filter(h=>h.status==='Critical').length;
+  const action=s.actions[0]||null,ah=action?hive(s,action.hiveId):null;
+  const riskCards=[...s.hives].filter(h=>h.status!=='Healthy').sort((a,b)=>a.score-b.score);
+  const C=2*Math.PI*44,D=C*score/100;
 
-  r.innerHTML=`<div class="screen master-home">
-    <section class="master-overview">
-      <div class="master-title-row"><div class="h2">Hive Overview</div></div>
+  r.innerHTML=`<div class="master-screen home-master">
 
-      <div class="master-overview-grid">
-        <div class="master-health-visual">
-          <div class="master-ring">
-            <svg viewBox="0 0 120 120" aria-hidden="true">
-              <circle cx="60" cy="60" r="47" class="master-ring-track"/>
-              <circle cx="60" cy="60" r="47" class="master-ring-value" stroke-dasharray="${D} ${C-D}"/>
+    <section class="home-overview-master">
+      <div class="master-section-title">Hive Overview <span class="mini-info">i</span></div>
+
+      <div class="overview-grid-master">
+        <div class="overview-left-master">
+          <div class="health-donut-master">
+            <svg viewBox="0 0 110 110" aria-hidden="true">
+              <circle class="donut-track" cx="55" cy="55" r="44"/>
+              <circle class="donut-progress" cx="55" cy="55" r="44" stroke-dasharray="${D} ${C-D}"/>
             </svg>
-            <div class="master-ring-label">
-              <strong>${score}<small>%</small></strong>
-              <b>${stat==='Healthy'?'Good':stat==='Attention'?'Good':'Critical'}</b>
-              <span>Overall Health</span>
-            </div>
+            <div class="donut-label"><strong>${score}<small>%</small></strong><b>Good</b><span>Overall Health</span></div>
           </div>
-
-          <div class="master-landscape" aria-hidden="true">
-            <svg viewBox="0 0 330 92" preserveAspectRatio="none">
+          <div class="landscape-master" aria-hidden="true">
+            <svg viewBox="0 0 260 65" preserveAspectRatio="none">
               <defs>
-                <linearGradient id="mHill1" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#71805D" stop-opacity=".42"/>
-                  <stop offset="100%" stop-color="#E7E9DE" stop-opacity=".10"/>
-                </linearGradient>
-                <linearGradient id="mHill2" x1="0" y1="0" x2="1" y2="0">
-                  <stop offset="0%" stop-color="#9CAA89" stop-opacity=".38"/>
-                  <stop offset="100%" stop-color="#EEF0E8" stop-opacity=".08"/>
-                </linearGradient>
+                <linearGradient id="hill1" x1="0" x2="1"><stop offset="0" stop-color="#83916f" stop-opacity=".48"/><stop offset="1" stop-color="#e7eadf" stop-opacity=".16"/></linearGradient>
+                <linearGradient id="hill2" x1="0" x2="1"><stop offset="0" stop-color="#b3bca3" stop-opacity=".5"/><stop offset="1" stop-color="#eef0e9" stop-opacity=".1"/></linearGradient>
               </defs>
-              <path d="M0,56 C40,31 67,47 101,39 C137,31 173,53 210,42 C246,31 282,48 330,38 L330,92 L0,92Z" fill="url(#mHill2)"/>
-              <path d="M0,70 C46,49 80,60 113,54 C149,48 185,66 221,56 C256,47 292,62 330,52 L330,92 L0,92Z" fill="url(#mHill1)"/>
-              <g transform="translate(12 34)">
-                <rect x="0" y="18" width="34" height="25" rx="2.5" fill="#E9E1CD" stroke="#526544" stroke-width="1.4"/>
-                <rect x="4" y="8" width="26" height="13" rx="2" fill="#F2EBD9" stroke="#526544" stroke-width="1.4"/>
-                <path d="M-2,10 L17,0 L36,10" fill="#9C7D4F" stroke="#526544" stroke-width="1.3"/>
-                <rect x="12" y="36" width="10" height="2.4" rx="1.2" fill="#526544"/>
+              <path d="M0 43 C28 21,53 39,82 31 C111 23,137 40,166 30 C198 19,225 36,260 27 L260 65 L0 65Z" fill="url(#hill2)"/>
+              <path d="M0 52 C34 38,62 48,92 41 C121 34,150 51,180 42 C211 33,236 46,260 39 L260 65 L0 65Z" fill="url(#hill1)"/>
+              <g transform="translate(14,25)">
+                <rect x="0" y="13" width="25" height="18" rx="1.5" fill="#e8dfc7" stroke="#59694b" stroke-width="1.2"/>
+                <rect x="3" y="5" width="19" height="10" rx="1.5" fill="#f2ead4" stroke="#59694b" stroke-width="1.1"/>
+                <path d="M-1 6 L12.5 -1 L26 6" fill="#9d8054" stroke="#59694b" stroke-width="1.1"/>
+                <rect x="9" y="26" width="8" height="2" rx="1" fill="#59694b"/>
               </g>
-              <g stroke="#687B57" stroke-width="1.0" opacity=".84">
-                <path d="M0,92 Q7,64 12,49 M10,92 Q16,70 22,58 M36,92 Q41,70 47,56 M48,92 Q55,72 61,61"/>
+              <g stroke="#6f805d" stroke-width=".8" opacity=".8">
+                <path d="M2 65 Q7 46 10 35 M9 65 Q14 49 18 40 M36 65 Q41 49 45 40"/>
               </g>
-              <g fill="#C5921A" opacity=".8">
-                <circle cx="9" cy="64" r="2"/><circle cx="18" cy="73" r="1.8"/><circle cx="42" cy="65" r="1.8"/><circle cx="58" cy="72" r="1.6"/>
-              </g>
+              <g fill="#C5921A"><circle cx="7" cy="46" r="1.5"/><circle cx="16" cy="52" r="1.4"/><circle cx="41" cy="49" r="1.3"/></g>
             </svg>
           </div>
         </div>
 
-        <div class="master-stats">
-          <button type="button" onclick="go('all-hives')"><span class="master-stat-icon">${icon('hive')}</span><span>Total Hives</span><b>${s.hives.length}</b></button>
-          <button type="button" onclick="go('all-hives')"><span class="master-dot strong"></span><span>Strong</span><b class="strong">${strong}</b></button>
-          <button type="button" onclick="go('all-hives')"><span class="master-dot attention"></span><span>Needs Attention</span><b class="attention">${attention}</b></button>
-          <button type="button" onclick="go('all-hives')"><span class="master-dot critical"></span><span>Critical</span><b class="critical">${critical}</b></button>
+        <div class="overview-stats-master">
+          <button onclick="go('all-hives')"><i class="stat-icon">${icon('hive')}</i><span>Total Hives</span><b>${s.hives.length}</b></button>
+          <button onclick="go('all-hives')"><i class="stat-dot green"></i><span>Strong</span><b class="green">${strong}</b></button>
+          <button onclick="go('all-hives')"><i class="stat-dot amber"></i><span>Needs Attention</span><b class="amber">${attention}</b></button>
+          <button onclick="go('all-hives')"><i class="stat-dot red"></i><span>Critical</span><b class="red">${critical}</b></button>
         </div>
       </div>
 
-      <button type="button" class="master-view-all" onclick="go('all-hives')">
-        <span class="master-view-icon">${icon('hive')}</span>
-        <span><b>View All Hives</b><small>Check detailed hive status</small></span>
-        <span class="chev">›</span>
+      <button type="button" class="view-hives-master" onclick="go('all-hives')">
+        <i>${icon('hive')}</i><span><b>View All Hives</b><small>Check detailed hive status</small></span><em>›</em>
       </button>
     </section>
 
-    <section class="master-section master-action">
-      <div class="master-heading"><div class="h2">Action Center</div></div>
-      ${action?`
-        <div class="master-action-row">
-          <span class="master-action-icon">${icon('check')}</span>
-          <span class="master-action-copy"><b>${esc(action.title)}</b><small>${esc(actionHive?.name||'Hive')} · Last inspection: ${actionHive?daysSince(actionHive.lastInspection):'—'} days ago</small></span>
-          <button type="button" class="master-inspect" onclick="${action.type==='Inspection'?"actionForm('inspection','"+action.hiveId+"')":action.type==='Feeding'?"actionForm('feeding','"+action.hiveId+"')":"actionForm('treatment','"+action.hiveId+"')"}">${action.type==='Inspection'?'Inspect Now':action.type==='Feeding'?'Record Feeding':'Start Treatment'}</button>
-        </div>
-        <div class="master-action-footer">
-          <span>▣ &nbsp;Due: <b>${esc(action.due)}</b></span>
-          <span>◷ &nbsp;Est. time: 15 min</span>
-          <button type="button" onclick="go('all-actions')">View All Actions ›</button>
-        </div>
-      `:`<div class="master-empty">No urgent actions right now.</div>`}
+    <section class="master-block action-master">
+      <div class="master-section-title">Action Center</div>
+      ${action?`<div class="action-main-master">
+        <i class="action-icon-master">${icon('check')}</i>
+        <span><b>${esc(action.title)}</b><small>${esc(ah?.name||'Hive')} · Last inspection: ${ah?daysSince(ah.lastInspection):'—'} days ago</small></span>
+        <button onclick="${action.type==='Inspection'?"actionForm('inspection','"+action.hiveId+"')":action.type==='Feeding'?"actionForm('feeding','"+action.hiveId+"')":"actionForm('treatment','"+action.hiveId+"')"}">${action.type==='Inspection'?'Inspect Now':action.type==='Feeding'?'Record Feeding':'Start Treatment'}</button>
+      </div>
+      <div class="action-foot-master"><span>▣ &nbsp;Due: <b>${esc(action.due)}</b></span><span>◷ &nbsp;Est. time: 15 min</span><button onclick="go('all-actions')">View All Actions ›</button></div>`:`<div class="empty-master">No urgent action right now.</div>`}
     </section>
 
-    <section class="master-section master-carousel">
-      <div class="master-heading"><div class="h2">Risk Alerts</div><button type="button" class="master-link risk" onclick="go('hives')">View All Alerts ›</button></div>
-      <div class="master-scroll risk-scroll">
-        ${riskCards.map(h=>`<button type="button" class="master-risk-card" onclick="go('hive/${h.id}')">
-          <span class="master-risk-icon ${h.status==='Critical'?'red':'amber'}">!</span>
-          <span class="master-risk-copy"><b>${esc(h.name)}</b><small>${h.queen!=='Confirmed'?'Queen status unconfirmed':h.varroa>=3?'Varroa test overdue':h.honey==='Low'||h.pollen==='Low'?'Low food stores':'Review hive health'}</small></span>
-          <span class="master-risk-pill ${h.status==='Critical'?'red':'amber'}">${h.status==='Critical'?'High Risk':'Medium Risk'}</span>
-          <span class="chev">›</span>
+    <section class="master-block">
+      <div class="master-title-action"><div class="master-section-title">Risk Alerts</div><button onclick="go('hives')">View All Alerts ›</button></div>
+      <div class="risk-scroll-master">
+        ${(riskCards.length?riskCards:s.hives.slice(0,3)).map(h=>`<button class="risk-card-master" onclick="go('hive/${h.id}')">
+          <i class="${h.status==='Critical'?'risk-red':'risk-amber'}">!</i>
+          <span><b>${esc(h.name)}</b><small>${h.queen!=='Confirmed'?'Queen status unconfirmed':h.varroa>=3?'Varroa test overdue':h.honey==='Low'||h.pollen==='Low'?'Low food stores':'Review hive health'}</small></span>
+          <strong class="${h.status==='Critical'?'risk-red':'risk-amber'}">${h.status==='Critical'?'High Risk':'Medium Risk'}</strong><em>›</em>
         </button>`).join('')}
       </div>
-      <div class="master-pager"><i class="active"></i><i></i><i></i><i></i><i></i></div>
+      <div class="dots-master"><i class="on"></i><i></i><i></i><i></i><i></i></div>
     </section>
 
-    <section class="master-section master-carousel">
-      <div class="master-heading"><div class="h2">Season Intelligence</div><button type="button" class="master-link" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Spring Build-Up ›</button></div>
-      <div class="master-scroll season-scroll">
-        <button type="button" class="master-season-card season-featured" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
-          <div class="season-photo-art" aria-hidden="true">
-            <svg viewBox="0 0 260 160" preserveAspectRatio="xMidYMid slice">
-              <defs><linearGradient id="photoBg" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#F3EBCF"/><stop offset="100%" stop-color="#9CAB77"/></linearGradient></defs>
-              <rect width="260" height="160" fill="url(#photoBg)"/>
-              <g fill="#FEFDF4" stroke="#D5B34D" stroke-width="1">
-                <g transform="translate(46 70)"><circle r="14"/><circle cx="-17" r="12"/><circle cx="17" r="12"/><circle cy="-17" r="12"/><circle cy="17" r="12"/><circle r="5" fill="#D2A72C"/></g>
-                <g transform="translate(100 106) scale(.9)"><circle r="14"/><circle cx="-17" r="12"/><circle cx="17" r="12"/><circle cy="-17" r="12"/><circle cy="17" r="12"/><circle r="5" fill="#D2A72C"/></g>
-              </g>
-              <g transform="translate(178 86) rotate(-12)">
-                <ellipse cx="0" cy="0" rx="18" ry="8.5" fill="#C5921A"/>
-                <rect x="-8" y="-8" width="5" height="16" rx="2" fill="#2F3B33"/><rect x="3" y="-8" width="5" height="16" rx="2" fill="#2F3B33"/>
-                <ellipse cx="3" cy="-11" rx="10" ry="5" fill="#FFF8E8" opacity=".75"/>
-              </g>
-            </svg>
-          </div>
-          <div class="season-feature-copy"><b>Nectar Flow</b><span>Good</span><small>Flow is strong in your area</small><em>Learn more ›</em></div>
-        </button>
-
-        <button type="button" class="master-season-card" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><span class="master-season-icon">✿</span><b>Swarm Watch</b><span>Low Risk</span><small>High swarm risk in 2–4 weeks</small><em>Learn more ›</em></button>
-        <button type="button" class="master-season-card" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><span class="master-season-icon">${icon('hive')}</span><b>Add Super Soon</b><span class="amber">Recommended</span><small>Prepare to add honey super</small><em>Learn more ›</em></button>
-        <button type="button" class="master-season-card" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><span class="master-season-icon">◉</span><b>Varroa Rising</b><span class="amber">Elevated</span><small>Increase monitoring frequency</small><em>Learn more ›</em></button>
+    <section class="master-block">
+      <div class="master-title-action"><div class="master-section-title">Season Intelligence</div><button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Spring Build-Up ›</button></div>
+      <div class="season-scroll-master">
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>✿</i><b>Nectar Flow</b><span>Good</span><small>Flow is strong in your area</small><em>Learn more ›</em></button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>♧</i><b>Swarm Watch</b><span>Low Risk</span><small>High swarm risk in 2–4 weeks</small><em>Learn more ›</em></button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>${icon('hive')}</i><b>Add Super Soon</b><span class="amber">Recommended</span><small>Prepare to add honey super</small><em>Learn more ›</em></button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>◉</i><b>Varroa Rising</b><span class="amber">Elevated</span><small>Increase monitoring frequency</small><em>Learn more ›</em></button>
       </div>
-      <div class="master-pager"><i class="active"></i><i></i><i></i><i></i></div>
+      <div class="dots-master"><i class="on"></i><i></i><i></i><i></i></div>
     </section>
 
-    <section class="master-section master-quick">
-      <div class="master-heading"><div class="h2">Quick Actions</div></div>
-      <div class="master-quick-grid">
-        <button type="button" onclick="actionForm('inspection')"><span>${icon('check')}</span><b>Inspection</b><small>Record hive inspection</small></button>
-        <button type="button" onclick="actionForm('feeding')"><span>▣</span><b>Feeding</b><small>Record feeding activity</small></button>
-        <button type="button" onclick="actionForm('treatment')"><span>✚</span><b>Treatment</b><small>Record treatment</small></button>
-        <button type="button" onclick="actionForm('harvest')"><span>⌁</span><b>Harvest</b><small>Record honey harvest</small></button>
-        <button type="button" onclick="moreActions()"><span>•••</span><b>More</b><small>More actions & tools</small></button>
+    <section class="quick-master">
+      <div class="master-section-title">Quick Actions</div>
+      <div class="quick-grid-master">
+        <button onclick="actionForm('inspection')"><i>${icon('check')}</i><b>Inspection</b><small>Record hive inspection</small></button>
+        <button onclick="actionForm('feeding')"><i>▣</i><b>Feeding</b><small>Record feeding activity</small></button>
+        <button onclick="actionForm('treatment')"><i>✚</i><b>Treatment</b><small>Record treatment</small></button>
+        <button onclick="actionForm('harvest')"><i>⌁</i><b>Harvest</b><small>Record honey harvest</small></button>
+        <button onclick="moreActions()"><i>•••</i><b>More</b><small>More actions & tools</small></button>
       </div>
     </section>
-  </div>`;
+  </div>`
 }
 function hives(r){
- const s=state(),ordered=[...s.hives].sort((a,b)=>b.score-a.score);
- r.innerHTML=`<div class="screen master-hives-screen">
-   <section class="master-page-head">
-     <div></div><div class="master-page-title">Hives</div><button type="button" class="master-plus" onclick="addHive()">+</button>
-   </section>
-   <section class="master-hive-search"><span>⌕</span><input id="mainHiveSearch" placeholder="Search hives"></section>
-   <section class="master-filter-row">
-     <button type="button" class="active" data-filter="all">All (${s.hives.length})</button>
-     <button type="button" data-filter="Healthy">Healthy (${s.hives.filter(x=>x.status==='Healthy').length})</button>
-     <button type="button" data-filter="Attention">Attention (${s.hives.filter(x=>x.status==='Attention').length})</button>
-     <button type="button" data-filter="Critical">Critical (${s.hives.filter(x=>x.status==='Critical').length})</button>
-   </section>
-   <section id="mainHiveList" class="master-hive-list"></section>
- </div>`;
- let filter='all';
- const draw=()=>{const q=idq('mainHiveSearch').value.toLowerCase();idq('mainHiveList').innerHTML=ordered.filter(h=>(filter==='all'||h.status===filter)&&h.name.toLowerCase().includes(q)).map(h=>masterHiveCard(h)).join('')};
- idq('mainHiveSearch').oninput=draw;
- r.querySelectorAll('.master-filter-row button').forEach(b=>b.onclick=()=>{r.querySelectorAll('.master-filter-row button').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;draw()});
- draw()
-}
-
-function masterHiveCard(h){
- const statusLabel=h.status==='Healthy'?'Good':h.status==='Attention'?'Needs Attention':'Critical';
- const tone=h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical';
- return `<button type="button" class="master-hive-card" onclick="go('hive/${h.id}')">
-   <div class="master-mini-ring ${tone}" style="--score:${Math.max(0,Math.min(100,h.score))}"><span>${h.score}%</span></div>
-   <div class="master-hive-copy">
-     <div class="master-hive-name">${esc(h.name)}</div>
-     <div class="master-hive-location">Location: ${esc(h.location||'North Field')}</div>
-     <div class="master-hive-last">Last inspection: ${fmtDate(h.lastInspection)}</div>
-     <div class="master-hive-icons"><span>♧ ${h.strength==='Strong'?8:h.strength==='Medium'?6:4}</span><span>✿ ${h.brood==='Excellent'?7:h.brood==='Good'?6:4}</span><span>▣ ${h.honey==='High'?3:h.honey==='Medium'?2:1}</span></div>
-   </div>
-   <div class="master-hive-status ${tone}">${statusLabel}</div>
-   <span class="master-more">•••</span>
- </button>`
+  const s=state(),ordered=[...s.hives];
+  r.innerHTML=`<div class="master-screen hives-master">
+    <div class="search-master"><span>⌕</span><input id="mainHiveSearch" placeholder="Search hives"></div>
+    <div class="filter-master">
+      <button class="active" data-filter="all">All (${s.hives.length})</button>
+      <button data-filter="Healthy">Healthy (${s.hives.filter(h=>h.status==='Healthy').length})</button>
+      <button data-filter="Attention">Attention (${s.hives.filter(h=>h.status==='Attention').length})</button>
+      <button data-filter="Critical">Critical (${s.hives.filter(h=>h.status==='Critical').length})</button>
+    </div>
+    <div id="mainHiveList" class="hive-list-master"></div>
+  </div>`;
+  let filter='all';
+  const draw=()=>{const q=idq('mainHiveSearch').value.toLowerCase();idq('mainHiveList').innerHTML=ordered.filter(h=>(filter==='all'||h.status===filter)&&h.name.toLowerCase().includes(q)).map(h=>hiveCard(h)).join('')};
+  idq('mainHiveSearch').oninput=draw;
+  r.querySelectorAll('.filter-master button').forEach(b=>b.onclick=()=>{r.querySelectorAll('.filter-master button').forEach(x=>x.classList.remove('active'));b.classList.add('active');filter=b.dataset.filter;draw()});
+  draw()
 }
 function hiveCard(h){
- const qc=h.queen==='Confirmed'?'':'dangertext',vc=h.varroa>=3?'dangertext':h.varroa>=2?'warntext':'',fc=(h.honey==='Low'||h.pollen==='Low')?'dangertext':'';
- return `<div class="card hivecard card-button" onclick="go('hive/${h.id}')"><div class="hivethumb">🏠</div><div><div class="row"><span style="width:8px;height:8px;border-radius:50%;background:${h.status==='Healthy'?'#2F8B64':h.status==='Attention'?'#E6A117':'#D94E43'}"></span><div class="h3">${esc(h.name)}</div></div><div class="hive-facts"><div class="fact">Queen <b class="${qc}">${esc(h.queen)}</b></div><div class="fact">Varroa <b class="${vc}">${h.varroa>=3?'High':h.varroa>=2?'Moderate':'Low'}</b></div><div class="fact">Food Stores <b class="${fc}">${h.honey==='Low'||h.pollen==='Low'?'Low':'Good'}</b></div><div class="fact">Strength <b>${esc(h.strength)}</b></div></div></div><div><div class="hive-score">${h.score}</div><div class="tiny" style="color:${h.status==='Healthy'?'#2F8B64':h.status==='Attention'?'#E6A117':'#D94E43'};text-align:right;font-weight:800">${h.status}</div></div><div class="hive-footer">Last inspected ${daysSince(h.lastInspection)} days ago <span style="float:right">›</span></div></div>`
+  const tone=h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical';
+  const label=h.status==='Healthy'?'Good':h.status==='Attention'?'Needs Attention':'Critical';
+  return `<button type="button" class="hive-card-master" onclick="go('hive/${h.id}')">
+    <div class="mini-ring-master ${tone}" style="--p:${h.score}"><span>${h.score}%</span></div>
+    <div class="hive-copy-master"><b>${esc(h.name)}</b><small>Location: ${esc(h.location||'North Field')}</small><small>Last inspection: ${fmtDate(h.lastInspection)}</small><div><span>♧ ${h.strength==='Strong'?8:h.strength==='Medium'?6:4}</span><span>✿ ${h.brood==='Excellent'?7:h.brood==='Good'?6:4}</span><span>▣ ${h.honey==='High'?3:h.honey==='Medium'?2:1}</span></div></div>
+    <strong class="${tone}">${label}</strong><em>•••</em>
+  </button>`
 }
-
 function addHive(){
   const s=state();
   if(!isPro(s)&&s.hives.length>=FREE_HIVE_LIMIT){subscriptionModal('more than 3 hives');return}
@@ -825,12 +777,12 @@ function actionForm(type,selectedHive){
   if(type==='feeding')fields=`<div class="formgroup"><label>Feed Type</label><select id="feedType"><option>1:1 Syrup</option><option>2:1 Syrup</option><option>Pollen Patty</option></select></div><div class="formgroup"><label>Amount</label><input id="feedAmount" maxlength="40" placeholder="${s.settings.units==='metric'?'2 L':'2 gallons'}"></div>`;
   if(type==='treatment')fields=`<div class="formgroup"><label>Treatment Type</label><select id="treatmentType"><option>Oxalic Acid</option><option>Formic Acid</option><option>Apivar</option><option>Other</option></select></div><div class="notice">Follow the product label and applicable local rules. HiveDash does not replace label instructions.</div>`;
   if(type==='harvest')fields=`<div class="formgroup"><label>Weight (${s.settings.units==='metric'?'kg':'lb'})</label><input id="harvestWeight" type="number" step=".1"></div><div class="formgroup"><label>Frames</label><input id="harvestFrames" type="number"></div><div class="formgroup"><label>Moisture %</label><input id="harvestMoisture" type="number" step=".1"></div>`;
-  const m=modal(`<div class="master-action-form ${type==='inspection'?'inspection-form':''}">
-    <div class="master-form-head"><button type="button" class="master-back" onclick="closeModal(this)">‹</button><div class="master-page-title">${type==='inspection'?'Inspection':`New ${type[0].toUpperCase()+type.slice(1)}`}</div><button type="button" class="master-save" id="saveActionTop">Save</button></div>
-    <div class="master-form-hive"><span class="master-stat-icon">${icon('hive')}</span><div><b>${esc(hive(s,selectedHive||s.hives[0]?.id)?.name||'Select hive')}</b><small>${new Date().toLocaleDateString()} · 9:30 AM</small></div></div>
-    ${type==='inspection'?`<div class="master-quick-entry"><b>Quick Entry</b><small>Use voice or quick inputs to save time</small><span>♩</span></div>`:''}
-    <div class="master-form-fields"><div class="formgroup"><label>Hive</label><select id="formHive">${hiveOptions}</select></div><div class="formgroup"><label>Date</label><input id="formDate" type="date" value="${new Date().toISOString().slice(0,10)}"></div>${fields}</div>
-    <button type="button" class="btn primary block master-bottom-save" id="saveAction">Save</button>
+  const m=modal(`<div class="form-master ${type==='inspection'?'inspection-master':''}">
+    <div class="form-header-master"><button type="button" onclick="closeModal(this)">‹</button><b>${type==='inspection'?'Inspection':`New ${type[0].toUpperCase()+type.slice(1)}`}</b><button type="button" id="saveActionTop">Save</button></div>
+    <div class="form-hive-master"><i>${icon('hive')}</i><span><b>${esc(hive(s,selectedHive||s.hives[0]?.id)?.name||'Select hive')}</b><small>${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · 9:30 AM</small></span></div>
+    ${type==='inspection'?`<div class="quick-entry-master"><span><b>Quick Entry</b><small>Use voice or quick inputs to save time</small></span><i>♩</i></div>`:''}
+    <div class="fields-master"><div class="formgroup"><label>Hive</label><select id="formHive">${hiveOptions}</select></div><div class="formgroup"><label>Date</label><input id="formDate" type="date" value="${new Date().toISOString().slice(0,10)}"></div>${fields}</div>
+    <button type="button" class="btn primary block" id="saveAction">Save</button>
   </div>`);
   m.querySelector('#saveActionTop').onclick=()=>m.querySelector('#saveAction').click();
   m.querySelector('#saveAction').onclick=()=>{
@@ -867,31 +819,15 @@ function actionForm(type,selectedHive){
 }
 
 function insights(r){
- const s=state(),pro=isPro(s);
- const strong=s.hives.filter(x=>x.status==='Healthy').length,attention=s.hives.filter(x=>x.status==='Attention').length,critical=s.hives.filter(x=>x.status==='Critical').length;
- const score=avgHealth(s),C=2*Math.PI*42,D=(score/100)*C;
- const lineA='10,76 52,65 94,70 136,54 178,58 220,46 262,51';
- const lineB='10,88 52,82 94,86 136,78 178,82 220,73 262,76';
- const lineC='10,98 52,96 94,94 136,90 178,93 220,86 262,88';
- r.innerHTML=`<div class="screen master-insights-screen">
-  <section class="master-page-head"><div></div><div class="master-page-title">Insights</div><button type="button" class="master-plus" onclick="${pro?"go('analysis')":"requirePro('Health Analysis')"}">+</button></section>
-  <section class="master-insight-tabs"><button class="active">Overview</button><button onclick="${pro?"go('analysis')":"requirePro('Health Analysis')"}">Colony Health</button><button onclick="${pro?"go('honey')":"requirePro('Honey Analytics')"}">Harvest</button><button onclick="${pro?"go('trend')":"requirePro('90-day trends')"}">Trends</button></section>
-  <section class="master-insight-card">
-    <div class="h2">Colony Health Summary</div>
-    <div class="insight-health-grid">
-      <div class="insight-ring"><svg viewBox="0 0 110 110"><circle cx="55" cy="55" r="42" class="ring-track"/><circle cx="55" cy="55" r="42" class="ring-value" stroke-dasharray="${D} ${C-D}"/></svg><strong>${score}%</strong></div>
-      <div class="insight-health-legend"><span><i class="g"></i>Strong <b>${Math.round(strong/Math.max(1,s.hives.length)*100)}% (${strong})</b></span><span><i class="a"></i>Needs Attention <b>${Math.round(attention/Math.max(1,s.hives.length)*100)}% (${attention})</b></span><button type="button" class="insight-risk-row" onclick="${pro?"go('risk')":"requirePro('Risk Prediction')"}"><i class="r"></i>Critical <b>${Math.round(critical/Math.max(1,s.hives.length)*100)}% (${critical})</b></button></div>
-    </div>
-  </section>
-  <section class="master-detail-section">
-    <div class="h2">Health Over Time</div>
-    <svg class="master-insight-chart" viewBox="0 0 280 120"><polyline points="${lineA}" fill="none" stroke="#5E7350" stroke-width="3"/><polyline points="${lineB}" fill="none" stroke="#C5921A" stroke-width="2"/><polyline points="${lineC}" fill="none" stroke="#D95449" stroke-width="2"/></svg>
-  </section>
-  <section class="master-detail-section">
-    <div class="h2">Top Actions This Year</div>
-    <div class="master-action-summary"><span>▣ Inspections <b>${s.logs.inspections.length}</b></span><span>◉ Feedings <b>${s.logs.feedings.length}</b></span><span>✚ Treatments <b>${s.logs.treatments.length}</b></span><span>⌁ Harvests <b>${s.logs.harvests.length}</b></span></div>
-  </section>
- </div>`
+  const s=state(),score=avgHealth(s),strong=s.hives.filter(h=>h.status==='Healthy').length,attention=s.hives.filter(h=>h.status==='Attention').length,critical=s.hives.filter(h=>h.status==='Critical').length;
+  const C=2*Math.PI*38,D=C*score/100;
+  r.innerHTML=`<div class="master-screen insights-master">
+    <div class="year-master"><button>This Year⌄</button></div>
+    <div class="insight-tabs-master"><button class="active">Overview</button><button onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}">Colony Health</button><button onclick="${isPro(s)?"go('honey')":"requirePro('Honey Analytics')"}">Harvest</button><button onclick="${isPro(s)?"go('trend')":"requirePro('90-day trends')"}">Trends</button></div>
+    <section class="insight-card-master"><div class="master-section-title">Colony Health Summary</div><div class="insight-health-master"><div class="insight-donut-master"><svg viewBox="0 0 100 100"><circle class="donut-track" cx="50" cy="50" r="38"/><circle class="donut-progress" cx="50" cy="50" r="38" stroke-dasharray="${D} ${C-D}"/></svg></div><div class="legend-master"><span><i class="green"></i>Strong <b>${Math.round(strong/Math.max(1,s.hives.length)*100)}% (${strong})</b></span><span><i class="amber"></i>Needs Attention <b>${Math.round(attention/Math.max(1,s.hives.length)*100)}% (${attention})</b></span><button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><i class="red"></i>Critical <b>${Math.round(critical/Math.max(1,s.hives.length)*100)}% (${critical})</b></button></div></div></section>
+    <section class="detail-section-master"><div class="master-section-title">Health Over Time</div><svg viewBox="0 0 300 110" class="trend-master"><polyline points="10,74 58,62 106,69 154,50 202,57 250,43 290,50" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,86 58,78 106,83 154,72 202,76 250,66 290,70" fill="none" stroke="#C5921A" stroke-width="1.5"/><polyline points="10,94 58,92 106,90 154,85 202,88 250,82 290,84" fill="none" stroke="#D94E43" stroke-width="1.5"/></svg></section>
+    <section class="detail-section-master"><div class="master-section-title">Top Actions This Year</div><div class="actions-summary-master"><span>▣ Inspections <b>${s.logs.inspections.length}</b></span><span>◉ Feedings <b>${s.logs.feedings.length}</b></span><span>✚ Treatments <b>${s.logs.treatments.length}</b></span><span>⌁ Harvests <b>${s.logs.harvests.length}</b></span></div></section>
+  </div>`
 }
 function healthAnalysis(r){
   const s=state();if(!isPro(s)){subscriptionModal('Health Analysis');go('insights');return}
@@ -907,15 +843,15 @@ function riskPage(r){
   r.innerHTML=`<section><button type="button" class="btn secondarybtn" onclick="go('insights')">← Insights</button><div class="h1" style="margin-top:12px">Risk Prediction</div><div class="tiny muted">Current prototype uses transparent rules, not a black-box model.</div></section><section class="setting">${s.hives.map(h=>{const reasons=[];if(h.varroa>=3)reasons.push('Varroa elevated');if(h.queen!=='Confirmed')reasons.push('Queen uncertainty');if(h.honey==='Low'||h.pollen==='Low')reasons.push('Low food stores');const level=h.varroa>=3?'High':reasons.length?'Medium':'Low';return `<div class="srow card-button" onclick="go('hive/${h.id}')"><div class="scopy"><b>${esc(h.name)}</b><div class="tiny muted">${reasons.length?esc(reasons.join(' · ')):'No major current rule-based signal'}</div></div><span class="pill ${level==='High'?'danger':level==='Medium'?'warn':''}">${level}</span></div>`}).join('')}</section>`
 }
 function honeyPage(r){
- const s=state(),total=s.logs.harvests.reduce((n,x)=>n+Number(x.weightLb||0),0),avgMoist=s.logs.harvests.length?s.logs.harvests.reduce((n,x)=>n+Number(x.moisture||0),0)/s.logs.harvests.length:0;
- const bars=[8,14,25,42,68,82,62,88,64,35,12,6];
- r.innerHTML=`<div class="screen master-harvest-screen">
-  <section class="master-page-head"><button type="button" class="master-back" onclick="go('insights')">‹</button><div class="master-page-title">Harvest</div><button type="button" class="master-plus" onclick="actionForm('harvest')">+</button></section>
-  <section class="master-year-filter"><button>This Year⌄</button></section>
-  <section class="master-harvest-stats"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${s.logs.harvests.length}</b></div><div><small>Avg Moisture</small><b>${avgMoist.toFixed(1)}%</b></div></section>
-  <section class="master-detail-section"><div class="h2">Harvest Over Time (${s.settings.units==='metric'?'kg':'lb'})</div><div class="master-bars">${bars.map((v,i)=>`<div><i style="height:${v}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section>
-  <section class="master-detail-section"><div class="master-heading"><div class="h2">Recent Batches</div><button type="button" class="master-link">View All</button></div><div class="master-batch-list">${s.logs.harvests.slice().reverse().slice(0,5).map(x=>`<div><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></div>`).join('')||'<div class="tiny muted">No harvest batches yet.</div>'}</div></section>
- </div>`
+  const s=state(),total=s.logs.harvests.reduce((n,x)=>n+Number(x.weightLb||0),0),avg=s.logs.harvests.length?s.logs.harvests.reduce((n,x)=>n+Number(x.moisture||0),0)/s.logs.harvests.length:0;
+  const bars=[4,6,12,25,58,82,65,90,70,43,15,6];
+  r.innerHTML=`<div class="master-screen harvest-master">
+    <div class="year-master"><button>This Year⌄</button></div>
+    <div class="harvest-stats-master"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${s.logs.harvests.length}</b></div><div><small>Avg Moisture</small><b>${avg.toFixed(1)}%</b></div></div>
+    <section class="detail-section-master"><div class="master-section-title">Harvest Over Time (${s.settings.units==='metric'?'kg':'lb'})</div><div class="bar-master">${bars.map((v,i)=>`<div><i style="height:${v}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section>
+    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button>View All</button></div><div class="batch-master">${s.logs.harvests.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches yet.</small>'}</div></section>
+    <button class="floating-add-master" onclick="actionForm('harvest')">+</button>
+  </div>`
 }
 function seasonPage(r){
   const s=state();if(!isPro(s)){subscriptionModal('Season Intelligence');go('home');return}
@@ -923,57 +859,29 @@ function seasonPage(r){
 }
 
 function hiveDetail(r,id){
- const s=state(),h=hive(s,id);if(!h){go('hives');return}
- const recent=s.logs.inspections.filter(x=>x.hiveId===h.id).slice(-5);
- const trend=recent.length?recent.map((x,i)=>({x:i,v:Number(x.score||h.score)})):[{x:0,v:72},{x:1,v:78},{x:2,v:75},{x:3,v:84},{x:4,v:h.score}];
- const pts=trend.map((p,i)=>`${20+i*(240/Math.max(1,trend.length-1))},${100-(p.v/100)*72}`).join(' ');
- r.innerHTML=`<div class="screen master-detail-screen">
-  <section class="master-page-head detail-head"><button type="button" class="master-back" onclick="go('hives')">‹</button><div class="master-page-title">Hive Detail</div><button type="button" class="master-more-btn">•••</button></section>
-
-  <section class="master-detail-hero">
-    <div class="detail-landscape">
-      <svg viewBox="0 0 360 120" preserveAspectRatio="none" aria-hidden="true">
-       <defs><linearGradient id="dh" x1="0" y1="0" x2="1" y2="1"><stop offset="0%" stop-color="#E8E0C6"/><stop offset="100%" stop-color="#AAB887"/></linearGradient></defs>
-       <rect width="360" height="120" fill="url(#dh)"/>
-       <path d="M0 82 C48 50 92 69 140 55 C190 40 238 73 286 55 C317 44 341 50 360 48 L360 120 L0 120Z" fill="#81916E" opacity=".55"/>
-       <g transform="translate(34 44)"><rect x="0" y="18" width="38" height="30" rx="3" fill="#E8DFC7" stroke="#506040" stroke-width="1.5"/><rect x="4" y="6" width="30" height="15" rx="2" fill="#F4EBD6" stroke="#506040" stroke-width="1.5"/><path d="M-2 8 L19 -3 L40 8" fill="#9A7D51" stroke="#506040" stroke-width="1.4"/></g>
-      </svg>
+  const s=state(),h=hive(s,id);if(!h){go('hives');return}
+  r.innerHTML=`<div class="master-screen detail-master">
+    <section class="detail-hero-master">
+      <div class="detail-photo-master">
+        <svg viewBox="0 0 360 110" preserveAspectRatio="none" aria-hidden="true">
+          <defs><linearGradient id="dph" x1="0" x2="1"><stop offset="0" stop-color="#e8dfc6"/><stop offset="1" stop-color="#a8b487"/></linearGradient></defs>
+          <rect width="360" height="110" fill="url(#dph)"/><path d="M0 78 C50 48 90 65 136 52 C186 38 229 69 276 54 C315 42 338 49 360 45 L360 110 L0 110Z" fill="#7d8c69" opacity=".55"/>
+          <g transform="translate(30 35)"><rect x="0" y="18" width="38" height="29" rx="3" fill="#e8dfc7" stroke="#506040" stroke-width="1.4"/><rect x="4" y="6" width="30" height="15" rx="2" fill="#f4ebd6" stroke="#506040" stroke-width="1.4"/><path d="M-2 8 L19 -3 L40 8" fill="#9a7d51" stroke="#506040" stroke-width="1.4"/></g>
+        </svg>
+      </div>
+      <div class="detail-name-master"><b>${esc(h.name)}</b><small>${esc(h.location||'North Field')}</small></div>
+      <div class="mini-ring-master detail-ring-master ${h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}" style="--p:${h.score}"><span>${h.score}%</span></div>
+      <div class="detail-status-master">${h.status==='Healthy'?'Good':h.status}</div>
+    </section>
+    <div class="detail-dates-master"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Next due: ${fmtDate(new Date(Date.now()+14*86400000).toISOString().slice(0,10))}</span></div>
+    <div class="detail-metrics-master">
+      <div><i>♛</i><b>Queen</b><small>${esc(h.queen)}</small></div><div><i>♧</i><b>Strength</b><small>${esc(h.strength)}</small></div><div><i>✿</i><b>Brood</b><small>${esc(h.brood)}</small></div><div><i>▣</i><b>Honey</b><small>${esc(h.honey)}</small></div><div><i>◌</i><b>Pollen</b><small>${esc(h.pollen)}</small></div>
     </div>
-    <div class="detail-hero-copy"><b>${esc(h.name)}</b><small>${esc(h.location||'North Field')}</small></div>
-    <div class="master-mini-ring detail-score ${h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}" style="--score:${h.score}"><span>${h.score}%</span><em>${h.status==='Healthy'?'Good':h.status==='Attention'?'Attention':'Critical'}</em></div>
-  </section>
-
-  <section class="master-detail-dates"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Next due: ${fmtDate(new Date(Date.now()+14*86400000).toISOString().slice(0,10))}</span></section>
-
-  <section class="master-detail-metrics">
-   <div><span>♛</span><b>Queen</b><small>${esc(h.queen)}</small></div>
-   <div><span>◉</span><b>Strength</b><small>${esc(h.strength)}</small></div>
-   <div><span>✿</span><b>Brood</b><small>${esc(h.brood)}</small></div>
-   <div><span>▣</span><b>Honey</b><small>${esc(h.honey)}</small></div>
-   <div><span>◌</span><b>Pollen</b><small>${esc(h.pollen)}</small></div>
-  </section>
-
-  <section class="master-detail-section">
-    <div class="master-heading"><div><div class="h2">Recent Trend</div><div class="tiny muted">Last 5 inspections</div></div><button type="button" class="master-link" onclick="go('trend')">View All</button></div>
-    <svg class="master-detail-chart" viewBox="0 0 280 110" preserveAspectRatio="none"><polyline points="${pts}" fill="none" stroke="#5E7350" stroke-width="3" stroke-linecap="round" stroke-linejoin="round"/><polyline points="20,78 80,68 140,72 200,60 260,65" fill="none" stroke="#C5921A" stroke-width="2" opacity=".9"/></svg>
-  </section>
-
-  <section class="master-detail-section">
-    <div class="master-heading"><div class="h2">Photos</div><button type="button" class="master-link">View All</button></div>
-    <div class="master-photo-row"><div class="comb-photo"></div><div class="comb-photo second"></div><div class="comb-photo third"></div><button type="button" class="photo-more">+12</button></div>
-  </section>
-
-  <section class="master-detail-section">
-    <div class="master-heading"><div class="h2">Treatments & Feeding</div><button type="button" class="master-link">View All</button></div>
-    <div class="master-record-row"><span>◉</span><div><b>${esc(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.type||'Oxalic Acid (Dribble)')}</b><small>${fmtDate(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.date||h.lastInspection)}</small></div><span>›</span></div>
-  </section>
-
-  <section class="master-detail-actions">
-   <button type="button" onclick="actionForm('inspection','${h.id}')">Inspection</button>
-   <button type="button" onclick="actionForm('feeding','${h.id}')">Feeding</button>
-   <button type="button" onclick="actionForm('treatment','${h.id}')">Treatment</button>
-  </section>
- </div>`
+    <section class="detail-section-master"><div class="master-title-action"><div><div class="master-section-title">Recent Trend</div><small>Last 5 inspections</small></div><button onclick="go('trend')">View All</button></div><svg viewBox="0 0 300 100" class="trend-master"><polyline points="10,72 60,57 110,66 160,48 210,55 290,42" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,84 60,76 110,82 160,69 210,72 290,65" fill="none" stroke="#C5921A" stroke-width="1.6"/></svg></section>
+    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Photos</div><button>View All</button></div><div class="photos-master"><div></div><div></div><div></div><button>+12</button></div></section>
+    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Treatments & Feeding</div><button>View All</button></div><button class="record-master" onclick="actionForm('treatment','${h.id}')"><i>◉</i><span><b>${esc(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.type||'Oxalic Acid (Dribble)')}</b><small>${fmtDate(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.date||h.lastInspection)}</small></span><em>›</em></button></section>
+    <div class="detail-actions-master"><button onclick="actionForm('inspection','${h.id}')">Inspection</button><button onclick="actionForm('feeding','${h.id}')">Feeding</button><button onclick="actionForm('treatment','${h.id}')">Treatment</button></div>
+  </div>`
 }
 function timelineRows(s,hiveId){
   const rows=[

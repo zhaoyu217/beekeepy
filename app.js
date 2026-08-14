@@ -618,13 +618,37 @@ function home(r){
 
     <section class="master-block">
       <div class="master-title-action"><div class="master-section-title">Risk Alerts</div><button onclick="go('hives')">View All Alerts ›</button></div>
-      <div class="risk-scroll-master">
+
+      <div class="risk-scroll-master ${riskCards.length<=2?'has-summary':''}">
         ${(riskCards.length?riskCards:s.hives.slice(0,3)).map(h=>`<button class="risk-card-master" onclick="go('hive/${h.id}')">
           <i class="${h.status==='Critical'?'risk-red':'risk-amber'}">!</i>
           <span><b>${esc(h.name)}</b><small>${h.queen!=='Confirmed'?'Queen status unconfirmed':h.varroa>=3?'Varroa test overdue':h.honey==='Low'||h.pollen==='Low'?'Low food stores':'Review hive health'}</small></span>
           <strong class="${h.status==='Critical'?'risk-red':'risk-amber'}">${h.status==='Critical'?'High Risk':'Medium Risk'}</strong><em>›</em>
         </button>`).join('')}
+
+        ${riskCards.length<=2?`<button type="button" class="risk-summary-master" onclick="go('hives')">
+          <div class="risk-summary-art" aria-hidden="true">
+            <svg viewBox="0 0 120 88">
+              <g fill="none" stroke="#5E7350" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" opacity=".6">
+                <path d="M39 54h42v23H39z"/>
+                <path d="M35 54l25-16 25 16"/>
+                <path d="M48 77v-10h24v10"/>
+                <path d="M93 22v20"/>
+                <path d="M87 28l6-6 6 6"/>
+                <path d="M92 42c-8 0-14 5-14 12 0 8 6 14 14 14s14-6 14-14c0-7-6-12-14-12z"/>
+              </g>
+              <circle cx="92" cy="54" r="2.8" fill="#C5921A" opacity=".9"/>
+            </svg>
+          </div>
+          <div class="risk-summary-copy">
+            <span class="risk-summary-kicker">RISK SUMMARY</span>
+            <b>${riskCards.length} Active Alert${riskCards.length===1?'':'s'}</b>
+            <small>${critical} High · ${attention} Medium</small>
+          </div>
+          <span class="chev">›</span>
+        </button>`:''}
       </div>
+
       <div class="dots-master"><i class="on"></i><i></i><i></i><i></i><i></i></div>
     </section>
 

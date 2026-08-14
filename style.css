@@ -440,3 +440,119 @@ input,select,textarea{font-size:13px!important;min-height:42px!important}
 .detail-status-master{
   text-shadow:0 1px 2px rgba(255,255,255,.9)!important;
 }
+
+/* =========================================================
+   V41 — Hero aspect-ratio fix + functional Hive photo gallery
+   ========================================================= */
+
+/* Hero: never stretch. Crop only. */
+.detail-hero-master{
+  height:126px!important;
+}
+.detail-photo-master{
+  position:absolute!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  overflow:hidden!important;
+}
+.detail-photo-master img{
+  display:block!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  transform:none!important;
+}
+
+/* Photo section */
+.photo-actions-master{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+.photo-actions-master button{
+  border:0!important;
+  background:transparent!important;
+  padding:0!important;
+  color:#315A36!important;
+  font-size:11px!important;
+  font-weight:700!important;
+}
+.hive-photo-input{
+  display:none!important;
+}
+.photos-master{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:6px!important;
+  margin-top:9px!important;
+}
+.detail-photo-thumb,
+.add-photo-empty,
+.photo-count-master{
+  position:relative!important;
+  width:100%!important;
+  height:68px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:8px!important;
+  overflow:hidden!important;
+  background:#F3F4F0!important;
+}
+.detail-photo-thumb img{
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+}
+.add-photo-empty{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  color:#315A36!important;
+  font-size:20px!important;
+  border:1px dashed #C9D2C5!important;
+}
+.add-photo-empty small{
+  display:block;
+  margin-top:2px;
+  font-size:10px;
+  color:#657069;
+}
+.photo-count-master{
+  display:grid!important;
+  place-items:center!important;
+  font-size:14px!important;
+  color:#263129!important;
+}
+
+/* Full gallery */
+.hive-gallery-modal{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+}
+.gallery-photo{
+  position:relative;
+  border-radius:9px;
+  overflow:hidden;
+  background:#F3F4F0;
+}
+.gallery-photo img{
+  width:100%;
+  aspect-ratio:1/1;
+  object-fit:cover;
+}
+.gallery-photo button{
+  position:absolute;
+  right:5px;
+  bottom:5px;
+  border:0;
+  border-radius:999px;
+  padding:5px 8px;
+  background:rgba(255,255,255,.92);
+  color:#B73C35;
+  font-size:10px;
+  font-weight:700;
+}

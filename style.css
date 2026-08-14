@@ -556,3 +556,28 @@ input,select,textarea{font-size:13px!important;min-height:42px!important}
   font-size:10px;
   font-weight:700;
 }
+
+/* V42 — functional history modals for every View All control */
+.history-list-master{
+  display:grid;
+  gap:7px;
+}
+.history-row-master{
+  min-height:58px;
+  padding:8px 9px;
+  display:grid;
+  grid-template-columns:28px 1fr auto;
+  gap:8px;
+  align-items:center;
+  border:1px solid #ECEAE4;
+  border-radius:9px;
+  background:#fff;
+}
+.history-row-master>i{
+  width:27px;height:27px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#EEF3E9;color:#315A36;font-style:normal;
+}
+.history-row-master b{display:block;font-size:12px}
+.history-row-master small{display:block;margin-top:3px;font-size:10px;color:#737D77}
+.history-row-master em{font-size:10px;color:#315A36;font-style:normal}

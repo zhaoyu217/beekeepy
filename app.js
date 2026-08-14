@@ -1040,6 +1040,14 @@ function riskPage(r){
   const s=state();if(!isPro(s)){subscriptionModal('Risk Prediction');go('insights');return}
   r.innerHTML=`<section><button type="button" class="btn secondarybtn" onclick="go('insights')">← Insights</button><div class="h1" style="margin-top:12px">Risk Prediction</div><div class="tiny muted">Current prototype uses transparent rules, not a black-box model.</div></section><section class="setting">${s.hives.map(h=>{const reasons=[];if(h.varroa>=3)reasons.push('Varroa elevated');if(h.queen!=='Confirmed')reasons.push('Queen uncertainty');if(h.honey==='Low'||h.pollen==='Low')reasons.push('Low food stores');const level=h.varroa>=3?'High':reasons.length?'Medium':'Low';return `<div class="srow card-button" onclick="go('hive/${h.id}')"><div class="scopy"><b>${esc(h.name)}</b><div class="tiny muted">${reasons.length?esc(reasons.join(' · ')):'No major current rule-based signal'}</div></div><span class="pill ${level==='High'?'danger':level==='Medium'?'warn':''}">${level}</span></div>`}).join('')}</section>`
 }
+
+function openHarvestHistory(){
+  const s=state();
+  const rows=[...s.logs.harvests].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  modal(`<div class="modalhead"><div class="h2">Harvest History</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div>
+    <div class="history-list-master">${rows.length?rows.map(x=>`<div class="history-row-master"><i>⌁</i><span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b><small>${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}%</small></span><em>Harvest</em></div>`).join(''):'<div class="small muted">No harvest records yet.</div>'}</div>`);
+}
+
 function honeyPage(r){
   const s=state(),total=s.logs.harvests.reduce((n,x)=>n+Number(x.weightLb||0),0),avg=s.logs.harvests.length?s.logs.harvests.reduce((n,x)=>n+Number(x.moisture||0),0)/s.logs.harvests.length:0;
   const bars=[4,6,12,25,58,82,65,90,70,43,15,6];
@@ -1047,7 +1055,7 @@ function honeyPage(r){
     <div class="year-master"><button>This Year⌄</button></div>
     <div class="harvest-stats-master"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${s.logs.harvests.length}</b></div><div><small>Avg Moisture</small><b>${avg.toFixed(1)}%</b></div></div>
     <section class="detail-section-master"><div class="master-section-title">Harvest Over Time (${s.settings.units==='metric'?'kg':'lb'})</div><div class="bar-master">${bars.map((v,i)=>`<div><i style="height:${v}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section>
-    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button>View All</button></div><div class="batch-master">${s.logs.harvests.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches yet.</small>'}</div></section>
+    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button type="button" onclick="openHarvestHistory()">View All</button></div><div class="batch-master">${s.logs.harvests.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches yet.</small>'}</div></section>
     <button class="floating-add-master" onclick="actionForm('harvest')">+</button>
   </div>`
 }
@@ -1139,6 +1147,26 @@ function deleteHivePhoto(hiveId,photoId){
   render();
 }
 
+
+function openTreatmentFeedingHistory(hiveId){
+  const s=state(),h=hive(s,hiveId);if(!h)return;
+  const treatments=s.logs.treatments.filter(x=>x.hiveId===hiveId).map(x=>({
+    type:'Treatment',date:x.date,title:x.type||'Treatment',detail:x.notes||'Recorded treatment'
+  }));
+  const feedings=s.logs.feedings.filter(x=>x.hiveId===hiveId).map(x=>({
+    type:'Feeding',date:x.date,title:x.type||'Feeding',detail:[x.amount,x.notes].filter(Boolean).join(' · ')||'Recorded feeding'
+  }));
+  const rows=[...treatments,...feedings].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const m=modal(`<div class="modalhead"><div class="h2">Treatments & Feeding</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div>
+    <div class="history-list-master">
+      ${rows.length?rows.map(x=>`<div class="history-row-master"><i>${x.type==='Treatment'?'◉':'▣'}</i><span><b>${esc(x.title)}</b><small>${fmtDate(x.date)} · ${esc(x.detail)}</small></span><em>${x.type}</em></div>`).join(''):'<div class="small muted">No treatment or feeding records yet.</div>'}
+    </div>`);
+}
+
+function openAllHivePhotos(hiveId){
+  openHivePhotoGallery(hiveId);
+}
+
 function hiveDetail(r,id){
   const s=state(),h=hive(s,id);if(!h){go('hives');return}
   r.innerHTML=`<div class="master-screen detail-master">
@@ -1172,7 +1200,7 @@ function hiveDetail(r,id){
         ${hivePhotos(h).length>3?`<button class="photo-count-master" type="button" onclick="openHivePhotoGallery('${h.id}')">+${hivePhotos(h).length-3}</button>`:''}
       </div>
     </section>
-    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Treatments & Feeding</div><button>View All</button></div><button class="record-master" onclick="actionForm('treatment','${h.id}')"><i>◉</i><span><b>${esc(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.type||'Oxalic Acid (Dribble)')}</b><small>${fmtDate(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.date||h.lastInspection)}</small></span><em>›</em></button></section>
+    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Treatments & Feeding</div><button type="button" onclick="openTreatmentFeedingHistory('${h.id}')">View All</button></div><button class="record-master" onclick="actionForm('treatment','${h.id}')"><i>◉</i><span><b>${esc(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.type||'Oxalic Acid (Dribble)')}</b><small>${fmtDate(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.date||h.lastInspection)}</small></span><em>›</em></button></section>
     <div class="detail-actions-master"><button onclick="actionForm('inspection','${h.id}')">Inspection</button><button onclick="actionForm('feeding','${h.id}')">Feeding</button><button onclick="actionForm('treatment','${h.id}')">Treatment</button></div>
   </div>`
 }

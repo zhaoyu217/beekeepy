@@ -1,1101 +1,228 @@
 
 :root{
-  --green:#5E7350;--green-dark:#31513A;--green-soft:#EDF2E8;--gold:#C5921A;--amber:#E79500;
-  --red:#E23831;--bg:#F7F5EF;--paper:#FFFDF9;--text:#26312A;--muted:#737D77;--line:#E9E7E0;
-  --header:64px;--nav:70px;--safe:max(5px,env(safe-area-inset-bottom));--x:12px
+  --green:#5E7350;
+  --green-dark:#304B38;
+  --green-soft:#EEF2E9;
+  --gold:#C5921A;
+  --amber:#E59200;
+  --red:#E23B33;
+  --bg:#F8F7F3;
+  --paper:#FFFFFF;
+  --text:#243028;
+  --muted:#737C76;
+  --line:#EAE9E3;
+  --header:58px;
+  --nav:66px;
+  --safe:max(4px,env(safe-area-inset-bottom));
 }
+
 *{box-sizing:border-box}
-html,body{margin:0;min-height:100%;background:#F3F1EB;color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Helvetica,Arial,sans-serif;-webkit-font-smoothing:antialiased}
-button,input,select,textarea{font:inherit}button{cursor:pointer}
-.app{width:100%;max-width:393px;margin:0 auto;min-height:100dvh;position:relative;background:#FBFAF7;overflow:hidden}
-.topbar{position:fixed;top:0;left:50%;transform:translateX(-50%);z-index:50;width:min(393px,100%);height:var(--header);display:grid;grid-template-columns:54px 1fr 54px;align-items:center;padding:0 7px;background:rgba(251,250,247,.98)}
-.brand{display:flex;align-items:center;justify-content:center;gap:6px;font-family:Georgia,"Times New Roman",serif;font-size:23px;font-weight:700;color:#315A36}
-.brand-hive{display:grid;place-items:center}.brand-hive .icon{width:25px;height:25px;stroke-width:2.2}
-.pagebar-title{text-align:center;font-size:16px;font-weight:800;color:#1E2822}
-.iconbtn{width:46px;height:46px;border:0;background:transparent;color:#304D39;display:grid;place-items:center;position:relative;font-size:27px}
-.icon{width:22px;height:22px;stroke:currentColor;fill:none;stroke-width:1.7;stroke-linecap:round;stroke-linejoin:round}
-.plusbtn{font-size:25px;font-weight:400}.badge,.nav-badge{position:absolute;display:grid;place-items:center;border-radius:999px;background:#F04C40;color:white;font-weight:800}
-.badge{top:5px;right:2px;min-width:17px;height:17px;font-size:9px}.nav-badge{top:8px;left:54%;width:16px;height:16px;font-size:8px;font-style:normal}
-.view{padding:calc(var(--header) + 5px) var(--x) calc(var(--nav) + var(--safe) + 8px);min-height:100dvh}
-.view.secondary{padding-bottom:22px}
-.bottomnav{position:fixed;z-index:60;left:50%;bottom:0;transform:translateX(-50%);width:min(393px,100%);height:calc(var(--nav) + var(--safe));padding-bottom:var(--safe);display:grid;grid-template-columns:repeat(4,1fr);background:rgba(255,254,251,.985);border-top:1px solid #E8E6DF;box-shadow:0 -5px 18px rgba(40,50,43,.035)}
-.bottomnav.hidden{display:none}.navitem{position:relative;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#69736D;font-size:9px;font-weight:600}.navitem .icon{width:20px;height:20px}.navitem.active{color:#315A36;font-weight:800}.navitem.active:after{content:"";position:absolute;bottom:5px;width:26px;height:3px;border-radius:999px;background:#315A36}
+html,body{margin:0;min-height:100%;background:#F2F0EA;color:var(--text);font-family:Inter,-apple-system,BlinkMacSystemFont,"SF Pro Text","Segoe UI",Roboto,Arial,sans-serif;-webkit-font-smoothing:antialiased}
+button,input,select,textarea{font:inherit}
+button{cursor:pointer}
+.app{width:100%;max-width:393px;min-height:100dvh;margin:0 auto;position:relative;background:#FBFAF7;overflow:hidden}
 
-.master-screen{display:flex;flex-direction:column;gap:10px}.master-section-title{font-size:13px;font-weight:800;color:#162019}.mini-info{display:inline-grid;place-items:center;width:13px;height:13px;border:1px solid #A7AEA9;border-radius:50%;font-size:8px;color:#8A918D}
-.home-overview-master,.master-block{background:#fff;border:1px solid #ECEAE4;border-radius:14px;box-shadow:0 3px 14px rgba(43,54,47,.028)}
-.home-overview-master{padding:11px 11px 0;overflow:hidden}
-.overview-grid-master{display:grid;grid-template-columns:1.02fr .98fr;gap:6px;margin-top:5px;align-items:center}
-.overview-left-master{position:relative;height:177px}
-.health-donut-master{position:relative;width:130px;height:130px;margin:2px auto 0;z-index:2}.health-donut-master svg{width:130px;height:130px;transform:rotate(-90deg)}.donut-track{fill:none;stroke:#E3E9DF;stroke-width:9}.donut-progress{fill:none;stroke:#5E7350;stroke-width:9;stroke-linecap:round}
-.donut-label{position:absolute;inset:0;display:grid;place-content:center;text-align:center}.donut-label strong{font-size:35px;line-height:.9;letter-spacing:-1.5px;color:#215029}.donut-label strong small{font-size:17px}.donut-label b{margin-top:7px;font-size:13px;color:#39703D}.donut-label span{margin-top:3px;font-size:8px;color:#6D7770}
-.landscape-master{position:absolute;left:-11px;right:-4px;bottom:-2px;height:61px;z-index:1}.landscape-master svg{width:100%;height:100%;display:block}
-.overview-stats-master{display:flex;flex-direction:column}
-.overview-stats-master button{height:42px;padding:0;display:grid;grid-template-columns:30px 1fr auto;align-items:center;gap:5px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;color:var(--text)}.overview-stats-master button:last-child{border-bottom:0}.overview-stats-master span{font-size:9px}.overview-stats-master b{font-size:14px}.stat-icon{width:27px;height:27px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:#315A36}.stat-icon .icon{width:14px;height:14px}.stat-dot{width:9px;height:9px;border-radius:50%;margin-left:9px}.stat-dot.green{background:#33723C}.stat-dot.amber{background:#F09A00}.stat-dot.red{background:#F12322}.overview-stats-master b.green{color:#39743E}.overview-stats-master b.amber{color:#EA8D00}.overview-stats-master b.red{color:#E82020}
-.view-hives-master{width:calc(100% + 22px);margin-left:-11px;height:52px;padding:6px 10px;display:grid;grid-template-columns:35px 1fr auto;align-items:center;gap:8px;border:0;border-top:1px solid var(--line);background:#fff;text-align:left;color:var(--text)}.view-hives-master i{width:33px;height:33px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:#315A36}.view-hives-master i .icon{width:18px;height:18px}.view-hives-master b{display:block;font-size:11px}.view-hives-master small{display:block;margin-top:2px;font-size:8px;color:#6F7973}.view-hives-master em{font-style:normal;font-size:18px;color:#67716A}
-
-.master-block{padding:10px}.action-main-master{height:56px;display:grid;grid-template-columns:40px 1fr auto;align-items:center;gap:7px;margin-top:4px}.action-icon-master{width:38px;height:38px;border-radius:10px;display:grid;place-items:center;background:var(--green-soft);color:#315A36}.action-icon-master .icon{width:20px;height:20px}.action-main-master span b{display:block;font-size:11px}.action-main-master span small{display:block;margin-top:3px;font-size:8px;color:#737D77}.action-main-master button{height:38px;padding:0 13px;border:0;border-radius:10px;background:linear-gradient(135deg,#D4A014,#ED9D00);color:#fff;font-size:10px;font-weight:800}.action-foot-master{height:34px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:5px;font-size:7.7px;color:#6D7770}.action-foot-master b{color:#DA8600}.action-foot-master button{border:0;background:transparent;color:#D98700;font-size:7.7px;font-weight:700}.empty-master{padding:10px;font-size:10px;color:var(--muted)}
-
-.master-title-action{display:flex;align-items:center;justify-content:space-between}.master-title-action button{border:0;background:transparent;color:#33613B;font-size:8px;font-weight:700;padding:0}.master-block:nth-of-type(3) .master-title-action button{color:#D82F28}
-.risk-scroll-master,.season-scroll-master{display:flex;gap:7px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:6px -10px 0;padding:0 10px}.risk-scroll-master::-webkit-scrollbar,.season-scroll-master::-webkit-scrollbar{display:none}
-.risk-card-master{flex:0 0 31.5%;height:86px;padding:7px;position:relative;display:grid;grid-template-columns:26px 1fr;grid-template-rows:auto 1fr auto;gap:3px 4px;scroll-snap-align:start;border:1px solid #F3DED9;border-radius:10px;background:#FFFDFC;text-align:left;color:var(--text)}.risk-card-master>i{grid-row:1/3;width:25px;height:25px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:13px;font-weight:900}.risk-card-master>i.risk-red{background:#FFF0ED;color:#E1332C}.risk-card-master>i.risk-amber{background:#FFF5E5;color:#DB8500}.risk-card-master span b{display:block;font-size:9px}.risk-card-master span small{display:block;margin-top:3px;font-size:7px;line-height:1.25}.risk-card-master strong{grid-column:2;justify-self:start;padding:3px 6px;border-radius:999px;font-size:6.5px}.risk-card-master strong.risk-red{background:#FFF0ED;color:#D62F28}.risk-card-master strong.risk-amber{background:#FFF5E5;color:#D88300}.risk-card-master em{position:absolute;right:6px;bottom:6px;font-style:normal;font-size:13px}
-.dots-master{height:13px;display:flex;justify-content:center;align-items:end;gap:5px}.dots-master i{width:4px;height:4px;border-radius:50%;background:#E0DED8}.dots-master i.on{background:#35673B}
-
-.season-scroll-master button{flex:0 0 24%;height:91px;padding:7px 5px;scroll-snap-align:start;display:flex;flex-direction:column;align-items:flex-start;border:0;border-right:1px solid #ECEAE4;background:transparent;text-align:left;color:var(--text)}.season-scroll-master button:last-child{border-right:0}.season-scroll-master i{height:20px;color:#315A36;font-size:15px;font-style:normal;display:grid;place-items:center}.season-scroll-master i .icon{width:15px;height:15px}.season-scroll-master b{font-size:8px}.season-scroll-master span{margin-top:3px;padding:2px 5px;border-radius:999px;background:#EEF3E9;color:#42703F;font-size:6px}.season-scroll-master span.amber{background:#FFF3DF;color:#D27D00}.season-scroll-master small{margin-top:4px;font-size:6.5px;line-height:1.25}.season-scroll-master em{margin-top:auto;font-size:6.5px;color:#315A36;font-style:normal;font-weight:700}
-
-.quick-master{padding:8px 6px 4px;background:#fff;border:1px solid #ECEAE4;border-radius:14px}.quick-grid-master{display:grid;grid-template-columns:repeat(5,1fr);margin-top:4px}.quick-grid-master button{height:75px;padding:3px;border:0;border-right:1px solid #ECEAE4;background:transparent;text-align:center;color:var(--text)}.quick-grid-master button:last-child{border-right:0}.quick-grid-master i{width:31px;height:31px;margin:0 auto 3px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:#315A36;font-style:normal;font-size:14px}.quick-grid-master i .icon{width:17px;height:17px}.quick-grid-master b{display:block;font-size:7.5px}.quick-grid-master small{display:block;margin-top:2px;font-size:5.8px;line-height:1.2;color:#737D77}
-
-/* Hives */
-.search-master{height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:8px;background:#F0F1ED}.search-master input{width:100%;height:34px;border:0;background:transparent;outline:0;font-size:10px;color:var(--text)}.filter-master{display:flex;gap:6px;overflow:auto;scrollbar-width:none}.filter-master button{white-space:nowrap;height:27px;padding:0 9px;border:0;border-radius:8px;background:#F0F1ED;color:#68716B;font-size:7.5px}.filter-master button.active{background:#5E7350;color:#fff}.hive-list-master{display:grid;gap:8px}.hive-card-master{position:relative;height:94px;padding:11px 38px 10px 10px;display:grid;grid-template-columns:48px 1fr;gap:9px;border:1px solid #EBE9E3;border-radius:12px;background:#fff;text-align:left;color:var(--text)}.mini-ring-master{--ring:#5E7350;width:45px;height:45px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--ring) calc(var(--p)*1%),#E7EBE4 0)}.mini-ring-master:after{content:"";position:absolute;inset:5px;border-radius:50%;background:#fff}.mini-ring-master span{position:relative;z-index:1;font-size:10px;font-weight:800}.mini-ring-master.good{--ring:#5E7350}.mini-ring-master.attention{--ring:#F0A000}.mini-ring-master.critical{--ring:#E63B35}.hive-copy-master b{display:block;font-size:10px}.hive-copy-master small{display:block;margin-top:3px;font-size:7px;color:#737D77}.hive-copy-master div{display:flex;gap:12px;margin-top:5px;font-size:6.5px}.hive-card-master>strong{position:absolute;right:10px;top:10px;font-size:7.5px}.hive-card-master>strong.good{color:#47723E}.hive-card-master>strong.attention{color:#DA8400}.hive-card-master>strong.critical{color:#DD312A}.hive-card-master>em{position:absolute;right:10px;bottom:9px;font-style:normal;font-size:11px}
-
-/* Detail */
-.detail-hero-master{position:relative;height:106px;overflow:hidden;border-radius:11px}.detail-photo-master,.detail-photo-master svg{width:100%;height:100%}.detail-name-master{position:absolute;left:107px;top:39px}.detail-name-master b{display:block;font-size:10px}.detail-name-master small{font-size:7px}.detail-ring-master{position:absolute;right:13px;top:12px;width:48px;height:48px}.detail-ring-master:after{inset:5px}.detail-status-master{position:absolute;right:23px;top:65px;font-size:7px;color:#456943}.detail-dates-master{display:flex;justify-content:space-between;padding:5px 1px;font-size:6.5px;color:#747C77}.detail-metrics-master{display:grid;grid-template-columns:repeat(5,1fr);padding:7px 0;border-top:1px solid var(--line);border-bottom:1px solid var(--line)}.detail-metrics-master div{text-align:center}.detail-metrics-master i{display:block;color:#507344;font-style:normal;font-size:12px}.detail-metrics-master b{display:block;margin-top:2px;font-size:6.5px}.detail-metrics-master small{display:block;margin-top:1px;font-size:6px;color:#717A74}.detail-section-master{padding:8px 0;border-bottom:1px solid var(--line)}.detail-section-master>.master-title-action>div>small{font-size:6px;color:#737D77}.trend-master{width:100%;height:90px}.photos-master{display:grid;grid-template-columns:repeat(4,1fr);gap:5px;margin-top:5px}.photos-master>div,.photos-master>button{height:47px;border:0;border-radius:7px;background:radial-gradient(circle at 35% 35%,#D8A94A 0 5px,#8D6322 6px 9px,#E2B75E 10px 14px,#6E4D1B 15px);background-size:27px 24px}.photos-master button{background:#657B57;color:white;font-size:8px}.record-master{width:100%;display:grid;grid-template-columns:25px 1fr auto;align-items:center;gap:6px;padding:7px 0;border:0;background:transparent;text-align:left;color:var(--text)}.record-master b{display:block;font-size:7.5px}.record-master small{display:block;font-size:6.5px;color:#747C77}.detail-actions-master{display:grid;grid-template-columns:repeat(3,1fr);gap:6px;padding-top:6px}.detail-actions-master button{height:35px;border:1px solid #DDE3DA;border-radius:9px;background:#F4F7F2;color:#315A36;font-size:8px;font-weight:700}
-
-/* Insights/Harvest */
-.year-master button{height:28px;padding:0 9px;border:0;border-radius:8px;background:#F0F1ED;color:#55615B;font-size:7px}.insight-tabs-master{display:flex;gap:5px;overflow:auto}.insight-tabs-master button{height:27px;padding:0 9px;border:0;border-radius:7px;background:#F0F1ED;color:#657069;font-size:7px}.insight-tabs-master button.active{background:#5E7350;color:#fff}.insight-card-master{padding:9px;border:1px solid #EAE9E3;border-radius:10px;background:#fff}.insight-health-master{display:grid;grid-template-columns:90px 1fr;gap:9px;align-items:center;margin-top:5px}.insight-donut-master{width:82px;height:82px}.insight-donut-master svg{width:82px;height:82px;transform:rotate(-90deg)}.legend-master{display:grid;gap:7px}.legend-master span,.legend-master button{display:grid;grid-template-columns:8px 1fr auto;gap:4px;align-items:center;border:0;background:transparent;padding:0;text-align:left;color:var(--text);font-size:6.5px}.legend-master i{width:6px;height:6px;border-radius:50%}.legend-master i.green{background:#5E7350}.legend-master i.amber{background:#E79500}.legend-master i.red{background:#E23831}.actions-summary-master{display:grid;gap:6px;margin-top:6px}.actions-summary-master span{display:grid;grid-template-columns:1fr auto;font-size:7px}.harvest-stats-master{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}.harvest-stats-master div{padding:8px 4px;border-radius:9px;background:#F5F6F2;text-align:center}.harvest-stats-master small{font-size:6px;color:#747C77}.harvest-stats-master b{display:block;margin-top:3px;font-size:11px}.bar-master{height:130px;display:grid;grid-template-columns:repeat(12,1fr);align-items:end;gap:3px;margin-top:5px}.bar-master div{height:100%;display:flex;flex-direction:column;justify-content:flex-end;align-items:center}.bar-master i{width:60%;background:#5E7350;border-radius:2px 2px 0 0}.bar-master span{font-size:5px;margin-top:3px;color:#7C847F}.batch-master button{width:100%;display:grid;grid-template-columns:1.2fr 1fr auto auto;gap:7px;padding:6px 0;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;color:var(--text);font-size:6.5px}.floating-add-master{position:fixed;right:calc(50% - 175px);bottom:18px;width:42px;height:42px;border:0;border-radius:50%;background:#315A36;color:#fff;font-size:22px}
-
-/* Existing generic screens/settings/auth */
-.h1{font-size:18px;font-weight:800}.h2{font-size:13px;font-weight:800}.h3{font-size:11px;font-weight:800}.small{font-size:10px}.tiny{font-size:8px}.muted{color:#737D77}
-.card,.setting{background:#fff;border:1px solid #EAE9E3;border-radius:12px;box-shadow:none}.pad,.setting{padding:10px}.sectionlabel{font-size:8px;color:#737D77;margin:0 1px 4px;text-transform:uppercase;letter-spacing:.06em}
-.btn{min-height:38px;border:0;border-radius:9px;padding:8px 11px;font-size:9px;font-weight:800}.primary{background:#315A36;color:white}.secondarybtn{background:#EDF2E8;color:#315A36}.goldbtn{background:#C5921A;color:#fff}.dangerbtn{background:#FFF0ED;color:#B43A32}.block{width:100%}
-.pill{min-height:22px;padding:3px 6px;border-radius:999px;background:#EDF2E8;border:0;color:#315A36;font-size:7px}.pill.warn{background:#FFF4DF;color:#C77700}.pill.danger{background:#FFF0ED;color:#C43830}
-.screen{display:flex;flex-direction:column;gap:8px}.row{display:flex;align-items:center;gap:6px}.between{justify-content:space-between}.grow{flex:1}.chev{font-size:15px}
-.searchbox input,input,select,textarea{width:100%;min-height:39px;border:1px solid #DDE0DA;border-radius:9px;padding:8px 9px;background:#fff;color:var(--text);font-size:12px;outline:none}textarea{min-height:75px}.formgroup{margin-bottom:8px}label{display:block;margin-bottom:4px;font-size:8px;font-weight:700;color:#6F7973}
-.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border-radius:9px;background:#ECEDE8}.tab{height:32px;border:0;border-radius:7px;background:transparent;color:#657069;font-size:8px}.tab.active{background:#5E7350;color:#fff}.actionlist,.upcoming-list{display:grid;gap:7px}.actioncard{padding:9px;border:1px solid #EAE9E3;border-radius:11px;background:#fff}.actioncard.high{background:#FFF5F2}.actioncard.medium{background:#FFFAEF}.action-title{font-size:10px;font-weight:800;margin-top:5px}.action-reason{font-size:8px;color:#737D77;margin-top:2px}
-.srow{min-height:43px;padding:7px 0;border-bottom:1px solid var(--line);display:flex;align-items:center;justify-content:space-between;gap:7px}.scopy{flex:1}.notice{padding:8px;border-radius:9px;background:#FFF8E8;border:1px solid #EEDFB9;font-size:8px}
-.modal{position:fixed;inset:0;z-index:90;display:grid;place-items:end center;background:rgba(31,40,35,.45)}.modalpanel{width:min(393px,100%);max-height:94vh;overflow:auto;background:#FFFDF9;border-radius:16px 16px 0 0;padding:12px}
-.form-header-master{height:38px;display:grid;grid-template-columns:40px 1fr 40px;align-items:center;border-bottom:1px solid var(--line)}.form-header-master button{border:0;background:transparent;color:#315A36;font-size:10px;font-weight:700}.form-header-master button:first-child{font-size:22px;text-align:left}.form-header-master b{text-align:center;font-size:11px}.form-hive-master{display:grid;grid-template-columns:34px 1fr;gap:7px;align-items:center;padding:7px;border-radius:9px;background:#F4F6F1;margin-top:7px}.form-hive-master i{width:30px;height:30px;border-radius:8px;display:grid;place-items:center;background:#EDF2E8;color:#315A36}.form-hive-master i .icon{width:16px;height:16px}.form-hive-master b{display:block;font-size:8px}.form-hive-master small{display:block;font-size:6.5px;color:#737D77}.quick-entry-master{display:flex;justify-content:space-between;align-items:center;padding:8px 0;border-bottom:1px solid var(--line)}.quick-entry-master b{display:block;font-size:8px}.quick-entry-master small{font-size:6.5px;color:#737D77}.quick-entry-master i{font-style:normal;color:#315A36}.fields-master .formgroup{padding:5px 0;border-bottom:1px solid #F0EFEA;margin:0}
-.toast{position:fixed;left:50%;bottom:82px;z-index:100;transform:translateX(-50%);opacity:0;padding:7px 10px;border-radius:999px;background:#26312A;color:#fff;font-size:8px}.toast.show{opacity:1}
-.auth-page{max-width:350px;margin:20px auto}.auth-brand{display:flex;align-items:center;justify-content:center;gap:8px;margin-bottom:16px}.auth-logo{width:42px;height:42px;border-radius:12px;display:grid;place-items:center;background:#315A36;color:#fff}.auth-title{font-size:20px;font-weight:800}.auth-card{padding:14px;background:#fff;border:1px solid #EAE9E3;border-radius:14px}.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;background:#ECEDE8;border-radius:9px;margin-bottom:11px}.auth-tab{height:36px;border:0;border-radius:7px;background:transparent;font-size:9px}.auth-tab.active{background:#fff;color:#315A36}.social-btn{width:100%;height:42px;border-radius:10px;border:1px solid #DADDD8;background:#fff;display:flex;align-items:center;justify-content:center;gap:7px;font-size:9px;font-weight:700}.other-login-toggle,.auth-link{width:100%;height:34px;border:0;background:transparent;color:#315A36;font-size:8px}.auth-divider{text-align:center;margin:9px 0;font-size:7px;color:#747C77}.auth-security{display:flex;gap:6px;padding:8px;border-radius:9px;background:#F4F6F1;margin-top:9px}.auth-legal{text-align:center;font-size:7px;color:#747C77;margin-top:9px}.legal-link{border:0;background:transparent;color:#315A36;font-size:7px;text-decoration:underline}
-@media(min-width:700px){body{padding:0}.app{box-shadow:0 20px 60px rgba(20,35,29,.10)}}
-
-/* ===========================================================
-   V19 MASTER PIXEL ADJUSTMENT
-   Locked reference: MASTER_UI_ALL_PAGES.png
-   No route / content / action changes.
-   =========================================================== */
-
-/* Browser preview status bar: desktop only. */
-/* Reduce visual "dashboard card" feeling to match the master. */
-.home-overview-master,
-.master-block,
-.quick-master{
-  box-shadow:none;
-  border-color:#EFEEE8;
-  background:#FFF;
-}
-
-/* Master has tighter horizontal margins and smaller vertical rhythm. */
-.master-screen{gap:7px}
-.view{padding-left:8px;padding-right:8px}
-
-/* Header proportions from master */
+/* HEADER */
 .topbar{
-  height:58px;
+  position:fixed!important;
+  top:0!important;
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  z-index:3000!important;
+  width:min(100vw,393px)!important;
+  height:var(--header)!important;
+  display:grid;
   grid-template-columns:48px 1fr 48px;
-  padding:0 5px;
-}
-:root{--header:58px;--nav:62px}
-.brand{font-size:21px;gap:5px}
-.brand-hive .icon{width:22px;height:22px}
-.iconbtn{width:40px;height:40px}
-.iconbtn .icon{width:19px;height:19px}
-
-/* Overview block */
-.home-overview-master{
-  padding:9px 10px 0;
-  border-radius:11px;
-}
-.master-section-title{font-size:11.5px}
-.mini-info{width:12px;height:12px;font-size:7px}
-
-.overview-grid-master{
-  grid-template-columns:50% 50%;
-  gap:1px;
-  margin-top:1px;
-}
-.overview-left-master{height:156px}
-.health-donut-master,
-.health-donut-master svg{
-  width:116px;
-  height:116px;
-}
-.health-donut-master{margin:2px auto 0}
-.donut-track,.donut-progress{stroke-width:8}
-.donut-label strong{font-size:31px}
-.donut-label strong small{font-size:15px}
-.donut-label b{font-size:11px;margin-top:5px}
-.donut-label span{font-size:6.8px;margin-top:2px}
-
-.landscape-master{
-  left:-10px;
-  right:-2px;
-  bottom:-1px;
-  height:57px;
-}
-
-.overview-stats-master button{
-  height:36px;
-  grid-template-columns:26px 1fr auto;
-  gap:4px;
-}
-.overview-stats-master span{font-size:7.6px}
-.overview-stats-master b{font-size:12px}
-.stat-icon{width:23px;height:23px}
-.stat-icon .icon{width:12px;height:12px}
-.stat-dot{width:7px;height:7px;margin-left:8px}
-
-.view-hives-master{
-  width:calc(100% + 20px);
-  margin-left:-10px;
-  height:45px;
-  grid-template-columns:31px 1fr auto;
-  padding:5px 9px;
-}
-.view-hives-master i{width:29px;height:29px}
-.view-hives-master i .icon{width:15px;height:15px}
-.view-hives-master b{font-size:9px}
-.view-hives-master small{font-size:6.7px}
-
-/* Action Center */
-.master-block{padding:8px 9px;border-radius:11px}
-.action-main-master{
-  height:48px;
-  grid-template-columns:35px 1fr auto;
-  gap:6px;
-  margin-top:2px;
-}
-.action-icon-master{width:33px;height:33px;border-radius:9px}
-.action-icon-master .icon{width:17px;height:17px}
-.action-main-master span b{font-size:9px}
-.action-main-master span small{font-size:6.6px;margin-top:2px}
-.action-main-master button{
-  height:33px;
-  padding:0 11px;
-  border-radius:8px;
-  font-size:8px;
-}
-.action-foot-master{
-  height:28px;
-  font-size:6.2px;
-}
-.action-foot-master button{font-size:6.2px}
-
-/* MASTER: Risk shows about 3.5 cards in viewport. */
-.risk-scroll-master{
-  gap:6px;
-  margin:5px -9px 0;
-  padding:0 9px;
-}
-.risk-card-master{
-  flex:0 0 23.8%;
-  height:83px;
-  padding:6px 5px;
-  grid-template-columns:23px 1fr;
-  gap:2px 3px;
-  border-radius:9px;
-}
-.risk-card-master>i{
-  width:22px;height:22px;font-size:11px
-}
-.risk-card-master span b{font-size:7.5px}
-.risk-card-master span small{font-size:5.7px}
-.risk-card-master strong{font-size:5.4px;padding:2px 4px}
-.risk-card-master em{font-size:11px;right:4px;bottom:4px}
-.dots-master{height:10px;gap:4px}
-.dots-master i{width:3.5px;height:3.5px}
-
-/* MASTER: four Season Intelligence cells visible at once. */
-.season-scroll-master{
-  gap:0;
-  margin:4px -9px 0;
-  padding:0 9px;
-}
-.season-scroll-master button{
-  flex:0 0 25%;
-  height:84px;
-  padding:5px 5px;
-}
-.season-scroll-master i{height:18px;font-size:13px}
-.season-scroll-master i .icon{width:13px;height:13px}
-.season-scroll-master b{font-size:6.8px}
-.season-scroll-master span{font-size:5.3px;padding:2px 4px}
-.season-scroll-master small{font-size:5.4px}
-.season-scroll-master em{font-size:5.4px}
-
-/* Quick Actions master is extremely compact. */
-.quick-master{
-  padding:7px 5px 3px;
-  border-radius:11px;
-}
-.quick-grid-master button{height:64px}
-.quick-grid-master i{
-  width:26px;height:26px;margin-bottom:2px;font-size:12px
-}
-.quick-grid-master i .icon{width:14px;height:14px}
-.quick-grid-master b{font-size:6.5px}
-.quick-grid-master small{font-size:4.9px}
-
-/* Bottom nav master dimensions */
-.bottomnav{
-  height:calc(var(--nav) + var(--safe));
-}
-.navitem{font-size:7.5px;gap:2px}
-.navitem .icon{width:17px;height:17px}
-.navitem.active:after{width:22px;height:2.5px;bottom:4px}
-.nav-badge{width:14px;height:14px;font-size:7px;top:6px}
-
-/* Hives page closer to master proportions */
-.hive-card-master{
-  height:88px;
-  border-radius:10px;
-  padding:10px 35px 9px 9px;
-  grid-template-columns:44px 1fr;
-}
-.mini-ring-master{width:41px;height:41px}
-.hive-copy-master b{font-size:8.8px}
-.hive-copy-master small{font-size:6.3px}
-.hive-copy-master div{font-size:5.8px}
-.hive-card-master>strong{font-size:6.8px}
-
-
-
-
-
-/* ===========================================================
-   V20 — Locked Master Home Top Exact Adjustment
-   Only visual alignment; no routes/functions/content changed.
-   =========================================================== */
-
-/* Header: closer to locked master */
-.topbar{
-  height:56px;
-}
-:root{--header:56px}
-.brand{
-  font-size:20px;
-  letter-spacing:-.2px;
-}
-.brand-hive .icon{
-  width:21px;
-  height:21px;
-}
-.iconbtn .icon{
-  width:18px;
-  height:18px;
-}
-
-/* Overview geometry */
-.home-overview-master{
-  position:relative;
-  padding:9px 10px 0;
-  overflow:hidden;
-}
-.overview-grid-master{
-  position:relative;
-  min-height:178px;
-  grid-template-columns:50% 50%;
-  align-items:start;
-}
-.overview-left-master{
-  height:145px;
-  z-index:2;
-}
-.health-donut-master,
-.health-donut-master svg{
-  width:113px;
-  height:113px;
-}
-.health-donut-master{
-  margin:3px auto 0;
-}
-.donut-track,
-.donut-progress{
-  stroke-width:8.2;
-}
-.donut-label strong{
-  font-size:30px;
-}
-.donut-label strong small{
-  font-size:15px;
-}
-.donut-label b{
-  font-size:10.5px;
-  margin-top:5px;
-}
-.donut-label span{
-  font-size:6.5px;
-}
-
-/* Exact image from the locked master.
-   It now spans the full inner width, matching the reference. */
-.landscape-master{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
-  height:67px;
-  z-index:1;
-  overflow:hidden;
-  pointer-events:none;
-}
-.landscape-master img{
-  width:100%;
-  height:100%;
-  display:block;
-  object-fit:cover;
-  object-position:center center;
-}
-
-/* Stats stay above the landscape and end before the image strip begins. */
-.overview-stats-master{
-  position:relative;
-  z-index:3;
-  background:rgba(255,255,255,.96);
-}
-.overview-stats-master button{
-  height:35px;
-}
-
-/* Match the reference strip-to-row transition */
-.view-hives-master{
-  position:relative;
-  z-index:4;
-  height:45px;
-  background:#FFF;
-}
-
-/* Master has virtually no gap between landscape and View All Hives */
-.home-overview-master .view-hives-master{
-  margin-top:0;
-}
-
-/* Slightly finer borders/rounding seen in the master */
-.home-overview-master,
-.master-block,
-.quick-master{
-  border-radius:10px;
-  border-color:#EFEEE9;
-}
-
-/* Action block vertical density in master */
-.action-main-master{
-  height:46px;
-}
-.action-foot-master{
-  height:27px;
-}
-
-/* Risk cards: master shows three full cards plus a partial fourth */
-.risk-card-master{
-  flex-basis:23.5%;
-}
-
-/* Season cards: four columns visible */
-.season-scroll-master button{
-  flex-basis:25%;
-}
-
-/* Bottom bar */
-:root{--nav:60px}
-.navitem .icon{
-  width:16px;
-  height:16px;
-}
-.navitem{
-  font-size:7.2px;
-}
-
-/* ===========================================================
-   V21 PRODUCTION FIX
-   =========================================================== */
-body{
-  overflow-x:hidden;
-}
-.app{
-  width:100%;
-  max-width:393px;
-  margin:0 auto;
-  zoom:1 !important;
-  transform:none !important;
-}
-@media (min-width:394px){
-  body{display:block;padding:0;}
-  .app{margin:0 auto;}
-  .topbar,.bottomnav{width:393px;}
-}
-.landscape-master{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
-  height:67px;
-  overflow:hidden;
-  z-index:1;
-}
-.landscape-master img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  object-position:center;
-  display:block;
-}
-.overview-left-master,
-.overview-stats-master{
-  position:relative;
-  z-index:2;
-}
-
-/* ===========================================================
-   V22 — HOME OVERVIEW IMAGE INTEGRATION FIX
-   The landscape belongs INSIDE the Hive Overview hero area,
-   behind/under the ring and stats, not as a detached strip.
-   =========================================================== */
-
-.home-overview-master{
-  position:relative;
-  overflow:hidden;
-  padding:9px 10px 0;
-}
-
-/* Keep title above all artwork */
-.home-overview-master > .master-section-title{
-  position:relative;
-  z-index:5;
-}
-
-/* The hero content is one integrated composition */
-.overview-grid-master{
-  position:relative;
-  min-height:170px;
-  margin-top:1px;
-  z-index:1;
-  overflow:hidden;
-}
-
-/* Artwork fills the LOWER HALF of the entire hero area */
-.landscape-master{
-  position:absolute !important;
-  left:-10px !important;
-  right:-10px !important;
-  bottom:0 !important;
-  width:auto !important;
-  height:74px !important;
-  z-index:0 !important;
-  overflow:hidden;
-  pointer-events:none;
-}
-
-/* The extracted master image is intentionally stretched across
-   the full hero width, so it reads as one integrated background */
-.landscape-master img{
-  width:100% !important;
-  height:100% !important;
-  display:block;
-  object-fit:cover !important;
-  object-position:center bottom !important;
-  opacity:1;
-}
-
-/* Ring and stats float above the artwork */
-.overview-left-master{
-  position:relative;
-  z-index:3;
-  height:151px;
-}
-.overview-stats-master{
-  position:relative;
-  z-index:4;
-  background:transparent !important;
-}
-
-/* Give the right metrics a subtle white veil so the landscape
-   can continue beneath without hurting readability */
-.overview-stats-master:before{
-  content:"";
-  position:absolute;
-  inset:0 -2px 0 -5px;
-  z-index:-1;
-  background:linear-gradient(
-    180deg,
-    rgba(255,255,255,.98) 0%,
-    rgba(255,255,255,.97) 70%,
-    rgba(255,255,255,.84) 100%
-  );
-}
-
-/* Ring stays clean and sits naturally over the integrated scene */
-.health-donut-master{
-  z-index:4;
-}
-
-/* Remove any visual gap that makes the image look detached */
-.view-hives-master{
-  position:relative;
-  z-index:6;
-  margin-top:0 !important;
-  background:#fff !important;
-  border-top:1px solid var(--line);
-}
-
-/* Ensure landscape cannot extend into View All Hives */
-.home-overview-master .overview-grid-master{
-  margin-bottom:0;
-}
-
-/* ===========================================================
-   V23 — HIVE OVERVIEW STRUCTURE FIX
-   The approved landscape is now a direct child of the entire
-   Overview grid and spans the whole hero area.
-   =========================================================== */
-
-.overview-grid-master{
-  position:relative;
-  display:grid;
-  grid-template-columns:50% 50%;
-  min-height:170px;
-  margin-top:1px;
-  overflow:hidden;
-  align-items:start;
-}
-
-/* Shared artwork layer across BOTH columns */
-.overview-grid-master > .landscape-master{
-  position:absolute !important;
-  left:0 !important;
-  right:0 !important;
-  bottom:0 !important;
-  width:100% !important;
-  height:68px !important;
-  z-index:0 !important;
-  overflow:hidden;
-  pointer-events:none;
-  transform:none !important;
-}
-.overview-grid-master > .landscape-master img{
-  width:100% !important;
-  height:100% !important;
-  display:block;
-  object-fit:cover !important;
-  object-position:center bottom !important;
-}
-
-/* Foreground columns float over the same artwork */
-.overview-left-master{
-  position:relative;
-  z-index:2;
-  height:150px;
-}
-.overview-stats-master{
-  position:relative;
-  z-index:3;
-  background:transparent !important;
-}
-
-/* Remove the old right-side white veil completely */
-.overview-stats-master:before{
-  content:none !important;
-  display:none !important;
-}
-
-/* Keep stat rows readable but transparent enough to preserve integration */
-.overview-stats-master button{
-  position:relative;
-  background:rgba(255,255,255,.90) !important;
-}
-
-/* Ring above artwork */
-.health-donut-master{
-  position:relative;
-  z-index:4;
-}
-
-/* View All Hives stays its own row beneath the integrated hero */
-.home-overview-master .view-hives-master{
-  position:relative;
-  z-index:5;
-  margin-top:0 !important;
-  background:#fff !important;
-  border-top:1px solid var(--line);
-}
-
-/* ===========================================================
-   V24 — RISK ALERTS DYNAMIC LAYOUT
-   >=3 alerts: 3 full cards + partial 4th in horizontal carousel
-   1–2 alerts: real alerts + Risk Summary card
-   =========================================================== */
-
-.risk-scroll-master{
-  gap:6px;
-  overflow-x:auto;
-  scroll-snap-type:x mandatory;
-  scrollbar-width:none;
-  padding-bottom:1px;
-}
-.risk-scroll-master::-webkit-scrollbar{display:none}
-
-/* Default: roughly 3 full cards plus a partial next card */
-.risk-card-master{
-  flex:0 0 calc((100% - 18px) / 3.25);
-  min-width:0;
-}
-
-/* When only 1–2 real alerts exist, make room for summary card */
-.risk-scroll-master.has-summary .risk-card-master{
-  flex:0 0 31%;
-}
-
-/* Summary card fills the empty space with real information, not decoration */
-.risk-summary-master{
-  flex:0 0 34%;
-  min-width:0;
-  height:83px;
-  padding:7px 7px 7px 8px;
-  display:grid;
-  grid-template-columns:42px 1fr auto;
   align-items:center;
-  gap:6px;
-  scroll-snap-align:start;
-  border:1px solid #DFE7DA;
-  border-radius:9px;
-  background:linear-gradient(145deg,#F7FAF4,#FFFDF8);
-  color:var(--text);
-  text-align:left;
+  padding:0 6px;
+  background:rgba(251,250,247,.985);
+  border-bottom:0;
 }
-.risk-summary-art{
-  width:40px;
-  height:40px;
-  display:grid;
-  place-items:center;
-  border-radius:10px;
-  background:#EEF3E9;
-  overflow:hidden;
+.brand{
+  display:flex;align-items:center;justify-content:center;gap:5px;
+  font-family:Georgia,"Times New Roman",serif;
+  font-size:20px;font-weight:700;color:#31583A;
 }
-.risk-summary-art svg{
-  width:38px;
-  height:32px;
+.brand-hive{display:grid;place-items:center}
+.brand-hive .icon{width:20px;height:20px}
+.pagebar-title{text-align:center;font-size:14px;font-weight:800;color:#1E2822}
+.iconbtn{width:40px;height:40px;border:0;background:transparent;color:#304B38;display:grid;place-items:center;position:relative;font-size:24px}
+.iconbtn .icon{width:18px;height:18px}
+.plusbtn{font-size:24px}
+.badge{position:absolute;right:3px;top:4px;min-width:16px;height:16px;border-radius:999px;background:#F04A3F;color:#fff;display:grid;place-items:center;font-size:8px;font-weight:800}
+
+/* CONTENT */
+.view{min-height:100dvh;padding:calc(var(--header) + 8px) 9px calc(var(--nav) + var(--safe) + 10px)}
+.view.secondary{padding-bottom:18px}
+.screen{display:flex;flex-direction:column;gap:8px}
+
+/* BOTTOM NAV */
+.bottomnav{
+  position:fixed!important;left:50%!important;bottom:0!important;transform:translateX(-50%)!important;
+  width:min(100vw,393px)!important;height:calc(var(--nav) + var(--safe));z-index:3000!important;
+  display:grid;grid-template-columns:repeat(4,1fr);padding-bottom:var(--safe);
+  background:rgba(255,254,251,.99);border-top:1px solid #E8E7E1;box-shadow:0 -5px 18px rgba(43,54,47,.03)
 }
-.risk-summary-copy{
-  min-width:0;
+.bottomnav.hidden{display:none}
+.navitem{position:relative;border:0;background:transparent;display:flex;flex-direction:column;align-items:center;justify-content:center;gap:3px;color:#737B76;font-size:7px}
+.navitem .icon{width:17px;height:17px}
+.navitem.active{color:#315A36;font-weight:800}
+.navitem.active:after{content:"";position:absolute;bottom:5px;width:23px;height:2.5px;border-radius:999px;background:#315A36}
+.nav-badge{position:absolute;top:5px;left:54%;width:14px;height:14px;border-radius:50%;display:grid;place-items:center;background:#F04A3F;color:#fff;font-size:7px;font-style:normal}
+
+/* HOME MASTER */
+.home-overview-master,.master-block,.quick-master{
+  background:#fff;border:1px solid #EFEEE9;border-radius:10px;box-shadow:none
 }
-.risk-summary-kicker{
-  display:block;
-  margin-bottom:3px;
-  font-size:5.4px;
-  letter-spacing:.08em;
-  font-weight:800;
-  color:#7A847D;
-}
-.risk-summary-copy b{
-  display:block;
-  font-size:7.8px;
-  line-height:1.15;
-}
-.risk-summary-copy small{
-  display:block;
-  margin-top:3px;
-  font-size:5.8px;
-  color:#6E7771;
-}
-.risk-summary-master .chev{
-  font-size:12px;
-  color:#5F6963;
+.home-overview-master{padding:9px 10px 0;overflow:hidden;position:relative}
+.master-section-title{font-size:11px;font-weight:800;color:#172018}
+.mini-info{display:inline-grid;place-items:center;width:11px;height:11px;border:1px solid #AEB4B0;border-radius:50%;font-size:6px;color:#8C938E}
+
+.overview-grid-master{position:relative;display:grid;grid-template-columns:50% 50%;min-height:170px;margin-top:1px;overflow:hidden}
+.overview-grid-master>.landscape-master{position:absolute!important;left:0!important;right:0!important;bottom:0!important;width:100%!important;height:68px!important;z-index:0!important;overflow:hidden}
+.overview-grid-master>.landscape-master img{width:100%;height:100%;display:block;object-fit:cover;object-position:center bottom}
+.overview-left-master{position:relative;z-index:2;height:150px}
+.health-donut-master{position:relative;width:113px;height:113px;margin:3px auto 0;z-index:4}
+.health-donut-master svg{width:113px;height:113px;transform:rotate(-90deg)}
+.donut-track{fill:none;stroke:#E4E8DF;stroke-width:8}
+.donut-progress{fill:none;stroke:var(--green);stroke-width:8;stroke-linecap:round}
+.donut-label{position:absolute;inset:0;display:grid;place-content:center;text-align:center}
+.donut-label strong{font-size:30px;line-height:.9;letter-spacing:-1.2px;color:#214B2C}
+.donut-label strong small{font-size:15px}
+.donut-label b{margin-top:5px;font-size:10px;color:#3E703D}
+.donut-label span{margin-top:2px;font-size:6px;color:#6F7973}
+.overview-stats-master{position:relative;z-index:3}
+.overview-stats-master button{height:35px;padding:0;display:grid;grid-template-columns:26px 1fr auto;align-items:center;gap:4px;border:0;border-bottom:1px solid var(--line);background:rgba(255,255,255,.9);text-align:left;color:var(--text)}
+.overview-stats-master button:last-child{border-bottom:0}
+.overview-stats-master span{font-size:7px}
+.overview-stats-master b{font-size:11px}
+.stat-icon{width:23px;height:23px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:#315A36}
+.stat-icon .icon{width:12px;height:12px}
+.stat-dot{width:7px;height:7px;border-radius:50%;margin-left:8px}
+.stat-dot.green{background:#34733C}.stat-dot.amber{background:#F09B00}.stat-dot.red{background:#F22222}
+.overview-stats-master b.green{color:#3B743F}.overview-stats-master b.amber{color:#EA8B00}.overview-stats-master b.red{color:#E82020}
+
+.view-hives-master{width:calc(100% + 20px);margin-left:-10px;height:44px;padding:5px 9px;display:grid;grid-template-columns:31px 1fr auto;align-items:center;gap:7px;border:0;border-top:1px solid var(--line);background:#fff;text-align:left;color:var(--text)}
+.view-hives-master i{width:29px;height:29px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:#315A36}
+.view-hives-master i .icon{width:15px;height:15px}.view-hives-master b{display:block;font-size:8px}.view-hives-master small{display:block;margin-top:2px;font-size:5.8px;color:#707A74}.view-hives-master em{font-style:normal;font-size:15px;color:#667069}
+
+.master-block{padding:8px 9px}
+.master-title-action{display:flex;align-items:center;justify-content:space-between}
+.master-title-action button{border:0;background:transparent;color:#35613C;font-size:6.7px;font-weight:700;padding:0}
+.action-main-master{height:46px;display:grid;grid-template-columns:34px 1fr auto;align-items:center;gap:6px;margin-top:2px}
+.action-icon-master{width:32px;height:32px;border-radius:8px;display:grid;place-items:center;background:var(--green-soft);color:#315A36}.action-icon-master .icon{width:17px;height:17px}
+.action-main-master span b{display:block;font-size:8px}.action-main-master span small{display:block;margin-top:2px;font-size:5.7px;color:#747D77}
+.action-main-master button{height:31px;padding:0 10px;border:0;border-radius:8px;background:linear-gradient(135deg,#D4A014,#EC9A00);color:#fff;font-size:7px;font-weight:800}
+.action-foot-master{height:27px;border-top:1px solid var(--line);display:grid;grid-template-columns:1fr 1fr auto;align-items:center;gap:4px;font-size:5.5px;color:#6D7770}.action-foot-master b{color:#D88400}.action-foot-master button{border:0;background:transparent;color:#D88400;font-size:5.5px;font-weight:700}
+
+.risk-scroll-master{display:flex;gap:6px;overflow-x:auto;scroll-snap-type:x mandatory;scrollbar-width:none;margin:5px -9px 0;padding:0 9px}
+.risk-scroll-master::-webkit-scrollbar{display:none}
+.risk-card-master{flex:0 0 24%;height:84px;padding:6px 5px;position:relative;display:grid;grid-template-columns:22px 1fr;grid-template-rows:auto 1fr auto;gap:2px 3px;scroll-snap-align:start;border:1px solid #F2DDD8;border-radius:9px;background:#FFFDFC;text-align:left;color:var(--text)}
+.risk-card-master>i{grid-row:1/3;width:21px;height:21px;border-radius:50%;display:grid;place-items:center;font-style:normal;font-size:10px;font-weight:900}.risk-card-master>i.risk-red{background:#FFF0ED;color:#E1332C}.risk-card-master>i.risk-amber{background:#FFF5E5;color:#DB8500}
+.risk-card-master span b{display:block;font-size:6.8px}.risk-card-master span small{display:block;margin-top:2px;font-size:5px;line-height:1.2}.risk-card-master strong{grid-column:2;justify-self:start;padding:2px 4px;border-radius:999px;font-size:4.8px}.risk-card-master strong.risk-red{background:#FFF0ED;color:#D62F28}.risk-card-master strong.risk-amber{background:#FFF5E5;color:#D88300}.risk-card-master em{position:absolute;right:4px;bottom:4px;font-style:normal;font-size:10px}
+.dots-master{height:9px;display:flex;justify-content:center;align-items:end;gap:4px}.dots-master i{width:3.5px;height:3.5px;border-radius:50%;background:#E0DED8}.dots-master i.on{background:#35673B}
+
+.season-scroll-master{display:flex;gap:0;overflow-x:auto;scrollbar-width:none;margin:4px -9px 0;padding:0 9px}
+.season-scroll-master::-webkit-scrollbar{display:none}
+.season-scroll-master button{flex:0 0 25%;height:84px;padding:5px;border:0;border-right:1px solid #ECEAE4;background:transparent;text-align:left;color:var(--text);display:flex;flex-direction:column;align-items:flex-start}
+.season-scroll-master i{height:18px;color:#315A36;font-size:12px;font-style:normal;display:grid;place-items:center}.season-scroll-master i .icon{width:13px;height:13px}.season-scroll-master b{font-size:6px}.season-scroll-master span{margin-top:2px;padding:2px 4px;border-radius:999px;background:#EEF3E9;color:#42703F;font-size:4.8px}.season-scroll-master span.amber{background:#FFF3DF;color:#D27D00}.season-scroll-master small{margin-top:3px;font-size:4.8px;line-height:1.2}.season-scroll-master em{margin-top:auto;font-size:4.8px;color:#315A36;font-style:normal;font-weight:700}
+
+.quick-master{padding:7px 5px 3px}.quick-grid-master{display:grid;grid-template-columns:repeat(5,1fr);margin-top:3px}.quick-grid-master button{height:63px;padding:3px;border:0;border-right:1px solid #ECEAE4;background:transparent;text-align:center;color:var(--text)}.quick-grid-master button:last-child{border-right:0}.quick-grid-master i{width:26px;height:26px;margin:0 auto 2px;border-radius:50%;display:grid;place-items:center;background:var(--green-soft);color:#315A36;font-style:normal;font-size:11px}.quick-grid-master i .icon{width:14px;height:14px}.quick-grid-master b{display:block;font-size:5.8px}.quick-grid-master small{display:block;margin-top:1px;font-size:4.2px;line-height:1.2;color:#737D77}
+
+/* HIVES - EXACT MASTER DIRECTION: NO PHOTOS */
+.hives-master-locked{gap:9px}
+.search-master-locked{height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:8px;background:#F0F1ED}
+.search-master-locked input{width:100%;height:34px;border:0;background:transparent;outline:0;font-size:8px;color:var(--text)}
+.filter-master-locked{display:flex;gap:6px;overflow:auto;scrollbar-width:none}.filter-master-locked::-webkit-scrollbar{display:none}
+.filter-master-locked button{white-space:nowrap;height:27px;padding:0 9px;border:0;border-radius:8px;background:#F0F1ED;color:#68716B;font-size:6.3px}.filter-master-locked button.active{background:#5E7350;color:#fff}
+.hive-list-master-locked{display:grid;gap:8px}
+.hive-card-master-locked{position:relative;height:94px;padding:11px 38px 10px 10px;display:grid;grid-template-columns:48px 1fr;gap:9px;border:1px solid #EBE9E3;border-radius:11px;background:#fff;text-align:left;color:var(--text)}
+.hive-score-ring-locked{--ring:#5E7350;width:45px;height:45px;border-radius:50%;display:grid;place-items:center;position:relative;background:conic-gradient(var(--ring) calc(var(--p)*1%),#E7EBE4 0)}
+.hive-score-ring-locked:after{content:"";position:absolute;inset:5px;border-radius:50%;background:#fff}
+.hive-score-ring-locked span{position:relative;z-index:1;font-size:8.5px;font-weight:800}
+.hive-score-ring-locked.good{--ring:#5E7350}.hive-score-ring-locked.attention{--ring:#F0A000}.hive-score-ring-locked.critical{--ring:#E63B35}
+.hive-info-locked>b{display:block;font-size:8px}.hive-info-locked>small{display:block;margin-top:3px;font-size:5.6px;color:#737D77}
+.hive-mini-metrics-locked{display:flex;gap:12px;margin-top:5px;font-size:5.2px}
+.hive-status-locked{position:absolute;right:10px;top:10px;font-size:6px}.hive-status-locked.good{color:#47723E}.hive-status-locked.attention{color:#DA8400}.hive-status-locked.critical{color:#DD312A}
+.hive-menu-locked{position:absolute;right:10px;bottom:9px;font-size:10px;font-weight:800}
+
+/* GENERIC EXISTING SCREENS */
+.h1{font-size:16px;font-weight:800}.h2{font-size:11px;font-weight:800}.h3{font-size:9px;font-weight:800}.small{font-size:8px}.tiny{font-size:6px}.muted{color:#737D77}
+.card,.setting{background:#fff;border:1px solid #EAE9E3;border-radius:10px;box-shadow:none}.pad,.setting{padding:9px}
+.btn{min-height:34px;border:0;border-radius:8px;padding:7px 10px;font-size:7px;font-weight:800}.primary{background:#315A36;color:#fff}.secondarybtn{background:#EDF2E8;color:#315A36}.goldbtn{background:#C5921A;color:#fff}.dangerbtn{background:#FFF0ED;color:#B43A32}.block{width:100%}
+.pill{min-height:20px;padding:3px 6px;border-radius:999px;background:#EDF2E8;border:0;color:#315A36;font-size:6px}.pill.warn{background:#FFF4DF;color:#C77700}.pill.danger{background:#FFF0ED;color:#C43830}
+.row{display:flex;align-items:center;gap:6px}.between{justify-content:space-between}.grow{flex:1}.chev{font-size:13px}
+input,select,textarea{width:100%;min-height:37px;border:1px solid #DDE0DA;border-radius:8px;padding:7px 8px;background:#fff;color:var(--text);font-size:9px;outline:none}textarea{min-height:70px}.formgroup{margin-bottom:7px}label{display:block;margin-bottom:3px;font-size:6px;font-weight:700;color:#6F7973}
+.tabs{display:grid;grid-template-columns:repeat(3,1fr);gap:3px;padding:3px;border-radius:8px;background:#ECEDE8}.tab{height:30px;border:0;border-radius:6px;background:transparent;color:#657069;font-size:6.5px}.tab.active{background:#5E7350;color:#fff}
+.modal{position:fixed;inset:0;z-index:4000;display:grid;place-items:end center;background:rgba(31,40,35,.45)}.modalpanel{width:min(393px,100%);max-height:94vh;overflow:auto;background:#FFFDF9;border-radius:15px 15px 0 0;padding:11px}
+.toast{position:fixed;left:50%;bottom:78px;z-index:5000;transform:translateX(-50%);opacity:0;padding:7px 10px;border-radius:999px;background:#26312A;color:#fff;font-size:7px}.toast.show{opacity:1}
+
+/* AUTH */
+.auth-page{max-width:350px;margin:18px auto}.auth-card{padding:13px;background:#fff;border:1px solid #EAE9E3;border-radius:12px}
+.auth-tabs{display:grid;grid-template-columns:1fr 1fr;gap:3px;padding:3px;background:#ECEDE8;border-radius:8px;margin-bottom:10px}.auth-tab{height:34px;border:0;border-radius:6px;background:transparent;font-size:8px}.auth-tab.active{background:#fff;color:#315A36}
+.social-btn{width:100%;height:40px;border-radius:9px;border:1px solid #DADDD8;background:#fff;display:flex;align-items:center;justify-content:center;gap:6px;font-size:8px;font-weight:700}
+.auth-link,.legal-link{color:#315A36}
+
+@media(max-width:393px){
+  .topbar,.bottomnav{left:0!important;transform:none!important;width:100%!important}
 }
 
-/* If there is exactly one alert, enlarge the summary slightly so balance stays natural */
-.risk-scroll-master.has-summary .risk-card-master:only-child{
-  flex-basis:42%;
-}
-
-/* ===========================================================
-   V25 — VERIFIED RISK ALERTS LAYOUT
-   Fixes the empty-right-area issue deterministically.
-   =========================================================== */
-
-/* Default: 3+ alerts = carousel */
-.risk-scroll-master:not(.has-summary){
+/* V30 — master Risk Alerts: 3 cards + partial next card */
+.risk-scroll-master{
   display:flex !important;
   gap:6px !important;
   overflow-x:auto !important;
   scroll-snap-type:x mandatory;
   scrollbar-width:none;
+  margin:5px -9px 0 !important;
+  padding:0 9px !important;
 }
-.risk-scroll-master:not(.has-summary) .risk-card-master{
+.risk-scroll-master::-webkit-scrollbar{display:none}
+.risk-card-master{
   flex:0 0 29.5% !important;
   width:auto !important;
   min-width:0;
   scroll-snap-align:start;
 }
 
-/* 1–2 alerts = NO carousel gap. Fill full width with a summary panel. */
-.risk-scroll-master.has-summary{
-  display:grid !important;
-  grid-template-columns:repeat(2,minmax(0,1fr)) minmax(0,1.35fr);
-  gap:6px !important;
-  width:100%;
-  margin:5px 0 0 !important;
-  padding:0 !important;
-  overflow:visible !important;
-}
-
-/* If only one real alert exists, it takes 42% and Summary takes the rest. */
-.risk-scroll-master.has-summary:has(.risk-card-master:nth-child(1):last-of-type){
-  grid-template-columns:minmax(0,.75fr) minmax(0,1.25fr);
-}
-
-.risk-scroll-master.has-summary .risk-card-master,
-.risk-scroll-master.has-summary .risk-summary-master{
-  width:100% !important;
-  min-width:0 !important;
-  max-width:none !important;
-  flex:none !important;
-  margin:0 !important;
-}
-
-/* Make the two real cards slightly wider/readable in the 2-alert state */
-.risk-scroll-master.has-summary .risk-card-master{
-  height:86px;
-}
-
-/* Summary panel */
-.risk-summary-master{
-  height:86px;
-  padding:8px;
-  grid-template-columns:38px 1fr auto;
-  gap:6px;
-  border:1px solid #DDE6D8;
-  border-radius:10px;
-  background:linear-gradient(145deg,#F3F7EF 0%,#FFFDF8 100%);
-}
-.risk-summary-art{
-  width:36px;
-  height:36px;
-  border-radius:9px;
-}
-.risk-summary-art svg{
-  width:34px;
-  height:29px;
-}
-.risk-summary-kicker{
-  font-size:5.2px;
-}
-.risk-summary-copy b{
-  font-size:7.8px;
-}
-.risk-summary-copy small{
-  font-size:5.8px;
-}
-
-/* When Summary is shown, pager is unnecessary because nothing is hidden. */
-.risk-scroll-master.has-summary + .dots-master{
-  visibility:hidden;
-  height:5px;
-}
-
-/* Preserve the master carousel cue for 3+ alerts. */
-.risk-scroll-master:not(.has-summary) + .dots-master{
-  visibility:visible;
-}
-
 /* ===========================================================
-   V26 — TRUE FIXED TOP NAVIGATION
-   Header remains fixed while the Home content scrolls underneath.
+   V30 — TIMELINE + MAP MASTER PAGES
    =========================================================== */
+.timeline-master-screen{gap:8px}
+.timeline-search-master{height:36px;display:flex;align-items:center;gap:6px;padding:0 10px;border-radius:8px;background:#F0F1ED}
+.timeline-search-master input{width:100%;height:34px;border:0;background:transparent;outline:0;font-size:8px}
+.timeline-filter-master{display:flex;gap:6px;overflow:auto}
+.timeline-filter-master button{height:27px;padding:0 9px;border:0;border-radius:8px;background:#F0F1ED;color:#68716B;font-size:6px;white-space:nowrap}
+.timeline-filter-master button.active{background:#5E7350;color:#fff}
+.timeline-list-master{display:grid;gap:0}
+.timeline-row-master{display:grid;grid-template-columns:34px 16px 1fr;min-height:72px}
+.timeline-date-master{text-align:center;padding-top:5px;color:#68716B}
+.timeline-date-master b{display:block;font-size:5.5px}.timeline-date-master strong{display:block;font-size:8px}
+.timeline-line-master{position:relative}
+.timeline-line-master:before{content:"";position:absolute;left:7px;top:0;bottom:0;width:1px;background:#DDE3DA}
+.timeline-line-master i{position:absolute;left:4px;top:12px;width:7px;height:7px;border-radius:50%;background:#5E7350;border:1px solid #fff;box-shadow:0 0 0 1px #5E7350}
+.timeline-line-master i.amber{background:#C5921A;box-shadow:0 0 0 1px #C5921A}
+.timeline-event-master{padding:7px 6px 10px;border:0;border-bottom:1px solid var(--line);background:transparent;text-align:left;color:var(--text)}
+.timeline-event-head{display:flex;justify-content:space-between;gap:8px}.timeline-event-head b{font-size:7px}.timeline-event-head span{font-size:5.5px;color:#777F7A}
+.timeline-event-master>small{display:block;margin-top:2px;font-size:5.5px;color:#315A36}.timeline-event-master p{margin:3px 0 0;font-size:5.5px;line-height:1.35;color:#6E7771}
 
-:root{
-  --header:56px;
-}
-
-/* The app remains the 393px mobile canvas. */
-.app{
-  position:relative;
-  width:100%;
-  max-width:393px;
-  margin:0 auto;
-}
-
-/* True fixed header */
-.topbar{
-  position:fixed !important;
-  top:0 !important;
-  left:50% !important;
-  right:auto !important;
-  transform:translateX(-50%) !important;
-  width:min(100vw,393px) !important;
-  max-width:393px !important;
-  height:var(--header) !important;
-  z-index:1000 !important;
-  margin:0 !important;
-  background:rgba(255,253,248,.97) !important;
-  border-bottom:1px solid rgba(230,228,220,.78);
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
-}
-
-/* Content always starts below the fixed header */
-#view,
-.view,
-.main,
-main{
-  scroll-margin-top:var(--header);
-}
-
-.view{
-  padding-top:calc(var(--header) + 8px) !important;
-}
-
-/* Avoid double top spacing if a page already injects a top spacer */
-.master-screen{
-  padding-top:0 !important;
-}
-
-/* Desktop and phone use the same fixed-header geometry */
-@media (max-width:393px){
-  .topbar{
-    left:0 !important;
-    transform:none !important;
-    width:100% !important;
-  }
-}
-
-/* Keep fixed bottom navigation above content too */
-.bottomnav{
-  position:fixed !important;
-  z-index:1000 !important;
-}
-
-/* ===========================================================
-   V27 — CLEAN FIXED HEADER CONTRACT
-   Verified production-only rules, no preview offsets.
-   =========================================================== */
-:root{
-  --header:56px;
-  --nav:60px;
-}
-html,body{
-  margin:0;
-}
-body{
-  overflow-x:hidden;
-}
-.app{
-  position:relative !important;
-  width:100% !important;
-  max-width:393px !important;
-  margin:0 auto !important;
-  padding:0 !important;
-  zoom:1 !important;
-  transform:none !important;
-}
-.topbar{
-  position:fixed !important;
-  top:0 !important;
-  left:50% !important;
-  right:auto !important;
-  transform:translateX(-50%) !important;
-  width:min(100vw,393px) !important;
-  max-width:393px !important;
-  height:56px !important;
-  z-index:2000 !important;
-  margin:0 !important;
-  background:rgba(255,253,248,.98) !important;
-  border-bottom:1px solid #ECEAE4 !important;
-  box-shadow:none !important;
-  backdrop-filter:blur(12px);
-  -webkit-backdrop-filter:blur(12px);
-}
-.view{
-  padding-top:64px !important;
-  padding-bottom:calc(var(--nav) + var(--safe) + 8px) !important;
-}
-.bottomnav{
-  position:fixed !important;
-  left:50% !important;
-  bottom:0 !important;
-  transform:translateX(-50%) !important;
-  width:min(100vw,393px) !important;
-  max-width:393px !important;
-  z-index:2000 !important;
-}
-@media (max-width:393px){
-  .topbar,
-  .bottomnav{
-    left:0 !important;
-    transform:none !important;
-    width:100% !important;
-  }
-}
-
-/* ===========================================================
-   V28 — HIVES PHOTO CARDS
-   Search/filter/routes remain unchanged.
-   =========================================================== */
-
-.hives-master{
-  gap:9px;
-}
-.hive-list-master{
-  gap:10px;
-}
-
-/* New visual card */
-.hive-card-photo-master{
-  position:relative;
-  width:100%;
-  min-height:116px;
-  padding:10px 38px 10px 10px;
-  display:grid;
-  grid-template-columns:92px minmax(0,1fr);
-  gap:11px;
-  align-items:center;
-  border:1px solid #E9E8E2;
-  border-radius:14px;
-  background:#FFF;
-  color:var(--text);
-  text-align:left;
-  box-shadow:0 4px 16px rgba(47,59,51,.035);
-  overflow:hidden;
-}
-
-.hive-card-photo-master:active{
-  transform:scale(.995);
-}
-
-/* Actual hive image */
-.hive-photo-wrap{
-  position:relative;
-  width:92px;
-  height:82px;
-  border-radius:11px;
-  overflow:hidden;
-  background:#E8ECE4;
-}
-.hive-photo-wrap img{
-  width:100%;
-  height:100%;
-  object-fit:cover;
-  display:block;
-}
-
-/* Health score is overlaid on photo instead of occupying another column */
-.photo-health-ring{
-  --ring:#5E7350;
-  position:absolute;
-  right:6px;
-  bottom:6px;
-  width:36px;
-  height:36px;
-  display:grid;
-  place-items:center;
-  border-radius:50%;
-  background:conic-gradient(var(--ring) calc(var(--p)*1%),rgba(255,255,255,.58) 0);
-  box-shadow:0 2px 8px rgba(31,45,35,.15);
-}
-.photo-health-ring:after{
-  content:"";
-  position:absolute;
-  inset:4px;
-  border-radius:50%;
-  background:rgba(255,255,255,.96);
-}
-.photo-health-ring span{
-  position:relative;
-  z-index:1;
-  font-size:8px;
-  font-weight:850;
-  color:#22332A;
-}
-.photo-health-ring.good{--ring:#5E7350}
-.photo-health-ring.attention{--ring:#E69A00}
-.photo-health-ring.critical{--ring:#E43A33}
-
-/* Information hierarchy */
-.hive-photo-copy{
-  min-width:0;
-  align-self:center;
-}
-.hive-photo-title-row{
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:8px;
-}
-.hive-photo-title-row>b{
-  min-width:0;
-  overflow:hidden;
-  text-overflow:ellipsis;
-  white-space:nowrap;
-  font-size:11px;
-  font-weight:850;
-  color:#1E2822;
-}
-.hive-photo-title-row>strong{
-  flex:0 0 auto;
-  font-size:6.8px;
-  font-weight:800;
-}
-.hive-photo-title-row>strong.good{color:#47723E}
-.hive-photo-title-row>strong.attention{color:#D98700}
-.hive-photo-title-row>strong.critical{color:#D9362F}
-
-.hive-photo-copy>small{
-  display:block;
-  margin-top:4px;
-  font-size:6.7px;
-  line-height:1.25;
-  color:#747D77;
-}
-
-.hive-photo-metrics{
-  display:flex;
-  align-items:center;
-  gap:14px;
-  margin-top:9px;
-  color:#647069;
-}
-.hive-photo-metrics span{
-  display:flex;
-  align-items:center;
-  gap:3px;
-  font-size:7px;
-}
-.hive-photo-metrics b{
-  color:#35463B;
-  font-size:7px;
-}
-
-.hive-card-menu{
-  position:absolute;
-  right:11px;
-  bottom:10px;
-  font-size:11px;
-  font-weight:850;
-  color:#505B54;
-}
-
-/* Slightly more breathing room around Hives filters */
-.search-master{
-  height:38px;
-  border-radius:10px;
-}
-.filter-master{
-  padding-bottom:1px;
-}
-.filter-master button{
-  height:29px;
-  border-radius:9px;
-}
-
-/* On very narrow phones, keep photo useful without squeezing text */
-@media(max-width:350px){
-  .hive-card-photo-master{
-    grid-template-columns:78px minmax(0,1fr);
-    gap:9px;
-  }
-  .hive-photo-wrap{
-    width:78px;
-    height:74px;
-  }
-  .hive-photo-metrics{
-    gap:9px;
-  }
-}
+.map-master-screen{gap:8px}
+.map-tabs-master{display:flex;gap:6px}
+.map-tabs-master button{height:27px;padding:0 10px;border:0;border-radius:8px;background:#F0F1ED;color:#68716B;font-size:6px}
+.map-tabs-master button.active{background:#EEF3E9;color:#315A36;font-weight:800}
+.map-canvas-master{position:relative;height:300px;border-radius:10px;overflow:hidden;background:
+  linear-gradient(25deg,rgba(120,155,180,.12) 12%,transparent 12% 88%,rgba(120,155,180,.12) 88%),
+  linear-gradient(155deg,rgba(157,176,126,.14) 16%,transparent 16% 84%,rgba(157,176,126,.14) 84%),
+  #F4F5EE}
+.map-bg-grid{position:absolute;inset:0;background-image:
+  linear-gradient(rgba(255,255,255,.7) 1px,transparent 1px),
+  linear-gradient(90deg,rgba(255,255,255,.7) 1px,transparent 1px);background-size:28px 28px;opacity:.5}
+.map-pin-master{position:absolute;transform:translate(-50%,-50%);min-width:72px;padding:5px 7px;border:1px solid #DDE5D9;border-radius:10px;background:rgba(255,255,255,.96);box-shadow:0 4px 12px rgba(47,59,51,.08);text-align:left;color:var(--text)}
+.map-pin-master>span{width:22px;height:22px;border-radius:50%;display:grid;place-items:center;background:#5E7350;color:#fff;float:left;margin-right:5px}.map-pin-master .icon{width:12px;height:12px}
+.map-pin-master b{display:block;font-size:6px}.map-pin-master small{display:block;font-size:5px;color:#737D77}
+.map-locate-master{position:absolute;right:10px;bottom:10px;width:30px;height:30px;border:0;border-radius:50%;background:#fff;color:#315A36;box-shadow:0 3px 10px rgba(47,59,51,.1)}
+.map-list-master{display:grid;gap:6px}
+.map-list-master>button{min-height:52px;padding:7px 9px;display:grid;grid-template-columns:30px 1fr auto auto;align-items:center;gap:6px;border:1px solid #EAE9E3;border-radius:10px;background:#fff;text-align:left;color:var(--text)}
+.map-list-icon{width:28px;height:28px;border-radius:50%;display:grid;place-items:center;background:#EEF3E9;color:#315A36}.map-list-icon .icon{width:15px;height:15px}
+.map-list-master b{display:block;font-size:7px}.map-list-master small{display:block;margin-top:2px;font-size:5.3px;color:#737D77}.map-list-master strong{font-size:5.8px}.map-list-master em{font-style:normal;font-size:12px}
+.hives-subnav-master{display:flex;justify-content:flex-end}.hives-subnav-master button{height:26px;padding:0 9px;border:0;border-radius:8px;background:#EEF3E9;color:#315A36;font-size:6px;font-weight:800}

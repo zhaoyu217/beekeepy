@@ -257,27 +257,9 @@ button,input,select,textarea{font:inherit}button{cursor:pointer}
 .hive-copy-master div{font-size:5.8px}
 .hive-card-master>strong{font-size:6.8px}
 
-/* Desktop preview: show the entire mobile canvas at the same visual density
-   as the reference collage rather than treating a 650px browser window as
-   a 650px-tall phone. Actual mobile widths remain unscaled. */
-.app{
-    margin-top:24px;
-  }
-  .topbar{
-    top:28px;
-  }
-}
 
-/* Short desktop browser windows are preview canvases, not phone screens.
-   Scale the whole reference phone down for a faithful visual comparison. */
-.app{
-    
-    margin-top:24px;
-  }
-  .topbar{
-    top:calc(24px / .78);
-  }
-}
+
+
 
 /* ===========================================================
    V20 — Locked Master Home Top Exact Adjustment
@@ -812,4 +794,133 @@ body{
 /* Preserve the master carousel cue for 3+ alerts. */
 .risk-scroll-master:not(.has-summary) + .dots-master{
   visibility:visible;
+}
+
+/* ===========================================================
+   V26 — TRUE FIXED TOP NAVIGATION
+   Header remains fixed while the Home content scrolls underneath.
+   =========================================================== */
+
+:root{
+  --header:56px;
+}
+
+/* The app remains the 393px mobile canvas. */
+.app{
+  position:relative;
+  width:100%;
+  max-width:393px;
+  margin:0 auto;
+}
+
+/* True fixed header */
+.topbar{
+  position:fixed !important;
+  top:0 !important;
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:min(100vw,393px) !important;
+  max-width:393px !important;
+  height:var(--header) !important;
+  z-index:1000 !important;
+  margin:0 !important;
+  background:rgba(255,253,248,.97) !important;
+  border-bottom:1px solid rgba(230,228,220,.78);
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+
+/* Content always starts below the fixed header */
+#view,
+.view,
+.main,
+main{
+  scroll-margin-top:var(--header);
+}
+
+.view{
+  padding-top:calc(var(--header) + 8px) !important;
+}
+
+/* Avoid double top spacing if a page already injects a top spacer */
+.master-screen{
+  padding-top:0 !important;
+}
+
+/* Desktop and phone use the same fixed-header geometry */
+@media (max-width:393px){
+  .topbar{
+    left:0 !important;
+    transform:none !important;
+    width:100% !important;
+  }
+}
+
+/* Keep fixed bottom navigation above content too */
+.bottomnav{
+  position:fixed !important;
+  z-index:1000 !important;
+}
+
+/* ===========================================================
+   V27 — CLEAN FIXED HEADER CONTRACT
+   Verified production-only rules, no preview offsets.
+   =========================================================== */
+:root{
+  --header:56px;
+  --nav:60px;
+}
+html,body{
+  margin:0;
+}
+body{
+  overflow-x:hidden;
+}
+.app{
+  position:relative !important;
+  width:100% !important;
+  max-width:393px !important;
+  margin:0 auto !important;
+  padding:0 !important;
+  zoom:1 !important;
+  transform:none !important;
+}
+.topbar{
+  position:fixed !important;
+  top:0 !important;
+  left:50% !important;
+  right:auto !important;
+  transform:translateX(-50%) !important;
+  width:min(100vw,393px) !important;
+  max-width:393px !important;
+  height:56px !important;
+  z-index:2000 !important;
+  margin:0 !important;
+  background:rgba(255,253,248,.98) !important;
+  border-bottom:1px solid #ECEAE4 !important;
+  box-shadow:none !important;
+  backdrop-filter:blur(12px);
+  -webkit-backdrop-filter:blur(12px);
+}
+.view{
+  padding-top:64px !important;
+  padding-bottom:calc(var(--nav) + var(--safe) + 8px) !important;
+}
+.bottomnav{
+  position:fixed !important;
+  left:50% !important;
+  bottom:0 !important;
+  transform:translateX(-50%) !important;
+  width:min(100vw,393px) !important;
+  max-width:393px !important;
+  z-index:2000 !important;
+}
+@media (max-width:393px){
+  .topbar,
+  .bottomnav{
+    left:0 !important;
+    transform:none !important;
+    width:100% !important;
+  }
 }

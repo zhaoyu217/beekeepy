@@ -587,24 +587,7 @@ function home(r){
             <div class="donut-label"><strong>${score}<small>%</small></strong><b>Good</b><span>Overall Health</span></div>
           </div>
           <div class="landscape-master" aria-hidden="true">
-            <svg viewBox="0 0 260 65" preserveAspectRatio="none">
-              <defs>
-                <linearGradient id="hill1" x1="0" x2="1"><stop offset="0" stop-color="#83916f" stop-opacity=".48"/><stop offset="1" stop-color="#e7eadf" stop-opacity=".16"/></linearGradient>
-                <linearGradient id="hill2" x1="0" x2="1"><stop offset="0" stop-color="#b3bca3" stop-opacity=".5"/><stop offset="1" stop-color="#eef0e9" stop-opacity=".1"/></linearGradient>
-              </defs>
-              <path d="M0 43 C28 21,53 39,82 31 C111 23,137 40,166 30 C198 19,225 36,260 27 L260 65 L0 65Z" fill="url(#hill2)"/>
-              <path d="M0 52 C34 38,62 48,92 41 C121 34,150 51,180 42 C211 33,236 46,260 39 L260 65 L0 65Z" fill="url(#hill1)"/>
-              <g transform="translate(14,25)">
-                <rect x="0" y="13" width="25" height="18" rx="1.5" fill="#e8dfc7" stroke="#59694b" stroke-width="1.2"/>
-                <rect x="3" y="5" width="19" height="10" rx="1.5" fill="#f2ead4" stroke="#59694b" stroke-width="1.1"/>
-                <path d="M-1 6 L12.5 -1 L26 6" fill="#9d8054" stroke="#59694b" stroke-width="1.1"/>
-                <rect x="9" y="26" width="8" height="2" rx="1" fill="#59694b"/>
-              </g>
-              <g stroke="#6f805d" stroke-width=".8" opacity=".8">
-                <path d="M2 65 Q7 46 10 35 M9 65 Q14 49 18 40 M36 65 Q41 49 45 40"/>
-              </g>
-              <g fill="#C5921A"><circle cx="7" cy="46" r="1.5"/><circle cx="16" cy="52" r="1.4"/><circle cx="41" cy="49" r="1.3"/></g>
-            </svg>
+            <img src="home_landscape_master.png" alt="">
           </div>
         </div>
 

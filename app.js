@@ -852,12 +852,21 @@ function inspectionPage(r,id){
   if(!h){go('hives');return}
   activeInspectionHiveId=h.id;
 
+  const hiveOptions=s.hives.map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('');
+
   r.innerHTML=`<div class="screen inspection-screen">
-    <section class="setting inspection-hive-summary">
-      <div class="row">
-        <div class="inspection-hive-icon">${icon('hive')}</div>
-        <div class="grow"><div class="h2">${esc(h.name)}</div><div class="tiny muted">${fmtDate(h.lastInspection)} · Inspection</div></div>
+    <section class="setting inspection-hive-summary inspection-hive-switcher">
+      <div class="inspection-hive-icon">${icon('hive')}</div>
+
+      <div class="inspection-hive-select-wrap">
+        <label for="inspectionHiveSelect">Inspecting hive</label>
+        <select id="inspectionHiveSelect" class="inspection-hive-select">
+          ${hiveOptions}
+        </select>
+        <div class="tiny muted">${fmtDate(h.lastInspection)} · Inspection</div>
       </div>
+
+      <span class="inspection-switch-chevron">⌄</span>
     </section>
 
     <section class="setting quick-entry-card">
@@ -885,6 +894,14 @@ function inspectionPage(r,id){
 
     <button type="button" class="btn primary block inspection-save-btn" onclick="saveInspectionPage()">Save Inspection</button>
   </div>`;
+
+  const select=idq('inspectionHiveSelect');
+  if(select){
+    select.onchange=()=>{
+      activeInspectionHiveId=select.value;
+      go('inspection/'+select.value);
+    };
+  }
 }
 
 function saveInspectionPage(){

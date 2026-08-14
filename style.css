@@ -363,3 +363,44 @@ input,select,textarea{font-size:13px!important;min-height:42px!important}
 .auth-security{font-size:11px!important}
 .auth-legal{font-size:10px!important}
 .other-login-toggle{font-size:12px!important;height:40px!important}
+
+/* =========================================================
+   V38 — Inspection hive switcher
+   Functional addition only; existing Inspection layout retained.
+   ========================================================= */
+.inspection-hive-switcher{
+  min-height:74px!important;
+  display:grid!important;
+  grid-template-columns:36px minmax(0,1fr) 18px!important;
+  gap:9px!important;
+  align-items:center!important;
+}
+.inspection-hive-select-wrap{
+  min-width:0;
+}
+.inspection-hive-select-wrap label{
+  margin:0 0 3px!important;
+  font-size:10px!important;
+  color:#7A827D!important;
+  font-weight:600!important;
+}
+.inspection-hive-select{
+  width:100%!important;
+  height:30px!important;
+  min-height:30px!important;
+  padding:0 22px 0 0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  color:#263129!important;
+  font-size:15px!important;
+  font-weight:800!important;
+  outline:0!important;
+  appearance:auto!important;
+  -webkit-appearance:auto!important;
+}
+.inspection-switch-chevron{
+  font-size:16px;
+  color:#315A36;
+  text-align:right;
+}

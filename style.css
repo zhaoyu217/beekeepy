@@ -462,3 +462,100 @@ body{
   position:relative;
   z-index:2;
 }
+
+/* ===========================================================
+   V22 — HOME OVERVIEW IMAGE INTEGRATION FIX
+   The landscape belongs INSIDE the Hive Overview hero area,
+   behind/under the ring and stats, not as a detached strip.
+   =========================================================== */
+
+.home-overview-master{
+  position:relative;
+  overflow:hidden;
+  padding:9px 10px 0;
+}
+
+/* Keep title above all artwork */
+.home-overview-master > .master-section-title{
+  position:relative;
+  z-index:5;
+}
+
+/* The hero content is one integrated composition */
+.overview-grid-master{
+  position:relative;
+  min-height:170px;
+  margin-top:1px;
+  z-index:1;
+  overflow:hidden;
+}
+
+/* Artwork fills the LOWER HALF of the entire hero area */
+.landscape-master{
+  position:absolute !important;
+  left:-10px !important;
+  right:-10px !important;
+  bottom:0 !important;
+  width:auto !important;
+  height:74px !important;
+  z-index:0 !important;
+  overflow:hidden;
+  pointer-events:none;
+}
+
+/* The extracted master image is intentionally stretched across
+   the full hero width, so it reads as one integrated background */
+.landscape-master img{
+  width:100% !important;
+  height:100% !important;
+  display:block;
+  object-fit:cover !important;
+  object-position:center bottom !important;
+  opacity:1;
+}
+
+/* Ring and stats float above the artwork */
+.overview-left-master{
+  position:relative;
+  z-index:3;
+  height:151px;
+}
+.overview-stats-master{
+  position:relative;
+  z-index:4;
+  background:transparent !important;
+}
+
+/* Give the right metrics a subtle white veil so the landscape
+   can continue beneath without hurting readability */
+.overview-stats-master:before{
+  content:"";
+  position:absolute;
+  inset:0 -2px 0 -5px;
+  z-index:-1;
+  background:linear-gradient(
+    180deg,
+    rgba(255,255,255,.98) 0%,
+    rgba(255,255,255,.97) 70%,
+    rgba(255,255,255,.84) 100%
+  );
+}
+
+/* Ring stays clean and sits naturally over the integrated scene */
+.health-donut-master{
+  z-index:4;
+}
+
+/* Remove any visual gap that makes the image look detached */
+.view-hives-master{
+  position:relative;
+  z-index:6;
+  margin-top:0 !important;
+  background:#fff !important;
+  border-top:1px solid var(--line);
+}
+
+/* Ensure landscape cannot extend into View All Hives */
+.home-overview-master .overview-grid-master{
+  margin-bottom:0;
+}

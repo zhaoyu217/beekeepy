@@ -1056,16 +1056,18 @@ function seasonPage(r){
   r.innerHTML=`<section><button type="button" class="btn secondarybtn" onclick="go('home')">← Home</button><div class="h1" style="margin-top:12px">Season Intelligence</div><div class="tiny muted">${esc(s.settings.location)} · ${new Date().toLocaleDateString('en-US',{month:'long'})}</div></section><section class="setting"><div class="srow"><div class="scopy"><b>Monitor mites closely</b><div class="tiny muted">Prioritize colonies with elevated Varroa or overdue checks.</div></div><span class="pill warn">Priority</span></div><div class="srow"><div class="scopy"><b>Review food stores</b><div class="tiny muted">Follow up on low honey or pollen stores before the next seasonal transition.</div></div></div><div class="srow"><div class="scopy"><b>Confirm queen status</b><div class="tiny muted">Recheck colonies where queen status remains uncertain.</div></div></div></section><div class="notice">V9 uses date, location setting and hive records. Real weather/bloom APIs are still required for production-grade recommendations.</div>`
 }
 
+function hiveDetailHeroPhoto(h){
+  const s=state();
+  const idx=Math.max(0,s.hives.findIndex(x=>x.id===h.id));
+  return `hive_detail_${(idx%3)+1}.jpg`;
+}
+
 function hiveDetail(r,id){
   const s=state(),h=hive(s,id);if(!h){go('hives');return}
   r.innerHTML=`<div class="master-screen detail-master">
     <section class="detail-hero-master">
       <div class="detail-photo-master">
-        <svg viewBox="0 0 360 110" preserveAspectRatio="none" aria-hidden="true">
-          <defs><linearGradient id="dph" x1="0" x2="1"><stop offset="0" stop-color="#e8dfc6"/><stop offset="1" stop-color="#a8b487"/></linearGradient></defs>
-          <rect width="360" height="110" fill="url(#dph)"/><path d="M0 78 C50 48 90 65 136 52 C186 38 229 69 276 54 C315 42 338 49 360 45 L360 110 L0 110Z" fill="#7d8c69" opacity=".55"/>
-          <g transform="translate(30 35)"><rect x="0" y="18" width="38" height="29" rx="3" fill="#e8dfc7" stroke="#506040" stroke-width="1.4"/><rect x="4" y="6" width="30" height="15" rx="2" fill="#f4ebd6" stroke="#506040" stroke-width="1.4"/><path d="M-2 8 L19 -3 L40 8" fill="#9a7d51" stroke="#506040" stroke-width="1.4"/></g>
-        </svg>
+        <img src="${hiveDetailHeroPhoto(h)}" alt="${esc(h.name)} hive at ${esc(h.location||'apiary')}">
       </div>
       <div class="detail-name-master"><b>${esc(h.name)}</b><small>${esc(h.location||'North Field')}</small></div>
       <div class="mini-ring-master detail-ring-master ${h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}" style="--p:${h.score}"><span>${h.score}%</span></div>

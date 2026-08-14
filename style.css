@@ -924,3 +924,178 @@ body{
     width:100% !important;
   }
 }
+
+/* ===========================================================
+   V28 — HIVES PHOTO CARDS
+   Search/filter/routes remain unchanged.
+   =========================================================== */
+
+.hives-master{
+  gap:9px;
+}
+.hive-list-master{
+  gap:10px;
+}
+
+/* New visual card */
+.hive-card-photo-master{
+  position:relative;
+  width:100%;
+  min-height:116px;
+  padding:10px 38px 10px 10px;
+  display:grid;
+  grid-template-columns:92px minmax(0,1fr);
+  gap:11px;
+  align-items:center;
+  border:1px solid #E9E8E2;
+  border-radius:14px;
+  background:#FFF;
+  color:var(--text);
+  text-align:left;
+  box-shadow:0 4px 16px rgba(47,59,51,.035);
+  overflow:hidden;
+}
+
+.hive-card-photo-master:active{
+  transform:scale(.995);
+}
+
+/* Actual hive image */
+.hive-photo-wrap{
+  position:relative;
+  width:92px;
+  height:82px;
+  border-radius:11px;
+  overflow:hidden;
+  background:#E8ECE4;
+}
+.hive-photo-wrap img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+}
+
+/* Health score is overlaid on photo instead of occupying another column */
+.photo-health-ring{
+  --ring:#5E7350;
+  position:absolute;
+  right:6px;
+  bottom:6px;
+  width:36px;
+  height:36px;
+  display:grid;
+  place-items:center;
+  border-radius:50%;
+  background:conic-gradient(var(--ring) calc(var(--p)*1%),rgba(255,255,255,.58) 0);
+  box-shadow:0 2px 8px rgba(31,45,35,.15);
+}
+.photo-health-ring:after{
+  content:"";
+  position:absolute;
+  inset:4px;
+  border-radius:50%;
+  background:rgba(255,255,255,.96);
+}
+.photo-health-ring span{
+  position:relative;
+  z-index:1;
+  font-size:8px;
+  font-weight:850;
+  color:#22332A;
+}
+.photo-health-ring.good{--ring:#5E7350}
+.photo-health-ring.attention{--ring:#E69A00}
+.photo-health-ring.critical{--ring:#E43A33}
+
+/* Information hierarchy */
+.hive-photo-copy{
+  min-width:0;
+  align-self:center;
+}
+.hive-photo-title-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.hive-photo-title-row>b{
+  min-width:0;
+  overflow:hidden;
+  text-overflow:ellipsis;
+  white-space:nowrap;
+  font-size:11px;
+  font-weight:850;
+  color:#1E2822;
+}
+.hive-photo-title-row>strong{
+  flex:0 0 auto;
+  font-size:6.8px;
+  font-weight:800;
+}
+.hive-photo-title-row>strong.good{color:#47723E}
+.hive-photo-title-row>strong.attention{color:#D98700}
+.hive-photo-title-row>strong.critical{color:#D9362F}
+
+.hive-photo-copy>small{
+  display:block;
+  margin-top:4px;
+  font-size:6.7px;
+  line-height:1.25;
+  color:#747D77;
+}
+
+.hive-photo-metrics{
+  display:flex;
+  align-items:center;
+  gap:14px;
+  margin-top:9px;
+  color:#647069;
+}
+.hive-photo-metrics span{
+  display:flex;
+  align-items:center;
+  gap:3px;
+  font-size:7px;
+}
+.hive-photo-metrics b{
+  color:#35463B;
+  font-size:7px;
+}
+
+.hive-card-menu{
+  position:absolute;
+  right:11px;
+  bottom:10px;
+  font-size:11px;
+  font-weight:850;
+  color:#505B54;
+}
+
+/* Slightly more breathing room around Hives filters */
+.search-master{
+  height:38px;
+  border-radius:10px;
+}
+.filter-master{
+  padding-bottom:1px;
+}
+.filter-master button{
+  height:29px;
+  border-radius:9px;
+}
+
+/* On very narrow phones, keep photo useful without squeezing text */
+@media(max-width:350px){
+  .hive-card-photo-master{
+    grid-template-columns:78px minmax(0,1fr);
+    gap:9px;
+  }
+  .hive-photo-wrap{
+    width:78px;
+    height:74px;
+  }
+  .hive-photo-metrics{
+    gap:9px;
+  }
+}

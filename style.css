@@ -559,3 +559,79 @@ body{
 .home-overview-master .overview-grid-master{
   margin-bottom:0;
 }
+
+/* ===========================================================
+   V23 — HIVE OVERVIEW STRUCTURE FIX
+   The approved landscape is now a direct child of the entire
+   Overview grid and spans the whole hero area.
+   =========================================================== */
+
+.overview-grid-master{
+  position:relative;
+  display:grid;
+  grid-template-columns:50% 50%;
+  min-height:170px;
+  margin-top:1px;
+  overflow:hidden;
+  align-items:start;
+}
+
+/* Shared artwork layer across BOTH columns */
+.overview-grid-master > .landscape-master{
+  position:absolute !important;
+  left:0 !important;
+  right:0 !important;
+  bottom:0 !important;
+  width:100% !important;
+  height:68px !important;
+  z-index:0 !important;
+  overflow:hidden;
+  pointer-events:none;
+  transform:none !important;
+}
+.overview-grid-master > .landscape-master img{
+  width:100% !important;
+  height:100% !important;
+  display:block;
+  object-fit:cover !important;
+  object-position:center bottom !important;
+}
+
+/* Foreground columns float over the same artwork */
+.overview-left-master{
+  position:relative;
+  z-index:2;
+  height:150px;
+}
+.overview-stats-master{
+  position:relative;
+  z-index:3;
+  background:transparent !important;
+}
+
+/* Remove the old right-side white veil completely */
+.overview-stats-master:before{
+  content:none !important;
+  display:none !important;
+}
+
+/* Keep stat rows readable but transparent enough to preserve integration */
+.overview-stats-master button{
+  position:relative;
+  background:rgba(255,255,255,.90) !important;
+}
+
+/* Ring above artwork */
+.health-donut-master{
+  position:relative;
+  z-index:4;
+}
+
+/* View All Hives stays its own row beneath the integrated hero */
+.home-overview-master .view-hives-master{
+  position:relative;
+  z-index:5;
+  margin-top:0 !important;
+  background:#fff !important;
+  border-top:1px solid var(--line);
+}

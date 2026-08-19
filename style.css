@@ -904,3 +904,9 @@ input,select,textarea{font-size:13px!important;min-height:42px!important}
 .aux-view .tiny{font-size:9.5px!important}
 .aux-view .srow{min-height:52px!important}
 .aux-view .btn{font-size:11px!important}
+
+/* V47 routing audit: functional CTA + clickable route affordances only */
+.detail-start-inspection{margin:10px 0 2px!important;min-height:42px!important}
+.detail-timeline-preview{max-height:118px;overflow:hidden}
+.history-row-master{width:100%;text-align:left;color:inherit}
+.insight-card-master.card-button,.detail-section-master.card-button{cursor:pointer}

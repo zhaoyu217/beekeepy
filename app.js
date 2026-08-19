@@ -50,75 +50,50 @@ function setCloudStatus(value){
 function scheduleCloudSave(nextState){
   if(!CLOUD_CONFIGURED || !cloudReady || !isAuthenticated() || suppressCloudSave)return;
   clearTimeout(syncTimer);
-  setCloudStatus('Saving…');
-  syncTimer=setTimeout(()=>pushCloudState(nextState),450);
+  const snapshot=clone(normalizeStateV50(nextState));
+  setCloudStatus(navigator.onLine===false?'Offline':'Saving…');
+  if(navigator.onLine===false)return;
+  syncTimer=setTimeout(()=>pushCloudState(snapshot),450);
 }
 
 async function pushCloudState(nextState){
-  if(!supabaseClient || !isAuthenticated())return;
+  if(!supabaseClient || !isAuthenticated() || navigator.onLine===false)return;
   try{
-    const payload=clone(nextState);
-    payload.user={
-      ...payload.user,
-      email:currentSession.user.email||payload.user?.email||'',
-      name:currentSession.user.user_metadata?.name||payload.user?.name||'Beekeeper'
-    };
-    const updatedAt=new Date().toISOString();
-    const {error}=await supabaseClient
-      .from('app_state')
-      .upsert(
-        {user_id:currentSession.user.id,payload,updated_at:updatedAt},
-        {onConflict:'user_id'}
-      );
+    const payload=clone(normalizeStateV50(nextState));
+    payload.meta.userId=currentSession.user.id;
+    payload.user={...payload.user,email:currentSession.user.email||payload.user?.email||'',name:currentSession.user.user_metadata?.name||payload.user?.name||'Beekeeper'};
+    const updatedAt=payload.meta.updatedAt||new Date().toISOString();
+    const {error}=await supabaseClient.from('app_state').upsert({user_id:currentSession.user.id,payload,updated_at:updatedAt},{onConflict:'user_id'});
     if(error)throw error;
-    lastRemoteUpdatedAt=updatedAt;
-    setCloudStatus('Synced');
-  }catch(err){
-    console.error('HiveDash cloud save failed',err);
-    setCloudStatus('Sync error');
-    toast('Cloud sync failed');
-  }
+    lastRemoteUpdatedAt=updatedAt;setCloudStatus('Synced');
+  }catch(err){console.error('HiveDash cloud save failed',err);setCloudStatus('Sync error');toast('Cloud sync failed. Local data is still saved.')}
 }
 
 async function loadCloudState(){
   if(!supabaseClient || !isAuthenticated())return false;
-  setCloudStatus('Syncing…');
-  const {data,error}=await supabaseClient
-    .from('app_state')
-    .select('payload,updated_at')
-    .eq('user_id',currentSession.user.id)
-    .maybeSingle();
-
-  if(error){
-    console.error('HiveDash cloud load failed',error);
-    setCloudStatus('Sync error');
-    throw error;
-  }
-
+  setCloudStatus(navigator.onLine===false?'Offline':'Syncing…');
+  if(navigator.onLine===false)return false;
+  const rawLocal=localStorage.getItem(STORAGE_KEY);
+  let local=null;
+  try{if(rawLocal)local=normalizeStateV50(JSON.parse(rawLocal))}catch(_e){}
+  const {data,error}=await supabaseClient.from('app_state').select('payload,updated_at').eq('user_id',currentSession.user.id).maybeSingle();
+  if(error){console.error('HiveDash cloud load failed',error);setCloudStatus('Sync error');throw error}
+  const localOwned=local && (!local.meta?.userId || local.meta.userId===currentSession.user.id);
   if(data?.payload && Object.keys(data.payload).length){
+    const remote=normalizeStateV50(clone(data.payload));remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
+    const merged=mergeStateV50(localOwned?local:null,remote);
+    merged.user={...(merged.user||{}),email:currentSession.user.email||merged.user?.email||'',name:currentSession.user.user_metadata?.name||merged.user?.name||'Beekeeper'};
+    merged.meta.userId=currentSession.user.id;
     suppressCloudSave=true;
-    const remote=clone(data.payload);
-    remote.user={
-      ...(remote.user||{}),
-      email:currentSession.user.email||remote.user?.email||'',
-      name:currentSession.user.user_metadata?.name||remote.user?.name||'Beekeeper'
-    };
-    localStorage.setItem(STORAGE_KEY,JSON.stringify(remote));
-    suppressCloudSave=false;
-    lastRemoteUpdatedAt=data.updated_at||'';
-    setCloudStatus('Synced');
+    if(!writeLocalV50(merged)){suppressCloudSave=false;throw new Error('Cloud data is too large for local storage')}
+    suppressCloudSave=false;lastRemoteUpdatedAt=data.updated_at||remote.meta.updatedAt||'';setCloudStatus('Synced');
+    if(JSON.stringify(merged)!==JSON.stringify(remote))await pushCloudState(merged);
     return true;
   }
-
-  const local=state();
-  local.user={
-    ...(local.user||{}),
-    email:currentSession.user.email||local.user?.email||'',
-    name:currentSession.user.user_metadata?.name||local.user?.name||'Beekeeper'
-  };
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(local));
-  await pushCloudState(local);
-  return false;
+  let seed=localOwned?local:normalizeStateV50(clone(DEFAULT_STATE));
+  seed.meta.userId=currentSession.user.id;seed.meta.updatedAt=seed.meta.updatedAt||new Date().toISOString();
+  seed.user={...(seed.user||{}),email:currentSession.user.email||'',name:currentSession.user.user_metadata?.name||seed.user?.name||'Beekeeper'};
+  writeLocalV50(seed);await pushCloudState(seed);return false;
 }
 
 function stopRealtimeSync(){
@@ -131,37 +106,14 @@ function stopRealtimeSync(){
 function startRealtimeSync(){
   stopRealtimeSync();
   if(!supabaseClient || !isAuthenticated())return;
-  realtimeChannel=supabaseClient
-    .channel(`hivedash-state-${currentSession.user.id}`)
-    .on(
-      'postgres_changes',
-      {
-        event:'*',
-        schema:'public',
-        table:'app_state',
-        filter:`user_id=eq.${currentSession.user.id}`
-      },
-      payload=>{
-        if(payload.eventType==='DELETE')return;
-        const row=payload.new;
-        if(!row?.payload || row.updated_at===lastRemoteUpdatedAt)return;
-        lastRemoteUpdatedAt=row.updated_at||'';
-        suppressCloudSave=true;
-        const remote=clone(row.payload);
-        remote.user={
-          ...(remote.user||{}),
-          email:currentSession.user.email||remote.user?.email||'',
-          name:currentSession.user.user_metadata?.name||remote.user?.name||'Beekeeper'
-        };
-        localStorage.setItem(STORAGE_KEY,JSON.stringify(remote));
-        suppressCloudSave=false;
-        setCloudStatus('Synced');
-        if(!document.querySelector('.modal'))render();
-      }
-    )
-    .subscribe(status=>{
-      if(status==='SUBSCRIBED')setCloudStatus('Synced');
-    });
+  realtimeChannel=supabaseClient.channel(`hivedash-state-${currentSession.user.id}`).on('postgres_changes',{event:'*',schema:'public',table:'app_state',filter:`user_id=eq.${currentSession.user.id}`},payload=>{
+    if(payload.eventType==='DELETE')return;
+    const row=payload.new;if(!row?.payload || row.updated_at===lastRemoteUpdatedAt)return;
+    const local=state(),remote=normalizeStateV50(clone(row.payload));remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||row.updated_at||'';
+    const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||row.updated_at||0)||0;
+    if(lt>rt){scheduleCloudSave(local);return}
+    const merged=mergeStateV50(local,remote);lastRemoteUpdatedAt=row.updated_at||'';suppressCloudSave=true;writeLocalV50(merged);suppressCloudSave=false;setCloudStatus('Synced');if(!document.querySelector('.modal'))render();
+  }).subscribe(status=>{if(status==='SUBSCRIBED')setCloudStatus('Synced');if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setCloudStatus('Sync error')});
 }
 
 function authShell(inner){
@@ -377,6 +329,36 @@ async function initializeCloudApp(){
   }
 }
 
+
+function normalizeStateV50(input){
+  const s=(input&&typeof input==='object')?input:{};
+  s.user=(s.user&&typeof s.user==='object')?s.user:{name:'Beekeeper',email:'',plan:'Free'};
+  if(!['Free','Pro'].includes(s.user.plan))s.user.plan='Free';
+  s.settings=(s.settings&&typeof s.settings==='object')?s.settings:{};
+  s.hives=Array.isArray(s.hives)?s.hives.filter(h=>h&&typeof h==='object'&&String(h.id||'').length):[];
+  s.logs=(s.logs&&typeof s.logs==='object')?s.logs:{};
+  for(const k of ['inspections','feedings','treatments','harvests'])s.logs[k]=Array.isArray(s.logs[k])?s.logs[k].filter(x=>x&&typeof x==='object'):[];
+  s.notifications=Array.isArray(s.notifications)?s.notifications:[];
+  s.actions=Array.isArray(s.actions)?s.actions:[];
+  s.meta=(s.meta&&typeof s.meta==='object')?s.meta:{};
+  s.meta.schema=50;s.meta.updatedAt=s.meta.updatedAt||'';s.meta.userId=s.meta.userId||'';
+  return s;
+}
+function writeLocalV50(s){
+  try{const raw=JSON.stringify(normalizeStateV50(s));if(raw.length>4500000)return false;localStorage.setItem(STORAGE_KEY,raw);return true}catch(e){console.error('Local write failed',e);return false}
+}
+function unionByIdV50(a=[],b=[]){const m=new Map();[...a,...b].forEach((x,i)=>{if(!x||typeof x!=='object')return;const id=String(x.id||`${x.hiveId||''}|${x.date||''}|${i}`);m.set(id,{...(m.get(id)||{}),...x})});return [...m.values()]}
+function mergeStateV50(local,remote){
+  if(!local)return normalizeStateV50(remote);if(!remote)return normalizeStateV50(local);
+  const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||0)||0,primary=rt>=lt?clone(remote):clone(local),other=rt>=lt?local:remote;
+  primary.logs=primary.logs||{};for(const k of ['inspections','feedings','treatments','harvests'])primary.logs[k]=unionByIdV50(primary.logs[k]||[],other.logs?.[k]||[]);
+  primary.notifications=unionByIdV50(primary.notifications||[],other.notifications||[]);
+  primary.hives=(primary.hives||[]).map(h=>{const o=(other.hives||[]).find(x=>x.id===h.id);if(!o)return h;const photos=unionByIdV50(h.photos||[],o.photos||[]);return {...(rt>=lt?o:h),...(rt>=lt?h:o),photos}});
+  for(const oh of other.hives||[])if(!primary.hives.some(h=>h.id===oh.id))primary.hives.push(oh);
+  primary.meta={...(primary.meta||{}),schema:50,updatedAt:new Date(Math.max(lt,rt,Date.now())).toISOString(),userId:currentSession?.user?.id||primary.meta?.userId||''};
+  return normalizeStateV50(primary);
+}
+
 const DEFAULT_STATE={
   user:{name:'Alex',email:'beekeeper@example.com',plan:'Free'},
   settings:{
@@ -409,31 +391,40 @@ const DEFAULT_STATE={
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function state(){
   const raw=localStorage.getItem(STORAGE_KEY);
-  if(!raw){localStorage.setItem(STORAGE_KEY,JSON.stringify(DEFAULT_STATE));return clone(DEFAULT_STATE)}
+  if(!raw){
+    const fresh=clone(DEFAULT_STATE);
+    fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:currentSession?.user?.id||''};
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh))}catch(e){console.error('Initial local save failed',e)}
+    return fresh;
+  }
   try{
-    const s=JSON.parse(raw);
+    const s=normalizeStateV50(JSON.parse(raw));
     s.actions=generateActions(s);
     if(currentSession?.user){
-      s.user={
-        ...(s.user||{}),
-        email:currentSession.user.email||s.user?.email||'',
-        name:currentSession.user.user_metadata?.name||s.user?.name||'Beekeeper'
-      };
+      s.meta.userId=s.meta.userId||currentSession.user.id;
+      s.user={...(s.user||{}),email:currentSession.user.email||s.user?.email||'',name:currentSession.user.user_metadata?.name||s.user?.name||'Beekeeper'};
     }
     return s;
-  }catch(e){return clone(DEFAULT_STATE)}
+  }catch(e){
+    console.error('HiveDash local state was invalid; recovered defaults',e);
+    try{localStorage.setItem('hivedash_corrupt_state_backup',raw.slice(0,200000))}catch(_e){}
+    const fresh=clone(DEFAULT_STATE);fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:currentSession?.user?.id||''};
+    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh))}catch(_e){}
+    return fresh;
+  }
 }
 function save(s){
+  s=normalizeStateV50(s);
   s.actions=generateActions(s);
+  s.meta.schema=50;
+  s.meta.updatedAt=new Date().toISOString();
+  if(currentSession?.user?.id)s.meta.userId=currentSession.user.id;
   const payload=JSON.stringify(s);
-  try{
-    localStorage.setItem(STORAGE_KEY,payload);
-  }catch(err){
-    console.error('HiveDash local save failed',err);
-    toast('Storage is full. Delete some photos and try again.');
-    return false;
+  if(payload.length>4500000){toast('Local storage is nearly full. Remove photos or export a backup.');return false}
+  try{localStorage.setItem(STORAGE_KEY,payload)}catch(err){
+    console.error('HiveDash local save failed',err);toast('Storage is full. Delete some photos and try again.');return false;
   }
-  scheduleCloudSave(s);
+  scheduleCloudSave(clone(s));
   return true;
 }
 function resetState(){
@@ -623,17 +614,17 @@ function render(){
   else if(page==='hives')hives(view);
   else if(page==='actions')actions(view);
   else if(page==='insights')insights(view);
-  else if(page==='all-hives')allHives(view);
+  else if(page==='all-hives')allHives(view,id);
   else if(page==='hive')hiveDetail(view,id);
   else if(page==='inspection')inspectionPage(view,id);
   else if(page==='all-actions')allActions(view,id);
-  else if(page==='timeline')timelinePage(view);
+  else if(page==='timeline')timelinePage(view,id);
   else if(page==='map')mapPage(view);
   else if(page==='settings')settings(view);
   else if(page==='notifications')notifications(view);
   else if(page==='subscription')subscriptionPage(view);
   else if(page==='analysis')healthAnalysis(view);
-  else if(page==='trend')trendPage(view);
+  else if(page==='trend')trendPage(view,id);
   else if(page==='risk')riskPage(view);
   else if(page==='honey')honeyPage(view);
   else if(page==='season')seasonPage(view);
@@ -644,6 +635,77 @@ function render(){
   else{go('home');return}
 
   chrome(page,!core.includes(page)&&page!=='actions');
+}
+
+function openActionByType(type,hiveId){
+  const t=String(type||'').toLowerCase();
+  if(t==='inspection') return actionForm('inspection',hiveId);
+  if(t==='feeding') return actionForm('feeding',hiveId);
+  if(t==='treatment') return actionForm('treatment',hiveId);
+  if(t==='harvest') return actionForm('harvest',hiveId);
+  return go('hive/'+hiveId);
+}
+function actionCtaLabel(type){
+  const t=String(type||'').toLowerCase();
+  if(t==='inspection') return 'Inspect Now';
+  if(t==='feeding') return 'Record Feeding';
+  if(t==='treatment') return 'Start Treatment';
+  if(t==='harvest') return 'Record Harvest';
+  return 'View Action';
+}
+function openRiskAlert(hiveId){
+  const s=state(),h=hive(s,hiveId); if(!h) return go('hives');
+  if(Number(h.varroa||0)>=3) return actionForm('treatment',h.id);
+  if(h.honey==='Low'||h.pollen==='Low') return actionForm('feeding',h.id);
+  return go('hive/'+h.id);
+}
+
+let timelineHiveFilter='all';
+let timelineTypeFilter='all';
+let timelineSearchFilter='';
+let selectedHarvestYear=new Date().getFullYear();
+let selectedInsightsYear=new Date().getFullYear();
+let mapDisplayMode='Apiaries';
+
+function openHiveCardMenu(event,hiveId){
+  event?.stopPropagation?.();
+  openHiveDetailMenu(hiveId);
+}
+function chooseTimelineType(type){
+  timelineTypeFilter=type||'all';
+  document.querySelector('.modal')?.remove();
+  render();
+}
+function openTimelineTypePicker(){
+  modal(`<div class="modalhead"><div class="h2">Timeline Type</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div>
+    <div class="quick core-menu-actions">
+      ${['all','Inspection','Feeding','Treatment','Harvest'].map(x=>`<button class="qbtn" onclick="chooseTimelineType('${x}')"><b>${x==='all'?'All Types':x}</b></button>`).join('')}
+    </div>`);
+}
+function availableYears(logs){
+  const years=[...new Set((logs||[]).map(x=>Number(String(x.date||'').slice(0,4))).filter(Boolean))].sort((a,b)=>b-a);
+  const now=new Date().getFullYear(); if(!years.includes(now))years.unshift(now); return years;
+}
+function chooseHarvestYear(y){selectedHarvestYear=Number(y);document.querySelector('.modal')?.remove();render()}
+function openHarvestYearPicker(){
+  const s=state(),years=availableYears(s.logs.harvests);
+  modal(`<div class="modalhead"><div class="h2">Harvest Year</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="quick core-menu-actions">${years.map(y=>`<button class="qbtn" onclick="chooseHarvestYear(${y})"><b>${y}</b></button>`).join('')}</div>`)
+}
+function chooseInsightsYear(y){selectedInsightsYear=Number(y);document.querySelector('.modal')?.remove();render()}
+function openInsightsYearPicker(){
+  const s=state(),all=[...s.logs.inspections,...s.logs.feedings,...s.logs.treatments,...s.logs.harvests],years=availableYears(all);
+  modal(`<div class="modalhead"><div class="h2">Insights Year</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="quick core-menu-actions">${years.map(y=>`<button class="qbtn" onclick="chooseInsightsYear(${y})"><b>${y}</b></button>`).join('')}</div>`)
+}
+function setMapDisplayMode(mode){mapDisplayMode=mode;render()}
+function locateUser(){
+  if(!navigator.geolocation){toast('Location is not available on this device');return}
+  navigator.geolocation.getCurrentPosition(p=>toast(`Location found: ${p.coords.latitude.toFixed(3)}, ${p.coords.longitude.toFixed(3)}`),()=>toast('Could not access your location'),{enableHighAccuracy:false,timeout:8000});
+}
+function apiaryHives(apiaryName){
+  const s=state();
+  let list=s.hives.filter(h=>String(h.location||'').toLowerCase().includes(String(apiaryName||'').split(' ')[0].toLowerCase()));
+  if(!list.length) list=s.hives;
+  modal(`<div class="modalhead"><div class="h2">${esc(apiaryName)}</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="history-list-master">${list.map(h=>`<button class="history-row-master" onclick="document.querySelector('.modal')?.remove();go('hive/${h.id}')"><i>${icon('hive')}</i><span><b>${esc(h.name)}</b><small>${esc(h.location||'Apiary')} · ${h.score}%</small></span><em>›</em></button>`).join('')}</div>`)
 }
 
 function home(r){
@@ -678,9 +740,9 @@ function home(r){
 
         <div class="overview-stats-master">
           <button onclick="go('all-hives')"><i class="stat-icon">${icon('hive')}</i><span>Total Hives</span><b>${s.hives.length}</b></button>
-          <button onclick="go('all-hives')"><i class="stat-dot green"></i><span>Strong</span><b class="green">${strong}</b></button>
-          <button onclick="go('all-hives')"><i class="stat-dot amber"></i><span>Needs Attention</span><b class="amber">${attention}</b></button>
-          <button onclick="go('all-hives')"><i class="stat-dot red"></i><span>Critical</span><b class="red">${critical}</b></button>
+          <button onclick="go('all-hives/Healthy')"><i class="stat-dot green"></i><span>Strong</span><b class="green">${strong}</b></button>
+          <button onclick="go('all-hives/Attention')"><i class="stat-dot amber"></i><span>Needs Attention</span><b class="amber">${attention}</b></button>
+          <button onclick="go('all-hives/Critical')"><i class="stat-dot red"></i><span>Critical</span><b class="red">${critical}</b></button>
         </div>
       </div>
 
@@ -694,16 +756,16 @@ function home(r){
       ${action?`<div class="action-main-master">
         <i class="action-icon-master">${icon('check')}</i>
         <span><b>${esc(action.title)}</b><small>${esc(ah?.name||'Hive')} · Last inspection: ${ah?daysSince(ah.lastInspection):'—'} days ago</small></span>
-        <button onclick="${action.type==='Inspection'?"actionForm('inspection','"+action.hiveId+"')":action.type==='Feeding'?"actionForm('feeding','"+action.hiveId+"')":"actionForm('treatment','"+action.hiveId+"')"}">${action.type==='Inspection'?'Inspect Now':action.type==='Feeding'?'Record Feeding':'Start Treatment'}</button>
+        <button onclick="openActionByType('${action.type}','${action.hiveId}')">${actionCtaLabel(action.type)}</button>
       </div>
       <div class="action-foot-master"><span>▣ &nbsp;Due: <b>${esc(action.due)}</b></span><span>◷ &nbsp;Est. time: 15 min</span><button onclick="go('all-actions')">View All Actions ›</button></div>`:`<div class="empty-master">No urgent action right now.</div>`}
     </section>
 
     <section class="master-block">
-      <div class="master-title-action"><div class="master-section-title">Risk Alerts</div><button onclick="go('hives')">View All Alerts ›</button></div>
+      <div class="master-title-action"><div class="master-section-title">Risk Alerts</div><button onclick="go('all-hives/Risk')">View All Alerts ›</button></div>
 
       <div class="risk-scroll-master">
-        ${(riskCards.length?riskCards:s.hives.slice(0,3)).map(h=>`<button class="risk-card-master" onclick="go('hive/${h.id}')">
+        ${(riskCards.length?riskCards:s.hives.slice(0,3)).map(h=>`<button class="risk-card-master" onclick="openRiskAlert('${h.id}')">
           <i class="${h.status==='Critical'?'risk-red':'risk-amber'}">!</i>
           <span><b>${esc(h.name)}</b><small>${h.queen!=='Confirmed'?'Queen status unconfirmed':h.varroa>=3?'Varroa test overdue':h.honey==='Low'||h.pollen==='Low'?'Low food stores':'Review hive health'}</small></span>
           <strong class="${h.status==='Critical'?'risk-red':'risk-amber'}">${h.status==='Critical'?'High Risk':'Medium Risk'}</strong><em>›</em>
@@ -791,7 +853,7 @@ function hiveCard(h){
     </div>
 
     <strong class="hive-status-locked ${tone}">${label}</strong>
-    <span class="hive-menu-locked" onclick="event.stopPropagation()">•••</span>
+    <span class="hive-menu-locked" onclick="openHiveCardMenu(event,'${h.id}')">•••</span>
   </button>`
 }
 function addHive(){
@@ -808,17 +870,17 @@ function addHive(){
   }
 }
 
-function allHives(r){
-  const s=state();
+function allHives(r,mode='All'){
+  const s=state(),initial=decodeURIComponent(mode||'All');
   r.innerHTML=`<section class="row between"><div><button type="button" class="btn secondarybtn" onclick="go('hives')">← Hives</button><div class="h1" style="margin-top:12px">All Hives</div></div><button type="button" class="btn primary" onclick="addHive()">+ Add</button></section>
-  <section class="searchrow"><input id="hiveSearch" placeholder="Search hives"><select id="hiveFilter"><option>All</option><option>Healthy</option><option>Attention</option><option>Critical</option></select></section>
+  <section class="searchrow"><input id="hiveSearch" placeholder="Search hives"><select id="hiveFilter"><option>All</option><option>Healthy</option><option>Attention</option><option>Critical</option><option>Risk</option></select></section>
   <section id="allHiveList"></section>`;
   const draw=()=>{
     const q=idq('hiveSearch').value.toLowerCase(),f=idq('hiveFilter').value;
-    const list=s.hives.filter(h=>(f==='All'||h.status===f)&&h.name.toLowerCase().includes(q)).sort((a,b)=>a.score-b.score);
+    const list=s.hives.filter(h=>((f==='All')||(f==='Risk'&&h.status!=='Healthy')||h.status===f)&&h.name.toLowerCase().includes(q)).sort((a,b)=>a.score-b.score);
     idq('allHiveList').innerHTML=list.map(h=>`<div style="margin-bottom:8px">${hiveCard(h)}</div>`).join('')||'<div class="setting small muted">No matching hives.</div>'
   };
-  idq('hiveSearch').oninput=draw;idq('hiveFilter').onchange=draw;draw()
+  idq('hiveSearch').oninput=draw;idq('hiveFilter').onchange=draw;if(['Healthy','Attention','Critical','Risk'].includes(initial))idq('hiveFilter').value=initial;draw()
 }
 
 function actions(r){
@@ -831,13 +893,13 @@ function actions(r){
   <section class="tabs"><button type="button" class="tab active">Today</button><button type="button" class="tab" onclick="go('all-actions/upcoming')">Upcoming</button><button type="button" class="tab" onclick="go('all-actions/completed')">Completed</button></section>
   <section class="actionlist">${top.length?top.map(a=>actionCard(s,a)).join(''):'<div class="card pad small muted">No actions for today.</div>'}</section>
   <section><div class="row between"><div class="h3">Upcoming</div><button type="button" class="pill" onclick="go('all-actions/upcoming')">View all</button></div>
-   <div class="upcoming-list">${upcoming.length?upcoming.map(a=>{const h=hive(s,a.hiveId);return `<button type="button" class="card pad row card-button" style="width:100%;text-align:left" onclick="${a.type==='Inspection'?"actionForm('inspection','"+a.hiveId+"')":a.type==='Feeding'?"actionForm('feeding','"+a.hiveId+"')":"actionForm('treatment','"+a.hiveId+"')"}"><span>${a.type==='Inspection'?'🔎':a.type==='Feeding'?'🥣':'🧪'}</span><div class="grow"><div class="small"><b>${esc(a.title)}</b></div><div class="tiny muted">${esc(h?.name||'Hive')} · ${esc(a.due)}</div></div><span class="chev">›</span></button>`}).join(''):'<div class="card pad small muted">No upcoming actions.</div>'}</div>
+   <div class="upcoming-list">${upcoming.length?upcoming.map(a=>{const h=hive(s,a.hiveId);return `<button type="button" class="card pad row card-button" style="width:100%;text-align:left" onclick="openActionByType('${a.type}','${a.hiveId}')"><span>${a.type==='Inspection'?'🔎':a.type==='Feeding'?'🥣':'🧪'}</span><div class="grow"><div class="small"><b>${esc(a.title)}</b></div><div class="tiny muted">${esc(h?.name||'Hive')} · ${esc(a.due)}</div></div><span class="chev">›</span></button>`}).join(''):'<div class="card pad small muted">No upcoming actions.</div>'}</div>
   </section>
  </div>`
 }
 function actionCard(s,a){
- const h=hive(s,a.hiveId),kind=a.priority==='High'?'high':'medium',cta=a.type==='Inspection'?'Start':'Record';
- return `<div class="actioncard ${kind}"><div class="row between"><span class="pill ${a.priority==='High'?'danger':'warn'}">${a.priority==='High'?'HIGH PRIORITY':'MEDIUM'}</span><span class="chev">›</span></div><div class="action-title">${a.type==='Inspection'?'Inspect':a.type==='Feeding'?'Feed':a.type==='Treatment'?'Treat':'Review'} ${esc(h?.name||'Hive')}</div><div class="action-reason">${esc(a.title)} · ${esc(a.reason)}</div><button type="button" class="btn ${a.priority==='High'?'primary':'goldbtn'} block action-button" onclick="${a.type==='Inspection'?"actionForm('inspection','"+a.hiveId+"')":a.type==='Feeding'?"actionForm('feeding','"+a.hiveId+"')":"actionForm('treatment','"+a.hiveId+"')"}">${cta} →</button></div>`
+ const h=hive(s,a.hiveId),kind=a.priority==='High'?'high':'medium',cta=actionCtaLabel(a.type);
+ return `<div class="actioncard ${kind}"><div class="row between"><span class="pill ${a.priority==='High'?'danger':'warn'}">${a.priority==='High'?'HIGH PRIORITY':'MEDIUM'}</span><span class="chev">›</span></div><div class="action-title">${a.type==='Inspection'?'Inspect':a.type==='Feeding'?'Feed':a.type==='Treatment'?'Treat':a.type==='Harvest'?'Harvest':'Review'} ${esc(h?.name||'Hive')}</div><div class="action-reason">${esc(a.title)} · ${esc(a.reason)}</div><button type="button" class="btn ${a.priority==='High'?'primary':'goldbtn'} block action-button" onclick="openActionByType('${a.type}','${a.hiveId}')">${cta} →</button></div>`
 }
 
 function allActions(r,mode='all'){
@@ -845,7 +907,7 @@ function allActions(r,mode='all'){
  let title='All Actions',items=s.actions;
  if(normalized==='today'){title='Today';items=s.actions.filter(a=>a.due==='Now')}
  else if(normalized==='upcoming'){title='Upcoming';items=s.actions.filter(a=>a.due!=='Now')}
- else if(['inspection','feeding','treatment'].includes(normalized)){title=normalized[0].toUpperCase()+normalized.slice(1)+' Actions';items=s.actions.filter(a=>a.type.toLowerCase()===normalized)}
+ else if(['inspection','feeding','treatment','harvest'].includes(normalized)){title=normalized[0].toUpperCase()+normalized.slice(1)+' Actions';items=s.actions.filter(a=>a.type.toLowerCase()===normalized)}
  if(normalized==='completed'){
   const logs=[
    ...s.logs.inspections.map(x=>({date:x.date,type:'Inspection',hiveId:x.hiveId,detail:x.notes||'Inspection recorded'})),
@@ -855,7 +917,7 @@ function allActions(r,mode='all'){
   ].sort((a,b)=>new Date(b.date)-new Date(a.date));
   r.innerHTML=`<section><button type="button" class="btn secondarybtn" onclick="go('actions')">← Actions</button><div class="h1" style="margin-top:12px">Completed</div><div class="tiny muted">Recorded work history</div></section><section class="setting">${logs.length?logs.map(x=>`<div class="srow card-button" onclick="go('hive/${x.hiveId}')"><div class="scopy"><div class="row"><span class="pill">${esc(x.type)}</span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b></div><div class="small" style="margin-top:5px">${fmtDate(x.date)}</div><div class="tiny muted">${esc(x.detail)}</div></div><span class="chev">›</span></div>`).join(''):'<div class="small muted">No completed records yet.</div>'}</section>`;return
  }
- r.innerHTML=`<section><button type="button" class="btn secondarybtn" onclick="go('actions')">← Actions</button><div class="h1" style="margin-top:12px">${esc(title)}</div><div class="tiny muted">Generated from hive records and settings</div></section><section class="setting">${items.length?items.map(a=>{const h=hive(s,a.hiveId);return `<div class="srow"><div class="scopy"><div class="row"><span class="pill ${a.priority==='High'?'danger':'warn'}">${a.priority}</span><b>${esc(h?.name||'Hive')}</b></div><div class="small" style="margin-top:5px">${esc(a.title)}</div><div class="tiny muted">${esc(a.reason)} · ${esc(a.due)}</div></div><button type="button" class="btn secondarybtn" onclick="${a.type==='Inspection'?"actionForm('inspection','"+a.hiveId+"')":a.type==='Feeding'?"actionForm('feeding','"+a.hiveId+"')":"actionForm('treatment','"+a.hiveId+"')"}">Start</button></div>`}).join(''):'<div class="small muted">No matching actions.</div>'}</section>`
+ r.innerHTML=`<section><button type="button" class="btn secondarybtn" onclick="go('actions')">← Actions</button><div class="h1" style="margin-top:12px">${esc(title)}</div><div class="tiny muted">Generated from hive records and settings</div></section><section class="setting">${items.length?items.map(a=>{const h=hive(s,a.hiveId);return `<div class="srow"><div class="scopy"><div class="row"><span class="pill ${a.priority==='High'?'danger':'warn'}">${a.priority}</span><b>${esc(h?.name||'Hive')}</b></div><div class="small" style="margin-top:5px">${esc(a.title)}</div><div class="tiny muted">${esc(a.reason)} · ${esc(a.due)}</div></div><button type="button" class="btn secondarybtn" onclick="openActionByType('${a.type}','${a.hiveId}')">Start</button></div>`}).join(''):'<div class="small muted">No matching actions.</div>'}</section>`
 }
 function moreActions(){
   const m=modal(`<div class="modalhead"><div class="h2">More</div><button type="button" class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="quick">
@@ -1016,98 +1078,39 @@ function saveInspectionPage(){
 }
 
 function insights(r){
-  const s=state(),score=avgHealth(s),strong=s.hives.filter(h=>h.status==='Healthy').length,attention=s.hives.filter(h=>h.status==='Attention').length,critical=s.hives.filter(h=>h.status==='Critical').length;
-  const C=2*Math.PI*38,D=C*score/100;
-  r.innerHTML=`<div class="master-screen insights-master">
-    <div class="year-master"><button>This Year⌄</button></div>
-    <div class="insight-tabs-master"><button class="active">Overview</button><button onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}">Colony Health</button><button onclick="${isPro(s)?"go('honey')":"requirePro('Honey Analytics')"}">Harvest</button><button onclick="${isPro(s)?"go('trend')":"requirePro('90-day trends')"}">Trends</button></div>
-    <section class="insight-card-master"><div class="master-section-title">Colony Health Summary</div><div class="insight-health-master"><div class="insight-donut-master"><svg viewBox="0 0 100 100"><circle class="donut-track" cx="50" cy="50" r="38"/><circle class="donut-progress" cx="50" cy="50" r="38" stroke-dasharray="${D} ${C-D}"/></svg></div><div class="legend-master"><span><i class="green"></i>Strong <b>${Math.round(strong/Math.max(1,s.hives.length)*100)}% (${strong})</b></span><span><i class="amber"></i>Needs Attention <b>${Math.round(attention/Math.max(1,s.hives.length)*100)}% (${attention})</b></span><button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><i class="red"></i>Critical <b>${Math.round(critical/Math.max(1,s.hives.length)*100)}% (${critical})</b></button></div></div></section>
-    <section class="detail-section-master"><div class="master-section-title">Health Over Time</div><svg viewBox="0 0 300 110" class="trend-master"><polyline points="10,74 58,62 106,69 154,50 202,57 250,43 290,50" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,86 58,78 106,83 154,72 202,76 250,66 290,70" fill="none" stroke="#C5921A" stroke-width="1.5"/><polyline points="10,94 58,92 106,90 154,85 202,88 250,82 290,84" fill="none" stroke="#D94E43" stroke-width="1.5"/></svg></section>
-    <section class="detail-section-master"><div class="master-section-title">Top Actions This Year</div><div class="actions-summary-master"><span>▣ Inspections <b>${s.logs.inspections.length}</b></span><span>◉ Feedings <b>${s.logs.feedings.length}</b></span><span>✚ Treatments <b>${s.logs.treatments.length}</b></span><span>⌁ Harvests <b>${s.logs.harvests.length}</b></span></div></section>
-  </div>`
+  const s=state(),year=Number(selectedInsightsYear||new Date().getFullYear()),score=avgHealth(s),strong=s.hives.filter(h=>h.status==='Healthy').length,attention=s.hives.filter(h=>h.status==='Attention').length,critical=s.hives.filter(h=>h.status==='Critical').length;
+  const C=2*Math.PI*38,D=C*score/100,byYear=arr=>arr.filter(x=>Number(String(x.date||'').slice(0,4))===year);
+  r.innerHTML=`<div class="master-screen insights-master"><div class="year-master"><button type="button" onclick="openInsightsYearPicker()">${year===new Date().getFullYear()?'This Year':year}⌄</button></div><div class="insight-tabs-master"><button class="active">Overview</button><button onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}">Colony Health</button><button onclick="${isPro(s)?"go('honey')":"requirePro('Honey Analytics')"}">Harvest</button><button onclick="${isPro(s)?"go('trend')":"requirePro('90-day trends')"}">Trends</button></div><section class="insight-card-master card-button" onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}"><div class="master-section-title">Colony Health Summary</div><div class="insight-health-master"><div class="insight-donut-master"><svg viewBox="0 0 100 100"><circle class="donut-track" cx="50" cy="50" r="38"/><circle class="donut-progress" cx="50" cy="50" r="38" stroke-dasharray="${D} ${C-D}"/></svg></div><div class="legend-master"><span><i class="green"></i>Strong <b>${Math.round(strong/Math.max(1,s.hives.length)*100)}% (${strong})</b></span><span><i class="amber"></i>Needs Attention <b>${Math.round(attention/Math.max(1,s.hives.length)*100)}% (${attention})</b></span><button onclick="event.stopPropagation();${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><i class="red"></i>Critical <b>${Math.round(critical/Math.max(1,s.hives.length)*100)}% (${critical})</b></button></div></div></section><section class="detail-section-master card-button" onclick="${isPro(s)?"go('trend')":"requirePro('Health Trends')"}"><div class="master-section-title">Health Over Time</div><svg viewBox="0 0 300 110" class="trend-master"><polyline points="10,74 58,62 106,69 154,50 202,57 250,43 290,50" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,86 58,78 106,83 154,72 202,76 250,66 290,70" fill="none" stroke="#C5921A" stroke-width="1.5"/><polyline points="10,94 58,92 106,90 154,85 202,88 250,82 290,84" fill="none" stroke="#D94E43" stroke-width="1.5"/></svg></section><section class="detail-section-master card-button" onclick="go('actions')"><div class="master-section-title">Top Actions ${year}</div><div class="actions-summary-master"><span>▣ Inspections <b>${byYear(s.logs.inspections).length}</b></span><span>◉ Feedings <b>${byYear(s.logs.feedings).length}</b></span><span>✚ Treatments <b>${byYear(s.logs.treatments).length}</b></span><span>⌁ Harvests <b>${byYear(s.logs.harvests).length}</b></span></div></section></div>`
 }
 
-function timelinePage(r){
+function timelinePage(r,id){
   const s=state();
+  if(id) timelineHiveFilter=id;
   const events=[];
-
-  s.logs.inspections.forEach(x=>events.push({
-    date:x.date,time:'9:30 AM',type:'Inspection',hiveId:x.hiveId,
-    title:'Inspection',desc:`Strength ${x.strength||'—'}, Queen ${x.queen||'—'}`,tone:'green'
-  }));
-  s.logs.feedings.forEach(x=>events.push({
-    date:x.date,time:'2:15 PM',type:'Feeding',hiveId:x.hiveId,
-    title:'Feeding',desc:`${x.type||'Feeding'} ${x.amount||''}`.trim(),tone:'green'
-  }));
-  s.logs.treatments.forEach(x=>events.push({
-    date:x.date,time:'10:00 AM',type:'Treatment',hiveId:x.hiveId,
-    title:'Treatment',desc:x.type||'Treatment',tone:'green'
-  }));
-  s.logs.harvests.forEach(x=>events.push({
-    date:x.date,time:'9:00 AM',type:'Harvest',hiveId:x.hiveId,
-    title:'Harvest',desc:`Harvested ${formatWeight(x.weightLb||0,s)}`,tone:'amber'
-  }));
-
+  s.logs.inspections.forEach(x=>events.push({date:x.date,time:'9:30 AM',type:'Inspection',hiveId:x.hiveId,title:'Inspection',desc:`Strength ${x.strength||'—'}, Queen ${x.queen||'—'}`,tone:'green'}));
+  s.logs.feedings.forEach(x=>events.push({date:x.date,time:'2:15 PM',type:'Feeding',hiveId:x.hiveId,title:'Feeding',desc:`${x.type||'Feeding'} ${x.amount||''}`.trim(),tone:'green'}));
+  s.logs.treatments.forEach(x=>events.push({date:x.date,time:'10:00 AM',type:'Treatment',hiveId:x.hiveId,title:'Treatment',desc:x.type||'Treatment',tone:'green'}));
+  s.logs.harvests.forEach(x=>events.push({date:x.date,time:'9:00 AM',type:'Harvest',hiveId:x.hiveId,title:'Harvest',desc:`Harvested ${formatWeight(x.weightLb||0,s)}`,tone:'amber'}));
   events.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-
-  const rows=events.slice(0,12).map((e,i)=>{
-    const h=hive(s,e.hiveId);
-    const dateObj=new Date(e.date+'T00:00:00');
-    const month=dateObj.toLocaleDateString('en-US',{month:'short'});
-    const day=dateObj.getDate();
-    return `<div class="timeline-row-master">
-      <div class="timeline-date-master">${i===0?`<b>${month}</b><strong>${day}</strong>`:''}</div>
-      <div class="timeline-line-master"><i class="${e.tone}"></i></div>
-      <button type="button" class="timeline-event-master" onclick="go('hive/${e.hiveId}')">
-        <div class="timeline-event-head"><b>${e.title}</b><span>${e.time}</span></div>
-        <small>${esc(h?.name||'Hive')}</small>
-        <p>${esc(e.desc)}</p>
-      </button>
-    </div>`
-  }).join('');
-
-  r.innerHTML=`<div class="screen timeline-master-screen">
-    <div class="timeline-search-master"><span>⌕</span><input placeholder="Search timeline"></div>
-    <div class="timeline-filter-master">
-      <button class="active">All</button>
-      <button>${esc(s.hives[0]?.name||'Hive')}</button>
-      <button>${esc(s.hives[1]?.name||'Hive')}</button>
-      <button>All Types⌄</button>
-    </div>
-    <div class="timeline-list-master">${rows||'<div class="tiny muted">No timeline events yet.</div>'}</div>
-  </div>`
+  const q=String(timelineSearchFilter||'').toLowerCase();
+  const filtered=events.filter(e=>(timelineHiveFilter==='all'||e.hiveId===timelineHiveFilter)&&(timelineTypeFilter==='all'||e.type===timelineTypeFilter)&&(!q||[e.title,e.desc,hive(s,e.hiveId)?.name].join(' ').toLowerCase().includes(q)));
+  const rows=filtered.slice(0,30).map((e,i)=>{const h=hive(s,e.hiveId),d=new Date(e.date+'T00:00:00');return `<div class="timeline-row-master"><div class="timeline-date-master">${i===0?`<b>${d.toLocaleDateString('en-US',{month:'short'})}</b><strong>${d.getDate()}</strong>`:''}</div><div class="timeline-line-master"><i class="${e.tone}"></i></div><button type="button" class="timeline-event-master" onclick="go('hive/${e.hiveId}')"><div class="timeline-event-head"><b>${e.title}</b><span>${e.time}</span></div><small>${esc(h?.name||'Hive')}</small><p>${esc(e.desc)}</p></button></div>`}).join('');
+  const hiveButtons=s.hives.slice(0,2).map(h=>`<button class="${timelineHiveFilter===h.id?'active':''}" data-hive="${h.id}">${esc(h.name)}</button>`).join('');
+  r.innerHTML=`<div class="screen timeline-master-screen"><div class="timeline-search-master"><span>⌕</span><input id="timelineSearch" value="${esc(timelineSearchFilter)}" placeholder="Search timeline"></div><div class="timeline-filter-master"><button class="${timelineHiveFilter==='all'?'active':''}" data-hive="all">All</button>${hiveButtons}<button type="button" onclick="openTimelineTypePicker()">${timelineTypeFilter==='all'?'All Types':esc(timelineTypeFilter)}⌄</button></div><div class="timeline-list-master">${rows||'<div class="tiny muted">No matching timeline events.</div>'}</div></div>`;
+  idq('timelineSearch').oninput=e=>{timelineSearchFilter=e.target.value;timelinePage(r)};
+  r.querySelectorAll('.timeline-filter-master [data-hive]').forEach(b=>b.onclick=()=>{timelineHiveFilter=b.dataset.hive;timelinePage(r)});
 }
 
 function mapPage(r){
   const s=state();
-  const apiaries=[
-    {name:'North Field',count:s.hives.filter(h=>(h.location||'').includes('North')).length||Math.max(1,Math.ceil(s.hives.length/2)),x:28,y:28},
-    {name:'East Field',count:s.hives.filter(h=>(h.location||'').includes('East')).length||1,x:72,y:42},
-    {name:'West Field',count:s.hives.filter(h=>(h.location||'').includes('West')).length||1,x:20,y:58},
-    {name:'South Field',count:s.hives.filter(h=>(h.location||'').includes('South')).length||1,x:63,y:68},
-  ];
-
-  r.innerHTML=`<div class="screen map-master-screen">
-    <div class="map-tabs-master">
-      <button class="active">Apiaries</button><button>Hives</button><button>Forage</button>
-    </div>
-
-    <section class="map-canvas-master">
-      <div class="map-bg-grid"></div>
-      ${apiaries.map(a=>`<button class="map-pin-master" style="left:${a.x}%;top:${a.y}%">
-        <span>${icon('hive')}</span><b>${a.name}</b><small>${a.count} Hives</small>
-      </button>`).join('')}
-      <button class="map-locate-master">◎</button>
-    </section>
-
-    <section class="map-list-master">
-      ${apiaries.slice(0,2).map(a=>`<button type="button" onclick="go('hives')">
-        <span class="map-list-icon">${icon('hive')}</span>
-        <span><b>${a.name}</b><small>Last inspection: ${fmtDate(s.hives[0]?.lastInspection||new Date().toISOString().slice(0,10))}</small></span>
-        <strong>${a.count} hives</strong><em>›</em>
-      </button>`).join('')}
-    </section>
-  </div>`
+  const apiaries=[{name:'North Field',count:s.hives.filter(h=>(h.location||'').includes('North')).length||Math.max(1,Math.ceil(s.hives.length/2)),x:28,y:28},{name:'East Field',count:s.hives.filter(h=>(h.location||'').includes('East')).length||1,x:72,y:42},{name:'West Field',count:s.hives.filter(h=>(h.location||'').includes('West')).length||1,x:20,y:58},{name:'South Field',count:s.hives.filter(h=>(h.location||'').includes('South')).length||1,x:63,y:68}];
+  const hivePins=s.hives.map((h,i)=>({h,x:18+(i*19)%70,y:25+(i*17)%55}));
+  const forage=[{name:'Clover & Wildflower',x:26,y:34},{name:'Orchard Bloom',x:70,y:48},{name:'Late Summer Forage',x:48,y:70}];
+  let pins='';
+  if(mapDisplayMode==='Apiaries')pins=apiaries.map(a=>`<button class="map-pin-master" style="left:${a.x}%;top:${a.y}%" onclick="apiaryHives('${a.name}')"><span>${icon('hive')}</span><b>${a.name}</b><small>${a.count} Hives</small></button>`).join('');
+  if(mapDisplayMode==='Hives')pins=hivePins.map(p=>`<button class="map-pin-master" style="left:${p.x}%;top:${p.y}%" onclick="go('hive/${p.h.id}')"><span>${icon('hive')}</span><b>${esc(p.h.name)}</b><small>${p.h.score}%</small></button>`).join('');
+  if(mapDisplayMode==='Forage')pins=forage.map(f=>`<button class="map-pin-master" style="left:${f.x}%;top:${f.y}%" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><span>✿</span><b>${f.name}</b><small>Season insight</small></button>`).join('');
+  r.innerHTML=`<div class="screen map-master-screen"><div class="map-tabs-master">${['Apiaries','Hives','Forage'].map(x=>`<button class="${mapDisplayMode===x?'active':''}" onclick="setMapDisplayMode('${x}')">${x}</button>`).join('')}</div><section class="map-canvas-master"><div class="map-bg-grid"></div>${pins}<button class="map-locate-master" onclick="locateUser()">◎</button></section><section class="map-list-master">${apiaries.slice(0,2).map(a=>`<button type="button" onclick="apiaryHives('${a.name}')"><span class="map-list-icon">${icon('hive')}</span><span><b>${a.name}</b><small>Open apiary hives</small></span><strong>${a.count} hives</strong><em>›</em></button>`).join('')}</section></div>`
 }
 
 function healthAnalysis(r){
@@ -1115,31 +1118,28 @@ function healthAnalysis(r){
   r.innerHTML=`<section><div class="h1" style="margin-top:12px">Health Analysis</div><div class="tiny muted">Transparent rule-based explanation</div></section>
   ${s.hives.map(h=>{const res=calculateHealth(h);return `<section class="setting card-button" onclick="go('hive/${h.id}')"><div class="row between"><div><div class="h2">${esc(h.name)}</div><div class="tiny muted">${res.why.length?res.why.map(x=>`${esc(x[0])} ${x[1]}`).join(' · '):'No major negative signals'}</div></div>${statusPill(res.status)}</div><div class="score" style="margin-top:8px">${res.score}%</div></section>`}).join('')}`
 }
-function trendPage(r){
+function trendPage(r,id){
   const s=state();if(!isPro(s)){subscriptionModal('Health Trends');go('insights');return}
-  r.innerHTML=`<section><div class="h1" style="margin-top:12px">Health Trend</div></section><section class="setting">${s.hives.map(h=>`<div class="srow"><div class="scopy"><b>${esc(h.name)}</b><div class="track" style="margin-top:6px"><div class="progress" style="width:${h.score}%"></div></div></div><b>${h.score}%</b></div>`).join('')}</section>`
+  const list=id?[hive(s,id)].filter(Boolean):s.hives;
+  r.innerHTML=`<section><div class="h1" style="margin-top:12px">Health Trend</div></section><section class="setting">${list.map(h=>`<button type="button" class="srow card-button" style="width:100%;border:0;background:transparent;text-align:left" onclick="openRiskAlert('${h.id}')"><div class="scopy"><b>${esc(h.name)}</b><div class="track" style="margin-top:6px"><div class="progress" style="width:${h.score}%"></div></div></div><b>${h.score}%</b></button>`).join('')}</section>`
 }
 function riskPage(r){
   const s=state();if(!isPro(s)){subscriptionModal('Risk Prediction');go('insights');return}
   r.innerHTML=`<section><div class="h1" style="margin-top:12px">Risk Prediction</div><div class="tiny muted">Current prototype uses transparent rules, not a black-box model.</div></section><section class="setting">${s.hives.map(h=>{const reasons=[];if(h.varroa>=3)reasons.push('Varroa elevated');if(h.queen!=='Confirmed')reasons.push('Queen uncertainty');if(h.honey==='Low'||h.pollen==='Low')reasons.push('Low food stores');const level=h.varroa>=3?'High':reasons.length?'Medium':'Low';return `<div class="srow card-button" onclick="go('hive/${h.id}')"><div class="scopy"><b>${esc(h.name)}</b><div class="tiny muted">${reasons.length?esc(reasons.join(' · ')):'No major current rule-based signal'}</div></div><span class="pill ${level==='High'?'danger':level==='Medium'?'warn':''}">${level}</span></div>`}).join('')}</section>`
 }
 
-function openHarvestHistory(){
-  const s=state();
-  const rows=[...s.logs.harvests].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-  modal(`<div class="modalhead"><div class="h2">Harvest History</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div>
-    <div class="history-list-master">${rows.length?rows.map(x=>`<div class="history-row-master"><i>⌁</i><span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b><small>${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}%</small></span><em>Harvest</em></div>`).join(''):'<div class="small muted">No harvest records yet.</div>'}</div>`);
+function openHarvestHistory(year=selectedHarvestYear){
+  const s=state(),y=Number(year||new Date().getFullYear());
+  const rows=[...s.logs.harvests].filter(x=>Number(String(x.date||'').slice(0,4))===y).sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  modal(`<div class="modalhead"><div class="h2">Harvest History · ${y}</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="history-list-master">${rows.length?rows.map(x=>`<button class="history-row-master" onclick="document.querySelector('.modal')?.remove();go('hive/${x.hiveId}')"><i>⌁</i><span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b><small>${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}%</small></span><em>›</em></button>`).join(''):'<div class="small muted">No harvest records for this year.</div>'}</div>`);
 }
 
 function honeyPage(r){
-  const s=state(),total=s.logs.harvests.reduce((n,x)=>n+Number(x.weightLb||0),0),avg=s.logs.harvests.length?s.logs.harvests.reduce((n,x)=>n+Number(x.moisture||0),0)/s.logs.harvests.length:0;
-  const bars=[4,6,12,25,58,82,65,90,70,43,15,6];
-  r.innerHTML=`<div class="master-screen harvest-master">
-    <div class="year-master"><button>This Year⌄</button></div>
-    <div class="harvest-stats-master"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${s.logs.harvests.length}</b></div><div><small>Avg Moisture</small><b>${avg.toFixed(1)}%</b></div></div>
-    <section class="detail-section-master"><div class="master-section-title">Harvest Over Time (${s.settings.units==='metric'?'kg':'lb'})</div><div class="bar-master">${bars.map((v,i)=>`<div><i style="height:${v}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section>
-    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button type="button" onclick="openHarvestHistory()">View All</button></div><div class="batch-master">${s.logs.harvests.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches yet.</small>'}</div></section>
-  </div>`
+  const s=state(),year=Number(selectedHarvestYear||new Date().getFullYear());
+  const logs=s.logs.harvests.filter(x=>Number(String(x.date||'').slice(0,4))===year);
+  const total=logs.reduce((n,x)=>n+Number(x.weightLb||0),0),avg=logs.length?logs.reduce((n,x)=>n+Number(x.moisture||0),0)/logs.length:0;
+  const monthly=Array(12).fill(0);logs.forEach(x=>{const m=Number(String(x.date||'').slice(5,7))-1;if(m>=0&&m<12)monthly[m]+=Number(x.weightLb||0)});const max=Math.max(1,...monthly);
+  r.innerHTML=`<div class="master-screen harvest-master"><div class="year-master"><button type="button" onclick="openHarvestYearPicker()">${year===new Date().getFullYear()?'This Year':year}⌄</button></div><div class="harvest-stats-master"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${logs.length}</b></div><div><small>Avg Moisture</small><b>${avg.toFixed(1)}%</b></div></div><section class="detail-section-master"><div class="master-section-title">Harvest Over Time (${s.settings.units==='metric'?'kg':'lb'})</div><div class="bar-master">${monthly.map((v,i)=>`<div><i style="height:${Math.max(2,v/max*100)}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section><section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button type="button" onclick="openHarvestHistory(${year})">View All</button></div><div class="batch-master">${logs.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches for this year.</small>'}</div></section></div>`
 }
 function seasonPage(r){
   const s=state();if(!isPro(s)){subscriptionModal('Season Intelligence');go('home');return}
@@ -1265,7 +1265,7 @@ function hiveDetail(r,id){
     <div class="detail-metrics-master">
       <div><i>♛</i><b>Queen</b><small>${esc(h.queen)}</small></div><div><i>♧</i><b>Strength</b><small>${esc(h.strength)}</small></div><div><i>✿</i><b>Brood</b><small>${esc(h.brood)}</small></div><div><i>▣</i><b>Honey</b><small>${esc(h.honey)}</small></div><div><i>◌</i><b>Pollen</b><small>${esc(h.pollen)}</small></div>
     </div>
-    <section class="detail-section-master"><div class="master-title-action"><div><div class="master-section-title">Recent Trend</div><small>Last 5 inspections</small></div><button onclick="go('trend')">View All</button></div><svg viewBox="0 0 300 100" class="trend-master"><polyline points="10,72 60,57 110,66 160,48 210,55 290,42" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,84 60,76 110,82 160,69 210,72 290,65" fill="none" stroke="#C5921A" stroke-width="1.6"/></svg></section>
+    <section class="detail-section-master"><div class="master-title-action"><div><div class="master-section-title">Recent Trend</div><small>Last 5 inspections</small></div><button onclick="go('trend/${h.id}')">View All</button></div><svg viewBox="0 0 300 100" class="trend-master"><polyline points="10,72 60,57 110,66 160,48 210,55 290,42" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,84 60,76 110,82 160,69 210,72 290,65" fill="none" stroke="#C5921A" stroke-width="1.6"/></svg></section>
     <section class="detail-section-master">
       <div class="master-title-action">
         <div class="master-section-title">Photos</div>
@@ -1284,7 +1284,8 @@ function hiveDetail(r,id){
       </div>
     </section>
     <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Treatments & Feeding</div><button type="button" onclick="openTreatmentFeedingHistory('${h.id}')">View All</button></div><button class="record-master" onclick="actionForm('treatment','${h.id}')"><i>◉</i><span><b>${esc(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.type||'Oxalic Acid (Dribble)')}</b><small>${fmtDate(s.logs.treatments.filter(x=>x.hiveId===h.id).slice(-1)[0]?.date||h.lastInspection)}</small></span><em>›</em></button></section>
-    <div class="detail-actions-master"><button onclick="actionForm('inspection','${h.id}')">Inspection</button><button onclick="actionForm('feeding','${h.id}')">Feeding</button><button onclick="actionForm('treatment','${h.id}')">Treatment</button></div>
+    <section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Timeline</div><button type="button" onclick="go('timeline/${h.id}')">View All</button></div><div class="detail-timeline-preview">${timelineRows(s,h.id).slice(0,600)}</div></section>
+    <button type="button" class="btn primary block detail-start-inspection" onclick="go('inspection/${h.id}')">Start Inspection</button>
   </div>`
 }
 function timelineRows(s,hiveId){

@@ -600,3 +600,195 @@ function insights(r){
   </div>`;
 }
 
+
+
+/* ==============================================================
+   V54 HOME VISUAL RESTORATION
+   Locked Home architecture:
+   1. Hive Overview
+   2. Action Center
+   3. Risk Alerts
+   4. Season Intelligence
+   5. Quick Actions
+
+   VISUAL ONLY:
+   - no route changes
+   - no data-model changes
+   - no bottom-nav changes
+   - no entry-point changes
+   ============================================================== */
+
+function v54TopAction(){
+  const s=v45s();
+  const pending=(s.actions||[]).filter(a=>a.status!=='Completed'&&a.priority!=='Done');
+  const rank={High:3,Medium:2,Low:1};
+  pending.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0));
+  return pending[0]||null;
+}
+
+function v54ActionCTA(a){
+  const s=v45s(), first=s.hives[0]?.id||'';
+  if(!a) return {label:'View Actions',route:"go('all-actions')",hive:first};
+  const hid=a.hiveId||first;
+  const type=String(a.type||'inspection').toLowerCase();
+  if(type.includes('feed')) return {label:'Record Feeding',route:`go('feeding-record/${hid}')`,hive:hid};
+  if(type.includes('treat')||type.includes('varroa')) return {label:'Start Treatment',route:`go('treatment-record/${hid}')`,hive:hid};
+  if(type.includes('harvest')) return {label:'Record Harvest',route:`go('harvest-record/${hid}')`,hive:hid};
+  if(type.includes('inspect')) return {label:'Inspect Now',route:`go('inspection/${hid}')`,hive:hid};
+  return {label:'Open',route:`go('hive/${hid}')`,hive:hid};
+}
+
+function home(r){
+  const s=v45s();
+  const score=avgHealth(s);
+  const strong=s.hives.filter(x=>x.status==='Healthy').length;
+  const att=s.hives.filter(x=>x.status==='Attention').length;
+  const crit=s.hives.filter(x=>x.status==='Critical').length;
+  const first=s.hives[0]?.id||'';
+  const top=v54TopAction();
+  const cta=v54ActionCTA(top);
+  const topHive=hive(s,cta.hive);
+  const topTitle=top?.title||'Inspection overdue';
+  const topReason=top?.reason||top?.due||'Last inspection needs review';
+  const attentionHive=s.hives.find(h=>h.status==='Attention')||s.hives[1]||s.hives[0];
+  const criticalHive=s.hives.find(h=>h.status==='Critical')||s.hives[2]||s.hives[0];
+
+  r.innerHTML=`
+  <div class="vs v54-home">
+
+    <!-- 1. Hive Overview -->
+    <section class="v54-card v54-overview">
+      <div class="v54-section-title">
+        <b>Hive Overview</b>
+        <span class="v54-info">i</span>
+      </div>
+
+      <div class="v54-overview-main">
+        <button class="v54-score" onclick="go('all-hives/All')" aria-label="View all hives">
+          <svg viewBox="0 0 120 120" class="v54-score-ring" aria-hidden="true">
+            <circle class="v54-ring-bg" cx="60" cy="60" r="47"></circle>
+            <circle class="v54-ring-value" cx="60" cy="60" r="47"
+                    style="stroke-dasharray:${Math.max(0,Math.min(100,score))*2.953},295.3"></circle>
+          </svg>
+          <span class="v54-score-number">${score}<small>%</small></span>
+          <b>${score>=80?'Good':score>=65?'Attention':'Critical'}</b>
+          <small>Overall Health</small>
+        </button>
+
+        <div class="v54-overview-stats">
+          <button onclick="go('all-hives/All')">
+            <span class="v54-stat-icon">▤</span>
+            <span>Total Hives</span>
+            <b>${s.hives.length}</b>
+          </button>
+          <button onclick="go('all-hives/Healthy')">
+            <i class="v54-dot v54-green"></i>
+            <span>Strong</span>
+            <b>${strong}</b>
+          </button>
+          <button onclick="go('all-hives/Attention')">
+            <i class="v54-dot v54-orange"></i>
+            <span>Needs Attention</span>
+            <b>${att}</b>
+          </button>
+          <button onclick="go('all-hives/Critical')">
+            <i class="v54-dot v54-red"></i>
+            <span>Critical</span>
+            <b>${crit}</b>
+          </button>
+        </div>
+      </div>
+
+      <div class="v54-apiary-strip" role="img" aria-label="Apiary"></div>
+
+      <button class="v54-view-row" onclick="go('all-hives/All')">
+        <span class="v54-view-icon">▤</span>
+        <span><b>View All Hives</b><small>Check detailed hive status</small></span>
+        <em>›</em>
+      </button>
+    </section>
+
+    <!-- 2. Action Center -->
+    <section class="v54-card">
+      <div class="v54-section-title">
+        <b>Action Center</b>
+      </div>
+      <div class="v54-action-primary">
+        <span class="v54-action-icon">✓</span>
+        <span class="v54-action-copy">
+          <b>${esc(topTitle)}</b>
+          <small>${topHive?esc(topHive.name):'Hive'} · ${esc(topReason)}</small>
+        </span>
+        <button onclick="${cta.route}">${cta.label}</button>
+      </div>
+      <div class="v54-action-meta">
+        <span>▧&nbsp; Due: <b>${esc(top?.due||'Now')}</b></span>
+        <span>◷&nbsp; Est. time: 15 min</span>
+        <button onclick="go('all-actions')">View All Actions ›</button>
+      </div>
+    </section>
+
+    <!-- 3. Risk Alerts -->
+    <section class="v54-card">
+      <div class="v54-section-title">
+        <b>Risk Alerts</b>
+        <button onclick="go('all-hives/Critical')">View All Alerts ›</button>
+      </div>
+      <div class="v54-risk-scroll">
+        <button class="v54-risk-card high" onclick="${criticalHive?`go('treatment-record/${criticalHive.id}')`:"go('all-hives/Critical')"}">
+          <span class="v54-risk-symbol">!</span>
+          <span><b>${criticalHive?esc(criticalHive.name):'Hive'}</b><small>Varroa test overdue</small><em>High Risk</em></span>
+          <i>›</i>
+        </button>
+        <button class="v54-risk-card medium" onclick="${attentionHive?`go('hive/${attentionHive.id}')`:"go('all-hives/Attention')"}">
+          <span class="v54-risk-symbol">!</span>
+          <span><b>${attentionHive?esc(attentionHive.name):'Hive'}</b><small>Queen status unconfirmed</small><em>Medium Risk</em></span>
+          <i>›</i>
+        </button>
+        <button class="v54-risk-card high" onclick="${criticalHive?`go('hive/${criticalHive.id}')`:"go('all-hives/Critical')"}">
+          <span class="v54-risk-symbol">!</span>
+          <span><b>${criticalHive?esc(criticalHive.name):'Hive'}</b><small>Inspection overdue</small><em>High Risk</em></span>
+          <i>›</i>
+        </button>
+      </div>
+      <div class="v54-pager"><i class="active"></i><i></i><i></i><i></i></div>
+    </section>
+
+    <!-- 4. Season Intelligence -->
+    <section class="v54-card">
+      <div class="v54-section-title">
+        <b>Season Intelligence</b>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Spring Build-Up ›</button>
+      </div>
+      <div class="v54-season-grid">
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
+          <i>✿</i><b>Nectar Flow</b><em>Good</em><small>Flow is strong in your area</small><span>Learn more ›</span>
+        </button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
+          <i>⌁</i><b>Swarm Watch</b><em>Low Risk</em><small>High swarm risk in 2–4 weeks</small><span>Learn more ›</span>
+        </button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
+          <i>▣</i><b>Add Super Soon</b><em class="warn">Recommended</em><small>Prepare to add honey super</small><span>Learn more ›</span>
+        </button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
+          <i>◉</i><b>Varroa Rising</b><em class="warn">Elevated</em><small>Increase monitoring frequency</small><span>Learn more ›</span>
+        </button>
+      </div>
+      <div class="v54-pager season"><i class="active"></i><i></i><i></i><i></i><i></i></div>
+    </section>
+
+    <!-- 5. Quick Actions -->
+    <section class="v54-card v54-quick-section">
+      <div class="v54-section-title"><b>Quick Actions</b></div>
+      <div class="v54-quick-grid">
+        <button onclick="go('inspection/${first}')"><i>✓</i><b>Inspection</b><small>Record hive inspection</small></button>
+        <button onclick="go('feeding-record/${first}')"><i>▤</i><b>Feeding</b><small>Record feeding activity</small></button>
+        <button onclick="go('treatment-record/${first}')"><i>✚</i><b>Treatment</b><small>Record treatment</small></button>
+        <button onclick="go('harvest-record/${first}')"><i>⌁</i><b>Harvest</b><small>Record honey harvest</small></button>
+        <button onclick="openRecordPicker()"><i>•••</i><b>More</b><small>More actions & tools</small></button>
+      </div>
+    </section>
+
+  </div>`;
+}
+

@@ -100,3 +100,325 @@ html,body{background:#EEEAE1!important;color:var(--ink)!important}.app{max-width
   .v53-action-split>img{width:64px!important}
 }
 
+
+
+/* ==============================================================
+   V54 HOME VISUAL RESTORATION — HOME ONLY
+   ============================================================== */
+.v54-home{
+  gap:8px!important;
+  padding:0 0 6px!important;
+  background:#F8F7F2;
+}
+.v54-home *{box-sizing:border-box}
+.v54-card{
+  background:#FFFEFB;
+  border:1px solid #ECE7DD;
+  border-radius:13px;
+  overflow:hidden;
+  box-shadow:0 2px 10px rgba(35,55,39,.025);
+}
+.v54-section-title{
+  min-height:33px;
+  padding:9px 10px 6px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:8px;
+}
+.v54-section-title>b{
+  color:#18261E;
+  font-size:12.5px;
+  line-height:1;
+  font-weight:800;
+}
+.v54-section-title>button{
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#2F6B42;
+  font-size:7.5px;
+  font-weight:800;
+}
+.v54-info{
+  margin-right:auto;
+  width:13px;height:13px;
+  display:grid;place-items:center;
+  border:1px solid #9BA59F;
+  border-radius:50%;
+  color:#7B8680;
+  font:700 8px/1 sans-serif;
+}
+
+/* Overview */
+.v54-overview-main{
+  position:relative;
+  min-height:132px;
+  padding:2px 10px 0;
+  display:grid;
+  grid-template-columns:47% 53%;
+  align-items:center;
+}
+.v54-score{
+  position:relative;
+  width:124px;height:124px;
+  margin:auto;
+  border:0;background:transparent;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  color:#245C32;
+}
+.v54-score-ring{
+  position:absolute;inset:0;
+  width:124px;height:124px;
+  transform:rotate(-90deg);
+}
+.v54-ring-bg,.v54-ring-value{
+  fill:none;
+  stroke-width:10;
+  stroke-linecap:round;
+}
+.v54-ring-bg{stroke:#E8EDE4}
+.v54-ring-value{stroke:#587753}
+.v54-score-number{
+  margin-top:-3px;
+  font-size:31px;
+  font-weight:800;
+  line-height:1;
+  letter-spacing:-1px;
+}
+.v54-score-number small{font-size:16px}
+.v54-score>b{margin-top:5px;font-size:12px}
+.v54-score>small{margin-top:3px;font-size:7px;color:#718078}
+
+.v54-overview-stats{
+  align-self:stretch;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.v54-overview-stats button{
+  min-height:31px;
+  padding:0 3px;
+  border:0;
+  border-bottom:1px solid #ECE7DD;
+  background:transparent;
+  display:grid;
+  grid-template-columns:24px 1fr auto;
+  align-items:center;
+  gap:5px;
+  text-align:left;
+  color:#26352B;
+}
+.v54-overview-stats button:last-child{border-bottom:0}
+.v54-overview-stats button span:nth-child(2){font-size:8px}
+.v54-overview-stats button b{font-size:13px;color:#163C22}
+.v54-stat-icon{
+  width:22px;height:22px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:#EDF3E8;color:#406B43;
+  font-size:10px;
+}
+.v54-dot{width:8px;height:8px;border-radius:50%;margin-left:8px}
+.v54-green{background:#2F7842}
+.v54-orange{background:#F09A00}
+.v54-red{background:#F21C16}
+
+.v54-apiary-strip{
+  height:55px;
+  margin-top:-17px;
+  background:
+    linear-gradient(180deg,rgba(255,255,255,.65),rgba(255,255,255,.04) 45%),
+    url('assets/home_overview_apiary.jpg') center 52%/cover no-repeat;
+}
+.v54-view-row{
+  width:100%;
+  min-height:49px;
+  padding:7px 10px;
+  border:0;
+  border-top:1px solid #E9E4DA;
+  background:#FFFEFB;
+  display:grid;
+  grid-template-columns:29px 1fr 15px;
+  align-items:center;
+  gap:7px;
+  text-align:left;
+  color:#1A2C21;
+}
+.v54-view-icon{
+  width:29px;height:29px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:#EDF4E9;
+  color:#47724A;
+  font-size:12px;
+}
+.v54-view-row b{display:block;font-size:10px}
+.v54-view-row small{display:block;margin-top:2px;color:#78837D;font-size:7px}
+.v54-view-row em{font-size:16px;font-style:normal;color:#50625A}
+
+/* Action Center */
+.v54-action-primary{
+  padding:2px 10px 9px;
+  display:grid;
+  grid-template-columns:33px 1fr auto;
+  align-items:center;
+  gap:8px;
+}
+.v54-action-icon{
+  width:32px;height:32px;
+  display:grid;place-items:center;
+  border-radius:10px;
+  background:#EDF4E9;color:#2F7045;
+  font-size:17px;
+}
+.v54-action-copy b{display:block;font-size:10.5px;color:#1F3026}
+.v54-action-copy small{display:block;margin-top:3px;font-size:7px;color:#7E8882}
+.v54-action-primary>button{
+  min-width:70px;height:34px;
+  padding:0 10px;
+  border:0;border-radius:9px;
+  background:#F1A000;color:white;
+  font-size:9px;font-weight:800;
+}
+.v54-action-meta{
+  min-height:32px;
+  padding:0 10px;
+  border-top:1px solid #ECE7DD;
+  display:grid;
+  grid-template-columns:1fr 1fr auto;
+  align-items:center;
+  gap:6px;
+  color:#77827B;
+  font-size:6.7px;
+}
+.v54-action-meta b{color:#E47900}
+.v54-action-meta button{
+  border:0;background:transparent;
+  color:#E67F00;
+  font-size:7px;font-weight:800;
+}
+
+/* Risk Alerts */
+.v54-risk-scroll{
+  padding:1px 8px 5px;
+  display:grid;
+  grid-template-columns:repeat(3,minmax(104px,1fr));
+  gap:6px;
+  overflow:hidden;
+}
+.v54-risk-card{
+  min-height:76px;
+  padding:7px 6px;
+  border-radius:8px;
+  background:#FFF8F4;
+  display:grid;
+  grid-template-columns:22px 1fr 8px;
+  gap:4px;
+  text-align:left;
+}
+.v54-risk-card.high{border:1px solid #F2CFC7}
+.v54-risk-card.medium{border:1px solid #F1D9B4;background:#FFFAF1}
+.v54-risk-symbol{
+  width:21px;height:21px;
+  display:grid;place-items:center;
+  border-radius:50%;
+  background:#FFF0EC;
+  color:#E72D1B;
+  font-weight:900;font-size:11px;
+}
+.v54-risk-card.medium .v54-risk-symbol{background:#FFF1DA;color:#E58B00}
+.v54-risk-card b{display:block;font-size:7.5px;color:#1E2C24}
+.v54-risk-card small{display:block;margin-top:2px;font-size:6px;line-height:1.3;color:#6F7A74}
+.v54-risk-card em{
+  display:inline-block;margin-top:5px;padding:2px 5px;
+  border-radius:8px;background:#FFF0EC;color:#E42F20;
+  font-size:6px;font-style:normal;font-weight:800;
+}
+.v54-risk-card.medium em{background:#FFF1DA;color:#DB8500}
+.v54-risk-card>i{align-self:end;font-style:normal;color:#5E7067;font-size:13px}
+.v54-pager{
+  height:13px;
+  display:flex;align-items:center;justify-content:center;gap:5px;
+}
+.v54-pager i{width:4px;height:4px;border-radius:50%;background:#D9DDD8}
+.v54-pager i.active{background:#28703C}
+
+/* Season Intelligence */
+.v54-season-grid{
+  padding:1px 7px 3px;
+  display:grid;
+  grid-template-columns:repeat(4,1fr);
+}
+.v54-season-grid button{
+  min-height:92px;
+  padding:5px 6px;
+  border:0;
+  border-right:1px solid #E8E4DA;
+  background:transparent;
+  text-align:left;
+  color:#1E2D23;
+}
+.v54-season-grid button:last-child{border-right:0}
+.v54-season-grid i{
+  width:22px;height:22px;
+  display:grid;place-items:center;
+  color:#3F7045;
+  font-size:12px;font-style:normal;
+}
+.v54-season-grid b{display:block;margin-top:2px;font-size:7.3px}
+.v54-season-grid em{
+  display:inline-block;margin-top:4px;padding:2px 5px;border-radius:7px;
+  background:#EDF4E9;color:#4F754B;font-size:5.8px;font-style:normal;
+}
+.v54-season-grid em.warn{background:#FFF1D9;color:#E78B00}
+.v54-season-grid small{
+  display:block;margin-top:6px;min-height:24px;
+  color:#6E7972;font-size:5.7px;line-height:1.35;
+}
+.v54-season-grid span{
+  display:block;margin-top:4px;color:#2E7040;font-size:5.8px;font-weight:700;
+}
+.v54-pager.season{height:10px}
+
+/* Quick Actions */
+.v54-quick-section{margin-bottom:1px}
+.v54-quick-grid{
+  padding:0 7px 8px;
+  display:grid;grid-template-columns:repeat(5,1fr);gap:3px;
+}
+.v54-quick-grid button{
+  min-height:68px;
+  padding:5px 2px;
+  border:0;background:transparent;
+  text-align:center;color:#203127;
+}
+.v54-quick-grid i{
+  width:28px;height:28px;margin:auto;
+  display:grid;place-items:center;
+  border-radius:50%;
+  color:#2D6B3C;
+  background:#EDF4E9;
+  font-style:normal;font-size:13px;
+}
+.v54-quick-grid b{display:block;margin-top:4px;font-size:7px}
+.v54-quick-grid small{
+  display:block;margin-top:2px;
+  color:#7D8781;font-size:5.4px;line-height:1.2;
+}
+
+/* Do not alter locked global navigation */
+.v54-home{padding-bottom:4px!important}
+.bottomnav:not(.hidden){grid-template-columns:repeat(4,1fr)!important}
+
+/* Responsive, still same layout */
+@media(max-width:360px){
+  .v54-overview-main{grid-template-columns:46% 54%}
+  .v54-score{width:116px;height:116px}
+  .v54-score-ring{width:116px;height:116px}
+  .v54-risk-scroll{grid-template-columns:repeat(3,102px)}
+}
+

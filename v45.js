@@ -432,3 +432,171 @@ const V51_OLD_INSIGHTS=insights;
 insights=function(r){const s=v45s();if(!s.hives.length){r.innerHTML=`<div class="vs">${Vhero(V45.flowers,'<div class="insighttitle">Overview</div>','inshero')}<section class="vc"><div class="vhead"><b>No hive data yet</b></div><div class="empty-master">Health analysis, risk prediction, trends, and recommendations will appear after you add a hive and record inspections.</div><button class="primary" onclick="go('hives')">Add a Hive</button></section></div>`;return}V51_OLD_INSIGHTS(r)};
 function v51NotifRows(){const s=v45s(),first=s.hives[0]?.id,critical=s.hives.find(h=>h.status==='Critical')?.id||first,attention=s.hives.find(h=>h.status==='Attention')?.id||first;const rows=[];if(first){rows.push(['v49n1','Critical','High temperature alert','hive/'+critical,'Alerts'],['v49n2','Action Required','Inspect '+(hive(s,first)?.name||'Hive'),'inspection/'+first,'Alerts'],['v49n3','Reminder','Varroa treatment due','treatment-record/'+critical,'Reminders'],['v49n4','AI Risk','Queen failure risk','risk','Alerts'],['v49n5','Treatment','Follow-up recommended','treatment-record/'+attention,'Reminders'],['v49n6','Seasonal','Spring nectar flow','season','Reminders'])}rows.push(['v49n7','System','HiveDash Pro status','subscription','System']);return rows}
 drawNotificationsV49=function(group='All'){const box=idq('v48notifs');if(!box)return;const rows=v51NotifRows().filter(x=>group==='All'||x[4]===group);box.innerHTML=rows.length?rows.map((x,i)=>`<button style="opacity:${v49NotifRead(x[0])?.6:1}" onclick="openNotifV49('${x[0]}','${x[3]}')"><i class="${x[1]==='Critical'?'critical':x[1]==='Action Required'?'attention':'good'}"></i><div><b>${x[1]}</b><span>${esc(x[2])}</span></div><time>${9+i}:30 AM</time></button>`).join(''):'<div class="vc small muted">No notifications.</div>'};
+
+
+/* ==============================================================
+   V53 VISUAL RESTORATION — STAGE 1
+   Locked scope: Home / Hives / Actions / Insights only.
+   No architecture, route, entry-point, data, or navigation changes.
+   ============================================================== */
+
+function v53HiveThumb(h){
+  const idx=Math.max(0,v45s().hives.findIndex(x=>x.id===h.id));
+  const imgs=[V45.hive,V45.hives,V45.home,V45.season];
+  return imgs[idx%imgs.length];
+}
+
+function home(r){
+  const s=v45s(),score=avgHealth(s);
+  const strong=s.hives.filter(x=>x.status==='Healthy').length;
+  const att=s.hives.filter(x=>x.status==='Attention').length;
+  const crit=s.hives.filter(x=>x.status==='Critical').length;
+  const first=s.hives[0]?.id||'';
+  r.innerHTML=`<div class="vs homev v53-home">
+    ${Vhero(V45.home,`
+      <div class="greet"><span>Good Morning!</span><b>${esc(s.settings.apiaryName||'Oak Meadow Apiary')}</b></div>
+      <div class="hring"><strong>${score}%</strong><span>Overall Health</span></div>
+      <div class="hstats">
+        <button onclick="go('all-hives/All')"><b>${s.hives.length}</b><span>Total Hives</span></button>
+        <button onclick="go('all-hives/Healthy')"><b>${strong}</b><span>Strong</span></button>
+        <button onclick="go('all-hives/Attention')"><b>${att}</b><span>Attention</span></button>
+        <button onclick="go('all-hives/Critical')"><b>${crit}</b><span>Critical</span></button>
+      </div>`,'homehero')}
+    ${Vcard('Action Center',`
+      <div class="actrow">
+        <div><small>High Priority</small><b>Inspect Hive #2</b><span>Queen confirmation due</span></div>
+        <button onclick="go('inspection/h2')">Open</button>
+      </div>`)}
+    ${Vcard('Risk Alerts',`
+      <div class="alerts">
+        <button onclick="go('treatment-record/h3')"><b>High Varroa Risk</b><span>Hive #3 · 4 mites / 100 bees</span><em>View</em></button>
+        <button onclick="go('hive/h2')"><b>Queen status unconfirmed</b><span>Hive #2 needs verification</span><em>View</em></button>
+      </div>`)}
+    ${Vcard('Season Intelligence',`
+      <div class="actrow"><div><b>Spring Nectar Flow</b><span>Peak flow · next 12 days</span></div><button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Learn More</button></div>`)}
+    ${Vcard('Quick Actions',`
+      <div class="quick">
+        <button onclick="go('inspection/${first}')"><i>⌕</i><b>Inspection</b></button>
+        <button onclick="go('feeding-record/${first}')"><i>▣</i><b>Feeding</b></button>
+        <button onclick="go('treatment-record/${first}')"><i>✚</i><b>Treatment</b></button>
+        <button onclick="go('harvest-record/${first}')"><i>⌁</i><b>Harvest</b></button>
+        <button onclick="openRecordPicker()"><i>•••</i><b>More</b></button>
+      </div>`)}
+  </div>`;
+}
+
+function v53HiveCard(h){
+  return `<button class="hcard v53-hcard" onclick="go('hive/${h.id}')">
+    <img src="${v53HiveThumb(h)}" alt="${esc(h.name)}">
+    <span class="v53-hi"><b>${esc(h.name)}</b><small>${h.score}% · Last ${pretty(h.lastInspection)}</small></span>
+    <em class="${Vclass(h)}">${Vstatus(h)}</em>
+  </button>`;
+}
+
+function hives(r){
+  const s=v45s();
+  r.innerHTML=`<div class="vs v53-hives">
+    <div class="phead" style="--hero:url('${V45.hives}')"><i></i><b>Hives</b>
+      <div class="search"><span>⌕</span><input id="hsearch" placeholder="Search hives"></div>
+    </div>
+    <div class="filters v53-filters">
+      <button class="active" data-v53-status="All">All (${s.hives.length})</button>
+      <button data-v53-status="Healthy">Healthy</button>
+      <button data-v53-status="Attention">Attention</button>
+      <button data-v53-status="Critical">Critical</button>
+    </div>
+    <div id="hlist" class="hlist">${s.hives.map(v53HiveCard).join('')}</div>
+  </div>`;
+  const input=idq('hsearch');
+  let status='All';
+  function draw(){
+    const q=(input?.value||'').toLowerCase().trim();
+    const rows=s.hives.filter(h=>(status==='All'||h.status===status)&&(!q||h.name.toLowerCase().includes(q)));
+    idq('hlist').innerHTML=rows.length?rows.map(v53HiveCard).join(''):'<section class="vc v53-empty"><b>No hives found</b><span>Try another search or filter.</span></section>';
+  }
+  document.querySelectorAll('[data-v53-status]').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('[data-v53-status]').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active'); status=btn.dataset.v53Status; draw();
+    };
+  });
+  if(input) input.oninput=draw;
+}
+
+function v53ActionRows(mode='Pending'){
+  const s=v45s();
+  if(typeof v48ActionRows==='function') return v48ActionRows(mode);
+  return (s.actions||[]);
+}
+
+function v53DrawActions(mode='Pending'){
+  const box=idq('alist'); if(!box)return;
+  const s=v45s(),rows=v53ActionRows(mode);
+  box.innerHTML=rows.length?rows.map(a=>{
+    const h=hive(s,a.hiveId)||s.hives[0];
+    if(!h)return '';
+    const done=a.priority==='Done'||a.status==='Completed';
+    return `<button onclick="${done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`}">
+      <span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b>
+      <em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(a.priority||'Low')}</em>
+      <small>${esc(a.due||'')}</small>
+    </button>`;
+  }).join(''):'<div class="v53-empty-inline">No matching actions.</div>';
+}
+
+function actions(r){
+  const first=v45s().hives[0]?.id||'';
+  r.innerHTML=`<div class="vs v53-actions">
+    <div class="split v53-action-split">
+      <img src="${V45.actions}" alt="Beekeeper inspecting hive">
+      <div>
+        <div class="filters v53-action-tabs">
+          <button class="active" data-v53-action="Pending">Pending</button>
+          <button data-v53-action="Completed">Completed</button>
+          <button data-v53-action="All">All</button>
+        </div>
+        <div class="alist" id="alist"></div>
+      </div>
+    </div>
+    <button class="primary v53-add-action" onclick="openRecordPicker()">+ Add Action</button>
+    <div class="shortcuts v53-shortcuts">
+      <button onclick="go('inspection/${first}')">Inspection</button>
+      <button onclick="go('feeding-record/${first}')">Feeding</button>
+      <button onclick="go('treatment-record/${first}')">Treatment</button>
+      <button onclick="go('harvest-record/${first}')">Harvest</button>
+    </div>
+  </div>`;
+  document.querySelectorAll('[data-v53-action]').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('[data-v53-action]').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      v53DrawActions(btn.dataset.v53Action);
+    };
+  });
+  v53DrawActions('Pending');
+}
+
+function insights(r){
+  const s=v45s(),score=avgHealth(s);
+  const critical=s.hives.filter(h=>h.status==='Critical').length;
+  const pending=(s.actions||[]).filter(a=>a.priority!=='Done'&&a.status!=='Completed').length;
+  const risk=critical?'High':s.hives.some(h=>h.status==='Attention')?'Medium':'Low';
+  r.innerHTML=`<div class="vs v53-insights">
+    ${Vhero(V45.flowers,`<div class="insighttitle">Overview</div>`,'inshero')}
+    <div class="isum">
+      <button onclick="${isPro(s)?"go('analysis')":"requirePro('AI Health Analysis')"}"><span>Health Score</span><b>${score}</b><small>${score>=80?'Good':score>=65?'Attention':'Critical'}</small></button>
+      <button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><span>Risk Level</span><b>${risk}</b><small>Overall Risk</small></button>
+    </div>
+    ${Vcard("Today's Highlights",`<ul class="bullets"><li>${s.hives.length} hives monitored</li><li>${pending} pending actions</li><li>${critical} critical hives</li></ul>`)}
+    ${Vcard('AI Recommendation',`<div class="recol"><button onclick="${isPro(s)?"go('recommendations')":"requirePro('Professional Recommendations')"}">${pending?'Review priority actions':'Continue regular inspection'}</button><button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}">Review current risk forecast</button></div>`)}
+    <div class="inav v53-insight-grid">
+      <button onclick="${isPro(s)?"go('analysis')":"requirePro('AI Health Analysis')"}">AI Health</button>
+      <button onclick="${isPro(s)?"go('trend')":"requirePro('Advanced Trends')"}">Trends</button>
+      <button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}">Risk</button>
+      <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Season</button>
+      <button onclick="${isPro(s)?"go('honey-analytics')":"requirePro('Honey Analytics')"}">Honey</button>
+      <button onclick="${isPro(s)?"go('recommendations')":"requirePro('Professional Recommendations')"}">Recommendations</button>
+    </div>
+  </div>`;
+}
+

@@ -442,7 +442,7 @@ drawNotificationsV49=function(group='All'){const box=idq('v48notifs');if(!box)re
 
 function v53HiveThumb(h){
   const idx=Math.max(0,v45s().hives.findIndex(x=>x.id===h.id));
-  const imgs=[V45.hive,V45.hives,V45.home,V45.season];
+  const imgs=[V45.hive,V45.hives,V45.home,V45.inspection,V45.treatment,V45.harvest];
   return imgs[idx%imgs.length];
 }
 

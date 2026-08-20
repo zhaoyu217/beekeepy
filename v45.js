@@ -792,3 +792,154 @@ function home(r){
   </div>`;
 }
 
+
+
+/* ==============================================================
+   V55 HOME EXACT RESTORE
+   Visual source of truth: locked five-module Home mother board.
+   No feature, route, entry, data-model, or navigation changes.
+   ============================================================== */
+
+function v55TopAction(){
+  const s=v45s();
+  const rows=(s.actions||[]).filter(a=>a.status!=='Completed'&&a.priority!=='Done');
+  const rank={High:3,Medium:2,Low:1};
+  rows.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0));
+  return rows[0]||null;
+}
+
+function v55ActionRoute(a){
+  const s=v45s();
+  const first=s.hives[0]?.id||'';
+  if(!a) return {label:'Inspect Now', onclick:`go('inspection/${first}')`, hive:first};
+  const hid=a.hiveId||first;
+  const t=String(a.type||a.title||'inspection').toLowerCase();
+  if(t.includes('feed')) return {label:'Record Feeding', onclick:`go('feeding-record/${hid}')`, hive:hid};
+  if(t.includes('treat')||t.includes('varroa')) return {label:'Start Treatment', onclick:`go('treatment-record/${hid}')`, hive:hid};
+  if(t.includes('harvest')) return {label:'Record Harvest', onclick:`go('harvest-record/${hid}')`, hive:hid};
+  if(t.includes('inspect')) return {label:'Inspect Now', onclick:`go('inspection/${hid}')`, hive:hid};
+  return {label:'Open', onclick:`go('hive/${hid}')`, hive:hid};
+}
+
+function home(r){
+  const s=v45s(), score=avgHealth(s);
+  const strong=s.hives.filter(h=>h.status==='Healthy').length;
+  const att=s.hives.filter(h=>h.status==='Attention').length;
+  const crit=s.hives.filter(h=>h.status==='Critical').length;
+  const total=Math.max(1,s.hives.length);
+  const pct=n=>Math.round((n/total)*100);
+  const first=s.hives[0]?.id||'';
+  const top=v55TopAction();
+  const ar=v55ActionRoute(top);
+  const th=hive(s,ar.hive);
+  const riskA=s.hives.find(h=>h.status==='Attention')||s.hives[0];
+  const riskC=s.hives.find(h=>h.status==='Critical')||s.hives[0];
+
+  r.innerHTML=`
+  <div class="vs v55-home">
+
+    <section class="v55-overview">
+      <div class="v55-title">Hive Overview <span>i</span></div>
+
+      <div class="v55-overview-body">
+        <button class="v55-health" onclick="go('all-hives/All')" aria-label="View all hives">
+          <svg viewBox="0 0 120 120">
+            <circle cx="60" cy="60" r="47" class="bg"></circle>
+            <circle cx="60" cy="60" r="47" class="val"
+              style="stroke-dasharray:${Math.max(0,Math.min(100,score))*2.953},295.3"></circle>
+          </svg>
+          <div class="num">${score}<small>%</small></div>
+          <b>${score>=80?'Good':score>=65?'Attention':'Critical'}</b>
+          <em>Overall Health</em>
+        </button>
+
+        <div class="v55-stat-list">
+          <button onclick="go('all-hives/All')">
+            <i class="ico">▤</i><span>Total Hives</span><b>${s.hives.length}</b>
+          </button>
+          <button onclick="go('all-hives/Healthy')">
+            <i class="dot green"></i><span>Strong</span><b>${strong}</b><em>(${pct(strong)}%)</em>
+          </button>
+          <button onclick="go('all-hives/Attention')">
+            <i class="dot orange"></i><span>Needs Attention</span><b>${att}</b><em>(${pct(att)}%)</em>
+          </button>
+          <button onclick="go('all-hives/Critical')">
+            <i class="dot red"></i><span>Critical</span><b>${crit}</b><em>(${pct(crit)}%)</em>
+          </button>
+        </div>
+      </div>
+
+      <div class="v55-landscape"></div>
+
+      <button class="v55-view-all" onclick="go('all-hives/All')">
+        <i>▤</i>
+        <span><b>View All Hives</b><small>Check detailed hive status</small></span>
+        <em>›</em>
+      </button>
+    </section>
+
+    <section class="v55-section v55-action">
+      <div class="v55-section-title">Action Center</div>
+      <div class="v55-action-row">
+        <i class="cal">✓</i>
+        <span class="copy">
+          <b>${esc(top?.title||'Varroa Check Overdue')}</b>
+          <small>${th?esc(th.name):'Hive'} · ${esc(top?.reason||'Last inspection: 35 days ago')}</small>
+        </span>
+        <button onclick="${ar.onclick}">${ar.label}</button>
+      </div>
+      <div class="v55-meta">
+        <span>▧ &nbsp; Due: <b>${esc(top?.due||'Now')}</b></span>
+        <span>◷ &nbsp; Est. time: 15 min</span>
+        <button onclick="go('all-actions')">View All Actions <b>›</b></button>
+      </div>
+    </section>
+
+    <section class="v55-section v55-risks">
+      <div class="v55-section-head">
+        <span>Risk Alerts</span>
+        <button onclick="go('all-hives/Critical')">View All Alerts <b>›</b></button>
+      </div>
+      <div class="v55-risk-row">
+        <button class="high" onclick="${riskA?`go('hive/${riskA.id}')`:"go('all-hives/Attention')"}">
+          <i>!</i><span><b>${riskA?esc(riskA.name):'Hive #2'}</b><small>Queen status<br>unconfirmed</small><em>High Risk</em></span><strong>›</strong>
+        </button>
+        <button class="medium" onclick="${riskA?`go('feeding-record/${riskA.id}')`:"go('all-hives/Attention')"}">
+          <i>!</i><span><b>${riskA?esc(riskA.name):'Hive #4'}</b><small>Low food<br>stores</small><em>Medium Risk</em></span><strong>›</strong>
+        </button>
+        <button class="high" onclick="${riskC?`go('treatment-record/${riskC.id}')`:"go('all-hives/Critical')"}">
+          <i>!</i><span><b>${riskC?esc(riskC.name):'Hive #1'}</b><small>Varroa test<br>overdue</small><em>High Risk</em></span><strong>›</strong>
+        </button>
+        <button class="more-risk" onclick="go('all-hives/Critical')"><i>!</i></button>
+      </div>
+      <div class="v55-dots"><b></b><i></i><i></i><i></i><i></i></div>
+    </section>
+
+    <section class="v55-section v55-season">
+      <div class="v55-section-head">
+        <span>Season Intelligence</span>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Spring Build-Up <b>›</b></button>
+      </div>
+      <div class="v55-season-grid">
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>✿</i><b>Nectar Flow</b><em>Good</em><small>Flow is strong in your area</small><span>Learn more ›</span></button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>⌁</i><b>Swarm Watch</b><em>Low Risk</em><small>High swarm risk in 2–4 weeks</small><span>Learn more ›</span></button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>▤</i><b>Add Super Soon</b><em class="orange">Recommended</em><small>Prepare to add honey super</small><span>Learn more ›</span></button>
+        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>◉</i><b>Varroa Rising</b><em class="orange">Elevated</em><small>Increase monitoring frequency</small><span>Learn more ›</span></button>
+      </div>
+      <div class="v55-dots season-dots"><b></b><i></i><i></i><i></i><i></i></div>
+    </section>
+
+    <section class="v55-section v55-quick">
+      <div class="v55-section-title">Quick Actions</div>
+      <div class="v55-quick-grid">
+        <button onclick="go('inspection/${first}')"><i>✓</i><b>Inspection</b><small>Record hive<br>inspection</small></button>
+        <button onclick="go('feeding-record/${first}')"><i>▤</i><b>Feeding</b><small>Record feeding<br>activity</small></button>
+        <button onclick="go('treatment-record/${first}')"><i>✚</i><b>Treatment</b><small>Record<br>treatment</small></button>
+        <button onclick="go('harvest-record/${first}')"><i>⌁</i><b>Harvest</b><small>Record honey<br>harvest</small></button>
+        <button onclick="openRecordPicker()"><i>•••</i><b>More</b><small>More actions<br>& tools</small></button>
+      </div>
+    </section>
+
+  </div>`;
+}
+

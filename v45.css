@@ -758,3 +758,96 @@ html,body{background:#EEEAE1!important;color:var(--ink)!important}.app{max-width
   .v56-soft-btn{min-width:56px}
 }
 
+
+
+/* ==============================================================
+   V57 HOME TYPOGRAPHY TUNE
+   Typography/line-height only. No layout/route/nav/function changes.
+   ============================================================== */
+
+.v56-greeting>span{
+  font-size:11px!important;
+  line-height:1.25!important;
+  font-weight:700!important;
+}
+.v56-greeting>button{
+  font-size:10px!important;
+  line-height:1.25!important;
+  font-weight:700!important;
+}
+
+.v56-health-ring strong{
+  font-size:28px!important;
+  line-height:1!important;
+  font-weight:800!important;
+}
+.v56-health-ring strong small{
+  font-size:14px!important;
+}
+.v56-health-ring>span{
+  font-size:8.5px!important;
+  line-height:1.15!important;
+  font-weight:700!important;
+}
+
+.v56-health-stats b{
+  font-size:15px!important;
+  line-height:1!important;
+  font-weight:800!important;
+}
+.v56-health-stats span{
+  font-size:8.5px!important;
+  line-height:1.15!important;
+  margin-top:4px!important;
+  font-weight:600!important;
+}
+
+.v56-row-copy>span{
+  font-size:13px!important;
+  line-height:1.15!important;
+  font-weight:800!important;
+  margin-bottom:5px!important;
+}
+.v56-row-copy>small{
+  font-size:8px!important;
+  line-height:1.2!important;
+  margin-bottom:3px!important;
+}
+.v56-row-copy>b{
+  font-size:11.5px!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+}
+.v56-row-copy>em{
+  font-size:8px!important;
+  line-height:1.25!important;
+  margin-top:3px!important;
+}
+
+.v56-soft-btn{
+  font-size:9.5px!important;
+  font-weight:800!important;
+  min-width:64px!important;
+}
+
+.v56-quickbar i{
+  font-size:16px!important;
+  height:24px!important;
+}
+.v56-quickbar span{
+  font-size:8.5px!important;
+  line-height:1.15!important;
+  margin-top:3px!important;
+  font-weight:600!important;
+}
+
+/* Slightly increase section breathing room only to prevent larger text collision. */
+.v56-row-card{
+  min-height:68px!important;
+  padding-top:9px!important;
+  padding-bottom:9px!important;
+}
+.v56-quickbar{
+  min-height:61px!important;
+}
+

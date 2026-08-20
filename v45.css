@@ -620,3 +620,141 @@ html,body{background:#EEEAE1!important;color:var(--ink)!important}.app{max-width
   .v55-risk-row{grid-template-columns:repeat(3,102px) 24px}
 }
 
+
+
+/* ==============================================================
+   V56 HOME — FINAL LOCKED BOARD RESTORE
+   Scoped to Home only.
+   ============================================================== */
+.v56-home{
+  gap:7px!important;
+  padding:8px 8px 7px!important;
+  background:#FBFAF6!important;
+}
+.v56-home *{box-sizing:border-box}
+
+.v56-hero{
+  position:relative;
+  height:214px;
+  overflow:hidden;
+  border-radius:14px;
+  background:url('assets/home_final_apiary.jpg') center 53%/cover no-repeat;
+  box-shadow:inset 0 0 0 1px rgba(255,255,255,.24);
+  color:#fff;
+}
+.v56-hero-shade{
+  position:absolute;inset:0;
+  background:
+    linear-gradient(180deg,rgba(24,38,26,.16) 0%,rgba(24,38,26,.02) 34%,rgba(15,31,21,.12) 58%,rgba(12,27,18,.54) 100%);
+  pointer-events:none;
+}
+.v56-greeting{
+  position:absolute;left:12px;top:12px;z-index:1;
+  display:flex;flex-direction:column;align-items:flex-start;
+  text-shadow:0 1px 4px rgba(0,0,0,.32);
+}
+.v56-greeting>span{font-size:10px;line-height:1.2;font-weight:600}
+.v56-greeting>button{
+  border:0;background:transparent;color:#fff;padding:3px 0 0;
+  font-size:9px;line-height:1.2;font-weight:700;text-shadow:inherit;
+}
+.v56-greeting>button b{font-size:8px;margin-left:2px}
+
+.v56-health-ring{
+  position:absolute;z-index:1;
+  left:50%;top:54px;transform:translateX(-50%);
+  width:91px;height:91px;padding:0;
+  border:0;background:transparent;color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-shadow:0 1px 4px rgba(0,0,0,.28);
+}
+.v56-health-ring svg{
+  position:absolute;inset:0;width:91px;height:91px;
+  transform:rotate(-90deg);
+}
+.v56-health-ring circle{fill:none;stroke-width:5.5;stroke-linecap:round}
+.v56-health-ring .track{stroke:rgba(255,255,255,.34)}
+.v56-health-ring .value{stroke:#fff}
+.v56-health-ring strong{font-size:25px;line-height:1;font-weight:750;letter-spacing:-.5px}
+.v56-health-ring strong small{font-size:13px}
+.v56-health-ring>span{margin-top:6px;font-size:7px;font-weight:600}
+
+.v56-health-stats{
+  position:absolute;z-index:1;left:8px;right:8px;bottom:8px;
+  display:grid;grid-template-columns:repeat(4,1fr);gap:3px;
+}
+.v56-health-stats button{
+  min-height:42px;padding:4px 1px;
+  border:0;border-radius:7px;
+  background:rgba(26,51,33,.38);
+  color:#fff;
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-shadow:0 1px 3px rgba(0,0,0,.28);
+}
+.v56-health-stats b{font-size:13px;line-height:1}
+.v56-health-stats span{font-size:6.5px;margin-top:5px}
+
+.v56-row-card{
+  min-height:62px;
+  padding:8px 9px;
+  border:1px solid #EAE4D8;
+  border-radius:12px;
+  background:#FFFEFB;
+  display:grid;grid-template-columns:1fr auto;align-items:center;gap:8px;
+  box-shadow:0 2px 8px rgba(42,54,46,.018);
+}
+.v56-row-copy{min-width:0}
+.v56-row-copy>span{
+  display:block;margin-bottom:4px;
+  color:#1A2A20;font-size:10.5px;font-weight:800;
+}
+.v56-row-copy>small{
+  display:block;margin-bottom:2px;
+  color:#C98200;font-size:6.6px;line-height:1.2;
+}
+.v56-row-copy>b{
+  display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+  color:#1C2C22;font-size:8.8px;line-height:1.25;
+}
+.v56-row-copy>em{
+  display:block;margin-top:2px;
+  color:#707A74;font-size:6.2px;line-height:1.2;font-style:normal;
+}
+.v56-soft-btn{
+  min-width:60px;height:29px;padding:0 9px;
+  border:0;border-radius:8px;
+  background:#E9EFDE;color:#315E38;
+  font-size:7.4px;font-weight:800;white-space:nowrap;
+}
+
+.v56-quickbar{
+  min-height:56px;
+  padding:3px 1px 0;
+  display:grid;grid-template-columns:repeat(5,1fr);
+  background:#FFFEFB;
+  border-top:1px solid #ECE7DD;
+  border-radius:0 0 12px 12px;
+}
+.v56-quickbar button{
+  min-width:0;padding:3px 0 2px;border:0;background:transparent;
+  color:#243229;display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.v56-quickbar i{
+  height:22px;display:grid;place-items:center;
+  color:#244E31;font-style:normal;font-size:14px;font-weight:700;
+}
+.v56-quickbar span{margin-top:2px;font-size:6.2px;line-height:1.1}
+
+/* Global navigation logic remains untouched; visually reduce separation on Home only. */
+.vview.main:has(.v56-home){padding-bottom:74px!important}
+.bottomnav:not(.hidden){grid-template-columns:repeat(4,1fr)!important}
+
+/* Keep the approved global Header component. */
+.vtop .brand{color:#285F39!important}
+
+@media(max-width:360px){
+  .v56-hero{height:205px}
+  .v56-row-card{min-height:59px}
+  .v56-soft-btn{min-width:56px}
+}
+

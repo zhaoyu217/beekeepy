@@ -943,3 +943,102 @@ function home(r){
   </div>`;
 }
 
+
+
+/* ==============================================================
+   V56 HOME — FINAL LOCKED BOARD RESTORE
+   Source of truth: user-approved final UI board (2026-08-18).
+   This override changes Home presentation only.
+   Routes, entry relationships, data, permissions and nav logic stay unchanged.
+   ============================================================== */
+
+function v56HomeAction(){
+  const s=v45s(), first=s.hives[0]?.id||'';
+  const rows=(s.actions||[]).filter(a=>a.status!=='Completed' && a.priority!=='Done');
+  const rank={High:3,Medium:2,Low:1};
+  rows.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0));
+  const a=rows[0]||null, hid=a?.hiveId||first, txt=String(a?.type||a?.title||'inspection').toLowerCase();
+  if(txt.includes('feed')) return {a,hid,label:'Open',click:`go('feeding-record/${hid}')`};
+  if(txt.includes('treat')||txt.includes('varroa')) return {a,hid,label:'Open',click:`go('treatment-record/${hid}')`};
+  if(txt.includes('harvest')) return {a,hid,label:'Open',click:`go('harvest-record/${hid}')`};
+  if(txt.includes('inspect')) return {a,hid,label:'Open',click:`go('inspection/${hid}')`};
+  return {a,hid,label:'Open',click:`go('hive/${hid}')`};
+}
+
+function home(r){
+  const s=v45s(), score=avgHealth(s);
+  const strong=s.hives.filter(h=>h.status==='Healthy').length;
+  const attention=s.hives.filter(h=>h.status==='Attention').length;
+  const critical=s.hives.filter(h=>h.status==='Critical').length;
+  const first=s.hives[0]?.id||'';
+  const action=v56HomeAction();
+  const actionHive=hive(s,action.hid);
+  const riskHive=s.hives.find(h=>h.status==='Critical')||s.hives.find(h=>h.status==='Attention')||s.hives[0];
+
+  r.innerHTML=`
+  <div class="vs v56-home">
+
+    <section class="v56-hero">
+      <div class="v56-hero-shade"></div>
+      <div class="v56-greeting">
+        <span>Good Morning!</span>
+        <button onclick="go('hives')">${esc(s.settings.apiaryName||'Oak Meadow Apiary')} <b>⌄</b></button>
+      </div>
+
+      <button class="v56-health-ring" onclick="go('all-hives/All')" aria-label="View overall hive health">
+        <svg viewBox="0 0 120 120">
+          <circle cx="60" cy="60" r="46" class="track"></circle>
+          <circle cx="60" cy="60" r="46" class="value"
+            style="stroke-dasharray:${Math.max(0,Math.min(100,score))*2.89},289"></circle>
+        </svg>
+        <strong>${score}<small>%</small></strong>
+        <span>Overall Health</span>
+      </button>
+
+      <div class="v56-health-stats">
+        <button onclick="go('all-hives/All')"><b>${s.hives.length}</b><span>Total Hives</span></button>
+        <button onclick="go('all-hives/Healthy')"><b>${strong}</b><span>Strong</span></button>
+        <button onclick="go('all-hives/Attention')"><b>${attention}</b><span>Attention</span></button>
+        <button onclick="go('all-hives/Critical')"><b>${critical}</b><span>Critical</span></button>
+      </div>
+    </section>
+
+    <section class="v56-row-card">
+      <div class="v56-row-copy">
+        <span>Action Center</span>
+        <small>High Priority</small>
+        <b>${esc(action.a?.title||'Inspect Hive #2')}</b>
+        <em>${esc(action.a?.reason||action.a?.due||'Due Today')}</em>
+      </div>
+      <button class="v56-soft-btn" onclick="${action.click}">${action.label}</button>
+    </section>
+
+    <section class="v56-row-card">
+      <div class="v56-row-copy">
+        <span>Risk Alerts</span>
+        <b>${riskHive?.varroa>=3?'High Varroa Risk':'Queen status unconfirmed'}</b>
+        <em>${riskHive?esc(riskHive.name):'Hive'} · ${riskHive?.varroa>=3?esc(String(riskHive.varroa))+' mites / 100 bees':'needs verification'}</em>
+      </div>
+      <button class="v56-soft-btn" onclick="${riskHive?.varroa>=3?`go('treatment-record/${riskHive.id}')`:riskHive?`go('hive/${riskHive.id}')`:"go('all-hives/Critical')"}">View</button>
+    </section>
+
+    <section class="v56-row-card">
+      <div class="v56-row-copy">
+        <span>Season Intelligence</span>
+        <b>Spring Nectar Flow</b>
+        <em>Peak flow in 12 days</em>
+      </div>
+      <button class="v56-soft-btn" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Learn More</button>
+    </section>
+
+    <section class="v56-quickbar" aria-label="Quick Actions">
+      <button onclick="go('inspection/${first}')"><i>⌕</i><span>Inspection</span></button>
+      <button onclick="go('feeding-record/${first}')"><i>▤</i><span>Feeding</span></button>
+      <button onclick="go('treatment-record/${first}')"><i>✚</i><span>Treatment</span></button>
+      <button onclick="go('harvest-record/${first}')"><i>⌁</i><span>Harvest</span></button>
+      <button onclick="openRecordPicker()"><i>•••</i><span>More</span></button>
+    </section>
+
+  </div>`;
+}
+

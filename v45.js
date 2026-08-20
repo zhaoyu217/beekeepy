@@ -488,7 +488,7 @@ function home(r){
 function v53HiveCard(h){
   return `<button class="hcard v53-hcard" onclick="go('hive/${h.id}')">
     <img src="${v53HiveThumb(h)}" alt="${esc(h.name)}">
-    <span class="v53-hi"><b>${esc(h.name)}</b><small>${h.score}% · Last ${pretty(h.lastInspection)}</small></span>
+    <span class="v53-hi"><b>${esc(h.name)}</b><small>${h.score}% · Last ${fmtDate(h.lastInspection)}</small></span>
     <em class="${Vclass(h)}">${Vstatus(h)}</em>
   </button>`;
 }

@@ -1326,3 +1326,148 @@ html,body{background:#EEEAE1!important;color:var(--ink)!important}.app{max-width
   .v61-hive-text b{font-size:10px}
 }
 
+
+
+/* ==============================================================
+   V62 HIVES LOCKED UI EXACT
+   Scoped to Hives only.
+   ============================================================== */
+
+.vtop.v62-hide-topbar{display:none!important}
+
+.vview.main:has(.v62-hives){
+  padding:0!important;
+  padding-bottom:66px!important;
+  background:#F4F0E7!important;
+}
+.v62-hives{
+  padding:0!important;
+  gap:0!important;
+  background:transparent!important;
+}
+.v62-screen{
+  position:relative;
+  min-height:calc(100vh - 66px);
+  padding:18px 10px 18px;
+  overflow:hidden;
+  background:url('assets/hives_ui_locked_bg.jpg') center 52%/cover no-repeat;
+}
+.v62-screen-shade{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(35,44,29,.19),rgba(35,44,29,.05) 18%,rgba(35,44,29,.02) 66%,rgba(35,44,29,.10));
+  backdrop-filter:blur(.55px);
+  pointer-events:none;
+}
+.v62-head,.v62-search-row,.v62-list{position:relative;z-index:1}
+
+.v62-head{
+  height:36px;
+  display:flex;align-items:center;justify-content:space-between;
+  padding:0 2px;
+  color:#fff;
+  text-shadow:0 1px 3px rgba(0,0,0,.35);
+}
+.v62-head>b{font-size:15px;font-weight:800}
+.v62-head>button{
+  width:28px;height:30px;border:0;background:transparent;color:#fff;
+  font-size:24px;line-height:1;font-weight:800;
+}
+
+.v62-search-row{
+  display:grid;grid-template-columns:1fr 34px;gap:6px;align-items:center;
+  margin-top:1px;
+}
+.v62-search{
+  height:34px;border-radius:9px;background:rgba(255,255,255,.83);
+  display:grid;grid-template-columns:27px 1fr;align-items:center;
+  backdrop-filter:blur(8px);
+}
+.v62-search span{
+  display:grid;place-items:center;color:#405A43;font-size:13px;font-weight:800;
+}
+.v62-search input{
+  width:100%;height:32px;border:0;outline:0;background:transparent;
+  color:#27342B;padding:0 8px 0 0;font-size:10px;font-weight:500;
+}
+.v62-search input::placeholder{color:#67766E}
+.v62-filter{
+  width:34px;height:34px;border:0;border-radius:50%;
+  background:rgba(73,90,66,.62);color:#fff;
+  font-size:17px;font-weight:800;backdrop-filter:blur(7px);
+}
+
+.v62-list{
+  margin-top:8px;
+  display:flex;flex-direction:column;gap:5px;
+}
+.v62-card{
+  min-height:50px;
+  padding:5px 7px;
+  border:1px solid rgba(211,205,191,.92);
+  border-radius:8px;
+  background:rgba(255,253,246,.88);
+  display:grid;grid-template-columns:47px 1fr auto;align-items:center;gap:7px;
+  text-align:left;color:#253228;
+  box-shadow:0 1px 4px rgba(28,37,29,.06);
+  backdrop-filter:blur(4px);
+}
+.v62-card img{
+  width:47px;height:39px;object-fit:cover;border-radius:5px;display:block;
+}
+.v62-copy{min-width:0;display:flex;flex-direction:column;justify-content:center}
+.v62-copy b{
+  font-size:10.5px;line-height:1.1;font-weight:800;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.v62-copy small{
+  margin-top:3px;font-size:7.7px;line-height:1.15;color:#6B776F;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.v62-card>em{
+  min-width:49px;text-align:right;font-style:normal;
+  font-size:8.5px;line-height:1;font-weight:800;white-space:nowrap;
+}
+.v62-card>em.good{color:#58723D}
+.v62-card>em.attention{color:#C98A00}
+.v62-card>em.critical{color:#C95836}
+
+.v62-empty{
+  min-height:88px;border-radius:8px;background:rgba(255,253,246,.88);
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+}
+.v62-empty b{font-size:11px}.v62-empty span{margin-top:4px;font-size:8px;color:#6E7A72}
+
+.v62-menu,.v62-filter-pop{
+  position:fixed;z-index:9999;
+  right:18px;top:58px;width:145px;padding:6px;
+  border:1px solid #DED8CB;border-radius:10px;
+  background:#FFFEFA;box-shadow:0 8px 24px rgba(22,35,25,.16);
+}
+.v62-filter-pop{top:100px}
+.v62-menu button,.v62-filter-pop button{
+  width:100%;height:34px;border:0;border-radius:7px;background:transparent;
+  text-align:left;padding:0 10px;font-size:10px;color:#27352C;
+}
+.v62-menu button:hover,.v62-filter-pop button:hover{background:#EFF2E9}
+
+/* Target screenshot bottom nav is compact, translucent, and overlays the photo. */
+.vview.main:has(.v62-hives) + .bottomnav,
+.bottomnav:not(.hidden){
+  grid-template-columns:repeat(4,1fr)!important;
+}
+body:has(.v62-hives) .bottomnav{
+  left:50%!important;transform:translateX(-50%)!important;
+  width:min(393px,100%)!important;
+  height:58px!important;
+  bottom:0!important;
+  border-radius:18px 18px 0 0!important;
+  background:rgba(255,253,247,.93)!important;
+  backdrop-filter:blur(14px)!important;
+}
+body:has(.v62-hives) .navitem{font-size:8.5px!important}
+body:has(.v62-hives) .navitem .icon{width:18px!important;height:18px!important}
+body:has(.v62-hives) .navitem.active:after{width:22px!important}
+
+/* Do not touch locked Home */
+.v56-home{}
+

@@ -1224,3 +1224,86 @@ function hives(r){
   if(input) input.oninput=window.__v61RedrawHives;
 }
 
+
+
+/* ==============================================================
+   V62 HIVES LOCKED UI EXACT
+   Visual source of truth: user-approved Hives screenshot.
+   ============================================================== */
+
+function v62Thumb(h){
+  const s=v45s();
+  const idx=Math.max(0,s.hives.findIndex(x=>x.id===h.id));
+  return `assets/hives_ui_thumb_${(idx%6)+1}.jpg`;
+}
+function v62Label(h){
+  if(h.status==='Critical') return 'Risk';
+  if(h.status==='Attention') return 'Attention';
+  return 'Good';
+}
+function v62Card(h){
+  return `<button class="v62-card" onclick="go('hive/${h.id}')">
+    <img src="${v62Thumb(h)}" alt="${esc(h.name)}">
+    <span class="v62-copy">
+      <b>${esc(h.name)}</b>
+      <small>${esc(String(h.score||0))}% · Last: ${fmtDate(h.lastInspection)}</small>
+    </span>
+    <em class="${Vclass(h)}">${v62Label(h)}</em>
+  </button>`;
+}
+function v62Menu(){
+  const old=document.querySelector('.v62-menu'); if(old){old.remove();return;}
+  const box=document.createElement('div');
+  box.className='v62-menu';
+  box.innerHTML=`
+    <button onclick="addHive();this.parentElement.remove()">Add Hive</button>
+    <button onclick="go('settings');this.parentElement.remove()">Settings</button>`;
+  document.body.appendChild(box);
+}
+function v62FilterMenu(){
+  const old=document.querySelector('.v62-filter-pop'); if(old){old.remove();return;}
+  const box=document.createElement('div');
+  box.className='v62-filter-pop';
+  box.innerHTML=`
+    <button data-f="All">All Hives</button>
+    <button data-f="Healthy">Healthy</button>
+    <button data-f="Attention">Attention</button>
+    <button data-f="Critical">Critical</button>`;
+  document.body.appendChild(box);
+  box.querySelectorAll('[data-f]').forEach(b=>b.onclick=()=>{
+    window.__v62Filter=b.dataset.f;
+    box.remove();
+    window.__v62Redraw?.();
+  });
+}
+function hives(r){
+  const s=v45s();
+  idq('topbar')?.classList.add('v62-hide-topbar');
+  window.__v62Filter=window.__v62Filter||'All';
+  r.innerHTML=`<div class="vs v62-hives">
+    <section class="v62-screen">
+      <div class="v62-screen-shade"></div>
+      <header class="v62-head">
+        <b>2. Hives</b>
+        <button onclick="v62Menu()" aria-label="More">⋮</button>
+      </header>
+      <div class="v62-search-row">
+        <label class="v62-search">
+          <span>⌕</span><input id="hsearch" placeholder="Search hives" autocomplete="off">
+        </label>
+        <button class="v62-filter" onclick="v62FilterMenu()" aria-label="Filter">⌄</button>
+      </div>
+      <div class="v62-list" id="hlist">${s.hives.map(v62Card).join('')}</div>
+    </section>
+  </div>`;
+  const input=idq('hsearch');
+  window.__v62Redraw=()=>{
+    const q=(input?.value||'').toLowerCase().trim();
+    const f=window.__v62Filter||'All';
+    const rows=s.hives.filter(h=>(f==='All'||h.status===f)&&(!q||h.name.toLowerCase().includes(q)));
+    idq('hlist').innerHTML=rows.length?rows.map(v62Card).join(''):
+      `<div class="v62-empty"><b>No hives found</b><span>Try another search or filter.</span></div>`;
+  };
+  if(input)input.oninput=window.__v62Redraw;
+}
+

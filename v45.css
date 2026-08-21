@@ -3359,3 +3359,81 @@ button.active{
   background:#C5921A!important;
   border-color:#C5921A!important;
 }
+
+
+/* ==============================================================
+   V93 — ADD ACTION / RECORD SHEET POLISH
+   Scope: Add Action modal only.
+   ============================================================== */
+
+.modal .add-action-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  padding:2px 0 12px!important;
+  border-bottom:1px solid var(--hd-border)!important;
+}
+.modal .add-action-head>b{
+  font-size:15px!important;
+  font-weight:700!important;
+  color:var(--hd-text)!important;
+}
+.modal .add-action-close{
+  width:30px!important;
+  height:30px!important;
+  min-height:30px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:50%!important;
+  background:transparent!important;
+  color:var(--hd-text-secondary)!important;
+  font-size:16px!important;
+}
+.modal .add-action-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:10px!important;
+  padding:14px 0 2px!important;
+}
+.modal .add-action-card{
+  min-height:88px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:8px!important;
+  padding:12px 8px!important;
+  border:1px solid var(--hd-border)!important;
+  border-radius:13px!important;
+  background:var(--hd-surface)!important;
+  color:var(--hd-text)!important;
+  box-shadow:0 3px 10px rgba(47,59,51,.045)!important;
+  text-align:center!important;
+}
+.modal .add-action-card>b{
+  font-size:11px!important;
+  font-weight:700!important;
+  color:var(--hd-text)!important;
+}
+.modal .add-action-icon{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  width:34px!important;
+  height:34px!important;
+  border-radius:10px!important;
+  background:rgba(94,115,80,.08)!important;
+  color:var(--hd-green)!important;
+}
+.modal .add-action-icon .icon,
+.modal .add-action-icon svg{
+  width:21px!important;
+  height:21px!important;
+  stroke:currentColor!important;
+  fill:none!important;
+}
+.modal:has(.add-action-grid){
+  height:auto!important;
+  min-height:0!important;
+  max-height:calc(100vh - 120px)!important;
+}

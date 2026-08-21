@@ -111,14 +111,30 @@ function drawV48Actions(mode='Pending'){
 }
 function filterActions(mode,btn){selectTab(btn);drawV48Actions(mode)}
 function openRecordPicker(){
-  modal(`<div class="modalhead"><b>Add Action / Record</b><button onclick="closeModal(this)">✕</button></div><div class="quick core-menu-actions">
-    <button class="qbtn" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')"><b>Inspection</b></button>
-    <button class="qbtn" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')"><b>Feeding</b></button>
-    <button class="qbtn" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')"><b>Treatment</b></button>
-    <button class="qbtn" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')"><b>Harvest</b></button>
+  modal(`<div class="modalhead add-action-head">
+    <b>Add Action / Record</b>
+    <button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button>
+  </div>
+  <div class="quick core-menu-actions add-action-grid">
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')">
+      <span class="add-action-icon">${icon('navActions')}</span>
+      <b>Inspection</b>
+    </button>
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')">
+      <span class="add-action-icon">${icon('feed')}</span>
+      <b>Feeding</b>
+    </button>
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')">
+      <span class="add-action-icon">${icon('treatment')}</span>
+      <b>Treatment</b>
+    </button>
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')">
+      <span class="add-action-icon">${icon('harvest')}</span>
+      <b>Harvest</b>
+    </button>
   </div>`)
 }
-/* V77 removed superseded actions */
+
 function allActions(r,mode){actions(r); if(mode){const want=String(mode).toLowerCase().startsWith('complete')?'Completed':String(mode).toLowerCase().startsWith('all')?'All':'Pending';const btn=[...document.querySelectorAll('.filters button')].find(b=>b.textContent.trim()===want);if(btn)filterActions(want,btn)}}
 
 function recordPage(r,type,id){

@@ -851,3 +851,273 @@ html,body{background:#EEEAE1!important;color:var(--ink)!important}.app{max-width
   min-height:61px!important;
 }
 
+
+
+/* ==============================================================
+   V58 HOME FINAL POLISH
+   Visual-only micro adjustments.
+   No structure / feature / route / navigation changes.
+   ============================================================== */
+
+.v56-greeting{
+  top:18px!important;
+  left:12px!important;
+}
+
+.v56-health-ring{
+  width:100px!important;
+  height:100px!important;
+  top:56px!important;
+}
+.v56-health-ring svg{
+  width:100px!important;
+  height:100px!important;
+}
+.v56-health-ring strong{
+  font-size:30px!important;
+}
+.v56-health-ring strong small{
+  font-size:15px!important;
+}
+.v56-health-ring>span{
+  font-size:9px!important;
+}
+
+.v56-row-copy>small{
+  font-size:9px!important;
+}
+.v56-row-copy>em{
+  font-size:9px!important;
+}
+
+.vtop .iconbtn,
+.vtop button:not(.brand){
+  font-size:17px!important;
+}
+.vtop .brand{
+  font-size:20px!important;
+  font-weight:800!important;
+}
+
+.bottomnav button i,
+.bottomnav button .ico,
+.bottomnav button svg{
+  width:21px!important;
+  height:21px!important;
+  font-size:18px!important;
+}
+.bottomnav button span,
+.bottomnav button small{
+  font-size:9px!important;
+}
+
+.v56-quickbar i{
+  width:24px!important;
+  height:24px!important;
+  font-size:17px!important;
+  line-height:1!important;
+  font-weight:800!important;
+  display:grid!important;
+  place-items:center!important;
+}
+.v56-quickbar button:nth-child(4) i{
+  transform:scale(1.08);
+}
+.v56-quickbar button:nth-child(5) i{
+  letter-spacing:1px;
+}
+
+
+
+/* ==============================================================
+   V59 HOME FINAL 3-POINT FIX
+   1) Greeting +4px lower
+   2) High Priority text to 10px
+   3) Harvest quick-action icon visually stronger
+   No structure / route / navigation changes.
+   ============================================================== */
+
+.v56-greeting{
+  top:22px!important;
+}
+
+.v56-row-copy>small{
+  font-size:10px!important;
+}
+
+.v56-quickbar button:nth-child(4) i{
+  font-size:19px!important;
+  font-weight:900!important;
+  transform:scale(1.15)!important;
+}
+
+
+
+/* ==============================================================
+   V60 HIVES VISUAL RESTORE
+   Hives-only CSS. V59 Home is untouched.
+   ============================================================== */
+
+.v60-hives{
+  gap:8px!important;
+  padding:0 10px 8px!important;
+  background:#FBFAF6!important;
+}
+.v60-hives *{box-sizing:border-box}
+
+.v60-hives-hero{
+  position:relative;
+  height:124px;
+  margin:0 -10px;
+  padding:0 12px;
+  overflow:hidden;
+  border-radius:0 0 14px 14px;
+  background:url('assets/hives_final_apiary.jpg') center 58%/cover no-repeat;
+  color:#fff;
+}
+.v60-hero-shade{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(19,35,24,.28),rgba(19,35,24,.08) 42%,rgba(15,31,21,.42));
+  pointer-events:none;
+}
+.v60-hero-title{
+  position:absolute;left:12px;top:14px;z-index:1;
+  font-size:14px;line-height:1;font-weight:800;
+  text-shadow:0 1px 4px rgba(0,0,0,.28);
+}
+.v60-search{
+  position:absolute;z-index:1;left:12px;right:12px;bottom:13px;
+  height:38px;
+  border-radius:9px;
+  background:rgba(255,255,255,.94);
+  display:grid;grid-template-columns:28px 1fr;align-items:center;
+  box-shadow:0 2px 10px rgba(20,34,24,.08);
+}
+.v60-search span{
+  display:grid;place-items:center;
+  color:#2C4B35;font-size:14px;font-weight:700;
+}
+.v60-search input{
+  width:100%;height:36px;
+  border:0;outline:0;background:transparent;
+  color:#25342B;
+  font-size:10px;
+  padding:0 8px 0 0;
+}
+.v60-search input::placeholder{color:#7B847F}
+
+.v60-filters{
+  display:flex;gap:6px;align-items:center;
+  overflow-x:auto;
+  padding:0;
+  scrollbar-width:none;
+}
+.v60-filters::-webkit-scrollbar{display:none}
+.v60-filters button{
+  height:31px;
+  padding:0 11px;
+  border:0;border-radius:10px;
+  background:#F0EFEA;
+  color:#627068;
+  font-size:9px;
+  font-weight:600;
+  white-space:nowrap;
+}
+.v60-filters button.active{
+  background:#4D7A4F;
+  color:#fff;
+  font-weight:800;
+}
+
+.v60-hive-list{
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+  padding-bottom:2px;
+}
+.v60-hive-card{
+  min-height:72px;
+  padding:7px 8px;
+  border:1px solid #E8E2D8;
+  border-radius:11px;
+  background:#FFFEFB;
+  display:grid;
+  grid-template-columns:64px 1fr auto;
+  align-items:center;
+  gap:10px;
+  text-align:left;
+  color:#213027;
+  box-shadow:0 2px 8px rgba(41,54,45,.018);
+}
+.v60-hive-card img{
+  width:64px;height:56px;
+  object-fit:cover;
+  border-radius:7px;
+  display:block;
+}
+.v60-hive-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.v60-hive-copy b{
+  font-size:12px;
+  line-height:1.2;
+  font-weight:800;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.v60-hive-copy small{
+  margin-top:5px;
+  font-size:9px;
+  line-height:1.2;
+  color:#748079;
+  white-space:nowrap;overflow:hidden;text-overflow:ellipsis;
+}
+.v60-hive-card>em{
+  align-self:center;
+  font-style:normal;
+  font-size:9px;
+  line-height:1.15;
+  font-weight:800;
+  text-align:right;
+  white-space:nowrap;
+}
+.v60-hive-card>em.good{color:#2E7241}
+.v60-hive-card>em.attention{color:#E58B00}
+.v60-hive-card>em.critical{color:#E9291D}
+
+.v60-empty{
+  min-height:96px;
+  border:1px solid #E8E2D8;
+  border-radius:11px;
+  background:#FFFEFB;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  text-align:center;
+}
+.v60-empty b{font-size:12px}
+.v60-empty span{margin-top:5px;color:#77827B;font-size:9px}
+
+/* Hives page typography is intentionally aligned to locked V59 Home scale. */
+.v60-hives .v60-hero-title{font-size:14px!important}
+.v60-hives .v60-hive-copy b{font-size:12px!important}
+.v60-hives .v60-hive-copy small,
+.v60-hives .v60-hive-card>em,
+.v60-hives .v60-filters button,
+.v60-hives .v60-search input{font-size:9px!important}
+
+/* Never alter locked Home */
+.v56-home,.v55-home,.v54-home{}
+
+/* Preserve approved 4-tab nav layout */
+.bottomnav:not(.hidden){grid-template-columns:repeat(4,1fr)!important}
+
+@media(max-width:360px){
+  .v60-hive-card{grid-template-columns:60px 1fr auto}
+  .v60-hive-card img{width:60px;height:54px}
+  .v60-hive-copy b{font-size:11.5px!important}
+}
+

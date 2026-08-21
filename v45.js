@@ -1042,3 +1042,80 @@ function home(r){
   </div>`;
 }
 
+
+
+/* ==============================================================
+   V60 HIVES VISUAL RESTORE
+   Scope: Hives page presentation only.
+   Locked: search, 4 filters, hive-card routes, add action, bottom nav.
+   Typography follows locked V59 Home visual scale.
+   ============================================================== */
+
+function v60HiveThumb(h){
+  const s=v45s();
+  const idx=Math.max(0,s.hives.findIndex(x=>x.id===h.id));
+  const n=(idx%6)+1;
+  return `assets/hive_thumb_${n}.jpg`;
+}
+
+function v60HiveCard(h){
+  return `<button class="v60-hive-card" onclick="go('hive/${h.id}')">
+    <img src="${v60HiveThumb(h)}" alt="${esc(h.name)}">
+    <span class="v60-hive-copy">
+      <b>${esc(h.name)}</b>
+      <small>${esc(String(h.score||0))}% · Last ${fmtDate(h.lastInspection)}</small>
+    </span>
+    <em class="${Vclass(h)}">${Vstatus(h)}</em>
+  </button>`;
+}
+
+function hives(r){
+  const s=v45s();
+  r.innerHTML=`<div class="vs v60-hives">
+    <section class="v60-hives-hero">
+      <div class="v60-hero-shade"></div>
+      <b class="v60-hero-title">Hives</b>
+      <div class="v60-search">
+        <span>⌕</span>
+        <input id="hsearch" placeholder="Search hives" autocomplete="off">
+      </div>
+    </section>
+
+    <div class="v60-filters">
+      <button class="active" data-v60-status="All">All (${s.hives.length})</button>
+      <button data-v60-status="Healthy">Healthy</button>
+      <button data-v60-status="Attention">Attention</button>
+      <button data-v60-status="Critical">Critical</button>
+    </div>
+
+    <div id="hlist" class="v60-hive-list">
+      ${s.hives.map(v60HiveCard).join('')}
+    </div>
+  </div>`;
+
+  const input=idq('hsearch');
+  let status='All';
+
+  function redraw(){
+    const q=(input?.value||'').trim().toLowerCase();
+    const rows=s.hives.filter(h =>
+      (status==='All'||h.status===status) &&
+      (!q||h.name.toLowerCase().includes(q))
+    );
+    idq('hlist').innerHTML=rows.length
+      ? rows.map(v60HiveCard).join('')
+      : `<section class="v60-empty"><b>No hives found</b><span>Try another search or filter.</span></section>`;
+  }
+
+  document.querySelectorAll('[data-v60-status]').forEach(btn=>{
+    btn.onclick=()=>{
+      document.querySelectorAll('[data-v60-status]').forEach(x=>x.classList.remove('active'));
+      btn.classList.add('active');
+      status=btn.dataset.v60Status;
+      redraw();
+    };
+  });
+
+  if(input) input.oninput=redraw;
+}
+

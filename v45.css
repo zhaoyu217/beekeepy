@@ -3532,3 +3532,56 @@ body>.overlay{
 .app>.overlay{
   position:absolute!important;
 }
+
+
+/* ==============================================================
+   V96 — MODAL ARCHITECTURE FIX
+   modal() now mounts inside #app. These rules lock all app modals
+   to the mobile app shell instead of the desktop browser viewport.
+   ============================================================== */
+
+#app{
+  position:relative!important;
+  overflow:hidden!important;
+}
+
+/* Overlay is now a child of #app */
+#app>.modal{
+  position:absolute!important;
+  inset:0!important;
+  z-index:1000!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
+  width:100%!important;
+  height:100%!important;
+  margin:0!important;
+  padding:0!important;
+  background:rgba(47,59,51,.34)!important;
+  backdrop-filter:blur(1px)!important;
+}
+
+/* Generic panel stays inside app width */
+#app>.modal>.modalpanel{
+  position:relative!important;
+  width:100%!important;
+  max-width:100%!important;
+  margin:0!important;
+  transform:none!important;
+  background:var(--hd-surface)!important;
+  box-sizing:border-box!important;
+}
+
+/* Add Action uses compact bottom-sheet styling */
+#app>.modal>.modalpanel:has(.add-action-grid){
+  padding:14px 14px 16px!important;
+  border-radius:16px 16px 0 0!important;
+  box-shadow:0 -8px 28px rgba(47,59,51,.16)!important;
+  max-height:calc(100% - 72px)!important;
+  overflow:auto!important;
+}
+
+/* Neutralize the V95 viewport-oriented modal positioning rules */
+body>.modal{
+  position:fixed;
+}

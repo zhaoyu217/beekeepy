@@ -452,7 +452,7 @@ function avgHealth(s){return Math.round(s.hives.reduce((n,h)=>n+h.score,0)/Math.
 function isPro(s){return s.user.plan==='Pro'}
 function statusPill(status){return `<span class="pill ${status==='Critical'?'danger':status==='Attention'?'warn':''}">${esc(status)}</span>`}
 function toast(msg){const t=idq('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
-function modal(html){const el=document.createElement('div');el.className='modal';el.innerHTML=`<div class="modalpanel">${html}</div>`;el.addEventListener('click',e=>{if(e.target===el)el.remove()});document.body.appendChild(el);return el}
+function modal(html){const el=document.createElement('div');el.className='modal';el.innerHTML=`<div class="modalpanel">${html}</div>`;el.addEventListener('click',e=>{if(e.target===el)el.remove()});(document.getElementById('app')||document.body).appendChild(el);return el}
 function closeModal(el){el.closest('.modal').remove()}
 function go(hash){location.hash=hash}
 function requirePro(feature){

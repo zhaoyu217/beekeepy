@@ -1764,3 +1764,20 @@ body:has(.v63-hives) #bottomnav .navitem{
 /* Locked Home remains untouched. */
 .v56-home{}
 
+
+
+/* ==============================================================
+   V65 HIVES IMAGE HOTFIX
+   - Reuse the verified Home apiary photo for all 3 thumbnails
+   - Different object-position per hive
+   - Restore Home hero asset
+   - No layout/route/nav changes
+   ============================================================== */
+
+.v63-card img.v65-thumb{
+  object-fit:cover!important;
+  object-repeat:no-repeat!important;
+}
+.v63-card img.v65-thumb-1{ object-position:14% 67%!important; }
+.v63-card img.v65-thumb-2{ object-position:43% 63%!important; }
+.v63-card img.v65-thumb-3{ object-position:78% 62%!important; }

@@ -82,13 +82,20 @@ function infoPage(r,title){r.innerHTML=`<div class="vs legal"><h2>${esc(title)}<
 
 function v48ActionRows(mode='Pending'){
   const s=v45s();
-  const pending=s.actions||[];
+
+  // V91 Free Plan Actions Sync:
+  // Free users can only act on the first 3 hives; Pro keeps every hive.
+  const allowedHiveIds=new Set((isPro(s)?s.hives:s.hives.slice(0,3)).map(h=>h.id));
+  const inPlan=a=>allowedHiveIds.has(a.hiveId);
+
+  const pending=(s.actions||[]).filter(inPlan);
   const completed=[
     ...s.logs.inspections.map(x=>({type:'Inspection',hiveId:x.hiveId,title:'Inspection completed',due:fmtDate(x.date),priority:'Done'})),
     ...s.logs.feedings.map(x=>({type:'Feeding',hiveId:x.hiveId,title:'Feeding recorded',due:fmtDate(x.date),priority:'Done'})),
     ...s.logs.treatments.map(x=>({type:'Treatment',hiveId:x.hiveId,title:'Treatment recorded',due:fmtDate(x.date),priority:'Done'})),
     ...s.logs.harvests.map(x=>({type:'Harvest',hiveId:x.hiveId,title:'Harvest recorded',due:fmtDate(x.date),priority:'Done'}))
-  ].slice(-12).reverse();
+  ].filter(inPlan).slice(-12).reverse();
+
   if(mode==='Completed') return completed;
   if(mode==='All') return [...pending,...completed];
   return pending;

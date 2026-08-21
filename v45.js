@@ -1119,3 +1119,108 @@ function hives(r){
   if(input) input.oninput=redraw;
 }
 
+
+
+/* ==============================================================
+   V61 HIVES EXACT RESTORE
+   Visual source of truth: user-approved Hives locked UI screenshot.
+   Visual-only restore:
+   - keeps search
+   - keeps status filtering behind the filter icon
+   - keeps hive-card -> Hive Detail routes
+   - keeps global bottom navigation
+   ============================================================== */
+
+function v61HiveThumb(h){
+  const s=v45s();
+  const idx=Math.max(0,s.hives.findIndex(x=>x.id===h.id));
+  return `assets/hives_locked_thumb_${(idx%6)+1}.jpg`;
+}
+
+function v61StatusLabel(h){
+  if(h.status==='Critical') return 'Risk';
+  if(h.status==='Attention') return 'Attention';
+  return 'Good';
+}
+
+function v61HiveCard(h){
+  return `<button class="v61-hive-card" onclick="go('hive/${h.id}')">
+    <img src="${v61HiveThumb(h)}" alt="${esc(h.name)}">
+    <span class="v61-hive-text">
+      <b>${esc(h.name)}</b>
+      <small>${esc(String(h.score||0))}% · Last: ${fmtDate(h.lastInspection)}</small>
+    </span>
+    <em class="${Vclass(h)}">${v61StatusLabel(h)}</em>
+  </button>`;
+}
+
+function v61FilterMenu(){
+  const cur=document.querySelector('.v61-filter-pop');
+  if(cur){cur.remove();return}
+  const box=document.createElement('div');
+  box.className='v61-filter-pop';
+  box.innerHTML=`
+    <button data-v61-filter="All">All</button>
+    <button data-v61-filter="Healthy">Healthy</button>
+    <button data-v61-filter="Attention">Attention</button>
+    <button data-v61-filter="Critical">Critical</button>`;
+  document.body.appendChild(box);
+
+  const fbtn=document.querySelector('.v61-filter-btn');
+  if(fbtn){
+    const r=fbtn.getBoundingClientRect();
+    box.style.top=`${Math.round(r.bottom+6)}px`;
+    box.style.left=`${Math.round(Math.max(12,r.right-150))}px`;
+  }
+
+  box.querySelectorAll('[data-v61-filter]').forEach(btn=>{
+    btn.onclick=()=>{
+      window.__v61HiveFilter=btn.dataset.v61Filter;
+      box.remove();
+      if(window.__v61RedrawHives) window.__v61RedrawHives();
+    };
+  });
+}
+
+function hives(r){
+  const s=v45s();
+  window.__v61HiveFilter=window.__v61HiveFilter||'All';
+
+  r.innerHTML=`<div class="vs v61-hives">
+    <section class="v61-hives-stage">
+      <div class="v61-stage-shade"></div>
+
+      <div class="v61-stage-top">
+        <b>2. Hives</b>
+        <button class="v61-more" onclick="go('settings')">⋮</button>
+      </div>
+
+      <div class="v61-search-row">
+        <label class="v61-search">
+          <span>⌕</span>
+          <input id="hsearch" placeholder="Search hives" autocomplete="off">
+        </label>
+        <button class="v61-filter-btn" onclick="v61FilterMenu()" aria-label="Filter hives">⌄</button>
+      </div>
+
+      <div id="hlist" class="v61-hive-list">${s.hives.map(v61HiveCard).join('')}</div>
+    </section>
+  </div>`;
+
+  const input=idq('hsearch');
+
+  window.__v61RedrawHives=()=>{
+    const q=(input?.value||'').trim().toLowerCase();
+    const status=window.__v61HiveFilter||'All';
+    const rows=s.hives.filter(h=>
+      (status==='All'||h.status===status) &&
+      (!q||h.name.toLowerCase().includes(q))
+    );
+    idq('hlist').innerHTML=rows.length
+      ? rows.map(v61HiveCard).join('')
+      : `<div class="v61-empty"><b>No hives found</b><span>Try another search or filter.</span></div>`;
+  };
+
+  if(input) input.oninput=window.__v61RedrawHives;
+}
+

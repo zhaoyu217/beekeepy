@@ -1121,3 +1121,208 @@ html,body{background:#EEEAE1!important;color:var(--ink)!important}.app{max-width
   .v60-hive-copy b{font-size:11.5px!important}
 }
 
+
+
+/* ==============================================================
+   V61 HIVES EXACT RESTORE
+   Scoped to Hives only. Locked Home remains untouched.
+   ============================================================== */
+
+.v61-hives{
+  padding:0!important;
+  gap:0!important;
+  background:#F8F6F0!important;
+}
+
+.v61-hives-stage{
+  position:relative;
+  min-height:calc(100vh - 128px);
+  padding:14px 10px 16px;
+  overflow:hidden;
+  background:
+    linear-gradient(180deg,rgba(44,57,37,.10),rgba(44,57,37,.08)),
+    url('assets/hives_locked_bg.jpg') center 34%/cover no-repeat;
+}
+
+.v61-stage-shade{
+  position:absolute;inset:0;
+  background:linear-gradient(180deg,rgba(29,42,29,.15) 0%,rgba(29,42,29,.04) 22%,rgba(248,246,240,.02) 100%);
+  pointer-events:none;
+}
+
+.v61-stage-top,
+.v61-search-row,
+.v61-hive-list{
+  position:relative;
+  z-index:1;
+}
+
+.v61-stage-top{
+  height:31px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  color:#fff;
+  text-shadow:0 1px 4px rgba(0,0,0,.35);
+}
+.v61-stage-top>b{
+  font-size:14px;
+  line-height:1;
+  font-weight:800;
+}
+.v61-more{
+  width:28px;height:28px;
+  border:0;background:transparent;color:#fff;
+  font-size:22px;line-height:1;
+  text-shadow:inherit;
+}
+
+.v61-search-row{
+  margin-top:2px;
+  display:grid;
+  grid-template-columns:1fr 34px;
+  gap:6px;
+  align-items:center;
+}
+.v61-search{
+  height:34px;
+  border-radius:9px;
+  background:rgba(255,255,255,.92);
+  display:grid;
+  grid-template-columns:27px 1fr;
+  align-items:center;
+  overflow:hidden;
+}
+.v61-search>span{
+  display:grid;place-items:center;
+  color:#33543A;
+  font-size:13px;font-weight:700;
+}
+.v61-search input{
+  height:32px;width:100%;
+  border:0;outline:0;background:transparent;
+  padding:0 8px 0 0;
+  color:#26342B;
+  font-size:9.5px;
+}
+.v61-search input::placeholder{color:#7A847F}
+.v61-filter-btn{
+  width:34px;height:34px;
+  border:0;border-radius:50%;
+  background:rgba(72,92,61,.78);
+  color:#fff;
+  font-size:15px;font-weight:800;
+}
+
+.v61-hive-list{
+  margin-top:8px;
+  display:flex;
+  flex-direction:column;
+  gap:6px;
+}
+
+.v61-hive-card{
+  min-height:52px;
+  padding:5px 7px;
+  border:1px solid rgba(222,217,205,.95);
+  border-radius:8px;
+  background:rgba(255,253,247,.94);
+  display:grid;
+  grid-template-columns:48px 1fr auto;
+  align-items:center;
+  gap:8px;
+  text-align:left;
+  color:#233127;
+  box-shadow:0 1px 5px rgba(27,38,29,.04);
+  backdrop-filter:blur(2px);
+}
+.v61-hive-card img{
+  width:48px;height:40px;
+  border-radius:5px;
+  object-fit:cover;
+  display:block;
+}
+.v61-hive-text{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+.v61-hive-text b{
+  font-size:10.5px;
+  line-height:1.15;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.v61-hive-text small{
+  margin-top:3px;
+  font-size:8px;
+  line-height:1.15;
+  color:#6E7A72;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.v61-hive-card>em{
+  font-style:normal;
+  font-size:8.5px;
+  line-height:1;
+  font-weight:800;
+  white-space:nowrap;
+  text-align:right;
+}
+.v61-hive-card>em.good{color:#346D3A}
+.v61-hive-card>em.attention{color:#D98600}
+.v61-hive-card>em.critical{color:#D9482F}
+
+.v61-empty{
+  min-height:84px;
+  border-radius:8px;
+  background:rgba(255,253,247,.94);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  color:#26342B;
+}
+.v61-empty b{font-size:11px}
+.v61-empty span{margin-top:4px;font-size:8px;color:#738078}
+
+/* Filter menu keeps the old filter functionality without altering the locked visual layout. */
+.v61-filter-pop{
+  position:fixed;
+  z-index:9999;
+  width:150px;
+  padding:6px;
+  border:1px solid #E3DED3;
+  border-radius:10px;
+  background:#FFFEFA;
+  box-shadow:0 8px 24px rgba(22,35,25,.14);
+}
+.v61-filter-pop button{
+  width:100%;
+  height:34px;
+  padding:0 10px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  text-align:left;
+  color:#26342B;
+  font-size:10px;
+}
+.v61-filter-pop button:hover{background:#F0F3EA}
+
+/* Locked 4-tab navigation remains untouched */
+.bottomnav:not(.hidden){grid-template-columns:repeat(4,1fr)!important}
+
+/* Explicitly do not alter locked Home */
+.v56-home,.v55-home,.v54-home{}
+
+@media(max-width:360px){
+  .v61-hive-card{grid-template-columns:45px 1fr auto}
+  .v61-hive-card img{width:45px;height:38px}
+  .v61-hive-text b{font-size:10px}
+}
+

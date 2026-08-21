@@ -3437,3 +3437,34 @@ button.active{
   min-height:0!important;
   max-height:calc(100vh - 120px)!important;
 }
+
+
+/* ==============================================================
+   V94 — ADD ACTION SHEET ICON + BACKDROP FIX
+   Inline SVG icons; stronger backdrop so background shortcuts recede.
+   ============================================================== */
+
+.modal .add-action-icon svg{
+  width:21px!important;
+  height:21px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+
+/* Make the page behind the sheet visually secondary */
+.modal-backdrop,
+.modal-overlay,
+.overlay{
+  background:rgba(47,59,51,.34)!important;
+  backdrop-filter:blur(1px)!important;
+}
+
+/* Keep the sheet clean and compact */
+.modal:has(.add-action-grid){
+  background:var(--hd-surface)!important;
+  border-radius:16px 16px 0 0!important;
+  box-shadow:0 -8px 28px rgba(47,59,51,.16)!important;
+}

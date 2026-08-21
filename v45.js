@@ -117,24 +117,31 @@ function openRecordPicker(){
   </div>
   <div class="quick core-menu-actions add-action-grid">
     <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')">
-      <span class="add-action-icon">${icon('navActions')}</span>
+      <span class="add-action-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.2" y="4.8" width="13.6" height="16.2" rx="2.2"/><path d="M8.5 4.3h7M9.4 2.7h5.2c.5 0 .9.4.9.9v1.5H8.5V3.6c0-.5.4-.9.9-.9Z"/><path d="m8.2 10 1.5 1.5 2.4-2.7M13.8 10.3h2.3M8.2 15.2l1.5 1.5 2.4-2.7M13.8 15.5h2.3"/></svg>
+      </span>
       <b>Inspection</b>
     </button>
     <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')">
-      <span class="add-action-icon">${icon('feed')}</span>
+      <span class="add-action-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9h10l-1.1 10.2a1.5 1.5 0 0 1-1.5 1.3H9.6a1.5 1.5 0 0 1-1.5-1.3L7 9Z"/><path d="M8.5 9V6.8a3.5 3.5 0 0 1 7 0V9"/><path d="M9.5 13.2h5M10.2 16h3.6"/></svg>
+      </span>
       <b>Feeding</b>
     </button>
     <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')">
-      <span class="add-action-icon">${icon('treatment')}</span>
+      <span class="add-action-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="14" rx="2"/><path d="M9 5V3h6v2"/><path d="M12 8v8M8 12h8"/></svg>
+      </span>
       <b>Treatment</b>
     </button>
     <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')">
-      <span class="add-action-icon">${icon('harvest')}</span>
+      <span class="add-action-icon">
+        <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8l1 3H7l1-3Z"/><path d="M7 8h10v10.5A1.5 1.5 0 0 1 15.5 20h-7A1.5 1.5 0 0 1 7 18.5V8Z"/><path d="M9 12c1.6 1 4.4 1 6 0M10 15h4"/></svg>
+      </span>
       <b>Harvest</b>
     </button>
   </div>`)
 }
-
 function allActions(r,mode){actions(r); if(mode){const want=String(mode).toLowerCase().startsWith('complete')?'Completed':String(mode).toLowerCase().startsWith('all')?'All':'Pending';const btn=[...document.querySelectorAll('.filters button')].find(b=>b.textContent.trim()===want);if(btn)filterActions(want,btn)}}
 
 function recordPage(r,type,id){

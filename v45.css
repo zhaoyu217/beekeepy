@@ -1887,3 +1887,58 @@ body:has(.actions-page) .actions-page p,
 body:has(.actions-page) .actions-page span{
   text-rendering:optimizeLegibility;
 }
+
+
+/* ==============================================================
+   V68 — ACTIONS FONT REAL FIX
+   Root cause: the active Actions renderer is .v53-actions, not .actions-page.
+   This override targets the actual live DOM classes.
+   Typography only + minimal card height to avoid collisions.
+   ============================================================== */
+
+/* Tabs */
+.v53-actions .v53-action-tabs button{
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:600!important;
+}
+
+/* Task cards */
+.v53-actions .alist button{
+  min-height:54px!important;
+  padding:7px 8px!important;
+}
+.v53-actions .alist span{
+  font-size:9.5px!important;
+  line-height:1.25!important;
+}
+.v53-actions .alist b{
+  font-size:11.5px!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+}
+.v53-actions .alist em,
+.v53-actions .alist small{
+  font-size:9.5px!important;
+  line-height:1.25!important;
+}
+
+/* Main CTA */
+.v53-actions .v53-add-action{
+  font-size:13px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+}
+
+/* Bottom record shortcuts */
+.v53-actions .v53-shortcuts button{
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:600!important;
+}
+
+/* Keep the typography density aligned with the locked Home page. */
+.v53-actions{
+  -webkit-font-smoothing:antialiased;
+  text-rendering:optimizeLegibility;
+}

@@ -3328,3 +3328,26 @@ button.active{
   width:11px!important;
   height:11px!important;
 }
+
+
+/* ==============================================================
+   V90 — TIMELINE FILTER FIT
+   Final Timeline-only tweak:
+   fit All / Inspection / Feeding / Treatment / Harvest / Photos
+   on one mobile row without clipping.
+   ============================================================== */
+
+.v88-timeline .timeline-filters{
+  gap:4px!important;
+  overflow:visible!important;
+  justify-content:space-between!important;
+}
+
+.v88-timeline .timeline-filters button{
+  flex:1 1 0!important;
+  min-width:0!important;
+  min-height:30px!important;
+  padding:0 5px!important;
+  font-size:9px!important;
+  white-space:nowrap!important;
+}

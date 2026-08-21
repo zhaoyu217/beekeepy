@@ -2573,3 +2573,155 @@ button.active{
   font-weight:700!important;
   box-shadow:0 5px 14px rgba(94,115,80,.18)!important;
 }
+
+
+/* ==============================================================
+   V83 — HIVE DETAIL COMPLETE POLISH
+   Covers the six outstanding Hive Detail visual issues explicitly.
+   Scope: .v82-hive-detail only.
+   No field / function / route / navigation changes.
+   ============================================================== */
+
+/* 1) Typography hierarchy: align with Home */
+.v82-hive-detail .hg>b{
+  font-size:15px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+}
+.v82-hive-detail .hg>div{
+  font-size:11px!important;
+  line-height:1.35!important;
+  margin-top:8px!important;
+}
+.v82-hive-detail .hg span{
+  color:var(--hd-text-secondary)!important;
+}
+.v82-hive-detail .hg strong{
+  font-size:11px!important;
+  font-weight:600!important;
+  color:var(--hd-text)!important;
+}
+
+/* semantic values get visual emphasis without changing content */
+.v82-hive-detail .hg strong:not(:empty){
+  color:var(--hd-green)!important;
+}
+
+/* 2) Hero hierarchy */
+.v82-hive-detail .dhero{
+  min-height:214px!important;
+  height:214px!important;
+  background-position:center 56%!important;
+}
+.v82-hive-detail .dhero>i{
+  background:linear-gradient(180deg,rgba(47,59,51,.02) 25%,rgba(47,59,51,.12) 55%,rgba(47,59,51,.62) 100%)!important;
+}
+.v82-hive-detail .dover{
+  inset:auto 15px 15px 15px!important;
+}
+.v82-hive-detail .dover>div:first-child b{
+  font-size:19px!important;
+  font-weight:700!important;
+}
+.v82-hive-detail .dover>div:first-child span{
+  font-size:11px!important;
+}
+.v82-hive-detail .score{
+  width:66px!important;
+  height:66px!important;
+}
+
+/* 3) Six cards: less table-like, more app-like */
+.v82-hive-detail .groups{
+  gap:10px!important;
+}
+.v82-hive-detail .hg{
+  min-height:124px!important;
+  padding:13px 12px!important;
+  border-radius:15px!important;
+  border-color:rgba(230,227,218,.95)!important;
+  box-shadow:0 4px 14px rgba(47,59,51,.055)!important;
+}
+.v82-hive-detail .hg>div{
+  padding-top:1px!important;
+}
+.v82-hive-detail .hg::after{
+  right:12px!important;
+  top:11px!important;
+}
+
+/* 4) Photos: consistent crop + clearer View All tile */
+.v82-hive-detail .photos{
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.v82-hive-detail .photos img,
+.v82-hive-detail .photos button{
+  height:72px!important;
+  border-radius:10px!important;
+}
+.v82-hive-detail .photos img{
+  object-fit:cover!important;
+  object-position:center!important;
+}
+.v82-hive-detail .photos button{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
+  background:var(--hd-green)!important;
+  color:var(--hd-surface)!important;
+  font-size:15px!important;
+  font-weight:700!important;
+}
+.v82-hive-detail .photos button::after{
+  content:"View all";
+  display:block;
+  font-size:9px;
+  font-weight:500;
+  opacity:.95;
+}
+
+/* 5) Timeline: stronger hierarchy */
+.v82-hive-detail .vc:has(.tease){
+  padding-top:11px!important;
+  padding-bottom:11px!important;
+}
+.v82-hive-detail .vc:has(.tease) .vhead{
+  margin-bottom:7px!important;
+}
+.v82-hive-detail .vc:has(.tease) .vhead>b{
+  font-size:15px!important;
+}
+.v82-hive-detail .vc:has(.tease) .vhead>button{
+  font-size:11px!important;
+  font-weight:600!important;
+  color:var(--hd-green)!important;
+}
+.v82-hive-detail .tease{
+  font-size:10.5px!important;
+  color:var(--hd-text-secondary)!important;
+}
+
+/* 6) Primary CTA: stronger visual weight */
+.v82-hive-detail>.primary{
+  min-height:52px!important;
+  border-radius:13px!important;
+  font-size:14px!important;
+  font-weight:700!important;
+  background:var(--hd-green)!important;
+  box-shadow:0 6px 16px rgba(94,115,80,.20)!important;
+}
+
+/* 7) Overall rhythm: less dashboard-like, more mobile-app flow */
+.v82-hive-detail{
+  gap:11px!important;
+}
+.v82-hive-detail .meta{
+  margin-top:-1px!important;
+  margin-bottom:1px!important;
+}
+.v82-hive-detail .vc{
+  padding:12px!important;
+}

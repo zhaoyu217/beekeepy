@@ -1324,7 +1324,7 @@ function v63VisibleHives(){
 function v63Thumb(h){
   const rows=v63VisibleHives();
   const idx=Math.max(0,rows.findIndex(x=>x.id===h.id));
-  return `assets/hives_3_thumb_${(idx%3)+1}.jpg`;
+  return `assets/hives_card_hive_${(idx%3)+1}.jpg`;
 }
 
 function v63Status(h){

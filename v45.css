@@ -2356,3 +2356,23 @@ button.active{
 .bottomnav .navitem.active:after{
   background-color:var(--hd-green)!important;
 }
+
+
+
+
+/* ==============================================================
+   V80 — HEADER LOGO PROPORTION FIX
+   Tight-cropped transparent asset + proportional header sizing only.
+   ============================================================== */
+.vtop .brand{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+}
+.vtop .brand .hd-header-logo{
+  display:block!important;
+  width:auto!important;
+  height:25px!important;
+  max-width:132px!important;
+  object-fit:contain!important;
+}

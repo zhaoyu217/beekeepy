@@ -1781,3 +1781,39 @@ body:has(.v63-hives) #bottomnav .navitem{
 .v63-card img.v65-thumb-1{ object-position:14% 67%!important; }
 .v63-card img.v65-thumb-2{ object-position:43% 63%!important; }
 .v63-card img.v65-thumb-3{ object-position:78% 62%!important; }
+
+
+/* ==============================================================
+   V66 — Hives popup positioning hotfix
+   Only fixes popup location. No route/data/navigation/layout changes.
+   ============================================================== */
+
+/* The app viewport is max 393px and centered on desktop.
+   Anchor Hives popups to that viewport, not the browser's right edge. */
+body:has(.v63-hives) .v63-menu,
+body:has(.v63-hives) .v63-filter-pop{
+  position:fixed!important;
+  z-index:9999!important;
+  left:calc(50% + min(196.5px, 50vw) - 164px)!important;
+  right:auto!important;
+  width:154px!important;
+}
+
+/* ⋮ menu sits directly below the Hives top-right control */
+body:has(.v63-hives) .v63-menu{
+  top:58px!important;
+}
+
+/* filter popup sits below Search / Filter row */
+body:has(.v63-hives) .v63-filter-pop{
+  top:112px!important;
+}
+
+/* On narrow/mobile screens, keep both menus safely inside the page */
+@media (max-width:393px){
+  body:has(.v63-hives) .v63-menu,
+  body:has(.v63-hives) .v63-filter-pop{
+    left:auto!important;
+    right:10px!important;
+  }
+}

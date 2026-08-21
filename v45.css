@@ -2725,3 +2725,48 @@ button.active{
 .v82-hive-detail .vc{
   padding:12px!important;
 }
+
+
+/* ==============================================================
+   V84 — HIVE DETAIL PHOTO ADD + GOLD CTA
+   Two requested fixes only:
+   1) Photo tile is an explicit Add Photo state.
+   2) Start Inspection background = #C5921A.
+   ============================================================== */
+
+.v82-hive-detail .photos .photo-add-tile{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:3px!important;
+  background:rgba(197,146,26,.10)!important;
+  color:var(--hd-gold)!important;
+  border:1px dashed rgba(197,146,26,.55)!important;
+}
+
+.v82-hive-detail .photos .photo-add-tile b{
+  font-size:20px!important;
+  line-height:1!important;
+  font-weight:500!important;
+  color:var(--hd-gold)!important;
+}
+
+.v82-hive-detail .photos .photo-add-tile span{
+  font-size:9px!important;
+  line-height:1.1!important;
+  font-weight:600!important;
+  color:var(--hd-gold)!important;
+}
+
+/* Cancel V83's generated "View all" label for the add-photo tile. */
+.v82-hive-detail .photos .photo-add-tile::after{
+  content:none!important;
+}
+
+/* Start Inspection: locked Honey Gold CTA */
+.v82-hive-detail>.primary{
+  background:#C5921A!important;
+  color:#FFFEFB!important;
+  box-shadow:0 6px 16px rgba(197,146,26,.22)!important;
+}

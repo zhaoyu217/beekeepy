@@ -3468,3 +3468,67 @@ button.active{
   border-radius:16px 16px 0 0!important;
   box-shadow:0 -8px 28px rgba(47,59,51,.16)!important;
 }
+
+
+/* ==============================================================
+   V95 — MODAL POSITION FIX
+   Restores Add Action sheet to the app/mobile container instead of
+   the desktop browser viewport. Keeps V94 cards/icons/routes unchanged.
+   ============================================================== */
+
+/* Keep the backdrop covering only the app shell */
+.app,
+#app,
+.app-shell,
+.phone,
+.phone-shell{
+  position:relative!important;
+}
+
+/* Constrain modal/backdrop to the mobile app container */
+.modal-backdrop,
+.modal-overlay,
+.overlay{
+  position:absolute!important;
+  inset:0!important;
+  z-index:90!important;
+  display:flex!important;
+  align-items:flex-end!important;
+  justify-content:center!important;
+  background:rgba(47,59,51,.34)!important;
+  backdrop-filter:blur(1px)!important;
+}
+
+/* Bottom-sheet behavior */
+.modal:has(.add-action-grid){
+  position:relative!important;
+  left:auto!important;
+  right:auto!important;
+  top:auto!important;
+  bottom:auto!important;
+  transform:none!important;
+  width:100%!important;
+  max-width:none!important;
+  margin:0!important;
+  padding:14px 14px 16px!important;
+  border-radius:16px 16px 0 0!important;
+  background:var(--hd-surface)!important;
+  box-shadow:0 -8px 28px rgba(47,59,51,.16)!important;
+}
+
+/* Prevent desktop viewport centering from old modal rules */
+body>.modal-backdrop,
+body>.modal-overlay,
+body>.overlay{
+  position:fixed!important;
+}
+
+/* If runtime mounts the modal inside the app root, keep it inside that root */
+#app>.modal-backdrop,
+#app>.modal-overlay,
+#app>.overlay,
+.app>.modal-backdrop,
+.app>.modal-overlay,
+.app>.overlay{
+  position:absolute!important;
+}

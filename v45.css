@@ -1817,3 +1817,73 @@ body:has(.v63-hives) .v63-filter-pop{
     right:10px!important;
   }
 }
+
+
+/* ==============================================================
+   V67 — ACTIONS TYPOGRAPHY ONLY
+   Match the approved Home page's readable type hierarchy.
+   No structural / functional / routing / navigation changes.
+   ============================================================== */
+
+body:has(.actions-page) .actions-page h1,
+body:has(.actions-page) .actions-page .page-title{
+  font-size:17px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+}
+
+body:has(.actions-page) .actions-page .seg button,
+body:has(.actions-page) .actions-page .tabs button,
+body:has(.actions-page) .actions-page [role="tab"]{
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:600!important;
+}
+
+body:has(.actions-page) .actions-page .action-card b,
+body:has(.actions-page) .actions-page .action-item b,
+body:has(.actions-page) .actions-page .task-card b,
+body:has(.actions-page) .actions-page article b{
+  font-size:12px!important;
+  line-height:1.25!important;
+  font-weight:800!important;
+}
+
+body:has(.actions-page) .actions-page .action-card small,
+body:has(.actions-page) .actions-page .action-item small,
+body:has(.actions-page) .actions-page .task-card small,
+body:has(.actions-page) .actions-page article small{
+  font-size:9.5px!important;
+  line-height:1.3!important;
+}
+
+body:has(.actions-page) .actions-page .priority,
+body:has(.actions-page) .actions-page .due,
+body:has(.actions-page) .actions-page .meta{
+  font-size:9.5px!important;
+  line-height:1.3!important;
+}
+
+body:has(.actions-page) .actions-page .add-action,
+body:has(.actions-page) .actions-page .primary{
+  font-size:13px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+}
+
+body:has(.actions-page) .actions-page .quick-action,
+body:has(.actions-page) .actions-page .quick-actions button{
+  font-size:10px!important;
+  line-height:1.2!important;
+  font-weight:600!important;
+}
+
+/* Generic fallback for the existing Actions markup, still page-scoped only. */
+body:has(.actions-page) .actions-page button{
+  min-height:32px;
+}
+
+body:has(.actions-page) .actions-page p,
+body:has(.actions-page) .actions-page span{
+  text-rendering:optimizeLegibility;
+}

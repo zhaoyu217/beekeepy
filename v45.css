@@ -3229,3 +3229,102 @@ button.active{
   object-position:center!important;
   box-shadow:0 2px 8px rgba(47,59,51,.10)!important;
 }
+
+
+/* ==============================================================
+   V89 — TIMELINE RENDER FIX
+   Fixes only four rendered issues seen in the live screenshot:
+   hero title visibility, search position, real .filters pills,
+   and timeline horizontal spacing.
+   ============================================================== */
+
+/* 1) Hero title: visible and anchored inside image */
+.v88-timeline .timeline-history-title{
+  position:relative!important;
+  z-index:3!important;
+  margin-top:-38px!important;
+  padding:0 10px!important;
+  font-size:12px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  color:#FFFEFB!important;
+  text-shadow:0 1px 4px rgba(0,0,0,.35)!important;
+}
+
+/* 2) Search: clean floating position just below hero */
+.v88-timeline .search{
+  position:relative!important;
+  z-index:4!important;
+  margin-top:10px!important;
+  margin-left:0!important;
+  margin-right:0!important;
+  min-height:42px!important;
+  padding:0 10px!important;
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  border:1px solid rgba(230,227,218,.95)!important;
+  border-radius:12px!important;
+  background:rgba(255,254,251,.97)!important;
+  box-shadow:0 4px 12px rgba(47,59,51,.08)!important;
+}
+.v88-timeline .search>span{
+  color:var(--hd-green)!important;
+  font-size:13px!important;
+}
+.v88-timeline .search input{
+  min-height:40px!important;
+  padding:0!important;
+  border:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  font-size:11px!important;
+  color:var(--hd-text)!important;
+}
+
+/* 3) Real filter selector = .filters */
+.v88-timeline .timeline-filters{
+  display:flex!important;
+  gap:6px!important;
+  overflow-x:auto!important;
+  padding:2px 0 5px!important;
+  margin-top:2px!important;
+  scrollbar-width:none!important;
+}
+.v88-timeline .timeline-filters::-webkit-scrollbar{
+  display:none!important;
+}
+.v88-timeline .timeline-filters button{
+  flex:0 0 auto!important;
+  min-height:31px!important;
+  padding:0 11px!important;
+  border:1px solid var(--hd-border)!important;
+  border-radius:999px!important;
+  background:var(--hd-surface)!important;
+  color:var(--hd-text-secondary)!important;
+  font-size:10px!important;
+  line-height:1!important;
+  font-weight:600!important;
+}
+.v88-timeline .timeline-filters button.active{
+  border-color:var(--hd-green)!important;
+  background:var(--hd-green)!important;
+  color:#FFFEFB!important;
+}
+
+/* 4) Timeline spacing: move date/spine left, give content more room */
+.v88-timeline .tlist::before{
+  left:58px!important;
+}
+.v88-timeline .tlist button{
+  grid-template-columns:44px 16px minmax(0,1fr) 60px!important;
+  gap:7px!important;
+}
+.v88-timeline .tlist time{
+  padding-top:14px!important;
+  font-size:9.5px!important;
+}
+.v88-timeline .tlist i{
+  width:11px!important;
+  height:11px!important;
+}

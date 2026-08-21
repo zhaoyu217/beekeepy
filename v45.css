@@ -2376,3 +2376,27 @@ button.active{
   max-width:132px!important;
   object-fit:contain!important;
 }
+
+
+/* ==============================================================
+   V81 — BOTTOM NAV ICON REFRESH
+   Four dedicated outline icons only. Labels/routes/layout stay locked.
+   ============================================================== */
+.bottomnav .navitem .navsvg{
+  display:block!important;
+  width:22px!important;
+  height:22px!important;
+  margin:0 auto 3px!important;
+  fill:none!important;
+  stroke:currentColor!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}
+.bottomnav .navitem{
+  color:var(--hd-text-secondary)!important;
+}
+.bottomnav .navitem.active{
+  color:var(--hd-green)!important;
+  background-color:transparent!important;
+}

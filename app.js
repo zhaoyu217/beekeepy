@@ -163,10 +163,10 @@ function socialLoginSection(){
     <button type="button" class="social-btn google" id="googleLogin">
       <span class="google-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22">
-          <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z"/>
-          <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.07v2.59A10 10 0 0 0 12 22Z"/>
-          <path fill="#FBBC05" d="M6.41 13.91A6.01 6.01 0 0 1 6.1 12c0-.66.11-1.3.31-1.91V7.5H3.07A10 10 0 0 0 2 12c0 1.61.39 3.13 1.07 4.5l3.34-2.59Z"/>
-          <path fill="#EA4335" d="M12 5.96c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.96 2.96 14.7 2 12 2A10 10 0 0 0 3.07 7.5l3.34 2.59C7.2 7.72 9.4 5.96 12 5.96Z"/>
+          <path fill="#6B736D" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z"/>
+          <path fill="#5E7350" d="M12 22c2.7 0 4.97-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.07v2.59A10 10 0 0 0 12 22Z"/>
+          <path fill="#C5921A" d="M6.41 13.91A6.01 6.01 0 0 1 6.1 12c0-.66.11-1.3.31-1.91V7.5H3.07A10 10 0 0 0 2 12c0 1.61.39 3.13 1.07 4.5l3.34-2.59Z"/>
+          <path fill="#D64545" d="M12 5.96c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.96 2.96 14.7 2 12 2A10 10 0 0 0 3.07 7.5l3.34 2.59C7.2 7.72 9.4 5.96 12 5.96Z"/>
         </svg>
       </span>
       <span>Continue with Google</span>
@@ -442,7 +442,7 @@ function resetState(){
   render();
 }
 
-function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#039;'}[m]))}
+function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#2F3B33;'}[m]))}
 function idq(id){return document.getElementById(id)}
 function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 function daysSince(date){return Math.floor((Date.now()-new Date(date+'T12:00:00').getTime())/86400000)}
@@ -470,6 +470,11 @@ function subscriptionModal(feature='this feature'){
 
 function icon(name){
   const icons={
+    navHome:'<svg class="icon navsvg" viewBox="0 0 24 24"><path d="M3.8 10.4 12 3.6l8.2 6.8v9.3a.8.8 0 0 1-.8.8h-5.1v-6.1H9.7v6.1H4.6a.8.8 0 0 1-.8-.8v-9.3Z"/></svg>',
+    navHive:'<svg class="icon navsvg" viewBox="0 0 24 24"><path d="M8.2 3.6h7.6M6.9 6.7h10.2M5.8 9.9h12.4M5.5 13h13M6.6 16.2h10.8M8.4 19.2h7.2"/><path d="M7.4 3.2c1-.9 2.4-1.4 4.6-1.4s3.6.5 4.6 1.4c.9.9 1.4 2.2 2 3.7.8 2 .9 4.2.6 6.3-.3 2.4-1.4 4.6-3.2 6.1-.8.7-1.7 1.1-2.7 1.3v-3.1h-2.6v3.1c-1-.2-1.9-.6-2.7-1.3-1.8-1.5-2.9-3.7-3.2-6.1-.3-2.1-.2-4.3.6-6.3.6-1.5 1.1-2.8 2-3.7Z"/></svg>',
+    navActions:'<svg class="icon navsvg" viewBox="0 0 24 24"><path d="M8.4 4.5h7.2M9.2 2.8h5.6c.5 0 .9.4.9.9v1.5H8.3V3.7c0-.5.4-.9.9-.9Z"/><rect x="5.1" y="4.9" width="13.8" height="16" rx="2.1"/><path d="m8.2 10 1.5 1.5 2.4-2.7M13.8 10.3h2.4M8.2 15.2l1.5 1.5 2.4-2.7M13.8 15.5h2.4"/></svg>',
+    navInsights:'<svg class="icon navsvg" viewBox="0 0 24 24"><rect x="3.8" y="14.2" width="3.5" height="5.8" rx=".7"/><rect x="10.2" y="9.7" width="3.5" height="10.3" rx=".7"/><rect x="16.7" y="5.2" width="3.5" height="14.8" rx=".7"/></svg>',
+
     settings:'<svg class="icon" viewBox="0 0 24 24"><circle cx="12" cy="12" r="3.2"/><path d="M19 13.5v-3l-2-.7a7.4 7.4 0 0 0-.8-1.8l.9-1.9-2.2-2.2-1.9.9a7.4 7.4 0 0 0-1.8-.8L10.5 2h-3l-.7 2a7.4 7.4 0 0 0-1.8.8l-1.9-.9L.9 6.1 1.8 8a7.4 7.4 0 0 0-.8 1.8l-2 .7v3l2 .7a7.4 7.4 0 0 0 .8 1.8l-.9 1.9 2.2 2.2 1.9-.9a7.4 7.4 0 0 0 1.8.8l.7 2h3l.7-2a7.4 7.4 0 0 0 1.8-.8l1.9.9 2.2-2.2-.9-1.9a7.4 7.4 0 0 0 .8-1.8Z" transform="translate(2.5 0) scale(.8)"/></svg>',
     bell:'<svg class="icon" viewBox="0 0 24 24"><path d="M18 8a6 6 0 0 0-12 0c0 7-3 7-3 9h18c0-2-3-2-3-9"/><path d="M13.7 21a2 2 0 0 1-3.4 0"/></svg>',
     home:'<svg class="icon" viewBox="0 0 24 24"><path d="m3 10 9-7 9 7"/><path d="M5 9v12h14V9"/><path d="M9 21v-7h6v7"/></svg>',
@@ -559,10 +564,10 @@ function chrome(page,secondary){
     ['insights','timeline'].includes(page)?'insights':'';
 
   bottom.innerHTML=[
-    ['home','Home','home'],
-    ['hives','Hives','hive'],
-    ['actions','Actions','check'],
-    ['insights','Insights','chart']
+    ['home','Home','navHome'],
+    ['hives','Hives','navHive'],
+    ['actions','Actions','navActions'],
+    ['insights','Insights','navInsights']
   ].map(([key,label,ico])=>`<button class="navitem ${active===key?'active':''}" onclick="go('${key}')" aria-label="${label}" ${active===key?'aria-current="page"':''}>${icon(ico)}<span>${label}</span>${key==='actions'&&s.actions.length?`<i class="nav-badge">${Math.min(9,s.actions.length)}</i>`:''}</button>`).join('');
 }
 
@@ -1080,7 +1085,7 @@ function saveInspectionPage(){
 function insights(r){
   const s=state(),year=Number(selectedInsightsYear||new Date().getFullYear()),score=avgHealth(s),strong=s.hives.filter(h=>h.status==='Healthy').length,attention=s.hives.filter(h=>h.status==='Attention').length,critical=s.hives.filter(h=>h.status==='Critical').length;
   const C=2*Math.PI*38,D=C*score/100,byYear=arr=>arr.filter(x=>Number(String(x.date||'').slice(0,4))===year);
-  r.innerHTML=`<div class="master-screen insights-master"><div class="year-master"><button type="button" onclick="openInsightsYearPicker()">${year===new Date().getFullYear()?'This Year':year}⌄</button></div><div class="insight-tabs-master"><button class="active">Overview</button><button onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}">Colony Health</button><button onclick="${isPro(s)?"go('honey')":"requirePro('Honey Analytics')"}">Harvest</button><button onclick="${isPro(s)?"go('trend')":"requirePro('90-day trends')"}">Trends</button></div><section class="insight-card-master card-button" onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}"><div class="master-section-title">Colony Health Summary</div><div class="insight-health-master"><div class="insight-donut-master"><svg viewBox="0 0 100 100"><circle class="donut-track" cx="50" cy="50" r="38"/><circle class="donut-progress" cx="50" cy="50" r="38" stroke-dasharray="${D} ${C-D}"/></svg></div><div class="legend-master"><span><i class="green"></i>Strong <b>${Math.round(strong/Math.max(1,s.hives.length)*100)}% (${strong})</b></span><span><i class="amber"></i>Needs Attention <b>${Math.round(attention/Math.max(1,s.hives.length)*100)}% (${attention})</b></span><button onclick="event.stopPropagation();${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><i class="red"></i>Critical <b>${Math.round(critical/Math.max(1,s.hives.length)*100)}% (${critical})</b></button></div></div></section><section class="detail-section-master card-button" onclick="${isPro(s)?"go('trend')":"requirePro('Health Trends')"}"><div class="master-section-title">Health Over Time</div><svg viewBox="0 0 300 110" class="trend-master"><polyline points="10,74 58,62 106,69 154,50 202,57 250,43 290,50" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,86 58,78 106,83 154,72 202,76 250,66 290,70" fill="none" stroke="#C5921A" stroke-width="1.5"/><polyline points="10,94 58,92 106,90 154,85 202,88 250,82 290,84" fill="none" stroke="#D94E43" stroke-width="1.5"/></svg></section><section class="detail-section-master card-button" onclick="go('actions')"><div class="master-section-title">Top Actions ${year}</div><div class="actions-summary-master"><span>▣ Inspections <b>${byYear(s.logs.inspections).length}</b></span><span>◉ Feedings <b>${byYear(s.logs.feedings).length}</b></span><span>✚ Treatments <b>${byYear(s.logs.treatments).length}</b></span><span>⌁ Harvests <b>${byYear(s.logs.harvests).length}</b></span></div></section></div>`
+  r.innerHTML=`<div class="master-screen insights-master"><div class="year-master"><button type="button" onclick="openInsightsYearPicker()">${year===new Date().getFullYear()?'This Year':year}⌄</button></div><div class="insight-tabs-master"><button class="active">Overview</button><button onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}">Colony Health</button><button onclick="${isPro(s)?"go('honey')":"requirePro('Honey Analytics')"}">Harvest</button><button onclick="${isPro(s)?"go('trend')":"requirePro('90-day trends')"}">Trends</button></div><section class="insight-card-master card-button" onclick="${isPro(s)?"go('analysis')":"requirePro('Health Analysis')"}"><div class="master-section-title">Colony Health Summary</div><div class="insight-health-master"><div class="insight-donut-master"><svg viewBox="0 0 100 100"><circle class="donut-track" cx="50" cy="50" r="38"/><circle class="donut-progress" cx="50" cy="50" r="38" stroke-dasharray="${D} ${C-D}"/></svg></div><div class="legend-master"><span><i class="green"></i>Strong <b>${Math.round(strong/Math.max(1,s.hives.length)*100)}% (${strong})</b></span><span><i class="amber"></i>Needs Attention <b>${Math.round(attention/Math.max(1,s.hives.length)*100)}% (${attention})</b></span><button onclick="event.stopPropagation();${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><i class="red"></i>Critical <b>${Math.round(critical/Math.max(1,s.hives.length)*100)}% (${critical})</b></button></div></div></section><section class="detail-section-master card-button" onclick="${isPro(s)?"go('trend')":"requirePro('Health Trends')"}"><div class="master-section-title">Health Over Time</div><svg viewBox="0 0 300 110" class="trend-master"><polyline points="10,74 58,62 106,69 154,50 202,57 250,43 290,50" fill="none" stroke="#5E7350" stroke-width="2"/><polyline points="10,86 58,78 106,83 154,72 202,76 250,66 290,70" fill="none" stroke="#C5921A" stroke-width="1.5"/><polyline points="10,94 58,92 106,90 154,85 202,88 250,82 290,84" fill="none" stroke="#D64545" stroke-width="1.5"/></svg></section><section class="detail-section-master card-button" onclick="go('actions')"><div class="master-section-title">Top Actions ${year}</div><div class="actions-summary-master"><span>▣ Inspections <b>${byYear(s.logs.inspections).length}</b></span><span>◉ Feedings <b>${byYear(s.logs.feedings).length}</b></span><span>✚ Treatments <b>${byYear(s.logs.treatments).length}</b></span><span>⌁ Harvests <b>${byYear(s.logs.harvests).length}</b></span></div></section></div>`
 }
 
 function timelinePage(r,id){
@@ -1317,10 +1322,10 @@ function settings(r){
   <div class="sectionlabel">Cloud Account</div><section class="setting">
   <div class="srow"><div class="scopy"><b>Signed in as</b><div class="tiny muted">${esc(currentCloudUser()?.email||s.user.email)}</div></div><span class="pill">Online</span></div>
   <div class="srow"><div class="scopy"><b>Cloud Sync</b><div class="tiny muted">Hive data syncs across signed-in devices.</div></div><b id="cloudStatusValue">${esc(cloudStatusText())}</b></div>
-  <div class="srow card-button" onclick="signOutCloud()"><div class="scopy"><b style="color:#94382F">Sign Out</b><div class="tiny muted">Keep cloud data and sign out on this device.</div></div><span class="chev">›</span></div>
+  <div class="srow card-button" onclick="signOutCloud()"><div class="scopy"><b style="color:#D64545">Sign Out</b><div class="tiny muted">Keep cloud data and sign out on this device.</div></div><span class="chev">›</span></div>
  </section>
 
-  <div class="sectionlabel">Data & Backup</div><section class="setting"><div class="srow card-button" onclick="exportData()"><div class="scopy"><b>Export Data</b><div class="tiny muted">Download a JSON backup</div></div><span class="chev">›</span></div><div class="srow card-button" onclick="if(confirm('Reset demo data?'))resetState()"><b style="color:#92372F">Reset Demo Data</b><span class="chev">›</span></div></section>
+  <div class="sectionlabel">Data & Backup</div><section class="setting"><div class="srow card-button" onclick="exportData()"><div class="scopy"><b>Export Data</b><div class="tiny muted">Download a JSON backup</div></div><span class="chev">›</span></div><div class="srow card-button" onclick="if(confirm('Reset demo data?'))resetState()"><b style="color:#D64545">Reset Demo Data</b><span class="chev">›</span></div></section>
 
   <div class="sectionlabel">Privacy & Support</div><section class="setting"><div class="srow card-button" onclick="go('privacy')"><b>Privacy Policy</b><span class="chev">›</span></div><div class="srow card-button" onclick="go('terms')"><b>Terms of Service</b><span class="chev">›</span></div><div class="srow card-button" onclick="go('help')"><b>Help Center</b><span class="chev">›</span></div><div class="srow card-button" onclick="go('support')"><b>Contact Support</b><span class="chev">›</span></div></section>
   <button type="button" class="btn primary block" id="saveSettings">Save Settings</button>`;

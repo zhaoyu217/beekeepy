@@ -1307,3 +1307,127 @@ function hives(r){
   if(input)input.oninput=window.__v62Redraw;
 }
 
+
+
+/* ==============================================================
+   V63 HIVES — 3 HIVE FREE PLAN EXACT RESTORE
+   Visual source: user-approved Hives screenshot.
+   Free users: only 3 hives shown / max 3 hives.
+   Pro users: existing additional hives remain available.
+   ============================================================== */
+
+function v63VisibleHives(){
+  const s=v45s();
+  return isPro(s) ? s.hives : s.hives.slice(0,3);
+}
+
+function v63Thumb(h){
+  const rows=v63VisibleHives();
+  const idx=Math.max(0,rows.findIndex(x=>x.id===h.id));
+  return `assets/hives_3_thumb_${(idx%3)+1}.jpg`;
+}
+
+function v63Status(h){
+  if(h.status==='Critical') return 'Risk';
+  if(h.status==='Attention') return 'Attention';
+  return 'Good';
+}
+
+function v63Card(h){
+  return `<button class="v63-card" onclick="go('hive/${h.id}')">
+    <img src="${v63Thumb(h)}" alt="${esc(h.name)}">
+    <span class="v63-copy">
+      <b>${esc(h.name)}</b>
+      <small>${esc(String(h.score||0))}% · Last: ${fmtDate(h.lastInspection)}</small>
+    </span>
+    <em class="${Vclass(h)}">${v63Status(h)}</em>
+  </button>`;
+}
+
+function v63Menu(){
+  const old=document.querySelector('.v63-menu');
+  if(old){old.remove();return;}
+  const s=v45s();
+  const freeFull=!isPro(s) && s.hives.length>=3;
+  const box=document.createElement('div');
+  box.className='v63-menu';
+  box.innerHTML=`
+    <button onclick="${freeFull ? "subscriptionModal('more than 3 hives')" : "addHive()"};this.parentElement.remove()">
+      ${freeFull?'Upgrade for More Hives':'Add Hive'}
+    </button>
+    <button onclick="go('settings');this.parentElement.remove()">Settings</button>`;
+  document.body.appendChild(box);
+}
+
+function v63FilterMenu(){
+  const old=document.querySelector('.v63-filter-pop');
+  if(old){old.remove();return;}
+  const box=document.createElement('div');
+  box.className='v63-filter-pop';
+  box.innerHTML=`
+    <button data-v63-filter="All">All Hives</button>
+    <button data-v63-filter="Healthy">Healthy</button>
+    <button data-v63-filter="Attention">Attention</button>
+    <button data-v63-filter="Critical">Critical</button>`;
+  document.body.appendChild(box);
+
+  box.querySelectorAll('[data-v63-filter]').forEach(btn=>{
+    btn.onclick=()=>{
+      window.__v63Filter=btn.dataset.v63Filter;
+      box.remove();
+      window.__v63Redraw?.();
+    };
+  });
+}
+
+function hives(r){
+  const s=v45s();
+  window.__v63Filter=window.__v63Filter||'All';
+  const visible=v63VisibleHives();
+
+  r.innerHTML=`<div class="vs v63-hives">
+    <section class="v63-stage">
+      <div class="v63-overlay"></div>
+
+      <header class="v63-head">
+        <b>2. Hives</b>
+        <button onclick="v63Menu()" aria-label="More options">⋮</button>
+      </header>
+
+      <div class="v63-search-row">
+        <label class="v63-search">
+          <span>⌕</span>
+          <input id="hsearch" placeholder="Search hives" autocomplete="off">
+        </label>
+        <button class="v63-filter-btn" onclick="v63FilterMenu()" aria-label="Filter hives">
+          <svg viewBox="0 0 24 24" aria-hidden="true">
+            <path d="M4 5h16l-6.2 7.2v5.5l-3.6 1.8v-7.3L4 5Z"></path>
+          </svg>
+        </button>
+      </div>
+
+      <div id="hlist" class="v63-list">
+        ${visible.map(v63Card).join('')}
+      </div>
+
+      ${!isPro(s) ? `<div class="v63-free-note">Free plan · 3 hive limit</div>` : ``}
+    </section>
+  </div>`;
+
+  const input=idq('hsearch');
+
+  window.__v63Redraw=()=>{
+    const q=(input?.value||'').trim().toLowerCase();
+    const f=window.__v63Filter||'All';
+    const rows=v63VisibleHives().filter(h=>
+      (f==='All'||h.status===f) &&
+      (!q||h.name.toLowerCase().includes(q))
+    );
+    idq('hlist').innerHTML=rows.length
+      ? rows.map(v63Card).join('')
+      : `<div class="v63-empty"><b>No hives found</b><span>Try another search or filter.</span></div>`;
+  };
+
+  if(input) input.oninput=window.__v63Redraw;
+}
+

@@ -1471,3 +1471,296 @@ body:has(.v62-hives) .navitem.active:after{width:22px!important}
 /* Do not touch locked Home */
 .v56-home{}
 
+
+
+/* ==============================================================
+   V63 HIVES — 3 HIVE FREE PLAN EXACT RESTORE
+   Hives only. Locked Home is untouched.
+   ============================================================== */
+
+/* Hives locked screenshot has no global white app header. */
+body:has(.v63-hives) #topbar{
+  display:none!important;
+}
+
+body:has(.v63-hives) #view{
+  padding:0!important;
+  padding-bottom:62px!important;
+  background:#EEE9DE!important;
+}
+
+.v63-hives{
+  padding:0!important;
+  gap:0!important;
+  background:transparent!important;
+}
+
+.v63-stage{
+  position:relative;
+  min-height:calc(100vh - 62px);
+  padding:18px 10px 20px;
+  overflow:hidden;
+  background:url('assets/hives_3_locked_bg.jpg') center 48%/cover no-repeat;
+}
+
+.v63-overlay{
+  position:absolute;
+  inset:0;
+  background:
+    linear-gradient(180deg,
+      rgba(34,43,28,.23) 0%,
+      rgba(34,43,28,.07) 22%,
+      rgba(255,252,244,.02) 63%,
+      rgba(40,50,32,.06) 100%);
+  pointer-events:none;
+}
+
+.v63-head,
+.v63-search-row,
+.v63-list,
+.v63-free-note{
+  position:relative;
+  z-index:1;
+}
+
+.v63-head{
+  height:34px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  padding:0 2px;
+  color:#fff;
+  text-shadow:0 1px 4px rgba(0,0,0,.35);
+}
+
+.v63-head>b{
+  font-size:15px;
+  font-weight:800;
+  line-height:1;
+}
+
+.v63-head>button{
+  width:28px;
+  height:30px;
+  padding:0;
+  border:0;
+  background:transparent;
+  color:#fff;
+  font-size:24px;
+  font-weight:800;
+  line-height:1;
+  text-shadow:inherit;
+}
+
+.v63-search-row{
+  margin-top:2px;
+  display:grid;
+  grid-template-columns:1fr 34px;
+  gap:6px;
+  align-items:center;
+}
+
+.v63-search{
+  height:35px;
+  border-radius:9px;
+  background:rgba(255,255,255,.84);
+  backdrop-filter:blur(9px);
+  display:grid;
+  grid-template-columns:28px 1fr;
+  align-items:center;
+}
+
+.v63-search>span{
+  display:grid;
+  place-items:center;
+  color:#36513C;
+  font-size:13px;
+  font-weight:800;
+}
+
+.v63-search input{
+  width:100%;
+  height:33px;
+  padding:0 8px 0 0;
+  border:0;
+  outline:0;
+  background:transparent;
+  color:#29372E;
+  font-size:10px;
+  font-weight:500;
+}
+
+.v63-search input::placeholder{
+  color:#6F7B73;
+}
+
+.v63-filter-btn{
+  width:34px;
+  height:34px;
+  padding:8px;
+  border:0;
+  border-radius:50%;
+  background:rgba(76,92,68,.70);
+  color:#fff;
+  backdrop-filter:blur(8px);
+}
+
+.v63-filter-btn svg{
+  width:100%;
+  height:100%;
+  fill:none;
+  stroke:currentColor;
+  stroke-width:1.8;
+  stroke-linejoin:round;
+}
+
+.v63-list{
+  margin-top:9px;
+  display:flex;
+  flex-direction:column;
+  gap:8px;
+}
+
+/* With only 3 Free hives, keep the locked card proportions instead of stretching to fill. */
+.v63-card{
+  min-height:67px;
+  padding:6px 8px;
+  border:1px solid rgba(215,209,195,.94);
+  border-radius:9px;
+  background:rgba(255,253,246,.91);
+  display:grid;
+  grid-template-columns:58px 1fr auto;
+  align-items:center;
+  gap:9px;
+  text-align:left;
+  color:#26332A;
+  box-shadow:0 2px 7px rgba(25,36,27,.06);
+  backdrop-filter:blur(5px);
+}
+
+.v63-card img{
+  width:58px;
+  height:52px;
+  border-radius:6px;
+  object-fit:cover;
+  display:block;
+}
+
+.v63-copy{
+  min-width:0;
+  display:flex;
+  flex-direction:column;
+  justify-content:center;
+}
+
+.v63-copy b{
+  font-size:12px;
+  line-height:1.15;
+  font-weight:800;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.v63-copy small{
+  margin-top:4px;
+  font-size:9px;
+  line-height:1.15;
+  color:#69766E;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.v63-card>em{
+  min-width:52px;
+  text-align:right;
+  font-style:normal;
+  font-size:9px;
+  line-height:1;
+  font-weight:800;
+  white-space:nowrap;
+}
+
+.v63-card>em.good{color:#52713D}
+.v63-card>em.attention{color:#C98900}
+.v63-card>em.critical{color:#C45134}
+
+.v63-free-note{
+  margin:12px auto 0;
+  width:max-content;
+  max-width:90%;
+  padding:5px 10px;
+  border-radius:12px;
+  background:rgba(255,253,246,.72);
+  color:#647168;
+  font-size:8px;
+  font-weight:600;
+  backdrop-filter:blur(7px);
+}
+
+.v63-empty{
+  min-height:90px;
+  border-radius:9px;
+  background:rgba(255,253,246,.9);
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+}
+.v63-empty b{font-size:12px}
+.v63-empty span{margin-top:5px;font-size:9px;color:#6F7A73}
+
+.v63-menu,
+.v63-filter-pop{
+  position:fixed;
+  z-index:9999;
+  right:18px;
+  width:154px;
+  padding:6px;
+  border:1px solid #DED8CB;
+  border-radius:10px;
+  background:#FFFEFA;
+  box-shadow:0 9px 26px rgba(24,35,26,.17);
+}
+
+.v63-menu{top:54px}
+.v63-filter-pop{top:97px}
+
+.v63-menu button,
+.v63-filter-pop button{
+  width:100%;
+  height:35px;
+  padding:0 10px;
+  border:0;
+  border-radius:7px;
+  background:transparent;
+  text-align:left;
+  color:#29372E;
+  font-size:10px;
+}
+
+.v63-menu button:hover,
+.v63-filter-pop button:hover{
+  background:#F0F2E9;
+}
+
+/* Bottom nav stays compact and overlays scenic background like the locked screenshot. */
+body:has(.v63-hives) #bottomnav{
+  left:50%!important;
+  transform:translateX(-50%)!important;
+  width:min(393px,100%)!important;
+  height:58px!important;
+  bottom:0!important;
+  border-radius:18px 18px 0 0!important;
+  background:rgba(255,253,247,.94)!important;
+  backdrop-filter:blur(14px)!important;
+}
+
+body:has(.v63-hives) #bottomnav .navitem{
+  font-size:8.5px!important;
+}
+
+/* Locked Home remains untouched. */
+.v56-home{}
+

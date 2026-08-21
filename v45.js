@@ -26,41 +26,49 @@ function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]
 function selectTab(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
 function filterHives(status,btn){selectTab(btn);const s=v45s(),rows=status==='All'?s.hives:s.hives.filter(h=>h.status===status);idq('hlist').innerHTML=rows.map(hcard).join('')}
 function filterTimeline(type,btn){selectTab(btn);document.querySelectorAll('[data-timeline-type]').forEach(el=>el.style.display=(type==='All'||el.dataset.timelineType===type)?'grid':'none')}
-function filterActions(mode,btn){selectTab(btn);const box=idq('alist');if(!box)return;if(mode==='Completed')box.innerHTML='<button onclick="go(\'hive/h4\')"><span>Willow Creek</span><b>Inspection completed</b><em class="good">Done</em><small>Yesterday</small></button>';else if(mode==='Pending')render();}
+/* V77 removed superseded filterActions */
 
-function home(r){const s=v45s(),score=avgHealth(s),strong=s.hives.filter(x=>x.status==='Healthy').length,att=s.hives.filter(x=>x.status==='Attention').length,crit=s.hives.filter(x=>x.status==='Critical').length;r.innerHTML=`<div class="vs homev">${Vhero(V45.home,`<div class="greet"><span>Good Morning!</span><b>${esc(s.settings.apiaryName)}</b></div><div class="hring"><strong>${score}%</strong><span>Overall Health</span></div><div class="hstats"><div><b>${s.hives.length}</b><span>Total Hives</span></div><div><b>${strong}</b><span>Strong</span></div><div><b>${att}</b><span>Attention</span></div><div><b>${crit}</b><span>Critical</span></div></div>`,'homehero')}${Vcard('Action Center',`<div class="actrow"><div><small>High Priority</small><b>Inspect Hive #2</b><span>Queen confirmation due</span></div><button onclick="go('inspection/h2')">Open</button></div>`)}${Vcard('Risk Alerts',`<div class="alerts"><button onclick="go('risk')"><b>High Varroa Risk</b><span>Hive #3 · 4 mites / 100 bees</span><em>View</em></button><button onclick="go('hive/h2')"><b>Queen status unconfirmed</b><span>Hive #2 needs verification</span><em>View</em></button></div>`)}${Vcard('Season Intelligence',`<div class="actrow"><div><b>Spring Nectar Flow</b><span>Peak flow · next 12 days</span></div><button onclick="go('season')">Learn More</button></div>`)}${Vcard('Quick Actions',`<div class="quick"><button onclick="go('inspection/h1')"><i>⌕</i><b>Inspection</b></button><button onclick="go('feeding-record/h1')"><i>▣</i><b>Feeding</b></button><button onclick="go('treatment-record/h1')"><i>✚</i><b>Treatment</b></button><button onclick="go('harvest-record/h1')"><i>⌁</i><b>Harvest</b></button><button onclick="go('actions')"><i>•••</i><b>More</b></button></div>`)}</div>`}
-function hives(r){const s=v45s();r.innerHTML=`<div class="vs"><div class="phead" style="--hero:url('${V45.hives}')"><i></i><b>Hives</b><div class="search"><span>⌕</span><input id="hsearch" placeholder="Search hives"></div></div><div class="filters"><button class="active" onclick="filterHives('All',this)">All (${s.hives.length})</button><button onclick="filterHives('Healthy',this)">Healthy</button><button onclick="filterHives('Attention',this)">Attention</button><button onclick="filterHives('Critical',this)">Critical</button></div><div id="hlist" class="hlist">${s.hives.map(hcard).join('')}</div></div>`;idq('hsearch').oninput=e=>{const q=e.target.value.toLowerCase();idq('hlist').innerHTML=s.hives.filter(h=>h.name.toLowerCase().includes(q)).map(hcard).join('')}}
+/* V77 removed superseded home */
+/* V77 removed superseded hives */
 function hcard(h){return `<button class="hcard" onclick="go('hive/${h.id}')"><img src="${vphoto(h)}"><div><b>${esc(h.name)}</b><span>${h.score}% · Last ${fmtDate(h.lastInspection)}</span></div><em class="${Vclass(h)}">${Vstatus(h)}</em></button>`}function allHives(r){hives(r)}
-function hiveDetail(r,id){const s=v45s(),h=vh(id),photos=hivePhotos(h);r.innerHTML=`<div class="vs">${Vhero(vphoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location)}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.queen],['Eggs',h.eggs?'Seen':'None'],['Larvae',h.larvae?'Seen':'None'],['Queen cells',h.queenCells?'Present':'None']])}${hg('Brood',[['Pattern',h.brood],['Strength',h.strength],['Abnormalities','None']])}${hg('Colony',[['Size',h.strength],['Population','8 frames'],['Temperament','Calm']])}${hg('Food Stores',[['Honey',h.honey],['Pollen',h.pollen],['Feeding need',h.honey==='Low'?'Yes':'No']])}${hg('Varroa',[['Last count',`${h.varroa}/100`],['Risk',h.varroa>=3?'High':'Low'],['Test date',fmtDate(h.lastInspection)]])}${hg('Treatment',[['History','Oxalic Acid'],['Active','None'],['Follow-up','May 20'],['Withdrawal','None']])}</div>${Vcard('Photos',`<div class="photos">${photos.slice(0,3).map(p=>`<img src="${p.data}">`).join('')||`<img src="${V45.honeycomb}"><img src="${V45.inspection}"><img src="${V45.hive}">`}<button onclick="idq('phinput').click()">+${Math.max(0,12-photos.length)}</button></div><input id="phinput" hidden type="file" accept="image/*" multiple>`)}${Vcard('Timeline',`<div class="tease"><span>Inspection · ${fmtDate(h.lastInspection)}</span><span>Treatment · Apr 28</span></div>`,`<button onclick="go('timeline')">View History</button>`)}<button class="primary" onclick="go('inspection/${h.id}')">Start Inspection</button></div>`;idq('phinput').onchange=e=>addHivePhotos(h.id,e.target)}
+/* V77 removed superseded hiveDetail */
 function hg(t,rows){return `<section class="hg"><b>${t}</b>${rows.map(x=>`<div><span>${x[0]}</span><strong>${esc(x[1])}</strong></div>`).join('')}</section>`}
-function inspectionPage(r,id){const s=v45s(),h=vh(id);r.innerHTML=`<div class="vs"><section class="vc switchh"><img src="${vphoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · 9:30 AM</span></div><select id="ihsel">${s.hives.map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section><section class="iform">${ifield('Queen Status','Seen laying')}${islider('Colony Strength',8)}${ifield('Brood Pattern','Good')}${islider('Honey Stores',7)}${ifield('Pollen Stores','Medium')}${ifield('Queen Cells','None')}${ifield('Varroa Count','2.1%')}${ifield('Pests','None')}${ifield('Disease','None')}${ifield('Swarming','None')}${ifield('Super','On (1 Super)')}${ifield('Treatment','None')}${ifield('Photos','Add photos')}${ifield('Voice Notes','Add voice note')}${ifield('Next Inspection','May 24, 2025')}<label class="notes"><span>Notes</span><textarea id="inotes">${esc(h.notes||'')}</textarea></label></section><div class="dual"><button onclick="toast('Draft saved')">Save Draft</button><button onclick="vSaveInspection('${h.id}')">Save Inspection</button></div></div>`;idq('ihsel').onchange=e=>go('inspection/'+e.target.value)}
+/* V77 removed superseded inspectionPage */
 function ifield(a,b){return `<div class="irow"><span>${a}</span><b>${b}</b><em>›</em></div>`}function islider(a,n){return `<div class="irow slide"><span>${a}</span><i><u style="width:${n*10}%"></u></i><b>${n} / 10</b></div>`}function vSaveInspection(id){const s=v45s(),h=hive(s,id);h.lastInspection=new Date().toISOString().slice(0,10);h.notes=idq('inotes')?.value||h.notes;s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date:h.lastInspection,notes:h.notes});save(s);toast('Inspection saved');go('hive/'+id)}
-function timelinePage(r){const data=[['May 10','Inspection','Oak Meadow','Colony strength 8/10 · Queen laying',V45.inspection,'hive/h1'],['May 5','Treatment','Oak Meadow','Formic Acid · Varroa treatment','', 'treatment-record/h1'],['Apr 28','Feeding','Oak Meadow','2:1 Sugar Syrup · 2.0 L','', 'feeding-record/h1'],['Apr 20','Inspection','Oak Meadow','Colony strength 7/10 · Varroa 2.1%','', 'hive/h1'],['Apr 15','Harvest','Pine Ridge','24.0 lb · Moisture 16.6%',V45.harvest,'honey']];r.innerHTML=`<div class="vs timeline"><div class="fadephoto" style="--hero:url('${V45.season}')"></div><div class="search"><span>⌕</span><input placeholder="Search timeline"></div><div class="filters"><button class="active" onclick="filterTimeline('All',this)">All</button><button onclick="filterTimeline('Inspection',this)">Inspection</button><button onclick="filterTimeline('Feeding',this)">Feeding</button><button onclick="filterTimeline('Treatment',this)">Treatment</button><button onclick="filterTimeline('Harvest',this)">Harvest</button></div><div class="tlist">${data.map(x=>`<button data-timeline-type="${x[1]}" onclick="go('${x[5]}')"><time>${x[0]}</time><i></i><div><b>${x[1]}</b><span>${x[2]}</span><small>${x[3]}</small></div>${x[4]?`<img src="${x[4]}">`:''}</button>`).join('')}</div><button class="secondary">Load More</button></div>`}
-function honeyPage(r){r.innerHTML=`<div class="vs harvest"><div class="bgphoto" style="--hero:url('${V45.season}')"></div><div class="stats3"><div><span>Total Harvest</span><b>248 lb</b></div><div><span>Total Batches</span><b>12</b></div><div><span>Avg Moisture</span><b>17.2%</b></div></div>${bars()}${Vcard('Recent Harvests',`<div class="lines"><button onclick="go('harvest-record/h1')"><span>May 12, 2025</span><b>Oak Meadow</b><em>28 lb · 16.8%</em></button><button onclick="go('harvest-record/h2')"><span>May 4, 2025</span><b>Pine Ridge</b><em>24 lb · 17.1%</em></button><button onclick="go('harvest-record/h3')"><span>May 1, 2025</span><b>South Field</b><em>26 lb · 16.5%</em></button></div>`)}<button class="primary" onclick="openHarvestHistory()">View All Harvest Records</button></div>`}function bars(){const v=[12,22,35,54,68,49,62,75,53,28,17,10];return `<section class="vc"><div class="vhead"><b>Monthly Harvest (lb)</b></div><div class="bars">${v.map((n,i)=>`<div><i style="height:${n}px"></i><span>${'JFMAMJJASOND'[i]}</span></div>`).join('')}</div></section>`}
-function mapPage(r){const s=v45s();r.innerHTML=`<div class="vs"><div class="filters"><button class="active" onclick="selectTab(this)">Apiaries</button><button onclick="selectTab(this)">Hives</button><button onclick="selectTab(this)">Forage</button></div><section class="mapbox" style="--hero:url('${V45.map}')"><i class="p1">●</i><i class="p2">●</i><i class="p3">●</i><i class="p4">●</i><button>+</button></section><div class="maplist">${s.hives.slice(0,4).map(h=>`<button onclick="go('hive/${h.id}')"><span>⌂</span><div><b>${esc(h.name)}</b><small>${h.score}% · Last ${fmtDate(h.lastInspection)}</small></div><em>›</em></button>`).join('')}</div></div>`}
-function insights(r){r.innerHTML=`<div class="vs">${Vhero(V45.flowers,'<div class="insighttitle">Overview</div>','inshero')}<div class="isum"><div><span>Health Score</span><b>78</b><small>Good</small></div><div><span>Risk Level</span><b>Low</b><small>Overall Risk</small></div></div>${Vcard("Today's Highlights",'<ul class="bullets"><li>All hives are healthy</li><li>No urgent actions</li><li>Good nectar flow ahead</li></ul>')}${Vcard('AI Recommendation','<div class="recol"><button onclick="go(\'recommendations\')">Continue regular inspection</button><button onclick="go(\'risk\')">Check varroa in 7 days</button></div>')}<div class="inav"><button onclick="go('analysis')">AI Health</button><button onclick="go('trend')">Trends</button><button onclick="go('risk')">Risk</button><button onclick="go('season')">Season</button><button onclick="go('honey-analytics')">Honey</button><button onclick="go('recommendations')">Recommendations</button></div></div>`}
-function actions(r){r.innerHTML=`<div class="vs actions-page"><div class="split"><img src="${V45.actions}"><div><div class="filters"><button class="active" onclick="filterActions('Pending',this)">Pending</button><button onclick="filterActions('Completed',this)">Completed</button><button onclick="filterActions('All',this)">All</button></div><div class="alist" id="alist"><button onclick="go('inspection/h1')"><span>Oak Meadow</span><b>Inspect colony</b><em>High</em><small>Due today</small></button><button onclick="go('treatment-record/h3')"><span>Hive #3</span><b>Varroa follow-up</b><em>High</em><small>Due in 2 days</small></button><button onclick="go('feeding-record/h2')"><span>Hive #2</span><b>Feed colony</b><em>Medium</em><small>Due in 5 days</small></button><button onclick="go('harvest-record/h1')"><span>Oak Meadow</span><b>Harvest batch</b><em>Low</em><small>Due in 10 days</small></button></div></div></div><button class="primary" onclick="go('all-actions')">+ Add Action</button><div class="shortcuts"><button onclick="go('inspection/h1')">Inspection</button><button onclick="go('feeding-record/h1')">Feeding</button><button onclick="go('treatment-record/h1')">Treatment</button><button onclick="go('harvest-record/h1')">Harvest</button></div></div>`}function allActions(r){actions(r)}
-function recordPage(r,type,id){const s=v45s(),h=vh(id),cfg={feeding:['Feeding Record',V45.feeding],treatment:['Treatment Record',V45.treatment],harvest:['Harvest Record',V45.harvest]}[type],f=type==='feeding'?[['Feed Type','2:1 Sugar Syrup'],['Quantity','2.0 L'],['Method','Top Feeder'],['Frames Fed','2'],['Date','May 7, 2025'],['Next Feeding','May 19, 2025']]:type==='treatment'?[['Problem','Varroa Mites'],['Treatment','Oxalic Acid (Dribble)'],['Product','Oxalic Acid Solution'],['Dose','5 ml / seam'],['Start Date','May 10, 2025'],['End Date','May 21, 2025'],['Follow-up','May 24, 2025'],['Withdrawal','None']]:[['Date','May 1, 2025'],['Frames Harvested','8'],['Honey Weight','28.0 lb'],['Moisture','16.4%'],['Batch Name','2025-05-01-01']];r.innerHTML=`<div class="vs"><div class="split rec"><img src="${cfg[1]}"><form id="rform"><label><span>Hive</span><select name="hiveId">${s.hives.map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>${f.map(x=>`<label><span>${x[0]}</span><input name="${x[0].replace(/\W/g,'_')}" value="${x[1]}"></label>`).join('')}<label><span>Notes</span><textarea name="Notes">${type==='feeding'?'Colony building up':type==='treatment'?'Day 1 of treatment':'Nice light amber honey'}</textarea></label></form></div><button class="primary" onclick="saveRec('${type}')">Save Record</button></div>`}function saveRec(type){const s=v45s(),fd=new FormData(idq('rform')),hiveId=fd.get('hiveId'),row={id:type[0]+Date.now(),hiveId,date:new Date().toISOString().slice(0,10),notes:fd.get('Notes')||''};if(type==='feeding'){row.type=fd.get('Feed_Type');row.amount=fd.get('Quantity');s.logs.feedings.push(row)}else if(type==='treatment'){row.type=fd.get('Treatment');s.logs.treatments.push(row)}else{row.weightLb=parseFloat(fd.get('Honey_Weight'))||28;row.moisture=parseFloat(fd.get('Moisture'))||16.4;s.logs.harvests.push(row)}save(s);toast('Record saved');go(type==='harvest'?'honey':'actions')}
+/* V77 removed superseded timelinePage */
+/* V77 removed superseded honeyPage */
+function bars(){const v=[12,22,35,54,68,49,62,75,53,28,17,10];return `<section class="vc"><div class="vhead"><b>Monthly Harvest (lb)</b></div><div class="bars">${v.map((n,i)=>`<div><i style="height:${n}px"></i><span>${'JFMAMJJASOND'[i]}</span></div>`).join('')}</div></section>`}
+/* V77 removed superseded mapPage */
+/* V77 removed superseded insights */
+/* V77 removed superseded actions */
+/* V77 removed superseded allActions */
+/* V77 removed superseded recordPage */
+/* V77 removed superseded saveRec */
 function healthAnalysis(r){r.innerHTML=aipage(V45.honeycomb,`<div class="aiscore"><b>82</b><span>Good</span></div><div class="riskchip">Risk Level <b>Low</b></div>${Vcard('Top Reasons','<ul class="bullets"><li>Strong colony population</li><li>Good brood pattern</li><li>Low varroa level</li></ul>')}${Vcard('Recommended Action','<div class="recol"><button onclick="go(\'inspection/h1\')">Continue regular inspection</button><button onclick="go(\'risk\')">Monitor for swarm signs</button></div>')}<button class="primary" onclick="go('recommendations')">View Detailed Analysis</button>`)}
 function aipage(img,body){return `<div class="vs aip" style="--hero:url('${img}')"><div class="aio">${body}</div></div>`}function trendPage(r){r.innerHTML=aipage(V45.hive,`<div class="filters"><button>7D</button><button class="active">30D</button><button>90D</button><button>Season</button></div>${['Health Score','Varroa Level','Colony Size','Food Stores','Brood Pattern','Queen Status'].map((x,i)=>trend(x,[78,2.1,8,7,'Good','Seen'][i])).join('')}<button class="primary" onclick="toast('Trend detail range updated')">View Trend Details</button>`)}function trend(a,b){return `<section class="trendc"><div><b>${a}</b><span>${b}</span></div><svg viewBox="0 0 260 45"><polyline points="0,32 40,24 80,29 120,18 160,23 200,12 260,16" fill="none" stroke="currentColor" stroke-width="2"/></svg></section>`}
 function riskPage(r){const a=[['Varroa Risk','Medium'],['Swarm Risk','Low'],['Queen Failure','Low'],['Food Shortage','Medium'],['Disease Risk','Low'],['Winter Survival','High']];r.innerHTML=`<div class="vs">${Vcard('Predicted Risks · Next 30 Days',a.map(x=>`<div class="riskrow"><span>${x[0]}</span><b class="${x[1]==='High'?'critical':x[1]==='Medium'?'attention':'good'}">${x[1]}</b></div>`).join(''))}<div class="note">Predictions are forecasts, not confirmed events.</div><button class="primary" onclick="go('recommendations')">View Details</button></div>`}
 function seasonPage(r){r.innerHTML=`<div class="vs">${Vhero(V45.season,'<div class="seasont"><span>Spring Nectar Flow</span><b>Peak flow · next 12 days</b></div>','shero')}${Vcard('Conditions','<div class="weather"><div><b>65°F</b><span>Temp</span></div><div><b>60%</b><span>Humidity</span></div><div><b>10 mph</b><span>Wind</span></div><div><b>Light</b><span>Rain</span></div></div>')}${Vcard('Recommendations','<ul class="bullets"><li>Good nectar flow ahead</li><li>Prepare for super expansion</li><li>Monitor for swarm signs</li><li>Keep varroa testing cadence</li></ul>')}<button class="primary" onclick="go('seasonal-settings')">View Details</button></div>`}
-function honeyAnalytics(r){r.innerHTML=aipage(V45.harvest,`<div class="stats3"><div><span>Total Honey</span><b>248 lb</b></div><div><span>Goal</span><b>300 lb</b></div><div><span>Progress</span><b>83%</b></div></div>${bars()}${Vcard('Top Hives','<div class="lines"><button><span>Oak Meadow</span><b>96 lb</b></button><button><span>Pine Ridge</span><b>72 lb</b></button><button onclick="go(&quot;all-hives&quot;)"><span>West Field</span><b>48 lb</b></button></div>')}<button class="primary" onclick="go('honey')">View Details</button>`)}function recommendations(r){r.innerHTML=`<div class="vs">${[['Varroa monitoring','Varroa level increasing','Check and treat if needed','Within 7 days'],['Prepare for flow','Nectar flow starting','Add honey super','This week'],['Queen verification','Hive #2 not confirmed','Inspect queen status','Next inspection']].map(x=>`<section class="vc reco"><div><span>What</span><b>${x[0]}</b></div><div><span>Why</span><b>${x[1]}</b></div><div><span>What to do</span><b>${x[2]}</b></div><div><span>When</span><b>${x[3]}</b></div><button onclick="go('actions')">Create Action</button></section>`).join('')}</div>`}
+/* V77 removed superseded honeyAnalytics */
+function recommendations(r){r.innerHTML=`<div class="vs">${[['Varroa monitoring','Varroa level increasing','Check and treat if needed','Within 7 days'],['Prepare for flow','Nectar flow starting','Add honey super','This week'],['Queen verification','Hive #2 not confirmed','Inspect queen status','Next inspection']].map(x=>`<section class="vc reco"><div><span>What</span><b>${x[0]}</b></div><div><span>Why</span><b>${x[1]}</b></div><div><span>What to do</span><b>${x[2]}</b></div><div><span>When</span><b>${x[3]}</b></div><button onclick="go('actions')">Create Action</button></section>`).join('')}</div>`}
 function settings(r){const s=v45s(),items=[['account','Account'],['subscription','HiveDash Pro'],['apiary','Apiary Environment'],['notification-preferences','Notifications'],['units-region','Units & Region'],['smart-features','Smart Features'],['data-backup','Data & Backup'],['store','Store'],['security','Privacy & Security'],['help','Help'],['about','About']];r.innerHTML=`<div class="vs setv"><div class="setphoto" style="--hero:url('${V45.settings}')"><div><b>${esc(s.settings.apiaryName)}</b><span>${esc(s.settings.location)}</span></div></div><section class="setmenu">${items.map(x=>`<button onclick="go('${x[0]}')"><span>◉</span><b>${x[1]}</b><em>›</em></button>`).join('')}</section><button class="secondary danger" onclick="signOutCloud()">Sign Out</button></div>`}
-function accountPage(r){const s=v45s();r.innerHTML=`<div class="vs"><section class="vc acct"><div class="avatar">${esc(s.user.name[0])}</div><b>${esc(s.user.name)}</b><span>${esc(s.user.email)}</span></section><section class="formlist"><label><span>Full Name</span><input id="aname" value="${esc(s.user.name)}"></label><label><span>Email</span><input id="aemail" value="${esc(s.user.email)}"></label><label><span>Google Account</span><input value="Connected" readonly></label><label><span>Password</span><button type="button" onclick="sendReset()">Change Password</button></label></section><button class="primary" onclick="saveAcct()">Save</button><button class="secondary danger" onclick="toast('Delete request recorded')">Delete Account</button></div>`}function saveAcct(){const s=v45s();s.user.name=idq('aname').value.trim();s.user.email=idq('aemail').value.trim();save(s);toast('Account saved')}async function sendReset(){const s=v45s(),email=prompt('Send password reset link to:',s.user.email);if(!email)return;if(supabaseClient){const{error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:oauthRedirectUrl()});if(error)return toast(error.message)}toast('Password reset email sent')}
-function subscriptionPage(r){const s=v45s();r.innerHTML=`<div class="vs"><section class="procard"><span>Current Plan</span><b>${s.user.plan} Plan</b><small>Renews Jun 30, 2027</small><button onclick="setPlan('Pro')">${s.user.plan==='Pro'?'Manage Subscription':'Upgrade to Pro'}</button></section>${Vcard('Pro includes','<ul class="checks"><li>AI Health Analysis</li><li>Risk Prediction</li><li>Advanced Trends</li><li>Season Intelligence</li><li>Honey Analytics</li><li>Photo AI</li><li>Professional Recommendations</li><li>Reports & Export</li></ul>')}<button class="secondary" onclick="toast('Purchase restored')">Restore Purchase</button></div>`}function setPlan(p){const s=v45s();s.user.plan=p;save(s);toast('Plan updated');render()}
-function apiaryPage(r){r.innerHTML=`<div class="vs">${Vcard('Apiaries & Hives','<div class="lines"><button onclick="go(&quot;all-hives&quot;)"><span>North Field</span><b>4 hives</b><em>›</em></button><button onclick="go(&quot;all-hives&quot;)"><span>East Field</span><b>2 hives</b><em>›</em></button><button onclick="go(&quot;all-hives&quot;)"><span>West Field</span><b>3 hives</b><em>›</em></button></div>')}<section class="formlist"><label><span>Default Inspection Interval</span><select><option>7 days</option><option>14 days</option></select></label><label><span>Hive Type</span><select><option>Langstroth</option><option>Flow Hive</option></select></label></section><button class="primary" onclick="go('seasonal-settings')">Seasonal Settings</button></div>`}
-function seasonalSettings(r){const s=v45s(),x=s.settings.seasonal;r.innerHTML=`<div class="vs">${Vhero(V45.season,'<div class="seasont"><span>Current Season</span><b>'+esc(x.mode)+'</b></div>','shero')}<section class="formlist"><label><span>Current Season</span><select id="smode"><option>Auto</option><option>Spring</option><option>Summer</option><option>Fall</option><option>Winter</option></select></label><label class="switchline"><span>Nectar Flow Tracking</span><input id="nectar" type="checkbox" ${x.nectar?'checked':''}></label><label><span>Swarm Season</span><input value="${esc(x.swarm)}"></label><label><span>Varroa Season</span><input value="${esc(x.varroa)}"></label><label><span>Feeding Season</span><input value="${esc(x.feeding)}"></label><label><span>Winter Preparation</span><input value="${esc(x.winter)}"></label><label><span>Super Management</span><select><option>Auto</option><option>Manual</option></select></label><label><span>Seasonal Inspection Focus</span><select><option>Auto</option><option>Queen</option><option>Varroa</option></select></label></section><button class="primary" onclick="saveSeason()">Save Settings</button></div>`}function saveSeason(){const s=v45s();s.settings.seasonal.mode=idq('smode').value;s.settings.seasonal.nectar=idq('nectar').checked;save(s);toast('Seasonal settings saved')}
+/* V77 removed superseded accountPage */
+function saveAcct(){const s=v45s();s.user.name=idq('aname').value.trim();s.user.email=idq('aemail').value.trim();save(s);toast('Account saved')}async function sendReset(){const s=v45s(),email=prompt('Send password reset link to:',s.user.email);if(!email)return;if(supabaseClient){const{error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:oauthRedirectUrl()});if(error)return toast(error.message)}toast('Password reset email sent')}
+/* V77 removed superseded subscriptionPage */
+/* V77 removed superseded setPlan */
+/* V77 removed superseded apiaryPage */
+/* V77 removed superseded seasonalSettings */
+/* V77 removed superseded saveSeason */
 function notificationPrefs(r){const s=v45s(),x=s.settings.notifications,rows=[['inspection','Inspection Reminders'],['varroa','Varroa Risk'],['treatment','Treatment Follow-up'],['feeding','Feeding Reminders'],['weather','Weather Alerts'],['seasonal','Seasonal Alerts'],['push','Push Notifications']];r.innerHTML=`<div class="vs"><section class="toggles">${rows.map(x=>`<label><span>${x[1]}</span><input data-pref="${x[0]}" type="checkbox" ${s.settings.notifications[x[0]]?'checked':''}></label>`).join('')}</section><button class="primary" onclick="savePrefs()">Save Preferences</button></div>`}function savePrefs(){const s=v45s();document.querySelectorAll('[data-pref]').forEach(e=>s.settings.notifications[e.dataset.pref]=e.checked);save(s);toast('Preferences saved')}
-function unitsRegion(r){const s=v45s();r.innerHTML=`<div class="vs"><section class="formlist"><label><span>Measurement System</span><select id="measure"><option>Imperial (US)</option><option>Metric</option></select></label><label><span>Temperature</span><select><option>°F</option><option>°C</option></select></label><label><span>Weight</span><select><option>lb</option><option>kg</option></select></label><label><span>Date Format</span><select><option>MM/DD/YYYY</option><option>DD/MM/YYYY</option></select></label><label><span>Language</span><select><option>English</option></select></label><label><span>Time Zone</span><select><option>(GMT-07:00) Mountain Time</option></select></label></section><button class="primary" onclick="const s=v45s();s.settings.units=idq('measure').value==='Metric'?'metric':'imperial';save(s);toast('Units saved')">Save Settings</button></div>`}
+/* V77 removed superseded unitsRegion */
 function smartFeatures(r){const s=v45s(),rows=[['voice','Voice Inspection'],['photo','Photo Analysis'],['varroaCount','Smart Varroa Count'],['aiHealth','AI Health Analysis'],['recommendations','Smart Recommendations'],['seasonWeather','Season & Weather Intelligence'],['qr','Hive QR Code']];r.innerHTML=`<div class="vs"><div class="smartphoto"><img src="${V45.flowers}"></div><section class="toggles">${rows.map(x=>`<label><span>${x[1]}</span><input data-smart="${x[0]}" type="checkbox" ${s.settings.smart[x[0]]?'checked':''}></label>`).join('')}</section><button class="secondary" onclick="qrModal()">Preview Hive QR Code</button><button class="primary" onclick="saveSmart()">Save Settings</button></div>`}function saveSmart(){const s=v45s();document.querySelectorAll('[data-smart]').forEach(e=>s.settings.smart[e.dataset.smart]=e.checked);save(s);toast('Smart features saved')}function qrModal(){modal('<div class="modalhead"><b>Hive QR Code</b><button onclick="closeModal(this)">✕</button></div><div class="qr"></div><div class="small muted">Scan to open Hive Detail and Start Inspection.</div>')}
-function dataBackup(r){r.innerHTML=`<div class="vs"><section class="setmenu"><button><span>☁</span><b>Cloud Sync</b><em class="good">Enabled</em></button><button onclick="exportData()"><span>⇧</span><b>Export Data</b><em>›</em></button><button onclick="idq('importfile').click()"><span>⇩</span><b>Import Data</b><em>›</em></button><button onclick="toast('Backup created')"><span>▣</span><b>Create Backup</b><em>›</em></button><button><span>↻</span><b>Sync Status</b><em>${esc(cloudStatusText())}</em></button></section><input id="importfile" hidden type="file" accept="application/json"><button class="primary" onclick="toast('Sync started')">Sync Now</button></div>`;idq('importfile').onchange=importData}function importData(e){const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(JSON.parse(reader.result)));toast('Data imported');render()}catch(e){toast('Invalid backup file')}};reader.readAsText(f)}
-function securityPage(r){r.innerHTML=`<div class="vs"><section class="setmenu"><button onclick="go('privacy')"><span>◉</span><b>Privacy Policy</b><em>›</em></button><button onclick="go('terms')"><span>◉</span><b>Terms of Service</b><em>›</em></button><button onclick="toast('Data permissions opened')"><span>◇</span><b>Data Permissions</b><em>›</em></button><button onclick="go('account')"><span>⌁</span><b>Account Security</b><em>›</em></button><button onclick="toast('Two-factor setup opened')"><span>✦</span><b>Two-Factor Auth</b><em>Off</em></button></section><button class="primary" onclick="toast('Security settings saved')">Manage Security</button></div>`}
+/* V77 removed superseded dataBackup */
+function importData(e){const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(JSON.parse(reader.result)));toast('Data imported');render()}catch(e){toast('Invalid backup file')}};reader.readAsText(f)}
+/* V77 removed superseded securityPage */
 function storePage(r){r.innerHTML=`<div class="vs"><div class="storehero"><img src="${V45.hive}"><div><span>Beekeeping Equipment Store</span><b>SkogHive</b><small>Premium hives · Flow Frames · Accessories</small></div></div><button class="primary" onclick="window.open('https://www.skoghive.com','_blank','noopener')">Shop Now ↗</button></div>`}
-function notifications(r){const rows=[['Critical','High temperature alert','hive/h3'],['Action Required','Inspect Oak Meadow','inspection/h1'],['Reminder','Varroa treatment due','treatment-record/h3'],['AI Risk','Queen failure risk','risk'],['Treatment','Follow-up recommended','treatment-record/h1'],['Seasonal','Spring nectar flow','season'],['System','HiveDash Pro enabled','subscription']];r.innerHTML=`<div class="vs"><div class="filters"><button class="active">All</button><button>Alerts</button><button>Reminders</button><button>System</button></div><section class="notifs">${rows.map((x,i)=>`<button onclick="go('${x[2]}')"><i class="${x[0]==='Critical'?'critical':x[0]==='Action Required'?'attention':'good'}"></i><div><b>${x[0]}</b><span>${x[1]}</span></div><time>${9+i}:30 AM</time></button>`).join('')}</section><button class="secondary" onclick="markAllRead()">Mark All Read</button></div>`}
-function helpPage(r){r.innerHTML=`<div class="vs"><div class="search"><span>⌕</span><input placeholder="Search help articles…"></div><section class="setmenu"><button onclick="toast('Getting Started opened')"><span>◉</span><b>Getting Started</b><em>›</em></button><button onclick="go('hives')"><span>⌂</span><b>Hive Management</b><em>›</em></button><button onclick="go('inspection/h1')"><span>⌕</span><b>Inspection</b><em>›</em></button><button onclick="go('honey')"><span>⌁</span><b>Harvest</b><em>›</em></button><button onclick="go('faq')"><span>?</span><b>FAQ</b><em>›</em></button><button onclick="go('support')"><span>✉</span><b>Contact Support</b><em>›</em></button></section></div>`}
-function faqPage(r){r.innerHTML=`<div class="vs"><div class="seg"><button class="active">FAQ</button><button>Report Problem</button></div>${Vcard('Frequently Asked Questions','<div class="lines"><button><span>How do I add a hive?</span><em>›</em></button><button><span>How does AI analysis work?</span><em>›</em></button><button><span>How do I export my data?</span><em>›</em></button></div>')}<section class="formlist"><label><span>Report a Problem</span><textarea placeholder="Describe the problem…"></textarea></label></section><button class="primary" onclick="toast('Report submitted')">Submit Report</button></div>`}
-function supportPage(r){r.innerHTML=`<div class="vs"><section class="formlist"><label><span>Issue Type</span><select><option>General</option><option>Account</option><option>Billing</option><option>Bug</option></select></label><label><span>Subject</span><input placeholder="Brief summary"></label><label><span>Message</span><textarea placeholder="Describe your issue in detail…"></textarea></label><label><span>Attachments</span><input type="file" multiple></label></section><button class="primary" onclick="toast('Support request sent')">Send Message</button></div>`}
+/* V77 removed superseded notifications */
+/* V77 removed superseded helpPage */
+/* V77 removed superseded faqPage */
+/* V77 removed superseded supportPage */
 function aboutPage(r){r.innerHTML=`<div class="vs about"><section><div class="abouticon">${icon('hive')}</div><b>HiveDash</b><span>Version 1.2.0 (Build 120)</span></section><div class="setmenu"><button onclick="toast('You are on the latest HiveDash build')"><b>What's New</b><em>›</em></button><button onclick="toast('HiveDash is up to date')"><b>Check for Updates</b><em>›</em></button><button onclick="window.open('https://hivedash.app','_blank')"><b>Official Website</b><em>›</em></button><button onclick="go('privacy')"><b>Privacy Policy</b><em>›</em></button><button onclick="go('terms')"><b>Terms of Service</b><em>›</em></button><button onclick="toast('Open-source licenses opened')"><b>Open-source Licenses</b><em>›</em></button><button onclick="go('support')"><b>Contact Support</b><em>›</em></button></div><small>© HiveDash</small></div>`}
 function infoPage(r,title){r.innerHTML=`<div class="vs legal"><h2>${esc(title)}</h2><p>Last updated: August 18, 2026</p><section class="vc body"><h3>1. Information and use</h3><p>HiveDash stores the information needed to manage hives, inspections, actions and preferences.</p><h3>2. Your data</h3><p>You control export, cloud sync and account deletion.</p><h3>3. Security</h3><p>Authentication and data-access controls protect your account.</p><h3>4. Contact</h3><p>Use Contact Support for questions.</p></section></div>`}
 
@@ -103,10 +111,7 @@ function openRecordPicker(){
     <button class="qbtn" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')"><b>Harvest</b></button>
   </div>`)
 }
-function actions(r){
-  r.innerHTML=`<div class="vs"><div class="split"><img src="${V45.actions}"><div><div class="filters"><button class="active" onclick="filterActions('Pending',this)">Pending</button><button onclick="filterActions('Completed',this)">Completed</button><button onclick="filterActions('All',this)">All</button></div><div class="alist" id="alist"></div></div></div><button class="primary" onclick="openRecordPicker()">+ Add Action</button><div class="shortcuts"><button onclick="go('inspection/${v45s().hives[0]?.id||''}')">Inspection</button><button onclick="go('feeding-record/${v45s().hives[0]?.id||''}')">Feeding</button><button onclick="go('treatment-record/${v45s().hives[0]?.id||''}')">Treatment</button><button onclick="go('harvest-record/${v45s().hives[0]?.id||''}')">Harvest</button></div></div>`;
-  drawV48Actions('Pending');
-}
+/* V77 removed superseded actions */
 function allActions(r,mode){actions(r); if(mode){const want=String(mode).toLowerCase().startsWith('complete')?'Completed':String(mode).toLowerCase().startsWith('all')?'All':'Pending';const btn=[...document.querySelectorAll('.filters button')].find(b=>b.textContent.trim()===want);if(btn)filterActions(want,btn)}}
 
 function recordPage(r,type,id){
@@ -193,8 +198,8 @@ function securityPage(r){r.innerHTML=`<div class="vs"><section class="setmenu"><
 
 const V48_NOTIFICATIONS=[['Critical','High temperature alert','hive/h3','Alerts'],['Action Required','Inspect Oak Meadow','inspection/h1','Alerts'],['Reminder','Varroa treatment due','treatment-record/h3','Reminders'],['AI Risk','Queen failure risk','risk','Alerts'],['Treatment','Follow-up recommended','treatment-record/h1','Reminders'],['Seasonal','Spring nectar flow','season','Reminders'],['System','HiveDash Pro enabled','subscription','System']];
 function drawNotificationsV48(group='All'){const box=idq('v48notifs');if(!box)return;const rows=V48_NOTIFICATIONS.filter(x=>group==='All'||x[3]===group);box.innerHTML=rows.map((x,i)=>`<button onclick="go('${x[2]}')"><i class="${x[0]==='Critical'?'critical':x[0]==='Action Required'?'attention':'good'}"></i><div><b>${x[0]}</b><span>${x[1]}</span></div><time>${9+i}:30 AM</time></button>`).join('')}
-function filterNotificationsV48(group,btn){selectTab(btn);drawNotificationsV48(group)}
-function notifications(r){r.innerHTML=`<div class="vs"><div class="filters"><button class="active" onclick="filterNotificationsV48('All',this)">All</button><button onclick="filterNotificationsV48('Alerts',this)">Alerts</button><button onclick="filterNotificationsV48('Reminders',this)">Reminders</button><button onclick="filterNotificationsV48('System',this)">System</button></div><section class="notifs" id="v48notifs"></section><button class="secondary" onclick="markAllRead()">Mark All Read</button></div>`;drawNotificationsV48('All')}
+/* V77 removed superseded filterNotificationsV48 */
+/* V77 removed superseded notifications */
 
 const V48_FAQ={
  'How do I add a hive?':'Open Hives and use the + button to add a hive.',
@@ -286,7 +291,7 @@ function zoomMapV49(){V49_MAP_ZOOM=!V49_MAP_ZOOM;const box=document.querySelecto
 function drawMapListV49(){const s=v45s(),box=idq('v49maplist');if(!box)return;if(V49_MAP_MODE==='Forage'){box.innerHTML=`<button onclick="go('season')"><span>✿</span><div><b>Season Intelligence</b><small>Nectar flow and forage guidance</small></div><em>›</em></button>`;return}if(V49_MAP_MODE==='Apiaries'){box.innerHTML=`<button onclick="go('all-hives')"><span>⌂</span><div><b>${esc(s.settings.apiaryName)}</b><small>${s.hives.length} hives · ${esc(s.settings.location)}</small></div><em>›</em></button>`;return}box.innerHTML=s.hives.slice(0,6).map(h=>`<button onclick="go('hive/${h.id}')"><span>⌂</span><div><b>${esc(h.name)}</b><small>${h.score}% · Last ${fmtDate(h.lastInspection)}</small></div><em>›</em></button>`).join('')}
 function mapPage(r){const s=v45s();V49_MAP_MODE='Apiaries';r.innerHTML=`<div class="vs"><div class="filters"><button class="active" onclick="setMapModeV49('Apiaries',this)">Apiaries</button><button onclick="setMapModeV49('Hives',this)">Hives</button><button onclick="setMapModeV49('Forage',this)">Forage</button></div><section class="mapbox" style="--hero:url('${V45.map}')"><i class="p1">●</i><i class="p2">●</i><i class="p3">●</i><i class="p4">●</i><button onclick="zoomMapV49()">+</button></section><div class="maplist" id="v49maplist"></div></div>`;drawMapListV49()}
 
-function insights(r){const s=v45s(),score=avgHealth(s),critical=s.hives.filter(h=>h.status==='Critical').length,pending=(s.actions||[]).length;const risk=critical?'High':s.hives.some(h=>h.status==='Attention')?'Medium':'Low';r.innerHTML=`<div class="vs">${Vhero(V45.flowers,'<div class="insighttitle">Overview</div>','inshero')}<div class="isum"><div><span>Health Score</span><b>${score}</b><small>${score>=80?'Good':score>=65?'Attention':'Critical'}</small></div><div><span>Risk Level</span><b>${risk}</b><small>Overall Risk</small></div></div>${Vcard("Today's Highlights",`<ul class="bullets"><li>${s.hives.length} hives monitored</li><li>${pending} pending actions</li><li>${critical} critical hives</li></ul>`)}${Vcard('AI Recommendation',`<div class="recol"><button onclick="go('recommendations')">${pending?'Review priority actions':'Continue regular inspection'}</button><button onclick="go('risk')">Review current risk forecast</button></div>`)}<div class="inav"><button onclick="go('analysis')">AI Health</button><button onclick="go('trend')">Trends</button><button onclick="go('risk')">Risk</button><button onclick="go('season')">Season</button><button onclick="go('honey-analytics')">Honey</button><button onclick="go('recommendations')">Recommendations</button></div></div>`}
+/* V77 removed superseded insights */
 
 let V49_TREND_RANGE='30D';
 function setTrendRangeV49(range,btn){V49_TREND_RANGE=range;selectTab(btn);toast(range+' trend range selected')}
@@ -446,44 +451,7 @@ function v53HiveThumb(h){
   return imgs[idx%imgs.length];
 }
 
-function home(r){
-  const s=v45s(),score=avgHealth(s);
-  const strong=s.hives.filter(x=>x.status==='Healthy').length;
-  const att=s.hives.filter(x=>x.status==='Attention').length;
-  const crit=s.hives.filter(x=>x.status==='Critical').length;
-  const first=s.hives[0]?.id||'';
-  r.innerHTML=`<div class="vs homev v53-home">
-    ${Vhero(V45.home,`
-      <div class="greet"><span>Good Morning!</span><b>${esc(s.settings.apiaryName||'Oak Meadow Apiary')}</b></div>
-      <div class="hring"><strong>${score}%</strong><span>Overall Health</span></div>
-      <div class="hstats">
-        <button onclick="go('all-hives/All')"><b>${s.hives.length}</b><span>Total Hives</span></button>
-        <button onclick="go('all-hives/Healthy')"><b>${strong}</b><span>Strong</span></button>
-        <button onclick="go('all-hives/Attention')"><b>${att}</b><span>Attention</span></button>
-        <button onclick="go('all-hives/Critical')"><b>${crit}</b><span>Critical</span></button>
-      </div>`,'homehero')}
-    ${Vcard('Action Center',`
-      <div class="actrow">
-        <div><small>High Priority</small><b>Inspect Hive #2</b><span>Queen confirmation due</span></div>
-        <button onclick="go('inspection/h2')">Open</button>
-      </div>`)}
-    ${Vcard('Risk Alerts',`
-      <div class="alerts">
-        <button onclick="go('treatment-record/h3')"><b>High Varroa Risk</b><span>Hive #3 · 4 mites / 100 bees</span><em>View</em></button>
-        <button onclick="go('hive/h2')"><b>Queen status unconfirmed</b><span>Hive #2 needs verification</span><em>View</em></button>
-      </div>`)}
-    ${Vcard('Season Intelligence',`
-      <div class="actrow"><div><b>Spring Nectar Flow</b><span>Peak flow · next 12 days</span></div><button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Learn More</button></div>`)}
-    ${Vcard('Quick Actions',`
-      <div class="quick">
-        <button onclick="go('inspection/${first}')"><i>⌕</i><b>Inspection</b></button>
-        <button onclick="go('feeding-record/${first}')"><i>▣</i><b>Feeding</b></button>
-        <button onclick="go('treatment-record/${first}')"><i>✚</i><b>Treatment</b></button>
-        <button onclick="go('harvest-record/${first}')"><i>⌁</i><b>Harvest</b></button>
-        <button onclick="openRecordPicker()"><i>•••</i><b>More</b></button>
-      </div>`)}
-  </div>`;
-}
+/* V77 removed superseded home */
 
 function v53HiveCard(h){
   return `<button class="hcard v53-hcard" onclick="go('hive/${h.id}')">
@@ -493,35 +461,7 @@ function v53HiveCard(h){
   </button>`;
 }
 
-function hives(r){
-  const s=v45s();
-  r.innerHTML=`<div class="vs v53-hives">
-    <div class="phead" style="--hero:url('${V45.hives}')"><i></i><b>Hives</b>
-      <div class="search"><span>⌕</span><input id="hsearch" placeholder="Search hives"></div>
-    </div>
-    <div class="filters v53-filters">
-      <button class="active" data-v53-status="All">All (${s.hives.length})</button>
-      <button data-v53-status="Healthy">Healthy</button>
-      <button data-v53-status="Attention">Attention</button>
-      <button data-v53-status="Critical">Critical</button>
-    </div>
-    <div id="hlist" class="hlist">${s.hives.map(v53HiveCard).join('')}</div>
-  </div>`;
-  const input=idq('hsearch');
-  let status='All';
-  function draw(){
-    const q=(input?.value||'').toLowerCase().trim();
-    const rows=s.hives.filter(h=>(status==='All'||h.status===status)&&(!q||h.name.toLowerCase().includes(q)));
-    idq('hlist').innerHTML=rows.length?rows.map(v53HiveCard).join(''):'<section class="vc v53-empty"><b>No hives found</b><span>Try another search or filter.</span></section>';
-  }
-  document.querySelectorAll('[data-v53-status]').forEach(btn=>{
-    btn.onclick=()=>{
-      document.querySelectorAll('[data-v53-status]').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active'); status=btn.dataset.v53Status; draw();
-    };
-  });
-  if(input) input.oninput=draw;
-}
+/* V77 removed superseded hives */
 
 function v53ActionRows(mode='Pending'){
   const s=v45s();
@@ -638,159 +578,7 @@ function v54ActionCTA(a){
   return {label:'Open',route:`go('hive/${hid}')`,hive:hid};
 }
 
-function home(r){
-  const s=v45s();
-  const score=avgHealth(s);
-  const strong=s.hives.filter(x=>x.status==='Healthy').length;
-  const att=s.hives.filter(x=>x.status==='Attention').length;
-  const crit=s.hives.filter(x=>x.status==='Critical').length;
-  const first=s.hives[0]?.id||'';
-  const top=v54TopAction();
-  const cta=v54ActionCTA(top);
-  const topHive=hive(s,cta.hive);
-  const topTitle=top?.title||'Inspection overdue';
-  const topReason=top?.reason||top?.due||'Last inspection needs review';
-  const attentionHive=s.hives.find(h=>h.status==='Attention')||s.hives[1]||s.hives[0];
-  const criticalHive=s.hives.find(h=>h.status==='Critical')||s.hives[2]||s.hives[0];
-
-  r.innerHTML=`
-  <div class="vs v54-home">
-
-    <!-- 1. Hive Overview -->
-    <section class="v54-card v54-overview">
-      <div class="v54-section-title">
-        <b>Hive Overview</b>
-        <span class="v54-info">i</span>
-      </div>
-
-      <div class="v54-overview-main">
-        <button class="v54-score" onclick="go('all-hives/All')" aria-label="View all hives">
-          <svg viewBox="0 0 120 120" class="v54-score-ring" aria-hidden="true">
-            <circle class="v54-ring-bg" cx="60" cy="60" r="47"></circle>
-            <circle class="v54-ring-value" cx="60" cy="60" r="47"
-                    style="stroke-dasharray:${Math.max(0,Math.min(100,score))*2.953},295.3"></circle>
-          </svg>
-          <span class="v54-score-number">${score}<small>%</small></span>
-          <b>${score>=80?'Good':score>=65?'Attention':'Critical'}</b>
-          <small>Overall Health</small>
-        </button>
-
-        <div class="v54-overview-stats">
-          <button onclick="go('all-hives/All')">
-            <span class="v54-stat-icon">▤</span>
-            <span>Total Hives</span>
-            <b>${s.hives.length}</b>
-          </button>
-          <button onclick="go('all-hives/Healthy')">
-            <i class="v54-dot v54-green"></i>
-            <span>Strong</span>
-            <b>${strong}</b>
-          </button>
-          <button onclick="go('all-hives/Attention')">
-            <i class="v54-dot v54-orange"></i>
-            <span>Needs Attention</span>
-            <b>${att}</b>
-          </button>
-          <button onclick="go('all-hives/Critical')">
-            <i class="v54-dot v54-red"></i>
-            <span>Critical</span>
-            <b>${crit}</b>
-          </button>
-        </div>
-      </div>
-
-      <div class="v54-apiary-strip" role="img" aria-label="Apiary"></div>
-
-      <button class="v54-view-row" onclick="go('all-hives/All')">
-        <span class="v54-view-icon">▤</span>
-        <span><b>View All Hives</b><small>Check detailed hive status</small></span>
-        <em>›</em>
-      </button>
-    </section>
-
-    <!-- 2. Action Center -->
-    <section class="v54-card">
-      <div class="v54-section-title">
-        <b>Action Center</b>
-      </div>
-      <div class="v54-action-primary">
-        <span class="v54-action-icon">✓</span>
-        <span class="v54-action-copy">
-          <b>${esc(topTitle)}</b>
-          <small>${topHive?esc(topHive.name):'Hive'} · ${esc(topReason)}</small>
-        </span>
-        <button onclick="${cta.route}">${cta.label}</button>
-      </div>
-      <div class="v54-action-meta">
-        <span>▧&nbsp; Due: <b>${esc(top?.due||'Now')}</b></span>
-        <span>◷&nbsp; Est. time: 15 min</span>
-        <button onclick="go('all-actions')">View All Actions ›</button>
-      </div>
-    </section>
-
-    <!-- 3. Risk Alerts -->
-    <section class="v54-card">
-      <div class="v54-section-title">
-        <b>Risk Alerts</b>
-        <button onclick="go('all-hives/Critical')">View All Alerts ›</button>
-      </div>
-      <div class="v54-risk-scroll">
-        <button class="v54-risk-card high" onclick="${criticalHive?`go('treatment-record/${criticalHive.id}')`:"go('all-hives/Critical')"}">
-          <span class="v54-risk-symbol">!</span>
-          <span><b>${criticalHive?esc(criticalHive.name):'Hive'}</b><small>Varroa test overdue</small><em>High Risk</em></span>
-          <i>›</i>
-        </button>
-        <button class="v54-risk-card medium" onclick="${attentionHive?`go('hive/${attentionHive.id}')`:"go('all-hives/Attention')"}">
-          <span class="v54-risk-symbol">!</span>
-          <span><b>${attentionHive?esc(attentionHive.name):'Hive'}</b><small>Queen status unconfirmed</small><em>Medium Risk</em></span>
-          <i>›</i>
-        </button>
-        <button class="v54-risk-card high" onclick="${criticalHive?`go('hive/${criticalHive.id}')`:"go('all-hives/Critical')"}">
-          <span class="v54-risk-symbol">!</span>
-          <span><b>${criticalHive?esc(criticalHive.name):'Hive'}</b><small>Inspection overdue</small><em>High Risk</em></span>
-          <i>›</i>
-        </button>
-      </div>
-      <div class="v54-pager"><i class="active"></i><i></i><i></i><i></i></div>
-    </section>
-
-    <!-- 4. Season Intelligence -->
-    <section class="v54-card">
-      <div class="v54-section-title">
-        <b>Season Intelligence</b>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Spring Build-Up ›</button>
-      </div>
-      <div class="v54-season-grid">
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
-          <i>✿</i><b>Nectar Flow</b><em>Good</em><small>Flow is strong in your area</small><span>Learn more ›</span>
-        </button>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
-          <i>⌁</i><b>Swarm Watch</b><em>Low Risk</em><small>High swarm risk in 2–4 weeks</small><span>Learn more ›</span>
-        </button>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
-          <i>▣</i><b>Add Super Soon</b><em class="warn">Recommended</em><small>Prepare to add honey super</small><span>Learn more ›</span>
-        </button>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">
-          <i>◉</i><b>Varroa Rising</b><em class="warn">Elevated</em><small>Increase monitoring frequency</small><span>Learn more ›</span>
-        </button>
-      </div>
-      <div class="v54-pager season"><i class="active"></i><i></i><i></i><i></i><i></i></div>
-    </section>
-
-    <!-- 5. Quick Actions -->
-    <section class="v54-card v54-quick-section">
-      <div class="v54-section-title"><b>Quick Actions</b></div>
-      <div class="v54-quick-grid">
-        <button onclick="go('inspection/${first}')"><i>✓</i><b>Inspection</b><small>Record hive inspection</small></button>
-        <button onclick="go('feeding-record/${first}')"><i>▤</i><b>Feeding</b><small>Record feeding activity</small></button>
-        <button onclick="go('treatment-record/${first}')"><i>✚</i><b>Treatment</b><small>Record treatment</small></button>
-        <button onclick="go('harvest-record/${first}')"><i>⌁</i><b>Harvest</b><small>Record honey harvest</small></button>
-        <button onclick="openRecordPicker()"><i>•••</i><b>More</b><small>More actions & tools</small></button>
-      </div>
-    </section>
-
-  </div>`;
-}
+/* V77 removed superseded home */
 
 
 
@@ -821,127 +609,7 @@ function v55ActionRoute(a){
   return {label:'Open', onclick:`go('hive/${hid}')`, hive:hid};
 }
 
-function home(r){
-  const s=v45s(), score=avgHealth(s);
-  const strong=s.hives.filter(h=>h.status==='Healthy').length;
-  const att=s.hives.filter(h=>h.status==='Attention').length;
-  const crit=s.hives.filter(h=>h.status==='Critical').length;
-  const total=Math.max(1,s.hives.length);
-  const pct=n=>Math.round((n/total)*100);
-  const first=s.hives[0]?.id||'';
-  const top=v55TopAction();
-  const ar=v55ActionRoute(top);
-  const th=hive(s,ar.hive);
-  const riskA=s.hives.find(h=>h.status==='Attention')||s.hives[0];
-  const riskC=s.hives.find(h=>h.status==='Critical')||s.hives[0];
-
-  r.innerHTML=`
-  <div class="vs v55-home">
-
-    <section class="v55-overview">
-      <div class="v55-title">Hive Overview <span>i</span></div>
-
-      <div class="v55-overview-body">
-        <button class="v55-health" onclick="go('all-hives/All')" aria-label="View all hives">
-          <svg viewBox="0 0 120 120">
-            <circle cx="60" cy="60" r="47" class="bg"></circle>
-            <circle cx="60" cy="60" r="47" class="val"
-              style="stroke-dasharray:${Math.max(0,Math.min(100,score))*2.953},295.3"></circle>
-          </svg>
-          <div class="num">${score}<small>%</small></div>
-          <b>${score>=80?'Good':score>=65?'Attention':'Critical'}</b>
-          <em>Overall Health</em>
-        </button>
-
-        <div class="v55-stat-list">
-          <button onclick="go('all-hives/All')">
-            <i class="ico">▤</i><span>Total Hives</span><b>${s.hives.length}</b>
-          </button>
-          <button onclick="go('all-hives/Healthy')">
-            <i class="dot green"></i><span>Strong</span><b>${strong}</b><em>(${pct(strong)}%)</em>
-          </button>
-          <button onclick="go('all-hives/Attention')">
-            <i class="dot orange"></i><span>Needs Attention</span><b>${att}</b><em>(${pct(att)}%)</em>
-          </button>
-          <button onclick="go('all-hives/Critical')">
-            <i class="dot red"></i><span>Critical</span><b>${crit}</b><em>(${pct(crit)}%)</em>
-          </button>
-        </div>
-      </div>
-
-      <div class="v55-landscape"></div>
-
-      <button class="v55-view-all" onclick="go('all-hives/All')">
-        <i>▤</i>
-        <span><b>View All Hives</b><small>Check detailed hive status</small></span>
-        <em>›</em>
-      </button>
-    </section>
-
-    <section class="v55-section v55-action">
-      <div class="v55-section-title">Action Center</div>
-      <div class="v55-action-row">
-        <i class="cal">✓</i>
-        <span class="copy">
-          <b>${esc(top?.title||'Varroa Check Overdue')}</b>
-          <small>${th?esc(th.name):'Hive'} · ${esc(top?.reason||'Last inspection: 35 days ago')}</small>
-        </span>
-        <button onclick="${ar.onclick}">${ar.label}</button>
-      </div>
-      <div class="v55-meta">
-        <span>▧ &nbsp; Due: <b>${esc(top?.due||'Now')}</b></span>
-        <span>◷ &nbsp; Est. time: 15 min</span>
-        <button onclick="go('all-actions')">View All Actions <b>›</b></button>
-      </div>
-    </section>
-
-    <section class="v55-section v55-risks">
-      <div class="v55-section-head">
-        <span>Risk Alerts</span>
-        <button onclick="go('all-hives/Critical')">View All Alerts <b>›</b></button>
-      </div>
-      <div class="v55-risk-row">
-        <button class="high" onclick="${riskA?`go('hive/${riskA.id}')`:"go('all-hives/Attention')"}">
-          <i>!</i><span><b>${riskA?esc(riskA.name):'Hive #2'}</b><small>Queen status<br>unconfirmed</small><em>High Risk</em></span><strong>›</strong>
-        </button>
-        <button class="medium" onclick="${riskA?`go('feeding-record/${riskA.id}')`:"go('all-hives/Attention')"}">
-          <i>!</i><span><b>${riskA?esc(riskA.name):'Hive #4'}</b><small>Low food<br>stores</small><em>Medium Risk</em></span><strong>›</strong>
-        </button>
-        <button class="high" onclick="${riskC?`go('treatment-record/${riskC.id}')`:"go('all-hives/Critical')"}">
-          <i>!</i><span><b>${riskC?esc(riskC.name):'Hive #1'}</b><small>Varroa test<br>overdue</small><em>High Risk</em></span><strong>›</strong>
-        </button>
-        <button class="more-risk" onclick="go('all-hives/Critical')"><i>!</i></button>
-      </div>
-      <div class="v55-dots"><b></b><i></i><i></i><i></i><i></i></div>
-    </section>
-
-    <section class="v55-section v55-season">
-      <div class="v55-section-head">
-        <span>Season Intelligence</span>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Spring Build-Up <b>›</b></button>
-      </div>
-      <div class="v55-season-grid">
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>✿</i><b>Nectar Flow</b><em>Good</em><small>Flow is strong in your area</small><span>Learn more ›</span></button>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>⌁</i><b>Swarm Watch</b><em>Low Risk</em><small>High swarm risk in 2–4 weeks</small><span>Learn more ›</span></button>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>▤</i><b>Add Super Soon</b><em class="orange">Recommended</em><small>Prepare to add honey super</small><span>Learn more ›</span></button>
-        <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}"><i>◉</i><b>Varroa Rising</b><em class="orange">Elevated</em><small>Increase monitoring frequency</small><span>Learn more ›</span></button>
-      </div>
-      <div class="v55-dots season-dots"><b></b><i></i><i></i><i></i><i></i></div>
-    </section>
-
-    <section class="v55-section v55-quick">
-      <div class="v55-section-title">Quick Actions</div>
-      <div class="v55-quick-grid">
-        <button onclick="go('inspection/${first}')"><i>✓</i><b>Inspection</b><small>Record hive<br>inspection</small></button>
-        <button onclick="go('feeding-record/${first}')"><i>▤</i><b>Feeding</b><small>Record feeding<br>activity</small></button>
-        <button onclick="go('treatment-record/${first}')"><i>✚</i><b>Treatment</b><small>Record<br>treatment</small></button>
-        <button onclick="go('harvest-record/${first}')"><i>⌁</i><b>Harvest</b><small>Record honey<br>harvest</small></button>
-        <button onclick="openRecordPicker()"><i>•••</i><b>More</b><small>More actions<br>& tools</small></button>
-      </div>
-    </section>
-
-  </div>`;
-}
+/* V77 removed superseded home */
 
 
 
@@ -1069,55 +737,7 @@ function v60HiveCard(h){
   </button>`;
 }
 
-function hives(r){
-  const s=v45s();
-  r.innerHTML=`<div class="vs v60-hives">
-    <section class="v60-hives-hero">
-      <div class="v60-hero-shade"></div>
-      <b class="v60-hero-title">Hives</b>
-      <div class="v60-search">
-        <span>⌕</span>
-        <input id="hsearch" placeholder="Search hives" autocomplete="off">
-      </div>
-    </section>
-
-    <div class="v60-filters">
-      <button class="active" data-v60-status="All">All (${s.hives.length})</button>
-      <button data-v60-status="Healthy">Healthy</button>
-      <button data-v60-status="Attention">Attention</button>
-      <button data-v60-status="Critical">Critical</button>
-    </div>
-
-    <div id="hlist" class="v60-hive-list">
-      ${s.hives.map(v60HiveCard).join('')}
-    </div>
-  </div>`;
-
-  const input=idq('hsearch');
-  let status='All';
-
-  function redraw(){
-    const q=(input?.value||'').trim().toLowerCase();
-    const rows=s.hives.filter(h =>
-      (status==='All'||h.status===status) &&
-      (!q||h.name.toLowerCase().includes(q))
-    );
-    idq('hlist').innerHTML=rows.length
-      ? rows.map(v60HiveCard).join('')
-      : `<section class="v60-empty"><b>No hives found</b><span>Try another search or filter.</span></section>`;
-  }
-
-  document.querySelectorAll('[data-v60-status]').forEach(btn=>{
-    btn.onclick=()=>{
-      document.querySelectorAll('[data-v60-status]').forEach(x=>x.classList.remove('active'));
-      btn.classList.add('active');
-      status=btn.dataset.v60Status;
-      redraw();
-    };
-  });
-
-  if(input) input.oninput=redraw;
-}
+/* V77 removed superseded hives */
 
 
 
@@ -1182,47 +802,7 @@ function v61FilterMenu(){
   });
 }
 
-function hives(r){
-  const s=v45s();
-  window.__v61HiveFilter=window.__v61HiveFilter||'All';
-
-  r.innerHTML=`<div class="vs v61-hives">
-    <section class="v61-hives-stage">
-      <div class="v61-stage-shade"></div>
-
-      <div class="v61-stage-top">
-        <b>2. Hives</b>
-        <button class="v61-more" onclick="go('settings')">⋮</button>
-      </div>
-
-      <div class="v61-search-row">
-        <label class="v61-search">
-          <span>⌕</span>
-          <input id="hsearch" placeholder="Search hives" autocomplete="off">
-        </label>
-        <button class="v61-filter-btn" onclick="v61FilterMenu()" aria-label="Filter hives">⌄</button>
-      </div>
-
-      <div id="hlist" class="v61-hive-list">${s.hives.map(v61HiveCard).join('')}</div>
-    </section>
-  </div>`;
-
-  const input=idq('hsearch');
-
-  window.__v61RedrawHives=()=>{
-    const q=(input?.value||'').trim().toLowerCase();
-    const status=window.__v61HiveFilter||'All';
-    const rows=s.hives.filter(h=>
-      (status==='All'||h.status===status) &&
-      (!q||h.name.toLowerCase().includes(q))
-    );
-    idq('hlist').innerHTML=rows.length
-      ? rows.map(v61HiveCard).join('')
-      : `<div class="v61-empty"><b>No hives found</b><span>Try another search or filter.</span></div>`;
-  };
-
-  if(input) input.oninput=window.__v61RedrawHives;
-}
+/* V77 removed superseded hives */
 
 
 
@@ -1276,36 +856,7 @@ function v62FilterMenu(){
     window.__v62Redraw?.();
   });
 }
-function hives(r){
-  const s=v45s();
-  idq('topbar')?.classList.add('v62-hide-topbar');
-  window.__v62Filter=window.__v62Filter||'All';
-  r.innerHTML=`<div class="vs v62-hives">
-    <section class="v62-screen">
-      <div class="v62-screen-shade"></div>
-      <header class="v62-head">
-        <b>2. Hives</b>
-        <button onclick="v62Menu()" aria-label="More">⋮</button>
-      </header>
-      <div class="v62-search-row">
-        <label class="v62-search">
-          <span>⌕</span><input id="hsearch" placeholder="Search hives" autocomplete="off">
-        </label>
-        <button class="v62-filter" onclick="v62FilterMenu()" aria-label="Filter">⌄</button>
-      </div>
-      <div class="v62-list" id="hlist">${s.hives.map(v62Card).join('')}</div>
-    </section>
-  </div>`;
-  const input=idq('hsearch');
-  window.__v62Redraw=()=>{
-    const q=(input?.value||'').toLowerCase().trim();
-    const f=window.__v62Filter||'All';
-    const rows=s.hives.filter(h=>(f==='All'||h.status===f)&&(!q||h.name.toLowerCase().includes(q)));
-    idq('hlist').innerHTML=rows.length?rows.map(v62Card).join(''):
-      `<div class="v62-empty"><b>No hives found</b><span>Try another search or filter.</span></div>`;
-  };
-  if(input)input.oninput=window.__v62Redraw;
-}
+/* V77 removed superseded hives */
 
 
 

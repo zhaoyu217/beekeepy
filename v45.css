@@ -2224,7 +2224,7 @@ button.active{
 .navitem.active:after,.bottomnav .active:after{
   background-color:var(--hd-green)!important;
 }
-.vtop .brand,.brand,.active,.good,.success{color:var(--hd-green)!important;}
+.vtop .brand{color:var(--hd-green)!important;}
 .attention,.needs-attention,.warn,.warning{color:var(--hd-gold)!important;}
 .critical,.danger,.risk.high{color:var(--hd-critical)!important;}
 
@@ -2245,4 +2245,114 @@ button.active{
 .v61-hive-card>em.critical,
 .v60-hive-card>em.critical{
   color:var(--hd-critical)!important;
+}
+
+
+/* ==============================================================
+   V75 — TEXT COLOR HOTFIX
+   Color only. Restores normal text to Text Primary and keeps
+   semantic colors only for status/active controls.
+   ============================================================== */
+
+/* Home normal titles and text */
+.v56-home .v56-row-copy>span,
+.v56-home .v56-row-copy>b,
+.v56-home .v56-row-copy>em{
+  color:var(--hd-text)!important;
+}
+
+/* Priority/attention helper remains Honey Gold */
+.v56-home .v56-row-copy>small{
+  color:var(--hd-gold)!important;
+}
+
+/* Buttons keep green semantic styling */
+.v56-home .v56-soft-btn{
+  color:var(--hd-green)!important;
+}
+
+/* Bottom nav: only active icon/text/underline use green; no block fill */
+.bottomnav .navitem{
+  color:var(--hd-text-secondary)!important;
+  background-color:transparent!important;
+}
+.bottomnav .navitem.active{
+  color:var(--hd-green)!important;
+  background-color:transparent!important;
+}
+.bottomnav .navitem.active:after{
+  background-color:var(--hd-green)!important;
+}
+
+/* Generic section/card copy should not inherit green from status classes */
+.vcard, .vc, .v53-actions, .v53-insights, .v63-hives{
+  color:var(--hd-text)!important;
+}
+
+
+/* ==============================================================
+   V76 — COLOR SEMANTIC FIX
+   ONLY fixes:
+   1) Insights Risk Level semantic color
+   2) Honey Gold usage on key CTA emphasis
+   3) Removes over-broad global button.active color forcing
+   No layout / typography / image / route / navigation changes.
+   ============================================================== */
+
+/* 1) Insights Risk Level semantic color */
+.v53-insights .isum > button:nth-child(1) b{
+  color:var(--hd-green)!important;
+}
+.v53-insights .isum > button:nth-child(2) b{
+  color:var(--hd-critical)!important;
+}
+
+/* Optional semantic support if runtime adds explicit classes later */
+.v53-insights .isum .risk-low{color:var(--hd-green)!important;}
+.v53-insights .isum .risk-medium{color:var(--hd-gold)!important;}
+.v53-insights .isum .risk-high{color:var(--hd-critical)!important;}
+
+/* 2) Honey Gold for key CTA emphasis */
+.v53-actions .v53-add-action,
+.v53-insights .recol button:first-child,
+.v55-action-row>button,
+.v54-action-primary>button{
+  background-color:var(--hd-gold)!important;
+  color:var(--hd-surface)!important;
+}
+
+/* Preserve green for general primary navigation/active tabs */
+.v53-action-tabs button.active,
+.v60-filters button.active,
+.v61-filter-pop button.active,
+.v62-filter-pop button.active,
+.v63-filter-pop button.active{
+  background-color:var(--hd-green)!important;
+  color:var(--hd-surface)!important;
+}
+
+/* 3) Stop globally forcing every button.active to green */
+button.active{
+  background-color:initial!important;
+  color:inherit!important;
+}
+
+/* Re-apply green only where active state is intentionally green */
+.v53-action-tabs button.active,
+.v60-filters button.active,
+.v61-filter-pop button.active,
+.v62-filter-pop button.active,
+.v63-filter-pop button.active,
+.bottomnav .navitem.active{
+  background-color:var(--hd-green)!important;
+  color:var(--hd-surface)!important;
+}
+
+/* Bottom nav active should NOT receive a filled block */
+.bottomnav .navitem.active{
+  background-color:transparent!important;
+  color:var(--hd-green)!important;
+}
+.bottomnav .navitem.active:after{
+  background-color:var(--hd-green)!important;
 }

@@ -3070,3 +3070,162 @@ button.active{
   color:#FFFEFB!important;
   box-shadow:0 5px 14px rgba(197,146,26,.20)!important;
 }
+
+
+/* ==============================================================
+   V88 — TIMELINE VISUAL POLISH
+   Timeline page only. Search/filter/data/routes unchanged.
+   ============================================================== */
+
+.v88-timeline{
+  gap:10px!important;
+  padding:0 10px 18px!important;
+  color:var(--hd-text)!important;
+}
+
+/* Clean hero */
+.v88-timeline .fadephoto,
+.v88-timeline .bgphoto{
+  height:118px!important;
+  margin:0 -10px -54px!important;
+  border-radius:0 0 16px 16px!important;
+  background-image:
+    linear-gradient(180deg,rgba(47,59,51,.08),rgba(47,59,51,.50)),
+    var(--hero)!important;
+  background-size:cover!important;
+  background-position:center 54%!important;
+}
+
+/* Search */
+.v88-timeline .search,
+.v88-timeline .vsearch,
+.v88-timeline input[type="search"]{
+  min-height:42px!important;
+  border-radius:12px!important;
+}
+.v88-timeline .search input,
+.v88-timeline .vsearch input,
+.v88-timeline input[type="search"]{
+  font-size:11px!important;
+  color:var(--hd-text)!important;
+}
+
+/* Filter tabs */
+.v88-timeline .tabs,
+.v88-timeline .filtertabs,
+.v88-timeline .timeline-tabs{
+  display:flex!important;
+  gap:6px!important;
+  overflow-x:auto!important;
+  padding:2px 0 4px!important;
+  scrollbar-width:none!important;
+}
+.v88-timeline .tabs::-webkit-scrollbar,
+.v88-timeline .filtertabs::-webkit-scrollbar,
+.v88-timeline .timeline-tabs::-webkit-scrollbar{
+  display:none!important;
+}
+.v88-timeline .tabs button,
+.v88-timeline .filtertabs button,
+.v88-timeline .timeline-tabs button{
+  flex:0 0 auto!important;
+  min-height:31px!important;
+  padding:0 11px!important;
+  border:1px solid var(--hd-border)!important;
+  border-radius:999px!important;
+  background:var(--hd-surface)!important;
+  color:var(--hd-text-secondary)!important;
+  font-size:10px!important;
+  font-weight:600!important;
+}
+.v88-timeline .tabs button.active,
+.v88-timeline .filtertabs button.active,
+.v88-timeline .timeline-tabs button.active{
+  border-color:var(--hd-green)!important;
+  background:var(--hd-green)!important;
+  color:#FFFEFB!important;
+}
+
+/* Timeline spine */
+.v88-timeline .tlist{
+  position:relative!important;
+  padding-left:4px!important;
+}
+.v88-timeline .tlist::before{
+  content:"";
+  position:absolute!important;
+  left:63px!important;
+  top:18px!important;
+  bottom:18px!important;
+  width:2px!important;
+  border-radius:999px!important;
+  background:rgba(94,115,80,.18)!important;
+}
+
+.v88-timeline .tlist button{
+  position:relative!important;
+  min-height:86px!important;
+  grid-template-columns:48px 18px minmax(0,1fr) 60px!important;
+  gap:8px!important;
+  align-items:center!important;
+  padding:8px 0!important;
+  border:0!important;
+  border-bottom:1px solid var(--hd-border)!important;
+  background:transparent!important;
+  text-align:left!important;
+}
+
+.v88-timeline .tlist time{
+  align-self:start!important;
+  padding-top:14px!important;
+  font-size:10px!important;
+  font-weight:600!important;
+  color:var(--hd-text-secondary)!important;
+}
+
+.v88-timeline .tlist i{
+  position:relative!important;
+  z-index:2!important;
+  width:12px!important;
+  height:12px!important;
+  margin:0 auto!important;
+  border-radius:50%!important;
+  border:3px solid var(--hd-bg)!important;
+  background:var(--hd-green)!important;
+  box-shadow:0 0 0 2px rgba(94,115,80,.22)!important;
+}
+
+.v88-timeline .tlist div{
+  padding:8px 0!important;
+}
+.v88-timeline .tlist b{
+  display:block!important;
+  font-size:12px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  color:var(--hd-text)!important;
+}
+.v88-timeline .tlist span{
+  display:block!important;
+  margin-top:3px!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  color:var(--hd-text-secondary)!important;
+}
+.v88-timeline .tlist small{
+  display:block!important;
+  margin-top:4px!important;
+  font-size:9px!important;
+  line-height:1.25!important;
+  color:var(--hd-text-secondary)!important;
+}
+
+.v88-timeline .tlist img{
+  width:58px!important;
+  height:54px!important;
+  margin:0!important;
+  border-radius:9px!important;
+  object-fit:cover!important;
+  object-position:center!important;
+  box-shadow:0 2px 8px rgba(47,59,51,.10)!important;
+}

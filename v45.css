@@ -2139,3 +2139,27 @@ textarea {
 
 /* V71 FINAL FONT FAMILY LOCK */
 html,body,button,input,select,textarea,*{font-family:"Inter"!important;}
+
+
+/* ==============================================================
+   V72 — INSIGHTS HERO IMAGE FIX
+   Only fixes the Insights Overview background image display area.
+   No typography / route / navigation / data / other-page changes.
+   ============================================================== */
+
+/* Final Insights renderer uses .v53-insights .inshero.
+   Increase the photo area to match the locked UI board. */
+.v53-insights .inshero{
+  min-height:205px!important;
+  height:205px!important;
+  background-size:cover!important;
+  background-position:center 42%!important;
+}
+
+/* Keep the two score cards floating over the lower part of the photo,
+   as in the locked UI, instead of visually cutting the photo in half. */
+.v53-insights .isum{
+  margin-top:-72px!important;
+  position:relative!important;
+  z-index:3!important;
+}

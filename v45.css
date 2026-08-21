@@ -1942,3 +1942,20 @@ body:has(.actions-page) .actions-page span{
   -webkit-font-smoothing:antialiased;
   text-rendering:optimizeLegibility;
 }
+
+
+/* V69 Actions: only two requested visual adjustments */
+.v53-actions .v53-action-split{
+  grid-template-columns:68px minmax(0,1fr)!important;
+}
+.v53-actions .v53-action-photo,
+.v53-actions .action-photo{
+  width:68px!important;
+  min-width:68px!important;
+}
+.v53-actions .alist button > span:first-of-type,
+.v53-actions .alist .hive-name,
+.v53-actions .alist .hive-label{
+  font-size:10.5px!important;
+  line-height:1.25!important;
+}

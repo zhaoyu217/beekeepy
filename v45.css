@@ -1959,3 +1959,180 @@ body:has(.actions-page) .actions-page span{
   font-size:10.5px!important;
   line-height:1.25!important;
 }
+
+
+/* ==============================================================
+   V70 — GLOBAL TYPOGRAPHY ONLY
+   Reference: uploaded HiveDash Pro screenshot.
+   Changes allowed:
+   - font-family
+   - font-size
+   NOTHING ELSE.
+   ============================================================== */
+
+/* Global font family */
+html, body,
+button, input, select, textarea,
+.vs, .vtop, .bottomnav,
+.v56-home, .v63-hives, .v53-actions, .v53-insights,
+.v60-hives, .v61-hives, .v62-hives,
+.vcard, .vc, .phead, .hcard, .alist,
+section, article, label, span, small, b, strong, em, i {
+  font-family: "Inter", -apple-system, BlinkMacSystemFont, "Segoe UI", Arial, sans-serif!important;
+}
+
+/* Base text */
+body, button, input, select, textarea {
+  font-size: 13px!important;
+}
+
+/* Global header / page titles */
+.vtop .brand,
+.vtop .title,
+.pagetitle,
+.page-title,
+.phead>b,
+.v53-actions > .title,
+.v53-insights > .title,
+.v60-hero-title,
+.v61-stage-top>b,
+.v62-head>b,
+.v63-head>b {
+  font-size: 18px!important;
+}
+
+/* Section / module titles */
+.v56-row-copy>span,
+.vhead>b,
+.v55-section-title,
+.v55-section-head>span,
+.v54-section-title>b,
+.v53-insights .vhead>b,
+.v53-actions .section-title,
+.vcard>h2,
+.vcard>h3,
+.vc>h2,
+.vc>h3 {
+  font-size: 14px!important;
+}
+
+/* Primary card / task / hive titles */
+.v56-row-copy>b,
+.v63-copy b,
+.v62-copy b,
+.v61-hive-text b,
+.v60-hive-copy b,
+.v53-actions .alist b,
+.v53-actions .alist button > b,
+.hcard b,
+.action-card b,
+.task-card b {
+  font-size: 12px!important;
+}
+
+/* Secondary / metadata text */
+.v56-row-copy>small,
+.v56-row-copy>em,
+.v63-copy small,
+.v62-copy small,
+.v61-hive-text small,
+.v60-hive-copy small,
+.v53-actions .alist span,
+.v53-actions .alist small,
+.v53-actions .alist em,
+.hcard small,
+.meta,
+.subtext,
+.helper,
+.caption {
+  font-size: 10px!important;
+}
+
+/* Tabs / filters / chips */
+.v53-action-tabs button,
+.v60-filters button,
+.v61-filter-pop button,
+.v62-filter-pop button,
+.v63-filter-pop button,
+.tabs button,
+.filters button,
+.chip,
+.pill {
+  font-size: 10px!important;
+}
+
+/* Main CTA buttons */
+.primary,
+.v53-add-action,
+.v56-soft-btn,
+.v55-action-row>button,
+.v54-action-primary>button,
+.v63-menu button,
+.v62-menu button {
+  font-size: 11px!important;
+}
+
+/* Search / form fields */
+.search input,
+.v60-search input,
+.v61-search input,
+.v62-search input,
+.v63-search input,
+input,
+select,
+textarea {
+  font-size: 13px!important;
+}
+
+/* Quick actions */
+.v56-quickbar span,
+.v55-quick-grid b,
+.v54-quick-grid b,
+.v53-shortcuts button,
+.shortcuts button {
+  font-size: 10px!important;
+}
+
+/* Bottom navigation */
+.bottomnav button,
+.bottomnav .navitem,
+.bottomnav button span,
+.bottomnav button small {
+  font-size: 10px!important;
+}
+
+/* Home hero */
+.v56-greeting>span,
+.v56-greeting>button {
+  font-size: 11px!important;
+}
+.v56-health-ring strong {
+  font-size: 30px!important;
+}
+.v56-health-ring strong small {
+  font-size: 15px!important;
+}
+.v56-health-ring>span,
+.v56-health-stats span {
+  font-size: 9px!important;
+}
+.v56-health-stats b {
+  font-size: 15px!important;
+}
+
+/* Hives statuses */
+.v63-card>em,
+.v62-card>em,
+.v61-hive-card>em,
+.v60-hive-card>em {
+  font-size: 10px!important;
+}
+
+/* Actions priority / timing */
+.v53-actions .alist button > span:first-of-type,
+.v53-actions .alist .hive-name,
+.v53-actions .alist .hive-label,
+.v53-actions .alist em,
+.v53-actions .alist small {
+  font-size: 10px!important;
+}

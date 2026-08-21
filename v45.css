@@ -2211,9 +2211,18 @@ html,body{background-color:var(--hd-bg)!important;color:var(--hd-text)!important
 .v53-insights .isum>button{border-color:var(--hd-border)!important;}
 
 .primary,.v53-add-action,.v55-action-row>button,
-button.active,.navitem.active,.bottomnav .active{
+button.active{
   background-color:var(--hd-green)!important;
   color:var(--hd-surface)!important;
+}
+/* V74: bottom navigation active state keeps the locked light surface.
+   Only icon/text/underline use Nature Green. */
+.navitem.active,.bottomnav .active{
+  background-color:transparent!important;
+  color:var(--hd-green)!important;
+}
+.navitem.active:after,.bottomnav .active:after{
+  background-color:var(--hd-green)!important;
 }
 .vtop .brand,.brand,.active,.good,.success{color:var(--hd-green)!important;}
 .attention,.needs-attention,.warn,.warning{color:var(--hd-gold)!important;}

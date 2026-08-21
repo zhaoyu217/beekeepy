@@ -3585,3 +3585,15 @@ body>.overlay{
 body>.modal{
   position:fixed;
 }
+
+
+/* ==============================================================
+   V97 — ADD ACTION BACKDROP FINAL FIX
+   Scope: Add Action modal backdrop only.
+   Keeps V96 modal architecture, size, icons, routes and layout.
+   ============================================================== */
+
+#app>.modal{
+  background:rgba(47,59,51,.46)!important;
+  backdrop-filter:blur(2px)!important;
+}

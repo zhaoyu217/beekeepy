@@ -2845,3 +2845,228 @@ button.active{
 .v82-hive-detail .managed-photos .photo-add-tile:first-child{
   grid-column:auto!important;
 }
+
+
+/* ==============================================================
+   V86 — INSPECTION VISUAL POLISH
+   Inspection page only. Existing fields, click handlers, saves,
+   data logic, routes and navigation are preserved.
+   ============================================================== */
+
+.v86-inspection{
+  gap:10px!important;
+  padding:8px 10px 18px!important;
+  color:var(--hd-text)!important;
+}
+
+/* Hive switcher */
+.v86-inspection .switchh{
+  grid-template-columns:54px 1fr 104px!important;
+  gap:10px!important;
+  padding:10px!important;
+  border-radius:14px!important;
+  border:1px solid var(--hd-border)!important;
+  background:var(--hd-surface)!important;
+  box-shadow:0 3px 12px rgba(47,59,51,.045)!important;
+}
+.v86-inspection .switchh img{
+  width:54px!important;
+  height:54px!important;
+  border-radius:10px!important;
+}
+.v86-inspection .switchh b{
+  font-size:13px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  color:var(--hd-text)!important;
+}
+.v86-inspection .switchh span{
+  margin-top:4px!important;
+  display:block!important;
+  font-size:10px!important;
+  color:var(--hd-text-secondary)!important;
+}
+.v86-inspection .switchh select{
+  min-height:38px!important;
+  font-size:11px!important;
+  border-color:var(--hd-border)!important;
+  background:var(--hd-surface)!important;
+  color:var(--hd-text)!important;
+}
+
+/* Main inspection form */
+.v86-inspection .iform{
+  overflow:visible!important;
+  padding:0 12px 12px!important;
+  border:1px solid var(--hd-border)!important;
+  border-radius:15px!important;
+  background:var(--hd-surface)!important;
+  box-shadow:0 4px 14px rgba(47,59,51,.04)!important;
+}
+
+/* Field rows — larger and glove-friendlier */
+.v86-inspection .irow{
+  position:relative!important;
+  min-height:52px!important;
+  grid-template-columns:minmax(120px,1fr) auto 14px!important;
+  gap:10px!important;
+  border-bottom:1px solid var(--hd-border)!important;
+  font-size:11px!important;
+  line-height:1.25!important;
+  cursor:pointer!important;
+}
+.v86-inspection .irow>span{
+  font-size:11px!important;
+  font-weight:500!important;
+  color:var(--hd-text)!important;
+}
+.v86-inspection .irow>b{
+  font-size:11px!important;
+  font-weight:600!important;
+  color:var(--hd-green)!important;
+}
+.v86-inspection .irow>em{
+  font-size:15px!important;
+  color:var(--hd-text-secondary)!important;
+}
+
+/* Visual section labels without changing field structure */
+.v86-inspection .section-start{
+  margin-top:30px!important;
+  border-top:1px solid var(--hd-border)!important;
+}
+.v86-inspection .section-start::before{
+  position:absolute!important;
+  left:0!important;
+  top:-23px!important;
+  font-size:10px!important;
+  line-height:1!important;
+  font-weight:700!important;
+  letter-spacing:.02em!important;
+  color:var(--hd-text-secondary)!important;
+}
+.v86-inspection .section-colony{
+  margin-top:28px!important;
+}
+.v86-inspection .section-colony::before{content:"COLONY & QUEEN";}
+.v86-inspection .section-stores::before{content:"STORES";}
+.v86-inspection .section-risk::before{content:"RISKS & HEALTH";}
+.v86-inspection .section-care::before{content:"CARE";}
+.v86-inspection .section-capture::before{content:"FIELD CAPTURE";}
+.v86-inspection .section-followup::before{content:"FOLLOW-UP";}
+
+/* Colony strength: visually thicker and easier to tap */
+.v86-inspection .slide{
+  grid-template-columns:120px 1fr 44px!important;
+}
+.v86-inspection .slide>i{
+  position:relative!important;
+  height:8px!important;
+  border-radius:999px!important;
+  background:rgba(94,115,80,.14)!important;
+  overflow:visible!important;
+}
+.v86-inspection .slide u{
+  position:relative!important;
+  height:8px!important;
+  border-radius:999px!important;
+  background:var(--hd-green)!important;
+  text-decoration:none!important;
+}
+.v86-inspection .slide u::after{
+  content:"";
+  position:absolute!important;
+  right:-7px!important;
+  top:50%!important;
+  width:16px!important;
+  height:16px!important;
+  border-radius:50%!important;
+  background:var(--hd-green)!important;
+  border:3px solid var(--hd-surface)!important;
+  transform:translateY(-50%)!important;
+  box-shadow:0 1px 5px rgba(47,59,51,.18)!important;
+}
+
+/* Semantic state colors */
+.v86-inspection .value-good{
+  color:var(--hd-green)!important;
+}
+.v86-inspection .value-warn{
+  color:var(--hd-gold)!important;
+}
+.v86-inspection .value-danger{
+  color:var(--hd-critical)!important;
+}
+
+/* Photos + voice: visibly actionable touch targets */
+.v86-inspection .capture-row{
+  min-height:58px!important;
+  margin:7px 0!important;
+  padding:0 10px!important;
+  border:1px solid rgba(197,146,26,.28)!important;
+  border-radius:11px!important;
+  background:rgba(197,146,26,.07)!important;
+}
+.v86-inspection .capture-row>span{
+  font-weight:700!important;
+}
+.v86-inspection .capture-row>b{
+  color:var(--hd-gold)!important;
+}
+.v86-inspection .photo-row>span::before{
+  content:"▧";
+  margin-right:7px;
+  color:var(--hd-gold);
+}
+.v86-inspection .voice-row>span::before{
+  content:"◉";
+  margin-right:7px;
+  color:var(--hd-gold);
+}
+
+/* Notes as a distinct input block */
+.v86-inspection .notes{
+  display:block!important;
+  margin-top:12px!important;
+  padding:12px!important;
+  border:1px solid var(--hd-border)!important;
+  border-radius:12px!important;
+  background:var(--hd-bg)!important;
+}
+.v86-inspection .notes span{
+  font-size:11px!important;
+  font-weight:700!important;
+  color:var(--hd-text)!important;
+}
+.v86-inspection .notes textarea{
+  min-height:92px!important;
+  margin-top:8px!important;
+  padding:10px!important;
+  border:1px solid var(--hd-border)!important;
+  border-radius:10px!important;
+  background:var(--hd-surface)!important;
+  color:var(--hd-text)!important;
+  font-size:11px!important;
+  line-height:1.45!important;
+}
+
+/* Bottom save actions: clear secondary / primary hierarchy */
+.v86-inspection .dual{
+  grid-template-columns:1fr 1.22fr!important;
+  gap:9px!important;
+}
+.v86-inspection .dual button{
+  height:48px!important;
+  border-radius:11px!important;
+  border:1px solid var(--hd-green)!important;
+  background:var(--hd-surface)!important;
+  color:var(--hd-green)!important;
+  font-size:12px!important;
+  font-weight:700!important;
+}
+.v86-inspection .dual button:last-child{
+  border-color:#C5921A!important;
+  background:#C5921A!important;
+  color:#FFFEFB!important;
+  box-shadow:0 5px 14px rgba(197,146,26,.20)!important;
+}

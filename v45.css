@@ -3351,3 +3351,11 @@ button.active{
   font-size:9px!important;
   white-space:nowrap!important;
 }
+
+
+/* V92 — Actions CTA Accent Fix
+   Scope: + Add Action background only */
+.v53-actions .v53-add-action{
+  background:#C5921A!important;
+  border-color:#C5921A!important;
+}

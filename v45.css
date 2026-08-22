@@ -4190,3 +4190,33 @@ body>.modal{
   font-weight:800!important;
   box-shadow:0 5px 14px rgba(197,146,26,.20)!important;
 }
+
+
+/* ==============================================================
+   V108 — HARVEST ENTRY FIX
+   Harvest is a core (non-Pro) Insights entry.
+   Help no longer contains the Harvest business-function shortcut.
+   ============================================================== */
+
+.v53-insights .v108-harvest-entry{
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:2px!important;
+  border-color:rgba(197,146,26,.34)!important;
+  background:rgba(197,146,26,.08)!important;
+  color:#2F3B33!important;
+}
+
+.v53-insights .v108-harvest-entry>span{
+  font-size:10px!important;
+  font-weight:700!important;
+  color:#2F3B33!important;
+}
+
+.v53-insights .v108-harvest-entry>small{
+  font-size:7.5px!important;
+  font-weight:500!important;
+  color:#C5921A!important;
+}

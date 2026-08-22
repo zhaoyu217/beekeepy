@@ -260,6 +260,7 @@ function recordPage(r,type,id){
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
     const weightUnit=metric?'kg':'lb';
     const defaultWeight=metric?'12.7':'28';
+    const nextBatch=nextHarvestBatchV107(today,s);
 
     r.innerHTML=`<div class="vs harvest-v103">
       <section class="harvest-hive-card">
@@ -279,7 +280,7 @@ function recordPage(r,type,id){
 
         <section class="harvest-section-v103">
           <h3><i>▣</i> HARVEST DETAILS</h3>
-          <label><span>Date</span><input name="Date" type="date" lang="en-US" value="${today}"></label>
+          <label><span>Date</span><input name="Date" type="date" lang="en-US" value="${today}" onchange="syncHarvestBatchV107(this)"></label>
           <label><span>Frames Harvested</span><input name="Frames_Harvested" type="number" min="0" step="1" value="8"></label>
           <label class="harvest-weight"><span>Honey Weight</span><div><input name="Honey_Weight" type="number" min="0" step=".1" value="${defaultWeight}"><select name="Honey_Weight_Unit"><option selected>${weightUnit}</option>${metric?'<option>lb</option>':'<option>kg</option>'}</select></div></label>
           <label class="harvest-moisture"><span>Moisture</span><div><input name="Moisture" type="number" min="0" max="100" step=".1" value="16.4"><b>%</b></div></label>
@@ -287,7 +288,7 @@ function recordPage(r,type,id){
 
         <section class="harvest-section-v103">
           <h3><i>#</i> BATCH</h3>
-          <label><span>Batch Name</span><input name="Batch_Name" value="${today}-01" maxlength="60"></label>
+          <label><span>Batch Name</span><input name="Batch_Name" value="${nextBatch}" maxlength="60"></label>
         </section>
 
         <section class="harvest-section-v103 harvest-notes-v103">
@@ -318,6 +319,22 @@ function recordPage(r,type,id){
     <label><span>Batch Name</span><input name="Batch_Name" value="${today}-01"></label>`;
   r.innerHTML=`<div class="vs"><div class="split rec"><img src="${cfg[1]}"><form id="rform"><label><span>Hive</span><select name="hiveId">${s.hives.map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>${fields}<label><span>Notes</span><textarea name="Notes"></textarea></label></form></div><button class="primary" onclick="saveRec('${type}')">Save Record</button></div>`
 }
+function nextHarvestBatchV107(date,state){
+  const d=String(date||new Date().toISOString().slice(0,10));
+  const rx=new RegExp('^'+d+'-(\\d+)$');
+  let max=0;
+  ((state&&state.logs&&state.logs.harvests)||[]).forEach(x=>{
+    const m=String(x.batch||'').match(rx);
+    if(m) max=Math.max(max,Number(m[1])||0);
+  });
+  return d+'-'+String(max+1).padStart(2,'0');
+}
+function syncHarvestBatchV107(input){
+  const form=input&&input.form;
+  if(!form)return;
+  const batch=form.elements['Batch_Name'];
+  if(batch)batch.value=nextHarvestBatchV107(input.value,v45s());
+}
 function saveRec(type){
   const s=v45s(),fd=new FormData(idq('rform')),hiveId=fd.get('hiveId'),today=new Date().toISOString().slice(0,10),notes=fd.get('Notes')||'';
   if(type==='feeding'){
@@ -335,16 +352,22 @@ function saveRec(type){
   }else{
     const weight=Number(fd.get('Honey_Weight')||0);
     const weightUnit=fd.get('Honey_Weight_Unit')||'lb';
+    const harvestDate=fd.get('Date')||today;
+    let harvestBatch=String(fd.get('Batch_Name')||'').trim();
+    const autoBatchPattern=new RegExp('^'+harvestDate+'-\\d+$');
+    if(!harvestBatch || (autoBatchPattern.test(harvestBatch) && s.logs.harvests.some(x=>String(x.batch||'')===harvestBatch))){
+      harvestBatch=nextHarvestBatchV107(harvestDate,s);
+    }
     s.logs.harvests.push({
       id:'hv'+Date.now(),
       hiveId,
-      date:fd.get('Date')||today,
+      date:harvestDate,
       frames:Number(fd.get('Frames_Harvested')||0),
       weightLb:weightUnit==='kg'?Number((weight*2.20462).toFixed(2)):weight,
       weight,
       weightUnit,
       moisture:Number(fd.get('Moisture')||0),
-      batch:fd.get('Batch_Name')||'',
+      batch:harvestBatch,
       notes
     });
   }
@@ -413,7 +436,7 @@ function submitReportV48(){const text=idq('v48report').value.trim();if(!text)ret
 function supportPage(r){r.innerHTML=`<div class="vs"><section class="formlist"><label><span>Issue Type</span><select id="v48issue"><option>General</option><option>Account</option><option>Billing</option><option>Bug</option></select></label><label><span>Subject</span><input id="v48subject" placeholder="Brief summary"></label><label><span>Message</span><textarea id="v48message" placeholder="Describe your issue in detail…"></textarea></label><label><span>Attachments</span><input id="v48attach" type="file" multiple></label></section><button class="primary" onclick="submitSupportV48()">Send Message</button></div>`}
 function submitSupportV48(){const subject=idq('v48subject').value.trim(),message=idq('v48message').value.trim();if(!subject||!message)return toast('Enter a subject and message');const s=v45s();s.supportRequests=s.supportRequests||[];s.supportRequests.push({id:'sp'+Date.now(),type:idq('v48issue').value,subject,message,attachments:[...idq('v48attach').files].map(f=>f.name),date:new Date().toISOString()});save(s);toast('Support request saved');go('help')}
 
-function helpPage(r){r.innerHTML=`<div class="vs"><div class="search"><span>⌕</span><input id="v48helpsearch" placeholder="Search help articles…"></div><section class="setmenu" id="v48helpmenu"><button data-help="Getting Started" onclick="openFaqV48('How do I add a hive?')"><span>◉</span><b>Getting Started</b><em>›</em></button><button data-help="Hive Management" onclick="go('hives')"><span>⌂</span><b>Hive Management</b><em>›</em></button><button data-help="Inspection" onclick="go('inspection/${v45s().hives[0]?.id||''}')"><span>⌕</span><b>Inspection</b><em>›</em></button><button data-help="Harvest" onclick="go('honey')"><span>⌁</span><b>Harvest</b><em>›</em></button><button data-help="FAQ" onclick="go('faq')"><span>?</span><b>FAQ</b><em>›</em></button><button data-help="Contact Support" onclick="go('support')"><span>✉</span><b>Contact Support</b><em>›</em></button></section></div>`;idq('v48helpsearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('[data-help]').forEach(b=>b.style.display=b.dataset.help.toLowerCase().includes(q)?'grid':'none')}}
+function helpPage(r){r.innerHTML=`<div class="vs"><div class="search"><span>⌕</span><input id="v48helpsearch" placeholder="Search help articles…"></div><section class="setmenu" id="v48helpmenu"><button data-help="Getting Started" onclick="openFaqV48('How do I add a hive?')"><span>◉</span><b>Getting Started</b><em>›</em></button><button data-help="Hive Management" onclick="go('hives')"><span>⌂</span><b>Hive Management</b><em>›</em></button><button data-help="Inspection" onclick="go('inspection/${v45s().hives[0]?.id||''}')"><span>⌕</span><b>Inspection</b><em>›</em></button><button data-help="FAQ" onclick="go('faq')"><span>?</span><b>FAQ</b><em>›</em></button><button data-help="Contact Support" onclick="go('support')"><span>✉</span><b>Contact Support</b><em>›</em></button></section></div>`;idq('v48helpsearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('[data-help]').forEach(b=>b.style.display=b.dataset.help.toLowerCase().includes(q)?'grid':'none')}}
 
 
 /* =========================================================
@@ -818,11 +841,12 @@ function insights(r){
     ${Vcard("Today's Highlights",`<ul class="bullets"><li>${s.hives.length} hives monitored</li><li>${pending} pending actions</li><li>${critical} critical hives</li></ul>`)}
     ${Vcard('AI Recommendation',`<div class="recol"><button onclick="${isPro(s)?"go('recommendations')":"requirePro('Professional Recommendations')"}">${pending?'Review priority actions':'Continue regular inspection'}</button><button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}">Review current risk forecast</button></div>`)}
     <div class="inav v53-insight-grid">
+      <button class="v108-harvest-entry" onclick="go('honey')"><span>Harvest</span><small>Records & totals</small></button>
       <button onclick="${isPro(s)?"go('analysis')":"requirePro('AI Health Analysis')"}">AI Health</button>
       <button onclick="${isPro(s)?"go('trend')":"requirePro('Advanced Trends')"}">Trends</button>
       <button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}">Risk</button>
       <button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Season</button>
-      <button onclick="${isPro(s)?"go('honey-analytics')":"requirePro('Honey Analytics')"}">Honey</button>
+      <button onclick="${isPro(s)?"go('honey-analytics')":"requirePro('Honey Analytics')"}">Honey Analytics</button>
       <button onclick="${isPro(s)?"go('recommendations')":"requirePro('Professional Recommendations')"}">Recommendations</button>
     </div>
   </div>`;

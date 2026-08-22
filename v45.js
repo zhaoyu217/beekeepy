@@ -599,11 +599,44 @@ function honeyPage(r){
 }
 
 let V49_MAP_MODE='Apiaries',V49_MAP_ZOOM=false;
+function v109MapHives(){const s=v45s();return isPro(s)?s.hives:s.hives.slice(0,3)}
 function setMapModeV49(mode,btn){V49_MAP_MODE=mode;selectTab(btn);drawMapListV49()}
-function zoomMapV49(){V49_MAP_ZOOM=!V49_MAP_ZOOM;const box=document.querySelector('.mapbox');if(box)box.style.backgroundSize=V49_MAP_ZOOM?'140%':'cover'}
-function drawMapListV49(){const s=v45s(),box=idq('v49maplist');if(!box)return;if(V49_MAP_MODE==='Forage'){box.innerHTML=`<button onclick="go('season')"><span>✿</span><div><b>Season Intelligence</b><small>Nectar flow and forage guidance</small></div><em>›</em></button>`;return}if(V49_MAP_MODE==='Apiaries'){box.innerHTML=`<button onclick="go('all-hives')"><span>⌂</span><div><b>${esc(s.settings.apiaryName)}</b><small>${s.hives.length} hives · ${esc(s.settings.location)}</small></div><em>›</em></button>`;return}box.innerHTML=s.hives.slice(0,6).map(h=>`<button onclick="go('hive/${h.id}')"><span>⌂</span><div><b>${esc(h.name)}</b><small>${h.score}% · Last ${fmtDate(h.lastInspection)}</small></div><em>›</em></button>`).join('')}
-function mapPage(r){const s=v45s();V49_MAP_MODE='Apiaries';r.innerHTML=`<div class="vs"><div class="filters"><button class="active" onclick="setMapModeV49('Apiaries',this)">Apiaries</button><button onclick="setMapModeV49('Hives',this)">Hives</button><button onclick="setMapModeV49('Forage',this)">Forage</button></div><section class="mapbox" style="--hero:url('${V45.map}')"><i class="p1">●</i><i class="p2">●</i><i class="p3">●</i><i class="p4">●</i><button onclick="zoomMapV49()">+</button></section><div class="maplist" id="v49maplist"></div></div>`;drawMapListV49()}
-
+function zoomMapV49(){
+  V49_MAP_ZOOM=!V49_MAP_ZOOM;
+  const box=document.querySelector('.v109-map-canvas');
+  if(box){box.classList.toggle('is-zoomed',V49_MAP_ZOOM);const b=box.querySelector('.v109-map-zoom');if(b)b.textContent=V49_MAP_ZOOM?'−':'+'}
+}
+function drawMapListV49(){
+  const s=v45s(),box=idq('v49maplist');if(!box)return;
+  const visible=v109MapHives();
+  if(V49_MAP_MODE==='Forage'){
+    box.innerHTML=`<section class="v109-map-info"><div class="v109-map-info-icon">✿</div><div><b>Forage Intelligence</b><small>Nectar flow, seasonal forage and timing guidance.</small></div><button onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">${isPro(s)?'Open':'Pro'} <em>›</em></button></section>`;
+    return;
+  }
+  if(V49_MAP_MODE==='Apiaries'){
+    box.innerHTML=`<section class="v109-map-info"><div class="v109-map-info-icon">⌂</div><div><b>${esc(s.settings.apiaryName)}</b><small>${esc(s.settings.location)} · ${visible.length} ${visible.length===1?'hive':'hives'}${!isPro(s)?' on Free plan':''}</small></div><button onclick="go('all-hives')">View <em>›</em></button></section>`;
+    return;
+  }
+  box.innerHTML=`<div class="v109-map-hive-list">${visible.map(h=>`<button onclick="go('hive/${h.id}')"><img src="${v101HivePrimaryPhoto(h)}" alt="${esc(h.name)}"><span><b>${esc(h.name)}</b><small>${esc(String(h.score||0))}% health · Last ${fmtDate(h.lastInspection)}</small></span><em>›</em></button>`).join('')}</div>${!isPro(s)?'<div class="v109-map-free">Free plan · Map shows Hive #1–#3 only</div>':''}`;
+}
+function mapPage(r){
+  const s=v45s(),visible=v109MapHives();V49_MAP_MODE='Apiaries';V49_MAP_ZOOM=false;
+  const dots=visible.map((h,i)=>`<button class="v109-map-pin p${i+1}" onclick="go('hive/${h.id}')" aria-label="Open ${esc(h.name)}"><span>${i+1}</span></button>`).join('');
+  r.innerHTML=`<div class="vs v109-map-page">
+    <section class="v109-map-head">
+      <div><b>Apiary Map</b><span>${esc(s.settings.location)}</span></div>
+      <small>${visible.length} ${visible.length===1?'hive':'hives'} shown</small>
+    </section>
+    <div class="filters v109-map-tabs"><button class="active" onclick="setMapModeV49('Apiaries',this)">Apiaries</button><button onclick="setMapModeV49('Hives',this)">Hives</button><button onclick="setMapModeV49('Forage',this)">Forage</button></div>
+    <section class="v109-map-canvas" style="--hero:url('${V45.map}')">
+      <div class="v109-map-shade"></div>${dots}
+      <div class="v109-map-label"><b>${esc(s.settings.apiaryName)}</b><span>${esc(s.settings.location)}</span></div>
+      <button class="v109-map-zoom" onclick="zoomMapV49()" aria-label="Zoom map">+</button>
+    </section>
+    <div class="v109-map-list" id="v49maplist"></div>
+  </div>`;
+  drawMapListV49();
+}
 /* V77 removed superseded insights */
 
 let V49_TREND_RANGE='30D';
@@ -1223,6 +1256,7 @@ function v63Menu(){
   const box=document.createElement('div');
   box.className='v63-menu';
   box.innerHTML=`
+    <button onclick="go('map');this.parentElement.remove()">Map</button>
     <button onclick="${freeFull ? "subscriptionModal('more than 3 hives')" : "addHive()"};this.parentElement.remove()">
       ${freeFull?'Upgrade for More Hives':'Add Hive'}
     </button>

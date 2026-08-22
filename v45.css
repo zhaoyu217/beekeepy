@@ -4220,3 +4220,26 @@ body>.modal{
   font-weight:500!important;
   color:#C5921A!important;
 }
+
+
+/* ==============================================================
+   V109 — MAP ENTRY + POLISH
+   Scope: Map page and its Hives entry only.
+   ============================================================== */
+.v109-map-page{padding:10px 12px 104px!important;display:grid;gap:10px}
+.v109-map-head{display:flex;align-items:end;justify-content:space-between;padding:2px 2px 0}
+.v109-map-head>div{display:grid;gap:2px}.v109-map-head b{font-size:15px;color:#2F3B33}.v109-map-head span,.v109-map-head small{font-size:8px;color:#6B736D}.v109-map-head small{padding-bottom:1px}
+.v109-map-tabs{margin:0!important;display:grid!important;grid-template-columns:repeat(3,1fr)!important;gap:6px!important;overflow:visible!important}
+.v109-map-tabs button{min-width:0!important;height:34px!important;border:1px solid #E6E0D4!important;border-radius:999px!important;background:#FFFEFB!important;color:#5E7350!important;font-size:9px!important;font-weight:700!important}
+.v109-map-tabs button.active{background:#5E7E58!important;border-color:#5E7E58!important;color:#fff!important}
+.v109-map-canvas{height:310px;position:relative;overflow:hidden;border-radius:16px;border:1px solid #E3DED2;background-image:var(--hero);background-position:center;background-size:cover;box-shadow:0 8px 22px rgba(49,59,51,.08);transition:background-size .22s ease}
+.v109-map-canvas.is-zoomed{background-size:145%}
+.v109-map-shade{position:absolute;inset:0;background:linear-gradient(180deg,rgba(20,34,24,.08),rgba(20,34,24,.02) 50%,rgba(20,34,24,.28))}
+.v109-map-label{position:absolute;left:12px;bottom:12px;display:grid;gap:1px;color:#fff;text-shadow:0 1px 5px rgba(0,0,0,.45)}
+.v109-map-label b{font-size:12px}.v109-map-label span{font-size:8px}
+.v109-map-zoom{position:absolute;right:11px;bottom:11px;width:38px;height:38px;border:1px solid rgba(255,255,255,.8);border-radius:12px;background:rgba(255,254,251,.94);color:#4F704C;font-size:22px;line-height:1;box-shadow:0 4px 14px rgba(0,0,0,.12)}
+.v109-map-pin{position:absolute;width:30px;height:30px;border:2px solid #fff;border-radius:50%;background:#5E7E58;color:#fff;box-shadow:0 3px 10px rgba(0,0,0,.25);font-size:9px;font-weight:800;z-index:2}.v109-map-pin span{display:grid;place-items:center;width:100%;height:100%}
+.v109-map-pin.p1{left:19%;top:25%}.v109-map-pin.p2{left:62%;top:21%}.v109-map-pin.p3{left:43%;top:55%}.v109-map-pin.p4{left:75%;top:60%}.v109-map-pin.p5{left:30%;top:70%}.v109-map-pin.p6{left:79%;top:37%}
+.v109-map-list{display:grid;gap:8px}.v109-map-info{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:9px;padding:11px;border:1px solid #E6E0D4;border-radius:14px;background:#FFFEFB}.v109-map-info-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:#F1F4EE;color:#5E7E58;font-size:16px}.v109-map-info>div:nth-child(2){display:grid;gap:2px}.v109-map-info b{font-size:10px;color:#2F3B33}.v109-map-info small{font-size:8px;color:#6B736D}.v109-map-info>button{border:0;background:transparent;color:#5E7350;font-size:9px;font-weight:700}.v109-map-info>button em{font-style:normal}
+.v109-map-hive-list{display:grid;gap:7px}.v109-map-hive-list>button{display:grid;grid-template-columns:44px 1fr 12px;align-items:center;gap:9px;width:100%;padding:7px;border:1px solid #E6E0D4;border-radius:13px;background:#FFFEFB;text-align:left}.v109-map-hive-list img{width:44px;height:44px;object-fit:cover;border-radius:10px}.v109-map-hive-list span{display:grid;gap:2px}.v109-map-hive-list b{font-size:10px;color:#2F3B33}.v109-map-hive-list small{font-size:8px;color:#6B736D}.v109-map-hive-list em{font-style:normal;color:#5E7350}.v109-map-free{padding:7px 9px;border-radius:10px;background:#F7F5EF;color:#6B736D;font-size:8px;text-align:center}
+body:has(.v109-map-page) #bottomnav{z-index:40}

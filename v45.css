@@ -4623,3 +4623,33 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
   color:#FFFEFB!important;
   border-color:#C5921A!important;
 }
+
+
+/* ==============================================================
+   V122 — RISK ASSESSMENT RULES
+   Scope: Risk page only.
+   ============================================================== */
+.v122-risk-list{overflow:hidden!important}
+.v122-risk-row{
+  width:100%!important;
+  border:0!important;
+  background:transparent!important;
+  text-align:left!important;
+  cursor:pointer!important;
+}
+.v122-risk-row .scopy{min-width:0!important}
+.v122-risk-end{
+  display:flex!important;
+  align-items:center!important;
+  gap:7px!important;
+  flex:0 0 auto!important;
+}
+.v122-risk-end em{
+  font-style:normal!important;
+  color:#7A837C!important;
+  font-size:15px!important;
+}
+.v122-risk-note{
+  margin-top:10px!important;
+  line-height:1.45!important;
+}

@@ -485,7 +485,82 @@ function idq(id){return document.getElementById(id)}
 function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}
 function daysSince(date){return Math.floor((Date.now()-new Date(date+'T12:00:00').getTime())/86400000)}
 function hive(s,id){return s.hives.find(h=>h.id===id)}
-function unread(s){return s.notifications.filter(n=>!n.read).length}
+function v135NotificationReadState(s){
+  const map={};
+  for(const n of (Array.isArray(s.notifications)?s.notifications:[])){
+    if(!n || typeof n!=='object')continue;
+
+    // New deterministic IDs: exact read-state key.
+    if(/^risk-[^/]+$/.test(String(n.id||''))){
+      map[String(n.id)]=n.read===true;
+      continue;
+    }
+
+    // Legacy rows are allowed to contribute READ STATE ONLY.
+    // title/body are intentionally ignored.
+    const target=String(n.target||'');
+    const m=target.match(/^#?hive\/([^/?#]+)/);
+    if(m){
+      const key=`risk-${m[1]}`;
+      if(!(key in map))map[key]=n.read===true;
+    }
+  }
+  return map;
+}
+
+function activeNotificationsV135(s){
+  const readState=v135NotificationReadState(s);
+  const rows=[];
+
+  for(const h of (s.hives||[])){
+    const risk=riskAssessment(h);
+
+    // Resolved/Low hives do not produce a notification at all.
+    if(!risk || risk.level==='Low')continue;
+
+    const id=`risk-${h.id}`;
+    rows.push({
+      id,
+      title:`${h.name} needs attention`,
+      body:risk.reasons?.length
+        ? risk.reasons.join(' · ')
+        : `${risk.level} risk requires review.`,
+      read:readState[id]===true,
+      target:`#hive/${h.id}`,
+      hiveId:h.id,
+      level:risk.level
+    });
+  }
+
+  return rows;
+}
+
+function persistNotificationReadV135(s,row,read=true){
+  s.notifications=Array.isArray(s.notifications)?s.notifications:[];
+  const id=String(row.id);
+
+  // Strip any legacy/current payload for this generated notification.
+  // Persistent storage keeps only minimal read state, never generated copy.
+  s.notifications=s.notifications.filter(n=>{
+    if(!n || typeof n!=='object')return false;
+    if(String(n.id||'')===id)return false;
+    const target=String(n.target||'');
+    const m=target.match(/^#?hive\/([^/?#]+)/);
+    return !(m && `risk-${m[1]}`===id);
+  });
+
+  s.notifications.push({
+    id,
+    read:!!read,
+    target:row.target,
+    hiveId:row.hiveId
+  });
+}
+
+function unread(s){
+  return activeNotificationsV135(s).filter(n=>!n.read).length;
+}
+
 function avgHealth(s){return Math.round(s.hives.reduce((n,h)=>n+h.score,0)/Math.max(1,s.hives.length))}
 function isPro(s){return s.user.plan==='Pro'}
 function statusPill(status){return `<span class="pill ${status==='Critical'?'danger':status==='Attention'?'warn':''}">${esc(status)}</span>`}
@@ -1680,11 +1755,25 @@ function subscriptionPage(r){
 }
 
 function notifications(r){
-  const s=state();
-  r.innerHTML=`<section><div class="h1">Notifications</div><div class="tiny muted">Alerts, reminders and seasonal updates</div></section><section>${s.notifications.length?s.notifications.map(n=>`<div class="setting card-button" style="opacity:${n.read?.65:1}" onclick="openNotification('${n.id}')"><div class="row"><div class="grow"><div class="h3">${esc(n.title)}</div><div class="small muted">${esc(n.body)}</div></div><span class="chev">›</span></div></div>`).join(''):'<div class="setting small muted">No notifications.</div>'}</section><button type="button" class="btn secondarybtn block" onclick="markAllRead()">Mark All Read</button>`
+  const s=state(),rows=activeNotificationsV135(s);
+  r.innerHTML=`<section><div class="h1">Notifications</div><div class="tiny muted">Alerts, reminders and seasonal updates</div></section>
+  <section>${rows.length?rows.map(n=>`<div class="setting card-button" style="opacity:${n.read?.65:1}" onclick="openNotification('${n.id}')"><div class="row"><div class="grow"><div class="h3">${esc(n.title)}</div><div class="small muted">${esc(n.body)}</div></div><span class="chev">›</span></div></div>`).join(''):'<div class="setting small muted">No active notifications.</div>'}</section>
+  ${rows.length?'<button type="button" class="btn secondarybtn block" onclick="markAllRead()">Mark All Read</button>':''}`;
 }
-function openNotification(id){const s=state(),n=s.notifications.find(x=>x.id===id);if(!n)return;n.read=true;save(s);location.hash=(n.target||'#notifications').replace(/^#/,'')}
-function markAllRead(){const s=state();s.notifications.forEach(n=>n.read=true);save(s);toast('All read');render()}
+function openNotification(id){
+  const s=state(),row=activeNotificationsV135(s).find(x=>x.id===id);
+  if(!row)return;
+  persistNotificationReadV135(s,row,true);
+  save(s);
+  location.hash=(row.target||'#notifications').replace(/^#/,'');
+}
+function markAllRead(){
+  const s=state(),rows=activeNotificationsV135(s);
+  rows.forEach(row=>persistNotificationReadV135(s,row,true));
+  save(s);
+  toast('All read');
+  render();
+}
 
 function infoPage(r,title){
   const copy={

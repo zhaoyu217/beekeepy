@@ -640,57 +640,66 @@ function mapPage(r){
 
 let V49_TREND_RANGE='30D';
 function setTrendRangeV49(range,btn){V49_TREND_RANGE=range;selectTab(btn);toast(range+' trend range selected')}
-function trendPage(r){const s=v45s(),score=avgHealth(s),avgVar=s.hives.length?s.hives.reduce((n,h)=>n+Number(h.varroa||0),0)/s.hives.length:0,avgHoney=s.hives.length?s.hives.filter(h=>h.honey==='High').length/s.hives.length*10:0;r.innerHTML=aipage(V45.hive,`<div class="filters"><button onclick="setTrendRangeV49('7D',this)">7D</button><button class="active" onclick="setTrendRangeV49('30D',this)">30D</button><button onclick="setTrendRangeV49('90D',this)">90D</button><button onclick="setTrendRangeV49('Season',this)">Season</button></div>${[['Health Score',score],['Varroa Level',avgVar.toFixed(1)],['Colony Size',s.hives.length],['Food Stores',avgHoney.toFixed(1)],['Brood Pattern',s.hives.filter(h=>h.brood==='Excellent'||h.brood==='Good').length],['Queen Status',s.hives.filter(h=>h.queen==='Confirmed').length+'/'+s.hives.length]].map(x=>trend(x[0],x[1])).join('')}<button class="primary" onclick="toast(V49_TREND_RANGE+' trend details active')">View Trend Details</button>`)}
-function honeyAnalytics(r){const s=v45s(),total=s.logs.harvests.reduce((n,x)=>n+Number(x.weightLb||0),0),goal=300,monthly=Array(12).fill(0),byHive={};s.logs.harvests.forEach(x=>{const m=Number(String(x.date||'').slice(5,7))-1;if(m>=0&&m<12)monthly[m]+=Number(x.weightLb||0);byHive[x.hiveId]=(byHive[x.hiveId]||0)+Number(x.weightLb||0)});const top=Object.entries(byHive).sort((a,b)=>b[1]-a[1]).slice(0,3);r.innerHTML=aipage(V45.harvest,`<div class="stats3"><div><span>Total Honey</span><b>${formatWeight(total,s)}</b></div><div><span>Goal</span><b>${formatWeight(goal,s)}</b></div><div><span>Progress</span><b>${Math.min(100,Math.round(total/goal*100))}%</b></div></div>${barsV49(monthly)}${Vcard('Top Hives',`<div class="lines">${top.map(([id,w])=>`<button onclick="go('hive/${id}')"><span>${esc(hive(s,id)?.name||'Hive')}</span><b>${formatWeight(w,s)}</b></button>`).join('')||'<div class="small muted">No harvest data yet.</div>'}</div>`)}<button class="primary" onclick="go('honey')">View Details</button>`)}
-
-const V49_NOTIFS=[['v49n1','Critical','High temperature alert','hive/h3','Alerts'],['v49n2','Action Required','Inspect Oak Meadow','inspection/h1','Alerts'],['v49n3','Reminder','Varroa treatment due','treatment-record/h3','Reminders'],['v49n4','AI Risk','Queen failure risk','risk','Alerts'],['v49n5','Treatment','Follow-up recommended','treatment-record/h1','Reminders'],['v49n6','Seasonal','Spring nectar flow','season','Reminders'],['v49n7','System','HiveDash Pro enabled','subscription','System']];
-function v49NotifRead(id){const s=v45s();return s.v49NotificationReadAll||(s.v49NotificationRead||{})[id]}
-function openNotifV49(id,target){const s=v45s();s.v49NotificationRead=s.v49NotificationRead||{};s.v49NotificationRead[id]=true;save(s);go(target)}
-function drawNotificationsV49(group='All'){const box=idq('v48notifs');if(!box)return;const rows=V49_NOTIFS.filter(x=>group==='All'||x[4]===group);box.innerHTML=rows.map((x,i)=>`<button style="opacity:${v49NotifRead(x[0])?.6:1}" onclick="openNotifV49('${x[0]}','${x[3]}')"><i class="${x[1]==='Critical'?'critical':x[1]==='Action Required'?'attention':'good'}"></i><div><b>${x[1]}</b><span>${x[2]}</span></div><time>${9+i}:30 AM</time></button>`).join('')}
-function filterNotificationsV48(group,btn){selectTab(btn);drawNotificationsV49(group)}
-function markAllReadV49(){const s=v45s();s.v49NotificationReadAll=true;s.notifications.forEach(n=>n.read=true);save(s);toast('All read');drawNotificationsV49(document.querySelector('.filters button.active')?.textContent.trim()||'All');chrome('notifications')}
-function notifications(r){r.innerHTML=`<div class="vs"><div class="filters"><button class="active" onclick="filterNotificationsV48('All',this)">All</button><button onclick="filterNotificationsV48('Alerts',this)">Alerts</button><button onclick="filterNotificationsV48('Reminders',this)">Reminders</button><button onclick="filterNotificationsV48('System',this)">System</button></div><section class="notifs" id="v48notifs"></section><button class="secondary" onclick="markAllReadV49()">Mark All Read</button></div>`;drawNotificationsV49('All')}
-
-
-
-/* V114 — restore the real Professional Recommendations renderer.
-   This must exist before V50 captures V50_OLD_RECO. */
-function recommendations(r){
+function trendPage(r){
   const s=v45s();
-  const rows=[
-    {
-      title:'Varroa monitoring',
-      why:'Varroa level is trending upward in the current hive data.',
-      action:'Review mite count and treatment need.',
-      when:'Within 7 days',
-      route:'actions'
-    },
-    {
-      title:'Prepare for nectar flow',
-      why:'Seasonal conditions indicate an active forage period.',
-      action:'Review super capacity and food stores.',
-      when:'This week',
-      route:'season'
-    },
-    {
-      title:'Queen verification',
-      why:'Queen status should be confirmed during the next inspection.',
-      action:'Open inspection and verify queen status.',
-      when:'Next inspection',
-      route:`inspection/${s.hives[0]?.id||''}`
-    }
+  const score=avgHealth(s);
+  const avgVar=s.hives.length
+    ? s.hives.reduce((n,h)=>n+Number(h.varroa||0),0)/s.hives.length
+    : 0;
+  const avgHoney=s.hives.length
+    ? s.hives.filter(h=>h.honey==='High').length/s.hives.length*10
+    : 0;
+
+  const metrics=[
+    ['Health Score',score,'Overall colony health'],
+    ['Varroa Level',avgVar.toFixed(1),'Average mite level'],
+    ['Colony Size',s.hives.length,'Hives monitored'],
+    ['Food Stores',avgHoney.toFixed(1),'Relative store level'],
+    ['Brood Pattern',s.hives.filter(h=>h.brood==='Excellent'||h.brood==='Good').length,'Good / excellent'],
+    ['Queen Status',s.hives.filter(h=>h.queen==='Confirmed').length+'/'+s.hives.length,'Confirmed queens']
   ];
 
-  r.innerHTML=`<div class="vs v114-recommendations-route">
-    ${rows.map(x=>`<section class="vc reco">
-      <div><span>What</span><b>${x.title}</b></div>
-      <div><span>Why</span><b>${x.why}</b></div>
-      <div><span>What to do</span><b>${x.action}</b></div>
-      <div><span>When</span><b>${x.when}</b></div>
-      <button onclick="go('${x.route}')">Open</button>
-    </section>`).join('')}
+  r.innerHTML=`<div class="vs v118-health-trends">
+    <section class="v118-trend-summary">
+      <div>
+        <small>HEALTH TRENDS</small>
+        <b>${V49_TREND_RANGE}</b>
+        <span>Current apiary health overview</span>
+      </div>
+      <strong>${score}</strong>
+    </section>
+
+    <div class="filters v118-trend-ranges">
+      <button onclick="setTrendRangeV118('7D',this)">7D</button>
+      <button class="${V49_TREND_RANGE==='30D'?'active':''}" onclick="setTrendRangeV118('30D',this)">30D</button>
+      <button onclick="setTrendRangeV118('90D',this)">90D</button>
+      <button onclick="setTrendRangeV118('Season',this)">Season</button>
+    </div>
+
+    <section class="v118-trend-grid">
+      ${metrics.map(([label,value,note])=>`
+        <div class="v118-trend-card">
+          <span>${label}</span>
+          <b>${value}</b>
+          <small>${note}</small>
+        </div>`).join('')}
+    </section>
+
+    <section class="vc v118-trend-note">
+      <b>Trend data</b>
+      <span>Metrics reflect the current Hive records available in HiveDash.</span>
+    </section>
   </div>`;
 }
+
+function setTrendRangeV118(range,btn){
+  V49_TREND_RANGE=range;
+  document.querySelectorAll('.v118-trend-ranges button').forEach(b=>b.classList.remove('active'));
+  if(btn)btn.classList.add('active');
+  const label=document.querySelector('.v118-trend-summary b');
+  if(label)label.textContent=range;
+}
+
 
 /* =========================================================
    V50 — RESILIENCE / EDGE-CASE AUDIT FIX

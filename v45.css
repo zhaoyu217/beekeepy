@@ -4431,3 +4431,84 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
   font-weight:800!important;
   box-shadow:0 5px 14px rgba(197,146,26,.18)!important;
 }
+
+
+/* ==============================================================
+   V118 — HEALTH TRENDS ROUTE FIX
+   Scope: #trend only.
+   ============================================================== */
+.v118-health-trends{
+  gap:10px!important;
+  padding:10px 12px 104px!important;
+}
+.v118-trend-summary{
+  min-height:112px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  padding:16px!important;
+  border-radius:16px!important;
+  background:#5E7350!important;
+  color:#FFFEFB!important;
+  box-shadow:0 5px 16px rgba(47,59,51,.10)!important;
+}
+.v118-trend-summary>div{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:3px!important;
+}
+.v118-trend-summary small{font-size:8px!important;letter-spacing:.08em!important}
+.v118-trend-summary b{font-size:16px!important;color:#FFFEFB!important}
+.v118-trend-summary span{font-size:9px!important;opacity:.9!important}
+.v118-trend-summary>strong{
+  font-size:34px!important;
+  line-height:1!important;
+  color:#FFFEFB!important;
+}
+.v118-trend-ranges{
+  display:grid!important;
+  grid-template-columns:repeat(4,1fr)!important;
+  gap:7px!important;
+}
+.v118-trend-ranges button{
+  min-height:36px!important;
+  border:1px solid #E5E0D5!important;
+  border-radius:999px!important;
+  background:#FFFEFB!important;
+  color:#5E7350!important;
+  font-size:9px!important;
+  font-weight:700!important;
+}
+.v118-trend-ranges button.active{
+  background:#5E7350!important;
+  color:#FFFEFB!important;
+  border-color:#5E7350!important;
+}
+.v118-trend-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.v118-trend-card{
+  min-height:96px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:4px!important;
+  padding:12px!important;
+  border:1px solid #E5E0D5!important;
+  border-radius:14px!important;
+  background:#FFFEFB!important;
+  box-shadow:0 3px 10px rgba(47,59,51,.04)!important;
+}
+.v118-trend-card span{font-size:9px!important;color:#6B736D!important}
+.v118-trend-card b{font-size:19px!important;color:#2F3B33!important}
+.v118-trend-card small{font-size:8px!important;color:#7B827C!important}
+.v118-trend-note{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  padding:12px!important;
+}
+.v118-trend-note b{font-size:11px!important}
+.v118-trend-note span{font-size:9px!important;color:#6B736D!important}

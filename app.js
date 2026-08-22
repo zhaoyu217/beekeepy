@@ -1374,6 +1374,15 @@ function v124SeasonAssessment(s,now=new Date()){
   };
 }
 
+function v133SeasonActionRoute(action){
+  const hiveId=action&&Array.isArray(action.hiveIds)?action.hiveIds.find(Boolean):null;
+  if(!hiveId)return null;
+  if(action.key==='food')return `feeding-record/${hiveId}`;
+  if(action.key==='queen')return `inspection/${hiveId}`;
+  if(action.key==='mites')return `treatment-record/${hiveId}`;
+  return null;
+}
+
 function seasonPage(r){
   const s=state();
   if(!isPro(s)){subscriptionModal('Season Intelligence');go('home');return}
@@ -1409,7 +1418,8 @@ function seasonPage(r){
       ${a.actions.length ? `
         <div class="v124-season-actions">
           ${a.actions.map(x=>`
-            <article class="v124-season-action ${x.priority==='Priority'?'priority':''}">
+            <article class="v124-season-action ${x.priority==='Priority'?'priority':''} ${v133SeasonActionRoute(x)?'v133-season-action-clickable':''}"
+              ${v133SeasonActionRoute(x)?`role="button" tabindex="0" aria-label="${esc(x.title)}" onclick="go('${v133SeasonActionRoute(x)}')" onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();go('${v133SeasonActionRoute(x)}')}"`:''}>
               <div class="v124-season-action-top">
                 <div>
                   <b>${esc(x.title)}</b>

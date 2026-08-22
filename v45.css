@@ -5496,3 +5496,8 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
 .v56-home .v56-soft-btn:active{
   transform:translateY(1px)!important;
 }
+
+/* V133 — Season action navigation affordance only */
+.v124-season-action.v133-season-action-clickable{cursor:pointer!important}
+.v124-season-action.v133-season-action-clickable:focus-visible{outline:2px solid #C5921A!important;outline-offset:2px!important}
+.v124-season-action.v133-season-action-clickable:active{transform:translateY(1px)!important}

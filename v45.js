@@ -1418,8 +1418,45 @@ function v53HiveCard(h){
 
 function v53ActionRows(mode='Pending'){
   const s=v45s();
-  if(typeof v48ActionRows==='function') return v48ActionRows(mode);
-  return (s.actions||[]);
+  const allowedHives=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
+  const allowedIds=new Set(allowedHives.map(h=>h.id));
+
+  // Pending actions are current rule-derived recommendations only.
+  const pending=(s.actions||[])
+    .filter(a=>allowedIds.has(a.hiveId))
+    .filter(a=>a.status!=='Completed' && a.priority!=='Done');
+
+  // Completed is real recorded work history. Do not mark a recommendation
+  // completed merely because a record of another type exists.
+  const completed=[
+    ...(s.logs?.inspections||[]).map(x=>({
+      id:`completed-inspection-${x.id||x.hiveId+'-'+x.date}`,
+      hiveId:x.hiveId,type:'Inspection',title:'Inspection recorded',
+      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
+    })),
+    ...(s.logs?.feedings||[]).map(x=>({
+      id:`completed-feeding-${x.id||x.hiveId+'-'+x.date}`,
+      hiveId:x.hiveId,type:'Feeding',title:'Feeding recorded',
+      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
+    })),
+    ...(s.logs?.treatments||[]).map(x=>({
+      id:`completed-treatment-${x.id||x.hiveId+'-'+x.date}`,
+      hiveId:x.hiveId,type:'Treatment',title:'Treatment recorded',
+      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
+    })),
+    ...(s.logs?.harvests||[]).map(x=>({
+      id:`completed-harvest-${x.id||x.hiveId+'-'+x.date}`,
+      hiveId:x.hiveId,type:'Harvest',title:'Harvest recorded',
+      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
+    }))
+  ]
+    .filter(a=>allowedIds.has(a.hiveId))
+    .sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+
+  const normalized=String(mode||'Pending').toLowerCase();
+  if(normalized==='completed') return completed;
+  if(normalized==='all') return [...pending,...completed];
+  return pending;
 }
 
 function v53DrawActions(mode='Pending'){

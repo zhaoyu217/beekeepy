@@ -960,6 +960,96 @@ function setTrendRangeV119(range){
 
 
 
+function v127RecommendationItems(s){
+  const items=[];
+  const seasonal=typeof v124SeasonAssessment==='function' ? v124SeasonAssessment(s) : null;
+  const seasonalByKey={};
+  (seasonal?.actions||[]).forEach(x=>seasonalByKey[x.key]=x);
+
+  (s.hives||[]).forEach(h=>{
+    const risk=typeof riskAssessment==='function'
+      ? riskAssessment(h)
+      : {level:'Low',reasons:[]};
+
+    const hiveName=h.name||'Hive';
+    const varroa=Number(h.varroa);
+    const queen=String(h.queen||'').trim().toLowerCase();
+    const honey=String(h.honey||'').trim().toLowerCase();
+    const pollen=String(h.pollen||'').trim().toLowerCase();
+
+    if(Number.isFinite(varroa) && varroa>=3){
+      const seasonBoost=seasonalByKey.mites?.priority==='Priority';
+      items.push({
+        key:`${h.id}:varroa`,
+        hiveId:h.id,
+        hiveName,
+        priority:risk.level==='High' || seasonBoost ? 'Priority' : 'Action',
+        rank:risk.level==='High' || seasonBoost ? 100 : 70,
+        title:'Verify elevated Varroa',
+        why:`${hiveName} has a recorded Varroa count of ${varroa}.`,
+        action:'Recheck the mite count and decide whether treatment is needed.',
+        when:risk.level==='High'?'Within 24 hours':'Within 3 days',
+        cta:'Start Inspection',
+        route:`inspection/${h.id}`
+      });
+    }
+
+    if(queen==='missing' || queen==='absent'){
+      items.push({
+        key:`${h.id}:queen`,
+        hiveId:h.id,
+        hiveName,
+        priority:'Priority',
+        rank:95,
+        title:'Confirm queen status',
+        why:`${hiveName} has a missing or absent queen status.`,
+        action:'Inspect for the queen, eggs, larvae, and queen cells before making a queen-management decision.',
+        when:'Within 24 hours',
+        cta:'Start Inspection',
+        route:`inspection/${h.id}`
+      });
+    }else if(queen && queen!=='confirmed'){
+      const seasonBoost=seasonalByKey.queen?.priority==='Priority';
+      items.push({
+        key:`${h.id}:queen`,
+        hiveId:h.id,
+        hiveName,
+        priority:seasonBoost?'Priority':'Action',
+        rank:seasonBoost?80:60,
+        title:'Confirm queen status',
+        why:`${hiveName} has an unconfirmed queen status.`,
+        action:'Use the next inspection to confirm the queen or fresh brood evidence.',
+        when:seasonBoost?'Within 3 days':'Next inspection',
+        cta:'Start Inspection',
+        route:`inspection/${h.id}`
+      });
+    }
+
+    if(honey==='low' || pollen==='low'){
+      const both=honey==='low' && pollen==='low';
+      const seasonBoost=seasonalByKey.food?.priority==='Priority';
+      items.push({
+        key:`${h.id}:food`,
+        hiveId:h.id,
+        hiveName,
+        priority:both || seasonBoost || risk.level==='High' ? 'Priority' : 'Action',
+        rank:both || seasonBoost || risk.level==='High' ? 90 : 55,
+        title:'Review food stores',
+        why:both
+          ? `${hiveName} has low honey and pollen stores.`
+          : `${hiveName} has low ${honey==='low'?'honey':'pollen'} stores.`,
+        action:'Check available stores and record feeding only if supplemental feed is actually needed.',
+        when:seasonBoost?'This week':'Before the next inspection',
+        cta:'Record Feeding',
+        route:`feeding-record/${h.id}`
+      });
+    }
+  });
+
+  items.sort((a,b)=>b.rank-a.rank || a.hiveName.localeCompare(b.hiveName) || a.title.localeCompare(b.title));
+  return items;
+}
+
 function recommendations(r){
   const s=v45s();
   if(!isPro(s)){
@@ -968,12 +1058,52 @@ function recommendations(r){
     return;
   }
 
-  r.innerHTML=`<div class="vs v126-recommendations-route">
-    <section class="vc">
-      <div class="vhead"><b>Professional Recommendations</b></div>
-      <div class="tiny muted">
-        Recommendations is connected. Current recommendation logic will be audited before data-driven recommendations are shown.
+  const items=v127RecommendationItems(s);
+  const priorityCount=items.filter(x=>x.priority==='Priority').length;
+  const hiveCount=new Set(items.map(x=>x.hiveId)).size;
+
+  r.innerHTML=`<div class="vs v127-recommendations-page">
+    <section class="v127-reco-summary">
+      <div>
+        <small>CURRENT RECOMMENDATIONS</small>
+        <b>${items.length} ${items.length===1?'action':'actions'}</b>
+        <span>${hiveCount} ${hiveCount===1?'hive':'hives'} need attention</span>
       </div>
+      <div class="v127-reco-summary-pill">${priorityCount} priority</div>
+    </section>
+
+    ${items.length ? `
+      <section class="v127-reco-list">
+        ${items.map(x=>`
+          <article class="v127-reco-card ${x.priority==='Priority'?'priority':''}">
+            <div class="v127-reco-top">
+              <div>
+                <small>${esc(x.hiveName)}</small>
+                <b>${esc(x.title)}</b>
+              </div>
+              <span>${esc(x.priority)}</span>
+            </div>
+
+            <div class="v127-reco-grid">
+              <div><small>Why</small><p>${esc(x.why)}</p></div>
+              <div><small>What to do</small><p>${esc(x.action)}</p></div>
+              <div><small>When</small><p>${esc(x.when)}</p></div>
+            </div>
+
+            <button type="button" onclick="go('${x.route}')">${esc(x.cta)} <em>›</em></button>
+          </article>`).join('')}
+      </section>` : `
+      <section class="v127-reco-empty">
+        <b>No current recommendations</b>
+        <span>Current hive records do not trigger a Varroa, queen-status, or food-store recommendation.</span>
+      </section>`}
+
+    <section class="v127-reco-source">
+      <div>
+        <b>How recommendations are generated</b>
+        <span>Uses current Hive records, Risk Assessment rules, and Seasonal Settings.</span>
+      </div>
+      <small>No weather, bloom, or future forecast is invented.</small>
     </section>
   </div>`;
 }

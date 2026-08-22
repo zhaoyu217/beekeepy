@@ -54,6 +54,78 @@ function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),r
 const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
 
+let V128_HONEY_RANGE='year';
+
+function v128HoneyRangeLogs(logs,range,now=new Date()){
+  const rows=(logs||[]).filter(x=>x && /^\d{4}-\d{2}-\d{2}/.test(String(x.date||'')));
+  if(range==='all')return rows.slice();
+  if(range==='12m'){
+    const start=new Date(now);
+    start.setFullYear(start.getFullYear()-1);
+    start.setHours(0,0,0,0);
+    return rows.filter(x=>{
+      const d=new Date(String(x.date).slice(0,10)+'T12:00:00');
+      return !Number.isNaN(d.getTime()) && d>=start && d<=now;
+    });
+  }
+  const year=now.getFullYear();
+  return rows.filter(x=>Number(String(x.date).slice(0,4))===year);
+}
+
+function v128HoneyUnit(s){
+  const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
+  return {metric,unit:metric?'kg':'lb',factor:metric?1/2.20462:1};
+}
+
+function v128HoneyTrendPoints(logs){
+  const byDate={};
+  logs.forEach(x=>{
+    const date=String(x.date||'').slice(0,10);
+    const weight=Number(x.weightLb||0);
+    if(!date || !Number.isFinite(weight))return;
+    byDate[date]=(byDate[date]||0)+weight;
+  });
+  return Object.keys(byDate).sort().map(date=>({date,value:byDate[date]}));
+}
+
+function v128HoneyTrendSvg(points,unitInfo){
+  if(points.length<2){
+    return `<div class="v128-honey-empty-chart">
+      <b>Not enough history</b>
+      <span>At least two dated harvest records are required to show a production trend.</span>
+    </div>`;
+  }
+
+  const w=320,h=128,pad=16;
+  const vals=points.map(x=>x.value);
+  let min=Math.min(...vals),max=Math.max(...vals);
+  if(max===min){min=Math.max(0,min-1);max=max+1}
+  const t0=new Date(points[0].date+'T12:00:00').getTime();
+  const t1=new Date(points[points.length-1].date+'T12:00:00').getTime();
+  const span=Math.max(1,t1-t0);
+  const pts=points.map(x=>{
+    const t=new Date(x.date+'T12:00:00').getTime();
+    return {
+      ...x,
+      x:pad+((t-t0)/span)*(w-pad*2),
+      y:h-pad-((x.value-min)/Math.max(1,max-min))*(h-pad*2)
+    };
+  });
+  const line=pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+
+  return `<div class="v128-honey-chart-wrap">
+    <svg class="v128-honey-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Harvest production trend">
+      <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" class="axis"/>
+      <polyline points="${line}" class="trendline"/>
+      ${pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2"/>`).join('')}
+    </svg>
+    <div class="v128-honey-chart-labels">
+      <span>${fmtDate(points[0].date)}</span>
+      <span>${fmtDate(points[points.length-1].date)}</span>
+    </div>
+  </div>`;
+}
+
 function honeyAnalytics(r){
   const s=v45s();
   if(!isPro(s)){
@@ -62,12 +134,94 @@ function honeyAnalytics(r){
     return;
   }
 
-  r.innerHTML=`<div class="vs v125-honey-analytics-route">
-    <section class="vc">
-      <div class="vhead"><b>Analytics workspace</b></div>
-      <div class="tiny muted">
-        Honey Analytics is connected. Existing harvest data will be audited before any analytics are shown.
+  const all=(s.logs?.harvests||[]).slice().sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  const logs=v128HoneyRangeLogs(all,V128_HONEY_RANGE);
+  const unitInfo=v128HoneyUnit(s);
+
+  const totalLb=logs.reduce((n,x)=>n+(Number(x.weightLb)||0),0);
+  const avgBatchLb=logs.length?totalLb/logs.length:0;
+  const moistureRows=logs.filter(x=>Number.isFinite(Number(x.moisture)) && Number(x.moisture)>0);
+  const avgMoisture=moistureRows.length
+    ? moistureRows.reduce((n,x)=>n+Number(x.moisture),0)/moistureRows.length
+    : null;
+
+  const total=totalLb*unitInfo.factor;
+  const avgBatch=avgBatchLb*unitInfo.factor;
+  const points=v128HoneyTrendPoints(logs);
+
+  const byHive={};
+  logs.forEach(x=>{
+    const w=Number(x.weightLb||0);
+    if(!Number.isFinite(w))return;
+    byHive[x.hiveId]=(byHive[x.hiveId]||0)+w;
+  });
+  const hiveRows=Object.entries(byHive)
+    .map(([hiveId,weightLb])=>({hiveId,weightLb,h:hive(s,hiveId)}))
+    .sort((a,b)=>b.weightLb-a.weightLb);
+
+  const rangeLabel=V128_HONEY_RANGE==='year'?'This Year':V128_HONEY_RANGE==='12m'?'Last 12 Months':'All Time';
+
+  r.innerHTML=`<div class="vs v128-honey-analytics">
+    <section class="v128-honey-summary">
+      <div>
+        <small>HONEY ANALYTICS</small>
+        <b>${logs.length} ${logs.length===1?'batch':'batches'}</b>
+        <span>${esc(rangeLabel)} · real Harvest records only</span>
       </div>
+      <strong>${total.toFixed(1)} <em>${unitInfo.unit}</em></strong>
+    </section>
+
+    <div class="v128-honey-ranges">
+      ${[
+        ['year','This Year'],
+        ['12m','12 Months'],
+        ['all','All Time']
+      ].map(([key,label])=>`<button class="${V128_HONEY_RANGE===key?'active':''}" onclick="V128_HONEY_RANGE='${key}';honeyAnalytics(idq('view'))">${label}</button>`).join('')}
+    </div>
+
+    ${logs.length ? `
+      <section class="v128-honey-stats">
+        <div><small>Total Harvest</small><b>${total.toFixed(1)} ${unitInfo.unit}</b></div>
+        <div><small>Avg / Batch</small><b>${avgBatch.toFixed(1)} ${unitInfo.unit}</b></div>
+        <div><small>Avg Moisture</small><b>${avgMoisture===null?'—':avgMoisture.toFixed(1)+'%'}</b></div>
+      </section>
+
+      <section class="vc v128-honey-chart-card">
+        <div class="vhead">
+          <b>Production Trend</b>
+          <span>${points.length<2?'Not enough history':`${points.length} dated points`}</span>
+        </div>
+        ${v128HoneyTrendSvg(points,unitInfo)}
+      </section>
+
+      <section class="vc v128-honey-hives">
+        <div class="vhead"><b>Harvest by Hive</b><span>${hiveRows.length} ${hiveRows.length===1?'hive':'hives'}</span></div>
+        <div class="v128-honey-hive-list">
+          ${hiveRows.map((x,i)=>{
+            const value=x.weightLb*unitInfo.factor;
+            const pct=totalLb>0?(x.weightLb/totalLb*100):0;
+            return `<button type="button" onclick="go('hive/${x.hiveId}')">
+              <span class="rank">${i+1}</span>
+              <span class="copy"><b>${esc(x.h?.name||'Hive')}</b><small>${pct.toFixed(0)}% of selected harvest</small></span>
+              <span class="value">${value.toFixed(1)} ${unitInfo.unit}</span>
+              <em>›</em>
+            </button>`;
+          }).join('')}
+        </div>
+      </section>
+
+      <button class="v128-honey-open" type="button" onclick="go('honey')">View Harvest Records</button>
+    ` : `
+      <section class="v128-honey-empty">
+        <b>No harvest data yet</b>
+        <span>No real Harvest records exist in the selected range.</span>
+        <button type="button" onclick="go('honey')">Open Harvest</button>
+      </section>
+    `}
+
+    <section class="v128-honey-source">
+      <b>Data source</b>
+      <span>Uses saved Harvest records only. Missing moisture values are excluded from the moisture average.</span>
     </section>
   </div>`;
 }

@@ -959,6 +959,25 @@ function setTrendRangeV119(range){
 
 
 
+
+function recommendations(r){
+  const s=v45s();
+  if(!isPro(s)){
+    subscriptionModal('Professional Recommendations');
+    go('insights');
+    return;
+  }
+
+  r.innerHTML=`<div class="vs v126-recommendations-route">
+    <section class="vc">
+      <div class="vhead"><b>Professional Recommendations</b></div>
+      <div class="tiny muted">
+        Recommendations is connected. Current recommendation logic will be audited before data-driven recommendations are shown.
+      </div>
+    </section>
+  </div>`;
+}
+
 /* =========================================================
    V50 — RESILIENCE / EDGE-CASE AUDIT FIX
    No locked feature architecture, entry relationship, navigation,

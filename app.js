@@ -279,6 +279,61 @@ async function signOutCloud(){
   await supabaseClient.auth.signOut();
 }
 
+let cloudHydrationPromise=null;
+
+function recoverAuthenticatedLocalState(err){
+  console.error('HiveDash cloud load failed; continuing with authenticated local mode',err);
+  cloudReady=false;
+  stopRealtimeSync();
+  setCloudStatus('Sync error');
+
+  let local=null;
+  try{
+    const raw=localStorage.getItem(STORAGE_KEY);
+    if(raw)local=normalizeStateV50(JSON.parse(raw));
+  }catch(_e){}
+
+  const owned=local && (!local.meta?.userId || local.meta.userId===currentSession?.user?.id);
+  const fallback=owned?local:normalizeStateV50(clone(DEFAULT_STATE));
+
+  if(currentSession?.user){
+    fallback.meta.userId=currentSession.user.id;
+    fallback.user={
+      ...(fallback.user||{}),
+      email:currentSession.user.email||fallback.user?.email||'',
+      name:currentSession.user.user_metadata?.name||fallback.user?.name||'Beekeeper'
+    };
+  }
+
+  suppressCloudSave=true;
+  writeLocalV50(fallback);
+  suppressCloudSave=false;
+
+  if(!location.hash || location.hash==='#signin')location.hash='home';
+  render();
+  toast('Signed in. Cloud sync is temporarily unavailable; local data is still available.');
+}
+
+async function hydrateAuthenticatedApp(){
+  if(cloudHydrationPromise)return cloudHydrationPromise;
+
+  cloudHydrationPromise=(async()=>{
+    try{
+      await loadCloudState();
+      cloudReady=true;
+      startRealtimeSync();
+      if(!location.hash || location.hash==='#signin')location.hash='home';
+      render();
+    }catch(err){
+      recoverAuthenticatedLocalState(err);
+    }finally{
+      cloudHydrationPromise=null;
+    }
+  })();
+
+  return cloudHydrationPromise;
+}
+
 async function initializeCloudApp(){
   if(!CLOUD_CONFIGURED){
     if(CLOUD_CONFIG.REQUIRE_AUTH!==false)renderCloudSetup();
@@ -291,25 +346,16 @@ async function initializeCloudApp(){
 
   supabaseClient.auth.onAuthStateChange(async(event,session)=>{
     currentSession=session;
+
     if(event==='SIGNED_OUT'){
       cloudReady=false;
       stopRealtimeSync();
       renderAuth('signin');
       return;
     }
-    if(event==='SIGNED_IN' || event==='INITIAL_SESSION'){
-      if(session){
-        try{
-          await loadCloudState();
-          cloudReady=true;
-          startRealtimeSync();
-          if(!location.hash)location.hash='home';
-          render();
-        }catch(err){
-          cloudReady=false;
-          renderAuth('signin','Signed in, but cloud data could not be loaded. Check the Supabase schema and RLS setup.');
-        }
-      }
+
+    if((event==='SIGNED_IN' || event==='INITIAL_SESSION' || event==='TOKEN_REFRESHED') && session){
+      await hydrateAuthenticatedApp();
     }
   });
 
@@ -318,15 +364,7 @@ async function initializeCloudApp(){
     return;
   }
 
-  try{
-    await loadCloudState();
-    cloudReady=true;
-    startRealtimeSync();
-    if(!location.hash)location.hash='home';
-    render();
-  }catch(err){
-    renderAuth('signin','Cloud data could not be loaded. Check the Supabase schema and RLS setup.');
-  }
+  await hydrateAuthenticatedApp();
 }
 
 
@@ -930,7 +968,6 @@ function moreActions(){
     <button type="button" class="qbtn" onclick="closeModal(this);actionForm('harvest')"><span class="emo">⌁</span><b>Harvest</b></button>
     <button type="button" class="qbtn" onclick="closeModal(this);actionForm('inspection')"><span class="emo">⌕</span><b>Inspection</b></button>
     <button type="button" class="qbtn" onclick="closeModal(this);go('timeline')"><span class="emo">≡</span><b>Timeline</b></button>
-    <button type="button" class="qbtn" onclick="closeModal(this);go('map')"><span class="emo">⌖</span><b>Map</b></button>
   </div>`)
 }
 

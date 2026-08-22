@@ -4243,3 +4243,63 @@ body>.modal{
 .v109-map-list{display:grid;gap:8px}.v109-map-info{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:9px;padding:11px;border:1px solid #E6E0D4;border-radius:14px;background:#FFFEFB}.v109-map-info-icon{width:36px;height:36px;display:grid;place-items:center;border-radius:11px;background:#F1F4EE;color:#5E7E58;font-size:16px}.v109-map-info>div:nth-child(2){display:grid;gap:2px}.v109-map-info b{font-size:10px;color:#2F3B33}.v109-map-info small{font-size:8px;color:#6B736D}.v109-map-info>button{border:0;background:transparent;color:#5E7350;font-size:9px;font-weight:700}.v109-map-info>button em{font-style:normal}
 .v109-map-hive-list{display:grid;gap:7px}.v109-map-hive-list>button{display:grid;grid-template-columns:44px 1fr 12px;align-items:center;gap:9px;width:100%;padding:7px;border:1px solid #E6E0D4;border-radius:13px;background:#FFFEFB;text-align:left}.v109-map-hive-list img{width:44px;height:44px;object-fit:cover;border-radius:10px}.v109-map-hive-list span{display:grid;gap:2px}.v109-map-hive-list b{font-size:10px;color:#2F3B33}.v109-map-hive-list small{font-size:8px;color:#6B736D}.v109-map-hive-list em{font-style:normal;color:#5E7350}.v109-map-free{padding:7px 9px;border-radius:10px;background:#F7F5EF;color:#6B736D;font-size:8px;text-align:center}
 body:has(.v109-map-page) #bottomnav{z-index:40}
+
+
+/* ==============================================================
+   V110 — MAP FINAL POLISH
+   Scope: Map only.
+   ============================================================== */
+
+.v109-map-canvas{
+  --v110-map-scale:1;
+  background-color:#E9E8D9!important;
+  background-image:
+    linear-gradient(28deg,transparent 0 41%,rgba(210,183,133,.72) 42% 44%,transparent 45% 100%),
+    linear-gradient(92deg,transparent 0 30%,rgba(210,183,133,.62) 31% 33%,transparent 34% 100%),
+    linear-gradient(151deg,transparent 0 57%,rgba(210,183,133,.55) 58% 60%,transparent 61% 100%),
+    linear-gradient(7deg,rgba(113,139,91,.10) 0 22%,transparent 23% 68%,rgba(113,139,91,.11) 69% 100%),
+    radial-gradient(circle at 73% 68%,rgba(122,161,177,.18) 0 14%,transparent 15%),
+    linear-gradient(180deg,#ECEBDD,#E2E5D2)!important;
+  background-size:
+    calc(125% * var(--v110-map-scale)) calc(125% * var(--v110-map-scale)),
+    calc(115% * var(--v110-map-scale)) calc(115% * var(--v110-map-scale)),
+    calc(130% * var(--v110-map-scale)) calc(130% * var(--v110-map-scale)),
+    calc(110% * var(--v110-map-scale)) calc(110% * var(--v110-map-scale)),
+    calc(120% * var(--v110-map-scale)) calc(120% * var(--v110-map-scale)),
+    cover!important;
+  background-position:center!important;
+  transition:background-size .18s ease!important;
+}
+
+/* Keep one marker language only: the numbered Hive markers. */
+.v109-map-pin{
+  z-index:5!important;
+}
+
+/* Complete two-way zoom control. */
+.v110-map-zoom{
+  position:absolute!important;
+  right:10px!important;
+  bottom:10px!important;
+  z-index:9!important;
+  display:flex!important;
+  flex-direction:column!important;
+  overflow:hidden!important;
+  border:1px solid rgba(47,59,51,.12)!important;
+  border-radius:13px!important;
+  background:#FFFEFB!important;
+  box-shadow:0 4px 14px rgba(47,59,51,.12)!important;
+}
+.v110-map-zoom button{
+  width:42px!important;
+  height:38px!important;
+  padding:0!important;
+  border:0!important;
+  background:#FFFEFB!important;
+  color:#2F3B33!important;
+  font-size:19px!important;
+  line-height:1!important;
+  font-weight:500!important;
+}
+.v110-map-zoom button+button{border-top:1px solid #E6E3DA!important}
+.v110-map-zoom button:active{background:#F5F3EC!important}

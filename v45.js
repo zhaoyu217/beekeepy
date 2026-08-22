@@ -614,11 +614,19 @@ function drawMapListV49(){
     return;
   }
   if(V49_MAP_MODE==='Apiaries'){
-    box.innerHTML=`<section class="v109-map-info"><div class="v109-map-info-icon">⌂</div><div><b>${esc(s.settings.apiaryName)}</b><small>${esc(s.settings.location)} · ${visible.length} ${visible.length===1?'hive':'hives'}${!isPro(s)?' on Free plan':''}</small></div><button onclick="go('all-hives')">View <em>›</em></button></section>`;
+    box.innerHTML=`<section class="v109-map-info"><div class="v109-map-info-icon">⌂</div><div><b>${esc(s.settings.apiaryName)}</b><small>${esc(s.settings.location)} · ${visible.length} ${visible.length===1?'hive':'hives'}${!isPro(s)?' on Free plan':''}</small></div><button onclick="go('all-hives')">View Hives <em>›</em></button></section>`;
     return;
   }
   box.innerHTML=`<div class="v109-map-hive-list">${visible.map(h=>`<button onclick="go('hive/${h.id}')"><img src="${v101HivePrimaryPhoto(h)}" alt="${esc(h.name)}"><span><b>${esc(h.name)}</b><small>${esc(String(h.score||0))}% health · Last ${fmtDate(h.lastInspection)}</small></span><em>›</em></button>`).join('')}</div>${!isPro(s)?'<div class="v109-map-free">Free plan · Map shows Hive #1–#3 only</div>':''}`;
 }
+let V110_MAP_ZOOM=1;
+function mapZoomV110(direction){
+  const canvas=document.querySelector('.v109-map-canvas');
+  if(!canvas)return;
+  V110_MAP_ZOOM=Math.max(1,Math.min(1.45,+(V110_MAP_ZOOM+(direction>0?.1:-.1)).toFixed(2)));
+  canvas.style.setProperty('--v110-map-scale',V110_MAP_ZOOM);
+}
+
 function mapPage(r){
   const s=v45s(),visible=v109MapHives();V49_MAP_MODE='Apiaries';V49_MAP_ZOOM=false;
   const dots=visible.map((h,i)=>`<button class="v109-map-pin p${i+1}" onclick="go('hive/${h.id}')" aria-label="Open ${esc(h.name)}"><span>${i+1}</span></button>`).join('');
@@ -631,7 +639,10 @@ function mapPage(r){
     <section class="v109-map-canvas" style="--hero:url('${V45.map}')">
       <div class="v109-map-shade"></div>${dots}
       <div class="v109-map-label"><b>${esc(s.settings.apiaryName)}</b><span>${esc(s.settings.location)}</span></div>
-      <button class="v109-map-zoom" onclick="zoomMapV49()" aria-label="Zoom map">+</button>
+      <div class="v110-map-zoom" aria-label="Map zoom controls">
+        <button type="button" onclick="mapZoomV110(1)" aria-label="Zoom in">+</button>
+        <button type="button" onclick="mapZoomV110(-1)" aria-label="Zoom out">−</button>
+      </div>
     </section>
     <div class="v109-map-list" id="v49maplist"></div>
   </div>`;

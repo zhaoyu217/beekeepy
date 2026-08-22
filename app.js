@@ -1212,28 +1212,59 @@ function riskPage(r){
   const s=state();
   if(!isPro(s)){subscriptionModal('Risk Assessment');go('insights');return}
 
-  r.innerHTML=`<section>
-    <div class="h1" style="margin-top:12px">Risk Assessment</div>
-    <div class="tiny muted">Transparent rule-based assessment using current hive records.</div>
-  </section>
-  <section class="setting v122-risk-list">
-    ${s.hives.map(h=>{
-      const res=riskAssessment(h);
-      const copy=res.reasons.length?res.reasons.join(' · '):'No current rule-based risk signal';
-      return `<button type="button" class="srow card-button v122-risk-row" onclick="go('hive/${h.id}')">
-        <div class="scopy">
-          <b>${esc(h.name)}</b>
-          <div class="tiny muted">${esc(copy)}</div>
+  const rows=s.hives.map(h=>({h,res:riskAssessment(h)}));
+  const counts={
+    High:rows.filter(x=>x.res.level==='High').length,
+    Medium:rows.filter(x=>x.res.level==='Medium').length,
+    Low:rows.filter(x=>x.res.level==='Low').length
+  };
+
+  r.innerHTML=`<div class="v123-risk-page">
+    <section class="v123-risk-overview">
+      <div class="v123-risk-overview-copy">
+        <small>CURRENT HIVE RISK</small>
+        <b>${rows.length} ${rows.length===1?'hive':'hives'} assessed</b>
+        <span>Transparent rule-based assessment from current hive records.</span>
+      </div>
+      <div class="v123-risk-counts">
+        <div class="high"><strong>${counts.High}</strong><span>High</span></div>
+        <div class="medium"><strong>${counts.Medium}</strong><span>Medium</span></div>
+        <div class="low"><strong>${counts.Low}</strong><span>Low</span></div>
+      </div>
+    </section>
+
+    <section class="v123-risk-cards">
+      ${rows.map(({h,res})=>{
+        const copy=res.reasons.length?res.reasons.join(' · '):'No current rule-based risk signal';
+        const cls=res.level.toLowerCase();
+        return `<button type="button" class="v123-risk-card ${cls}" onclick="go('hive/${h.id}')">
+          <span class="v123-risk-card-marker" aria-hidden="true"></span>
+          <span class="v123-risk-card-copy">
+            <b>${esc(h.name)}</b>
+            <small>${esc(copy)}</small>
+          </span>
+          <span class="v123-risk-card-end">
+            <span class="v123-risk-badge ${cls}">${res.level}</span>
+            <em>›</em>
+          </span>
+        </button>`;
+      }).join('')}
+    </section>
+
+    <section class="v123-risk-how">
+      <div class="v123-risk-how-head">
+        <span class="v123-risk-how-icon">i</span>
+        <div>
+          <b>How risk is calculated</b>
+          <small>Current conditions only — not a future forecast.</small>
         </div>
-        <span class="v122-risk-end">
-          <span class="pill ${res.level==='High'?'danger':res.level==='Medium'?'warn':''}">${res.level}</span>
-          <em>›</em>
-        </span>
-      </button>`;
-    }).join('')}
-  </section>
-  <div class="notice v122-risk-note">
-    High = any severe signal, or 2+ moderate signals. Medium = 1 moderate signal. Low = no current rule-based signal.
+      </div>
+      <div class="v123-risk-how-grid">
+        <div><span class="dot high"></span><b>High</b><small>Any severe signal, or 2+ moderate signals.</small></div>
+        <div><span class="dot medium"></span><b>Medium</b><small>Exactly 1 moderate signal.</small></div>
+        <div><span class="dot low"></span><b>Low</b><small>No current rule-based signal.</small></div>
+      </div>
+    </section>
   </div>`;
 }
 

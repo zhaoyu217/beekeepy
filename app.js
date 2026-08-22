@@ -1220,11 +1220,50 @@ async function addHivePhotos(hiveId,input){
 function openHivePhotoGallery(hiveId){
   const s=state(),h=hive(s,hiveId);if(!h)return;
   const photos=hivePhotos(h);
-  const m=modal(`<div class="modalhead"><div class="h2">${esc(h.name)} Photos</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div>
-    <div class="hive-gallery-modal">
-      ${photos.length?photos.map((p,i)=>`<div class="gallery-photo"><img src="${p.data}" alt="${esc(h.name)} photo ${i+1}"><button onclick="deleteHivePhoto('${h.id}','${p.id}')">Delete</button></div>`).join(''):'<div class="small muted">No photos yet.</div>'}
-    </div>`);
+
+  const galleryHtml=photos.length
+    ? photos.map((p,i)=>`<div class="gallery-photo-card">
+        <button class="gallery-photo-open" type="button" aria-label="Open photo ${i+1}">
+          <img src="${p.data}" alt="${esc(h.name)} photo ${i+1}">
+        </button>
+        <button class="gallery-photo-menu" type="button" aria-label="Photo options" onclick="event.stopPropagation();openHivePhotoMenu('${h.id}','${p.id}',this)">•••</button>
+      </div>`).join('')
+    : '<div class="gallery-empty"><b>No photos yet</b><span>Add your first hive photo.</span></div>';
+
+  const m=modal(`<div class="modalhead photo-gallery-head">
+      <div>
+        <div class="h2">${esc(h.name)} Photos</div>
+        <div class="small muted">${photos.length} ${photos.length===1?'photo':'photos'}</div>
+      </div>
+      <button class="iconbtn" onclick="closeModal(this)">✕</button>
+    </div>
+    <div class="photo-gallery-toolbar">
+      <button class="photo-gallery-add" type="button" onclick="document.getElementById('galleryPhotoInput').click()">＋ Add Photo</button>
+      <input id="galleryPhotoInput" hidden type="file" accept="image/*" multiple onchange="addHivePhotos('${h.id}',this)">
+    </div>
+    <div class="hive-gallery-modal">${galleryHtml}</div>`);
+  m.classList.add('photo-gallery-modal-shell');
 }
+
+function openHivePhotoMenu(hiveId,photoId,btn){
+  document.querySelector('.photo-menu-pop')?.remove();
+  const pop=document.createElement('div');
+  pop.className='photo-menu-pop';
+  pop.innerHTML=`<button type="button" class="danger" onclick="confirmDeleteHivePhoto('${hiveId}','${photoId}')">Delete Photo</button>`;
+  const panel=btn.closest('.modalpanel')||document.body;
+  panel.appendChild(pop);
+  const br=btn.getBoundingClientRect(),pr=panel.getBoundingClientRect();
+  pop.style.top=(br.bottom-pr.top+6)+'px';
+  pop.style.right=Math.max(10,pr.right-br.right)+'px';
+}
+
+function confirmDeleteHivePhoto(hiveId,photoId){
+  document.querySelector('.photo-menu-pop')?.remove();
+  const ok=confirm('Delete this photo?');
+  if(!ok)return;
+  deleteHivePhoto(hiveId,photoId);
+}
+
 
 function deleteHivePhoto(hiveId,photoId){
   const s=state(),h=hive(s,hiveId);if(!h)return;
@@ -1233,6 +1272,7 @@ function deleteHivePhoto(hiveId,photoId){
   document.querySelector('.modal')?.remove();
   toast('Photo deleted');
   render();
+  setTimeout(()=>openHivePhotoGallery(hiveId),0);
 }
 
 

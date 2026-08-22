@@ -17,49 +17,9 @@ function Vback(title,right=''){return `<button class="iconbtn" onclick="history.
 function Vstatus(h){return h.status==='Healthy'?'Good':h.status==='Attention'?'Needs Attention':'Critical'}
 function Vclass(h){return h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}
 
-function analysisPage(r){
-  const s=load();
-  const hive=(s.hives||[])[0]||{id:1,name:'Hive #1'};
-  const photo=hivePhoto(hive);
-  const score=82;
-  return `<div class="page v111-ai-health">
-    ${header('AI Health Analysis',true)}
-    <main class="v111-ai-main">
-      <section class="v111-ai-hero" style="--ai-photo:url('${photo}')">
-        <div class="v111-ai-hero-shade"></div>
-        <div class="v111-ai-score" aria-label="Health score 82, Good">
-          <strong>${score}</strong><span>Good</span>
-        </div>
-        <div class="v111-ai-hero-copy">
-          <small>AI HEALTH ANALYSIS</small>
-          <h2>${hive.name||'Hive #1'}</h2>
-          <p>Current colony health assessment</p>
-        </div>
-        <div class="v111-ai-risk"><span>Risk Level</span><strong>Low</strong></div>
-      </section>
+function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${unread(s)?`<span class="badge">${unread(s)}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Prediction','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
+const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
-      <section class="v111-ai-card">
-        <h3>Top Reasons</h3>
-        <ul>
-          <li>Strong colony population</li>
-          <li>Good brood pattern</li>
-          <li>Low varroa level</li>
-        </ul>
-      </section>
-
-      <section class="v111-ai-card">
-        <h3>Recommended Action</h3>
-        <div class="v111-ai-action">Continue regular inspection</div>
-        <div class="v111-ai-action">Monitor for swarm signs</div>
-      </section>
-
-      <section class="v111-ai-detail-card">
-        <div><strong>Analysis Summary</strong><span>Health score, risk and recommendations are shown above.</span></div>
-      </section>
-    </main>
-    ${bottomNav('insights')}
-  </div>`;
-}
 function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]||'home',id=p[1],r=idq('view');r.className='view vview '+(['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','feeding-record','treatment-record','harvest-record'].includes(page)?'secondary':'main');const m={home:()=>home(r),hives:()=>hives(r),hive:()=>hiveDetail(r,id),inspection:()=>inspectionPage(r,id),timeline:()=>timelinePage(r),honey:()=>honeyPage(r),map:()=>mapPage(r),insights:()=>insights(r),actions:()=>actions(r),'all-hives':()=>allHives(r),'all-actions':()=>allActions(r,id),'feeding-record':()=>recordPage(r,'feeding',id),'treatment-record':()=>recordPage(r,'treatment',id),'harvest-record':()=>recordPage(r,'harvest',id),analysis:()=>healthAnalysis(r),trend:()=>trendPage(r),risk:()=>riskPage(r),season:()=>seasonPage(r),'honey-analytics':()=>honeyAnalytics(r),recommendations:()=>recommendations(r),settings:()=>settings(r),account:()=>accountPage(r),subscription:()=>subscriptionPage(r),apiary:()=>apiaryPage(r),'seasonal-settings':()=>seasonalSettings(r),'notification-preferences':()=>notificationPrefs(r),'units-region':()=>unitsRegion(r),'smart-features':()=>smartFeatures(r),'data-backup':()=>dataBackup(r),security:()=>securityPage(r),store:()=>storePage(r),notifications:()=>notifications(r),help:()=>helpPage(r),faq:()=>faqPage(r),support:()=>supportPage(r),about:()=>aboutPage(r),privacy:()=>infoPage(r,'Privacy Policy'),terms:()=>infoPage(r,'Terms of Service')};(m[page]||m.home)();chrome(page)}
 
 
@@ -84,61 +44,49 @@ function bars(){const v=[12,22,35,54,68,49,62,75,53,28,17,10];return `<section c
 /* V77 removed superseded allActions */
 /* V77 removed superseded recordPage */
 /* V77 removed superseded saveRec */
-function healthAnalysis(r){r.innerHTML=aipage(V45.honeycomb,`<div class="aiscore"><b>82</b><span>Good</span></div><div class="riskchip">Risk Level <b>Low</b></div>${Vcard('Top Reasons','<ul class="bullets"><li>Strong colony population</li><li>Good brood pattern</li><li>Low varroa level</li></ul>')}${Vcard('Recommended Action','<div class="recol"><button onclick="go(\'inspection/h1\')">Continue regular inspection</button><button onclick="go(\'risk\')">Monitor for swarm signs</button></div>')}<button class="primary" onclick="go('recommendations')">View Detailed Analysis</button>`)}
-function aipage(img,body){return `<div class="vs aip" style="--hero:url('${img}')"><div class="aio">${body}</div></div>`}function trendPage(r){r.innerHTML=aipage(V45.hive,`<div class="filters"><button>7D</button><button class="active">30D</button><button>90D</button><button>Season</button></div>${['Health Score','Varroa Level','Colony Size','Food Stores','Brood Pattern','Queen Status'].map((x,i)=>trend(x,[78,2.1,8,7,'Good','Seen'][i])).join('')}<button class="primary" onclick="toast('Trend detail range updated')">View Trend Details</button>`)}function trend(a,b){return `<section class="trendc"><div><b>${a}</b><span>${b}</span></div><svg viewBox="0 0 260 45"><polyline points="0,32 40,24 80,29 120,18 160,23 200,12 260,16" fill="none" stroke="currentColor" stroke-width="2"/></svg></section>`}
-function riskPage(r){const a=[['Varroa Risk','Medium'],['Swarm Risk','Low'],['Queen Failure','Low'],['Food Shortage','Medium'],['Disease Risk','Low'],['Winter Survival','High']];r.innerHTML=`<div class="vs">${Vcard('Predicted Risks · Next 30 Days',a.map(x=>`<div class="riskrow"><span>${x[0]}</span><b class="${x[1]==='High'?'critical':x[1]==='Medium'?'attention':'good'}">${x[1]}</b></div>`).join(''))}<div class="note">Predictions are forecasts, not confirmed events.</div><button class="primary" onclick="go('recommendations')">View Details</button></div>`}
-function seasonPage(r){r.innerHTML=`<div class="vs">${Vhero(V45.season,'<div class="seasont"><span>Spring Nectar Flow</span><b>Peak flow · next 12 days</b></div>','shero')}${Vcard('Conditions','<div class="weather"><div><b>65°F</b><span>Temp</span></div><div><b>60%</b><span>Humidity</span></div><div><b>10 mph</b><span>Wind</span></div><div><b>Light</b><span>Rain</span></div></div>')}${Vcard('Recommendations','<ul class="bullets"><li>Good nectar flow ahead</li><li>Prepare for super expansion</li><li>Monitor for swarm signs</li><li>Keep varroa testing cadence</li></ul>')}<button class="primary" onclick="go('seasonal-settings')">View Details</button></div>`}
-/* V77 removed superseded honeyAnalytics */
-function recommendations(r){r.innerHTML=`<div class="vs">${[['Varroa monitoring','Varroa level increasing','Check and treat if needed','Within 7 days'],['Prepare for flow','Nectar flow starting','Add honey super','This week'],['Queen verification','Hive #2 not confirmed','Inspect queen status','Next inspection']].map(x=>`<section class="vc reco"><div><span>What</span><b>${x[0]}</b></div><div><span>Why</span><b>${x[1]}</b></div><div><span>What to do</span><b>${x[2]}</b></div><div><span>When</span><b>${x[3]}</b></div><button onclick="go('actions')">Create Action</button></section>`).join('')}</div>`}
-function settings(r){const s=v45s(),items=[['account','Account'],['subscription','HiveDash Pro'],['apiary','Apiary Environment'],['notification-preferences','Notifications'],['units-region','Units & Region'],['smart-features','Smart Features'],['data-backup','Data & Backup'],['store','Store'],['security','Privacy & Security'],['help','Help'],['about','About']];r.innerHTML=`<div class="vs setv"><div class="setphoto" style="--hero:url('${V45.settings}')"><div><b>${esc(s.settings.apiaryName)}</b><span>${esc(s.settings.location)}</span></div></div><section class="setmenu">${items.map(x=>`<button onclick="go('${x[0]}')"><span>◉</span><b>${x[1]}</b><em>›</em></button>`).join('')}</section><button class="secondary danger" onclick="signOutCloud()">Sign Out</button></div>`}
-/* V77 removed superseded accountPage */
-function saveAcct(){const s=v45s();s.user.name=idq('aname').value.trim();s.user.email=idq('aemail').value.trim();save(s);toast('Account saved')}async function sendReset(){const s=v45s(),email=prompt('Send password reset link to:',s.user.email);if(!email)return;if(supabaseClient){const{error}=await supabaseClient.auth.resetPasswordForEmail(email,{redirectTo:oauthRedirectUrl()});if(error)return toast(error.message)}toast('Password reset email sent')}
-/* V77 removed superseded subscriptionPage */
-/* V77 removed superseded setPlan */
-/* V77 removed superseded apiaryPage */
-/* V77 removed superseded seasonalSettings */
-/* V77 removed superseded saveSeason */
-function notificationPrefs(r){const s=v45s(),x=s.settings.notifications,rows=[['inspection','Inspection Reminders'],['varroa','Varroa Risk'],['treatment','Treatment Follow-up'],['feeding','Feeding Reminders'],['weather','Weather Alerts'],['seasonal','Seasonal Alerts'],['push','Push Notifications']];r.innerHTML=`<div class="vs"><section class="toggles">${rows.map(x=>`<label><span>${x[1]}</span><input data-pref="${x[0]}" type="checkbox" ${s.settings.notifications[x[0]]?'checked':''}></label>`).join('')}</section><button class="primary" onclick="savePrefs()">Save Preferences</button></div>`}function savePrefs(){const s=v45s();document.querySelectorAll('[data-pref]').forEach(e=>s.settings.notifications[e.dataset.pref]=e.checked);save(s);toast('Preferences saved')}
-/* V77 removed superseded unitsRegion */
-function smartFeatures(r){const s=v45s(),rows=[['voice','Voice Inspection'],['photo','Photo Analysis'],['varroaCount','Smart Varroa Count'],['aiHealth','AI Health Analysis'],['recommendations','Smart Recommendations'],['seasonWeather','Season & Weather Intelligence'],['qr','Hive QR Code']];r.innerHTML=`<div class="vs"><div class="smartphoto"><img src="${V45.flowers}"></div><section class="toggles">${rows.map(x=>`<label><span>${x[1]}</span><input data-smart="${x[0]}" type="checkbox" ${s.settings.smart[x[0]]?'checked':''}></label>`).join('')}</section><button class="secondary" onclick="qrModal()">Preview Hive QR Code</button><button class="primary" onclick="saveSmart()">Save Settings</button></div>`}function saveSmart(){const s=v45s();document.querySelectorAll('[data-smart]').forEach(e=>s.settings.smart[e.dataset.smart]=e.checked);save(s);toast('Smart features saved')}function qrModal(){modal('<div class="modalhead"><b>Hive QR Code</b><button onclick="closeModal(this)">✕</button></div><div class="qr"></div><div class="small muted">Scan to open Hive Detail and Start Inspection.</div>')}
-/* V77 removed superseded dataBackup */
-function importData(e){const f=e.target.files?.[0];if(!f)return;const reader=new FileReader();reader.onload=()=>{try{localStorage.setItem(STORAGE_KEY,JSON.stringify(JSON.parse(reader.result)));toast('Data imported');render()}catch(e){toast('Invalid backup file')}};reader.readAsText(f)}
-/* V77 removed superseded securityPage */
-function storePage(r){r.innerHTML=`<div class="vs"><div class="storehero"><img src="${V45.hive}"><div><span>Beekeeping Equipment Store</span><b>SkogHive</b><small>Premium hives · Flow Frames · Accessories</small></div></div><button class="primary" onclick="window.open('https://www.skoghive.com','_blank','noopener')">Shop Now ↗</button></div>`}
-/* V77 removed superseded notifications */
-/* V77 removed superseded helpPage */
-/* V77 removed superseded faqPage */
-/* V77 removed superseded supportPage */
-function aboutPage(r){r.innerHTML=`<div class="vs about"><section><div class="abouticon">${icon('hive')}</div><b>HiveDash</b><span>Version 1.2.0 (Build 120)</span></section><div class="setmenu"><button onclick="toast('You are on the latest HiveDash build')"><b>What's New</b><em>›</em></button><button onclick="toast('HiveDash is up to date')"><b>Check for Updates</b><em>›</em></button><button onclick="window.open('https://hivedash.app','_blank')"><b>Official Website</b><em>›</em></button><button onclick="go('privacy')"><b>Privacy Policy</b><em>›</em></button><button onclick="go('terms')"><b>Terms of Service</b><em>›</em></button><button onclick="toast('Open-source licenses opened')"><b>Open-source Licenses</b><em>›</em></button><button onclick="go('support')"><b>Contact Support</b><em>›</em></button></div><small>© HiveDash</small></div>`}
-function infoPage(r,title){r.innerHTML=`<div class="vs legal"><h2>${esc(title)}</h2><p>Last updated: August 18, 2026</p><section class="vc body"><h3>1. Information and use</h3><p>HiveDash stores the information needed to manage hives, inspections, actions and preferences.</p><h3>2. Your data</h3><p>You control export, cloud sync and account deletion.</p><h3>3. Security</h3><p>Authentication and data-access controls protect your account.</p><h3>4. Contact</h3><p>Use Contact Support for questions.</p></section></div>`}
-
-
-/* =========================================================
-   V48 — REMAINING ROUTE / INTERACTION AUDIT FIX
-   Scope: Actions + record pages + Settings subtree +
-   Notifications + Subscription + Login / Account.
-   LOCKED UI architecture and navigation are unchanged.
-   ========================================================= */
-
-function v48ActionRows(mode='Pending'){
+function healthAnalysis(r){
   const s=v45s();
+  const h=s.hives[0]||{id:'h1',name:'Hive #1'};
+  const photo=v101HivePrimaryPhoto(h);
 
-  // V91 Free Plan Actions Sync:
-  // Free users can only act on the first 3 hives; Pro keeps every hive.
-  const allowedHiveIds=new Set((isPro(s)?s.hives:s.hives.slice(0,3)).map(h=>h.id));
-  const inPlan=a=>allowedHiveIds.has(a.hiveId);
+  r.innerHTML=`<div class="vs v112-ai-health">
+    <section class="v112-ai-hero" style="--ai-photo:url('${photo}')">
+      <div class="v112-ai-shade"></div>
 
-  const pending=(s.actions||[]).filter(inPlan);
-  const completed=[
-    ...s.logs.inspections.map(x=>({type:'Inspection',hiveId:x.hiveId,title:'Inspection completed',due:fmtDate(x.date),priority:'Done'})),
-    ...s.logs.feedings.map(x=>({type:'Feeding',hiveId:x.hiveId,title:'Feeding recorded',due:fmtDate(x.date),priority:'Done'})),
-    ...s.logs.treatments.map(x=>({type:'Treatment',hiveId:x.hiveId,title:'Treatment recorded',due:fmtDate(x.date),priority:'Done'})),
-    ...s.logs.harvests.map(x=>({type:'Harvest',hiveId:x.hiveId,title:'Harvest recorded',due:fmtDate(x.date),priority:'Done'}))
-  ].filter(inPlan).slice(-12).reverse();
+      <div class="v112-ai-score" aria-label="Health score 82, Good">
+        <strong>82</strong>
+        <span>Good</span>
+      </div>
 
-  if(mode==='Completed') return completed;
-  if(mode==='All') return [...pending,...completed];
-  return pending;
+      <div class="v112-ai-copy">
+        <small>AI HEALTH ANALYSIS</small>
+        <b>${esc(h.name||'Hive #1')}</b>
+        <span>Current colony health assessment</span>
+      </div>
+
+      <div class="v112-ai-risk">
+        <span>Risk Level</span>
+        <strong>Low</strong>
+      </div>
+    </section>
+
+    ${Vcard('Top Reasons',`
+      <ul class="bullets v112-ai-reasons">
+        <li>Strong colony population</li>
+        <li>Good brood pattern</li>
+        <li>Low varroa level</li>
+      </ul>
+    `)}
+
+    ${Vcard('Recommended Action',`
+      <div class="recol v112-ai-actions">
+        <button onclick="go('inspection/${h.id}')">Continue regular inspection</button>
+        <button onclick="go('risk')">Monitor for swarm signs</button>
+      </div>
+    `)}
+
+    <button class="primary v112-ai-cta" onclick="go('recommendations')">View Recommendations</button>
+  </div>`;
 }
 function drawV48Actions(mode='Pending'){
   const box=idq('alist'); if(!box)return;

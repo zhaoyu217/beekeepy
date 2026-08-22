@@ -652,6 +652,46 @@ function markAllReadV49(){const s=v45s();s.v49NotificationReadAll=true;s.notific
 function notifications(r){r.innerHTML=`<div class="vs"><div class="filters"><button class="active" onclick="filterNotificationsV48('All',this)">All</button><button onclick="filterNotificationsV48('Alerts',this)">Alerts</button><button onclick="filterNotificationsV48('Reminders',this)">Reminders</button><button onclick="filterNotificationsV48('System',this)">System</button></div><section class="notifs" id="v48notifs"></section><button class="secondary" onclick="markAllReadV49()">Mark All Read</button></div>`;drawNotificationsV49('All')}
 
 
+
+/* V114 — restore the real Professional Recommendations renderer.
+   This must exist before V50 captures V50_OLD_RECO. */
+function recommendations(r){
+  const s=v45s();
+  const rows=[
+    {
+      title:'Varroa monitoring',
+      why:'Varroa level is trending upward in the current hive data.',
+      action:'Review mite count and treatment need.',
+      when:'Within 7 days',
+      route:'actions'
+    },
+    {
+      title:'Prepare for nectar flow',
+      why:'Seasonal conditions indicate an active forage period.',
+      action:'Review super capacity and food stores.',
+      when:'This week',
+      route:'season'
+    },
+    {
+      title:'Queen verification',
+      why:'Queen status should be confirmed during the next inspection.',
+      action:'Open inspection and verify queen status.',
+      when:'Next inspection',
+      route:`inspection/${s.hives[0]?.id||''}`
+    }
+  ];
+
+  r.innerHTML=`<div class="vs v114-recommendations-route">
+    ${rows.map(x=>`<section class="vc reco">
+      <div><span>What</span><b>${x.title}</b></div>
+      <div><span>Why</span><b>${x.why}</b></div>
+      <div><span>What to do</span><b>${x.action}</b></div>
+      <div><span>When</span><b>${x.when}</b></div>
+      <button onclick="go('${x.route}')">Open</button>
+    </section>`).join('')}
+  </div>`;
+}
+
 /* =========================================================
    V50 — RESILIENCE / EDGE-CASE AUDIT FIX
    No locked feature architecture, entry relationship, navigation,

@@ -493,8 +493,86 @@ function vSaveInspection(id){
 function barsV49(monthly){const max=Math.max(1,...monthly);return `<section class="vc"><div class="vhead"><b>Monthly Harvest (${v45s().settings.units==='metric'?'kg':'lb'})</b></div><div class="bars">${monthly.map((n,i)=>`<div><i style="height:${Math.max(2,n/max*75)}px"></i><span>${'JFMAMJJASOND'[i]}</span></div>`).join('')}</div></section>`}
 function openHarvestRecordViewV49(id){const s=v45s(),x=s.logs.harvests.find(y=>y.id===id);if(!x)return;const h=hive(s,x.hiveId);modal(`<div class="modalhead"><b>Harvest · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}% moisture<br>${x.frames||0} frames${x.batch?` · ${esc(x.batch)}`:''}</div><button class="primary" onclick="closeModal(this);go('hive/${x.hiveId}')">Open Hive</button>`)}
 function honeyPage(r){
-  const s=v45s(),logs=[...s.logs.harvests].sort((a,b)=>String(b.date).localeCompare(String(a.date))),total=logs.reduce((n,x)=>n+Number(x.weightLb||0),0),avg=logs.length?logs.reduce((n,x)=>n+Number(x.moisture||0),0)/logs.length:0,monthly=Array(12).fill(0);logs.forEach(x=>{const m=Number(String(x.date||'').slice(5,7))-1;if(m>=0&&m<12)monthly[m]+=Number(x.weightLb||0)});
-  r.innerHTML=`<div class="vs harvest"><div class="bgphoto" style="--hero:url('${V45.season}')"></div><div class="stats3"><div><span>Total Harvest</span><b>${formatWeight(total,s)}</b></div><div><span>Total Batches</span><b>${logs.length}</b></div><div><span>Avg Moisture</span><b>${avg.toFixed(1)}%</b></div></div>${barsV49(monthly)}${Vcard('Recent Harvests',`<div class="lines">${logs.slice(0,3).map(x=>`<button onclick="openHarvestRecordViewV49('${x.id}')"><span>${fmtDate(x.date)}</span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b><em>${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}%</em></button>`).join('')||'<div class="small muted">No harvest records yet.</div>'}</div>`)}<button class="primary" onclick="openHarvestHistory()">View All Harvest Records</button></div>`
+  const s=v45s();
+  const logs=[...s.logs.harvests].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+  const totalLb=logs.reduce((n,x)=>n+Number(x.weightLb||0),0);
+  const avg=logs.length?logs.reduce((n,x)=>n+Number(x.moisture||0),0)/logs.length:0;
+  const monthly=Array(12).fill(0);
+  logs.forEach(x=>{
+    const m=Number(String(x.date||'').slice(5,7))-1;
+    if(m>=0&&m<12)monthly[m]+=Number(x.weightLb||0);
+  });
+
+  const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
+  const totalDisplay=metric?(totalLb/2.20462):totalLb;
+  const unit=metric?'kg':'lb';
+  const maxMonth=Math.max(1,...monthly);
+  const monthLabels=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+
+  const recent=logs.slice(0,4).map(x=>{
+    const h=hive(s,x.hiveId);
+    const w=metric?Number(x.weightLb||0)/2.20462:Number(x.weightLb||0);
+    return `<button class="harvest-recent-row" onclick="openHarvestRecordViewV49('${x.id}')">
+      <span class="harvest-date">${fmtDate(x.date)}</span>
+      <span class="harvest-recent-main">
+        <b>${esc(h?.name||'Hive')}</b>
+        <small>${esc(x.batch||'Harvest batch')}</small>
+      </span>
+      <span class="harvest-recent-value">
+        <b>${w.toFixed(1)} ${unit}</b>
+        <small>${Number(x.moisture||0).toFixed(1)}% moisture</small>
+      </span>
+      <em>›</em>
+    </button>`;
+  }).join('') || `<div class="harvest-empty">
+    <b>No harvest records yet</b>
+    <span>Add your first harvest record to start tracking honey production.</span>
+  </div>`;
+
+  r.innerHTML=`<div class="vs harvest-main-v106">
+    <section class="harvest-hero-v106">
+      <div class="harvest-hero-overlay"></div>
+      <div class="harvest-hero-copy">
+        <span>Harvest Overview</span>
+        <b>${totalDisplay.toFixed(1)} ${unit}</b>
+        <small>Total recorded honey</small>
+      </div>
+      <button class="harvest-add-v106" onclick="go('harvest-record/${s.hives[0]?.id||''}')">＋ Add Harvest</button>
+    </section>
+
+    <section class="harvest-stats-v106">
+      <div><span>Total Harvest</span><b>${totalDisplay.toFixed(1)} ${unit}</b></div>
+      <div><span>Total Batches</span><b>${logs.length}</b></div>
+      <div><span>Avg Moisture</span><b>${logs.length?avg.toFixed(1):'—'}${logs.length?'%':''}</b></div>
+    </section>
+
+    <section class="harvest-card-v106">
+      <div class="harvest-card-head">
+        <div><b>Monthly Harvest</b><span>${new Date().getFullYear()}</span></div>
+        <small>${unit}</small>
+      </div>
+      <div class="harvest-bars-v106">
+        ${monthly.map((n,i)=>{
+          const display=metric?n/2.20462:n;
+          const h=Math.max(4,Math.round((n/maxMonth)*86));
+          return `<div class="harvest-bar-item">
+            <div class="harvest-bar-track"><i style="height:${h}px" title="${display.toFixed(1)} ${unit}"></i></div>
+            <span>${monthLabels[i][0]}</span>
+          </div>`;
+        }).join('')}
+      </div>
+    </section>
+
+    <section class="harvest-card-v106">
+      <div class="harvest-card-head">
+        <div><b>Recent Harvests</b><span>${logs.length} ${logs.length===1?'record':'records'}</span></div>
+        <button onclick="openHarvestHistory()">View All</button>
+      </div>
+      <div class="harvest-recent-list">${recent}</div>
+    </section>
+
+    <button class="harvest-primary-v106" onclick="go('harvest-record/${s.hives[0]?.id||''}')">＋ Add Harvest Record</button>
+  </div>`;
 }
 
 let V49_MAP_MODE='Apiaries',V49_MAP_ZOOM=false;

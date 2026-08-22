@@ -4303,3 +4303,44 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
 }
 .v110-map-zoom button+button{border-top:1px solid #E6E3DA!important}
 .v110-map-zoom button:active{background:#F5F3EC!important}
+
+
+/* ==============================================================
+   V111 — AI HEALTH ANALYSIS POLISH
+   Scope: AI Health Analysis only.
+   ============================================================== */
+.v111-ai-health{background:#F7F5EF;min-height:100vh}
+.v111-ai-main{padding:10px 12px 92px}
+.v111-ai-hero{
+  position:relative;min-height:178px;border-radius:18px;overflow:hidden;
+  background-image:var(--ai-photo);background-size:cover;background-position:center;
+  box-shadow:0 8px 22px rgba(47,59,51,.10);margin-bottom:10px
+}
+.v111-ai-hero-shade{position:absolute;inset:0;background:linear-gradient(90deg,rgba(31,45,35,.72),rgba(31,45,35,.25) 62%,rgba(31,45,35,.48))}
+.v111-ai-score{
+  position:absolute;left:14px;top:16px;width:70px;height:70px;border-radius:50%;
+  border:3px solid rgba(255,255,255,.92);background:rgba(255,255,255,.12);
+  backdrop-filter:blur(3px);display:flex;flex-direction:column;align-items:center;justify-content:center;color:#fff
+}
+.v111-ai-score strong{font-size:27px;line-height:1;font-weight:800}
+.v111-ai-score span{font-size:10px;margin-top:4px}
+.v111-ai-hero-copy{position:absolute;left:14px;bottom:15px;color:#fff}
+.v111-ai-hero-copy small{font-size:8px;letter-spacing:.08em;font-weight:700;opacity:.9}
+.v111-ai-hero-copy h2{font-size:18px;line-height:1.15;margin:3px 0 2px;color:#fff}
+.v111-ai-hero-copy p{font-size:9px;margin:0;opacity:.9}
+.v111-ai-risk{
+  position:absolute;right:12px;top:14px;padding:7px 9px;border-radius:11px;
+  background:rgba(255,255,255,.91);display:flex;gap:5px;align-items:baseline
+}
+.v111-ai-risk span{font-size:9px;color:#657168}.v111-ai-risk strong{font-size:12px;color:#4F7A53}
+.v111-ai-card,.v111-ai-detail-card{
+  background:#FFFEFB;border:1px solid #E5E0D5;border-radius:16px;padding:13px 14px;margin-top:10px;
+  box-shadow:0 3px 10px rgba(47,59,51,.04)
+}
+.v111-ai-card h3{font-size:14px;margin:0 0 9px;color:#17251D}
+.v111-ai-card ul{margin:0;padding-left:18px}.v111-ai-card li{font-size:11px;line-height:1.75;color:#2F3B33}
+.v111-ai-action{padding:11px 10px;border-radius:10px;background:#F5F3ED;font-size:11px;color:#17251D}
+.v111-ai-action+.v111-ai-action{margin-top:7px}
+.v111-ai-detail-card div{display:flex;flex-direction:column;gap:3px}
+.v111-ai-detail-card strong{font-size:11px;color:#2F3B33}
+.v111-ai-detail-card span{font-size:9px;color:#758078}

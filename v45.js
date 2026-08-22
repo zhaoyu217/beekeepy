@@ -47,7 +47,7 @@ function bars(){const v=[12,22,35,54,68,49,62,75,53,28,17,10];return `<section c
 function healthAnalysis(r){
   const s=v45s();
   const h=s.hives[0]||{id:'h1',name:'Hive #1'};
-  const photo=v101HivePrimaryPhoto(h);
+  const photo=V45.hive;
 
   r.innerHTML=`<div class="vs v112-ai-health">
     <section class="v112-ai-hero" style="--ai-photo:url('${photo}')">

@@ -4882,3 +4882,174 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
   line-height:1.4!important;
   color:#727B75!important;
 }
+
+
+/* ==============================================================
+   V124 — SEASON INTELLIGENCE REAL RULES + UI POLISH
+   Scope: Season page only.
+   ============================================================== */
+.v124-season-page{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:10px!important;
+  padding:10px 12px 96px!important;
+}
+.v124-season-hero{
+  padding:15px!important;
+  border-radius:16px!important;
+  background:#C5921A!important;
+  color:#FFFEFB!important;
+  box-shadow:0 5px 16px rgba(197,146,26,.18)!important;
+}
+.v124-season-hero>div:first-child{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:3px!important;
+}
+.v124-season-hero small{
+  font-size:8px!important;
+  font-weight:800!important;
+  letter-spacing:.08em!important;
+  color:rgba(255,255,255,.88)!important;
+}
+.v124-season-hero b{
+  font-size:22px!important;
+  line-height:1.05!important;
+  color:#FFFEFB!important;
+}
+.v124-season-hero span{
+  font-size:9px!important;
+  color:rgba(255,255,255,.92)!important;
+}
+.v124-season-context{
+  display:flex!important;
+  flex-wrap:wrap!important;
+  gap:6px!important;
+  margin-top:12px!important;
+}
+.v124-season-context span{
+  padding:6px 8px!important;
+  border-radius:999px!important;
+  background:rgba(255,255,255,.14)!important;
+  border:1px solid rgba(255,255,255,.20)!important;
+  font-size:8px!important;
+  font-weight:700!important;
+}
+.v124-season-context span.on{
+  background:#FFFEFB!important;
+  color:#8B6712!important;
+  border-color:#FFFEFB!important;
+}
+.v124-season-section,
+.v124-season-source{
+  border:1px solid #E5E0D5!important;
+  border-radius:15px!important;
+  background:#FFFEFB!important;
+  box-shadow:0 3px 10px rgba(47,59,51,.04)!important;
+}
+.v124-season-section{padding:13px!important}
+.v124-season-head{
+  display:flex!important;
+  align-items:flex-start!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  margin-bottom:10px!important;
+}
+.v124-season-head>div{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:2px!important;
+}
+.v124-season-head b{font-size:13px!important;color:#24342B!important}
+.v124-season-head small{font-size:8px!important;line-height:1.35!important;color:#737D76!important}
+.v124-season-head>span{
+  flex:0 0 auto!important;
+  padding:5px 8px!important;
+  border-radius:999px!important;
+  background:#F5F1E6!important;
+  color:#8B6712!important;
+  font-size:8px!important;
+  font-weight:800!important;
+}
+.v124-season-actions{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:8px!important;
+}
+.v124-season-action{
+  padding:11px!important;
+  border:1px solid #E8E4DA!important;
+  border-radius:12px!important;
+  background:#FAF9F5!important;
+}
+.v124-season-action.priority{
+  border-color:#E7CF94!important;
+  background:#FFF9EA!important;
+}
+.v124-season-action-top{
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:flex-start!important;
+  gap:10px!important;
+}
+.v124-season-action-top>div{
+  min-width:0!important;
+  display:flex!important;
+  flex-direction:column!important;
+  gap:3px!important;
+}
+.v124-season-action-top b{font-size:11px!important;color:#223229!important}
+.v124-season-action-top span{font-size:9px!important;line-height:1.35!important;color:#5F6962!important}
+.v124-season-action-top em{
+  flex:0 0 auto!important;
+  padding:5px 8px!important;
+  border-radius:999px!important;
+  background:#F0EEE8!important;
+  color:#677168!important;
+  font-size:8px!important;
+  font-style:normal!important;
+  font-weight:800!important;
+}
+.v124-season-action.priority .v124-season-action-top em{
+  background:#F4E5B9!important;
+  color:#8B6712!important;
+}
+.v124-season-action>small{
+  display:block!important;
+  margin-top:8px!important;
+  padding-top:8px!important;
+  border-top:1px solid #ECE8DF!important;
+  font-size:8px!important;
+  line-height:1.4!important;
+  color:#7A837C!important;
+}
+.v124-season-empty{
+  min-height:110px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  text-align:center!important;
+}
+.v124-season-empty b{font-size:12px!important;color:#2F3B33!important}
+.v124-season-empty span{max-width:270px!important;font-size:9px!important;line-height:1.45!important;color:#758078!important}
+.v124-season-source{
+  display:flex!important;
+  justify-content:space-between!important;
+  align-items:flex-start!important;
+  gap:12px!important;
+  padding:12px 13px!important;
+}
+.v124-season-source>div{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:3px!important;
+}
+.v124-season-source b{font-size:10px!important;color:#2F3B33!important}
+.v124-season-source span,
+.v124-season-source small{font-size:8px!important;line-height:1.35!important;color:#737D76!important}
+.v124-season-source>small{
+  max-width:120px!important;
+  text-align:right!important;
+}

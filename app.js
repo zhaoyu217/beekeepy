@@ -1281,9 +1281,159 @@ function honeyPage(r){
   const monthly=Array(12).fill(0);logs.forEach(x=>{const m=Number(String(x.date||'').slice(5,7))-1;if(m>=0&&m<12)monthly[m]+=Number(x.weightLb||0)});const max=Math.max(1,...monthly);
   r.innerHTML=`<div class="master-screen harvest-master"><div class="year-master"><button type="button" onclick="openHarvestYearPicker()">${year===new Date().getFullYear()?'This Year':year}⌄</button></div><div class="harvest-stats-master"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${logs.length}</b></div><div><small>Avg Moisture</small><b>${avg.toFixed(1)}%</b></div></div><section class="detail-section-master"><div class="master-section-title">Harvest Over Time (${s.settings.units==='metric'?'kg':'lb'})</div><div class="bar-master">${monthly.map((v,i)=>`<div><i style="height:${Math.max(2,v/max*100)}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section><section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button type="button" onclick="openHarvestHistory(${year})">View All</button></div><div class="batch-master">${logs.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches for this year.</small>'}</div></section></div>`
 }
+function v124MonthIndex(name){
+  const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};
+  return months[String(name||'').trim().slice(0,3).toLowerCase()] ?? null;
+}
+
+function v124MonthInRange(range,monthIndex){
+  const parts=String(range||'').replace(/[–—]/g,'-').split('-').map(x=>x.trim()).filter(Boolean);
+  if(parts.length<2)return false;
+  const a=v124MonthIndex(parts[0]),b=v124MonthIndex(parts[1]);
+  if(a===null || b===null)return false;
+  return a<=b ? monthIndex>=a && monthIndex<=b : monthIndex>=a || monthIndex<=b;
+}
+
+function v124AutoSeason(monthIndex){
+  if(monthIndex>=2 && monthIndex<=4)return 'Spring';
+  if(monthIndex>=5 && monthIndex<=7)return 'Summer';
+  if(monthIndex>=8 && monthIndex<=10)return 'Fall';
+  return 'Winter';
+}
+
+function v124SeasonAssessment(s,now=new Date()){
+  const seasonal={
+    mode:'Auto',
+    nectar:true,
+    swarm:'Apr – Jul',
+    varroa:'Aug – Oct',
+    feeding:'Aug – Oct',
+    winter:'Oct – Feb',
+    super:'Auto',
+    focus:'Auto',
+    ...((s.settings&&s.settings.seasonal)||{})
+  };
+  const month=now.getMonth();
+  const season=seasonal.mode && seasonal.mode!=='Auto' ? seasonal.mode : v124AutoSeason(month);
+  const inVarroa=v124MonthInRange(seasonal.varroa,month);
+  const inFeeding=v124MonthInRange(seasonal.feeding,month);
+  const inSwarm=v124MonthInRange(seasonal.swarm,month);
+  const inWinter=v124MonthInRange(seasonal.winter,month);
+
+  const hives=s.hives||[];
+  const miteHives=hives.filter(h=>Number(h.varroa)>=3);
+  const foodHives=hives.filter(h=>String(h.honey||'').toLowerCase()==='low' || String(h.pollen||'').toLowerCase()==='low');
+  const queenHives=hives.filter(h=>String(h.queen||'').toLowerCase()!=='confirmed');
+
+  const actions=[];
+
+  if(miteHives.length){
+    actions.push({
+      key:'mites',
+      title:'Monitor mites closely',
+      detail:`${miteHives.length} ${miteHives.length===1?'hive has':'hives have'} elevated Varroa.`,
+      context:inVarroa ? `${seasonal.varroa} is your configured Varroa season.` : `Elevated mite counts need follow-up even outside the configured Varroa season.`,
+      priority:inVarroa || seasonal.focus==='Varroa' ? 'Priority' : 'Action',
+      level:inVarroa || seasonal.focus==='Varroa' ? 3 : 2,
+      hiveIds:miteHives.map(h=>h.id)
+    });
+  }
+
+  if(foodHives.length){
+    actions.push({
+      key:'food',
+      title:'Review food stores',
+      detail:`${foodHives.length} ${foodHives.length===1?'hive has':'hives have'} low honey or pollen stores.`,
+      context:inFeeding ? `${seasonal.feeding} is your configured feeding season.` : `Review stores before the next inspection or seasonal transition.`,
+      priority:inFeeding ? 'Priority' : 'Action',
+      level:inFeeding ? 3 : 2,
+      hiveIds:foodHives.map(h=>h.id)
+    });
+  }
+
+  if(queenHives.length){
+    actions.push({
+      key:'queen',
+      title:'Confirm queen status',
+      detail:`${queenHives.length} ${queenHives.length===1?'hive has':'hives have'} an unconfirmed queen status.`,
+      context:seasonal.focus==='Queen' ? `Queen is the configured seasonal inspection focus.` : `Recheck queen status at the next inspection.`,
+      priority:seasonal.focus==='Queen' ? 'Priority' : 'Action',
+      level:seasonal.focus==='Queen' ? 3 : 2,
+      hiveIds:queenHives.map(h=>h.id)
+    });
+  }
+
+  actions.sort((a,b)=>b.level-a.level || a.title.localeCompare(b.title));
+
+  return {
+    season,
+    monthLabel:now.toLocaleDateString('en-US',{month:'long'}),
+    seasonal,
+    flags:{inVarroa,inFeeding,inSwarm,inWinter},
+    actions
+  };
+}
+
 function seasonPage(r){
-  const s=state();if(!isPro(s)){subscriptionModal('Season Intelligence');go('home');return}
-  r.innerHTML=`<section><div class="h1" style="margin-top:12px">Season Intelligence</div><div class="tiny muted">${esc(s.settings.location)} · ${new Date().toLocaleDateString('en-US',{month:'long'})}</div></section><section class="setting"><div class="srow"><div class="scopy"><b>Monitor mites closely</b><div class="tiny muted">Prioritize colonies with elevated Varroa or overdue checks.</div></div><span class="pill warn">Priority</span></div><div class="srow"><div class="scopy"><b>Review food stores</b><div class="tiny muted">Follow up on low honey or pollen stores before the next seasonal transition.</div></div></div><div class="srow"><div class="scopy"><b>Confirm queen status</b><div class="tiny muted">Recheck colonies where queen status remains uncertain.</div></div></div></section><div class="notice">V9 uses date, location setting and hive records. Real weather/bloom APIs are still required for production-grade recommendations.</div>`
+  const s=state();
+  if(!isPro(s)){subscriptionModal('Season Intelligence');go('home');return}
+
+  const a=v124SeasonAssessment(s);
+  const location=s.settings?.location||'Location not set';
+  const primary=a.actions[0]||null;
+
+  r.innerHTML=`<div class="v124-season-page">
+    <section class="v124-season-hero">
+      <div>
+        <small>SEASON CONTEXT</small>
+        <b>${esc(a.season)}</b>
+        <span>${esc(location)} · ${esc(a.monthLabel)}</span>
+      </div>
+      <div class="v124-season-context">
+        <span class="${a.flags.inVarroa?'on':''}">Varroa</span>
+        <span class="${a.flags.inFeeding?'on':''}">Feeding</span>
+        <span class="${a.flags.inSwarm?'on':''}">Swarm</span>
+        <span class="${a.flags.inWinter?'on':''}">Winter prep</span>
+      </div>
+    </section>
+
+    <section class="v124-season-section">
+      <div class="v124-season-head">
+        <div>
+          <b>Seasonal actions</b>
+          <small>Based on current hive records and your Seasonal Settings.</small>
+        </div>
+        ${primary?`<span>${a.actions.length} active</span>`:''}
+      </div>
+
+      ${a.actions.length ? `
+        <div class="v124-season-actions">
+          ${a.actions.map(x=>`
+            <article class="v124-season-action ${x.priority==='Priority'?'priority':''}">
+              <div class="v124-season-action-top">
+                <div>
+                  <b>${esc(x.title)}</b>
+                  <span>${esc(x.detail)}</span>
+                </div>
+                <em>${esc(x.priority)}</em>
+              </div>
+              <small>${esc(x.context)}</small>
+            </article>`).join('')}
+        </div>` : `
+        <div class="v124-season-empty">
+          <b>No urgent seasonal actions</b>
+          <span>Current hive records do not trigger any mite, food-store, or queen-status action.</span>
+        </div>`}
+    </section>
+
+    <section class="v124-season-source">
+      <div>
+        <b>What this uses</b>
+        <span>Current hive records · ${esc(a.monthLabel)} · Seasonal Settings</span>
+      </div>
+      <small>Weather and bloom forecasts are not included.</small>
+    </section>
+  </div>`;
 }
 
 const HIVE_DETAIL_HERO_PHOTOS=[

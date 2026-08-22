@@ -640,65 +640,229 @@ function mapPage(r){
 
 let V49_TREND_RANGE='30D';
 function setTrendRangeV49(range,btn){V49_TREND_RANGE=range;selectTab(btn);toast(range+' trend range selected')}
+function v119TrendStart(range,now=new Date()){
+  const end=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,999);
+  let start;
+  if(range==='7D'){
+    start=new Date(end); start.setDate(start.getDate()-6); start.setHours(0,0,0,0);
+  }else if(range==='30D'){
+    start=new Date(end); start.setDate(start.getDate()-29); start.setHours(0,0,0,0);
+  }else if(range==='90D'){
+    start=new Date(end); start.setDate(start.getDate()-89); start.setHours(0,0,0,0);
+  }else{
+    start=new Date(end.getFullYear(),0,1,0,0,0,0);
+  }
+  return {start,end};
+}
+
+function v119DateValue(v){
+  if(!v)return null;
+  const d=new Date(String(v).slice(0,10)+'T12:00:00');
+  return Number.isNaN(d.getTime())?null:d;
+}
+
+function v119EnumValue(v,map){
+  const key=String(v||'').trim().toLowerCase();
+  return Object.prototype.hasOwnProperty.call(map,key)?map[key]:null;
+}
+
+function v119InspectionHealth(x){
+  const vals=[];
+  const strength=Number(x.strength);
+  if(Number.isFinite(strength) && strength>=0 && strength<=10)vals.push(strength*10);
+
+  const brood=v119EnumValue(x.brood,{excellent:100,good:82,fair:60,poor:35});
+  if(brood!==null)vals.push(brood);
+
+  const honey=v119EnumValue(x.honey,{high:100,medium:70,low:40,none:10});
+  const pollen=v119EnumValue(x.pollen,{high:100,medium:70,low:40,none:10});
+  if(honey!==null || pollen!==null){
+    const stores=[honey,pollen].filter(v=>v!==null);
+    vals.push(stores.reduce((a,b)=>a+b,0)/stores.length);
+  }
+
+  const varroa=Number(x.varroa);
+  if(Number.isFinite(varroa) && varroa>=0){
+    vals.push(varroa<=1?95:varroa<=2?80:varroa<=3?62:varroa<=4?44:25);
+  }
+
+  const queen=v119EnumValue(x.queenStatus,{confirmed:95,'not confirmed':55,unknown:50,missing:20,absent:20});
+  if(queen!==null)vals.push(queen);
+
+  // Strict rule: do not manufacture a score from a fragmentary legacy record.
+  if(vals.length<3)return null;
+  return Math.round(vals.reduce((a,b)=>a+b,0)/vals.length);
+}
+
+function v119MetricPoint(x,key){
+  if(key==='health')return v119InspectionHealth(x);
+  if(key==='varroa'){
+    const n=Number(x.varroa); return Number.isFinite(n)&&n>=0?n:null;
+  }
+  if(key==='stores'){
+    const a=v119EnumValue(x.honey,{high:3,medium:2,low:1,none:0});
+    const b=v119EnumValue(x.pollen,{high:3,medium:2,low:1,none:0});
+    const vals=[a,b].filter(v=>v!==null);
+    return vals.length?vals.reduce((m,n)=>m+n,0)/vals.length:null;
+  }
+  if(key==='brood')return v119EnumValue(x.brood,{excellent:4,good:3,fair:2,poor:1});
+  if(key==='queen'){
+    const q=String(x.queenStatus||'').trim().toLowerCase();
+    if(!q)return null;
+    return q==='confirmed'?1:0;
+  }
+  return null;
+}
+
+function v119Series(rows,key){
+  const grouped={};
+  rows.forEach(x=>{
+    const d=String(x.date||'').slice(0,10);
+    const v=v119MetricPoint(x,key);
+    if(!d || v===null || !Number.isFinite(v))return;
+    (grouped[d]||(grouped[d]=[])).push(v);
+  });
+  return Object.keys(grouped).sort().map(date=>{
+    const a=grouped[date];
+    return {date,value:a.reduce((m,n)=>m+n,0)/a.length,count:a.length};
+  });
+}
+
+function v119TrendStatus(series,threshold,invert=false){
+  if(series.length<2)return {label:'Not enough history',cls:'muted',delta:null};
+  const first=series[0].value,last=series[series.length-1].value,delta=last-first;
+  if(Math.abs(delta)<threshold)return {label:'Stable',cls:'stable',delta};
+  const up=delta>0;
+  const positive=invert?!up:up;
+  return {label:(up?'↑ ':'↓ ')+Math.abs(delta).toFixed(1),cls:positive?'good':'bad',delta};
+}
+
+function v119MetricText(key,series){
+  if(series.length<2)return 'Not enough history';
+  const v=series[series.length-1].value;
+  if(key==='health')return Math.round(v).toString();
+  if(key==='varroa')return v.toFixed(1);
+  if(key==='stores')return v>=2.5?'High':v>=1.5?'Medium':'Low';
+  if(key==='brood')return v>=3.5?'Excellent':v>=2.5?'Good':v>=1.5?'Fair':'Poor';
+  if(key==='queen')return Math.round(v*100)+'%';
+  return '—';
+}
+
+function v119HealthChart(series){
+  if(series.length<2){
+    return `<div class="v119-chart-empty"><b>Not enough history</b><span>At least two dated inspections with sufficient health fields are required in this range.</span></div>`;
+  }
+  const w=320,h=130,pad=16;
+  const vals=series.map(x=>x.value);
+  let min=Math.min(...vals),max=Math.max(...vals);
+  if(max-min<10){min=Math.max(0,min-5);max=Math.min(100,max+5)}
+  const t0=v119DateValue(series[0].date).getTime();
+  const t1=v119DateValue(series[series.length-1].date).getTime();
+  const span=Math.max(1,t1-t0);
+  const pts=series.map(x=>{
+    const t=v119DateValue(x.date).getTime();
+    const px=pad+((t-t0)/span)*(w-pad*2);
+    const py=h-pad-((x.value-min)/Math.max(1,max-min))*(h-pad*2);
+    return {x:px,y:py,...x};
+  });
+  const line=pts.map(p=>`${p.x.toFixed(1)},${p.y.toFixed(1)}`).join(' ');
+  const first=series[0],last=series[series.length-1];
+  return `<div class="v119-chart-wrap">
+    <svg class="v119-chart" viewBox="0 0 ${w} ${h}" preserveAspectRatio="none" aria-label="Health score trend">
+      <line x1="${pad}" y1="${h-pad}" x2="${w-pad}" y2="${h-pad}" class="axis"/>
+      <polyline points="${line}" class="trendline"/>
+      ${pts.map(p=>`<circle cx="${p.x.toFixed(1)}" cy="${p.y.toFixed(1)}" r="3.2"/>`).join('')}
+    </svg>
+    <div class="v119-chart-labels"><span>${fmtDate(first.date)}</span><span>${fmtDate(last.date)}</span></div>
+  </div>`;
+}
+
 function trendPage(r){
   const s=v45s();
-  const score=avgHealth(s);
-  const avgVar=s.hives.length
-    ? s.hives.reduce((n,h)=>n+Number(h.varroa||0),0)/s.hives.length
-    : 0;
-  const avgHoney=s.hives.length
-    ? s.hives.filter(h=>h.honey==='High').length/s.hives.length*10
-    : 0;
+  const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
+  const allowedIds=new Set(allowedHives.map(h=>h.id));
+  const {start,end}=v119TrendStart(V49_TREND_RANGE);
+
+  // Timeline's Inspection events come from this same source of truth.
+  const rows=(s.logs?.inspections||[])
+    .filter(x=>allowedIds.has(x.hiveId))
+    .filter(x=>{
+      const d=v119DateValue(x.date);
+      return d && d>=start && d<=end;
+    })
+    .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+
+  const series={
+    health:v119Series(rows,'health'),
+    varroa:v119Series(rows,'varroa'),
+    stores:v119Series(rows,'stores'),
+    brood:v119Series(rows,'brood'),
+    queen:v119Series(rows,'queen')
+  };
+
+  const trend={
+    health:v119TrendStatus(series.health,3,false),
+    varroa:v119TrendStatus(series.varroa,.35,true),
+    stores:v119TrendStatus(series.stores,.2,false),
+    brood:v119TrendStatus(series.brood,.2,false),
+    queen:v119TrendStatus(series.queen,.12,false)
+  };
 
   const metrics=[
-    ['Health Score',score,'Overall colony health'],
-    ['Varroa Level',avgVar.toFixed(1),'Average mite level'],
-    ['Colony Size',s.hives.length,'Hives monitored'],
-    ['Food Stores',avgHoney.toFixed(1),'Relative store level'],
-    ['Brood Pattern',s.hives.filter(h=>h.brood==='Excellent'||h.brood==='Good').length,'Good / excellent'],
-    ['Queen Status',s.hives.filter(h=>h.queen==='Confirmed').length+'/'+s.hives.length,'Confirmed queens']
+    ['Health Score','health','Derived only from sufficiently complete inspection records.'],
+    ['Varroa Level','varroa','Average recorded mite level.'],
+    ['Food Stores','stores','Average honey + pollen store rating.'],
+    ['Brood Pattern','brood','Average recorded brood quality.'],
+    ['Queen Status','queen','Share of inspections with queen confirmed.']
   ];
 
-  r.innerHTML=`<div class="vs v118-health-trends">
-    <section class="v118-trend-summary">
+  const usableHealth=series.health.length;
+  const scopeText=`${rows.length} inspection ${rows.length===1?'record':'records'} · ${allowedHives.length} ${allowedHives.length===1?'hive':'hives'} in scope`;
+
+  r.innerHTML=`<div class="vs v119-health-trends">
+    <section class="v119-trend-summary">
       <div>
         <small>HEALTH TRENDS</small>
         <b>${V49_TREND_RANGE}</b>
-        <span>Current apiary health overview</span>
+        <span>${esc(scopeText)}</span>
       </div>
-      <strong>${score}</strong>
+      <strong>${usableHealth>=2?v119MetricText('health',series.health):'—'}</strong>
     </section>
 
-    <div class="filters v118-trend-ranges">
-      <button onclick="setTrendRangeV118('7D',this)">7D</button>
-      <button class="${V49_TREND_RANGE==='30D'?'active':''}" onclick="setTrendRangeV118('30D',this)">30D</button>
-      <button onclick="setTrendRangeV118('90D',this)">90D</button>
-      <button onclick="setTrendRangeV118('Season',this)">Season</button>
+    <div class="filters v119-trend-ranges">
+      ${['7D','30D','90D','Season'].map(x=>`<button class="${V49_TREND_RANGE===x?'active':''}" onclick="setTrendRangeV119('${x}')">${x}</button>`).join('')}
     </div>
 
-    <section class="v118-trend-grid">
-      ${metrics.map(([label,value,note])=>`
-        <div class="v118-trend-card">
-          <span>${label}</span>
-          <b>${value}</b>
-          <small>${note}</small>
-        </div>`).join('')}
+    <section class="vc v119-chart-card">
+      <div class="vhead"><b>Health Score</b><span>${usableHealth>=2?trend.health.label:'Not enough history'}</span></div>
+      ${v119HealthChart(series.health)}
     </section>
 
-    <section class="vc v118-trend-note">
-      <b>Trend data</b>
-      <span>Metrics reflect the current Hive records available in HiveDash.</span>
+    <section class="v119-trend-grid">
+      ${metrics.map(([label,key,note])=>{
+        const st=trend[key];
+        return `<div class="v119-trend-card">
+          <span>${label}</span>
+          <b>${v119MetricText(key,series[key])}</b>
+          <em class="${st.cls}">${st.label}</em>
+          <small>${note}</small>
+        </div>`;
+      }).join('')}
+    </section>
+
+    <section class="vc v119-source-note">
+      <b>Data source</b>
+      <span>Uses dated Inspection records shown in Timeline. Range filters never create synthetic history.</span>
+      <span>${isPro(s)?'Pro scope: all hives.':'Free scope: Hive #1–#3 only.'}</span>
     </section>
   </div>`;
 }
 
-function setTrendRangeV118(range,btn){
+function setTrendRangeV119(range){
   V49_TREND_RANGE=range;
-  document.querySelectorAll('.v118-trend-ranges button').forEach(b=>b.classList.remove('active'));
-  if(btn)btn.classList.add('active');
-  const label=document.querySelector('.v118-trend-summary b');
-  if(label)label.textContent=range;
+  trendPage(idq('view'));
 }
+
 
 
 /* =========================================================

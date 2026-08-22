@@ -4512,3 +4512,96 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
 }
 .v118-trend-note b{font-size:11px!important}
 .v118-trend-note span{font-size:9px!important;color:#6B736D!important}
+
+
+/* ==============================================================
+   V119 — HEALTH TRENDS REAL DATA
+   Historical Inspection/Timeline data only. No synthetic history.
+   ============================================================== */
+.v119-health-trends{
+  gap:10px!important;
+  padding:10px 12px 104px!important;
+}
+.v119-trend-summary{
+  min-height:110px!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  padding:16px!important;
+  border-radius:16px!important;
+  background:#5E7350!important;
+  color:#FFFEFB!important;
+  box-shadow:0 5px 16px rgba(47,59,51,.10)!important;
+}
+.v119-trend-summary>div{display:flex!important;flex-direction:column!important;gap:3px!important}
+.v119-trend-summary small{font-size:8px!important;letter-spacing:.08em!important}
+.v119-trend-summary b{font-size:16px!important;color:#FFFEFB!important}
+.v119-trend-summary span{font-size:8.5px!important;opacity:.92!important}
+.v119-trend-summary>strong{font-size:32px!important;color:#FFFEFB!important}
+.v119-trend-ranges{
+  display:grid!important;
+  grid-template-columns:repeat(4,minmax(0,1fr))!important;
+  gap:7px!important;
+}
+.v119-trend-ranges button{
+  min-height:36px!important;
+  border:1px solid #E5E0D5!important;
+  border-radius:999px!important;
+  background:#FFFEFB!important;
+  color:#5E7350!important;
+  font-size:9px!important;
+  font-weight:700!important;
+}
+.v119-trend-ranges button.active{background:#5E7350!important;color:#FFFEFB!important;border-color:#5E7350!important}
+.v119-chart-card{padding:12px 13px!important}
+.v119-chart-card .vhead span{font-size:9px!important;color:#6B736D!important}
+.v119-chart-wrap{padding-top:5px!important}
+.v119-chart{width:100%!important;height:132px!important;overflow:visible!important}
+.v119-chart .axis{stroke:#DADDD4!important;stroke-width:1!important}
+.v119-chart .trendline{fill:none!important;stroke:#C5921A!important;stroke-width:3!important;stroke-linecap:round!important;stroke-linejoin:round!important}
+.v119-chart circle{fill:#FFFEFB!important;stroke:#C5921A!important;stroke-width:2!important}
+.v119-chart-labels{display:flex!important;justify-content:space-between!important;font-size:8px!important;color:#778079!important}
+.v119-chart-empty{
+  min-height:126px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  text-align:center!important;
+}
+.v119-chart-empty b{font-size:12px!important;color:#2F3B33!important}
+.v119-chart-empty span{max-width:250px!important;font-size:9px!important;line-height:1.45!important;color:#778079!important}
+.v119-trend-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.v119-trend-card{
+  min-height:116px!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  gap:4px!important;
+  padding:12px!important;
+  border:1px solid #E5E0D5!important;
+  border-radius:14px!important;
+  background:#FFFEFB!important;
+  box-shadow:0 3px 10px rgba(47,59,51,.04)!important;
+}
+.v119-trend-card span{font-size:9px!important;color:#6B736D!important}
+.v119-trend-card b{font-size:16px!important;line-height:1.2!important;color:#2F3B33!important}
+.v119-trend-card em{font-size:9px!important;font-style:normal!important;font-weight:700!important}
+.v119-trend-card em.good{color:#5E7350!important}
+.v119-trend-card em.bad{color:#B9534F!important}
+.v119-trend-card em.stable{color:#8A7A43!important}
+.v119-trend-card em.muted{color:#858B86!important;font-weight:600!important}
+.v119-trend-card small{font-size:8px!important;line-height:1.35!important;color:#7B827C!important}
+.v119-source-note{
+  display:flex!important;
+  flex-direction:column!important;
+  gap:4px!important;
+  padding:12px!important;
+}
+.v119-source-note b{font-size:11px!important}
+.v119-source-note span{font-size:8.5px!important;line-height:1.4!important;color:#6B736D!important}

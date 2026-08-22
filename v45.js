@@ -4,11 +4,44 @@
 const V45={
   home:'assets/home_apiary.jpg',hives:'assets/hives_apiary.jpg',hive:'assets/hive_detail.jpg',actions:'assets/actions_field.jpg',inspection:'assets/inspection_beekeeper.jpg',feeding:'assets/feeding_bucket.jpg',treatment:'assets/treatment_apiary.jpg',harvest:'assets/harvest_honey.jpg',flowers:'assets/flowers.jpg',honeycomb:'assets/honeycomb.jpg',settings:'assets/settings_apiary.jpg',season:'assets/season_apiary.jpg',map:'assets/map_bg.jpg',insights:'assets/insights_bee.jpg'
 };
-function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';s.settings.location=s.settings.location||'Colorado, USA';s.hives=s.hives||[];[
-{id:'h4',name:'Willow Creek',score:84,status:'Healthy',queen:'Confirmed',eggs:true,larvae:true,queenCells:false,brood:'Good',strength:'Strong',honey:'High',pollen:'High',varroa:1,superStatus:'Installed',lastInspection:'2026-08-12',notes:'Calm and productive.'},
-{id:'h5',name:'South Field #2',score:76,status:'Healthy',queen:'Confirmed',eggs:true,larvae:true,queenCells:false,brood:'Good',strength:'Medium',honey:'Medium',pollen:'Medium',varroa:2,superStatus:'Installed',lastInspection:'2026-08-10',notes:'Good nectar intake.'},
-{id:'h6',name:'East Field #1',score:61,status:'Attention',queen:'Not confirmed',eggs:true,larvae:true,queenCells:false,brood:'Fair',strength:'Medium',honey:'Medium',pollen:'Low',varroa:3,superStatus:'Installed',lastInspection:'2026-08-06',notes:'Queen confirmation needed.'}
-].forEach(h=>{if(!s.hives.some(x=>x.id===h.id))s.hives.push(h)});return s}
+
+function v121CleanupDemoHives(s){
+  if(!s || s.meta?.v121DemoHiveCleanup)return s;
+
+  const demo={
+    h4:'Willow Creek',
+    h5:'South Field #2',
+    h6:'East Field #1'
+  };
+
+  const removedIds=new Set(
+    (s.hives||[])
+      .filter(h=>demo[h.id]===h.name)
+      .map(h=>h.id)
+  );
+
+  if(removedIds.size){
+    s.hives=(s.hives||[]).filter(h=>!removedIds.has(h.id));
+
+    if(s.logs){
+      ['inspections','feedings','treatments','harvests'].forEach(k=>{
+        if(Array.isArray(s.logs[k])){
+          s.logs[k]=s.logs[k].filter(x=>!removedIds.has(x.hiveId));
+        }
+      });
+    }
+
+    if(Array.isArray(s.actions)){
+      s.actions=s.actions.filter(x=>!removedIds.has(x.hiveId));
+    }
+  }
+
+  s.meta=s.meta||{};
+  s.meta.v121DemoHiveCleanup=true;
+  save(s);
+  return s;
+}
+function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';s.settings.location=s.settings.location||'Colorado, USA';s.hives=s.hives||[];v121CleanupDemoHives(s);return s}
 function vh(id){const s=v45s();return hive(s,id)||s.hives[0]}
 function vphoto(h,i=0){return v101HivePrimaryPhoto(h)}
 function Vcard(title,body,action=''){return `<section class="vc"><div class="vhead"><b>${title}</b>${action}</div>${body}</section>`}

@@ -3631,3 +3631,19 @@ body>.modal{
  .feeding-hive-card>img{width:68px;height:68px}
  .feeding-section-v98 label{grid-template-columns:96px 1fr}
 }
+
+
+/* ==============================================================
+   V99 — FEEDING RECORD BOTTOM CLEARANCE FIX
+   Scope: Feeding Record only.
+   Keeps the Save Record button fully scrollable above the fixed
+   bottom navigation.
+   ============================================================== */
+
+.feeding-v98{
+  padding-bottom:104px!important;
+}
+
+.feeding-v98 .feeding-save-v98{
+  margin-bottom:8px!important;
+}

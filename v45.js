@@ -154,7 +154,13 @@ function recordPage(r,type,id){
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
     const qtyUnit=metric?'L':'qt';
     const qtyValue=metric?'2.0':'2.1';
-    const hivePhoto=active?.photo||V45.hive;
+    const hivePhotoIndex=Math.max(0,s.hives.findIndex(x=>x.id===active.id));
+    const cleanHivePhotos=[
+      'assets/hive_detail_hero.jpg',
+      V45.hives,
+      V45.home
+    ];
+    const hivePhoto=cleanHivePhotos[hivePhotoIndex%cleanHivePhotos.length]||'assets/hive_detail_hero.jpg';
 
     r.innerHTML=`<div class="vs feeding-v98">
       <section class="feeding-hive-card">

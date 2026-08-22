@@ -3597,3 +3597,37 @@ body>.modal{
   background:rgba(47,59,51,.46)!important;
   backdrop-filter:blur(2px)!important;
 }
+
+/* ==============================================================
+   V98 — FEEDING RECORD POLISH
+   Feeding page only. Approved visual hierarchy + CTA semantics.
+   ============================================================== */
+.feeding-v98{gap:10px!important;padding-bottom:12px!important}
+.feeding-hive-card{display:grid;grid-template-columns:82px 1fr 104px;gap:10px;align-items:center;padding:9px;background:#FFFEFB;border:1px solid #E6E3DA;border-radius:14px;box-shadow:0 3px 12px rgba(47,59,51,.05)}
+.feeding-hive-card>img{width:82px;height:82px;object-fit:cover;border-radius:11px}
+.feeding-hive-copy{display:flex;flex-direction:column;align-items:flex-start;gap:5px;min-width:0}
+.feeding-hive-copy>b{font-size:16px;color:#2F3B33}
+.feeding-hive-copy>span{font-size:10px;color:#6B736D}
+.feeding-hive-copy>em{padding:5px 9px;border-radius:999px;background:rgba(94,115,80,.10);color:#5E7350;font-size:9px;font-weight:800;font-style:normal}
+.feeding-hive-card>select{width:100%;height:38px;padding:0 8px;border:1px solid #D9D3C5;border-radius:9px;background:#FFFEFB;color:#2F3B33;font-size:9px;font-weight:700}
+.feeding-form-v98{display:grid;gap:10px}
+.feeding-section-v98{padding:10px 12px;background:#FFFEFB;border:1px solid #E6E3DA;border-radius:14px;box-shadow:0 3px 12px rgba(47,59,51,.04)}
+.feeding-section-v98 h3{display:flex;align-items:center;gap:7px;margin:0 0 5px;color:#5E7350;font-size:11px;letter-spacing:.1px}
+.feeding-section-v98 h3 i{display:grid;place-items:center;width:25px;height:25px;border-radius:50%;background:#5E7350;color:#FFFEFB;font-size:11px;font-style:normal}
+.feeding-section-v98 label{display:grid;grid-template-columns:120px 1fr;gap:10px;align-items:center;min-height:48px;border-bottom:1px solid #E6E3DA}
+.feeding-section-v98 label:last-child{border-bottom:0}
+.feeding-section-v98 label>span{font-size:10px;font-weight:700;color:#2F3B33}
+.feeding-section-v98 input,.feeding-section-v98 select,.feeding-section-v98 textarea{width:100%;min-height:36px;padding:7px 9px;border:1px solid #D9D3C5;border-radius:9px;background:#FFFEFB;color:#2F3B33;font-size:10px;box-sizing:border-box}
+.feeding-qty>div{display:grid;grid-template-columns:1fr 68px;gap:6px}
+.feeding-notes-v98 label{align-items:start;padding-top:6px}
+.note-wrap-v98{position:relative}
+.note-wrap-v98 textarea{min-height:78px;resize:vertical;padding-bottom:22px}
+.note-wrap-v98 small{position:absolute;right:9px;bottom:7px;font-size:8px;color:#6B736D}
+.feeding-time-note{display:flex;gap:7px;align-items:center;padding:9px 11px;border:1px solid #E6E3DA;border-radius:10px;background:#F7F5EF;color:#5E7350;font-size:9px}
+.feeding-time-note span{color:#6B736D}
+.feeding-save-v98{height:48px!important;border:0!important;border-radius:11px!important;background:#C5921A!important;color:#FFFEFB!important;font-size:12px!important;font-weight:800!important;box-shadow:0 5px 14px rgba(197,146,26,.20)!important}
+@media(max-width:360px){
+ .feeding-hive-card{grid-template-columns:68px 1fr 92px}
+ .feeding-hive-card>img{width:68px;height:68px}
+ .feeding-section-v98 label{grid-template-columns:96px 1fr}
+}

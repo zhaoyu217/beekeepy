@@ -18,7 +18,7 @@ function Vstatus(h){return h.status==='Healthy'?'Good':h.status==='Attention'?'N
 function Vclass(h){return h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}
 
 function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${unread(s)?`<span class="badge">${unread(s)}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Prediction','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
-const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','feeding-record','treatment-record','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
+const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','treatment-record','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
 function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]||'home',id=p[1],r=idq('view');r.className='view vview '+(['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','feeding-record','treatment-record','harvest-record'].includes(page)?'secondary':'main');const m={home:()=>home(r),hives:()=>hives(r),hive:()=>hiveDetail(r,id),inspection:()=>inspectionPage(r,id),timeline:()=>timelinePage(r),honey:()=>honeyPage(r),map:()=>mapPage(r),insights:()=>insights(r),actions:()=>actions(r),'all-hives':()=>allHives(r),'all-actions':()=>allActions(r,id),'feeding-record':()=>recordPage(r,'feeding',id),'treatment-record':()=>recordPage(r,'treatment',id),'harvest-record':()=>recordPage(r,'harvest',id),analysis:()=>healthAnalysis(r),trend:()=>trendPage(r),risk:()=>riskPage(r),season:()=>seasonPage(r),'honey-analytics':()=>honeyAnalytics(r),recommendations:()=>recommendations(r),settings:()=>settings(r),account:()=>accountPage(r),subscription:()=>subscriptionPage(r),apiary:()=>apiaryPage(r),'seasonal-settings':()=>seasonalSettings(r),'notification-preferences':()=>notificationPrefs(r),'units-region':()=>unitsRegion(r),'smart-features':()=>smartFeatures(r),'data-backup':()=>dataBackup(r),security:()=>securityPage(r),store:()=>storePage(r),notifications:()=>notifications(r),help:()=>helpPage(r),faq:()=>faqPage(r),support:()=>supportPage(r),about:()=>aboutPage(r),privacy:()=>infoPage(r,'Privacy Policy'),terms:()=>infoPage(r,'Terms of Service')};(m[page]||m.home)();chrome(page)}
 
@@ -147,13 +147,57 @@ function allActions(r,mode){actions(r); if(mode){const want=String(mode).toLower
 function recordPage(r,type,id){
   const s=v45s(),h=vh(id),cfg={feeding:['Feeding Record',V45.feeding],treatment:['Treatment Record',V45.treatment],harvest:['Harvest Record',V45.harvest]}[type];
   const today=new Date().toISOString().slice(0,10);
-  const fields=type==='feeding'?`
-    <label><span>Feed Type</span><select name="Feed_Type"><option>Sugar Syrup</option><option>Pollen Patty</option><option>Dry Sugar</option></select></label>
-    <label><span>Syrup Ratio</span><select name="Syrup_Ratio"><option>1:1</option><option selected>2:1</option><option>N/A</option></select></label>
-    <label><span>Quantity</span><input name="Quantity" value="2.0 L"></label>
-    <label><span>Date</span><input name="Date" type="date" value="${today}"></label>
-    <label><span>Next Feeding</span><input name="Next_Feeding" type="date"></label>`:
-  type==='treatment'?`
+
+  if(type==='feeding'){
+    const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
+    const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
+    const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
+    const qtyUnit=metric?'L':'qt';
+    const qtyValue=metric?'2.0':'2.1';
+    const hivePhoto=active?.photo||V45.hive;
+
+    r.innerHTML=`<div class="vs feeding-v98">
+      <section class="feeding-hive-card">
+        <img src="${hivePhoto}" alt="${esc(active.name)}">
+        <div class="feeding-hive-copy">
+          <b>${esc(active.name)}</b>
+          <span>⌖ ${esc(s.settings.location||'Colorado, USA')}</span>
+          <em>✓ Healthy</em>
+        </div>
+        <select name="hiveId" form="rform" aria-label="Change Hive" onchange="go('feeding-record/'+this.value)">
+          ${allowedHives.map(x=>`<option value="${x.id}" ${x.id===active.id?'selected':''}>${esc(x.name)}</option>`).join('')}
+        </select>
+      </section>
+
+      <form id="rform" class="feeding-form-v98">
+        <input type="hidden" name="hiveId" value="${active.id}">
+
+        <section class="feeding-section-v98">
+          <h3><i>▣</i> FEEDING DETAILS</h3>
+          <label><span>Feed Type</span><select name="Feed_Type"><option>Sugar Syrup</option><option>Pollen Patty</option><option>Dry Sugar</option></select></label>
+          <label><span>Syrup Ratio</span><select name="Syrup_Ratio"><option>1:1</option><option selected>2:1</option><option>N/A</option></select></label>
+          <label class="feeding-qty"><span>Quantity</span><div><input name="Quantity_Value" type="number" min="0" step=".1" value="${qtyValue}"><select name="Quantity_Unit"><option selected>${qtyUnit}</option>${metric?'<option>kg</option>':'<option>lb</option>'}</select></div></label>
+        </section>
+
+        <section class="feeding-section-v98">
+          <h3><i>▦</i> SCHEDULE</h3>
+          <label><span>Date</span><input name="Date" type="date" lang="en-US" value="${today}"></label>
+          <label><span>Next Feeding</span><input name="Next_Feeding" type="date" lang="en-US"></label>
+        </section>
+
+        <section class="feeding-section-v98 feeding-notes-v98">
+          <h3><i>✎</i> NOTES</h3>
+          <label><span>Notes</span><div class="note-wrap-v98"><textarea name="Notes" maxlength="200" placeholder="Add any notes about this feeding..." oninput="this.nextElementSibling.textContent=this.value.length+' / 200'"></textarea><small>0 / 200</small></div></label>
+        </section>
+      </form>
+
+      <div class="feeding-time-note">● <span>All times and dates are saved in your local time zone.</span></div>
+      <button class="primary feeding-save-v98" onclick="saveRec('feeding')">▣&nbsp;&nbsp; Save Record</button>
+    </div>`;
+    return;
+  }
+
+  const fields=type==='treatment'?`
     <label><span>Problem</span><input name="Problem" value="Varroa Mites"></label>
     <label><span>Treatment</span><input name="Treatment" value="Oxalic Acid (Dribble)"></label>
     <label><span>Product</span><input name="Product" value="Oxalic Acid Solution"></label>
@@ -172,7 +216,7 @@ function recordPage(r,type,id){
 function saveRec(type){
   const s=v45s(),fd=new FormData(idq('rform')),hiveId=fd.get('hiveId'),today=new Date().toISOString().slice(0,10),notes=fd.get('Notes')||'';
   if(type==='feeding'){
-    s.logs.feedings.push({id:'f'+Date.now(),hiveId,date:fd.get('Date')||today,type:fd.get('Feed_Type'),ratio:fd.get('Syrup_Ratio'),amount:fd.get('Quantity'),notes,nextFeeding:fd.get('Next_Feeding')||''});
+    s.logs.feedings.push({id:'f'+Date.now(),hiveId,date:fd.get('Date')||today,type:fd.get('Feed_Type'),ratio:fd.get('Syrup_Ratio'),amount:(fd.get('Quantity_Value')||'0')+' '+(fd.get('Quantity_Unit')||''),notes,nextFeeding:fd.get('Next_Feeding')||''});
   }else if(type==='treatment'){
     s.logs.treatments.push({id:'t'+Date.now(),hiveId,date:fd.get('Start_Date')||today,problem:fd.get('Problem'),type:fd.get('Treatment'),product:fd.get('Product'),dose:fd.get('Dose'),endDate:fd.get('End_Date')||'',followUp:fd.get('Follow_up')||'',withdrawal:fd.get('Withdrawal')||'',notes});
   }else{

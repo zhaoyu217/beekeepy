@@ -640,6 +640,45 @@ function mapPage(r){
 
 let V49_TREND_RANGE='30D';
 function setTrendRangeV49(range,btn){V49_TREND_RANGE=range;selectTab(btn);toast(range+' trend range selected')}
+/* V120 — Inspection History Sync
+   Backfill only from already-stored Hive snapshot data + lastInspection date.
+   No synthetic dates and no invented trend points. */
+function v120SyncInspectionHistory(s){
+  s.logs=s.logs||{};
+  s.logs.inspections=Array.isArray(s.logs.inspections)?s.logs.inspections:[];
+  let changed=false;
+
+  (s.hives||[]).forEach(h=>{
+    const date=String(h.lastInspection||'').slice(0,10);
+    if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
+
+    const exists=s.logs.inspections.some(x=>x && x.hiveId===h.id && String(x.date||'').slice(0,10)===date);
+    if(exists)return;
+
+    const score=Number(h.score);
+    s.logs.inspections.push({
+      id:`legacy-${h.id}-${date}`,
+      hiveId:h.id,
+      date,
+      queenStatus:h.queen||'',
+      brood:h.brood||'',
+      honey:h.honey||'',
+      pollen:h.pollen||'',
+      varroa:Number.isFinite(Number(h.varroa))?Number(h.varroa):null,
+      notes:h.notes||'',
+      scoreSnapshot:Number.isFinite(score)?score:null,
+      legacySnapshot:true
+    });
+    changed=true;
+  });
+
+  if(changed){
+    s.logs.inspections.sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+    save(s);
+  }
+  return changed;
+}
+
 function v119TrendStart(range,now=new Date()){
   const end=new Date(now.getFullYear(),now.getMonth(),now.getDate(),23,59,59,999);
   let start;
@@ -667,6 +706,8 @@ function v119EnumValue(v,map){
 }
 
 function v119InspectionHealth(x){
+  const snapshot=Number(x.scoreSnapshot);
+  if(Number.isFinite(snapshot) && snapshot>=0 && snapshot<=100)return Math.round(snapshot);
   const vals=[];
   const strength=Number(x.strength);
   if(Number.isFinite(strength) && strength>=0 && strength<=10)vals.push(strength*10);
@@ -779,6 +820,7 @@ function v119HealthChart(series){
 
 function trendPage(r){
   const s=v45s();
+  v120SyncInspectionHistory(s);
   const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
   const allowedIds=new Set(allowedHives.map(h=>h.id));
   const {start,end}=v119TrendStart(V49_TREND_RANGE);

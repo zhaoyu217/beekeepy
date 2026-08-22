@@ -4605,3 +4605,21 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
 }
 .v119-source-note b{font-size:11px!important}
 .v119-source-note span{font-size:8.5px!important;line-height:1.4!important;color:#6B736D!important}
+
+
+/* ==============================================================
+   V120 — HEALTH TRENDS ACCENT ALIGNMENT
+   Scope: Health Trends only.
+   ============================================================== */
+.v119-trend-summary{
+  background:#C5921A!important;
+  box-shadow:0 5px 16px rgba(197,146,26,.18)!important;
+}
+.v119-trend-ranges button{
+  color:#8B6712!important;
+}
+.v119-trend-ranges button.active{
+  background:#C5921A!important;
+  color:#FFFEFB!important;
+  border-color:#C5921A!important;
+}

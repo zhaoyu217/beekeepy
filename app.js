@@ -585,7 +585,7 @@ function chrome(page,secondary){
   }else{
     const titles={
       'all-hives':'All Hives','all-actions':'All Actions','settings':'Settings','notifications':'Notifications',
-      'subscription':'HiveDash Pro','analysis':'Health Analysis','trend':'Trends','risk':'Risk Prediction',
+      'subscription':'HiveDash Pro','analysis':'Health Analysis','trend':'Trends','risk':'Risk Assessment',
       'season':'Season Intelligence','privacy':'Privacy Policy','terms':'Terms of Service',
       'help':'Help Center','support':'Contact Support'
     };
@@ -1165,9 +1165,76 @@ function trendPage(r,id){
   const list=id?[hive(s,id)].filter(Boolean):s.hives;
   r.innerHTML=`<section><div class="h1" style="margin-top:12px">Health Trend</div></section><section class="setting">${list.map(h=>`<button type="button" class="srow card-button" style="width:100%;border:0;background:transparent;text-align:left" onclick="openRiskAlert('${h.id}')"><div class="scopy"><b>${esc(h.name)}</b><div class="track" style="margin-top:6px"><div class="progress" style="width:${h.score}%"></div></div></div><b>${h.score}%</b></button>`).join('')}</section>`
 }
+function riskAssessment(h){
+  const signals=[];
+  const queen=String(h.queen||'').trim().toLowerCase();
+  const honey=String(h.honey||'').trim().toLowerCase();
+  const pollen=String(h.pollen||'').trim().toLowerCase();
+  const varroa=Number(h.varroa);
+
+  if(Number.isFinite(varroa) && varroa>=3){
+    signals.push({key:'varroa',severity:'severe',label:'Varroa elevated'});
+  }
+  if(queen==='missing' || queen==='absent'){
+    signals.push({key:'queen-missing',severity:'severe',label:'Queen missing'});
+  }
+
+  if(queen && queen!=='confirmed' && queen!=='missing' && queen!=='absent'){
+    signals.push({key:'queen-uncertain',severity:'moderate',label:'Queen uncertainty'});
+  }
+  if(honey==='low'){
+    signals.push({key:'honey-low',severity:'moderate',label:'Low honey stores'});
+  }
+  if(pollen==='low'){
+    signals.push({key:'pollen-low',severity:'moderate',label:'Low pollen stores'});
+  }
+
+  const severe=signals.filter(x=>x.severity==='severe').length;
+  const moderate=signals.filter(x=>x.severity==='moderate').length;
+  const level=severe>0 || moderate>=2 ? 'High' : moderate===1 ? 'Medium' : 'Low';
+
+  const reasons=[];
+  if(signals.some(x=>x.key==='varroa'))reasons.push('Varroa elevated');
+  if(signals.some(x=>x.key==='queen-missing'))reasons.push('Queen missing');
+  else if(signals.some(x=>x.key==='queen-uncertain'))reasons.push('Queen uncertainty');
+
+  if(honey==='low' && pollen==='low'){
+    reasons.push('Honey and pollen stores low');
+  }else{
+    if(honey==='low')reasons.push('Low honey stores');
+    if(pollen==='low')reasons.push('Low pollen stores');
+  }
+
+  return {level,reasons,severe,moderate,signalCount:signals.length};
+}
+
 function riskPage(r){
-  const s=state();if(!isPro(s)){subscriptionModal('Risk Prediction');go('insights');return}
-  r.innerHTML=`<section><div class="h1" style="margin-top:12px">Risk Prediction</div><div class="tiny muted">Current prototype uses transparent rules, not a black-box model.</div></section><section class="setting">${s.hives.map(h=>{const reasons=[];if(h.varroa>=3)reasons.push('Varroa elevated');if(h.queen!=='Confirmed')reasons.push('Queen uncertainty');if(h.honey==='Low'||h.pollen==='Low')reasons.push('Low food stores');const level=h.varroa>=3?'High':reasons.length?'Medium':'Low';return `<div class="srow card-button" onclick="go('hive/${h.id}')"><div class="scopy"><b>${esc(h.name)}</b><div class="tiny muted">${reasons.length?esc(reasons.join(' · ')):'No major current rule-based signal'}</div></div><span class="pill ${level==='High'?'danger':level==='Medium'?'warn':''}">${level}</span></div>`}).join('')}</section>`
+  const s=state();
+  if(!isPro(s)){subscriptionModal('Risk Assessment');go('insights');return}
+
+  r.innerHTML=`<section>
+    <div class="h1" style="margin-top:12px">Risk Assessment</div>
+    <div class="tiny muted">Transparent rule-based assessment using current hive records.</div>
+  </section>
+  <section class="setting v122-risk-list">
+    ${s.hives.map(h=>{
+      const res=riskAssessment(h);
+      const copy=res.reasons.length?res.reasons.join(' · '):'No current rule-based risk signal';
+      return `<button type="button" class="srow card-button v122-risk-row" onclick="go('hive/${h.id}')">
+        <div class="scopy">
+          <b>${esc(h.name)}</b>
+          <div class="tiny muted">${esc(copy)}</div>
+        </div>
+        <span class="v122-risk-end">
+          <span class="pill ${res.level==='High'?'danger':res.level==='Medium'?'warn':''}">${res.level}</span>
+          <em>›</em>
+        </span>
+      </button>`;
+    }).join('')}
+  </section>
+  <div class="notice v122-risk-note">
+    High = any severe signal, or 2+ moderate signals. Medium = 1 moderate signal. Low = no current rule-based signal.
+  </div>`;
 }
 
 function openHarvestHistory(year=selectedHarvestYear){

@@ -154,13 +154,7 @@ function recordPage(r,type,id){
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
     const qtyUnit=metric?'L':'qt';
     const qtyValue=metric?'2.0':'2.1';
-    const hivePhotoIndex=Math.max(0,s.hives.findIndex(x=>x.id===active.id));
-    const cleanHivePhotos=[
-      'assets/hive_detail_hero.jpg',
-      V45.hives,
-      V45.home
-    ];
-    const hivePhoto=cleanHivePhotos[hivePhotoIndex%cleanHivePhotos.length]||'assets/hive_detail_hero.jpg';
+    const hivePhoto=v101HivePrimaryPhoto(active);
 
     r.innerHTML=`<div class="vs feeding-v98">
       <section class="feeding-hive-card">
@@ -957,13 +951,21 @@ function v62FilterMenu(){
    Pro users: existing additional hives remain available.
    ============================================================== */
 
+function v101HivePrimaryPhoto(h){
+  const photos=(typeof hivePhotos==='function'?hivePhotos(h):(Array.isArray(h?.photos)?h.photos:[]));
+  if(photos.length && photos[0]?.data) return photos[0].data;
+  const s=v45s(),idx=Math.max(0,s.hives.findIndex(x=>x.id===h.id));
+  const fallback=['assets/hive_detail_hero.jpg','assets/home_final_apiary.jpg','assets/hive_detail_hero.jpg'];
+  return fallback[idx%fallback.length];
+}
+
 function v63VisibleHives(){
   const s=v45s();
   return isPro(s) ? s.hives : s.hives.slice(0,3);
 }
 
 function v63Thumb(h){
-  return 'assets/home_final_apiary.jpg';
+  return v101HivePrimaryPhoto(h);
 }
 
 function v63Status(h){

@@ -5476,3 +5476,23 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
 }
 .v128-honey-source b{font-size:10px!important;color:#2F3B33!important}
 .v128-honey-source span{font-size:8px!important;line-height:1.4!important;color:#737D76!important}
+
+
+/* ==============================================================
+   V132 — HOME CTA ACCENT COLOR
+   Scope: Home Open / View / Learn More buttons only.
+   ============================================================== */
+.v56-home .v56-soft-btn{
+  background:#C5921A!important;
+  border-color:#C5921A!important;
+  color:#FFFEFB!important;
+  box-shadow:0 3px 8px rgba(197,146,26,.16)!important;
+}
+.v56-home .v56-soft-btn:hover{
+  background:#B78617!important;
+  border-color:#B78617!important;
+  color:#FFFEFB!important;
+}
+.v56-home .v56-soft-btn:active{
+  transform:translateY(1px)!important;
+}

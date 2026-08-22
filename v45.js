@@ -1632,7 +1632,18 @@ function home(r){
   const first=s.hives[0]?.id||'';
   const action=v56HomeAction();
   const actionHive=hive(s,action.hid);
-  const riskHive=s.hives.find(h=>h.status==='Critical')||s.hives.find(h=>h.status==='Attention')||s.hives[0];
+  const riskRows=s.hives
+    .map(h=>({h,res:riskAssessment(h)}))
+    .sort((a,b)=>{
+      const rank={High:3,Medium:2,Low:1};
+      return (rank[b.res.level]||0)-(rank[a.res.level]||0);
+    });
+  const riskRow=riskRows.find(x=>x.res.level!=='Low')||riskRows[0]||null;
+  const riskHive=riskRow?.h||null;
+  const riskResult=riskRow?.res||null;
+  const riskReason=riskResult?.reasons?.length
+    ? riskResult.reasons.join(' · ')
+    : 'No current rule-based risk signal';
 
   r.innerHTML=`
   <div class="vs v56-home">
@@ -1675,10 +1686,10 @@ function home(r){
     <section class="v56-row-card">
       <div class="v56-row-copy">
         <span>Risk Alerts</span>
-        <b>${riskHive?.varroa>=3?'High Varroa Risk':'Queen status unconfirmed'}</b>
-        <em>${riskHive?esc(riskHive.name):'Hive'} · ${riskHive?.varroa>=3?esc(String(riskHive.varroa))+' mites / 100 bees':'needs verification'}</em>
+        <b>${esc(riskReason)}</b>
+        <em>${riskHive?`${esc(riskHive.name)} · ${esc(riskResult.level)} risk`:'No hive risk data'}</em>
       </div>
-      <button class="v56-soft-btn" onclick="${riskHive?.varroa>=3?`go('treatment-record/${riskHive.id}')`:riskHive?`go('hive/${riskHive.id}')`:"go('all-hives/Critical')"}">View</button>
+      <button class="v56-soft-btn" onclick="${riskHive?`go('hive/${riskHive.id}')`:"go('risk')"}">View</button>
     </section>
 
     <section class="v56-row-card">

@@ -18,7 +18,7 @@ function Vstatus(h){return h.status==='Healthy'?'Good':h.status==='Attention'?'N
 function Vclass(h){return h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}
 
 function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${unread(s)?`<span class="badge">${unread(s)}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Prediction','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
-const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','treatment-record','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
+const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
 function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]||'home',id=p[1],r=idq('view');r.className='view vview '+(['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','feeding-record','treatment-record','harvest-record'].includes(page)?'secondary':'main');const m={home:()=>home(r),hives:()=>hives(r),hive:()=>hiveDetail(r,id),inspection:()=>inspectionPage(r,id),timeline:()=>timelinePage(r),honey:()=>honeyPage(r),map:()=>mapPage(r),insights:()=>insights(r),actions:()=>actions(r),'all-hives':()=>allHives(r),'all-actions':()=>allActions(r,id),'feeding-record':()=>recordPage(r,'feeding',id),'treatment-record':()=>recordPage(r,'treatment',id),'harvest-record':()=>recordPage(r,'harvest',id),analysis:()=>healthAnalysis(r),trend:()=>trendPage(r),risk:()=>riskPage(r),season:()=>seasonPage(r),'honey-analytics':()=>honeyAnalytics(r),recommendations:()=>recommendations(r),settings:()=>settings(r),account:()=>accountPage(r),subscription:()=>subscriptionPage(r),apiary:()=>apiaryPage(r),'seasonal-settings':()=>seasonalSettings(r),'notification-preferences':()=>notificationPrefs(r),'units-region':()=>unitsRegion(r),'smart-features':()=>smartFeatures(r),'data-backup':()=>dataBackup(r),security:()=>securityPage(r),store:()=>storePage(r),notifications:()=>notifications(r),help:()=>helpPage(r),faq:()=>faqPage(r),support:()=>supportPage(r),about:()=>aboutPage(r),privacy:()=>infoPage(r,'Privacy Policy'),terms:()=>infoPage(r,'Terms of Service')};(m[page]||m.home)();chrome(page)}
 
@@ -197,6 +197,61 @@ function recordPage(r,type,id){
     return;
   }
 
+
+  if(type==='treatment'){
+    const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
+    const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
+    const hivePhoto=v101HivePrimaryPhoto(active);
+
+    r.innerHTML=`<div class="vs treatment-v102">
+      <section class="treatment-hive-card">
+        <img src="${hivePhoto}" alt="${esc(active.name)}">
+        <div class="treatment-hive-copy">
+          <b>${esc(active.name)}</b>
+          <span>⌖ ${esc(s.settings.location||'Colorado, USA')}</span>
+          <em>✓ ${esc(active.status||'Healthy')}</em>
+        </div>
+        <select aria-label="Change Hive" onchange="go('treatment-record/'+this.value)">
+          ${allowedHives.map(x=>`<option value="${x.id}" ${x.id===active.id?'selected':''}>${esc(x.name)}</option>`).join('')}
+        </select>
+      </section>
+      <form id="rform" class="treatment-form-v102">
+        <input type="hidden" name="hiveId" value="${active.id}">
+        <section class="treatment-section-v102">
+          <h3><i>✚</i> TREATMENT DETAILS</h3>
+          <label><span>Problem</span><select name="Problem">
+            <option selected>Varroa Mites</option><option>Small Hive Beetle</option><option>Wax Moth</option><option>Disease</option><option>Other</option>
+          </select></label>
+          <label><span>Treatment</span><select name="Treatment">
+            <option selected>Oxalic Acid (Dribble)</option><option>Oxalic Acid (Vapor)</option><option>Formic Acid</option><option>Thymol</option><option>Other</option>
+          </select></label>
+          <label><span>Product</span><input name="Product" value="Oxalic Acid Solution"></label>
+          <label><span>Dose</span><input name="Dose" value="5 ml / seam"></label>
+        </section>
+        <section class="treatment-section-v102">
+          <h3><i>▦</i> SCHEDULE</h3>
+          <label><span>Start Date</span><input name="Start_Date" type="date" lang="en-US" value="${today}"></label>
+          <label><span>End Date</span><input name="End_Date" type="date" lang="en-US"></label>
+          <label><span>Follow-up</span><input name="Follow_up" type="date" lang="en-US"></label>
+        </section>
+        <section class="treatment-section-v102">
+          <h3><i>!</i> SAFETY</h3>
+          <label><span>Withdrawal</span><select name="Withdrawal">
+            <option selected>None</option><option>1 day</option><option>3 days</option><option>7 days</option><option>14 days</option><option>Custom</option>
+          </select></label>
+          <div class="treatment-safety-note">Record the withdrawal period you intend to follow for the product and label you are using.</div>
+        </section>
+        <section class="treatment-section-v102 treatment-notes-v102">
+          <h3><i>✎</i> NOTES</h3>
+          <label><span>Notes</span><div class="treatment-note-wrap"><textarea name="Notes" maxlength="200" placeholder="Add notes about this treatment..." oninput="this.nextElementSibling.textContent=this.value.length+' / 200'"></textarea><small>0 / 200</small></div></label>
+        </section>
+      </form>
+      <div class="treatment-time-note">● <span>All times and dates are saved in your local time zone.</span></div>
+      <button class="primary treatment-save-v102" onclick="saveRec('treatment')">▣&nbsp;&nbsp; Save Record</button>
+    </div>`;
+    return;
+  }
+
   const fields=type==='treatment'?`
     <label><span>Problem</span><input name="Problem" value="Varroa Mites"></label>
     <label><span>Treatment</span><input name="Treatment" value="Oxalic Acid (Dribble)"></label>
@@ -218,7 +273,15 @@ function saveRec(type){
   if(type==='feeding'){
     s.logs.feedings.push({id:'f'+Date.now(),hiveId,date:fd.get('Date')||today,type:fd.get('Feed_Type'),ratio:fd.get('Syrup_Ratio'),amount:(fd.get('Quantity_Value')||'0')+' '+(fd.get('Quantity_Unit')||''),notes,nextFeeding:fd.get('Next_Feeding')||''});
   }else if(type==='treatment'){
-    s.logs.treatments.push({id:'t'+Date.now(),hiveId,date:fd.get('Start_Date')||today,problem:fd.get('Problem'),type:fd.get('Treatment'),product:fd.get('Product'),dose:fd.get('Dose'),endDate:fd.get('End_Date')||'',followUp:fd.get('Follow_up')||'',withdrawal:fd.get('Withdrawal')||'',notes});
+    const treatmentId='t'+Date.now();
+    const followUp=fd.get('Follow_up')||'';
+    s.logs.treatments.push({id:treatmentId,hiveId,date:fd.get('Start_Date')||today,problem:fd.get('Problem'),type:fd.get('Treatment'),product:fd.get('Product'),dose:fd.get('Dose'),endDate:fd.get('End_Date')||'',followUp,withdrawal:fd.get('Withdrawal')||'',notes});
+    if(followUp){
+      s.actions=s.actions||[];
+      if(!s.actions.some(a=>a.hiveId===hiveId&&a.type==='Treatment'&&a.sourceId===treatmentId)){
+        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:followUp,status:'Pending',sourceId:treatmentId});
+      }
+    }
   }else{
     s.logs.harvests.push({id:'hv'+Date.now(),hiveId,date:fd.get('Date')||today,frames:Number(fd.get('Frames_Harvested')||0),weightLb:Number(fd.get('Honey_Weight')||0),moisture:Number(fd.get('Moisture')||0),batch:fd.get('Batch_Name')||'',notes});
   }

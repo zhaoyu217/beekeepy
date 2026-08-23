@@ -2167,3 +2167,58 @@ function hives(r){
     renderVersionOnInitialLoadV140();
   }
 })();
+
+
+/* V141 - Privacy Policy single-point replacement */
+const V141_OLD_INFO_PAGE=infoPage;
+infoPage=function(r,title){
+  if(title!=='Privacy Policy')return V141_OLD_INFO_PAGE(r,title);
+  r.innerHTML=`<section><div class="h1" style="margin-top:12px">Privacy Policy</div></section><section class="setting body">
+    <div class="small muted">Effective date: August 23, 2026</div>
+    <p>HiveDash is a family beekeeping log designed to help beekeepers manage hives, inspections, actions, photos, reminders, seasonal settings, and related records. This Privacy Policy explains what information HiveDash collects, how it is used, when it is shared, and the choices available to you.</p>
+
+    <div class="h3">1. Information We Collect</div>
+    <p><b>Account information.</b> When you create or use a cloud account, HiveDash may process information such as your email address, account identifier, authentication information handled by the authentication provider, and subscription or entitlement status.</p>
+    <p><b>Beekeeping records.</b> HiveDash processes information you enter about apiaries and hives, including hive names, locations you provide, inspections, colony condition, queen observations, feeding, treatments, harvests, reminders, notes, seasonal settings, and related history.</p>
+    <p><b>Photos and optional inputs.</b> If you choose to add hive photos, use supported voice-input features, or enable smart features, HiveDash processes the information you submit for those features. Features marked as unavailable or coming soon do not collect data merely because they are displayed in the app.</p>
+    <p><b>Location.</b> HiveDash may request device location only when you actively use a location-based feature and grant permission. You can deny or revoke location permission through your browser or device settings. Apiary locations that you type into HiveDash are also stored as part of your beekeeping records.</p>
+    <p><b>Technical information.</b> The app and the services used to operate it may process basic technical information needed for security and operation, such as browser or device information, IP address, timestamps, network status, and diagnostic error information.</p>
+
+    <div class="h3">2. How We Use Information</div>
+    <p>We use information to provide and maintain HiveDash; save and synchronize your hive records; authenticate accounts; display reminders, alerts, analytics, and seasonal information; provide features you request; preserve settings across sessions and devices; troubleshoot problems; protect the service; and comply with applicable legal obligations.</p>
+
+    <div class="h3">3. Local Storage and Cloud Sync</div>
+    <p>HiveDash can store application data in your browser or device. When cloud sync is enabled and you are signed in, HiveDash also synchronizes application state with its cloud backend so your records can be available across signed-in devices. Local data may remain on a device after sign-out unless you clear it, reset local data, or remove it through available controls.</p>
+
+    <div class="h3">4. Service Providers</div>
+    <p>HiveDash uses service providers to operate certain functions. The current cloud authentication, database, and synchronization backend uses Supabase. Service providers process information only as needed to provide their services to HiveDash and are subject to their own security and privacy obligations. HiveDash may also rely on hosting, network, or platform providers that process limited technical information necessary to deliver the app.</p>
+
+    <div class="h3">5. Photos, Smart Features, and Permissions</div>
+    <p>You control whether to add photos or grant device permissions. HiveDash does not require access to your entire photo library or precise device location simply to maintain ordinary hive records. Where a feature requires a permission, you can decline it; the related feature may then be unavailable. Smart-feature permissions can be managed from the app where those controls are provided.</p>
+
+    <div class="h3">6. Sharing of Information</div>
+    <p>HiveDash does not sell your personal information. We may disclose information to service providers that help operate HiveDash, when you direct us to do so, when required by law or valid legal process, or when reasonably necessary to protect users, the service, or the rights and safety of others. If the business responsible for HiveDash is involved in a merger, acquisition, financing, reorganization, or sale of assets, information may be transferred as part of that transaction subject to applicable law.</p>
+
+    <div class="h3">7. Data Retention and Deletion</div>
+    <p>We retain information for as long as reasonably necessary to provide HiveDash, maintain your account and records, comply with legal obligations, resolve disputes, and protect the service. You may use available export, reset, account, or support tools to manage your data. For requests to access, correct, or delete cloud-account information that cannot be completed directly in the app, use Contact Support in HiveDash.</p>
+
+    <div class="h3">8. Security</div>
+    <p>We use reasonable technical and organizational measures intended to protect information against unauthorized access, loss, misuse, alteration, or disclosure. No method of storage or transmission is completely secure, so absolute security cannot be guaranteed.</p>
+
+    <div class="h3">9. Your Choices and Privacy Rights</div>
+    <p>You can manage notification, smart-feature, location, and other permissions through HiveDash and your browser or device. Depending on where you live, you may have rights to request access to, correction of, deletion of, or a copy of certain personal information, or to object to or restrict certain processing. We will respond to verified requests as required by applicable law.</p>
+    <p>HiveDash does not sell personal information or use personal information for cross-context behavioral advertising. If applicable law gives you additional rights, you may exercise them through Contact Support.</p>
+
+    <div class="h3">10. Children</div>
+    <p>HiveDash is not directed to children under 13, and we do not knowingly collect personal information from children under 13. If we learn that such information has been collected, we will take appropriate steps to delete it.</p>
+
+    <div class="h3">11. International Processing</div>
+    <p>HiveDash and its service providers may process information in countries other than the country where you live. Where required, we use appropriate safeguards for international transfers and handle information in accordance with applicable privacy law.</p>
+
+    <div class="h3">12. Changes to This Policy</div>
+    <p>We may update this Privacy Policy as HiveDash changes or as legal requirements evolve. When we make material changes, we will update the effective date and provide notice when required.</p>
+
+    <div class="h3">13. Contact</div>
+    <p>For privacy questions or requests, open HiveDash and use <b>Settings &gt; Help Center &gt; Contact Support</b>. Please include enough information for us to understand and verify your request.</p>
+  </section>`;
+};

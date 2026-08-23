@@ -2151,3 +2151,19 @@ function hives(r){
   if(input) input.oninput=window.__v63Redraw;
 }
 
+
+/* V140 - Version initial-load refresh fallback */
+(function(){
+  function renderVersionOnInitialLoadV140(){
+    const page=(location.hash||'#home').slice(1).split('/')[0];
+    if(page==='version' && typeof render==='function'){
+      render();
+    }
+  }
+
+  if(document.readyState==='loading'){
+    window.addEventListener('DOMContentLoaded',renderVersionOnInitialLoadV140,{once:true});
+  }else{
+    renderVersionOnInitialLoadV140();
+  }
+})();

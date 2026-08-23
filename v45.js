@@ -1389,6 +1389,54 @@ addHivePhotos=async function(hiveId,input){
   const files=[...(input?.files||[])];if(!files.length)return;const galleryModal=input?.closest?.('.photo-gallery-modal-shell')||null;const s=v45s(),h=hive(s,hiveId);if(!h){input.value='';return toast('Hive not found')}h.photos=Array.isArray(h.photos)?h.photos:[];let room=Math.max(0,12-h.photos.length);if(!room){input.value='';return toast('Maximum 12 photos per hive')}if(files.length>room)toast(`Only ${room} more photo${room===1?'':'s'} can be added`);
   const before=clone(h.photos);let added=0;try{for(const file of files.slice(0,room)){const data=await compressHivePhoto(file);h.photos.push({id:'p'+Date.now()+Math.random().toString(36).slice(2,7),data,date:new Date().toISOString().slice(0,10),name:String(file.name||'photo').slice(0,120)});added++;if(JSON.stringify(s).length>4300000)throw new Error('Photo storage limit reached')}if(!added)throw new Error('No supported photos selected');if(save(s)===false)throw new Error('Photo storage limit reached');toast(added===1?'Photo added':`${added} photos added`);render();if(galleryModal){galleryModal.remove();setTimeout(()=>openHivePhotoGallery(hiveId),0)}}catch(err){h.photos=before;console.error(err);toast(err.message||'Could not add photo')}finally{input.value=''}
 };
+
+
+/* =========================================================
+   V138 — PHOTO GALLERY STATE SOURCE FIX
+   Fix only: gallery count/cards now read the same normalized current hive state
+   used by upload/Timeline. Locked visual structure and navigation are unchanged.
+   ========================================================= */
+openHivePhotoGallery=function(hiveId){
+  const s=v45s(),h=hive(s,hiveId);if(!h)return;
+  const photos=Array.isArray(h.photos)?h.photos:[];
+  const galleryHtml=photos.length
+    ? photos.map((p,i)=>`<div class="gallery-photo-card">
+        <button class="gallery-photo-open" type="button" aria-label="Open photo ${i+1}">
+          <img src="${p.data}" alt="${esc(h.name)} photo ${i+1}">
+        </button>
+        <button class="gallery-photo-menu" type="button" aria-label="Photo options" onclick="event.stopPropagation();openHivePhotoMenu('${h.id}','${p.id}',this)">•••</button>
+      </div>`).join('')
+    : '<div class="gallery-empty"><b>No photos yet</b><span>Add your first hive photo.</span></div>';
+  const m=modal(`<div class="modalhead photo-gallery-head">
+      <div>
+        <div class="h2">${esc(h.name)} Photos</div>
+        <div class="small muted">${photos.length} ${photos.length===1?'photo':'photos'}</div>
+      </div>
+      <button class="iconbtn" onclick="closeModal(this)">✕</button>
+    </div>
+    <div class="photo-gallery-toolbar">
+      <button class="photo-gallery-add" type="button" onclick="document.getElementById('galleryPhotoInput').click()">＋ Add Photo</button>
+      <input id="galleryPhotoInput" hidden type="file" accept="image/*" multiple onchange="addHivePhotos('${h.id}',this)">
+    </div>
+    <div class="hive-gallery-modal">${galleryHtml}</div>`);
+  m.classList.add('photo-gallery-modal-shell');
+  m.querySelectorAll('.gallery-photo-open').forEach((btn,i)=>btn.onclick=()=>{
+    const latest=v45s(),latestHive=hive(latest,hiveId),latestPhotos=Array.isArray(latestHive?.photos)?latestHive.photos:[];
+    const p=latestPhotos[i];if(!p)return;
+    modal(`<div class="modalhead"><div class="h2">Photo · ${esc(latestHive.name)}</div><button type="button" class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="setting"><img src="${p.data}" alt="${esc(latestHive.name)} photo" style="width:100%;border-radius:14px;display:block"><div class="small muted" style="margin-top:10px">${fmtDate(p.date||'')} · Hive photo</div></div>`);
+  });
+};
+
+// V138: after a successful Gallery upload, rebuild that Gallery from current saved state.
+const V138_ADD_HIVE_PHOTOS=addHivePhotos;
+addHivePhotos=async function(hiveId,input){
+  const fromGallery=!!input?.closest?.('.photo-gallery-modal-shell');
+  await V138_ADD_HIVE_PHOTOS(hiveId,input);
+  if(fromGallery){
+    document.querySelectorAll('.photo-gallery-modal-shell').forEach(el=>el.remove());
+    openHivePhotoGallery(hiveId);
+  }
+};
 deleteHivePhoto=function(hiveId,photoId){const s=v45s(),h=hive(s,hiveId);if(!h)return;const before=clone(h.photos||[]);h.photos=before.filter(p=>p.id!==photoId);if(save(s)===false){h.photos=before;return toast('Photo could not be deleted')}document.querySelector('.modal')?.remove();toast('Photo deleted');render()};
 
 // ---------- Empty-state safety without changing normal locked screens ----------

@@ -50,8 +50,8 @@ function Vback(title,right=''){return `<button class="iconbtn" onclick="history.
 function Vstatus(h){return h.status==='Healthy'?'Good':h.status==='Attention'?'Needs Attention':'Critical'}
 function Vclass(h){return h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}
 
-function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
-const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
+function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
+const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
 
 let V128_HONEY_RANGE='year';
@@ -257,7 +257,7 @@ function markAllRead(){
   render();
 }
 
-function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]||'home',id=p[1],r=idq('view');r.className='view vview '+(['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','privacy','terms','feeding-record','treatment-record','harvest-record'].includes(page)?'secondary':'main');const m={home:()=>home(r),hives:()=>hives(r),hive:()=>hiveDetail(r,id),inspection:()=>inspectionPage(r,id),timeline:()=>timelinePage(r),honey:()=>honeyPage(r),map:()=>mapPage(r),insights:()=>insights(r),actions:()=>actions(r),'all-hives':()=>allHives(r),'all-actions':()=>allActions(r,id),'feeding-record':()=>recordPage(r,'feeding',id),'treatment-record':()=>recordPage(r,'treatment',id),'harvest-record':()=>recordPage(r,'harvest',id),analysis:()=>healthAnalysis(r),trend:()=>trendPage(r),risk:()=>riskPage(r),season:()=>seasonPage(r),'honey-analytics':()=>honeyAnalytics(r),recommendations:()=>recommendations(r),settings:()=>settings(r),account:()=>accountPage(r),subscription:()=>subscriptionPage(r),apiary:()=>apiaryPage(r),'seasonal-settings':()=>seasonalSettings(r),'notification-preferences':()=>notificationPrefs(r),'units-region':()=>unitsRegion(r),'smart-features':()=>smartFeatures(r),'data-backup':()=>dataBackup(r),security:()=>securityPage(r),store:()=>storePage(r),notifications:()=>notifications(r),help:()=>helpPage(r),faq:()=>faqPage(r),support:()=>supportPage(r),about:()=>aboutPage(r),privacy:()=>infoPage(r,'Privacy Policy'),terms:()=>infoPage(r,'Terms of Service')};(m[page]||m.home)();chrome(page)}
+function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]||'home',id=p[1],r=idq('view');r.className='view vview '+(['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','harvest-record'].includes(page)?'secondary':'main');const m={home:()=>home(r),hives:()=>hives(r),hive:()=>hiveDetail(r,id),inspection:()=>inspectionPage(r,id),timeline:()=>timelinePage(r),honey:()=>honeyPage(r),map:()=>mapPage(r),insights:()=>insights(r),actions:()=>actions(r),'all-hives':()=>allHives(r),'all-actions':()=>allActions(r,id),'feeding-record':()=>recordPage(r,'feeding',id),'treatment-record':()=>recordPage(r,'treatment',id),'harvest-record':()=>recordPage(r,'harvest',id),analysis:()=>healthAnalysis(r),trend:()=>trendPage(r),risk:()=>riskPage(r),season:()=>seasonPage(r),'honey-analytics':()=>honeyAnalytics(r),recommendations:()=>recommendations(r),settings:()=>settings(r),account:()=>accountPage(r),subscription:()=>subscriptionPage(r),apiary:()=>apiaryPage(r),'seasonal-settings':()=>seasonalSettings(r),'notification-preferences':()=>notificationPrefs(r),'units-region':()=>unitsRegion(r),'smart-features':()=>smartFeatures(r),'data-backup':()=>dataBackup(r),security:()=>securityPage(r),store:()=>storePage(r),notifications:()=>notifications(r),help:()=>helpPage(r),faq:()=>faqPage(r),support:()=>supportPage(r),about:()=>aboutPage(r),version:()=>versionPageV139(r),privacy:()=>infoPage(r,'Privacy Policy'),terms:()=>infoPage(r,'Terms of Service')};(m[page]||m.home)();chrome(page)}
 
 
 function selectTab(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
@@ -643,6 +643,78 @@ function dataBackup(r){r.innerHTML=`<div class="vs"><section class="setmenu"><bu
 function dataPermissionsV48(){modal(`<div class="modalhead"><b>Data Permissions</b><button onclick="closeModal(this)">✕</button></div><div class="notice">HiveDash uses hive records, photos, voice input and location only for enabled features. Change individual smart-feature permissions from Smart Features.</div><button class="primary" onclick="closeModal(this);go('smart-features')">Manage Permissions</button>`)}
 function twoFactorV48(){modal(`<div class="modalhead"><b>Two-Factor Authentication</b><button onclick="closeModal(this)">✕</button></div><div class="notice">Two-factor enrollment requires the production Supabase MFA flow. This control is routed correctly but is not falsely marked as enabled.</div>`)}
 function securityPage(r){r.innerHTML=`<div class="vs"><section class="setmenu"><button onclick="go('privacy')"><span>◉</span><b>Privacy Policy</b><em>›</em></button><button onclick="go('terms')"><span>◉</span><b>Terms of Service</b><em>›</em></button><button onclick="dataPermissionsV48()"><span>◇</span><b>Data Permissions</b><em>›</em></button><button onclick="go('account')"><span>⌁</span><b>Account Security</b><em>›</em></button><button onclick="twoFactorV48()"><span>✦</span><b>Two-Factor Auth</b><em>Off</em></button></section><button class="primary" onclick="go('account')">Manage Security</button></div>`}
+
+
+/* =========================================================
+   V139 — SETTINGS / AUXILIARY ROUTE FIX
+   Targeted repair only: restores missing Settings entries/pages.
+   Existing Hive, Timeline, Photos, Supabase, Actions and Insights
+   behavior is intentionally untouched.
+   ========================================================= */
+
+function notificationPrefs(r){
+  const s=v45s(),x=s.settings.notifications;
+  r.innerHTML=`<div class="vs"><section class="formlist">
+    <label class="switchline"><span>Inspection Reminders</span><input data-v139-notif="inspection" type="checkbox" ${x.inspection?'checked':''}></label>
+    <label class="switchline"><span>Varroa Alerts</span><input data-v139-notif="varroa" type="checkbox" ${x.varroa?'checked':''}></label>
+    <label class="switchline"><span>Treatment Follow-up</span><input data-v139-notif="treatment" type="checkbox" ${x.treatment?'checked':''}></label>
+    <label class="switchline"><span>Feeding Reminders</span><input data-v139-notif="feeding" type="checkbox" ${x.feeding?'checked':''}></label>
+    <label class="switchline"><span>Weather Alerts</span><input data-v139-notif="weather" type="checkbox" ${x.weather?'checked':''}></label>
+    <label class="switchline"><span>Seasonal Updates</span><input data-v139-notif="seasonal" type="checkbox" ${x.seasonal?'checked':''}></label>
+    <label class="switchline"><span>Push Notifications</span><input data-v139-notif="push" type="checkbox" ${x.push?'checked':''}></label>
+  </section><button class="primary" onclick="saveNotificationPrefsV139()">Save Settings</button></div>`;
+}
+function saveNotificationPrefsV139(){
+  const s=v45s(),x=s.settings.notifications;
+  document.querySelectorAll('[data-v139-notif]').forEach(el=>x[el.dataset.v139Notif]=el.checked);
+  save(s);toast('Notification preferences saved');
+}
+
+function smartFeatures(r){
+  const s=v45s(),x=s.settings.smart;
+  const rows=[
+    ['voice','Voice Notes'],['photo','Photo Analysis'],['varroaCount','Varroa Count'],
+    ['aiHealth','AI Health Analysis'],['recommendations','Health Recommendations'],
+    ['seasonWeather','Season & Weather Intelligence'],['qr','QR Hive Access']
+  ];
+  r.innerHTML=`<div class="vs"><section class="formlist">${rows.map(([k,label])=>`<label class="switchline"><span>${label}</span><input data-smart="${k}" type="checkbox" ${x[k]?'checked':''}></label>`).join('')}</section><button class="primary" onclick="saveSmart()">Save Settings</button></div>`;
+}
+function saveSmart(){
+  const s=v45s(),x=s.settings.smart;
+  document.querySelectorAll('[data-smart]').forEach(el=>x[el.dataset.smart]=el.checked);
+  save(s);toast('Smart features saved');
+}
+
+function aboutPage(r){
+  r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>HiveDash</b></div><div class="small muted">Family Beekeeping Log</div></section><section class="setmenu"><button onclick="go('version')"><span>ⓘ</span><b>Version</b><em>›</em></button><button onclick="go('privacy')"><span>◉</span><b>Privacy Policy</b><em>›</em></button><button onclick="go('terms')"><span>◉</span><b>Terms of Service</b><em>›</em></button><button onclick="go('help')"><span>?</span><b>Help Center</b><em>›</em></button></section></div>`;
+}
+function versionPageV139(r){
+  r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>HiveDash</b></div><div class="small muted">Version 139</div></section></div>`;
+}
+
+settings=function(r){
+  const s=v45s();
+  r.innerHTML=`<div class="vs">
+    <section class="setmenu">
+      <button onclick="go('account')"><span>◉</span><b>Account</b><em>›</em></button>
+      <button onclick="go('subscription')"><span>✦</span><b>Subscription</b><em>${esc(s.user.plan||'Free')}</em></button>
+      <button onclick="go('apiary')"><span>⌂</span><b>Apiary & Hive Management</b><em>›</em></button>
+      <button onclick="go('seasonal-settings')"><span>☀</span><b>Seasonal Settings</b><em>›</em></button>
+      <button onclick="go('notification-preferences')"><span>●</span><b>Notification Preferences</b><em>›</em></button>
+      <button onclick="go('units-region')"><span>◇</span><b>Units & Region</b><em>›</em></button>
+      <button onclick="go('smart-features')"><span>✦</span><b>Smart Features</b><em>›</em></button>
+      <button onclick="go('data-backup')"><span>☁</span><b>Data & Backup</b><em>›</em></button>
+      <button onclick="go('security')"><span>⌁</span><b>Privacy & Security</b><em>›</em></button>
+    </section>
+    <section class="setmenu">
+      <button onclick="window.open('https://www.skoghive.com','_blank','noopener')"><span>⌂</span><b>SkogHive Store</b><em>›</em></button>
+      <button onclick="go('help')"><span>?</span><b>Help Center</b><em>›</em></button>
+      <button onclick="go('support')"><span>✉</span><b>Contact Support</b><em>›</em></button>
+      <button onclick="go('about')"><span>ⓘ</span><b>About HiveDash</b><em>›</em></button>
+      <button onclick="go('version')"><span>ⓘ</span><b>Version</b><em>139</em></button>
+    </section>
+  </div>`;
+}
 
 const V48_NOTIFICATIONS=[['Critical','High temperature alert','hive/h3','Alerts'],['Action Required','Inspect Oak Meadow','inspection/h1','Alerts'],['Reminder','Varroa treatment due','treatment-record/h3','Reminders'],['AI Risk','Queen failure risk','risk','Alerts'],['Treatment','Follow-up recommended','treatment-record/h1','Reminders'],['Seasonal','Spring nectar flow','season','Reminders'],['System','HiveDash Pro enabled','subscription','System']];
 function drawNotificationsV48(group='All'){const box=idq('v48notifs');if(!box)return;const rows=V48_NOTIFICATIONS.filter(x=>group==='All'||x[3]===group);box.innerHTML=rows.map((x,i)=>`<button onclick="go('${x[2]}')"><i class="${x[0]==='Critical'?'critical':x[0]==='Action Required'?'attention':'good'}"></i><div><b>${x[0]}</b><span>${x[1]}</span></div><time>${9+i}:30 AM</time></button>`).join('')}
@@ -1457,7 +1529,7 @@ function safeBackV51(fallback='home'){
 }
 Vback=function(title,right=''){
   const raw=(location.hash||'#home').slice(1).split('/'),page=raw[0],id=raw[1]||'';
-  const fallback={hive:'hives',inspection:id?'hive/'+id:'hives',timeline:id?'hive/'+id:'home',honey:'home',map:'home','all-hives':'hives','all-actions':'actions','feeding-record':'actions','treatment-record':'actions','harvest-record':'honey',analysis:'insights',trend:'insights',risk:'insights',season:'insights','honey-analytics':'insights',recommendations:'insights',settings:'home',account:'settings',subscription:'settings',apiary:'settings','seasonal-settings':'apiary','notification-preferences':'settings','units-region':'settings','smart-features':'settings','data-backup':'settings',security:'settings',store:'settings',notifications:'home',help:'settings',faq:'help',support:'help',about:'settings',privacy:'security',terms:'security'}[page]||'home';
+  const fallback={hive:'hives',inspection:id?'hive/'+id:'hives',timeline:id?'hive/'+id:'home',honey:'home',map:'home','all-hives':'hives','all-actions':'actions','feeding-record':'actions','treatment-record':'actions','harvest-record':'honey',analysis:'insights',trend:'insights',risk:'insights',season:'insights','honey-analytics':'insights',recommendations:'insights',settings:'home',account:'settings',subscription:'settings',apiary:'settings','seasonal-settings':'apiary','notification-preferences':'settings','units-region':'settings','smart-features':'settings','data-backup':'settings',security:'settings',store:'settings',notifications:'home',help:'settings',faq:'help',support:'help',about:'settings',version:'about',privacy:'security',terms:'security'}[page]||'home';
   return `<button class="iconbtn" onclick="safeBackV51('${fallback}')">‹</button><div class="pagebar-title">${title}</div>${right||'<span></span>'}`
 };
 function noHiveStateV51(r,title='No hives yet'){

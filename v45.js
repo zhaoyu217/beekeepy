@@ -673,6 +673,8 @@ function helpPage(r){r.innerHTML=`<div class="vs"><div class="search"><span>⌕<
 
 let V49_TIMELINE_LIMIT=10;
 let V49_TIMELINE_CACHE=[];
+let V49_TIMELINE_FILTER='All';
+let V49_TIMELINE_FILTER_ROUTE='';
 function v49TimelineRows(hiveId=''){
   const s=v45s(), rows=[];
   const add=(type,x,detail,img='')=>{if(!hiveId||x.hiveId===hiveId)rows.push({key:type+':'+x.id,type,hiveId:x.hiveId,date:x.date||'',detail:detail||'',img})};
@@ -689,16 +691,16 @@ function openTimelineEventV49(key){
   modal(`<div class="modalhead"><b>${esc(e.type)} · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(e.date)}<br>${esc(e.detail)}</div><button class="primary" onclick="closeModal(this);go('hive/${e.hiveId}')">Open Hive</button>`)
 }
 function applyTimelineFilterV49(){
-  const q=(idq('v49tsearch')?.value||'').toLowerCase(), active=document.querySelector('.timeline .filters button.active')?.dataset.type||'All';
+  const q=(idq('v49tsearch')?.value||'').toLowerCase(), route=(location.hash||'#timeline').slice(1), active=V49_TIMELINE_FILTER_ROUTE===route?(V49_TIMELINE_FILTER||'All'):'All';
   document.querySelectorAll('[data-v49-timeline]').forEach((el,i)=>{const matchType=active==='All'||el.dataset.type===active, matchQ=!q||el.dataset.search.includes(q);el.style.display=(i<V49_TIMELINE_LIMIT&&matchType&&matchQ)?'grid':'none'});
   const more=idq('v49loadmore');if(more)more.style.display=V49_TIMELINE_CACHE.length>V49_TIMELINE_LIMIT?'block':'none';
 }
-function filterTimelineV49(type,btn){selectTab(btn);applyTimelineFilterV49()}
+function filterTimelineV49(type,btn){V49_TIMELINE_FILTER=type||'All';V49_TIMELINE_FILTER_ROUTE=(location.hash||'#timeline').slice(1);selectTab(btn);applyTimelineFilterV49()}
 function loadMoreTimelineV49(){V49_TIMELINE_LIMIT+=10;applyTimelineFilterV49()}
 function timelinePage(r){
-  const parts=(location.hash||'#timeline').slice(1).split('/'),hiveId=parts[1]||'';V49_TIMELINE_LIMIT=10;V49_TIMELINE_CACHE=v49TimelineRows(hiveId);
+  const route=(location.hash||'#timeline').slice(1),parts=route.split('/'),hiveId=parts[1]||'';if(V49_TIMELINE_FILTER_ROUTE!==route){V49_TIMELINE_FILTER='All';V49_TIMELINE_FILTER_ROUTE=route}V49_TIMELINE_LIMIT=10;V49_TIMELINE_CACHE=v49TimelineRows(hiveId);
   const s=v45s(), title=hiveId?esc(hive(s,hiveId)?.name||'Hive'):'';
-  r.innerHTML=`<div class="vs v88-timeline timeline"><div class="fadephoto" style="--hero:url('assets/hive_detail_hero.jpg')"></div>${title?`<div class="small muted timeline-history-title">${title} history</div>`:''}<div class="search"><span>⌕</span><input id="v49tsearch" placeholder="Search timeline"></div><div class="filters timeline-filters"><button class="timeline-event" class="active" data-type="All" onclick="filterTimelineV49('All',this)">All</button><button data-type="Inspection" onclick="filterTimelineV49('Inspection',this)">Inspection</button><button data-type="Feeding" onclick="filterTimelineV49('Feeding',this)">Feeding</button><button data-type="Treatment" onclick="filterTimelineV49('Treatment',this)">Treatment</button><button data-type="Harvest" onclick="filterTimelineV49('Harvest',this)">Harvest</button><button data-type="Photo" onclick="filterTimelineV49('Photo',this)">Photos</button></div><div class="tlist">${V49_TIMELINE_CACHE.map(e=>{const h=hive(s,e.hiveId);return `<button data-v49-timeline data-type="${e.type}" data-search="${esc((e.type+' '+(h?.name||'')+' '+e.detail).toLowerCase())}" onclick="openTimelineEventV49('${e.key}')"><time>${fmtDate(e.date)}</time><i></i><div><b>${e.type}</b><span>${esc(h?.name||'Hive')}</span><small>${esc(e.detail)}</small></div>${e.img?`<img src="${e.img}">`:''}</button>`}).join('')||'<div class="vc small muted">No history yet.</div>'}</div><button id="v49loadmore" class="secondary" onclick="loadMoreTimelineV49()">Load More</button></div>`;
+  r.innerHTML=`<div class="vs v88-timeline timeline"><div class="fadephoto" style="--hero:url('assets/hive_detail_hero.jpg')"></div>${title?`<div class="small muted timeline-history-title">${title} history</div>`:''}<div class="search"><span>⌕</span><input id="v49tsearch" placeholder="Search timeline"></div><div class="filters timeline-filters"><button class="timeline-event ${V49_TIMELINE_FILTER==='All'?'active':''}" data-type="All" onclick="filterTimelineV49('All',this)">All</button><button class="${V49_TIMELINE_FILTER==='Inspection'?'active':''}" data-type="Inspection" onclick="filterTimelineV49('Inspection',this)">Inspection</button><button class="${V49_TIMELINE_FILTER==='Feeding'?'active':''}" data-type="Feeding" onclick="filterTimelineV49('Feeding',this)">Feeding</button><button class="${V49_TIMELINE_FILTER==='Treatment'?'active':''}" data-type="Treatment" onclick="filterTimelineV49('Treatment',this)">Treatment</button><button class="${V49_TIMELINE_FILTER==='Harvest'?'active':''}" data-type="Harvest" onclick="filterTimelineV49('Harvest',this)">Harvest</button><button class="${V49_TIMELINE_FILTER==='Photo'?'active':''}" data-type="Photo" onclick="filterTimelineV49('Photo',this)">Photos</button></div><div class="tlist">${V49_TIMELINE_CACHE.map(e=>{const h=hive(s,e.hiveId);return `<button data-v49-timeline data-type="${e.type}" data-search="${esc((e.type+' '+(h?.name||'')+' '+e.detail).toLowerCase())}" onclick="openTimelineEventV49('${e.key}')"><time>${fmtDate(e.date)}</time><i></i><div><b>${e.type}</b><span>${esc(h?.name||'Hive')}</span><small>${esc(e.detail)}</small></div>${e.img?`<img src="${e.img}">`:''}</button>`}).join('')||'<div class="vc small muted">No history yet.</div>'}</div><button id="v49loadmore" class="secondary" onclick="loadMoreTimelineV49()">Load More</button></div>`;
   idq('v49tsearch').oninput=applyTimelineFilterV49;applyTimelineFilterV49();
 }
 

@@ -3142,7 +3142,7 @@ function v63Menu(){
   box.innerHTML=`
     <button onclick="go('map');this.parentElement.remove()">Map</button>
     <button onclick="openHiveManagementV186();this.parentElement.remove()">Hive Management</button>
-    <button onclick="go('settings');this.parentElement.remove()">Settings</button>`;
+`;
   document.body.appendChild(box);
 }
 

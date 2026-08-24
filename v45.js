@@ -694,24 +694,92 @@ function versionPageV139(r){
 
 settings=function(r){
   const s=v45s();
-  r.innerHTML=`<div class="vs">
-    <section class="setmenu">
-      <button onclick="go('account')"><span>◉</span><b>Account</b><em>›</em></button>
-      <button onclick="go('subscription')"><span>✦</span><b>Subscription</b><em>${esc(s.user.plan||'Free')}</em></button>
-      <button onclick="go('apiary')"><span>⌂</span><b>Apiary & Hive Management</b><em>›</em></button>
-      <button onclick="go('seasonal-settings')"><span>☀</span><b>Seasonal Settings</b><em>›</em></button>
-      <button onclick="go('notification-preferences')"><span>●</span><b>Notification Preferences</b><em>›</em></button>
-      <button onclick="go('units-region')"><span>◇</span><b>Units & Region</b><em>›</em></button>
-      <button onclick="go('smart-features')"><span>✦</span><b>Smart Features</b><em>›</em></button>
-      <button onclick="go('data-backup')"><span>☁</span><b>Data & Backup</b><em>›</em></button>
-      <button onclick="go('security')"><span>⌁</span><b>Privacy & Security</b><em>›</em></button>
+  const plan=esc(s.user.plan||'Free');
+  r.innerHTML=`<style>
+    .v144-settings{padding:18px 10px 34px;position:relative}
+    .v144-settings *{box-sizing:border-box}
+    .v144-settings .v144-settings-head{padding:4px 4px 14px}
+    .v144-settings .v144-settings-title{margin:0;color:#25332b;font-size:28px;line-height:1.12;font-weight:800;letter-spacing:-.55px}
+    .v144-settings .v144-settings-sub{margin-top:6px;color:#667166;font-size:14px;line-height:1.45}
+    .v144-settings .v144-settings-hero{position:relative;overflow:hidden;min-height:104px;margin:0 0 18px;border:1px solid rgba(47,59,51,.08);border-radius:16px;background:#eef1e8 url('assets/settings_apiary.jpg') center/cover no-repeat;box-shadow:0 6px 18px rgba(47,59,51,.08)}
+    .v144-settings .v144-settings-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(247,245,239,.98) 0%,rgba(247,245,239,.90) 47%,rgba(247,245,239,.26) 76%,rgba(247,245,239,.08) 100%)}
+    .v144-settings .v144-settings-hero-copy{position:relative;z-index:1;display:flex;align-items:center;gap:12px;min-height:104px;padding:18px 16px;max-width:76%}
+    .v144-settings .v144-settings-hero-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:#5E7350;color:white;font-size:20px;box-shadow:0 3px 9px rgba(47,59,51,.14)}
+    .v144-settings .v144-settings-hero-copy b{display:block;color:#25332b;font-size:16px;line-height:1.25;margin-bottom:4px}
+    .v144-settings .v144-settings-hero-copy span{display:block;color:#5f695f;font-size:13px;line-height:1.45}
+    .v144-settings .v144-group{margin:0 0 18px}
+    .v144-settings .v144-group-title{display:flex;align-items:center;gap:8px;margin:0 4px 8px;color:#536646;font-size:15px;font-weight:800;letter-spacing:.01em}
+    .v144-settings .v144-group-title:after{content:'';height:1px;flex:1;background:linear-gradient(90deg,rgba(94,115,80,.18),transparent)}
+    .v144-settings .v144-menu{overflow:hidden;border:1px solid rgba(47,59,51,.10);border-radius:16px;background:rgba(255,255,255,.94);box-shadow:0 5px 16px rgba(47,59,51,.07)}
+    .v144-settings .v144-row{width:100%;min-height:68px;display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:10px;padding:10px 13px;border:0;border-bottom:1px solid rgba(47,59,51,.09);background:transparent;color:#2F3B33;text-align:left;cursor:pointer;font:inherit}
+    .v144-settings .v144-row:last-child{border-bottom:0}
+    .v144-settings .v144-row:hover{background:#fbfaf6}
+    .v144-settings .v144-row:active{background:#f4f2eb}
+    .v144-settings .v144-ico{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font-size:18px;font-style:normal;background:#eef3e9;color:#536b45}
+    .v144-settings .v144-ico.amber{background:#fbf0d3;color:#a97000}
+    .v144-settings .v144-ico.blue{background:#e9f1f7;color:#376d91}
+    .v144-settings .v144-ico.violet{background:#f0eafb;color:#7252a2}
+    .v144-settings .v144-ico.sage{background:#edf3e8;color:#5E7350}
+    .v144-settings .v144-copy{min-width:0}
+    .v144-settings .v144-copy b{display:block;color:#28352d;font-size:15px;line-height:1.25;font-weight:750}
+    .v144-settings .v144-copy small{display:block;margin-top:3px;color:#747d74;font-size:12.5px;line-height:1.35;font-weight:450;white-space:normal}
+    .v144-settings .v144-meta{display:flex;align-items:center;justify-content:flex-end;min-width:24px;color:#667166;font-size:14px;font-style:normal;white-space:nowrap}
+    .v144-settings .v144-chevron{font-size:24px;line-height:1;color:#7c867d;font-weight:300;transform:translateY(-1px)}
+    .v144-settings .v144-store{background:linear-gradient(90deg,#fffaf0,#fff4d9)}
+    .v144-settings .v144-store:hover{background:linear-gradient(90deg,#fff8e9,#ffefc7)}
+    .v144-settings .v144-store .v144-copy b{color:#805700}
+    .v144-settings .v144-version{font-weight:750;color:#6b735f}
+    @media(max-width:390px){
+      .v144-settings{padding-left:8px;padding-right:8px}
+      .v144-settings .v144-settings-title{font-size:26px}
+      .v144-settings .v144-row{grid-template-columns:42px 1fr auto;padding-left:11px;padding-right:11px}
+      .v144-settings .v144-ico{width:38px;height:38px}
+      .v144-settings .v144-settings-hero-copy{max-width:82%}
+    }
+  </style>
+  <div class="vs v144-settings">
+    <div class="v144-settings-head">
+      <h1 class="v144-settings-title">Settings</h1>
+      <div class="v144-settings-sub">Manage your app preferences and beekeeping setup</div>
+    </div>
+
+    <section class="v144-settings-hero" aria-label="HiveDash settings overview">
+      <div class="v144-settings-hero-copy">
+        <span class="v144-settings-hero-icon">☁</span>
+        <div><b>HiveDash settings</b><span>Your preferences, account and beekeeping setup in one place.</span></div>
+      </div>
     </section>
-    <section class="setmenu">
-      <button onclick="window.open('https://www.skoghive.com','_blank','noopener')"><span>⌂</span><b>SkogHive Store</b><em>›</em></button>
-      <button onclick="go('help')"><span>?</span><b>Help Center</b><em>›</em></button>
-      <button onclick="go('support')"><span>✉</span><b>Contact Support</b><em>›</em></button>
-      <button onclick="go('about')"><span>ⓘ</span><b>About HiveDash</b><em>›</em></button>
-      <button onclick="go('version')"><span>ⓘ</span><b>Version</b><em>139</em></button>
+
+    <section class="v144-group">
+      <div class="v144-group-title">Preferences</div>
+      <div class="v144-menu">
+        <button class="v144-row" onclick="go('account')"><i class="v144-ico sage">●</i><span class="v144-copy"><b>Account</b><small>Profile, sign-in and personal information</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('subscription')"><i class="v144-ico amber">★</i><span class="v144-copy"><b>Subscription</b><small>Manage your HiveDash plan</small></span><em class="v144-meta v144-version">${plan}</em></button>
+        <button class="v144-row" onclick="go('apiary')"><i class="v144-ico amber">⌂</i><span class="v144-copy"><b>Apiary & Hive Management</b><small>Manage apiaries, locations and hives</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('seasonal-settings')"><i class="v144-ico sage">☀</i><span class="v144-copy"><b>Seasonal Settings</b><small>Configure seasonal reminders and guidance</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('notification-preferences')"><i class="v144-ico violet">●</i><span class="v144-copy"><b>Notification Preferences</b><small>Customize notification settings</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('units-region')"><i class="v144-ico blue">◇</i><span class="v144-copy"><b>Units & Region</b><small>Units and regional preferences</small></span><em class="v144-meta v144-chevron">›</em></button>
+      </div>
+    </section>
+
+    <section class="v144-group">
+      <div class="v144-group-title">App & Data</div>
+      <div class="v144-menu">
+        <button class="v144-row" onclick="go('smart-features')"><i class="v144-ico violet">✦</i><span class="v144-copy"><b>Smart Features</b><small>AI insights and smart recommendations</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('data-backup')"><i class="v144-ico blue">☁</i><span class="v144-copy"><b>Data & Backup</b><small>Import, export and backup your data</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('security')"><i class="v144-ico sage">◆</i><span class="v144-copy"><b>Privacy & Security</b><small>Privacy and account security settings</small></span><em class="v144-meta v144-chevron">›</em></button>
+      </div>
+    </section>
+
+    <section class="v144-group">
+      <div class="v144-group-title">Support & About</div>
+      <div class="v144-menu">
+        <button class="v144-row v144-store" onclick="window.open('https://www.skoghive.com','_blank','noopener')"><i class="v144-ico amber">⌂</i><span class="v144-copy"><b>SkogHive Store</b><small>Browse beekeeping equipment and accessories</small></span><em class="v144-meta v144-chevron">↗</em></button>
+        <button class="v144-row" onclick="go('help')"><i class="v144-ico blue">?</i><span class="v144-copy"><b>Help Center</b><small>Guides, answers and app help</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('support')"><i class="v144-ico sage">✉</i><span class="v144-copy"><b>Contact Support</b><small>Get help from HiveDash support</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('about')"><i class="v144-ico sage">ⓘ</i><span class="v144-copy"><b>About HiveDash</b><small>Product information and legal links</small></span><em class="v144-meta v144-chevron">›</em></button>
+        <button class="v144-row" onclick="go('version')"><i class="v144-ico sage">ⓘ</i><span class="v144-copy"><b>Version</b><small>Installed HiveDash app version</small></span><em class="v144-meta v144-version">139</em></button>
+      </div>
     </section>
   </div>`;
 }

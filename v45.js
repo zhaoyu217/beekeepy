@@ -2584,8 +2584,17 @@ v45s=function(){const s=V50_OLD_V45S();if(!isPro(s)){for(const k of V50_PRO_FEAT
    Locked UI architecture/navigation preserved. Only safety behavior.
    ========================================================= */
 function safeBackV51(fallback='home'){
-  if(history.length>1){history.back();return}
-  go(fallback)
+  const target=String(fallback||'home').replace(/^#/,'');
+  try{
+    if(typeof go==='function'){
+      go(target);
+    }else{
+      location.hash=target;
+    }
+  }catch(err){
+    console.error('HiveDash back navigation failed',err);
+    location.hash=target;
+  }
 }
 Vback=function(title,right=''){
   const raw=(location.hash||'#home').slice(1).split('/'),page=raw[0],id=raw[1]||'';
@@ -4314,5 +4323,63 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       if(e.target===confirm) confirm.remove();
     });
   };
+})();
+
+/* ==========================================================
+   V187 — GLOBAL ROUTE BLANK-VIEW RECOVERY
+   Functional-only.
+   - no visual changes
+   - no route target changes
+   - no page architecture changes
+   - only calls current render() if a known HiveDash route ends
+     up with an actually blank #view after startup/hashchange.
+   ========================================================== */
+(function(){
+  if(window.__V187_ROUTE_BLANK_RECOVERY__) return;
+  window.__V187_ROUTE_BLANK_RECOVERY__=true;
+
+  const knownRoutes=new Set([
+    'home','hives','hive','inspection','timeline','honey','map',
+    'insights','actions','all-hives','all-actions',
+    'feeding-record','treatment-record','harvest-record',
+    'analysis','trend','risk','season','honey-analytics',
+    'recommendations','settings','account','subscription','apiary',
+    'seasonal-settings','notification-preferences','units-region',
+    'smart-features','data-backup','security','store','notifications',
+    'help','faq','support','about','version','privacy','terms'
+  ]);
+
+  function v187RepairBlankRoute(){
+    const root=String(location.hash||'#home').replace(/^#/,'').split('/')[0]||'home';
+    if(!knownRoutes.has(root)) return;
+
+    const view=document.getElementById('view');
+    if(!view) return;
+
+    const blank=!view.children.length && !String(view.textContent||'').trim();
+    if(!blank) return;
+
+    try{
+      if(typeof render==='function') render();
+    }catch(err){
+      console.error('V187 blank-route recovery failed',err);
+    }
+  }
+
+  window.addEventListener('hashchange',()=>{
+    setTimeout(v187RepairBlankRoute,80);
+  });
+
+  window.addEventListener('pageshow',()=>{
+    setTimeout(v187RepairBlankRoute,0);
+  });
+
+  if(document.readyState==='loading'){
+    window.addEventListener('DOMContentLoaded',()=>{
+      setTimeout(v187RepairBlankRoute,0);
+    },{once:true});
+  }else{
+    setTimeout(v187RepairBlankRoute,0);
+  }
 })();
 

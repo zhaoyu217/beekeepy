@@ -984,6 +984,89 @@ settings=function(r){
       .v145-settings .v145-copy b{font-size:16px}
       .v145-settings .v145-copy small{font-size:12.8px}
     }
+  
+    /* V146 SETTINGS TYPOGRAPHY UNIFIED */
+    .v145-settings,
+    .v145-settings button,
+    .v145-settings input,
+    .v145-settings select,
+    .v145-settings textarea{
+      font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;
+      color:#2F3B33;
+    }
+
+    .v145-settings .v145-settings-title{
+      color:#2F3B33;
+      font-size:26px;
+      line-height:1.16;
+      font-weight:700;
+      letter-spacing:-.35px;
+    }
+    .v145-settings .v145-settings-sub{
+      color:#667068;
+      font-size:14px;
+      line-height:1.42;
+      font-weight:400;
+    }
+
+    .v145-settings .v145-settings-hero-copy b{
+      color:#2F3B33;
+      font-size:16px;
+      line-height:1.24;
+      font-weight:700;
+      letter-spacing:0;
+    }
+    .v145-settings .v145-settings-hero-copy span:not(.v145-settings-hero-icon){
+      color:#626C65;
+      font-size:13px;
+      line-height:1.42;
+      font-weight:400;
+    }
+
+    .v145-settings .v145-group-title{
+      color:#5E7350;
+      font-size:14px;
+      line-height:1.3;
+      font-weight:700;
+      letter-spacing:0;
+    }
+
+    .v145-settings .v145-copy b{
+      color:#2F3B33;
+      font-size:15px;
+      line-height:1.25;
+      font-weight:600;
+      letter-spacing:0;
+    }
+    .v145-settings .v145-copy small{
+      color:#737B75;
+      font-size:12px;
+      line-height:1.38;
+      font-weight:400;
+    }
+
+    .v145-settings .v145-meta{
+      color:#68736B;
+      font-size:13px;
+      font-weight:400;
+    }
+    .v145-settings .v145-version{
+      color:#5E7350;
+      font-size:13px;
+      font-weight:600;
+    }
+    .v145-settings .v145-store .v145-copy b{
+      color:#7A5900;
+      font-weight:600;
+    }
+
+    @media(max-width:370px){
+      .v145-settings .v145-settings-title{font-size:26px}
+      .v145-settings .v145-settings-sub{font-size:14px}
+      .v145-settings .v145-copy b{font-size:15px}
+      .v145-settings .v145-copy small{font-size:12px}
+    }
+
   </style>
 
   <div class="vs v145-settings">

@@ -696,89 +696,341 @@ settings=function(r){
   const s=v45s();
   const plan=esc(s.user.plan||'Free');
   r.innerHTML=`<style>
-    .v144-settings{padding:18px 10px 34px;position:relative}
-    .v144-settings *{box-sizing:border-box}
-    .v144-settings .v144-settings-head{padding:4px 4px 14px}
-    .v144-settings .v144-settings-title{margin:0;color:#25332b;font-size:28px;line-height:1.12;font-weight:800;letter-spacing:-.55px}
-    .v144-settings .v144-settings-sub{margin-top:6px;color:#667166;font-size:14px;line-height:1.45}
-    .v144-settings .v144-settings-hero{position:relative;overflow:hidden;min-height:104px;margin:0 0 18px;border:1px solid rgba(47,59,51,.08);border-radius:16px;background:#eef1e8 url('assets/settings_apiary.jpg') center/cover no-repeat;box-shadow:0 6px 18px rgba(47,59,51,.08)}
-    .v144-settings .v144-settings-hero:before{content:'';position:absolute;inset:0;background:linear-gradient(90deg,rgba(247,245,239,.98) 0%,rgba(247,245,239,.90) 47%,rgba(247,245,239,.26) 76%,rgba(247,245,239,.08) 100%)}
-    .v144-settings .v144-settings-hero-copy{position:relative;z-index:1;display:flex;align-items:center;gap:12px;min-height:104px;padding:18px 16px;max-width:76%}
-    .v144-settings .v144-settings-hero-icon{display:grid;place-items:center;flex:0 0 42px;width:42px;height:42px;border-radius:50%;background:#5E7350;color:white;font-size:20px;box-shadow:0 3px 9px rgba(47,59,51,.14)}
-    .v144-settings .v144-settings-hero-copy b{display:block;color:#25332b;font-size:16px;line-height:1.25;margin-bottom:4px}
-    .v144-settings .v144-settings-hero-copy span{display:block;color:#5f695f;font-size:13px;line-height:1.45}
-    .v144-settings .v144-group{margin:0 0 18px}
-    .v144-settings .v144-group-title{display:flex;align-items:center;gap:8px;margin:0 4px 8px;color:#536646;font-size:15px;font-weight:800;letter-spacing:.01em}
-    .v144-settings .v144-group-title:after{content:'';height:1px;flex:1;background:linear-gradient(90deg,rgba(94,115,80,.18),transparent)}
-    .v144-settings .v144-menu{overflow:hidden;border:1px solid rgba(47,59,51,.10);border-radius:16px;background:rgba(255,255,255,.94);box-shadow:0 5px 16px rgba(47,59,51,.07)}
-    .v144-settings .v144-row{width:100%;min-height:68px;display:grid;grid-template-columns:46px 1fr auto;align-items:center;gap:10px;padding:10px 13px;border:0;border-bottom:1px solid rgba(47,59,51,.09);background:transparent;color:#2F3B33;text-align:left;cursor:pointer;font:inherit}
-    .v144-settings .v144-row:last-child{border-bottom:0}
-    .v144-settings .v144-row:hover{background:#fbfaf6}
-    .v144-settings .v144-row:active{background:#f4f2eb}
-    .v144-settings .v144-ico{display:grid;place-items:center;width:40px;height:40px;border-radius:50%;font-size:18px;font-style:normal;background:#eef3e9;color:#536b45}
-    .v144-settings .v144-ico.amber{background:#fbf0d3;color:#a97000}
-    .v144-settings .v144-ico.blue{background:#e9f1f7;color:#376d91}
-    .v144-settings .v144-ico.violet{background:#f0eafb;color:#7252a2}
-    .v144-settings .v144-ico.sage{background:#edf3e8;color:#5E7350}
-    .v144-settings .v144-copy{min-width:0}
-    .v144-settings .v144-copy b{display:block;color:#28352d;font-size:15px;line-height:1.25;font-weight:750}
-    .v144-settings .v144-copy small{display:block;margin-top:3px;color:#747d74;font-size:12.5px;line-height:1.35;font-weight:450;white-space:normal}
-    .v144-settings .v144-meta{display:flex;align-items:center;justify-content:flex-end;min-width:24px;color:#667166;font-size:14px;font-style:normal;white-space:nowrap}
-    .v144-settings .v144-chevron{font-size:24px;line-height:1;color:#7c867d;font-weight:300;transform:translateY(-1px)}
-    .v144-settings .v144-store{background:linear-gradient(90deg,#fffaf0,#fff4d9)}
-    .v144-settings .v144-store:hover{background:linear-gradient(90deg,#fff8e9,#ffefc7)}
-    .v144-settings .v144-store .v144-copy b{color:#805700}
-    .v144-settings .v144-version{font-weight:750;color:#6b735f}
-    @media(max-width:390px){
-      .v144-settings{padding-left:8px;padding-right:8px}
-      .v144-settings .v144-settings-title{font-size:26px}
-      .v144-settings .v144-row{grid-template-columns:42px 1fr auto;padding-left:11px;padding-right:11px}
-      .v144-settings .v144-ico{width:38px;height:38px}
-      .v144-settings .v144-settings-hero-copy{max-width:82%}
+    /* ==========================================================
+       V145 — SETTINGS VISUAL MASTER FINAL
+       VISUAL-ONLY SCOPE:
+       - no route changes
+       - no entry changes
+       - no navigation changes
+       - no data / action logic changes
+       ========================================================== */
+
+    .v145-settings{
+      width:100%;
+      margin:0;
+      padding:24px 6px 42px;
+      position:relative;
+      box-sizing:border-box;
+    }
+    .v145-settings *{box-sizing:border-box}
+
+    .v145-settings .v145-settings-head{
+      padding:8px 4px 20px;
+    }
+    .v145-settings .v145-settings-title{
+      margin:0;
+      color:#1f2f27;
+      font-size:34px;
+      line-height:1.05;
+      font-weight:800;
+      letter-spacing:-.8px;
+    }
+    .v145-settings .v145-settings-sub{
+      max-width:330px;
+      margin-top:8px;
+      color:#626d66;
+      font-size:15.5px;
+      line-height:1.42;
+      font-weight:500;
+    }
+
+    .v145-settings .v145-settings-hero{
+      position:relative;
+      overflow:hidden;
+      min-height:148px;
+      margin:0 0 28px;
+      border:1px solid rgba(47,59,51,.09);
+      border-radius:20px;
+      background:
+        #edf1e8
+        url('assets/settings_apiary.jpg')
+        69% center/cover no-repeat;
+      box-shadow:
+        0 12px 28px rgba(47,59,51,.10),
+        0 2px 6px rgba(47,59,51,.05);
+    }
+    .v145-settings .v145-settings-hero:before{
+      content:'';
+      position:absolute;
+      inset:0;
+      background:linear-gradient(
+        90deg,
+        rgba(255,254,251,.99) 0%,
+        rgba(255,254,251,.96) 28%,
+        rgba(255,254,251,.78) 52%,
+        rgba(255,254,251,.24) 73%,
+        rgba(255,254,251,.05) 100%
+      );
+    }
+    .v145-settings .v145-settings-hero:after{
+      content:'';
+      position:absolute;
+      inset:0;
+      pointer-events:none;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.30);
+      border-radius:20px;
+    }
+    .v145-settings .v145-settings-hero-copy{
+      position:relative;
+      z-index:1;
+      display:flex;
+      align-items:center;
+      gap:16px;
+      width:72%;
+      min-height:148px;
+      padding:24px 20px;
+    }
+    .v145-settings .v145-settings-hero-icon{
+      display:grid;
+      place-items:center;
+      flex:0 0 52px;
+      width:52px;
+      height:52px;
+      border-radius:50%;
+      background:#5E7350;
+      color:#fff;
+      font-size:25px;
+      line-height:1;
+      box-shadow:0 5px 14px rgba(47,59,51,.18);
+    }
+    .v145-settings .v145-settings-hero-copy b{
+      display:block;
+      margin:0 0 6px;
+      color:#203028;
+      font-size:18px;
+      line-height:1.18;
+      font-weight:800;
+      letter-spacing:-.2px;
+    }
+    .v145-settings .v145-settings-hero-copy span:not(.v145-settings-hero-icon){
+      display:block;
+      color:#59655d;
+      font-size:14.5px;
+      line-height:1.48;
+      font-weight:500;
+    }
+
+    .v145-settings .v145-group{
+      margin:0 0 26px;
+    }
+    .v145-settings .v145-group-title{
+      display:flex;
+      align-items:center;
+      gap:10px;
+      margin:0 4px 11px;
+      color:#4f653f;
+      font-size:16.5px;
+      line-height:1.2;
+      font-weight:800;
+      letter-spacing:.01em;
+    }
+    .v145-settings .v145-group-title:after{
+      content:'';
+      height:1px;
+      flex:1;
+      background:linear-gradient(
+        90deg,
+        rgba(94,115,80,.22),
+        rgba(94,115,80,.03)
+      );
+    }
+
+    .v145-settings .v145-menu{
+      overflow:hidden;
+      border:1px solid rgba(47,59,51,.09);
+      border-radius:20px;
+      background:rgba(255,255,255,.97);
+      box-shadow:
+        0 10px 26px rgba(47,59,51,.085),
+        0 2px 5px rgba(47,59,51,.035);
+    }
+
+    .v145-settings .v145-row{
+      width:100%;
+      min-height:78px;
+      display:grid;
+      grid-template-columns:54px minmax(0,1fr) auto;
+      align-items:center;
+      gap:13px;
+      padding:12px 17px;
+      border:0;
+      border-bottom:1px solid rgba(47,59,51,.085);
+      background:transparent;
+      color:#2F3B33;
+      text-align:left;
+      cursor:pointer;
+      font:inherit;
+      -webkit-tap-highlight-color:transparent;
+    }
+    .v145-settings .v145-row:last-child{border-bottom:0}
+    .v145-settings .v145-row:hover{background:#fbfaf6}
+    .v145-settings .v145-row:active{background:#f4f2eb}
+
+    .v145-settings .v145-ico{
+      display:grid;
+      place-items:center;
+      width:48px;
+      height:48px;
+      border-radius:50%;
+      font-size:21px;
+      line-height:1;
+      font-style:normal;
+      font-weight:700;
+      background:#eef3e9;
+      color:#536b45;
+      box-shadow:inset 0 0 0 1px rgba(255,255,255,.52);
+    }
+    .v145-settings .v145-ico.amber{
+      background:#fff0ca;
+      color:#b77800;
+    }
+    .v145-settings .v145-ico.blue{
+      background:#e7f2f8;
+      color:#2f82b5;
+    }
+    .v145-settings .v145-ico.violet{
+      background:#f0e9fb;
+      color:#7450b0;
+    }
+    .v145-settings .v145-ico.sage{
+      background:#edf4e7;
+      color:#557044;
+    }
+
+    .v145-settings .v145-copy{min-width:0}
+    .v145-settings .v145-copy b{
+      display:block;
+      color:#24332b;
+      font-size:17px;
+      line-height:1.2;
+      font-weight:800;
+      letter-spacing:-.15px;
+    }
+    .v145-settings .v145-copy small{
+      display:block;
+      margin-top:4px;
+      color:#727b74;
+      font-size:13.5px;
+      line-height:1.38;
+      font-weight:500;
+      white-space:normal;
+    }
+
+    .v145-settings .v145-meta{
+      display:flex;
+      align-items:center;
+      justify-content:flex-end;
+      min-width:26px;
+      padding-left:4px;
+      color:#68736b;
+      font-size:15px;
+      line-height:1;
+      font-style:normal;
+      white-space:nowrap;
+    }
+    .v145-settings .v145-chevron{
+      font-size:29px;
+      color:#778279;
+      font-weight:300;
+      transform:translateY(-1px);
+    }
+    .v145-settings .v145-version{
+      color:#667058;
+      font-size:15px;
+      font-weight:800;
+    }
+
+    .v145-settings .v145-store{
+      background:linear-gradient(90deg,#fffaf0 0%,#fff3d0 100%);
+    }
+    .v145-settings .v145-store:hover{
+      background:linear-gradient(90deg,#fff8e8 0%,#ffedbc 100%);
+    }
+    .v145-settings .v145-store .v145-copy b{
+      color:#785600;
+    }
+    .v145-settings .v145-store .v145-meta{
+      color:#a46e00;
+    }
+
+    @media(max-width:370px){
+      .v145-settings{padding-left:4px;padding-right:4px}
+      .v145-settings .v145-settings-title{font-size:31px}
+      .v145-settings .v145-settings-sub{font-size:14.5px}
+      .v145-settings .v145-settings-hero{min-height:136px}
+      .v145-settings .v145-settings-hero-copy{
+        min-height:136px;
+        width:77%;
+        gap:13px;
+        padding:20px 16px;
+      }
+      .v145-settings .v145-settings-hero-icon{
+        width:48px;
+        height:48px;
+        flex-basis:48px;
+        font-size:22px;
+      }
+      .v145-settings .v145-row{
+        min-height:74px;
+        grid-template-columns:50px minmax(0,1fr) auto;
+        gap:11px;
+        padding:11px 14px;
+      }
+      .v145-settings .v145-ico{
+        width:44px;
+        height:44px;
+        font-size:19px;
+      }
+      .v145-settings .v145-copy b{font-size:16px}
+      .v145-settings .v145-copy small{font-size:12.8px}
     }
   </style>
-  <div class="vs v144-settings">
-    <div class="v144-settings-head">
-      <h1 class="v144-settings-title">Settings</h1>
-      <div class="v144-settings-sub">Manage your app preferences and beekeeping setup</div>
+
+  <div class="vs v145-settings">
+    <div class="v145-settings-head">
+      <h1 class="v145-settings-title">Settings</h1>
+      <div class="v145-settings-sub">Manage your app preferences and beekeeping setup</div>
     </div>
 
-    <section class="v144-settings-hero" aria-label="HiveDash settings overview">
-      <div class="v144-settings-hero-copy">
-        <span class="v144-settings-hero-icon">☁</span>
-        <div><b>HiveDash settings</b><span>Your preferences, account and beekeeping setup in one place.</span></div>
+    <section class="v145-settings-hero" aria-label="HiveDash settings overview">
+      <div class="v145-settings-hero-copy">
+        <span class="v145-settings-hero-icon" aria-hidden="true">⚙</span>
+        <div>
+          <b>HiveDash settings</b>
+          <span>Your preferences, account and beekeeping setup in one place.</span>
+        </div>
       </div>
     </section>
 
-    <section class="v144-group">
-      <div class="v144-group-title">Preferences</div>
-      <div class="v144-menu">
-        <button class="v144-row" onclick="go('account')"><i class="v144-ico sage">●</i><span class="v144-copy"><b>Account</b><small>Profile, sign-in and personal information</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('subscription')"><i class="v144-ico amber">★</i><span class="v144-copy"><b>Subscription</b><small>Manage your HiveDash plan</small></span><em class="v144-meta v144-version">${plan}</em></button>
-        <button class="v144-row" onclick="go('apiary')"><i class="v144-ico amber">⌂</i><span class="v144-copy"><b>Apiary & Hive Management</b><small>Manage apiaries, locations and hives</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('seasonal-settings')"><i class="v144-ico sage">☀</i><span class="v144-copy"><b>Seasonal Settings</b><small>Configure seasonal reminders and guidance</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('notification-preferences')"><i class="v144-ico violet">●</i><span class="v144-copy"><b>Notification Preferences</b><small>Customize notification settings</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('units-region')"><i class="v144-ico blue">◇</i><span class="v144-copy"><b>Units & Region</b><small>Units and regional preferences</small></span><em class="v144-meta v144-chevron">›</em></button>
+    <section class="v145-group">
+      <div class="v145-group-title">Preferences</div>
+      <div class="v145-menu">
+        <button class="v145-row" onclick="go('account')"><i class="v145-ico sage">●</i><span class="v145-copy"><b>Account</b><small>Profile, sign-in and personal information</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('subscription')"><i class="v145-ico amber">★</i><span class="v145-copy"><b>Subscription</b><small>Manage your HiveDash plan</small></span><em class="v145-meta v145-version">${plan}</em></button>
+        <button class="v145-row" onclick="go('apiary')"><i class="v145-ico amber">⌂</i><span class="v145-copy"><b>Apiary & Hive Management</b><small>Manage apiaries, locations and hives</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('seasonal-settings')"><i class="v145-ico sage">☀</i><span class="v145-copy"><b>Seasonal Settings</b><small>Configure seasonal reminders and guidance</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('notification-preferences')"><i class="v145-ico violet">●</i><span class="v145-copy"><b>Notification Preferences</b><small>Customize notification settings</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('units-region')"><i class="v145-ico blue">◇</i><span class="v145-copy"><b>Units & Region</b><small>Units and regional preferences</small></span><em class="v145-meta v145-chevron">›</em></button>
       </div>
     </section>
 
-    <section class="v144-group">
-      <div class="v144-group-title">App & Data</div>
-      <div class="v144-menu">
-        <button class="v144-row" onclick="go('smart-features')"><i class="v144-ico violet">✦</i><span class="v144-copy"><b>Smart Features</b><small>AI insights and smart recommendations</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('data-backup')"><i class="v144-ico blue">☁</i><span class="v144-copy"><b>Data & Backup</b><small>Import, export and backup your data</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('security')"><i class="v144-ico sage">◆</i><span class="v144-copy"><b>Privacy & Security</b><small>Privacy and account security settings</small></span><em class="v144-meta v144-chevron">›</em></button>
+    <section class="v145-group">
+      <div class="v145-group-title">App & Data</div>
+      <div class="v145-menu">
+        <button class="v145-row" onclick="go('smart-features')"><i class="v145-ico violet">✦</i><span class="v145-copy"><b>Smart Features</b><small>AI insights and smart recommendations</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('data-backup')"><i class="v145-ico blue">☁</i><span class="v145-copy"><b>Data & Backup</b><small>Import, export and backup your data</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('security')"><i class="v145-ico sage">◆</i><span class="v145-copy"><b>Privacy & Security</b><small>Privacy and account security settings</small></span><em class="v145-meta v145-chevron">›</em></button>
       </div>
     </section>
 
-    <section class="v144-group">
-      <div class="v144-group-title">Support & About</div>
-      <div class="v144-menu">
-        <button class="v144-row v144-store" onclick="window.open('https://www.skoghive.com','_blank','noopener')"><i class="v144-ico amber">⌂</i><span class="v144-copy"><b>SkogHive Store</b><small>Browse beekeeping equipment and accessories</small></span><em class="v144-meta v144-chevron">↗</em></button>
-        <button class="v144-row" onclick="go('help')"><i class="v144-ico blue">?</i><span class="v144-copy"><b>Help Center</b><small>Guides, answers and app help</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('support')"><i class="v144-ico sage">✉</i><span class="v144-copy"><b>Contact Support</b><small>Get help from HiveDash support</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('about')"><i class="v144-ico sage">ⓘ</i><span class="v144-copy"><b>About HiveDash</b><small>Product information and legal links</small></span><em class="v144-meta v144-chevron">›</em></button>
-        <button class="v144-row" onclick="go('version')"><i class="v144-ico sage">ⓘ</i><span class="v144-copy"><b>Version</b><small>Installed HiveDash app version</small></span><em class="v144-meta v144-version">139</em></button>
+    <section class="v145-group">
+      <div class="v145-group-title">Support & About</div>
+      <div class="v145-menu">
+        <button class="v145-row v145-store" onclick="window.open('https://www.skoghive.com','_blank','noopener')"><i class="v145-ico amber">⌂</i><span class="v145-copy"><b>SkogHive Store</b><small>Browse beekeeping equipment and accessories</small></span><em class="v145-meta v145-chevron">↗</em></button>
+        <button class="v145-row" onclick="go('help')"><i class="v145-ico blue">?</i><span class="v145-copy"><b>Help Center</b><small>Guides, answers and app help</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('support')"><i class="v145-ico sage">✉</i><span class="v145-copy"><b>Contact Support</b><small>Get help from HiveDash support</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('about')"><i class="v145-ico sage">ⓘ</i><span class="v145-copy"><b>About HiveDash</b><small>Product information and legal links</small></span><em class="v145-meta v145-chevron">›</em></button>
+        <button class="v145-row" onclick="go('version')"><i class="v145-ico sage">ⓘ</i><span class="v145-copy"><b>Version</b><small>Installed HiveDash app version</small></span><em class="v145-meta v145-version">139</em></button>
       </div>
     </section>
   </div>`;

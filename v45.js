@@ -1782,7 +1782,20 @@ function timelinePage(r){
 }
 
 function hiveDetail(r,id){
-  const s=v45s(),h=vh(id),photos=hivePhotos(h),lastTx=s.logs.treatments.filter(x=>x.hiveId===h.id).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0];
+  const s=v45s(),h=vh(id),
+    photos=(typeof hivePhotos==='function'
+      ? hivePhotos(h)
+      : (Array.isArray(h?.photos)?h.photos:[])),
+    treatments=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]),
+    lastTx=treatments.filter(x=>x.hiveId===h.id).sort((a,b)=>String(b.date).localeCompare(String(a.date)))[0],
+    timelineRows=(typeof v49TimelineRows==='function'
+      ? v49TimelineRows(h.id)
+      : [
+          ...(Array.isArray(s.logs?.inspections)?s.logs.inspections:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Inspection'})),
+          ...(Array.isArray(s.logs?.feeding)?s.logs.feeding:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Feeding'})),
+          ...(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Treatment'})),
+          ...(Array.isArray(s.logs?.harvests)?s.logs.harvests:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Harvest'}))
+        ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))));
   r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location)}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.queen],['Eggs',h.eggs?'Seen':'None'],['Larvae',h.larvae?'Seen':'None'],['Queen cells',h.queenCells?'Present':'None']])}${hg('Brood',[['Pattern',h.brood],['Strength',h.strength],['Abnormalities','None']])}${hg('Colony',[['Size',h.strength],['Population','8 frames'],['Temperament','Calm']])}${hg('Food Stores',[['Honey',h.honey],['Pollen',h.pollen],['Feeding need',h.honey==='Low'?'Yes':'No']])}${hg('Varroa',[['Last count',`${h.varroa}/100`],['Risk',h.varroa>=3?'High':'Low'],['Test date',fmtDate(h.lastInspection)]])}${hg('Treatment',[['History',lastTx?.type||'None'],['Active',lastTx&&!lastTx.endDate?'Active':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
   <div class="photo-card-head-actions">
     <button class="photo-card-viewall" type="button" onclick="openHivePhotoGallery('${h.id}')">View All</button>
@@ -1795,7 +1808,7 @@ function hiveDetail(r,id){
     </div>`).join('')}
     <button class="photo-add-tile" type="button" onclick="idq('phinput').click()"><b>＋</b><span>Add Photo</span></button>
   </div>
-  <input id="phinput" hidden type="file" accept="image/*" multiple onchange="addHivePhotos('${h.id}',this)">`)}${Vcard('Timeline',`<div class="tease">${v49TimelineRows(h.id).slice(0,2).map(x=>`<span>${x.type} · ${fmtDate(x.date)}</span>`).join('')||'<span>No history yet</span>'}</div>`,`<button onclick="go('timeline/${h.id}')">View History</button>`)}<button class="primary" onclick="go('inspection/${h.id}')">Start Inspection</button></div>`;
+  <input id="phinput" hidden type="file" accept="image/*" multiple onchange="addHivePhotos('${h.id}',this)">`)}${Vcard('Timeline',`<div class="tease">${timelineRows.slice(0,2).map(x=>`<span>${x.type} · ${fmtDate(x.date)}</span>`).join('')||'<span>No history yet</span>'}</div>`,`<button onclick="go('timeline/${h.id}')">View History</button>`)}<button class="primary" onclick="go('inspection/${h.id}')">Start Inspection</button></div>`;
   idq('phinput').onchange=e=>addHivePhotos(h.id,e.target)
 }
 
@@ -3100,7 +3113,7 @@ function v63Status(h){
 function v63Card(h){
   const rows=v63VisibleHives();
   const idx=Math.max(0,rows.findIndex(x=>x.id===h.id));
-  return `<button class="v63-card" onclick="go('hive/${h.id}');setTimeout(()=>render(),0)">
+  return `<button class="v63-card" onclick="go('hive/${h.id}')">
     <img class="v65-thumb v65-thumb-${(idx%3)+1}" src="${v63Thumb(h)}" alt="${esc(h.name)}">
     <span class="v63-copy">
       <b>${esc(h.name)}</b>
@@ -3760,3 +3773,29 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     renderTermsOnInitialLoadV142();
   }
 })();
+
+/* ==========================================================
+   V183 — HIVE ROUTE OWNERSHIP FIX
+   Scope: #hive/<id> only.
+   app.js loads before v45.js and owns an older hashchange path.
+   This later listener lets the legacy handler finish first, then
+   asks the current V45 renderer to paint Hive Detail.
+   ========================================================== */
+(function(){
+  if(window.__V183_HIVE_ROUTE_FIX__) return;
+  window.__V183_HIVE_ROUTE_FIX__ = true;
+
+  window.addEventListener('hashchange', function(){
+    const hash = String(location.hash || '');
+    if(!hash.startsWith('#hive/')) return;
+
+    setTimeout(function(){
+      try{
+        if(typeof render === 'function') render();
+      }catch(err){
+        console.error('V183 hive render repair failed', err);
+      }
+    }, 0);
+  });
+})();
+

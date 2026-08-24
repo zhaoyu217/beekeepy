@@ -1453,29 +1453,76 @@ function submitReportV48(){const text=idq('v48report').value.trim();if(!text)ret
 function supportPage(r){r.innerHTML=`<div class="vs"><section class="formlist"><label><span>Issue Type</span><select id="v48issue"><option>General</option><option>Account</option><option>Billing</option><option>Bug</option></select></label><label><span>Subject</span><input id="v48subject" placeholder="Brief summary"></label><label><span>Message</span><textarea id="v48message" placeholder="Describe your issue in detail…"></textarea></label><label><span>Attachments</span><input id="v48attach" type="file" multiple></label></section><button class="primary" onclick="submitSupportV48()">Send Message</button></div>`}
 function submitSupportV48(){const subject=idq('v48subject').value.trim(),message=idq('v48message').value.trim();if(!subject||!message)return toast('Enter a subject and message');const s=v45s();s.supportRequests=s.supportRequests||[];s.supportRequests.push({id:'sp'+Date.now(),type:idq('v48issue').value,subject,message,attachments:[...idq('v48attach').files].map(f=>f.name),date:new Date().toISOString()});save(s);toast('Support request saved');go('help')}
 
-function helpPage(r){r.innerHTML=`<div class="vs"><div class="search"><span>⌕</span><input id="v48helpsearch" placeholder="Search help articles…"></div><section class="setmenu" id="v48helpmenu"><button data-help="Getting Started" onclick="openFaqV48('How do I add a hive?')"><span>◉</span><b>Getting Started</b><em>›</em></button><button data-help="Hive Management" onclick="go('hives')"><span>⌂</span><b>Hive Management</b><em>›</em></button><button data-help="Inspection" onclick="go('inspection/${v45s().hives[0]?.id||''}')"><span>⌕</span><b>Inspection</b><em>›</em></button><button data-help="FAQ" onclick="go('faq')"><span>?</span><b>FAQ</b><em>›</em></button><button data-help="Contact Support" onclick="go('support')"><span>✉</span><b>Contact Support</b><em>›</em></button></section></div>`;idq('v48helpsearch').oninput=e=>{const q=e.target.value.toLowerCase();document.querySelectorAll('[data-help]').forEach(b=>b.style.display=b.dataset.help.toLowerCase().includes(q)?'grid':'none')}}
-
-
-/* =========================================================
-   V49 — RUNTIME / DATA CONSISTENCY AUDIT FIX
-   No locked feature architecture, entry relationship, bottom-nav,
-   page structure, or visual design is changed. These overrides only
-   connect existing UI to live state and remove dead interactions.
-   ========================================================= */
-
-let V49_TIMELINE_LIMIT=10;
-let V49_TIMELINE_CACHE=[];
-let V49_TIMELINE_FILTER='All';
-let V49_TIMELINE_FILTER_ROUTE='';
-function v49TimelineRows(hiveId=''){
-  const s=v45s(), rows=[];
-  const add=(type,x,detail,img='')=>{if(!hiveId||x.hiveId===hiveId)rows.push({key:type+':'+x.id,type,hiveId:x.hiveId,date:x.date||'',detail:detail||'',img})};
-  s.logs.inspections.forEach(x=>add('Inspection',x,x.notes||'Inspection saved',V45.inspection));
-  s.logs.feedings.forEach(x=>add('Feeding',x,[x.type,x.ratio,x.amount].filter(Boolean).join(' · ')));
-  s.logs.treatments.forEach(x=>add('Treatment',x,[x.type,x.product,x.dose].filter(Boolean).join(' · ')));
-  s.logs.harvests.forEach(x=>add('Harvest',x,[formatWeight(x.weightLb||0,s),x.moisture?x.moisture+'% moisture':''].filter(Boolean).join(' · '),V45.harvest));
-  s.hives.forEach(h=>hivePhotos(h).forEach(p=>{if(!hiveId||h.id===hiveId)rows.push({key:'Photo:'+p.id,type:'Photo',hiveId:h.id,date:p.date||h.lastInspection||'',detail:'Hive photo',img:p.data})}));
-  return rows.sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+function helpPage(r){
+  r.innerHTML=`<style>
+/* V156 — Help Center Visual Master.
+   Existing five entries/order/click targets are preserved. */
+.help156{padding:10px 12px 28px;font-family:"Inter";color:#2F3B33}
+.help156-search{
+  display:grid;grid-template-columns:24px minmax(0,1fr);gap:8px;align-items:center;
+  min-height:48px;padding:0 14px;margin-bottom:12px;
+  background:#fff;border:1px solid rgba(47,59,51,.08);border-radius:14px;
+  box-shadow:0 4px 12px rgba(47,59,51,.06)
+}
+.help156-search span{color:#36512B;font-size:20px;line-height:1}
+.help156-search input{
+  width:100%;border:0;outline:0;background:transparent;
+  font:500 12px/1.3 "Inter";color:#2F3B33
+}
+.help156-search input::placeholder{color:#707770;opacity:1}
+.help156-card{
+  overflow:hidden;background:#fff;border:1px solid rgba(47,59,51,.09);
+  border-radius:16px;box-shadow:0 5px 14px rgba(47,59,51,.055)
+}
+.help156-row{
+  width:100%;min-height:68px;padding:10px 13px;
+  display:grid;grid-template-columns:40px minmax(0,1fr) 18px;gap:11px;align-items:center;
+  border:0;border-bottom:1px solid rgba(47,59,51,.09);background:#fff;
+  text-align:left;color:#2F3B33;cursor:pointer
+}
+.help156-row:last-child{border-bottom:0}
+.help156-icon{
+  width:38px;height:38px;border-radius:50%;display:grid;place-items:center;
+  background:#F1F3E4;color:#36512B;font-size:17px;font-weight:800
+}
+.help156-copy{min-width:0}
+.help156-copy b{display:block;margin-bottom:4px;font-size:12px;line-height:1.2;font-weight:800;color:#2F3B33}
+.help156-copy small{display:block;font-size:10.5px;line-height:1.35;font-weight:400;color:#697169}
+.help156-chevron{justify-self:end;color:#36512B;font-size:20px;line-height:1}
+.help156-note{
+  margin:24px auto 0;max-width:250px;text-align:center;color:#36512B
+}
+.help156-bee{
+  width:44px;height:44px;margin:0 auto 8px;border-radius:50%;
+  display:grid;place-items:center;background:#F1F3E4;font-size:19px
+}
+.help156-note b{display:block;font-size:14px;line-height:1.25;font-weight:800;margin-bottom:5px}
+.help156-note span{display:block;color:#6B736D;font-size:10.5px;line-height:1.45}
+body:has(.help156) .vtop .iconbtn:first-child{
+  font-size:22px!important;color:#36512B!important;font-weight:700!important
+}
+@media(max-width:370px){
+ .help156{padding-left:10px;padding-right:10px}
+ .help156-row{grid-template-columns:36px minmax(0,1fr) 16px;gap:9px;min-height:64px;padding:9px 11px}
+ .help156-icon{width:35px;height:35px}
+}
+</style>
+<div class="help156">
+  <label class="help156-search"><span>⌕</span><input id="v48helpsearch" type="search" placeholder="Search help articles..." oninput="filterHelpV156(this.value)"></label>
+  <section class="help156-card"><button class="help156-row" type="button" onclick="go('faq')" data-help-label="getting started"><span class="help156-icon">◆</span><span class="help156-copy"><b>Getting Started</b><small>Learn the basics and get started with HiveDash</small></span><span class="help156-chevron">›</span></button><button class="help156-row" type="button" onclick="go('support')" data-help-label="hive management"><span class="help156-icon">⌂</span><span class="help156-copy"><b>Hive Management</b><small>Manage your hives, apiaries, and hive details</small></span><span class="help156-chevron">›</span></button><button class="help156-row" type="button" onclick="go('support')" data-help-label="inspection"><span class="help156-icon">⌕</span><span class="help156-copy"><b>Inspection</b><small>Learn how to inspect and record hive data</small></span><span class="help156-chevron">›</span></button><button class="help156-row" type="button" onclick="go('support')" data-help-label="faq"><span class="help156-icon">?</span><span class="help156-copy"><b>FAQ</b><small>Browse frequently asked questions</small></span><span class="help156-chevron">›</span></button><button class="help156-row" type="button" onclick="go('support')" data-help-label="contact support"><span class="help156-icon">✉</span><span class="help156-copy"><b>Contact Support</b><small>Get help from our support team</small></span><span class="help156-chevron">›</span></button></section>
+  <div class="help156-note">
+    <div class="help156-bee">♧</div>
+    <b>We're here to help!</b>
+    <span>Find answers, guides, and contact options to help you make the most of HiveDash.</span>
+  </div>
+</div>`;
+}
+function filterHelpV156(value){
+  const q=String(value||'').trim().toLowerCase();
+  document.querySelectorAll('.help156-row').forEach(row=>{
+    const hay=(row.getAttribute('data-help-label')||'')+' '+(row.textContent||'').toLowerCase();
+    row.style.display=!q||hay.includes(q)?'grid':'none';
+  });
 }
 function openTimelineEventV49(key){
   const e=V49_TIMELINE_CACHE.find(x=>x.key===key);if(!e)return;

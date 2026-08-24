@@ -1540,8 +1540,8 @@ settings=function(r){
       padding:7px 13px!important;
     }
     .v145-settings .v145-ico{
-      width:36px!important;
-      height:36px!important;
+      width:40px!important;
+      height:40px!important;
       font-size:16px!important;
     }
     .v145-settings .v145-copy small{
@@ -3160,80 +3160,13 @@ function hives(r){
       min-height:100%;
       background:#F7F5EF;
     }
-
-    /* ==========================================================
-       V174 — LOCKED HEADER / BOTTOM NAV / SCROLL FIX
-       Hives visual-layout only.
-       No onclick / route / search / filter / card logic changes.
-       ========================================================== */
-
-    /* Match the locked primary-page header height and keep it visible while scrolling. */
-    .v173-hives .v63-head{
-      position:sticky!important;
-      top:0!important;
-      z-index:50!important;
-      height:60px!important;
-      min-height:60px!important;
-      margin:0 -10px 10px!important;
-      padding:0 10px!important;
-      grid-template-columns:44px minmax(0,1fr) 44px!important;
-      background:#FFFDF9!important;
-    }
-
-    .v173-hives .v63-head b{
-      line-height:60px!important;
-    }
-
-    .v173-hives .v63-head .v173-settings,
-    .v173-hives .v63-head .v173-more{
-      width:40px!important;
-      height:40px!important;
-    }
-
-    /* Make the background/content reach the locked bottom nav with no beige gap. */
-    .v173-hives .v63-stage{
-      min-height:calc(100dvh - 68px)!important;
-      padding-bottom:0!important;
-      background-color:#F7F5EF!important;
-    }
-
-    /* Keep the already-existing global bottom nav at the same locked primary-page height. */
-    body:has(.v173-hives) #bottomnav{
-      min-height:68px!important;
-      height:68px!important;
-      margin:0!important;
-      position:sticky!important;
-      bottom:0!important;
-      z-index:60!important;
-      background:#FFFDF9!important;
-    }
-
-    body:has(.v173-hives) #bottomnav .navitem{
-      min-height:68px!important;
-      height:68px!important;
-    }
-
-    /* Remove any view/app gap between the image stage and the locked bottom nav. */
-    body:has(.v173-hives) #view,
-    body:has(.v173-hives) .vview,
-    body:has(.v173-hives) .view{
-      margin-bottom:0!important;
-      padding-bottom:0!important;
-      background:#F7F5EF!important;
-    }
-
-    body:has(.v173-hives) #app,
-    body:has(.v173-hives) .app{
-      padding-bottom:0!important;
-      background:#F7F5EF!important;
-    }
     .v173-hives .v63-stage{
       position:relative;
       isolation:isolate;
-      min-height:calc(100dvh - 76px);
+      min-height:100dvh!important;
       margin:0!important;
-      padding:0 10px 34px!important;
-      overflow:hidden;
+      padding:0 10px 0!important;
+      overflow:visible!important;
       background:url("assets/hives_near_apiary_bg.jpg") center 48% / cover no-repeat;
     }
     .v173-hives .v63-overlay{
@@ -3244,11 +3177,15 @@ function hives(r){
       background:linear-gradient(180deg,rgba(247,245,239,.08) 0%,rgba(94,115,80,.04) 48%,rgba(47,59,51,.07) 100%);
     }
     .v173-hives .v63-head{
-      height:44px!important;
+      position:sticky!important;
+      top:0!important;
+      z-index:40!important;
+      height:60px!important;
+      min-height:60px!important;
       margin:0 -10px 10px!important;
       padding:0 10px!important;
       display:grid!important;
-      grid-template-columns:40px minmax(0,1fr) 40px!important;
+      grid-template-columns:44px minmax(0,1fr) 44px!important;
       align-items:center!important;
       background:#FFFDF9!important;
       border-bottom:1px solid rgba(47,59,51,.10)!important;
@@ -3274,7 +3211,7 @@ function hives(r){
       text-align:center!important;
       color:#4F6744!important;
       font-size:15px!important;
-      line-height:44px!important;
+      line-height:60px!important;
       font-weight:800!important;
     }
     .v173-hives .v63-search-row{

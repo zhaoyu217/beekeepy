@@ -1191,6 +1191,92 @@ settings=function(r){
       .v145-settings .v145-copy small{font-size:10px!important}
     }
 
+  
+    /* V148 SETTINGS — HERO CLEANUP + ROW DENSITY FINAL
+       Scope is intentionally limited:
+       1) Hero background cleanup
+       2) Settings list-row density
+       V147 typography remains untouched.
+    */
+
+    /* Replace the old settings_apiary.jpg because that asset itself
+       contains baked-in Settings text/arrows. Use an existing clean,
+       real apiary photo already shipped with HiveDash instead. */
+    .v145-settings .v145-settings-hero{
+      min-height:118px!important;
+      background:
+        #edf1e8
+        url('assets/home_apiary.jpg')
+        70% center/cover no-repeat!important;
+    }
+    .v145-settings .v145-settings-hero:before{
+      background:linear-gradient(
+        90deg,
+        rgba(255,254,251,.99) 0%,
+        rgba(255,254,251,.96) 32%,
+        rgba(255,254,251,.82) 52%,
+        rgba(255,254,251,.30) 72%,
+        rgba(255,254,251,.08) 100%
+      )!important;
+    }
+    .v145-settings .v145-settings-hero-copy{
+      min-height:118px!important;
+      width:70%!important;
+      gap:12px!important;
+      padding:16px 16px!important;
+    }
+    .v145-settings .v145-settings-hero-icon{
+      width:42px!important;
+      height:42px!important;
+      flex-basis:42px!important;
+      font-size:19px!important;
+      box-shadow:0 4px 10px rgba(47,59,51,.16)!important;
+    }
+
+    /* Compact rows: keep V147 type sizes/colors exactly as-is. */
+    .v145-settings .v145-row{
+      min-height:58px!important;
+      grid-template-columns:42px minmax(0,1fr) auto!important;
+      gap:10px!important;
+      padding:7px 13px!important;
+    }
+    .v145-settings .v145-ico{
+      width:36px!important;
+      height:36px!important;
+      font-size:16px!important;
+    }
+    .v145-settings .v145-copy small{
+      margin-top:2px!important;
+    }
+
+    @media(max-width:370px){
+      .v145-settings .v145-settings-hero{
+        min-height:112px!important;
+      }
+      .v145-settings .v145-settings-hero-copy{
+        min-height:112px!important;
+        width:74%!important;
+        gap:10px!important;
+        padding:14px 13px!important;
+      }
+      .v145-settings .v145-settings-hero-icon{
+        width:40px!important;
+        height:40px!important;
+        flex-basis:40px!important;
+      }
+      .v145-settings .v145-row{
+        min-height:56px!important;
+        grid-template-columns:40px minmax(0,1fr) auto!important;
+        gap:9px!important;
+        padding:6px 12px!important;
+      }
+      .v145-settings .v145-ico{
+        width:34px!important;
+        height:34px!important;
+        font-size:15px!important;
+      }
+    }
+
   </style>
 
   <div class="vs v145-settings">

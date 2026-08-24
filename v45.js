@@ -719,23 +719,34 @@ function securityPage(r){r.innerHTML=`<div class="vs"><section class="setmenu"><
    ========================================================= */
 
 function notificationPrefs(r){
+  /* V165 — REAL TOGGLE FIX
+     Keep the original V162 markup/visuals.
+     Repair interaction at the state layer so realtime/rerenders cannot reset a click. */
+  document.querySelectorAll('.modal').forEach(el=>el.remove());
   const s=v45s(),x=s.settings.notifications;
-  r.innerHTML=`<div class="vs"><section class="formlist">
-    <label class="switchline" onclick="toggleNotificationPrefV164(event,'inspection')"><span>Inspection Reminders</span><input data-v139-notif="inspection" type="checkbox" ${x.inspection?'checked':''} onclick="event.stopPropagation()"></label>
-    <label class="switchline" onclick="toggleNotificationPrefV164(event,'varroa')"><span>Varroa Alerts</span><input data-v139-notif="varroa" type="checkbox" ${x.varroa?'checked':''} onclick="event.stopPropagation()"></label>
-    <label class="switchline" onclick="toggleNotificationPrefV164(event,'treatment')"><span>Treatment Follow-up</span><input data-v139-notif="treatment" type="checkbox" ${x.treatment?'checked':''} onclick="event.stopPropagation()"></label>
-    <label class="switchline" onclick="toggleNotificationPrefV164(event,'feeding')"><span>Feeding Reminders</span><input data-v139-notif="feeding" type="checkbox" ${x.feeding?'checked':''} onclick="event.stopPropagation()"></label>
-    <label class="switchline" onclick="toggleNotificationPrefV164(event,'weather')"><span>Weather Alerts</span><input data-v139-notif="weather" type="checkbox" ${x.weather?'checked':''} onclick="event.stopPropagation()"></label>
-    <label class="switchline" onclick="toggleNotificationPrefV164(event,'seasonal')"><span>Seasonal Updates</span><input data-v139-notif="seasonal" type="checkbox" ${x.seasonal?'checked':''} onclick="event.stopPropagation()"></label>
-    <label class="switchline" onclick="toggleNotificationPrefV164(event,'push')"><span>Push Notifications</span><input data-v139-notif="push" type="checkbox" ${x.push?'checked':''} onclick="event.stopPropagation()"></label>
+  r.innerHTML=`<style>
+    /* Interaction-only. No size/color/layout changes. */
+    .formlist .switchline{cursor:pointer!important;pointer-events:auto!important}
+    .formlist .switchline input[type="checkbox"]{cursor:pointer!important;pointer-events:auto!important}
+  </style><div class="vs"><section class="formlist">
+    <label class="switchline"><span>Inspection Reminders</span><input data-v139-notif="inspection" type="checkbox" ${x.inspection?'checked':''} onchange="setNotificationPrefV165('inspection',this.checked)"></label>
+    <label class="switchline"><span>Varroa Alerts</span><input data-v139-notif="varroa" type="checkbox" ${x.varroa?'checked':''} onchange="setNotificationPrefV165('varroa',this.checked)"></label>
+    <label class="switchline"><span>Treatment Follow-up</span><input data-v139-notif="treatment" type="checkbox" ${x.treatment?'checked':''} onchange="setNotificationPrefV165('treatment',this.checked)"></label>
+    <label class="switchline"><span>Feeding Reminders</span><input data-v139-notif="feeding" type="checkbox" ${x.feeding?'checked':''} onchange="setNotificationPrefV165('feeding',this.checked)"></label>
+    <label class="switchline"><span>Weather Alerts</span><input data-v139-notif="weather" type="checkbox" ${x.weather?'checked':''} onchange="setNotificationPrefV165('weather',this.checked)"></label>
+    <label class="switchline"><span>Seasonal Updates</span><input data-v139-notif="seasonal" type="checkbox" ${x.seasonal?'checked':''} onchange="setNotificationPrefV165('seasonal',this.checked)"></label>
+    <label class="switchline"><span>Push Notifications</span><input data-v139-notif="push" type="checkbox" ${x.push?'checked':''} onchange="setNotificationPrefV165('push',this.checked)"></label>
   </section><button class="primary" onclick="saveNotificationPrefsV139()">Save Settings</button></div>`;
 }
-function toggleNotificationPrefV164(ev,key){
-  if(ev && ev.target && ev.target.matches && ev.target.matches('input[type="checkbox"]'))return;
-  const el=document.querySelector(`[data-v139-notif="${key}"]`);
-  if(!el)return;
-  el.checked=!el.checked;
-  el.dispatchEvent(new Event('change',{bubbles:true}));
+function setNotificationPrefV165(key,checked){
+  const allowed=['inspection','varroa','treatment','feeding','weather','seasonal','push'];
+  if(!allowed.includes(key))return;
+  const s=v45s();
+  s.settings=s.settings||{};
+  s.settings.notifications=s.settings.notifications||{};
+  s.settings.notifications[key]=!!checked;
+  /* Persist immediately so auth/realtime/render refresh cannot visually revert the toggle. */
+  save(s);
 }
 function saveNotificationPrefsV139(){
   const s=v45s(),x=s.settings.notifications;

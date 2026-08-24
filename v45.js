@@ -428,7 +428,24 @@ function recordPage(r,type,id){
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const hivePhoto=v101HivePrimaryPhoto(active);
 
-    r.innerHTML=`<div class="vs treatment-v102">
+    r.innerHTML=`
+<style>
+/* V151 ACCOUNT — SAVE ACCENT ONLY
+   Visual-only: change the existing Account Save button from green
+   to HiveDash accent #C5921A. Nothing else on Account is changed. */
+#account button[type="submit"],
+#account .save,
+#account .save-btn,
+#account .btn-save,
+.account button[type="submit"],
+.account .save,
+.account .save-btn,
+.account .btn-save{
+  background:#C5921A!important;
+  border-color:#C5921A!important;
+}
+</style>
+<div class="vs treatment-v102">
       <section class="treatment-hive-card">
         <img src="${hivePhoto}" alt="${esc(active.name)}">
         <div class="treatment-hive-copy">

@@ -2947,58 +2947,66 @@ infoPage=function(r,title){
 const V142_OLD_INFO_PAGE=infoPage;
 infoPage=function(r,title){
   if(title!=='Terms of Service')return V142_OLD_INFO_PAGE(r,title);
-  r.innerHTML=`<section><div class="h1" style="margin-top:12px">Terms of Service</div></section><section class="setting body">
-    <div class="small muted">Effective date: August 23, 2026</div>
-    <p>These Terms of Service govern your access to and use of HiveDash, a family beekeeping log for managing hives, inspections, actions, photos, reminders, seasonal settings, analytics, and related records. By accessing or using HiveDash, you agree to these Terms.</p>
+  r.innerHTML=`
+<style>
+/* V154 — Terms visual master. Legal copy and 16-section order unchanged. */
+.terms154{padding:12px 12px 28px;font-family:"Inter";color:#2F3B33}
+.terms154-card{background:#fff;border:1px solid rgba(47,59,51,.12);border-radius:16px;padding:14px 14px 4px}
+.terms154-date{display:inline-flex;align-items:center;gap:7px;background:#F1F2E6;border-radius:10px;padding:8px 10px;color:#2F3B33;font-size:11px;line-height:1.2;margin-bottom:12px}
+.terms154-intro{display:grid;grid-template-columns:42px 1fr;gap:12px;align-items:center;background:#F7F7EF;border:1px solid rgba(94,115,80,.10);border-radius:12px;padding:13px 14px;margin-bottom:6px}
+.terms154-shield{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#E9EEDF;color:#5E7350;font-size:17px}
+.terms154-intro p{margin:0;color:#2F3B33;font-size:12px;line-height:1.55;font-weight:600}
+.terms154-sections{display:block}
+.terms154-section{display:grid;grid-template-columns:32px minmax(0,1fr);gap:11px;padding:14px 0;border-bottom:1px solid rgba(47,59,51,.10)}
+.terms154-section:last-child{border-bottom:0}
+.terms154-num{width:30px;height:30px;border-radius:9px;background:#F1F2E6;color:#36512B;display:grid;place-items:center;font-size:13px;line-height:1;font-weight:800}
+.terms154-copy h3{margin:1px 0 7px;color:#36512B;font-size:13px;line-height:1.3;font-weight:800}
+.terms154-copy p{margin:0;color:#2F3B33;font-size:11px;line-height:1.55;font-weight:400}
+.terms154-copy b{font-weight:700}
+body:has(.terms154) .vtop .iconbtn:first-child{font-size:22px!important;color:#36512B!important;font-weight:700!important}
+@media(max-width:370px){
+ .terms154{padding-left:10px;padding-right:10px}
+ .terms154-card{padding-left:12px;padding-right:12px}
+ .terms154-intro{grid-template-columns:38px 1fr;gap:10px;padding:12px}
+ .terms154-shield{width:38px;height:38px}
+ .terms154-section{grid-template-columns:30px minmax(0,1fr);gap:9px}
+}
+</style>
+<div class="terms154"><section class="terms154-card"><div class="terms154-date">▣ <b>Effective date: August 23, 2026</b></div><div class="terms154-intro"><span class="terms154-shield">◆</span><p>
+    These Terms of Service govern your access to and use of HiveDash, a family beekeeping log for managing hives, inspections, actions, photos, reminders, seasonal settings, analytics, and related records. By accessing or using HiveDash, you agree to these Terms.</p></div><div class="terms154-sections">
 
-    <div class="h3">1. Eligibility and Accounts</div>
-    <p>You must be legally able to enter into these Terms in the place where you live. HiveDash is not directed to children under 13. If you create an account, you are responsible for providing accurate account information, protecting access to your account, and for activity that occurs through your account unless prohibited by applicable law.</p>
+    <section class="terms154-section"><div class="terms154-num">1</div><div class="terms154-copy"><h3>Eligibility and Accounts</h3><p>You must be legally able to enter into these Terms in the place where you live. HiveDash is not directed to children under 13. If you create an account, you are responsible for providing accurate account information, protecting access to your account, and for activity that occurs through your account unless prohibited by applicable law.</p></div></section>
 
-    <div class="h3">2. HiveDash Is a Recordkeeping and Decision-Support Tool</div>
-    <p>HiveDash helps organize beekeeping information and may display reminders, health indicators, trends, forecasts, risk estimates, recommendations, weather-related information, or other automated outputs. These outputs are informational and may be incomplete, delayed, or inaccurate. HiveDash does not replace your own inspection, judgment, local regulations, product labels, veterinary advice where applicable, or qualified professional advice. You remain responsible for decisions affecting bees, people, property, food, treatments, and equipment.</p>
+    <section class="terms154-section"><div class="terms154-num">2</div><div class="terms154-copy"><h3>HiveDash Is a Recordkeeping and Decision-Support Tool</h3><p>HiveDash helps organize beekeeping information and may display reminders, health indicators, trends, forecasts, risk estimates, recommendations, weather-related information, or other automated outputs. These outputs are informational and may be incomplete, delayed, or inaccurate. HiveDash does not replace your own inspection, judgment, local regulations, product labels, veterinary advice where applicable, or qualified professional advice. You remain responsible for decisions affecting bees, people, property, food, treatments, and equipment.</p></div></section>
 
-    <div class="h3">3. Your Records and Content</div>
-    <p>You retain responsibility for the hive records, notes, photos, locations, and other content you submit to HiveDash. You represent that you have the right to submit that content. You grant HiveDash the limited rights necessary to store, process, display, back up, synchronize, and otherwise handle your content solely to operate, maintain, secure, and improve the features you use.</p>
+    <section class="terms154-section"><div class="terms154-num">3</div><div class="terms154-copy"><h3>Your Records and Content</h3><p>You retain responsibility for the hive records, notes, photos, locations, and other content you submit to HiveDash. You represent that you have the right to submit that content. You grant HiveDash the limited rights necessary to store, process, display, back up, synchronize, and otherwise handle your content solely to operate, maintain, secure, and improve the features you use.</p></div></section>
 
-    <div class="h3">4. Acceptable Use</div>
-    <p>You may not misuse HiveDash, interfere with its operation or security, attempt unauthorized access to accounts or systems, introduce malicious code, use the service to violate law or the rights of others, scrape or extract data in a manner that materially burdens the service, or attempt to bypass access, subscription, or security controls.</p>
+    <section class="terms154-section"><div class="terms154-num">4</div><div class="terms154-copy"><h3>Acceptable Use</h3><p>You may not misuse HiveDash, interfere with its operation or security, attempt unauthorized access to accounts or systems, introduce malicious code, use the service to violate law or the rights of others, scrape or extract data in a manner that materially burdens the service, or attempt to bypass access, subscription, or security controls.</p></div></section>
 
-    <div class="h3">5. Free and Paid Features</div>
-    <p>HiveDash may offer free and paid features. The features, limits, and pricing shown in the app may change prospectively. Where a paid subscription is offered through a payment provider or app marketplace, billing, renewal, cancellation, refund, and payment processing may also be subject to that provider's terms. Paid access should be treated as active only when a valid entitlement is confirmed by the applicable billing system.</p>
+    <section class="terms154-section"><div class="terms154-num">5</div><div class="terms154-copy"><h3>Free and Paid Features</h3><p>HiveDash may offer free and paid features. The features, limits, and pricing shown in the app may change prospectively. Where a paid subscription is offered through a payment provider or app marketplace, billing, renewal, cancellation, refund, and payment processing may also be subject to that provider's terms. Paid access should be treated as active only when a valid entitlement is confirmed by the applicable billing system.</p></div></section>
 
-    <div class="h3">6. Trials, Changes, and Availability</div>
-    <p>We may add, modify, suspend, or discontinue features when reasonably necessary for product, security, legal, or operational reasons. We may also use limits or staged availability for features. We do not guarantee that every feature will be available at all times, on every device, or in every location.</p>
+    <section class="terms154-section"><div class="terms154-num">6</div><div class="terms154-copy"><h3>Trials, Changes, and Availability</h3><p>We may add, modify, suspend, or discontinue features when reasonably necessary for product, security, legal, or operational reasons. We may also use limits or staged availability for features. We do not guarantee that every feature will be available at all times, on every device, or in every location.</p></div></section>
 
-    <div class="h3">7. Third-Party Services</div>
-    <p>HiveDash may depend on third-party services for functions such as authentication, cloud storage, synchronization, hosting, maps, weather information, analytics, payments, or other integrations. Those services may be subject to their own terms and policies. HiveDash is not responsible for third-party services that are outside its control.</p>
+    <section class="terms154-section"><div class="terms154-num">7</div><div class="terms154-copy"><h3>Third-Party Services</h3><p>HiveDash may depend on third-party services for functions such as authentication, cloud storage, synchronization, hosting, maps, weather information, analytics, payments, or other integrations. Those services may be subject to their own terms and policies. HiveDash is not responsible for third-party services that are outside its control.</p></div></section>
 
-    <div class="h3">8. Data, Backup, and Export</div>
-    <p>HiveDash may provide local storage, cloud synchronization, or export tools. You are responsible for keeping any additional copies of records that are important to you. Although we take reasonable steps to preserve service data, no storage or synchronization system is guaranteed to be error-free or permanently available.</p>
+    <section class="terms154-section"><div class="terms154-num">8</div><div class="terms154-copy"><h3>Data, Backup, and Export</h3><p>HiveDash may provide local storage, cloud synchronization, or export tools. You are responsible for keeping any additional copies of records that are important to you. Although we take reasonable steps to preserve service data, no storage or synchronization system is guaranteed to be error-free or permanently available.</p></div></section>
 
-    <div class="h3">9. Privacy</div>
-    <p>Our handling of personal information is described in the HiveDash Privacy Policy. The Privacy Policy is available from Privacy &amp; Security and About HiveDash in the app.</p>
+    <section class="terms154-section"><div class="terms154-num">9</div><div class="terms154-copy"><h3>Privacy</h3><p>Our handling of personal information is described in the HiveDash Privacy Policy. The Privacy Policy is available from Privacy &amp; Security and About HiveDash in the app.</p></div></section>
 
-    <div class="h3">10. Intellectual Property</div>
-    <p>HiveDash, including its software, interface, branding, visual design, and service content other than user-submitted content, is protected by applicable intellectual-property law. These Terms give you a limited, non-exclusive, non-transferable right to use HiveDash for its intended purpose. They do not transfer ownership of HiveDash or its intellectual property to you.</p>
+    <section class="terms154-section"><div class="terms154-num">10</div><div class="terms154-copy"><h3>Intellectual Property</h3><p>HiveDash, including its software, interface, branding, visual design, and service content other than user-submitted content, is protected by applicable intellectual-property law. These Terms give you a limited, non-exclusive, non-transferable right to use HiveDash for its intended purpose. They do not transfer ownership of HiveDash or its intellectual property to you.</p></div></section>
 
-    <div class="h3">11. Suspension and Termination</div>
-    <p>You may stop using HiveDash at any time. We may restrict or suspend access when reasonably necessary to protect users or the service, respond to unlawful activity, enforce these Terms, or meet legal obligations. Where appropriate and practicable, we will provide notice or an opportunity to address the issue. Rights and obligations that by their nature should survive termination will continue to apply.</p>
+    <section class="terms154-section"><div class="terms154-num">11</div><div class="terms154-copy"><h3>Suspension and Termination</h3><p>You may stop using HiveDash at any time. We may restrict or suspend access when reasonably necessary to protect users or the service, respond to unlawful activity, enforce these Terms, or meet legal obligations. Where appropriate and practicable, we will provide notice or an opportunity to address the issue. Rights and obligations that by their nature should survive termination will continue to apply.</p></div></section>
 
-    <div class="h3">12. Disclaimers</div>
-    <p>To the extent permitted by applicable law, HiveDash is provided on an "as is" and "as available" basis. We do not warrant that the service will be uninterrupted, error-free, or that recommendations, predictions, weather information, health indicators, or other outputs will always be accurate or suitable for a particular beekeeping decision. Nothing in these Terms excludes warranties or rights that cannot legally be excluded.</p>
+    <section class="terms154-section"><div class="terms154-num">12</div><div class="terms154-copy"><h3>Disclaimers</h3><p>To the extent permitted by applicable law, HiveDash is provided on an "as is" and "as available" basis. We do not warrant that the service will be uninterrupted, error-free, or that recommendations, predictions, weather information, health indicators, or other outputs will always be accurate or suitable for a particular beekeeping decision. Nothing in these Terms excludes warranties or rights that cannot legally be excluded.</p></div></section>
 
-    <div class="h3">13. Limitation of Liability</div>
-    <p>To the extent permitted by applicable law, HiveDash and the persons or entities responsible for operating it will not be liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, lost data, lost honey production, colony loss, or business interruption arising from use of or inability to use the service. Any limitation applies only to the maximum extent allowed by law and does not limit liability that cannot legally be limited.</p>
+    <section class="terms154-section"><div class="terms154-num">13</div><div class="terms154-copy"><h3>Limitation of Liability</h3><p>To the extent permitted by applicable law, HiveDash and the persons or entities responsible for operating it will not be liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, lost data, lost honey production, colony loss, or business interruption arising from use of or inability to use the service. Any limitation applies only to the maximum extent allowed by law and does not limit liability that cannot legally be limited.</p></div></section>
 
-    <div class="h3">14. Changes to These Terms</div>
-    <p>We may update these Terms as HiveDash changes or as legal requirements evolve. When material changes are made, we will update the effective date and provide notice when required. Continued use after an updated version takes effect means the updated Terms apply, except where applicable law requires additional consent.</p>
+    <section class="terms154-section"><div class="terms154-num">14</div><div class="terms154-copy"><h3>Changes to These Terms</h3><p>We may update these Terms as HiveDash changes or as legal requirements evolve. When material changes are made, we will update the effective date and provide notice when required. Continued use after an updated version takes effect means the updated Terms apply, except where applicable law requires additional consent.</p></div></section>
 
-    <div class="h3">15. Applicable Law and Consumer Rights</div>
-    <p>These Terms are subject to applicable law. Nothing in these Terms limits mandatory consumer rights, privacy rights, or other protections that cannot be waived by contract. Any governing-law or venue requirement that applies by law remains unaffected.</p>
+    <section class="terms154-section"><div class="terms154-num">15</div><div class="terms154-copy"><h3>Applicable Law and Consumer Rights</h3><p>These Terms are subject to applicable law. Nothing in these Terms limits mandatory consumer rights, privacy rights, or other protections that cannot be waived by contract. Any governing-law or venue requirement that applies by law remains unaffected.</p></div></section>
 
-    <div class="h3">16. Contact</div>
-    <p>For questions about these Terms, open HiveDash and use <b>Settings &gt; Help Center &gt; Contact Support</b>.</p>
-  </section>`;
+    <section class="terms154-section"><div class="terms154-num">16</div><div class="terms154-copy"><h3>Contact</h3><p>For questions about these Terms, open HiveDash and use <b>Settings &gt; Help Center &gt; Contact Support</b>.</p></div></section>
+  </div></section></div>`;
 };
 
 (function(){

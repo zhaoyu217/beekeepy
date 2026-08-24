@@ -766,7 +766,7 @@ function smartFeatures(r){
     ['seasonWeather','Season & Weather Intelligence'],['qr','QR Hive Access']
   ];
   r.innerHTML=`<style>
-  /* V167 — Smart Features Checked-State Fix
+  /* V168 — Smart Features State Sync Fix
      Same proven checked-state treatment as locked Notification Preferences V166.
      Original Smart Features layout, spacing, typography and unchecked appearance stay unchanged. */
   input[data-smart]{
@@ -781,20 +781,49 @@ function smartFeatures(r){
     background-position:center!important;
     background-size:17px 17px!important;
   }
-  </style><div class="vs"><section class="formlist">${rows.map(([k,label])=>`<label class="switchline"><span>${label}</span><input data-smart="${k}" type="checkbox" ${x[k]?'checked':''} onchange="setSmartFeatureV167('${k}',this.checked)"></label>`).join('')}</section><button class="primary" onclick="saveSmart()">Save Settings</button></div>`;
+  </style><div class="vs"><section class="formlist">${rows.map(([k,label])=>`<label class="switchline"><span>${label}</span><input data-smart="${k}" type="checkbox" ${x[k]?'checked':''} onchange="setSmartFeatureV168('${k}',this.checked)"></label>`).join('')}</section><button class="primary" onclick="saveSmart()">Save Settings</button></div>`;
 }
-function setSmartFeatureV167(key,checked){
+function setSmartFeatureV168(key,checked){
   const allowed=['voice','photo','varroaCount','aiHealth','recommendations','seasonWeather','qr'];
   if(!allowed.includes(key))return;
+
+  /* Update the live in-memory state first. */
   const s=v45s();
   s.settings=s.settings||{};
   s.settings.smart=s.settings.smart||{};
   s.settings.smart[key]=!!checked;
+
+  /* Persist the exact new boolean immediately. */
   save(s);
+
+  /* Guard against stale async/auth/realtime refreshes restoring an older value.
+     Re-assert the user's latest choice for a short window without changing UI. */
+  window.__hdSmartPrefLatest=window.__hdSmartPrefLatest||{};
+  window.__hdSmartPrefLatest[key]=!!checked;
+
+  [120,400,900,1600].forEach(ms=>{
+    setTimeout(()=>{
+      const latest=window.__hdSmartPrefLatest&&window.__hdSmartPrefLatest[key];
+      if(typeof latest!=='boolean')return;
+      const st=v45s();
+      st.settings=st.settings||{};
+      st.settings.smart=st.settings.smart||{};
+      if(st.settings.smart[key]!==latest){
+        st.settings.smart[key]=latest;
+        save(st);
+      }
+      const el=document.querySelector(`[data-smart="${key}"]`);
+      if(el && el.checked!==latest)el.checked=latest;
+    },ms);
+  });
 }
 function saveSmart(){
   const s=v45s(),x=s.settings.smart;
-  document.querySelectorAll('[data-smart]').forEach(el=>x[el.dataset.smart]=el.checked);
+  window.__hdSmartPrefLatest=window.__hdSmartPrefLatest||{};
+  document.querySelectorAll('[data-smart]').forEach(el=>{
+    x[el.dataset.smart]=el.checked;
+    window.__hdSmartPrefLatest[el.dataset.smart]=el.checked;
+  });
   save(s);toast('Smart features saved');
 }
 

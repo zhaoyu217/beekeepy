@@ -827,7 +827,60 @@ body:has(.about157) .vtop .iconbtn:first-child{font-size:22px!important;color:#3
 </div>`;
 }
 function versionPageV139(r){
-  r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>HiveDash</b></div><div class="small muted">Version 139</div></section></div>`;
+  r.innerHTML=`<style>
+/* V161 — Version Visual Master */
+.version161{padding:12px 12px 28px;font-family:"Inter",system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#2F3B33}
+.version161-card{overflow:hidden;background:#fff;border:1px solid rgba(47,59,51,.09);border-radius:16px;box-shadow:0 5px 14px rgba(47,59,51,.055)}
+.version161-brand{display:grid;grid-template-columns:58px minmax(0,1fr);gap:12px;align-items:center;padding:16px}
+.version161-logo{width:56px;height:56px;border-radius:15px;display:grid;place-items:center;background:#F4F4E9}
+.version161-logo img{display:block;width:44px;height:44px;object-fit:contain}
+.version161-brand-title{margin:0;color:#36512B;font-size:16px;line-height:1.15;font-weight:800}
+.version161-brand-sub{margin-top:4px;color:#6B736D;font-size:10.5px;line-height:1.3;font-weight:600}
+.version161-rule{height:1px;margin:0 14px;background:rgba(47,59,51,.09)}
+.version161-section{padding:15px 16px}
+.version161-version{display:grid;grid-template-columns:40px minmax(0,1fr);gap:11px;align-items:center}
+.version161-icon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#F1F3E4}
+.version161-icon svg{display:block}
+.version161-h{margin:0;color:#2F3B33;font-size:12px;line-height:1.25;font-weight:800}
+.version161-p{margin:3px 0 0;color:#697169;font-size:10.5px;line-height:1.4;font-weight:400}
+.version161-included{padding:15px 16px 16px}
+.version161-included-head{display:grid;grid-template-columns:40px minmax(0,1fr);gap:11px;align-items:center;margin-bottom:13px}
+.version161-features{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:0}
+.version161-feature{min-width:0;padding:1px 5px 0;text-align:center;border-right:1px solid rgba(47,59,51,.09)}
+.version161-feature:last-child{border-right:0}
+.version161-feature svg{display:block;width:24px;height:24px;margin:0 auto 6px}
+.version161-feature span{display:block;color:#2F3B33;font-size:9px;line-height:1.25;font-weight:600}
+@media(max-width:370px){.version161{padding-left:10px;padding-right:10px}.version161-brand{grid-template-columns:52px minmax(0,1fr);padding:14px}.version161-logo{width:50px;height:50px}.version161-logo img{width:40px;height:40px}.version161-section,.version161-included{padding-left:14px;padding-right:14px}.version161-feature{padding-left:3px;padding-right:3px}.version161-feature span{font-size:8.4px}}
+</style>
+<div class="version161">
+  <section class="version161-card">
+    <div class="version161-brand">
+      <div class="version161-logo"><img src="assets/hivedash-logo-mark.png" alt="HiveDash"></div>
+      <div><h2 class="version161-brand-title">HiveDash</h2><div class="version161-brand-sub">Family Beekeeping Log</div></div>
+    </div>
+    <div class="version161-rule"></div>
+    <div class="version161-section">
+      <div class="version161-version">
+        <span class="version161-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><path d="M6.5 13.2 15.3 4.5h8.2a4 4 0 0 1 4 4v8.2l-8.8 8.8a3.8 3.8 0 0 1-5.4 0l-6.8-6.8a3.8 3.8 0 0 1 0-5.5Z" fill="#36512B"/><circle cx="21.3" cy="10.7" r="2.1" fill="#C5921A"/></svg></span>
+        <div><h3 class="version161-h">Version 139</h3><p class="version161-p">Current version of HiveDash.</p></div>
+      </div>
+    </div>
+    <div class="version161-rule"></div>
+    <div class="version161-included">
+      <div class="version161-included-head">
+        <span class="version161-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none"><path d="m16 4 10 5.5v13L16 28 6 22.5v-13L16 4Z" fill="#FFF0CF" stroke="#C5921A" stroke-width="2"/><path d="m6.8 9.8 9.2 5 9.2-5M16 14.8V27" stroke="#C5921A" stroke-width="2"/></svg></span>
+        <div><h3 class="version161-h">What’s included</h3><p class="version161-p">HiveDash helps you manage your hives and keep important beekeeping records in one place.</p></div>
+      </div>
+      <div class="version161-features">
+        <div class="version161-feature"><svg viewBox="0 0 32 32" fill="none"><path d="M6 13h20v14H6V13Zm3-4h14l3 4H6l3-4Z" stroke="#36512B" stroke-width="2"/><path d="M12 27v-6h8v6" stroke="#C5921A" stroke-width="2"/></svg><span>Hive<br>management</span></div>
+        <div class="version161-feature"><svg viewBox="0 0 32 32" fill="none"><rect x="8" y="6" width="16" height="22" rx="2" stroke="#36512B" stroke-width="2"/><path d="M12 12h8M12 17h8M12 22h6" stroke="#C5921A" stroke-width="2" stroke-linecap="round"/></svg><span>Inspections</span></div>
+        <div class="version161-feature"><svg viewBox="0 0 32 32" fill="none"><path d="M10 23h12l-2-3v-6a4 4 0 0 0-8 0v6l-2 3Z" stroke="#C5921A" stroke-width="2"/><path d="M14 26h4" stroke="#36512B" stroke-width="2" stroke-linecap="round"/></svg><span>Actions &<br>reminders</span></div>
+        <div class="version161-feature"><svg viewBox="0 0 32 32" fill="none"><rect x="5" y="7" width="22" height="18" rx="2" stroke="#36512B" stroke-width="2"/><circle cx="20.5" cy="12" r="2" fill="#C5921A"/><path d="m7 22 6-6 4 4 3-3 5 5" stroke="#36512B" stroke-width="2" stroke-linejoin="round"/></svg><span>Photos &<br>records</span></div>
+        <div class="version161-feature"><svg viewBox="0 0 32 32" fill="none"><circle cx="16" cy="16" r="5" fill="#FFF0CF" stroke="#C5921A" stroke-width="2"/><path d="M16 3v4M16 25v4M3 16h4M25 16h4M6.8 6.8l2.8 2.8M22.4 22.4l2.8 2.8M25.2 6.8l-2.8 2.8M9.6 22.4l-2.8 2.8" stroke="#36512B" stroke-width="2" stroke-linecap="round"/></svg><span>Seasonal<br>settings</span></div>
+      </div>
+    </div>
+  </section>
+</div>`;
 }
 
 settings=function(r){

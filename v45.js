@@ -776,6 +776,14 @@ function aboutPage(r){
 .about157-thanks span{display:block;margin-top:3px;color:#6B736D;font-size:10.5px;line-height:1.35}
 body:has(.about157) .vtop .iconbtn:first-child{font-size:22px!important;color:#36512B!important;font-weight:700!important}
 @media(max-width:370px){.about157{padding-left:10px;padding-right:10px}.about157-hero{min-height:176px;padding:14px}.about157-desc{max-width:78%}.about157-row{grid-template-columns:36px minmax(0,1fr) 16px;gap:9px;min-height:64px;padding:9px 11px}.about157-icon{width:35px;height:35px}}
+
+/* V158 — ABOUT HERO CLEANUP FINAL
+   Only removes the decorative diagonal art / lower-right hive icon
+   from the About hero. Everything else from V157 remains unchanged. */
+.about157-art{
+  display:none!important;
+}
+
 </style>
 <div class="about157">
   <section class="about157-hero">

@@ -3153,126 +3153,87 @@ function hives(r){
   const visible=v63VisibleHives();
 
   r.innerHTML=`<style>
-    /* ==========================================================
-       V170 — ALL HIVES VISUAL MASTER
-       VISUAL-ONLY SCOPE
-       - locked global Header remains owned by chrome('hives')
-       - locked Bottom Nav remains owned by chrome('hives')
-       - no route / link / click-target changes
-       - no search / filter / hive-card logic changes
-       ========================================================== */
-
-    .v170-hives{
+    /* V173 — Hives visual only. Existing click/route logic preserved. */
+    .v173-hives{
       margin:0!important;
       padding:0!important;
       min-height:100%;
       background:#F7F5EF;
     }
-
-    /* V172 — locked global Hives Header visual restore only.
-       No click target or route logic is changed. */
-    body:has(.v170-hives) #topbar{
-      display:grid!important;
-      visibility:visible!important;
-      opacity:1!important;
-      position:sticky!important;
-      top:0!important;
-      z-index:1000!important;
-      min-height:44px!important;
+    .v173-hives .v63-stage{
+      position:relative;
+      isolation:isolate;
+      min-height:calc(100dvh - 76px);
+      margin:0!important;
+      padding:0 10px 34px!important;
+      overflow:hidden;
+      background:url("assets/hives_near_apiary_bg.jpg") center 48% / cover no-repeat;
+    }
+    .v173-hives .v63-overlay{
+      position:absolute;
+      inset:0;
+      z-index:-1;
+      pointer-events:none;
+      background:linear-gradient(180deg,rgba(247,245,239,.08) 0%,rgba(94,115,80,.04) 48%,rgba(47,59,51,.07) 100%);
+    }
+    .v173-hives .v63-head{
       height:44px!important;
-      grid-template-columns:44px minmax(0,1fr) 44px!important;
+      margin:0 -10px 10px!important;
+      padding:0 10px!important;
+      display:grid!important;
+      grid-template-columns:40px minmax(0,1fr) 40px!important;
       align-items:center!important;
-      padding:0 8px!important;
       background:#FFFDF9!important;
       border-bottom:1px solid rgba(47,59,51,.10)!important;
       box-shadow:none!important;
-      transform:none!important;
     }
-
-    body:has(.v170-hives) #topbar .pagebar-title{
-      display:block!important;
-      margin:0!important;
+    .v173-hives .v63-head .v173-settings,
+    .v173-hives .v63-head .v173-more{
+      width:36px!important;
+      height:36px!important;
       padding:0!important;
+      margin:0!important;
+      display:grid!important;
+      place-items:center!important;
+      border:0!important;
+      background:transparent!important;
+      color:#36512B!important;
+      box-shadow:none!important;
+      font-size:17px!important;
+      line-height:1!important;
+    }
+    .v173-hives .v63-head b{
+      margin:0!important;
       text-align:center!important;
       color:#4F6744!important;
       font-size:15px!important;
       line-height:44px!important;
       font-weight:800!important;
     }
-
-    body:has(.v170-hives) #topbar .iconbtn{
+    .v173-hives .v63-search-row{
       display:grid!important;
-      place-items:center!important;
-      width:36px!important;
-      height:36px!important;
-      min-width:36px!important;
-      margin:0!important;
-      padding:0!important;
-      background:transparent!important;
-      box-shadow:none!important;
-      border:0!important;
+      grid-template-columns:minmax(0,1fr) 42px!important;
+      align-items:center!important;
+      gap:8px!important;
+      margin:0 0 9px!important;
     }
-
-    .v170-hives .v63-stage{
-      position:relative;
-      isolation:isolate;
-      min-height:calc(100dvh - 132px);
-      margin:0!important;
-      padding:12px 10px 34px!important;
-      overflow:hidden;
-      background:
-        url("assets/hives_near_apiary_bg.jpg") center 44% / cover no-repeat;
-    }
-
-    .v170-hives .v63-overlay{
-      position:absolute;
-      inset:0;
-      z-index:-1;
-      pointer-events:none;
-      background:
-        linear-gradient(
-          180deg,
-          rgba(247,245,239,.12) 0%,
-          rgba(94,115,80,.055) 44%,
-          rgba(47,59,51,.085) 100%
-        );
-    }
-
-    /* Search / Filter — same controls and same handlers, visual polish only. */
-    .v170-hives .v63-search-row{
-      position:relative;
-      z-index:1;
-      display:grid;
-      grid-template-columns:minmax(0,1fr) 42px;
-      align-items:center;
-      gap:8px;
-      margin:0 0 10px!important;
-    }
-
-    .v170-hives .v63-search{
-      min-width:0;
-      height:40px;
-      display:flex;
-      align-items:center;
-      gap:8px;
+    .v173-hives .v63-search{
+      height:40px!important;
       padding:0 12px!important;
+      display:flex!important;
+      align-items:center!important;
+      gap:8px!important;
       border:1px solid rgba(47,59,51,.10)!important;
       border-radius:13px!important;
-      background:rgba(255,255,255,.96)!important;
+      background:rgba(255,255,255,.97)!important;
       box-shadow:0 3px 10px rgba(47,59,51,.045)!important;
-      backdrop-filter:blur(2px);
     }
-
-    .v170-hives .v63-search span{
-      color:#5E7350!important;
-      font-size:16px!important;
-      line-height:1!important;
-    }
-
-    .v170-hives .v63-search input{
-      min-width:0;
-      width:100%;
-      height:100%;
+    .v173-hives .v63-search span{color:#5E7350!important;font-size:16px!important;}
+    .v173-hives .v63-search input{
+      width:100%!important;
+      min-width:0!important;
+      height:100%!important;
+      margin:0!important;
       padding:0!important;
       border:0!important;
       outline:0!important;
@@ -3280,13 +3241,7 @@ function hives(r){
       color:#2F3B33!important;
       font:inherit!important;
     }
-
-    .v170-hives .v63-search input::placeholder{
-      color:#7B817C!important;
-      opacity:1;
-    }
-
-    .v170-hives .v63-filter-btn{
+    .v173-hives .v63-filter-btn{
       width:42px!important;
       height:42px!important;
       margin:0!important;
@@ -3298,8 +3253,7 @@ function hives(r){
       background:#6F8662!important;
       box-shadow:0 3px 10px rgba(47,59,51,.09)!important;
     }
-
-    .v170-hives .v63-filter-btn svg{
+    .v173-hives .v63-filter-btn svg{
       width:20px!important;
       height:20px!important;
       fill:none!important;
@@ -3307,18 +3261,13 @@ function hives(r){
       stroke-width:1.8!important;
       stroke-linejoin:round!important;
     }
-
-    /* Hive cards — keep existing click destination and dynamic data. */
-    .v170-hives .v63-list{
-      position:relative;
-      z-index:1;
+    .v173-hives .v63-list{
       display:flex!important;
       flex-direction:column!important;
       gap:8px!important;
       margin:0!important;
     }
-
-    .v170-hives .v63-card{
+    .v173-hives .v63-card{
       width:100%!important;
       min-height:66px!important;
       margin:0!important;
@@ -3332,64 +3281,37 @@ function hives(r){
       border-radius:13px!important;
       background:rgba(255,255,255,.97)!important;
       box-shadow:0 4px 12px rgba(47,59,51,.055)!important;
-      backdrop-filter:blur(2px);
     }
-
-    .v170-hives .v63-card img{
+    .v173-hives .v63-card img{
       width:48px!important;
       height:48px!important;
       margin:0!important;
       border-radius:9px!important;
       object-fit:cover!important;
-      display:block!important;
     }
-
-    .v170-hives .v63-copy{
-      min-width:0;
+    .v173-hives .v63-copy{
+      min-width:0!important;
       display:flex!important;
       flex-direction:column!important;
-      justify-content:center!important;
       gap:2px!important;
     }
-
-    .v170-hives .v63-copy b{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-
-    .v170-hives .v63-copy small{
-      overflow:hidden;
-      text-overflow:ellipsis;
-      white-space:nowrap;
-    }
-
-    .v170-hives .v63-card > em{
-      align-self:center!important;
+    .v173-hives .v63-card > em{
       margin:0!important;
       padding-left:4px!important;
       white-space:nowrap!important;
       font-style:normal!important;
     }
-
-    .v170-hives .v63-empty{
-      border-radius:13px!important;
-      background:rgba(255,255,255,.96)!important;
-    }
-
-    @media (max-width:360px){
-      .v170-hives .v63-stage{padding-left:8px!important;padding-right:8px!important}
-      .v170-hives .v63-card{
-        grid-template-columns:44px minmax(0,1fr) auto!important;
-        gap:8px!important;
-      }
-      .v170-hives .v63-card img{width:44px!important;height:44px!important}
-    }
   </style>
 
-  <div class="vs v63-hives v170-hives">
+  <div class="vs v63-hives v173-hives">
     <section class="v63-stage">
       <div class="v63-overlay"></div>
+
+      <header class="v63-head">
+        <button class="v173-settings" onclick="go('settings')" aria-label="Settings">⚙</button>
+        <b>Hives</b>
+        <button class="v173-more" onclick="v63Menu()" aria-label="More options">⋮</button>
+      </header>
 
       <div class="v63-search-row">
         <label class="v63-search">

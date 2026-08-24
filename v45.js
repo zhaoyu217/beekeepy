@@ -720,19 +720,53 @@ function securityPage(r){r.innerHTML=`<div class="vs"><section class="setmenu"><
 
 function notificationPrefs(r){
   const s=v45s(),x=s.settings.notifications;
-  r.innerHTML=`<div class="vs"><section class="formlist">
-    <label class="switchline"><span>Inspection Reminders</span><input data-v139-notif="inspection" type="checkbox" ${x.inspection?'checked':''}></label>
-    <label class="switchline"><span>Varroa Alerts</span><input data-v139-notif="varroa" type="checkbox" ${x.varroa?'checked':''}></label>
-    <label class="switchline"><span>Treatment Follow-up</span><input data-v139-notif="treatment" type="checkbox" ${x.treatment?'checked':''}></label>
-    <label class="switchline"><span>Feeding Reminders</span><input data-v139-notif="feeding" type="checkbox" ${x.feeding?'checked':''}></label>
-    <label class="switchline"><span>Weather Alerts</span><input data-v139-notif="weather" type="checkbox" ${x.weather?'checked':''}></label>
-    <label class="switchline"><span>Seasonal Updates</span><input data-v139-notif="seasonal" type="checkbox" ${x.seasonal?'checked':''}></label>
-    <label class="switchline"><span>Push Notifications</span><input data-v139-notif="push" type="checkbox" ${x.push?'checked':''}></label>
+  const rows=[
+    ['inspection','Inspection Reminders'],
+    ['varroa','Varroa Alerts'],
+    ['treatment','Treatment Follow-up'],
+    ['feeding','Feeding Reminders'],
+    ['weather','Weather Alerts'],
+    ['seasonal','Seasonal Updates'],
+    ['push','Push Notifications']
+  ];
+  r.innerHTML=`<style>
+  /* V163 — Notification Preferences Toggle Fix
+     Functional repair only: preserves the existing page structure and visual density. */
+  .v163-notif-row{cursor:pointer;user-select:none}
+  .v163-notif-toggle{
+    width:34px!important;height:34px!important;min-width:34px!important;
+    padding:0!important;margin:0!important;border-radius:10px!important;
+    border:1px solid #DED9CE!important;background:#fff!important;
+    display:grid!important;place-items:center!important;box-shadow:none!important;
+    cursor:pointer!important;appearance:none!important;-webkit-appearance:none!important;
+  }
+  .v163-notif-toggle::after{
+    content:"";width:16px;height:16px;border-radius:6px;background:transparent;
+    transform:scale(.72);transition:transform .12s ease,background .12s ease;
+  }
+  .v163-notif-toggle[aria-checked="true"]{
+    border-color:#5E7350!important;background:#EEF3E9!important;
+  }
+  .v163-notif-toggle[aria-checked="true"]::after{
+    background:#5E7350;transform:scale(1);
+  }
+  .v163-notif-toggle:focus-visible{outline:2px solid #C5921A!important;outline-offset:2px}
+  </style>
+  <div class="vs"><section class="formlist">
+    ${rows.map(([k,label])=>`<div class="switchline v163-notif-row" role="group" onclick="toggleNotificationPrefV163(event,'${k}')"><span>${label}</span><button type="button" class="v163-notif-toggle" data-v163-notif="${k}" role="switch" aria-checked="${!!x[k]}" aria-label="${label}"></button></div>`).join('')}
   </section><button class="primary" onclick="saveNotificationPrefsV139()">Save Settings</button></div>`;
+}
+function toggleNotificationPrefV163(ev,key){
+  const el=document.querySelector(`[data-v163-notif="${key}"]`);
+  if(!el)return;
+  const next=el.getAttribute('aria-checked')!=='true';
+  el.setAttribute('aria-checked',String(next));
 }
 function saveNotificationPrefsV139(){
   const s=v45s(),x=s.settings.notifications;
-  document.querySelectorAll('[data-v139-notif]').forEach(el=>x[el.dataset.v139Notif]=el.checked);
+  document.querySelectorAll('[data-v163-notif]').forEach(el=>{
+    x[el.dataset.v163Notif]=el.getAttribute('aria-checked')==='true';
+  });
   save(s);toast('Notification preferences saved');
 }
 

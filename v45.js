@@ -784,11 +784,15 @@ body:has(.about157) .vtop .iconbtn:first-child{font-size:22px!important;color:#3
   display:none!important;
 }
 
+
+/* V160 — ABOUT COLOR ICONS FINAL */
+.about157-logo svg,.about157-icon svg,.about157-thanks-icon svg{display:block}
+.about157-thanks-icon{background:#F1F3E4!important}
 </style>
 <div class="about157">
   <section class="about157-hero">
     <div class="about157-brand">
-      <div class="about157-logo">⌂</div>
+      <div class="about157-logo"><svg viewBox="0 0 32 32" width="28" height="28" xmlns="http://www.w3.org/2000/svg" fill="none"><path d="M6 12.5 16 5l10 7.5V27H6V12.5Z" stroke="#2F6B3C" stroke-width="2.2" stroke-linejoin="round"/><path d="M13 27v-7h6v7" stroke="#C5921A" stroke-width="2.2" stroke-linejoin="round"/></svg></div>
       <div><h2 class="about157-title">HiveDash</h2><div class="about157-sub">Family Beekeeping Log</div></div>
     </div>
     <div class="about157-desc">HiveDash is a family beekeeping log designed to help beekeepers manage hives, inspections, actions, photos, reminders, seasonal settings, and related records.</div>
@@ -796,28 +800,28 @@ body:has(.about157) .vtop .iconbtn:first-child{font-size:22px!important;color:#3
   </section>
   <section class="about157-menu">
 <button class="about157-row" type="button" onclick="go('help')">
-  <span class="about157-icon">ⓘ</span>
+  <span class="about157-icon"><svg viewBox="0 0 32 32" width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none"><circle cx="16" cy="16" r="11" stroke="#2F6B3C" stroke-width="2.2"/><circle cx="16" cy="10" r="1.7" fill="#C5921A"/><path d="M16 14v8" stroke="#2F6B3C" stroke-width="2.2" stroke-linecap="round"/></svg></span>
   <span class="about157-copy"><b>Version</b><small>View app version and build information</small></span>
   <span class="about157-chevron">›</span>
 </button>
 <button class="about157-row" type="button" onclick="go('help')">
-  <span class="about157-icon">◆</span>
+  <span class="about157-icon"><svg viewBox="0 0 32 32" width="22" height="22" xmlns="http://www.w3.org/2000/svg"><path d="M16 4 25 7v7.3c0 6.2-3.8 10.9-9 13.7-5.2-2.8-9-7.5-9-13.7V7l9-3Z" fill="#2F6B3C"/><path d="M16 8.2 21 10v4.3c0 3.8-2 6.8-5 8.8V8.2Z" fill="#E3A51D"/></svg></span>
   <span class="about157-copy"><b>Privacy Policy</b><small>Read our privacy policy</small></span>
   <span class="about157-chevron">›</span>
 </button>
 <button class="about157-row" type="button" onclick="go('help')">
-  <span class="about157-icon">▤</span>
+  <span class="about157-icon"><svg viewBox="0 0 32 32" width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none"><rect x="8" y="5" width="16" height="22" rx="2" fill="#EAF1E4" stroke="#2F6B3C" stroke-width="2"/><path d="M12 11h8M12 15h8M12 19h6" stroke="#C5921A" stroke-width="2" stroke-linecap="round"/></svg></span>
   <span class="about157-copy"><b>Terms of Service</b><small>Read our terms of service</small></span>
   <span class="about157-chevron">›</span>
 </button>
 <button class="about157-row" type="button" onclick="go('help')">
-  <span class="about157-icon">?</span>
+  <span class="about157-icon"><svg viewBox="0 0 32 32" width="22" height="22" xmlns="http://www.w3.org/2000/svg" fill="none"><circle cx="16" cy="16" r="11" fill="#F3E8C7" stroke="#2F6B3C" stroke-width="2"/><path d="M12.8 12.5a3.5 3.5 0 1 1 5.6 2.8c-1.4 1-2.4 1.7-2.4 3.5" stroke="#2F6B3C" stroke-width="2" stroke-linecap="round"/><circle cx="16" cy="23" r="1.3" fill="#C5921A"/></svg></span>
   <span class="about157-copy"><b>Help Center</b><small>Find answers and get help</small></span>
   <span class="about157-chevron">›</span>
 </button>
 </section>
   <section class="about157-thanks">
-    <span class="about157-thanks-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="16" cy="17" rx="6" ry="8" stroke="currentColor" stroke-width="2"/><path d="M12 13.5h8M11 18h10M13 22h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="9.5" cy="13" rx="4.5" ry="3.5" transform="rotate(-32 9.5 13)" stroke="currentColor" stroke-width="1.8"/><ellipse cx="22.5" cy="13" rx="4.5" ry="3.5" transform="rotate(32 22.5 13)" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="7.5" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M14 5 11.5 2.8M18 5l2.5-2.2M16 25v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
+    <span class="about157-thanks-icon" aria-hidden="true"><svg viewBox="0 0 40 40" width="30" height="30" xmlns="http://www.w3.org/2000/svg" fill="none"><ellipse cx="20" cy="23" rx="7.5" ry="10" fill="#F6C343" stroke="#2F3B33" stroke-width="1.8"/><path d="M14 19h12M13 24h14M15 29h10" stroke="#2F3B33" stroke-width="2" stroke-linecap="round"/><ellipse cx="11.5" cy="18" rx="6" ry="4.5" transform="rotate(-28 11.5 18)" fill="#DFF0F4" stroke="#5E7350" stroke-width="1.5"/><ellipse cx="28.5" cy="18" rx="6" ry="4.5" transform="rotate(28 28.5 18)" fill="#DFF0F4" stroke="#5E7350" stroke-width="1.5"/><circle cx="20" cy="11" r="4.2" fill="#F6C343" stroke="#2F3B33" stroke-width="1.7"/><circle cx="18.5" cy="10.5" r=".8" fill="#2F3B33"/><circle cx="21.5" cy="10.5" r=".8" fill="#2F3B33"/><path d="M17.5 7.5 15 4.8M22.5 7.5 25 4.8" stroke="#2F3B33" stroke-width="1.5" stroke-linecap="round"/></svg></span>
     <span><b>Thank you for being part of the HiveDash community!</b><span>Happy beekeeping! 🍯</span></span>
   </section>
 </div>`;

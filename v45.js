@@ -3100,7 +3100,7 @@ function v63Status(h){
 function v63Card(h){
   const rows=v63VisibleHives();
   const idx=Math.max(0,rows.findIndex(x=>x.id===h.id));
-  return `<button class="v63-card" onclick="go('hive/${h.id}')">
+  return `<button class="v63-card" onclick="go('hive/${h.id}');setTimeout(()=>render(),0)">
     <img class="v65-thumb v65-thumb-${(idx%3)+1}" src="${v63Thumb(h)}" alt="${esc(h.name)}">
     <span class="v63-copy">
       <b>${esc(h.name)}</b>

@@ -620,6 +620,55 @@ function accountPage(r){
   const s=v45s(),provider=currentSession?.user?.app_metadata?.provider||'email';
   r.innerHTML=`<div class="vs"><section class="vc acct"><div class="avatar">${esc((s.user.name||'H')[0])}</div><b>${esc(s.user.name)}</b><span>${esc(s.user.email)}</span></section><section class="formlist"><label><span>Full Name</span><input id="aname" value="${esc(s.user.name)}"></label><label><span>Email</span><input id="aemail" value="${esc(s.user.email)}"></label><label><span>Google Account</span><input value="${provider==='google'?'Connected':'Not connected'}" readonly></label><label><span>Password</span><button type="button" onclick="sendReset()">Change Password</button></label></section><button class="primary" onclick="saveAcct()">Save</button><button class="secondary danger" onclick="requestAccountDeletion()">Delete Account</button></div>`
 }
+
+/* =========================================================
+   V153 — ACCOUNT SAVE FUNCTION FIX
+   Root cause:
+   accountPage() renders onclick="saveAcct()", but the active
+   v45.js override does not define saveAcct.
+   Scope: restore saving of the existing Full Name / Email fields.
+   No Account layout or visual redesign.
+   ========================================================= */
+function saveAcct(){
+  const nameEl=idq('aname'),emailEl=idq('aemail');
+  if(!nameEl||!emailEl)return toast('Account form is unavailable');
+
+  const name=String(nameEl.value||'').trim();
+  const email=String(emailEl.value||'').trim();
+
+  if(!name)return toast('Full Name is required');
+  if(name.length>80)return toast('Full Name must be 80 characters or fewer');
+  if(!email)return toast('Email is required');
+  if(email.length>254||!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email))return toast('Enter a valid email address');
+
+  const s=v45s();
+  const before={...(s.user||{})};
+
+  s.user=s.user||{};
+  s.user.name=name;
+  s.user.email=email;
+
+  try{
+    if(save(s)===false){
+      s.user=before;
+      return toast('Account could not be saved');
+    }
+
+    // Keep the same existing HiveDash cloud-sync path when signed in.
+    if(typeof currentSession!=='undefined' && currentSession &&
+       typeof cloudReady!=='undefined' && cloudReady &&
+       typeof scheduleCloudSave==='function'){
+      scheduleCloudSave(s);
+    }
+
+    toast('Account saved');
+    render();
+  }catch(err){
+    s.user=before;
+    console.error(err);
+    toast('Account could not be saved');
+  }
+}
 async function requestAccountDeletion(){
   if(!confirm('Delete this HiveDash account? This action requires server-side confirmation.'))return;
   localStorage.setItem('hivedash_delete_requested','1');

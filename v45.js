@@ -752,7 +752,67 @@ function saveSmart(){
 }
 
 function aboutPage(r){
-  r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>HiveDash</b></div><div class="small muted">Family Beekeeping Log</div></section><section class="setmenu"><button onclick="go('version')"><span>ⓘ</span><b>Version</b><em>›</em></button><button onclick="go('privacy')"><span>◉</span><b>Privacy Policy</b><em>›</em></button><button onclick="go('terms')"><span>◉</span><b>Terms of Service</b><em>›</em></button><button onclick="go('help')"><span>?</span><b>Help Center</b><em>›</em></button></section></div>`;
+  r.innerHTML=`<style>
+/* V157 — About HiveDash Visual Master */
+.about157{padding:10px 12px 28px;font-family:"Inter";color:#2F3B33}
+.about157-hero{position:relative;overflow:hidden;min-height:188px;padding:16px;background:#fff;border:1px solid rgba(47,59,51,.09);border-radius:16px;box-shadow:0 5px 14px rgba(47,59,51,.055);margin-bottom:12px}
+.about157-brand{display:grid;grid-template-columns:56px minmax(0,1fr);gap:12px;align-items:center;position:relative;z-index:2}
+.about157-logo{width:54px;height:54px;border-radius:18px;display:grid;place-items:center;background:#F1F3E4;color:#36512B;font-size:23px;font-weight:800}
+.about157-title{margin:0;color:#36512B;font-size:18px;line-height:1.1;font-weight:800}
+.about157-sub{margin-top:4px;color:#6B736D;font-size:11px;line-height:1.3;font-weight:600}
+.about157-desc{position:relative;z-index:2;max-width:74%;margin-top:16px;color:#2F3B33;font-size:11px;line-height:1.55;font-weight:400}
+.about157-art{position:absolute;right:0;bottom:0;width:44%;height:58%;background:radial-gradient(circle at 70% 20%, rgba(197,146,26,.18), transparent 32%),linear-gradient(160deg, transparent 20%, rgba(142,165,118,.20) 21% 46%, transparent 47%),linear-gradient(170deg, transparent 35%, rgba(94,115,80,.18) 36% 60%, transparent 61%);border-bottom-right-radius:16px}
+.about157-art:before{content:"⌂";position:absolute;right:22px;bottom:18px;color:#6F805E;font-size:42px;line-height:1}
+.about157-menu{overflow:hidden;background:#fff;border:1px solid rgba(47,59,51,.09);border-radius:16px;box-shadow:0 5px 14px rgba(47,59,51,.055)}
+.about157-row{width:100%;min-height:68px;padding:10px 13px;display:grid;grid-template-columns:40px minmax(0,1fr) 18px;gap:11px;align-items:center;border:0;border-bottom:1px solid rgba(47,59,51,.09);background:#fff;text-align:left;color:#2F3B33;cursor:pointer}
+.about157-row:last-child{border-bottom:0}
+.about157-icon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#F1F3E4;color:#36512B;font-size:16px;font-weight:800}
+.about157-copy b{display:block;margin-bottom:4px;font-size:12px;line-height:1.2;font-weight:800;color:#2F3B33}
+.about157-copy small{display:block;font-size:10.5px;line-height:1.35;font-weight:400;color:#697169}
+.about157-chevron{justify-self:end;color:#36512B;font-size:20px;line-height:1}
+.about157-thanks{display:grid;grid-template-columns:40px minmax(0,1fr);gap:10px;align-items:center;margin-top:12px;padding:12px 13px;background:#fff;border:1px solid rgba(47,59,51,.09);border-radius:14px}
+.about157-thanks-icon{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:#F1F3E4;color:#36512B;font-size:18px}
+.about157-thanks b{display:block;color:#2F3B33;font-size:11px;line-height:1.3;font-weight:700}
+.about157-thanks span{display:block;margin-top:3px;color:#6B736D;font-size:10.5px;line-height:1.35}
+body:has(.about157) .vtop .iconbtn:first-child{font-size:22px!important;color:#36512B!important;font-weight:700!important}
+@media(max-width:370px){.about157{padding-left:10px;padding-right:10px}.about157-hero{min-height:176px;padding:14px}.about157-desc{max-width:78%}.about157-row{grid-template-columns:36px minmax(0,1fr) 16px;gap:9px;min-height:64px;padding:9px 11px}.about157-icon{width:35px;height:35px}}
+</style>
+<div class="about157">
+  <section class="about157-hero">
+    <div class="about157-brand">
+      <div class="about157-logo">⌂</div>
+      <div><h2 class="about157-title">HiveDash</h2><div class="about157-sub">Family Beekeeping Log</div></div>
+    </div>
+    <div class="about157-desc">HiveDash is a family beekeeping log designed to help beekeepers manage hives, inspections, actions, photos, reminders, seasonal settings, and related records.</div>
+    <div class="about157-art"></div>
+  </section>
+  <section class="about157-menu">
+<button class="about157-row" type="button" onclick="go('help')">
+  <span class="about157-icon">ⓘ</span>
+  <span class="about157-copy"><b>Version</b><small>View app version and build information</small></span>
+  <span class="about157-chevron">›</span>
+</button>
+<button class="about157-row" type="button" onclick="go('help')">
+  <span class="about157-icon">◆</span>
+  <span class="about157-copy"><b>Privacy Policy</b><small>Read our privacy policy</small></span>
+  <span class="about157-chevron">›</span>
+</button>
+<button class="about157-row" type="button" onclick="go('help')">
+  <span class="about157-icon">▤</span>
+  <span class="about157-copy"><b>Terms of Service</b><small>Read our terms of service</small></span>
+  <span class="about157-chevron">›</span>
+</button>
+<button class="about157-row" type="button" onclick="go('help')">
+  <span class="about157-icon">?</span>
+  <span class="about157-copy"><b>Help Center</b><small>Find answers and get help</small></span>
+  <span class="about157-chevron">›</span>
+</button>
+</section>
+  <section class="about157-thanks">
+    <span class="about157-thanks-icon">♧</span>
+    <span><b>Thank you for being part of the HiveDash community!</b><span>Happy beekeeping! 🍯</span></span>
+  </section>
+</div>`;
 }
 function versionPageV139(r){
   r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>HiveDash</b></div><div class="small muted">Version 139</div></section></div>`;

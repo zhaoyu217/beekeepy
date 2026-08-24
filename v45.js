@@ -50,7 +50,13 @@ function Vback(title,right=''){return `<button class="iconbtn" onclick="history.
 function Vstatus(h){return h.status==='Healthy'?'Good':h.status==='Attention'?'Needs Attention':'Critical'}
 function Vclass(h){return h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}
 
-function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
+function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page)){
+  if(page==='hives'){
+    top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">Hives</div><button class="iconbtn" onclick="v63Menu()" aria-label="More options">⋮</button>`;
+  }else{
+    top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;
+  }
+}else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
 const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
 
@@ -1540,8 +1546,8 @@ settings=function(r){
       padding:7px 13px!important;
     }
     .v145-settings .v145-ico{
-      width:40px!important;
-      height:40px!important;
+      width:36px!important;
+      height:36px!important;
       font-size:16px!important;
     }
     .v145-settings .v145-copy small{
@@ -3163,10 +3169,10 @@ function hives(r){
     .v173-hives .v63-stage{
       position:relative;
       isolation:isolate;
-      min-height:100dvh!important;
+      min-height:calc(100dvh - 68px);
       margin:0!important;
-      padding:0 10px 0!important;
-      overflow:visible!important;
+      padding:10px 10px 0!important;
+      overflow:hidden;
       background:url("assets/hives_near_apiary_bg.jpg") center 48% / cover no-repeat;
     }
     .v173-hives .v63-overlay{
@@ -3175,44 +3181,6 @@ function hives(r){
       z-index:-1;
       pointer-events:none;
       background:linear-gradient(180deg,rgba(247,245,239,.08) 0%,rgba(94,115,80,.04) 48%,rgba(47,59,51,.07) 100%);
-    }
-    .v173-hives .v63-head{
-      position:sticky!important;
-      top:0!important;
-      z-index:40!important;
-      height:60px!important;
-      min-height:60px!important;
-      margin:0 -10px 10px!important;
-      padding:0 10px!important;
-      display:grid!important;
-      grid-template-columns:44px minmax(0,1fr) 44px!important;
-      align-items:center!important;
-      background:#FFFDF9!important;
-      border-bottom:1px solid rgba(47,59,51,.10)!important;
-      box-shadow:none!important;
-    }
-    .v173-hives .v63-head .v173-settings,
-    .v173-hives .v63-head .v173-more{
-      width:36px!important;
-      height:36px!important;
-      padding:0!important;
-      margin:0!important;
-      display:grid!important;
-      place-items:center!important;
-      border:0!important;
-      background:transparent!important;
-      color:#36512B!important;
-      box-shadow:none!important;
-      font-size:17px!important;
-      line-height:1!important;
-    }
-    .v173-hives .v63-head b{
-      margin:0!important;
-      text-align:center!important;
-      color:#4F6744!important;
-      font-size:15px!important;
-      line-height:60px!important;
-      font-weight:800!important;
     }
     .v173-hives .v63-search-row{
       display:grid!important;
@@ -3310,12 +3278,6 @@ function hives(r){
   <div class="vs v63-hives v173-hives">
     <section class="v63-stage">
       <div class="v63-overlay"></div>
-
-      <header class="v63-head">
-        <button class="v173-settings" onclick="go('settings')" aria-label="Settings">⚙</button>
-        <b>Hives</b>
-        <button class="v173-more" onclick="v63Menu()" aria-label="More options">⋮</button>
-      </header>
 
       <div class="v63-search-row">
         <label class="v63-search">

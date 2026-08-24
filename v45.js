@@ -3161,19 +3161,26 @@ function hives(r){
       background:#F7F5EF;
     }
 
-    /* ==========================================================
-       V177 — FINAL FIXED HIVES HEADER
-       Use the already-correct Hives page header and pin it to the
-       viewport. No click handler, route, search, filter, card or
-       bottom-nav logic is changed.
-       ========================================================== */
-
-    /* Prevent a duplicate global bar on Hives only. */
+    /* V178 — Hives only: use the existing Hives header, not a duplicate global bar. */
     body:has(.v173-hives) #topbar{
       display:none!important;
     }
-
-    /* Lock the Hives header to the same centered app column. */
+    .v173-hives .v63-stage{
+      position:relative;
+      isolation:isolate;
+      min-height:calc(100dvh - 68px);
+      margin:0!important;
+      padding:70px 10px 0!important;
+      overflow:hidden;
+      background:url("assets/hives_near_apiary_bg.jpg") center 48% / cover no-repeat;
+    }
+    .v173-hives .v63-overlay{
+      position:absolute;
+      inset:0;
+      z-index:-1;
+      pointer-events:none;
+      background:linear-gradient(180deg,rgba(247,245,239,.08) 0%,rgba(94,115,80,.04) 48%,rgba(47,59,51,.07) 100%);
+    }
     .v173-hives .v63-head{
       position:fixed!important;
       top:0!important;
@@ -3193,59 +3200,10 @@ function hives(r){
       box-shadow:none!important;
       z-index:1000!important;
     }
-
-    .v173-hives .v63-head b{
-      margin:0!important;
-      text-align:center!important;
-      color:#4F6744!important;
-      font-size:15px!important;
-      line-height:60px!important;
-      font-weight:800!important;
-    }
-
     .v173-hives .v63-head .v173-settings,
     .v173-hives .v63-head .v173-more{
       width:40px!important;
       height:40px!important;
-    }
-
-    /* The scrollable content starts below the fixed 60px header. */
-    .v173-hives .v63-stage{
-      padding-top:70px!important;
-      padding-bottom:0!important;
-      min-height:calc(100dvh - 68px)!important;
-    }
-    .v173-hives .v63-stage{
-      position:relative;
-      isolation:isolate;
-      min-height:calc(100dvh - 76px);
-      margin:0!important;
-      padding:0 10px 34px!important;
-      overflow:hidden;
-      background:url("assets/hives_near_apiary_bg.jpg") center 48% / cover no-repeat;
-    }
-    .v173-hives .v63-overlay{
-      position:absolute;
-      inset:0;
-      z-index:-1;
-      pointer-events:none;
-      background:linear-gradient(180deg,rgba(247,245,239,.08) 0%,rgba(94,115,80,.04) 48%,rgba(47,59,51,.07) 100%);
-    }
-    .v173-hives .v63-head{
-      height:44px!important;
-      margin:0 -10px 10px!important;
-      padding:0 10px!important;
-      display:grid!important;
-      grid-template-columns:40px minmax(0,1fr) 40px!important;
-      align-items:center!important;
-      background:#FFFDF9!important;
-      border-bottom:1px solid rgba(47,59,51,.10)!important;
-      box-shadow:none!important;
-    }
-    .v173-hives .v63-head .v173-settings,
-    .v173-hives .v63-head .v173-more{
-      width:36px!important;
-      height:36px!important;
       padding:0!important;
       margin:0!important;
       display:grid!important;
@@ -3262,7 +3220,7 @@ function hives(r){
       text-align:center!important;
       color:#4F6744!important;
       font-size:15px!important;
-      line-height:44px!important;
+      line-height:60px!important;
       font-weight:800!important;
     }
     .v173-hives .v63-search-row{

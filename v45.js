@@ -817,7 +817,7 @@ body:has(.about157) .vtop .iconbtn:first-child{font-size:22px!important;color:#3
 </button>
 </section>
   <section class="about157-thanks">
-    <span class="about157-thanks-icon">♧</span>
+    <span class="about157-thanks-icon" aria-hidden="true"><svg viewBox="0 0 32 32" width="22" height="22" fill="none" xmlns="http://www.w3.org/2000/svg"><ellipse cx="16" cy="17" rx="6" ry="8" stroke="currentColor" stroke-width="2"/><path d="M12 13.5h8M11 18h10M13 22h6" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/><ellipse cx="9.5" cy="13" rx="4.5" ry="3.5" transform="rotate(-32 9.5 13)" stroke="currentColor" stroke-width="1.8"/><ellipse cx="22.5" cy="13" rx="4.5" ry="3.5" transform="rotate(32 22.5 13)" stroke="currentColor" stroke-width="1.8"/><circle cx="16" cy="7.5" r="3" stroke="currentColor" stroke-width="1.8"/><path d="M14 5 11.5 2.8M18 5l2.5-2.2M16 25v3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></span>
     <span><b>Thank you for being part of the HiveDash community!</b><span>Happy beekeeping! 🍯</span></span>
   </section>
 </div>`;

@@ -3132,9 +3132,7 @@ function v63Menu(){
   box.className='v63-menu';
   box.innerHTML=`
     <button onclick="go('map');this.parentElement.remove()">Map</button>
-    <button onclick="${freeFull ? "subscriptionModal('more than 3 hives')" : "addHive()"};this.parentElement.remove()">
-      ${freeFull?'Upgrade for More Hives':'Add Hive'}
-    </button>
+    <button onclick="openHiveManagementV186();this.parentElement.remove()">Hive Management</button>
     <button onclick="go('settings');this.parentElement.remove()">Settings</button>`;
   document.body.appendChild(box);
 }
@@ -4030,6 +4028,291 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     });
 
     setTimeout(()=>document.getElementById('v185-hive-name')?.focus(),0);
+  };
+})();
+
+/* ==========================================================
+   V186 — HIVE MANAGEMENT / DELETE HIVE
+   Scope:
+   - Hives overflow menu: Add Hive -> Hive Management
+   - Management sheet provides Add + Delete
+   - Main Hives page visual / cards / Header / Bottom Nav unchanged
+   ========================================================== */
+(function(){
+  if(window.__V186_HIVE_MANAGEMENT__) return;
+  window.__V186_HIVE_MANAGEMENT__ = true;
+
+  function v186Close(selector){
+    document.querySelector(selector)?.remove();
+  }
+
+  function v186Escape(v){
+    return String(v ?? '')
+      .replaceAll('&','&amp;')
+      .replaceAll('<','&lt;')
+      .replaceAll('>','&gt;')
+      .replaceAll('"','&quot;')
+      .replaceAll("'",'&#39;');
+  }
+
+  function v186RemoveHiveAssociatedData(s,hiveId){
+    // Hive itself (photos live on the hive object and are deleted with it).
+    s.hives=(Array.isArray(s.hives)?s.hives:[]).filter(h=>h.id!==hiveId);
+
+    // All existing log collections that key records by hiveId.
+    if(s.logs && typeof s.logs==='object'){
+      Object.keys(s.logs).forEach(k=>{
+        if(Array.isArray(s.logs[k])){
+          s.logs[k]=s.logs[k].filter(row=>row?.hiveId!==hiveId);
+        }
+      });
+    }
+
+    // Existing action/reminder-like collections, when present.
+    ['actions','reminders'].forEach(k=>{
+      if(Array.isArray(s[k])){
+        s[k]=s[k].filter(row=>row?.hiveId!==hiveId);
+      }
+    });
+
+    return s;
+  }
+
+  window.openHiveManagementV186=function(){
+    v186Close('.v186-hive-management');
+
+    const s=v45s();
+    const hives=Array.isArray(s.hives)?s.hives:[];
+    const isFull=!isPro(s) && hives.length>=3;
+
+    const rows=hives.length
+      ? hives.map(h=>`
+          <div class="v186-hive-row">
+            <div class="v186-hive-copy">
+              <b>${v186Escape(h.name||h.id||'Hive')}</b>
+              <span>${v186Escape(Vstatus(h))}</span>
+            </div>
+            <button type="button"
+                    class="v186-delete-btn"
+                    onclick="confirmDeleteHiveV186('${v186Escape(h.id)}')">
+              Delete
+            </button>
+          </div>
+        `).join('')
+      : `<div class="v186-empty">No hives yet.</div>`;
+
+    const wrap=document.createElement('div');
+    wrap.className='v186-hive-management';
+    wrap.innerHTML=`
+      <style>
+        .v186-hive-management{
+          position:fixed;inset:0;z-index:5100;
+          display:flex;align-items:flex-end;justify-content:center;
+          padding:16px;
+          background:rgba(35,45,35,.28);
+        }
+        .v186-manage-sheet{
+          width:min(100%,430px);
+          max-height:min(78dvh,650px);
+          overflow:auto;
+          background:#FFFDF9;
+          border:1px solid rgba(47,59,51,.10);
+          border-radius:18px;
+          box-shadow:0 14px 40px rgba(47,59,51,.18);
+          padding:18px;
+        }
+        .v186-manage-head{
+          display:flex;align-items:center;justify-content:space-between;
+          margin-bottom:14px;
+        }
+        .v186-manage-head b{
+          color:#4F6744;font-size:17px;
+        }
+        .v186-close{
+          width:34px;height:34px;border:0;background:transparent;
+          color:#2F3B33;font-size:20px;text-align:center;
+        }
+        .v186-hive-list{
+          display:flex;flex-direction:column;gap:8px;
+        }
+        .v186-hive-row{
+          display:flex;align-items:center;gap:12px;
+          min-height:62px;padding:10px 11px;
+          background:#fff;
+          border:1px solid #E8E0D5;
+          border-radius:13px;
+        }
+        .v186-hive-copy{
+          min-width:0;flex:1;
+          display:flex;flex-direction:column;gap:3px;
+        }
+        .v186-hive-copy b{
+          overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+          color:#36512B;font-size:14px;
+        }
+        .v186-hive-copy span{
+          color:#767B74;font-size:11px;
+        }
+        .v186-delete-btn{
+          flex:none;height:36px;padding:0 12px;
+          border:1px solid #E7C8C3;border-radius:10px;
+          background:#FFF7F5;color:#B63A2E;
+          font-weight:800;font-size:12px;
+        }
+        .v186-empty{
+          padding:24px 12px;text-align:center;
+          color:#777E76;background:#fff;
+          border:1px solid #E8E0D5;border-radius:13px;
+        }
+        .v186-manage-actions{
+          display:grid;grid-template-columns:1fr;gap:9px;
+          margin-top:14px;
+        }
+        .v186-add-btn{
+          height:44px;border:0;border-radius:12px;
+          background:#5E7350;color:#fff;
+          font-weight:800;
+        }
+        .v186-add-btn.v186-disabled{
+          background:#A8B1A4;color:#fff;
+        }
+        .v186-limit-note{
+          margin-top:8px;text-align:center;
+          color:#817B72;font-size:11px;
+        }
+
+        .v186-delete-confirm{
+          position:fixed;inset:0;z-index:5200;
+          display:flex;align-items:center;justify-content:center;
+          padding:22px;background:rgba(35,45,35,.34);
+        }
+        .v186-confirm-card{
+          width:min(100%,390px);
+          padding:18px;background:#FFFDF9;
+          border:1px solid rgba(47,59,51,.10);
+          border-radius:18px;
+          box-shadow:0 14px 40px rgba(47,59,51,.20);
+        }
+        .v186-confirm-card b{
+          display:block;color:#2F3B33;font-size:17px;
+          margin-bottom:8px;
+        }
+        .v186-confirm-card p{
+          margin:0;color:#6D706B;font-size:13px;line-height:1.55;
+        }
+        .v186-confirm-actions{
+          display:grid;grid-template-columns:1fr 1.25fr;
+          gap:9px;margin-top:17px;
+        }
+        .v186-confirm-actions button{
+          height:42px;border-radius:11px;font-weight:800;
+        }
+        .v186-confirm-cancel{
+          border:1px solid #E4DDD1;background:#fff;color:#4F6744;
+        }
+        .v186-confirm-delete{
+          border:1px solid #B43B30;background:#B43B30;color:#fff;
+        }
+      </style>
+
+      <div class="v186-manage-sheet" role="dialog" aria-modal="true" aria-label="Hive Management">
+        <div class="v186-manage-head">
+          <b>Hive Management</b>
+          <button type="button" class="v186-close" aria-label="Close">×</button>
+        </div>
+
+        <div class="v186-hive-list">${rows}</div>
+
+        <div class="v186-manage-actions">
+          <button type="button"
+                  class="v186-add-btn ${isFull?'v186-disabled':''}"
+                  onclick="${isFull
+                    ? "this.closest('.v186-hive-management').remove();subscriptionModal('more than 3 hives')"
+                    : "this.closest('.v186-hive-management').remove();addHive()"}">
+            ${isFull?'Upgrade for More Hives':'＋ Add Hive'}
+          </button>
+        </div>
+
+        ${isFull?'<div class="v186-limit-note">Free plan · 3 hive limit</div>':''}
+      </div>
+    `;
+
+    document.body.appendChild(wrap);
+    wrap.querySelector('.v186-close').onclick=()=>v186Close('.v186-hive-management');
+    wrap.addEventListener('click',e=>{
+      if(e.target===wrap) v186Close('.v186-hive-management');
+    });
+  };
+
+  window.confirmDeleteHiveV186=function(hiveId){
+    v186Close('.v186-delete-confirm');
+
+    const s=v45s();
+    const h=(s.hives||[]).find(x=>x.id===hiveId);
+    if(!h){
+      toast('Hive not found');
+      return;
+    }
+
+    const confirm=document.createElement('div');
+    confirm.className='v186-delete-confirm';
+    confirm.innerHTML=`
+      <div class="v186-confirm-card" role="alertdialog" aria-modal="true">
+        <b>Delete ${v186Escape(h.name||'Hive')}?</b>
+        <p>
+          This will permanently delete this hive and its associated
+          inspections, feeding, treatments, harvest records, actions,
+          reminders, and hive photos. This action cannot be undone.
+        </p>
+        <div class="v186-confirm-actions">
+          <button type="button" class="v186-confirm-cancel">Cancel</button>
+          <button type="button" class="v186-confirm-delete">Delete Hive</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(confirm);
+
+    confirm.querySelector('.v186-confirm-cancel').onclick=()=>confirm.remove();
+    confirm.querySelector('.v186-confirm-delete').onclick=()=>{
+      const current=v45s();
+      const snapshot=JSON.stringify(current);
+
+      try{
+        v186RemoveHiveAssociatedData(current,hiveId);
+
+        if(save(current)===false){
+          throw new Error('Could not save deletion');
+        }
+
+        confirm.remove();
+        v186Close('.v186-hive-management');
+        toast('Hive deleted');
+
+        if(location.hash!=='#hives'){
+          location.hash='hives';
+        }
+
+        setTimeout(()=>{
+          try{
+            if(typeof render==='function') render();
+          }catch(err){
+            console.error('V186 render after delete failed',err);
+          }
+        },0);
+      }catch(err){
+        console.error('V186 delete hive failed',err);
+        try{
+          const restored=JSON.parse(snapshot);
+          save(restored);
+        }catch(_){}
+        toast('Hive could not be deleted');
+      }
+    };
+
+    confirm.addEventListener('click',e=>{
+      if(e.target===confirm) confirm.remove();
+    });
   };
 })();
 

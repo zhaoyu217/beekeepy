@@ -3100,7 +3100,7 @@ function v63Status(h){
 function v63Card(h){
   const rows=v63VisibleHives();
   const idx=Math.max(0,rows.findIndex(x=>x.id===h.id));
-  return `<button class="v63-card" onclick="go('hive/${h.id}')">
+  return `<button class="v63-card" data-hive-id="${esc(h.id)}">
     <img class="v65-thumb v65-thumb-${(idx%3)+1}" src="${v63Thumb(h)}" alt="${esc(h.name)}">
     <span class="v63-copy">
       <b>${esc(h.name)}</b>
@@ -3161,7 +3161,7 @@ function hives(r){
       background:#F7F5EF;
     }
 
-    /* V178 — Hives only: use the existing Hives header, not a duplicate global bar. */
+    /* V179 — Hives only */
     body:has(.v173-hives) #topbar{
       display:none!important;
     }
@@ -3184,10 +3184,8 @@ function hives(r){
     .v173-hives .v63-head{
       position:fixed!important;
       top:0!important;
-      left:50%!important;
-      transform:translateX(-50%)!important;
-      width:min(100vw,480px)!important;
-      max-width:480px!important;
+      left:0;
+      width:100%;
       height:60px!important;
       min-height:60px!important;
       margin:0!important;
@@ -3275,12 +3273,19 @@ function hives(r){
       stroke-linejoin:round!important;
     }
     .v173-hives .v63-list{
+      position:relative!important;
+      z-index:5!important;
       display:flex!important;
       flex-direction:column!important;
       gap:8px!important;
       margin:0!important;
+      pointer-events:auto!important;
     }
     .v173-hives .v63-card{
+      position:relative!important;
+      z-index:6!important;
+      pointer-events:auto!important;
+      cursor:pointer!important;
       width:100%!important;
       min-height:66px!important;
       margin:0!important;
@@ -3344,6 +3349,34 @@ function hives(r){
     </section>
   </div>`;
 
+  /* V179: match fixed header to the actual Hives content column width.
+     No hard-coded desktop width, so header and photo/list stay exactly aligned. */
+  const v179SyncHeader=()=>{
+    const wrap=r.querySelector('.v173-hives');
+    const head=r.querySelector('.v63-head');
+    if(!wrap||!head) return;
+    const rect=wrap.getBoundingClientRect();
+    head.style.left=rect.left+'px';
+    head.style.width=rect.width+'px';
+  };
+  v179SyncHeader();
+  if(window.__v179HivesResize) window.removeEventListener('resize',window.__v179HivesResize);
+  window.__v179HivesResize=v179SyncHeader;
+  window.addEventListener('resize',window.__v179HivesResize,{passive:true});
+
+  /* Restore reliable Hive-card ownership explicitly. Same route as before. */
+  const v179BindCards=()=>{
+    r.querySelectorAll('.v63-card[data-hive-id]').forEach(card=>{
+      card.onclick=(e)=>{
+        e.preventDefault();
+        e.stopPropagation();
+        const hid=card.dataset.hiveId;
+        if(hid) go('hive/'+hid);
+      };
+    });
+  };
+  v179BindCards();
+
   const input=idq('hsearch');
 
   window.__v63Redraw=()=>{
@@ -3356,6 +3389,7 @@ function hives(r){
     idq('hlist').innerHTML=rows.length
       ? rows.map(v63Card).join('')
       : `<div class="v63-empty"><b>No hives found</b><span>Try another search or filter.</span></div>`;
+    v179BindCards();
   };
 
   if(input) input.oninput=window.__v63Redraw;

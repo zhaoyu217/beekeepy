@@ -1831,7 +1831,30 @@ function vSaveInspection(id){
 }
 
 function barsV49(monthly){const max=Math.max(1,...monthly);return `<section class="vc"><div class="vhead"><b>Monthly Harvest (${v45s().settings.units==='metric'?'kg':'lb'})</b></div><div class="bars">${monthly.map((n,i)=>`<div><i style="height:${Math.max(2,n/max*75)}px"></i><span>${'JFMAMJJASOND'[i]}</span></div>`).join('')}</div></section>`}
-function openHarvestRecordViewV49(id){const s=v45s(),x=s.logs.harvests.find(y=>y.id===id);if(!x)return;const h=hive(s,x.hiveId);modal(`<div class="modalhead"><b>Harvest · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}% moisture<br>${x.frames||0} frames${x.batch?` · ${esc(x.batch)}`:''}</div><button class="primary" onclick="closeModal(this);go('hive/${x.hiveId}')">Open Hive</button>`)}
+function openHarvestRecordViewV49(id){
+  const s=v45s(),x=s.logs.harvests.find(y=>y.id===id);
+  if(!x)return;
+  const h=hive(s,x.hiveId);
+
+  const m=modal(`<div class="modalhead"><b>Harvest · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}% moisture<br>${x.frames||0} frames${x.batch?` · ${esc(x.batch)}`:''}</div><button class="primary" onclick="closeModal(this);go('hive/${x.hiveId}')">Open Hive</button>`);
+
+  if(m){
+    m.classList.add('harvest-record-view-v189');
+
+    /* Keep the Harvest detail sheet fully above the locked Bottom Nav.
+       No navigation or Harvest data logic changes. */
+    m.style.zIndex='5000';
+    m.style.paddingBottom='calc(82px + env(safe-area-inset-bottom, 0px))';
+
+    const panel=m.firstElementChild;
+    if(panel && panel!==m){
+      panel.style.maxHeight='calc(100dvh - 150px)';
+      panel.style.overflowY='auto';
+      panel.style.overscrollBehavior='contain';
+      panel.style.marginBottom='0';
+    }
+  }
+}
 function honeyPage(r){
   const s=v45s();
   const logs=[...s.logs.harvests].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
@@ -4381,5 +4404,38 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }else{
     setTimeout(v187RepairBlankRoute,0);
   }
+})();
+
+/* ==========================================================
+   V189 — HARVEST RECORD MODAL BOTTOM VISIBILITY FIX
+   Visual/layout only for Harvest record detail modal.
+   ========================================================== */
+(function(){
+  if(window.__V189_HARVEST_MODAL_FIX__) return;
+  window.__V189_HARVEST_MODAL_FIX__=true;
+
+  const style=document.createElement('style');
+  style.id='v189-harvest-modal-fix';
+  style.textContent=`
+    .harvest-record-view-v189{
+      z-index:5000 !important;
+      padding-bottom:calc(82px + env(safe-area-inset-bottom, 0px)) !important;
+      box-sizing:border-box !important;
+    }
+
+    .harvest-record-view-v189 > *{
+      max-height:calc(100dvh - 150px) !important;
+      overflow-y:auto !important;
+      overscroll-behavior:contain !important;
+      box-sizing:border-box !important;
+    }
+
+    .harvest-record-view-v189 .primary{
+      position:relative !important;
+      z-index:2 !important;
+      margin-bottom:8px !important;
+    }
+  `;
+  document.head.appendChild(style);
 })();
 

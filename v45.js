@@ -765,7 +765,32 @@ function smartFeatures(r){
     ['aiHealth','AI Health Analysis'],['recommendations','Health Recommendations'],
     ['seasonWeather','Season & Weather Intelligence'],['qr','QR Hive Access']
   ];
-  r.innerHTML=`<div class="vs"><section class="formlist">${rows.map(([k,label])=>`<label class="switchline"><span>${label}</span><input data-smart="${k}" type="checkbox" ${x[k]?'checked':''}></label>`).join('')}</section><button class="primary" onclick="saveSmart()">Save Settings</button></div>`;
+  r.innerHTML=`<style>
+  /* V167 — Smart Features Checked-State Fix
+     Same proven checked-state treatment as locked Notification Preferences V166.
+     Original Smart Features layout, spacing, typography and unchecked appearance stay unchanged. */
+  input[data-smart]{
+    cursor:pointer!important;
+    pointer-events:auto!important;
+  }
+  input[data-smart]:checked{
+    background-color:#5E7350!important;
+    border-color:#5E7350!important;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.2 4.2L19 7' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+    background-repeat:no-repeat!important;
+    background-position:center!important;
+    background-size:17px 17px!important;
+  }
+  </style><div class="vs"><section class="formlist">${rows.map(([k,label])=>`<label class="switchline"><span>${label}</span><input data-smart="${k}" type="checkbox" ${x[k]?'checked':''} onchange="setSmartFeatureV167('${k}',this.checked)"></label>`).join('')}</section><button class="primary" onclick="saveSmart()">Save Settings</button></div>`;
+}
+function setSmartFeatureV167(key,checked){
+  const allowed=['voice','photo','varroaCount','aiHealth','recommendations','seasonWeather','qr'];
+  if(!allowed.includes(key))return;
+  const s=v45s();
+  s.settings=s.settings||{};
+  s.settings.smart=s.settings.smart||{};
+  s.settings.smart[key]=!!checked;
+  save(s);
 }
 function saveSmart(){
   const s=v45s(),x=s.settings.smart;

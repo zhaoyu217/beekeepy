@@ -3799,3 +3799,35 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   });
 })();
 
+/* ==========================================================
+   V184 — HIVES HEADER SHADOW REMOVAL ONLY
+   ========================================================== */
+(function(){
+  if(window.__V184_HIVES_HEADER_NO_SHADOW__) return;
+  window.__V184_HIVES_HEADER_NO_SHADOW__ = true;
+
+  const style = document.createElement('style');
+  style.id = 'v184-hives-header-no-shadow';
+  style.textContent = `
+    .v173-hives .v63-head b,
+    .v173-hives .v63-head .v173-settings,
+    .v173-hives .v63-head .v173-more {
+      text-shadow:none !important;
+      filter:none !important;
+      -webkit-filter:none !important;
+      box-shadow:none !important;
+    }
+
+    .v173-hives .v63-head svg,
+    .v173-hives .v63-head svg *,
+    .v173-hives .v63-head .v173-settings *,
+    .v173-hives .v63-head .v173-more * {
+      filter:none !important;
+      -webkit-filter:none !important;
+      text-shadow:none !important;
+      box-shadow:none !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

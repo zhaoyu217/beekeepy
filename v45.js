@@ -3831,3 +3831,205 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V185 — ADD HIVE SAVE FIX
+   Scope: repair Add Hive modal/save only.
+   Existing routes, Hives visual, Header, Bottom Nav untouched.
+   ========================================================== */
+(function(){
+  if(window.__V185_ADD_HIVE_FIX__) return;
+  window.__V185_ADD_HIVE_FIX__ = true;
+
+  function v185NextHiveId(s){
+    const used=new Set((s.hives||[]).map(h=>String(h.id||'')));
+    let n=1;
+    while(used.has('h'+n)) n++;
+    return 'h'+n;
+  }
+
+  function v185CloseAddHive(){
+    document.querySelector('.v185-add-hive-modal')?.remove();
+  }
+
+  window.v185SaveHive=function(){
+    const s=v45s();
+
+    if(!isPro(s) && (s.hives||[]).length>=3){
+      v185CloseAddHive();
+      if(typeof subscriptionModal==='function'){
+        subscriptionModal('more than 3 hives');
+      }else{
+        toast('Free plan supports up to 3 hives');
+      }
+      return;
+    }
+
+    const name=(document.getElementById('v185-hive-name')?.value||'').trim();
+    const date=document.getElementById('v185-hive-date')?.value || new Date().toISOString().slice(0,10);
+    const status=document.getElementById('v185-hive-status')?.value || 'Healthy';
+
+    if(!name){
+      document.getElementById('v185-hive-name')?.focus();
+      toast('Enter a hive name');
+      return;
+    }
+
+    const id=v185NextHiveId(s);
+    const hive={
+      id,
+      name,
+      score: status==='Healthy'?100:status==='Attention'?75:55,
+      status,
+      lastInspection:date,
+      queen:'Unknown',
+      eggs:false,
+      larvae:false,
+      queenCells:false,
+      brood:'Unknown',
+      strength:'5',
+      honey:'Medium',
+      pollen:'Medium',
+      varroa:0,
+      shb:false,
+      disease:false,
+      swarm:false,
+      superStatus:'None',
+      notes:'',
+      photos:[]
+    };
+
+    s.hives=s.hives||[];
+    s.hives.push(hive);
+
+    if(save(s)===false){
+      s.hives=s.hives.filter(x=>x.id!==id);
+      toast('Hive could not be saved');
+      return;
+    }
+
+    v185CloseAddHive();
+    toast('Hive added');
+
+    if(location.hash!=='#hives'){
+      location.hash='hives';
+    }
+
+    setTimeout(()=>{
+      try{
+        if(typeof render==='function') render();
+      }catch(err){
+        console.error('V185 render after Add Hive failed',err);
+      }
+    },0);
+  };
+
+  window.addHive=function(){
+    const s=v45s();
+
+    if(!isPro(s) && (s.hives||[]).length>=3){
+      if(typeof subscriptionModal==='function'){
+        subscriptionModal('more than 3 hives');
+      }else{
+        toast('Free plan supports up to 3 hives');
+      }
+      return;
+    }
+
+    document.querySelector('.v185-add-hive-modal')?.remove();
+
+    const today=new Date().toISOString().slice(0,10);
+    const wrap=document.createElement('div');
+    wrap.className='v185-add-hive-modal';
+    wrap.innerHTML=`
+      <style>
+        .v185-add-hive-modal{
+          position:fixed;inset:0;z-index:5000;
+          display:flex;align-items:flex-end;justify-content:center;
+          background:rgba(35,45,35,.28);
+          padding:16px;
+        }
+        .v185-add-hive-sheet{
+          width:min(100%,430px);
+          background:#FFFDF9;
+          border-radius:18px;
+          border:1px solid rgba(47,59,51,.10);
+          box-shadow:0 14px 40px rgba(47,59,51,.18);
+          padding:18px;
+        }
+        .v185-add-hive-head{
+          display:flex;align-items:center;justify-content:space-between;
+          margin-bottom:14px;
+        }
+        .v185-add-hive-head b{
+          color:#4F6744;font-size:17px;
+        }
+        .v185-add-hive-close{
+          width:34px;height:34px;border:0;background:transparent;
+          font-size:20px;text-align:center;
+        }
+        .v185-add-hive-sheet label{
+          display:block;margin:12px 0 0;
+          color:#5C665D;font-size:12px;font-weight:700;
+        }
+        .v185-add-hive-sheet input,
+        .v185-add-hive-sheet select{
+          width:100%;height:44px;margin-top:6px;
+          border:1px solid #E4DDD1;border-radius:12px;
+          background:#fff;padding:0 12px;
+          color:#2F3B33;font:inherit;
+          outline:none;
+        }
+        .v185-add-hive-actions{
+          display:grid;grid-template-columns:1fr 1.4fr;gap:10px;
+          margin-top:18px;
+        }
+        .v185-add-hive-actions button{
+          height:44px;border-radius:12px;border:1px solid #E4DDD1;
+          text-align:center;font-weight:800;
+        }
+        .v185-add-hive-cancel{background:#fff;color:#4F6744;}
+        .v185-add-hive-save{background:#5E7350!important;color:#fff!important;border-color:#5E7350!important;}
+      </style>
+
+      <div class="v185-add-hive-sheet" role="dialog" aria-modal="true" aria-label="Add Hive">
+        <div class="v185-add-hive-head">
+          <b>Add Hive</b>
+          <button class="v185-add-hive-close" type="button" aria-label="Close">×</button>
+        </div>
+
+        <label>Hive Name
+          <input id="v185-hive-name" maxlength="60" placeholder="e.g. Hive #4" autocomplete="off">
+        </label>
+
+        <label>Start Date
+          <input id="v185-hive-date" type="date" value="${today}">
+        </label>
+
+        <label>Status
+          <select id="v185-hive-status">
+            <option value="Healthy">Healthy</option>
+            <option value="Attention">Attention</option>
+            <option value="Critical">Critical</option>
+          </select>
+        </label>
+
+        <div class="v185-add-hive-actions">
+          <button class="v185-add-hive-cancel" type="button">Cancel</button>
+          <button class="v185-add-hive-save" type="button">Add Hive</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(wrap);
+
+    wrap.querySelector('.v185-add-hive-close').onclick=v185CloseAddHive;
+    wrap.querySelector('.v185-add-hive-cancel').onclick=v185CloseAddHive;
+    wrap.querySelector('.v185-add-hive-save').onclick=window.v185SaveHive;
+    wrap.addEventListener('click',e=>{
+      if(e.target===wrap) v185CloseAddHive();
+    });
+
+    setTimeout(()=>document.getElementById('v185-hive-name')?.focus(),0);
+  };
+})();
+

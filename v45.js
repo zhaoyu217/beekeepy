@@ -851,12 +851,43 @@ function versionPageV139(r){
 .version161-feature svg{display:block;width:24px;height:24px;margin:0 auto 6px}
 .version161-feature span{display:block;color:#2F3B33;font-size:9px;line-height:1.25;font-weight:600}
 @media(max-width:370px){.version161{padding-left:10px;padding-right:10px}.version161-brand{grid-template-columns:52px minmax(0,1fr);padding:14px}.version161-logo{width:50px;height:50px}.version161-logo img{width:40px;height:40px}.version161-section,.version161-included{padding-left:14px;padding-right:14px}.version161-feature{padding-left:3px;padding-right:3px}.version161-feature span{font-size:8.4px}}
+
+/* V162 — VERSION EXACT USER LOGO FIX
+   Exact user-supplied full HiveDash logo: mark + wordmark. */
+.version161-brand.version162-brand{
+  display:block!important;
+  padding:15px 16px 13px!important;
+}
+.version162-logo-wrap{
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  min-height:48px;
+}
+.version162-logo-full{
+  display:block;
+  width:auto;
+  height:44px;
+  max-width:230px;
+  object-fit:contain;
+  object-position:left center;
+}
+.version162-sub{
+  margin-top:5px!important;
+  padding-left:1px;
+}
+@media(max-width:370px){
+  .version162-logo-full{height:40px;max-width:205px}
+}
+
 </style>
 <div class="version161">
   <section class="version161-card">
-    <div class="version161-brand">
-      <div class="version161-logo"><img src="assets/hivedash-logo-mark.png" alt="HiveDash"></div>
-      <div><h2 class="version161-brand-title">HiveDash</h2><div class="version161-brand-sub">Family Beekeeping Log</div></div>
+    <div class="version161-brand version162-brand">
+      <div class="version162-logo-wrap">
+        <img class="version162-logo-full" src="assets/hivedash-logo-full.png" alt="HiveDash">
+      </div>
+      <div class="version161-brand-sub version162-sub">Family Beekeeping Log</div>
     </div>
     <div class="version161-rule"></div>
     <div class="version161-section">

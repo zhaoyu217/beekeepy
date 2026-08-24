@@ -783,6 +783,7 @@ function smartFeatures(r){
   }
   </style><div class="vs"><section class="formlist">${rows.map(([k,label])=>`<label class="switchline"><span>${label}</span><input data-smart="${k}" type="checkbox" ${x[k]?'checked':''} onchange="setSmartFeatureV168('${k}',this.checked)"></label>`).join('')}</section><button class="primary" onclick="saveSmart()">Save Settings</button></div>`;
 }
+/* V169 state owner: this handler must remain attached to each Smart Features checkbox. */
 function setSmartFeatureV168(key,checked){
   const allowed=['voice','photo','varroaCount','aiHealth','recommendations','seasonWeather','qr'];
   if(!allowed.includes(key))return;
@@ -2396,15 +2397,62 @@ riskPage=function(r){if(!v50GuardPro('Risk Prediction'))return;V50_OLD_RISK(r)};
 seasonPage=function(r){if(!v50GuardPro('Season Intelligence','home'))return;V50_OLD_SEASON(r)};
 honeyAnalytics=function(r){if(!v50GuardPro('Honey Analytics'))return;V50_OLD_HONEY(r)};
 recommendations=function(r){if(!v50GuardPro('Professional Recommendations'))return;V50_OLD_RECO(r)};
+/* V169 — Smart Features Final Event Ownership Fix
+   V50 must NOT overwrite the page's existing onchange handler.
+   The page handler owns state persistence; V50 only adds entitlement enforcement. */
 smartFeatures=function(r){
-  V50_OLD_SMART(r);const s=v45s();document.querySelectorAll('[data-smart]').forEach(el=>{
-    const key=el.dataset.smart;if(!V50_PRO_FEATURES.has(key))return;
-    el.onchange=()=>{if(!isPro(s)&&el.checked){el.checked=false;subscriptionModal(el.closest('label')?.querySelector('span')?.textContent||'this smart feature')}};
+  V50_OLD_SMART(r);
+  document.querySelectorAll('[data-smart]').forEach(el=>{
+    const key=el.dataset.smart;
+    if(!V50_PRO_FEATURES.has(key))return;
+
+    el.addEventListener('change',()=>{
+      const current=v45s();
+
+      /* Pro users: never interfere with the user's on/off choice.
+         The existing V168 handler remains the state owner. */
+      if(isPro(current))return;
+
+      /* Free users: Pro-only features cannot be enabled.
+         If the user tries to enable one, reverse that single change,
+         persist false, and keep V168's latest-choice guard aligned. */
+      if(el.checked){
+        el.checked=false;
+
+        current.settings=current.settings||{};
+        current.settings.smart=current.settings.smart||{};
+        current.settings.smart[key]=false;
+
+        window.__hdSmartPrefLatest=window.__hdSmartPrefLatest||{};
+        window.__hdSmartPrefLatest[key]=false;
+
+        save(current);
+        subscriptionModal(
+          el.closest('label')?.querySelector('span')?.textContent || 'this smart feature'
+        );
+      }
+    });
   });
 };
+
 const V50_OLD_SAVE_SMART=saveSmart;
 saveSmart=function(){
-  const s=v45s();document.querySelectorAll('[data-smart]').forEach(e=>{if(!isPro(s)&&V50_PRO_FEATURES.has(e.dataset.smart))e.checked=false});V50_OLD_SAVE_SMART();
+  const s=v45s();
+
+  document.querySelectorAll('[data-smart]').forEach(el=>{
+    const key=el.dataset.smart;
+
+    /* Preserve current user choice for Pro users.
+       Enforce OFF only for Pro-only features on Free plans. */
+    if(!isPro(s) && V50_PRO_FEATURES.has(key)){
+      el.checked=false;
+      s.settings.smart[key]=false;
+      window.__hdSmartPrefLatest=window.__hdSmartPrefLatest||{};
+      window.__hdSmartPrefLatest[key]=false;
+    }
+  });
+
+  V50_OLD_SAVE_SMART();
 };
 
 // ---------- Persistent inspection drafts + bounded values ----------

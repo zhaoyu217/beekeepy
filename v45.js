@@ -719,33 +719,37 @@ function securityPage(r){r.innerHTML=`<div class="vs"><section class="setmenu"><
    ========================================================= */
 
 function notificationPrefs(r){
-  /* V165 — REAL TOGGLE FIX
-     Keep the original V162 markup/visuals.
-     Repair interaction at the state layer so realtime/rerenders cannot reset a click. */
-  document.querySelectorAll('.modal').forEach(el=>el.remove());
   const s=v45s(),x=s.settings.notifications;
   r.innerHTML=`<style>
-    /* Interaction-only. No size/color/layout changes. */
-    .formlist .switchline{cursor:pointer!important;pointer-events:auto!important}
-    .formlist .switchline input[type="checkbox"]{cursor:pointer!important;pointer-events:auto!important}
+  /* V166 — Notification Preferences checked-state fix
+     The original V162 layout / size / spacing / unchecked appearance stays unchanged.
+     The missing checked visual state is explicitly defined here. */
+  input[data-v139-notif]{
+    cursor:pointer!important;
+    pointer-events:auto!important;
+  }
+  input[data-v139-notif]:checked{
+    background-color:#5E7350!important;
+    border-color:#5E7350!important;
+    background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cpath d='M5 12.5l4.2 4.2L19 7' fill='none' stroke='white' stroke-width='2.8' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E")!important;
+    background-repeat:no-repeat!important;
+    background-position:center!important;
+    background-size:17px 17px!important;
+  }
   </style><div class="vs"><section class="formlist">
-    <label class="switchline"><span>Inspection Reminders</span><input data-v139-notif="inspection" type="checkbox" ${x.inspection?'checked':''} onchange="setNotificationPrefV165('inspection',this.checked)"></label>
-    <label class="switchline"><span>Varroa Alerts</span><input data-v139-notif="varroa" type="checkbox" ${x.varroa?'checked':''} onchange="setNotificationPrefV165('varroa',this.checked)"></label>
-    <label class="switchline"><span>Treatment Follow-up</span><input data-v139-notif="treatment" type="checkbox" ${x.treatment?'checked':''} onchange="setNotificationPrefV165('treatment',this.checked)"></label>
-    <label class="switchline"><span>Feeding Reminders</span><input data-v139-notif="feeding" type="checkbox" ${x.feeding?'checked':''} onchange="setNotificationPrefV165('feeding',this.checked)"></label>
-    <label class="switchline"><span>Weather Alerts</span><input data-v139-notif="weather" type="checkbox" ${x.weather?'checked':''} onchange="setNotificationPrefV165('weather',this.checked)"></label>
-    <label class="switchline"><span>Seasonal Updates</span><input data-v139-notif="seasonal" type="checkbox" ${x.seasonal?'checked':''} onchange="setNotificationPrefV165('seasonal',this.checked)"></label>
-    <label class="switchline"><span>Push Notifications</span><input data-v139-notif="push" type="checkbox" ${x.push?'checked':''} onchange="setNotificationPrefV165('push',this.checked)"></label>
+    <label class="switchline"><span>Inspection Reminders</span><input data-v139-notif="inspection" type="checkbox" ${x.inspection?'checked':''} onchange="setNotificationPrefV166('inspection',this.checked)"></label>
+    <label class="switchline"><span>Varroa Alerts</span><input data-v139-notif="varroa" type="checkbox" ${x.varroa?'checked':''} onchange="setNotificationPrefV166('varroa',this.checked)"></label>
+    <label class="switchline"><span>Treatment Follow-up</span><input data-v139-notif="treatment" type="checkbox" ${x.treatment?'checked':''} onchange="setNotificationPrefV166('treatment',this.checked)"></label>
+    <label class="switchline"><span>Feeding Reminders</span><input data-v139-notif="feeding" type="checkbox" ${x.feeding?'checked':''} onchange="setNotificationPrefV166('feeding',this.checked)"></label>
+    <label class="switchline"><span>Weather Alerts</span><input data-v139-notif="weather" type="checkbox" ${x.weather?'checked':''} onchange="setNotificationPrefV166('weather',this.checked)"></label>
+    <label class="switchline"><span>Seasonal Updates</span><input data-v139-notif="seasonal" type="checkbox" ${x.seasonal?'checked':''} onchange="setNotificationPrefV166('seasonal',this.checked)"></label>
+    <label class="switchline"><span>Push Notifications</span><input data-v139-notif="push" type="checkbox" ${x.push?'checked':''} onchange="setNotificationPrefV166('push',this.checked)"></label>
   </section><button class="primary" onclick="saveNotificationPrefsV139()">Save Settings</button></div>`;
 }
-function setNotificationPrefV165(key,checked){
-  const allowed=['inspection','varroa','treatment','feeding','weather','seasonal','push'];
-  if(!allowed.includes(key))return;
+function setNotificationPrefV166(key,checked){
   const s=v45s();
-  s.settings=s.settings||{};
-  s.settings.notifications=s.settings.notifications||{};
+  if(!s.settings.notifications)s.settings.notifications={};
   s.settings.notifications[key]=!!checked;
-  /* Persist immediately so auth/realtime/render refresh cannot visually revert the toggle. */
   save(s);
 }
 function saveNotificationPrefsV139(){

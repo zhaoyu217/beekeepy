@@ -1296,6 +1296,28 @@ settings=function(r){
       display:none!important;
     }
 
+  
+    /* V150 SETTINGS — HERO SHADOW OFF + TOP GAP COMPACT
+       Only the two user-requested visual changes.
+       Typography, row density, routes, entries and logic remain untouched. */
+
+    /* 1) Remove Hero shadow completely; keep only a subtle border. */
+    .v145-settings .v145-settings-hero{
+      box-shadow:none!important;
+      border:1px solid rgba(47,59,51,.12)!important;
+    }
+
+    /* 2) Reduce the empty vertical space around the Settings heading area. */
+    .v145-settings{
+      padding-top:6px!important;
+    }
+    .v145-settings .v145-settings-head{
+      padding:2px 4px 6px!important;
+    }
+    .v145-settings .v145-settings-sub{
+      margin-top:2px!important;
+    }
+
   </style>
 
   <div class="vs v145-settings">

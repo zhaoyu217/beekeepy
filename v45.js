@@ -2891,122 +2891,355 @@ function hives(r){
 
 /* V141 - Privacy Policy single-point replacement */
 const V141_OLD_INFO_PAGE=infoPage;
-infoPage=function(r,title){
-  if(title!=='Privacy Policy')return V141_OLD_INFO_PAGE(r,title);
-  r.innerHTML=`<section><div class="h1" style="margin-top:12px">Privacy Policy</div></section><section class="setting body">
-    <div class="small muted">Effective date: August 23, 2026</div>
-    <p>HiveDash is a family beekeeping log designed to help beekeepers manage hives, inspections, actions, photos, reminders, seasonal settings, and related records. This Privacy Policy explains what information HiveDash collects, how it is used, when it is shared, and the choices available to you.</p>
 
-    <div class="h3">1. Information We Collect</div>
-    <p><b>Account information.</b> When you create or use a cloud account, HiveDash may process information such as your email address, account identifier, authentication information handled by the authentication provider, and subscription or entitlement status.</p>
+/* =========================================================
+   V155 — PRIVACY + TERMS ACCORDION VISUAL MASTER
+   - First 6 sections shown initially
+   - Remaining sections hidden behind Show more
+   - Each section opens/closes via arrow
+   - Exact existing legal copy preserved
+   ========================================================= */
+function toggleLegalV155(prefix,n){
+  const item=document.getElementById(prefix+'-item-'+n);
+  if(!item)return;
+  const open=item.classList.toggle('open');
+  const btn=item.querySelector('.legal155-toggle');
+  if(btn)btn.setAttribute('aria-expanded',open?'true':'false');
+}
+function toggleLegalMoreV155(prefix,count){
+  const extra=document.getElementById(prefix+'-extra');
+  const btn=document.getElementById(prefix+'-more-btn');
+  if(!extra||!btn)return;
+  const show=extra.classList.toggle('show');
+  btn.innerHTML=show?'Show less⌃':`Show more⌄<small>${count} more sections</small>`;
+}
+infoPage=function(r,title){
+  if(title==='Privacy Policy'){
+    r.innerHTML=`
+<style>
+/* V155 — Legal accordion visual master.
+   Visual/interaction change only. Legal copy is preserved exactly. */
+.legal155{
+  padding:10px 12px 28px;
+  font-family:"Inter";
+  color:#2F3B33;
+}
+.legal155-card{
+  background:#fff;
+  border:1px solid rgba(47,59,51,.11);
+  border-radius:16px;
+  padding:14px;
+}
+.legal155-head{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.legal155-shield{
+  width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#E9EEDF;color:#36512B;
+  font-size:19px;font-weight:800;
+}
+.legal155-title{
+  margin:0 0 7px;
+  color:#2F3B33;
+  font-size:18px;
+  line-height:1.2;
+  font-weight:800;
+}
+.legal155-date{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 9px;
+  border-radius:9px;
+  background:#F1F2E6;
+  color:#2F3B33;
+  font-size:10px;
+  line-height:1.2;
+}
+.legal155-intro{
+  margin:8px 0 12px;
+  color:#2F3B33;
+  font-size:11px;
+  line-height:1.55;
+  font-weight:500;
+}
+.legal155-list{display:grid;gap:8px}
+.legal155-item{
+  border:1px solid rgba(47,59,51,.11);
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+}
+.legal155-toggle{
+  width:100%;
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr) 22px;
+  align-items:center;
+  gap:10px;
+  min-height:52px;
+  padding:9px 11px;
+  border:0;
+  background:#fff;
+  text-align:left;
+  color:#36512B;
+  cursor:pointer;
+}
+.legal155-num{
+  width:28px;height:28px;border-radius:8px;
+  display:grid;place-items:center;
+  background:#F1F2E6;
+  font-size:12px;font-weight:800;
+}
+.legal155-label{
+  font-size:12px;
+  line-height:1.25;
+  font-weight:800;
+}
+.legal155-arrow{
+  justify-self:end;
+  color:#36512B;
+  font-size:18px;
+  line-height:1;
+  transform:rotate(0deg);
+  transition:transform .16s ease;
+}
+.legal155-item.open .legal155-arrow{transform:rotate(180deg)}
+.legal155-body{
+  display:none;
+  padding:0 12px 13px 51px;
+  color:#2F3B33;
+  font-size:10.5px;
+  line-height:1.55;
+}
+.legal155-item.open .legal155-body{display:block}
+.legal155-body p{margin:0 0 9px}
+.legal155-body p:last-child{margin-bottom:0}
+.legal155-body b{font-weight:700}
+.legal155-extra{display:none}
+.legal155-extra.show{display:block}
+.legal155-more{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:#36512B;
+  font-family:"Inter";
+  font-size:11px;
+  line-height:1.3;
+  font-weight:700;
+  padding:12px 0 5px;
+  cursor:pointer;
+}
+.legal155-more small{
+  display:block;
+  margin-top:4px;
+  color:#6B736D;
+  font-size:10px;
+  font-weight:400;
+}
+.legal155-note{
+  display:grid;
+  grid-template-columns:34px 1fr;
+  gap:10px;
+  align-items:center;
+  margin-top:10px;
+  padding:11px 12px;
+  border:1px solid rgba(94,115,80,.10);
+  border-radius:11px;
+  background:#FAFAF5;
+  color:#2F3B33;
+  font-size:10.5px;
+  line-height:1.45;
+}
+.legal155-lock{
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#E9EEDF;color:#36512B;
+  font-size:15px;
+}
+body:has(.legal155) .vtop .iconbtn:first-child{
+  font-size:22px!important;
+  color:#36512B!important;
+  font-weight:700!important;
+}
+@media(max-width:370px){
+  .legal155{padding-left:10px;padding-right:10px}
+  .legal155-card{padding:12px}
+  .legal155-toggle{grid-template-columns:28px minmax(0,1fr) 20px;gap:8px;padding:8px 10px}
+  .legal155-body{padding-left:46px}
+}
+</style>
+<div class="legal155" data-legal="privacy"><section class="legal155-card"><div class="legal155-head"><span class="legal155-shield">◆</span><div><h2 class="legal155-title">Privacy Policy</h2><span class="legal155-date">▣ <b>Effective date: August 23, 2026</b></span></div></div><div class="legal155-intro">HiveDash is a family beekeeping log designed to help beekeepers manage hives, inspections, actions, photos, reminders, seasonal settings, and related records. This Privacy Policy explains what information HiveDash collects, how it is used, when it is shared, and the choices available to you.</div><div class="legal155-list"><section class="legal155-item" id="privacy-item-1"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',1)" aria-expanded="false"><span class="legal155-num">1</span><span class="legal155-label">Information We Collect</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p><b>Account information.</b> When you create or use a cloud account, HiveDash may process information such as your email address, account identifier, authentication information handled by the authentication provider, and subscription or entitlement status.</p>
     <p><b>Beekeeping records.</b> HiveDash processes information you enter about apiaries and hives, including hive names, locations you provide, inspections, colony condition, queen observations, feeding, treatments, harvests, reminders, notes, seasonal settings, and related history.</p>
     <p><b>Photos and optional inputs.</b> If you choose to add hive photos, use supported voice-input features, or enable smart features, HiveDash processes the information you submit for those features. Features marked as unavailable or coming soon do not collect data merely because they are displayed in the app.</p>
     <p><b>Location.</b> HiveDash may request device location only when you actively use a location-based feature and grant permission. You can deny or revoke location permission through your browser or device settings. Apiary locations that you type into HiveDash are also stored as part of your beekeeping records.</p>
-    <p><b>Technical information.</b> The app and the services used to operate it may process basic technical information needed for security and operation, such as browser or device information, IP address, timestamps, network status, and diagnostic error information.</p>
-
-    <div class="h3">2. How We Use Information</div>
-    <p>We use information to provide and maintain HiveDash; save and synchronize your hive records; authenticate accounts; display reminders, alerts, analytics, and seasonal information; provide features you request; preserve settings across sessions and devices; troubleshoot problems; protect the service; and comply with applicable legal obligations.</p>
-
-    <div class="h3">3. Local Storage and Cloud Sync</div>
-    <p>HiveDash can store application data in your browser or device. When cloud sync is enabled and you are signed in, HiveDash also synchronizes application state with its cloud backend so your records can be available across signed-in devices. Local data may remain on a device after sign-out unless you clear it, reset local data, or remove it through available controls.</p>
-
-    <div class="h3">4. Service Providers</div>
-    <p>HiveDash uses service providers to operate certain functions. The current cloud authentication, database, and synchronization backend uses Supabase. Service providers process information only as needed to provide their services to HiveDash and are subject to their own security and privacy obligations. HiveDash may also rely on hosting, network, or platform providers that process limited technical information necessary to deliver the app.</p>
-
-    <div class="h3">5. Photos, Smart Features, and Permissions</div>
-    <p>You control whether to add photos or grant device permissions. HiveDash does not require access to your entire photo library or precise device location simply to maintain ordinary hive records. Where a feature requires a permission, you can decline it; the related feature may then be unavailable. Smart-feature permissions can be managed from the app where those controls are provided.</p>
-
-    <div class="h3">6. Sharing of Information</div>
-    <p>HiveDash does not sell your personal information. We may disclose information to service providers that help operate HiveDash, when you direct us to do so, when required by law or valid legal process, or when reasonably necessary to protect users, the service, or the rights and safety of others. If the business responsible for HiveDash is involved in a merger, acquisition, financing, reorganization, or sale of assets, information may be transferred as part of that transaction subject to applicable law.</p>
-
-    <div class="h3">7. Data Retention and Deletion</div>
-    <p>We retain information for as long as reasonably necessary to provide HiveDash, maintain your account and records, comply with legal obligations, resolve disputes, and protect the service. You may use available export, reset, account, or support tools to manage your data. For requests to access, correct, or delete cloud-account information that cannot be completed directly in the app, use Contact Support in HiveDash.</p>
-
-    <div class="h3">8. Security</div>
-    <p>We use reasonable technical and organizational measures intended to protect information against unauthorized access, loss, misuse, alteration, or disclosure. No method of storage or transmission is completely secure, so absolute security cannot be guaranteed.</p>
-
-    <div class="h3">9. Your Choices and Privacy Rights</div>
-    <p>You can manage notification, smart-feature, location, and other permissions through HiveDash and your browser or device. Depending on where you live, you may have rights to request access to, correction of, deletion of, or a copy of certain personal information, or to object to or restrict certain processing. We will respond to verified requests as required by applicable law.</p>
-    <p>HiveDash does not sell personal information or use personal information for cross-context behavioral advertising. If applicable law gives you additional rights, you may exercise them through Contact Support.</p>
-
-    <div class="h3">10. Children</div>
-    <p>HiveDash is not directed to children under 13, and we do not knowingly collect personal information from children under 13. If we learn that such information has been collected, we will take appropriate steps to delete it.</p>
-
-    <div class="h3">11. International Processing</div>
-    <p>HiveDash and its service providers may process information in countries other than the country where you live. Where required, we use appropriate safeguards for international transfers and handle information in accordance with applicable privacy law.</p>
-
-    <div class="h3">12. Changes to This Policy</div>
-    <p>We may update this Privacy Policy as HiveDash changes or as legal requirements evolve. When we make material changes, we will update the effective date and provide notice when required.</p>
-
-    <div class="h3">13. Contact</div>
-    <p>For privacy questions or requests, open HiveDash and use <b>Settings &gt; Help Center &gt; Contact Support</b>. Please include enough information for us to understand and verify your request.</p>
-  </section>`;
-};
-
-/* V142 - Terms of Service single-point replacement + initial-load refresh fallback */
-const V142_OLD_INFO_PAGE=infoPage;
-infoPage=function(r,title){
-  if(title!=='Terms of Service')return V142_OLD_INFO_PAGE(r,title);
-  r.innerHTML=`
+    <p><b>Technical information.</b> The app and the services used to operate it may process basic technical information needed for security and operation, such as browser or device information, IP address, timestamps, network status, and diagnostic error information.</p></div></section><section class="legal155-item" id="privacy-item-2"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',2)" aria-expanded="false"><span class="legal155-num">2</span><span class="legal155-label">How We Use Information</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>We use information to provide and maintain HiveDash; save and synchronize your hive records; authenticate accounts; display reminders, alerts, analytics, and seasonal information; provide features you request; preserve settings across sessions and devices; troubleshoot problems; protect the service; and comply with applicable legal obligations.</p></div></section><section class="legal155-item" id="privacy-item-3"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',3)" aria-expanded="false"><span class="legal155-num">3</span><span class="legal155-label">Local Storage and Cloud Sync</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash can store application data in your browser or device. When cloud sync is enabled and you are signed in, HiveDash also synchronizes application state with its cloud backend so your records can be available across signed-in devices. Local data may remain on a device after sign-out unless you clear it, reset local data, or remove it through available controls.</p></div></section><section class="legal155-item" id="privacy-item-4"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',4)" aria-expanded="false"><span class="legal155-num">4</span><span class="legal155-label">Service Providers</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash uses service providers to operate certain functions. The current cloud authentication, database, and synchronization backend uses Supabase. Service providers process information only as needed to provide their services to HiveDash and are subject to their own security and privacy obligations. HiveDash may also rely on hosting, network, or platform providers that process limited technical information necessary to deliver the app.</p></div></section><section class="legal155-item" id="privacy-item-5"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',5)" aria-expanded="false"><span class="legal155-num">5</span><span class="legal155-label">Photos, Smart Features, and Permissions</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>You control whether to add photos or grant device permissions. HiveDash does not require access to your entire photo library or precise device location simply to maintain ordinary hive records. Where a feature requires a permission, you can decline it; the related feature may then be unavailable. Smart-feature permissions can be managed from the app where those controls are provided.</p></div></section><section class="legal155-item" id="privacy-item-6"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',6)" aria-expanded="false"><span class="legal155-num">6</span><span class="legal155-label">Sharing of Information</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash does not sell your personal information. We may disclose information to service providers that help operate HiveDash, when you direct us to do so, when required by law or valid legal process, or when reasonably necessary to protect users, the service, or the rights and safety of others. If the business responsible for HiveDash is involved in a merger, acquisition, financing, reorganization, or sale of assets, information may be transferred as part of that transaction subject to applicable law.</p></div></section></div><div class="legal155-extra" id="privacy-extra"><div class="legal155-list"><section class="legal155-item" id="privacy-item-7"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',7)" aria-expanded="false"><span class="legal155-num">7</span><span class="legal155-label">Data Retention and Deletion</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>We retain information for as long as reasonably necessary to provide HiveDash, maintain your account and records, comply with legal obligations, resolve disputes, and protect the service. You may use available export, reset, account, or support tools to manage your data. For requests to access, correct, or delete cloud-account information that cannot be completed directly in the app, use Contact Support in HiveDash.</p></div></section><section class="legal155-item" id="privacy-item-8"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',8)" aria-expanded="false"><span class="legal155-num">8</span><span class="legal155-label">Security</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>We use reasonable technical and organizational measures intended to protect information against unauthorized access, loss, misuse, alteration, or disclosure. No method of storage or transmission is completely secure, so absolute security cannot be guaranteed.</p></div></section><section class="legal155-item" id="privacy-item-9"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',9)" aria-expanded="false"><span class="legal155-num">9</span><span class="legal155-label">Your Choices and Privacy Rights</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>You can manage notification, smart-feature, location, and other permissions through HiveDash and your browser or device. Depending on where you live, you may have rights to request access to, correction of, deletion of, or a copy of certain personal information, or to object to or restrict certain processing. We will respond to verified requests as required by applicable law.</p>
+    <p>HiveDash does not sell personal information or use personal information for cross-context behavioral advertising. If applicable law gives you additional rights, you may exercise them through Contact Support.</p></div></section><section class="legal155-item" id="privacy-item-10"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',10)" aria-expanded="false"><span class="legal155-num">10</span><span class="legal155-label">Children</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash is not directed to children under 13, and we do not knowingly collect personal information from children under 13. If we learn that such information has been collected, we will take appropriate steps to delete it.</p></div></section><section class="legal155-item" id="privacy-item-11"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',11)" aria-expanded="false"><span class="legal155-num">11</span><span class="legal155-label">International Processing</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash and its service providers may process information in countries other than the country where you live. Where required, we use appropriate safeguards for international transfers and handle information in accordance with applicable privacy law.</p></div></section><section class="legal155-item" id="privacy-item-12"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',12)" aria-expanded="false"><span class="legal155-num">12</span><span class="legal155-label">Changes to This Policy</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>We may update this Privacy Policy as HiveDash changes or as legal requirements evolve. When we make material changes, we will update the effective date and provide notice when required.</p></div></section><section class="legal155-item" id="privacy-item-13"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('privacy',13)" aria-expanded="false"><span class="legal155-num">13</span><span class="legal155-label">Contact</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>For privacy questions or requests, open HiveDash and use <b>Settings &gt; Help Center &gt; Contact Support</b>. Please include enough information for us to understand and verify your request.</p></div></section></div></div><button class="legal155-more" id="privacy-more-btn" type="button" onclick="toggleLegalMoreV155('privacy',7)">Show more⌄<small>7 more sections</small></button><div class="legal155-note"><span class="legal155-lock">▣</span><span>Your privacy is important to us. We use reasonable technical and organizational measures to protect your information.</span></div></section></div>`;
+    return;
+  }
+  if(title==='Terms of Service'){
+    r.innerHTML=`
 <style>
-/* V154 — Terms visual master. Legal copy and 16-section order unchanged. */
-.terms154{padding:12px 12px 28px;font-family:"Inter";color:#2F3B33}
-.terms154-card{background:#fff;border:1px solid rgba(47,59,51,.12);border-radius:16px;padding:14px 14px 4px}
-.terms154-date{display:inline-flex;align-items:center;gap:7px;background:#F1F2E6;border-radius:10px;padding:8px 10px;color:#2F3B33;font-size:11px;line-height:1.2;margin-bottom:12px}
-.terms154-intro{display:grid;grid-template-columns:42px 1fr;gap:12px;align-items:center;background:#F7F7EF;border:1px solid rgba(94,115,80,.10);border-radius:12px;padding:13px 14px;margin-bottom:6px}
-.terms154-shield{width:42px;height:42px;border-radius:50%;display:grid;place-items:center;background:#E9EEDF;color:#5E7350;font-size:17px}
-.terms154-intro p{margin:0;color:#2F3B33;font-size:12px;line-height:1.55;font-weight:600}
-.terms154-sections{display:block}
-.terms154-section{display:grid;grid-template-columns:32px minmax(0,1fr);gap:11px;padding:14px 0;border-bottom:1px solid rgba(47,59,51,.10)}
-.terms154-section:last-child{border-bottom:0}
-.terms154-num{width:30px;height:30px;border-radius:9px;background:#F1F2E6;color:#36512B;display:grid;place-items:center;font-size:13px;line-height:1;font-weight:800}
-.terms154-copy h3{margin:1px 0 7px;color:#36512B;font-size:13px;line-height:1.3;font-weight:800}
-.terms154-copy p{margin:0;color:#2F3B33;font-size:11px;line-height:1.55;font-weight:400}
-.terms154-copy b{font-weight:700}
-body:has(.terms154) .vtop .iconbtn:first-child{font-size:22px!important;color:#36512B!important;font-weight:700!important}
+/* V155 — Legal accordion visual master.
+   Visual/interaction change only. Legal copy is preserved exactly. */
+.legal155{
+  padding:10px 12px 28px;
+  font-family:"Inter";
+  color:#2F3B33;
+}
+.legal155-card{
+  background:#fff;
+  border:1px solid rgba(47,59,51,.11);
+  border-radius:16px;
+  padding:14px;
+}
+.legal155-head{
+  display:grid;
+  grid-template-columns:44px minmax(0,1fr);
+  gap:12px;
+  align-items:center;
+  margin-bottom:10px;
+}
+.legal155-shield{
+  width:44px;height:44px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#E9EEDF;color:#36512B;
+  font-size:19px;font-weight:800;
+}
+.legal155-title{
+  margin:0 0 7px;
+  color:#2F3B33;
+  font-size:18px;
+  line-height:1.2;
+  font-weight:800;
+}
+.legal155-date{
+  display:inline-flex;align-items:center;gap:6px;
+  padding:7px 9px;
+  border-radius:9px;
+  background:#F1F2E6;
+  color:#2F3B33;
+  font-size:10px;
+  line-height:1.2;
+}
+.legal155-intro{
+  margin:8px 0 12px;
+  color:#2F3B33;
+  font-size:11px;
+  line-height:1.55;
+  font-weight:500;
+}
+.legal155-list{display:grid;gap:8px}
+.legal155-item{
+  border:1px solid rgba(47,59,51,.11);
+  border-radius:12px;
+  background:#fff;
+  overflow:hidden;
+}
+.legal155-toggle{
+  width:100%;
+  display:grid;
+  grid-template-columns:30px minmax(0,1fr) 22px;
+  align-items:center;
+  gap:10px;
+  min-height:52px;
+  padding:9px 11px;
+  border:0;
+  background:#fff;
+  text-align:left;
+  color:#36512B;
+  cursor:pointer;
+}
+.legal155-num{
+  width:28px;height:28px;border-radius:8px;
+  display:grid;place-items:center;
+  background:#F1F2E6;
+  font-size:12px;font-weight:800;
+}
+.legal155-label{
+  font-size:12px;
+  line-height:1.25;
+  font-weight:800;
+}
+.legal155-arrow{
+  justify-self:end;
+  color:#36512B;
+  font-size:18px;
+  line-height:1;
+  transform:rotate(0deg);
+  transition:transform .16s ease;
+}
+.legal155-item.open .legal155-arrow{transform:rotate(180deg)}
+.legal155-body{
+  display:none;
+  padding:0 12px 13px 51px;
+  color:#2F3B33;
+  font-size:10.5px;
+  line-height:1.55;
+}
+.legal155-item.open .legal155-body{display:block}
+.legal155-body p{margin:0 0 9px}
+.legal155-body p:last-child{margin-bottom:0}
+.legal155-body b{font-weight:700}
+.legal155-extra{display:none}
+.legal155-extra.show{display:block}
+.legal155-more{
+  width:100%;
+  border:0;
+  background:transparent;
+  color:#36512B;
+  font-family:"Inter";
+  font-size:11px;
+  line-height:1.3;
+  font-weight:700;
+  padding:12px 0 5px;
+  cursor:pointer;
+}
+.legal155-more small{
+  display:block;
+  margin-top:4px;
+  color:#6B736D;
+  font-size:10px;
+  font-weight:400;
+}
+.legal155-note{
+  display:grid;
+  grid-template-columns:34px 1fr;
+  gap:10px;
+  align-items:center;
+  margin-top:10px;
+  padding:11px 12px;
+  border:1px solid rgba(94,115,80,.10);
+  border-radius:11px;
+  background:#FAFAF5;
+  color:#2F3B33;
+  font-size:10.5px;
+  line-height:1.45;
+}
+.legal155-lock{
+  width:34px;height:34px;border-radius:50%;
+  display:grid;place-items:center;
+  background:#E9EEDF;color:#36512B;
+  font-size:15px;
+}
+body:has(.legal155) .vtop .iconbtn:first-child{
+  font-size:22px!important;
+  color:#36512B!important;
+  font-weight:700!important;
+}
 @media(max-width:370px){
- .terms154{padding-left:10px;padding-right:10px}
- .terms154-card{padding-left:12px;padding-right:12px}
- .terms154-intro{grid-template-columns:38px 1fr;gap:10px;padding:12px}
- .terms154-shield{width:38px;height:38px}
- .terms154-section{grid-template-columns:30px minmax(0,1fr);gap:9px}
+  .legal155{padding-left:10px;padding-right:10px}
+  .legal155-card{padding:12px}
+  .legal155-toggle{grid-template-columns:28px minmax(0,1fr) 20px;gap:8px;padding:8px 10px}
+  .legal155-body{padding-left:46px}
 }
 </style>
-<div class="terms154"><section class="terms154-card"><div class="terms154-date">▣ <b>Effective date: August 23, 2026</b></div><div class="terms154-intro"><span class="terms154-shield">◆</span><p>
-    These Terms of Service govern your access to and use of HiveDash, a family beekeeping log for managing hives, inspections, actions, photos, reminders, seasonal settings, analytics, and related records. By accessing or using HiveDash, you agree to these Terms.</p></div><div class="terms154-sections">
-
-    <section class="terms154-section"><div class="terms154-num">1</div><div class="terms154-copy"><h3>Eligibility and Accounts</h3><p>You must be legally able to enter into these Terms in the place where you live. HiveDash is not directed to children under 13. If you create an account, you are responsible for providing accurate account information, protecting access to your account, and for activity that occurs through your account unless prohibited by applicable law.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">2</div><div class="terms154-copy"><h3>HiveDash Is a Recordkeeping and Decision-Support Tool</h3><p>HiveDash helps organize beekeeping information and may display reminders, health indicators, trends, forecasts, risk estimates, recommendations, weather-related information, or other automated outputs. These outputs are informational and may be incomplete, delayed, or inaccurate. HiveDash does not replace your own inspection, judgment, local regulations, product labels, veterinary advice where applicable, or qualified professional advice. You remain responsible for decisions affecting bees, people, property, food, treatments, and equipment.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">3</div><div class="terms154-copy"><h3>Your Records and Content</h3><p>You retain responsibility for the hive records, notes, photos, locations, and other content you submit to HiveDash. You represent that you have the right to submit that content. You grant HiveDash the limited rights necessary to store, process, display, back up, synchronize, and otherwise handle your content solely to operate, maintain, secure, and improve the features you use.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">4</div><div class="terms154-copy"><h3>Acceptable Use</h3><p>You may not misuse HiveDash, interfere with its operation or security, attempt unauthorized access to accounts or systems, introduce malicious code, use the service to violate law or the rights of others, scrape or extract data in a manner that materially burdens the service, or attempt to bypass access, subscription, or security controls.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">5</div><div class="terms154-copy"><h3>Free and Paid Features</h3><p>HiveDash may offer free and paid features. The features, limits, and pricing shown in the app may change prospectively. Where a paid subscription is offered through a payment provider or app marketplace, billing, renewal, cancellation, refund, and payment processing may also be subject to that provider's terms. Paid access should be treated as active only when a valid entitlement is confirmed by the applicable billing system.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">6</div><div class="terms154-copy"><h3>Trials, Changes, and Availability</h3><p>We may add, modify, suspend, or discontinue features when reasonably necessary for product, security, legal, or operational reasons. We may also use limits or staged availability for features. We do not guarantee that every feature will be available at all times, on every device, or in every location.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">7</div><div class="terms154-copy"><h3>Third-Party Services</h3><p>HiveDash may depend on third-party services for functions such as authentication, cloud storage, synchronization, hosting, maps, weather information, analytics, payments, or other integrations. Those services may be subject to their own terms and policies. HiveDash is not responsible for third-party services that are outside its control.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">8</div><div class="terms154-copy"><h3>Data, Backup, and Export</h3><p>HiveDash may provide local storage, cloud synchronization, or export tools. You are responsible for keeping any additional copies of records that are important to you. Although we take reasonable steps to preserve service data, no storage or synchronization system is guaranteed to be error-free or permanently available.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">9</div><div class="terms154-copy"><h3>Privacy</h3><p>Our handling of personal information is described in the HiveDash Privacy Policy. The Privacy Policy is available from Privacy &amp; Security and About HiveDash in the app.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">10</div><div class="terms154-copy"><h3>Intellectual Property</h3><p>HiveDash, including its software, interface, branding, visual design, and service content other than user-submitted content, is protected by applicable intellectual-property law. These Terms give you a limited, non-exclusive, non-transferable right to use HiveDash for its intended purpose. They do not transfer ownership of HiveDash or its intellectual property to you.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">11</div><div class="terms154-copy"><h3>Suspension and Termination</h3><p>You may stop using HiveDash at any time. We may restrict or suspend access when reasonably necessary to protect users or the service, respond to unlawful activity, enforce these Terms, or meet legal obligations. Where appropriate and practicable, we will provide notice or an opportunity to address the issue. Rights and obligations that by their nature should survive termination will continue to apply.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">12</div><div class="terms154-copy"><h3>Disclaimers</h3><p>To the extent permitted by applicable law, HiveDash is provided on an "as is" and "as available" basis. We do not warrant that the service will be uninterrupted, error-free, or that recommendations, predictions, weather information, health indicators, or other outputs will always be accurate or suitable for a particular beekeeping decision. Nothing in these Terms excludes warranties or rights that cannot legally be excluded.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">13</div><div class="terms154-copy"><h3>Limitation of Liability</h3><p>To the extent permitted by applicable law, HiveDash and the persons or entities responsible for operating it will not be liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, lost data, lost honey production, colony loss, or business interruption arising from use of or inability to use the service. Any limitation applies only to the maximum extent allowed by law and does not limit liability that cannot legally be limited.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">14</div><div class="terms154-copy"><h3>Changes to These Terms</h3><p>We may update these Terms as HiveDash changes or as legal requirements evolve. When material changes are made, we will update the effective date and provide notice when required. Continued use after an updated version takes effect means the updated Terms apply, except where applicable law requires additional consent.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">15</div><div class="terms154-copy"><h3>Applicable Law and Consumer Rights</h3><p>These Terms are subject to applicable law. Nothing in these Terms limits mandatory consumer rights, privacy rights, or other protections that cannot be waived by contract. Any governing-law or venue requirement that applies by law remains unaffected.</p></div></section>
-
-    <section class="terms154-section"><div class="terms154-num">16</div><div class="terms154-copy"><h3>Contact</h3><p>For questions about these Terms, open HiveDash and use <b>Settings &gt; Help Center &gt; Contact Support</b>.</p></div></section>
-  </div></section></div>`;
+<div class="legal155" data-legal="terms"><section class="legal155-card"><div class="legal155-head"><span class="legal155-shield">◆</span><div><h2 class="legal155-title">Terms of Service</h2><span class="legal155-date">▣ <b>Effective date: August 23, 2026</b></span></div></div><div class="legal155-intro">These Terms of Service govern your access to and use of HiveDash, a family beekeeping log for managing hives, inspections, actions, photos, reminders, seasonal settings, analytics, and related records. By accessing or using HiveDash, you agree to these Terms.</div><div class="legal155-list"><section class="legal155-item" id="terms-item-1"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',1)" aria-expanded="false"><span class="legal155-num">1</span><span class="legal155-label">Eligibility and Accounts</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>You must be legally able to enter into these Terms in the place where you live. HiveDash is not directed to children under 13. If you create an account, you are responsible for providing accurate account information, protecting access to your account, and for activity that occurs through your account unless prohibited by applicable law.</p></div></section><section class="legal155-item" id="terms-item-2"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',2)" aria-expanded="false"><span class="legal155-num">2</span><span class="legal155-label">HiveDash Is a Recordkeeping and Decision-Support Tool</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash helps organize beekeeping information and may display reminders, health indicators, trends, forecasts, risk estimates, recommendations, weather-related information, or other automated outputs. These outputs are informational and may be incomplete, delayed, or inaccurate. HiveDash does not replace your own inspection, judgment, local regulations, product labels, veterinary advice where applicable, or qualified professional advice. You remain responsible for decisions affecting bees, people, property, food, treatments, and equipment.</p></div></section><section class="legal155-item" id="terms-item-3"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',3)" aria-expanded="false"><span class="legal155-num">3</span><span class="legal155-label">Your Records and Content</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>You retain responsibility for the hive records, notes, photos, locations, and other content you submit to HiveDash. You represent that you have the right to submit that content. You grant HiveDash the limited rights necessary to store, process, display, back up, synchronize, and otherwise handle your content solely to operate, maintain, secure, and improve the features you use.</p></div></section><section class="legal155-item" id="terms-item-4"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',4)" aria-expanded="false"><span class="legal155-num">4</span><span class="legal155-label">Acceptable Use</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>You may not misuse HiveDash, interfere with its operation or security, attempt unauthorized access to accounts or systems, introduce malicious code, use the service to violate law or the rights of others, scrape or extract data in a manner that materially burdens the service, or attempt to bypass access, subscription, or security controls.</p></div></section><section class="legal155-item" id="terms-item-5"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',5)" aria-expanded="false"><span class="legal155-num">5</span><span class="legal155-label">Free and Paid Features</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash may offer free and paid features. The features, limits, and pricing shown in the app may change prospectively. Where a paid subscription is offered through a payment provider or app marketplace, billing, renewal, cancellation, refund, and payment processing may also be subject to that provider's terms. Paid access should be treated as active only when a valid entitlement is confirmed by the applicable billing system.</p></div></section><section class="legal155-item" id="terms-item-6"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',6)" aria-expanded="false"><span class="legal155-num">6</span><span class="legal155-label">Trials, Changes, and Availability</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>We may add, modify, suspend, or discontinue features when reasonably necessary for product, security, legal, or operational reasons. We may also use limits or staged availability for features. We do not guarantee that every feature will be available at all times, on every device, or in every location.</p></div></section></div><div class="legal155-extra" id="terms-extra"><div class="legal155-list"><section class="legal155-item" id="terms-item-7"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',7)" aria-expanded="false"><span class="legal155-num">7</span><span class="legal155-label">Third-Party Services</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash may depend on third-party services for functions such as authentication, cloud storage, synchronization, hosting, maps, weather information, analytics, payments, or other integrations. Those services may be subject to their own terms and policies. HiveDash is not responsible for third-party services that are outside its control.</p></div></section><section class="legal155-item" id="terms-item-8"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',8)" aria-expanded="false"><span class="legal155-num">8</span><span class="legal155-label">Data, Backup, and Export</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash may provide local storage, cloud synchronization, or export tools. You are responsible for keeping any additional copies of records that are important to you. Although we take reasonable steps to preserve service data, no storage or synchronization system is guaranteed to be error-free or permanently available.</p></div></section><section class="legal155-item" id="terms-item-9"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',9)" aria-expanded="false"><span class="legal155-num">9</span><span class="legal155-label">Privacy</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>Our handling of personal information is described in the HiveDash Privacy Policy. The Privacy Policy is available from Privacy &amp; Security and About HiveDash in the app.</p></div></section><section class="legal155-item" id="terms-item-10"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',10)" aria-expanded="false"><span class="legal155-num">10</span><span class="legal155-label">Intellectual Property</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>HiveDash, including its software, interface, branding, visual design, and service content other than user-submitted content, is protected by applicable intellectual-property law. These Terms give you a limited, non-exclusive, non-transferable right to use HiveDash for its intended purpose. They do not transfer ownership of HiveDash or its intellectual property to you.</p></div></section><section class="legal155-item" id="terms-item-11"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',11)" aria-expanded="false"><span class="legal155-num">11</span><span class="legal155-label">Suspension and Termination</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>You may stop using HiveDash at any time. We may restrict or suspend access when reasonably necessary to protect users or the service, respond to unlawful activity, enforce these Terms, or meet legal obligations. Where appropriate and practicable, we will provide notice or an opportunity to address the issue. Rights and obligations that by their nature should survive termination will continue to apply.</p></div></section><section class="legal155-item" id="terms-item-12"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',12)" aria-expanded="false"><span class="legal155-num">12</span><span class="legal155-label">Disclaimers</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>To the extent permitted by applicable law, HiveDash is provided on an "as is" and "as available" basis. We do not warrant that the service will be uninterrupted, error-free, or that recommendations, predictions, weather information, health indicators, or other outputs will always be accurate or suitable for a particular beekeeping decision. Nothing in these Terms excludes warranties or rights that cannot legally be excluded.</p></div></section><section class="legal155-item" id="terms-item-13"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',13)" aria-expanded="false"><span class="legal155-num">13</span><span class="legal155-label">Limitation of Liability</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>To the extent permitted by applicable law, HiveDash and the persons or entities responsible for operating it will not be liable for indirect, incidental, special, consequential, or punitive damages, or for lost profits, lost data, lost honey production, colony loss, or business interruption arising from use of or inability to use the service. Any limitation applies only to the maximum extent allowed by law and does not limit liability that cannot legally be limited.</p></div></section><section class="legal155-item" id="terms-item-14"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',14)" aria-expanded="false"><span class="legal155-num">14</span><span class="legal155-label">Changes to These Terms</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>We may update these Terms as HiveDash changes or as legal requirements evolve. When material changes are made, we will update the effective date and provide notice when required. Continued use after an updated version takes effect means the updated Terms apply, except where applicable law requires additional consent.</p></div></section><section class="legal155-item" id="terms-item-15"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',15)" aria-expanded="false"><span class="legal155-num">15</span><span class="legal155-label">Applicable Law and Consumer Rights</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>These Terms are subject to applicable law. Nothing in these Terms limits mandatory consumer rights, privacy rights, or other protections that cannot be waived by contract. Any governing-law or venue requirement that applies by law remains unaffected.</p></div></section><section class="legal155-item" id="terms-item-16"><button class="legal155-toggle" type="button" onclick="toggleLegalV155('terms',16)" aria-expanded="false"><span class="legal155-num">16</span><span class="legal155-label">Contact</span><span class="legal155-arrow">⌄</span></button><div class="legal155-body"><p>For questions about these Terms, open HiveDash and use <b>Settings &gt; Help Center &gt; Contact Support</b>.</p></div></section></div></div><button class="legal155-more" id="terms-more-btn" type="button" onclick="toggleLegalMoreV155('terms',10)">Show more⌄<small>10 more sections</small></button><div class="legal155-note"><span class="legal155-lock">▣</span><span>By using HiveDash, you agree to these Terms. Please read them carefully.</span></div></section></div>`;
+    return;
+  }
+  return V141_OLD_INFO_PAGE(r,title);
 };
 
 (function(){

@@ -1067,6 +1067,130 @@ settings=function(r){
       .v145-settings .v145-copy small{font-size:12px}
     }
 
+  
+    /* V147 SETTINGS — LOCKED GLOBAL TYPOGRAPHY + SPACING SYNC
+       Exact values taken from the existing locked HiveDash CSS:
+       V70 Global Typography:
+       - page title: 18px
+       - section title: 14px
+       - primary/card title: 12px
+       - secondary/metadata: 10px
+       - base/form text: 13px
+       V73/V75 colors:
+       - primary text: #2F3B33
+       - secondary text: #6B736D
+       - brand/section green: #5E7350
+       Existing locked vertical rhythm:
+       - .vs gap: 9px
+       - .vhead margin-bottom: 8px
+    */
+
+    .v145-settings,
+    .v145-settings button,
+    .v145-settings input,
+    .v145-settings select,
+    .v145-settings textarea{
+      font-family:"Inter";
+      color:#2F3B33;
+    }
+
+    /* Typography: use existing global HiveDash scale, no page-specific scale */
+    .v145-settings .v145-settings-title{
+      color:#2F3B33;
+      font-size:18px!important;
+      line-height:1.25!important;
+      font-weight:800!important;
+      letter-spacing:0!important;
+    }
+    .v145-settings .v145-settings-sub{
+      color:#6B736D;
+      font-size:10px!important;
+      line-height:1.4!important;
+      font-weight:400!important;
+    }
+
+    .v145-settings .v145-settings-hero-copy b{
+      color:#2F3B33;
+      font-size:12px!important;
+      line-height:1.3!important;
+      font-weight:800!important;
+      letter-spacing:0!important;
+    }
+    .v145-settings .v145-settings-hero-copy span:not(.v145-settings-hero-icon){
+      color:#6B736D;
+      font-size:10px!important;
+      line-height:1.4!important;
+      font-weight:400!important;
+    }
+
+    .v145-settings .v145-group-title{
+      color:#5E7350;
+      font-size:14px!important;
+      line-height:1.25!important;
+      font-weight:800!important;
+      letter-spacing:0!important;
+    }
+
+    .v145-settings .v145-copy b{
+      color:#2F3B33;
+      font-size:12px!important;
+      line-height:1.3!important;
+      font-weight:800!important;
+      letter-spacing:0!important;
+    }
+    .v145-settings .v145-copy small{
+      color:#6B736D;
+      font-size:10px!important;
+      line-height:1.35!important;
+      font-weight:400!important;
+    }
+
+    .v145-settings .v145-meta,
+    .v145-settings .v145-version{
+      font-size:10px!important;
+      line-height:1.2!important;
+    }
+    .v145-settings .v145-meta{
+      color:#6B736D;
+      font-weight:400!important;
+    }
+    .v145-settings .v145-version{
+      color:#5E7350;
+      font-weight:800!important;
+    }
+    .v145-settings .v145-store .v145-copy b{
+      color:#2F3B33!important;
+      font-weight:800!important;
+    }
+
+    /* Spacing: sync to locked HiveDash 8–9px vertical rhythm */
+    .v145-settings{
+      padding-top:12px!important;
+      padding-bottom:24px!important;
+    }
+    .v145-settings .v145-settings-head{
+      padding:4px 4px 9px!important;
+    }
+    .v145-settings .v145-settings-sub{
+      margin-top:4px!important;
+    }
+    .v145-settings .v145-settings-hero{
+      margin-bottom:9px!important;
+    }
+    .v145-settings .v145-group{
+      margin-bottom:9px!important;
+    }
+    .v145-settings .v145-group-title{
+      margin:0 4px 8px!important;
+    }
+
+    @media(max-width:370px){
+      .v145-settings .v145-settings-title{font-size:18px!important}
+      .v145-settings .v145-settings-sub{font-size:10px!important}
+      .v145-settings .v145-copy b{font-size:12px!important}
+      .v145-settings .v145-copy small{font-size:10px!important}
+    }
+
   </style>
 
   <div class="vs v145-settings">

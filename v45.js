@@ -7102,3 +7102,212 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   },true);
 })();
 
+/* ==========================================================
+   V205 — NEXT INSPECTION ACTIONS DISPLAY FIX
+   BASE: V204 FULL
+
+   Scope ONLY:
+   Existing Actions page reads hive.nextInspection and displays a
+   derived Inspection task with the real date.
+
+   Rules:
+   - No new persisted Action record is created.
+   - Existing Action data is not modified.
+   - Existing Actions page structure/layout is not redesigned.
+   - Clicking the derived row opens that Hive's Inspection page.
+   - Duplicate derived rows are prevented.
+   ========================================================== */
+(function(){
+  if(window.__V205_NEXT_INSPECTION_ACTIONS_DISPLAY__) return;
+  window.__V205_NEXT_INSPECTION_ACTIONS_DISPLAY__=true;
+
+  function v205State(){
+    try{
+      if(typeof getState==='function') return getState();
+      if(typeof load==='function') return load();
+      if(typeof state!=='undefined') return state;
+      if(typeof s!=='undefined') return s;
+    }catch(_){}
+    return null;
+  }
+
+  function v205Hives(st){
+    if(!st) return [];
+    if(Array.isArray(st.hives)) return st.hives;
+    if(Array.isArray(st.data?.hives)) return st.data.hives;
+    if(Array.isArray(st.apiary?.hives)) return st.apiary.hives;
+    return [];
+  }
+
+  function v205FmtDate(value){
+    if(!value) return '';
+    try{
+      const d=new Date(value+'T00:00:00');
+      return d.toLocaleDateString('en-US',{month:'short',day:'numeric'});
+    }catch(_){
+      return value;
+    }
+  }
+
+  function v205RenderDerivedRows(){
+    const root=String(location.hash||'').replace(/^#/,'').split('/')[0];
+    if(root!=='actions') return;
+
+    const st=v205State();
+    const hives=v205Hives(st).filter(h=>String(h?.nextInspection||'').trim());
+    if(!hives.length) return;
+
+    /* Find the existing Actions list container without changing page structure.
+       We append only small rows that reuse the current card/list visual language. */
+    const candidates=[
+      ...document.querySelectorAll('.actions-list,.action-list,.actioncards,.actions-card,.panel,.card,.vc')
+    ];
+
+    let host=candidates.find(el=>{
+      const t=String(el.textContent||'');
+      return /Pending/i.test(t) && (/Completed/i.test(t) || /All/i.test(t));
+    });
+
+    if(!host){
+      host=[...document.querySelectorAll('main,section,div')].find(el=>{
+        const t=String(el.textContent||'');
+        return /Varroa follow-up|Confirm queen status|Review food stores/i.test(t);
+      });
+    }
+    if(!host) return;
+
+    /* Prevent duplicate derived display after rerender. */
+    host.querySelectorAll('.v205-next-inspection-action').forEach(el=>el.remove());
+
+    const existingText=String(host.textContent||'').toLowerCase();
+
+    const rows=hives.map(h=>{
+      const hiveId=String(h.id||'');
+      const hiveName=String(h.name||'Hive');
+      const date=String(h.nextInspection||'').trim();
+      const dateLabel=v205FmtDate(date);
+
+      /* Avoid showing the same date twice if the existing page already has
+         an explicit Inspection row for this hive/date. */
+      const normalizedName=hiveName.toLowerCase();
+      const normalizedDate=dateLabel.toLowerCase();
+      if(existingText.includes(normalizedName) &&
+         existingText.includes('inspection') &&
+         existingText.includes(normalizedDate)){
+        return '';
+      }
+
+      return `
+        <button type="button"
+                class="v205-next-inspection-action"
+                onclick="go('inspection/${hiveId}')"
+                aria-label="${hiveName} inspection ${dateLabel}">
+          <span class="v205-next-left">
+            <b>${hiveName}</b>
+            <em>Medium</em>
+          </span>
+          <span class="v205-next-right">
+            <b>Inspection</b>
+            <em>${dateLabel}</em>
+          </span>
+        </button>
+      `;
+    }).filter(Boolean).join('');
+
+    if(!rows) return;
+
+    const wrap=document.createElement('div');
+    wrap.className='v205-next-inspection-wrap';
+    wrap.innerHTML=rows;
+
+    /* Insert after the Pending/Completed/All controls when possible,
+       otherwise before the first existing action row. */
+    const tabs=[...host.querySelectorAll('button')].find(b=>/Pending/i.test(b.textContent||''));
+    if(tabs){
+      const tabBlock=tabs.parentElement;
+      if(tabBlock?.nextSibling){
+        tabBlock.parentElement.insertBefore(wrap,tabBlock.nextSibling);
+      }else{
+        tabBlock?.parentElement?.appendChild(wrap);
+      }
+    }else{
+      host.prepend(wrap);
+    }
+  }
+
+  /* Re-run after current Actions page render without replacing its renderer. */
+  const obs=new MutationObserver(()=>{
+    const root=String(location.hash||'').replace(/^#/,'').split('/')[0];
+    if(root==='actions'){
+      clearTimeout(window.__v205ActionsTimer);
+      window.__v205ActionsTimer=setTimeout(v205RenderDerivedRows,30);
+    }
+  });
+  obs.observe(document.documentElement,{childList:true,subtree:true});
+
+  window.addEventListener('hashchange',()=>setTimeout(v205RenderDerivedRows,50));
+  setTimeout(v205RenderDerivedRows,80);
+
+  const style=document.createElement('style');
+  style.id='v205-next-inspection-actions-style';
+  style.textContent=`
+    .v205-next-inspection-wrap{
+      display:grid!important;
+      gap:4px!important;
+      margin:4px 0!important;
+    }
+
+    .v205-next-inspection-action{
+      display:grid!important;
+      grid-template-columns:1fr 1fr!important;
+      align-items:center!important;
+      width:100%!important;
+      min-height:54px!important;
+      padding:7px 10px!important;
+      border:1px solid #E6E3DA!important;
+      border-radius:9px!important;
+      background:#FFFEFB!important;
+      color:#2F3B33!important;
+      text-align:left!important;
+      font:inherit!important;
+      cursor:pointer!important;
+      box-sizing:border-box!important;
+    }
+
+    .v205-next-left,
+    .v205-next-right{
+      display:flex!important;
+      flex-direction:column!important;
+      gap:3px!important;
+      min-width:0!important;
+    }
+
+    .v205-next-right{
+      text-align:right!important;
+      align-items:flex-end!important;
+    }
+
+    .v205-next-inspection-action b{
+      display:block!important;
+      color:#1F2B24!important;
+      font-size:12px!important;
+      line-height:1.2!important;
+      font-weight:800!important;
+    }
+
+    .v205-next-inspection-action em{
+      display:block!important;
+      color:#C5921A!important;
+      font-size:10px!important;
+      line-height:1.2!important;
+      font-style:normal!important;
+      font-weight:600!important;
+    }
+
+    .v205-next-right em{
+      color:#2F3B33!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

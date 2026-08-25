@@ -1820,7 +1820,7 @@ function editInspectionV49(field,type='text'){
 }
 function inspectionPage(r,id){
   const s=v45s(),h=vh(id);if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id)V49_INSPECTION_DRAFT={hiveId:h.id,queenStatus:h.queen||'Confirmed',strength:Number(String(h.strength).match(/\d+/)?.[0]||8),brood:h.brood||'Good',honey:h.honey||'Medium',pollen:h.pollen||'Medium',queenCells:h.queenCells?'Present':'None',varroa:Number(h.varroa||0),pests:h.shb||h.waxMoth?'Present':'None',disease:h.disease?'Present':'None',swarming:h.swarm?'Signs':'None',super:h.superStatus||'Installed',treatment:'None',voiceNotes:'',nextInspection:'',notes:h.notes||''};const d=V49_INSPECTION_DRAFT;
-  r.innerHTML=`<div class="vs v86-inspection"><section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section><section class="iform"><div class="irow section-start section-colony" onclick="editInspectionV49('queenStatus')"><span>Queen Status</span><b>${esc(d.queenStatus)}</b><em>›</em></div><div class="irow slide" onclick="editInspectionV49('strength','number')"><span>Colony Strength</span><i><u style="width:${d.strength*10}%"></u></i><b>${d.strength} / 10</b></div><div class="irow" onclick="editInspectionV49('brood')"><span>Brood Pattern</span><b>${esc(d.brood)}</b><em>›</em></div><div class="irow section-start section-stores status-row" onclick="editInspectionV49('honey')"><span>Honey Stores</span><b class="${String(d.honey).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.honey)}</b><em>›</em></div><div class="irow status-row" onclick="editInspectionV49('pollen')"><span>Pollen Stores</span><b class="${String(d.pollen).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.pollen)}</b><em>›</em></div><div class="irow" onclick="editInspectionV49('queenCells')"><span>Queen Cells</span><b>${esc(d.queenCells)}</b><em>›</em></div><div class="irow section-start section-risk risk-row" onclick="editInspectionV49('varroa')"><span>Varroa Count</span><b class="${Number(d.varroa)>=3?'value-danger':Number(d.varroa)>=2?'value-warn':'value-good'}">${esc(d.varroa)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('pests')"><span>Pests</span><b class="${String(d.pests).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.pests)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('disease')"><span>Disease</span><b class="${String(d.disease).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.disease)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('swarming')"><span>Swarming</span><b class="${String(d.swarming).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.swarming)}</b><em>›</em></div><div class="irow section-start section-care" onclick="editInspectionV49('super')"><span>Super</span><b>${esc(d.super)}</b><em>›</em></div><div class="irow" onclick="editInspectionV49('treatment')"><span>Treatment</span><b>${esc(d.treatment)}</b><em>›</em></div><div class="irow section-start section-capture capture-row photo-row" onclick="idq('phinput2').click()"><span>Photos</span><b>Add photos</b><em>›</em></div><input id="phinput2" hidden type="file" accept="image/*" multiple><div class="irow capture-row voice-row" onclick="editInspectionV49('voiceNotes')"><span>Voice Notes</span><b>${d.voiceNotes?'Added':'Add voice note'}</b><em>›</em></div><div class="irow section-start section-followup" onclick="editInspectionV49('nextInspection')"><span>Next Inspection</span><b>${esc(d.nextInspection||'Set date')}</b><em>›</em></div><label class="notes"><span>Notes</span><textarea id="inotes">${esc(d.notes)}</textarea></label></section><div class="dual"><button onclick="V49_INSPECTION_DRAFT.notes=idq('inotes').value;toast('Draft saved')">Save Draft</button><button onclick="vSaveInspection('${h.id}')">Save Inspection</button></div></div>`;
+  r.innerHTML=`<div class="vs v86-inspection"><section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section><section class="iform"><div class="irow section-start section-colony" onclick="editInspectionV49('queenStatus')"><span>Queen Status</span><b>${esc(d.queenStatus)}</b><em>›</em></div><div class="irow slide" onclick="editInspectionV49('strength','number')"><span>Colony Strength</span><i><u style="width:${d.strength*10}%"></u></i><b>${d.strength} / 10</b></div><div class="irow" onclick="editInspectionV49('brood')"><span>Brood Pattern</span><b>${esc(d.brood)}</b><em>›</em></div><div class="irow section-start section-stores status-row" onclick="editInspectionV49('honey')"><span>Honey Stores</span><b class="${String(d.honey).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.honey)}</b><em>›</em></div><div class="irow status-row" onclick="editInspectionV49('pollen')"><span>Pollen Stores</span><b class="${String(d.pollen).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.pollen)}</b><em>›</em></div><div class="irow" onclick="editInspectionV49('queenCells')"><span>Queen Cells</span><b>${esc(d.queenCells)}</b><em>›</em></div><div class="irow section-start section-risk risk-row" onclick="editInspectionV49('varroa')"><span>Varroa Count</span><b class="${Number(d.varroa)>=3?'value-danger':Number(d.varroa)>=2?'value-warn':'value-good'}">${esc(d.varroa)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('pests')"><span>Pests</span><b class="${String(d.pests).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.pests)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('disease')"><span>Disease</span><b class="${String(d.disease).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.disease)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('swarming')"><span>Swarming</span><b class="${String(d.swarming).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.swarming)}</b><em>›</em></div><div class="irow section-start section-care" onclick="editInspectionV49('super')"><span>Super</span><b>${esc(d.super)}</b><em>›</em></div><div class="irow" onclick="editInspectionV49('treatment')"><span>Treatment</span><b>${esc(d.treatment)}</b><em>›</em></div><div class="irow section-start section-capture capture-row photo-row" onclick="idq('phinput2').click()"><span>Photos</span><b>Add photos</b><em>›</em></div><input id="phinput2" hidden type="file" accept="image/*" multiple><div class="irow capture-row voice-row" onclick="openVoiceNotesV193()"><span>Voice Notes</span><b>${d.voiceNotes?'Added':'Add voice note'}</b><em>›</em></div><div class="irow section-start section-followup" onclick="editInspectionV49('nextInspection')"><span>Next Inspection</span><b>${esc(d.nextInspection||'Set date')}</b><em>›</em></div><label class="notes"><span>Notes</span><textarea id="inotes">${esc(d.notes)}</textarea></label></section><div class="dual"><button onclick="V49_INSPECTION_DRAFT.notes=idq('inotes').value;toast('Draft saved')">Save Draft</button><button onclick="vSaveInspection('${h.id}')">Save Inspection</button></div></div>`;
   idq('ihsel').onchange=e=>{V49_INSPECTION_DRAFT=null;go('inspection/'+e.target.value)};idq('phinput2').onchange=e=>addHivePhotos(h.id,e.target)
 }
 function vSaveInspection(id){
@@ -4702,5 +4702,375 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }catch(err){
     console.error('V192 legacy location purge failed',err);
   }
+})();
+
+/* ==========================================================
+   V193 — REAL VOICE NOTES FIX
+   Scope: Inspection -> Voice Notes only.
+   Replaces the old prompt()/text-entry path with real browser
+   microphone speech recognition (Web Speech API).
+   Existing Inspection layout, Photos, Save Inspection, Header,
+   Bottom Nav, routes and all locked screens stay unchanged.
+   ========================================================== */
+(function(){
+  if(window.__V193_REAL_VOICE_NOTES__) return;
+  window.__V193_REAL_VOICE_NOTES__=true;
+
+  let v193Recognition=null;
+  let v193FinalTranscript='';
+  let v193Listening=false;
+
+  function v193SpeechCtor(){
+    return window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  }
+
+  function v193CloseVoiceModal(){
+    try{
+      if(v193Recognition && v193Listening) v193Recognition.stop();
+    }catch(_){}
+    v193Recognition=null;
+    v193Listening=false;
+    document.querySelector('.v193-voice-modal')?.remove();
+  }
+
+  function v193SetStatus(text,state='idle'){
+    const modal=document.querySelector('.v193-voice-modal');
+    if(!modal) return;
+    const status=modal.querySelector('.v193-voice-status');
+    const dot=modal.querySelector('.v193-voice-dot');
+    if(status) status.textContent=text;
+    if(dot) dot.dataset.state=state;
+  }
+
+  function v193SetTranscript(text){
+    const box=document.querySelector('.v193-voice-transcript');
+    if(box) box.textContent=text || 'Your speech will appear here.';
+  }
+
+  function v193UpdateButtons(){
+    const modal=document.querySelector('.v193-voice-modal');
+    if(!modal) return;
+    const start=modal.querySelector('.v193-voice-start');
+    const stop=modal.querySelector('.v193-voice-stop');
+    if(start) start.disabled=v193Listening;
+    if(stop) stop.disabled=!v193Listening;
+  }
+
+  function v193StartRecognition(){
+    const Ctor=v193SpeechCtor();
+    if(!Ctor){
+      v193SetStatus('Voice recognition is not supported in this browser.','error');
+      toast('Voice recognition is not supported in this browser');
+      return;
+    }
+
+    try{
+      if(v193Recognition && v193Listening) return;
+
+      v193FinalTranscript='';
+      const current=String(V49_INSPECTION_DRAFT?.voiceNotes||'').trim();
+      if(current){
+        v193FinalTranscript=current;
+        v193SetTranscript(current);
+      }else{
+        v193SetTranscript('');
+      }
+
+      const rec=new Ctor();
+      v193Recognition=rec;
+      rec.lang='en-US';
+      rec.continuous=true;
+      rec.interimResults=true;
+      rec.maxAlternatives=1;
+
+      rec.onstart=()=>{
+        v193Listening=true;
+        v193SetStatus('Listening… speak naturally.','listening');
+        v193UpdateButtons();
+      };
+
+      rec.onresult=(event)=>{
+        let interim='';
+        let finalAdd='';
+
+        for(let i=event.resultIndex;i<event.results.length;i++){
+          const part=String(event.results[i][0]?.transcript||'').trim();
+          if(!part) continue;
+          if(event.results[i].isFinal){
+            finalAdd+=(finalAdd?' ':'')+part;
+          }else{
+            interim+=(interim?' ':'')+part;
+          }
+        }
+
+        if(finalAdd){
+          v193FinalTranscript=(v193FinalTranscript
+            ? v193FinalTranscript.replace(/\s+$/,'')+' '
+            : '')+finalAdd;
+        }
+
+        const display=[v193FinalTranscript,interim].filter(Boolean).join(' ').trim();
+        v193SetTranscript(display);
+      };
+
+      rec.onerror=(event)=>{
+        const code=String(event?.error||'unknown');
+        v193Listening=false;
+        v193UpdateButtons();
+
+        if(code==='not-allowed' || code==='service-not-allowed'){
+          v193SetStatus('Microphone permission was denied.','error');
+          toast('Allow microphone access to use Voice Notes');
+        }else if(code==='no-speech'){
+          v193SetStatus('No speech detected. Try again.','error');
+        }else if(code==='audio-capture'){
+          v193SetStatus('No microphone was detected.','error');
+          toast('No microphone detected');
+        }else{
+          v193SetStatus('Voice recognition stopped. Try again.','error');
+          console.error('V193 speech recognition error',event);
+        }
+      };
+
+      rec.onend=()=>{
+        v193Listening=false;
+        v193UpdateButtons();
+        if(document.querySelector('.v193-voice-modal')){
+          v193SetStatus(v193FinalTranscript ? 'Ready to use this voice note.' : 'Tap Start and speak.','idle');
+        }
+      };
+
+      rec.start();
+    }catch(err){
+      console.error('V193 speech recognition start failed',err);
+      v193Listening=false;
+      v193UpdateButtons();
+      v193SetStatus('Microphone could not be started.','error');
+      toast('Microphone could not be started');
+    }
+  }
+
+  function v193StopRecognition(){
+    try{
+      if(v193Recognition && v193Listening){
+        v193Recognition.stop();
+      }
+    }catch(err){
+      console.error('V193 speech recognition stop failed',err);
+    }
+  }
+
+  window.openVoiceNotesV193=function(){
+    if(!V49_INSPECTION_DRAFT){
+      toast('Inspection draft is unavailable');
+      return;
+    }
+
+    const s=v45s();
+    if(s.settings?.smart?.voice===false){
+      toast('Voice Notes are disabled in Smart Features');
+      return;
+    }
+
+    v193CloseVoiceModal();
+    v193FinalTranscript=String(V49_INSPECTION_DRAFT.voiceNotes||'').trim();
+
+    const wrap=document.createElement('div');
+    wrap.className='v193-voice-modal';
+    wrap.innerHTML=`
+      <style>
+        .v193-voice-modal{
+          position:fixed;
+          inset:0;
+          z-index:8000;
+          display:flex;
+          align-items:center;
+          justify-content:center;
+          padding:20px;
+          background:rgba(35,45,35,.28);
+        }
+        .v193-voice-card{
+          width:min(100%,420px);
+          background:#FFFDF9;
+          border:1px solid rgba(47,59,51,.12);
+          border-radius:18px;
+          box-shadow:0 16px 42px rgba(47,59,51,.20);
+          padding:18px;
+        }
+        .v193-voice-head{
+          display:flex;
+          align-items:center;
+          justify-content:space-between;
+          gap:12px;
+        }
+        .v193-voice-head b{
+          color:#36512B;
+          font-size:17px;
+        }
+        .v193-voice-close{
+          width:34px;
+          height:34px;
+          border:0;
+          background:transparent;
+          color:#2F3B33;
+          font-size:20px;
+        }
+        .v193-voice-live{
+          display:flex;
+          align-items:center;
+          gap:9px;
+          margin-top:14px;
+          color:#657067;
+          font-size:12px;
+          font-weight:700;
+        }
+        .v193-voice-dot{
+          width:10px;
+          height:10px;
+          flex:none;
+          border-radius:50%;
+          background:#A7AFA5;
+        }
+        .v193-voice-dot[data-state="listening"]{
+          background:#C5921A;
+          animation:v193Pulse 1.1s infinite ease-in-out;
+        }
+        .v193-voice-dot[data-state="error"]{
+          background:#B53A30;
+        }
+        @keyframes v193Pulse{
+          0%,100%{transform:scale(.8);opacity:.55}
+          50%{transform:scale(1.3);opacity:1}
+        }
+        .v193-voice-transcript{
+          min-height:112px;
+          max-height:220px;
+          overflow:auto;
+          margin-top:12px;
+          padding:13px;
+          border:1px solid #E5DDD1;
+          border-radius:13px;
+          background:#fff;
+          color:#2F3B33;
+          font-size:14px;
+          line-height:1.55;
+          white-space:pre-wrap;
+        }
+        .v193-voice-controls{
+          display:grid;
+          grid-template-columns:1fr 1fr;
+          gap:9px;
+          margin-top:14px;
+        }
+        .v193-voice-controls button,
+        .v193-voice-actions button{
+          min-height:43px;
+          border-radius:11px;
+          font-weight:800;
+        }
+        .v193-voice-start{
+          border:0;
+          background:#C5921A;
+          color:#fff;
+        }
+        .v193-voice-stop{
+          border:1px solid #DED7CC;
+          background:#fff;
+          color:#4F6744;
+        }
+        .v193-voice-controls button:disabled{
+          opacity:.42;
+          cursor:not-allowed;
+        }
+        .v193-voice-actions{
+          display:grid;
+          grid-template-columns:1fr 1.25fr;
+          gap:9px;
+          margin-top:16px;
+        }
+        .v193-voice-cancel{
+          border:1px solid #DED7CC;
+          background:#fff;
+          color:#4F6744;
+        }
+        .v193-voice-use{
+          border:0;
+          background:#5E7350;
+          color:#fff;
+        }
+        .v193-voice-note{
+          margin-top:9px;
+          color:#8A8E88;
+          font-size:10px;
+          line-height:1.4;
+        }
+      </style>
+
+      <div class="v193-voice-card" role="dialog" aria-modal="true" aria-label="Voice Notes">
+        <div class="v193-voice-head">
+          <b>Voice Notes</b>
+          <button class="v193-voice-close" type="button" aria-label="Close">×</button>
+        </div>
+
+        <div class="v193-voice-live">
+          <span class="v193-voice-dot" data-state="idle"></span>
+          <span class="v193-voice-status">Tap Start and speak.</span>
+        </div>
+
+        <div class="v193-voice-transcript">${esc(v193FinalTranscript || 'Your speech will appear here.')}</div>
+
+        <div class="v193-voice-controls">
+          <button class="v193-voice-start" type="button">● Start</button>
+          <button class="v193-voice-stop" type="button" disabled>■ Stop</button>
+        </div>
+
+        <div class="v193-voice-actions">
+          <button class="v193-voice-cancel" type="button">Cancel</button>
+          <button class="v193-voice-use" type="button">Use Voice Note</button>
+        </div>
+
+        <div class="v193-voice-note">
+          Your browser will ask for microphone permission the first time.
+          Speech is converted to text for this inspection note.
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(wrap);
+
+    wrap.querySelector('.v193-voice-close').onclick=v193CloseVoiceModal;
+    wrap.querySelector('.v193-voice-cancel').onclick=v193CloseVoiceModal;
+    wrap.querySelector('.v193-voice-start').onclick=v193StartRecognition;
+    wrap.querySelector('.v193-voice-stop').onclick=v193StopRecognition;
+
+    wrap.querySelector('.v193-voice-use').onclick=()=>{
+      try{
+        if(v193Recognition && v193Listening) v193Recognition.stop();
+      }catch(_){}
+
+      const text=String(v193FinalTranscript||'').trim();
+      if(!text){
+        toast('Record a voice note first');
+        return;
+      }
+
+      V49_INSPECTION_DRAFT.voiceNotes=text;
+      v193CloseVoiceModal();
+
+      /* Repaint only the same Inspection draft so the existing
+         row changes from "Add voice note" -> "Added". */
+      const hiveId=V49_INSPECTION_DRAFT?.hiveId;
+      if(hiveId){
+        inspectionPage(idq('view'),hiveId);
+        chrome('inspection');
+      }
+
+      toast('Voice note added');
+    };
+
+    wrap.addEventListener('click',e=>{
+      if(e.target===wrap) v193CloseVoiceModal();
+    });
+  };
 })();
 

@@ -6205,3 +6205,200 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V201 — INSPECTION QUICK SELECT OWNERSHIP FIX
+   BASE: V200 FULL
+
+   V200 failed because it tried to intercept clicks by guessing DOM row
+   class names. The actual Inspection rows are .irow and still execute
+   inline editInspectionV49(...), so the legacy prompt() kept ownership.
+
+   V201 fixes the real ownership point:
+   editInspectionV49(field,type)
+
+   Five enum fields are intercepted there. Every other field continues
+   through the exact current legacy edit function.
+   ========================================================== */
+(function(){
+  if(window.__V201_INSPECTION_QUICK_SELECT_OWNERSHIP__) return;
+  window.__V201_INSPECTION_QUICK_SELECT_OWNERSHIP__=true;
+
+  const V201_LEGACY_EDIT_INSPECTION = window.editInspectionV49;
+
+  const V201_ENUMS = {
+    queenStatus: ['Seen','Not Seen','Unsure'],
+    brood: ['Excellent','Good','Fair','Poor'],
+    honey: ['High','Medium','Low'],
+    pollen: ['High','Medium','Low'],
+    queenCells: ['None','Present']
+  };
+
+  const V201_LABELS = {
+    queenStatus:'Queen Status',
+    brood:'Brood Pattern',
+    honey:'Honey Stores',
+    pollen:'Pollen Stores',
+    queenCells:'Queen Cells'
+  };
+
+  function v201Close(){
+    document.querySelector('.v201-inspection-select-overlay')?.remove();
+  }
+
+  function v201Open(field){
+    if(!V49_INSPECTION_DRAFT) return;
+    const options=V201_ENUMS[field];
+    if(!options) return;
+
+    v201Close();
+
+    const current=String(V49_INSPECTION_DRAFT[field] ?? '');
+    const overlay=document.createElement('div');
+    overlay.className='v201-inspection-select-overlay';
+    overlay.innerHTML=`
+      <section class="v201-inspection-select-sheet" role="dialog" aria-modal="true" aria-label="${V201_LABELS[field]}">
+        <div class="v201-inspection-select-head">
+          <b>${V201_LABELS[field]}</b>
+          <button type="button" class="v201-inspection-select-close" aria-label="Close">×</button>
+        </div>
+
+        <div class="v201-inspection-select-options">
+          ${options.map(value=>`
+            <button type="button"
+                    class="v201-inspection-select-option ${current===value?'is-selected':''}"
+                    data-value="${value}">
+              <span>${value}</span>
+              <span class="v201-inspection-select-check">${current===value?'✓':''}</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.querySelector('.v201-inspection-select-close').onclick=v201Close;
+    overlay.addEventListener('click',e=>{
+      if(e.target===overlay) v201Close();
+    });
+
+    overlay.querySelectorAll('.v201-inspection-select-option').forEach(btn=>{
+      btn.onclick=()=>{
+        V49_INSPECTION_DRAFT[field]=btn.dataset.value;
+        const hiveId=V49_INSPECTION_DRAFT.hiveId;
+        v201Close();
+
+        /* Same current Inspection renderer and same draft/save model. */
+        inspectionPage(idq('view'),hiveId);
+        chrome('inspection');
+
+        /* Preserve the existing draft-persistence behavior introduced
+           by the current Inspection wrapper when available. */
+        try{
+          if(typeof persistInspectionDraftV50==='function'){
+            persistInspectionDraftV50();
+          }
+        }catch(_){}
+      };
+    });
+  }
+
+  window.editInspectionV49=function(field,type='text'){
+    if(Object.prototype.hasOwnProperty.call(V201_ENUMS,field)){
+      v201Open(field);
+      return;
+    }
+
+    /* Non-enum fields are completely unchanged:
+       strength/varroa/pests/disease/swarming/super/treatment/date etc.
+       continue through the exact V200/V199 legacy ownership chain. */
+    return V201_LEGACY_EDIT_INSPECTION.apply(this,arguments);
+  };
+
+  const style=document.createElement('style');
+  style.id='v201-inspection-select-style';
+  style.textContent=`
+    .v201-inspection-select-overlay{
+      position:fixed!important;
+      inset:0!important;
+      z-index:13500!important;
+      display:flex!important;
+      align-items:flex-end!important;
+      justify-content:center!important;
+      background:rgba(47,59,51,.34)!important;
+    }
+
+    .v201-inspection-select-sheet{
+      width:min(393px,100vw)!important;
+      margin:0!important;
+      padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;
+      border-radius:18px 18px 0 0!important;
+      background:#FFFEFB!important;
+      box-shadow:0 -10px 30px rgba(47,59,51,.16)!important;
+      box-sizing:border-box!important;
+    }
+
+    .v201-inspection-select-head{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      min-height:58px!important;
+      border-bottom:1px solid #E6E3DA!important;
+    }
+
+    .v201-inspection-select-head b{
+      color:#2F3B33!important;
+      font-size:17px!important;
+      font-weight:800!important;
+    }
+
+    .v201-inspection-select-close{
+      width:42px!important;
+      height:42px!important;
+      padding:0!important;
+      border:0!important;
+      background:transparent!important;
+      color:#5E7350!important;
+      font-size:22px!important;
+      cursor:pointer!important;
+    }
+
+    .v201-inspection-select-options{
+      display:grid!important;
+      gap:10px!important;
+      padding-top:14px!important;
+    }
+
+    .v201-inspection-select-option{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      width:100%!important;
+      min-height:54px!important;
+      padding:0 16px!important;
+      border:1px solid #DDD8CF!important;
+      border-radius:12px!important;
+      background:#fff!important;
+      color:#2F3B33!important;
+      font:inherit!important;
+      font-size:14px!important;
+      font-weight:700!important;
+      text-align:left!important;
+      cursor:pointer!important;
+    }
+
+    .v201-inspection-select-option.is-selected{
+      border-color:#5E7350!important;
+      background:#F2F5EF!important;
+      color:#36512B!important;
+    }
+
+    .v201-inspection-select-check{
+      width:24px!important;
+      color:#5E7350!important;
+      font-size:17px!important;
+      text-align:right!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

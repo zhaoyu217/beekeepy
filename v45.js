@@ -7467,3 +7467,115 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 })();
 
+/* ==========================================================
+   V207 — NEXT INSPECTION PERSISTENCE FIX
+   BASE: V206 FULL
+
+   Confirmed runtime fact from browser console:
+     localStorage['hd_hives'][0].nextInspection === undefined
+
+   Therefore the break is in persistence, not Actions display.
+
+   Scope ONLY:
+   - Mirror V49_INSPECTION_DRAFT.nextInspection into the real hd_hives
+     localStorage array for the matching Hive ID when Inspection is saved.
+   - Clear it from hd_hives when V203 Clear is used.
+   - Keep V206 Actions derivation intact.
+   - Do not modify existing Inspection record save logic or page structure.
+   ========================================================== */
+(function(){
+  if(window.__V207_NEXT_INSPECTION_PERSISTENCE__) return;
+  window.__V207_NEXT_INSPECTION_PERSISTENCE__=true;
+
+  function v207ReadHives(){
+    try{
+      const raw=localStorage.getItem('hd_hives');
+      const arr=raw ? JSON.parse(raw) : [];
+      return Array.isArray(arr) ? arr : [];
+    }catch(err){
+      console.error('V207 read hd_hives failed',err);
+      return [];
+    }
+  }
+
+  function v207WriteHives(arr){
+    try{
+      localStorage.setItem('hd_hives',JSON.stringify(arr));
+      return true;
+    }catch(err){
+      console.error('V207 write hd_hives failed',err);
+      return false;
+    }
+  }
+
+  function v207HiveId(){
+    return String(
+      window.V49_INSPECTION_DRAFT?.hiveId ||
+      String(location.hash||'').split('/')[1] ||
+      ''
+    );
+  }
+
+  function v207PersistNextInspection(value){
+    const hiveId=v207HiveId();
+    if(!hiveId) return false;
+
+    const hives=v207ReadHives();
+    const index=hives.findIndex(h=>String(h?.id||'')===hiveId);
+    if(index<0){
+      console.error('V207 hive not found in hd_hives:',hiveId);
+      return false;
+    }
+
+    const next=String(value||'').trim();
+    hives[index]={
+      ...hives[index],
+      nextInspection:next
+    };
+
+    const ok=v207WriteHives(hives);
+    if(ok){
+      /* Also mirror into the current in-memory state when present so the
+         existing V206 Actions derivation can see it immediately. */
+      try{
+        const s=state();
+        const h=hive(s,hiveId);
+        if(h) h.nextInspection=next;
+      }catch(_){}
+    }
+    return ok;
+  }
+
+  /* Own the exact Save button boundary BEFORE existing save handlers clear
+     or replace the draft. We do not stop propagation and do not replace save. */
+  document.addEventListener('click',function(e){
+    const root=String(location.hash||'').replace(/^#/,'').split('/')[0];
+    if(root!=='inspection') return;
+
+    const el=e.target.closest?.('button,[role="button"],a');
+    if(!el) return;
+
+    const txt=String(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+    if(txt!=='save' && txt!=='save inspection') return;
+
+    const next=String(window.V49_INSPECTION_DRAFT?.nextInspection||'').trim();
+    v207PersistNextInspection(next);
+  },true);
+
+  /* V203 Clear -> real hd_hives clear. */
+  document.addEventListener('click',function(e){
+    const clear=e.target.closest?.('.v203-clear');
+    if(!clear) return;
+
+    setTimeout(()=>v207PersistNextInspection(''),0);
+  },true);
+
+  /* Public diagnostic helper for QA only. */
+  window.V207_NEXT_INSPECTION_QA={
+    get(hiveId){
+      const h=v207ReadHives().find(x=>String(x?.id||'')===String(hiveId||''));
+      return h ? h.nextInspection : undefined;
+    }
+  };
+})();
+

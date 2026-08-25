@@ -8084,6 +8084,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const lastTx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
     if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id){
       const hi=h.insp||{};
+      const lastInspectionLog=(Array.isArray(s.logs?.inspections)?s.logs.inspections:[])
+        .filter(x=>x.hiveId===h.id)
+        .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || String(b.id||'').localeCompare(String(a.id||'')))[0];
       V49_INSPECTION_DRAFT={
         hiveId:h.id,queenStatus:hi.queenStatus||h.queen||'Seen',eggs:hi.eggs||(h.eggs?'Seen':'Not Seen'),larvae:hi.larvae||(h.larvae?'Seen':'Not Seen'),queenCells:hi.queenCells||(h.queenCells?'Present':'None'),
         brood:hi.brood||h.brood||'Good',broodStrength:Number(hi.broodStrength??hi.strength??8),abnormalities:hi.abnormalities||'None',
@@ -8092,7 +8095,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         varroa:Number(hi.varroa??h.varroa??0),varroaTestDate:hi.varroaTestDate||h.lastInspection||v211Today(),
         treatment:lastTx?.type||'None',treatmentStatus:lastTx?(lastTx.endDate?'Completed':'Active'):'None',treatmentFollowUp:lastTx?.followUp||'',treatmentWithdrawal:lastTx?.withdrawal||'None',
         pests:hi.pests||(h.shb||h.waxMoth?'Present':'None'),disease:hi.disease||(h.disease?'Present':'None'),swarming:hi.swarming||(h.swarm?'Signs':'None'),super:hi.superStatus||h.superStatus||'Installed',
-        voiceNotes:'',nextInspection:h.nextInspection||'',notes:h.notes||''
+        voiceNotes:String(hi.voiceNotes??lastInspectionLog?.voiceNotes??''),nextInspection:h.nextInspection||'',notes:h.notes||''
       };
     }
     const d=v212NormalizeDraft(V49_INSPECTION_DRAFT);
@@ -8123,7 +8126,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     d.notes=idq('inotes')?.value||d.notes||h.notes;
     const date=v211Today();
     h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=Number(d.varroa)||0;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;
-    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super};
+    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
     s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
     if(d.treatment&&d.treatment!=='None'){
       const tx={id:'t'+Date.now(),hiveId:id,date,type:d.treatment,endDate:d.treatmentStatus==='Completed'?date:'',followUp:d.treatmentFollowUp||'',withdrawal:d.treatmentWithdrawal||'None'};

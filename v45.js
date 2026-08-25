@@ -6038,3 +6038,170 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 })();
 
+/* ==========================================================
+   V200 — INSPECTION QUICK SELECT CONTROLS
+   BASE: V199 FULL
+
+   Scope ONLY:
+   Replace Inspection enum-field browser prompt() interactions with
+   a touch-friendly quick-select sheet.
+
+   No field names, draft keys, save logic, page structure, routes,
+   Header, Bottom Nav, Photos, Voice Notes, Timeline or Hive Actions
+   are changed.
+   ========================================================== */
+(function(){
+  if(window.__V200_INSPECTION_QUICK_SELECT__) return;
+  window.__V200_INSPECTION_QUICK_SELECT__=true;
+
+  const ENUMS = {
+    queenStatus: {
+      label:'Queen Status',
+      options:['Seen','Not Seen','Unsure']
+    },
+    brood: {
+      label:'Brood Pattern',
+      options:['Excellent','Good','Fair','Poor']
+    },
+    honey: {
+      label:'Honey Stores',
+      options:['High','Medium','Low']
+    },
+    pollen: {
+      label:'Pollen Stores',
+      options:['High','Medium','Low']
+    },
+    queenCells: {
+      label:'Queen Cells',
+      options:['None','Present']
+    }
+  };
+
+  function closeSheet(){
+    document.querySelector('.v200-qs-overlay')?.remove();
+  }
+
+  function openSheet(key){
+    const cfg=ENUMS[key];
+    if(!cfg) return false;
+
+    const draft=window.V49_INSPECTION_DRAFT || {};
+    const current=String(draft[key] ?? '');
+
+    closeSheet();
+    const overlay=document.createElement('div');
+    overlay.className='v200-qs-overlay';
+    overlay.innerHTML=`
+      <section class="v200-qs-sheet" role="dialog" aria-modal="true" aria-label="${cfg.label}">
+        <div class="v200-qs-head">
+          <b>${cfg.label}</b>
+          <button type="button" class="v200-qs-close" aria-label="Close">×</button>
+        </div>
+        <div class="v200-qs-options">
+          ${cfg.options.map(v=>`
+            <button type="button"
+                    class="v200-qs-option ${current===v?'is-selected':''}"
+                    data-value="${v}">
+              <span>${v}</span>
+              <span class="v200-qs-check">${current===v?'✓':''}</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>`;
+
+    document.body.appendChild(overlay);
+    overlay.querySelector('.v200-qs-close').onclick=closeSheet;
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) closeSheet(); });
+
+    overlay.querySelectorAll('.v200-qs-option').forEach(btn=>{
+      btn.onclick=()=>{
+        const value=btn.dataset.value;
+        if(!window.V49_INSPECTION_DRAFT) window.V49_INSPECTION_DRAFT={};
+        window.V49_INSPECTION_DRAFT[key]=value;
+        closeSheet();
+
+        /* Reuse current Inspection renderer/save draft model.
+           This does not persist until the existing Save action is used. */
+        try{
+          if(typeof render==='function') render();
+        }catch(err){
+          console.error('V200 Inspection quick select render failed',err);
+        }
+      };
+    });
+    return true;
+  }
+
+  /* Capture only clicks on the five existing Inspection enum rows.
+     We deliberately do not modify sliders, Photos, Voice Notes, Save,
+     or any row outside #inspection/... */
+  document.addEventListener('click',function(e){
+    const root=String(location.hash||'').replace(/^#/,'').split('/')[0];
+    if(root!=='inspection') return;
+
+    const row=e.target.closest('[data-field], .row, .fieldrow, .inspect-row, .v49-row');
+    if(!row) return;
+
+    const text=(row.textContent||'').replace(/\s+/g,' ').trim();
+    let key='';
+    if(/^Queen Status\b/i.test(text)) key='queenStatus';
+    else if(/^Brood Pattern\b/i.test(text)) key='brood';
+    else if(/^Honey Stores\b/i.test(text)) key='honey';
+    else if(/^Pollen Stores\b/i.test(text)) key='pollen';
+    else if(/^Queen Cells\b/i.test(text)) key='queenCells';
+    if(!key) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+    openSheet(key);
+  }, true);
+
+  const style=document.createElement('style');
+  style.id='v200-inspection-quick-select-style';
+  style.textContent=`
+    .v200-qs-overlay{
+      position:fixed!important; inset:0!important; z-index:13000!important;
+      display:flex!important; align-items:flex-end!important; justify-content:center!important;
+      background:rgba(47,59,51,.34)!important;
+    }
+    .v200-qs-sheet{
+      width:min(393px,100vw)!important;
+      margin:0!important;
+      padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;
+      border-radius:18px 18px 0 0!important;
+      background:#FFFEFB!important;
+      box-shadow:0 -10px 30px rgba(47,59,51,.16)!important;
+      box-sizing:border-box!important;
+    }
+    .v200-qs-head{
+      display:flex!important; align-items:center!important; justify-content:space-between!important;
+      min-height:58px!important; border-bottom:1px solid #E6E3DA!important;
+    }
+    .v200-qs-head b{
+      color:#2F3B33!important; font-size:17px!important; font-weight:800!important;
+    }
+    .v200-qs-close{
+      width:42px!important; height:42px!important; border:0!important; background:transparent!important;
+      color:#5E7350!important; font-size:22px!important; cursor:pointer!important;
+    }
+    .v200-qs-options{
+      display:grid!important; gap:10px!important; padding-top:14px!important;
+    }
+    .v200-qs-option{
+      display:flex!important; align-items:center!important; justify-content:space-between!important;
+      width:100%!important; min-height:54px!important; padding:0 16px!important;
+      border:1px solid #DDD8CF!important; border-radius:12px!important;
+      background:#fff!important; color:#2F3B33!important;
+      font:inherit!important; font-size:14px!important; font-weight:700!important;
+      text-align:left!important; cursor:pointer!important;
+    }
+    .v200-qs-option.is-selected{
+      border-color:#5E7350!important; background:#F2F5EF!important; color:#36512B!important;
+    }
+    .v200-qs-check{
+      width:24px!important; color:#5E7350!important; font-size:17px!important; text-align:right!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

@@ -6402,3 +6402,334 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V202 — INSPECTION RISK & CARE QUICK CONTROLS
+   BASE: V201 FULL
+
+   Adds quick controls ONLY for the remaining Inspection fields
+   shown in RISK & HEALTH / CARE:
+   - Varroa Count
+   - Pests
+   - Disease
+   - Swarming
+   - Super
+   - Treatment
+
+   V201's five quick-select fields remain unchanged.
+   Save/draft/page structure/routes remain unchanged.
+   ========================================================== */
+(function(){
+  if(window.__V202_INSPECTION_RISK_CARE_QUICK_CONTROLS__) return;
+  window.__V202_INSPECTION_RISK_CARE_QUICK_CONTROLS__=true;
+
+  const V202_PREVIOUS_EDIT_INSPECTION = window.editInspectionV49;
+
+  const V202_ENUMS = {
+    pests: {
+      label:'Pests',
+      options:['None','Present']
+    },
+    disease: {
+      label:'Disease',
+      options:['None','Present']
+    },
+    swarming: {
+      label:'Swarming',
+      options:['None','Signs']
+    },
+    super: {
+      label:'Super',
+      options:['Installed','Needed','None']
+    },
+    treatment: {
+      label:'Treatment',
+      options:['None','Oxalic Acid','Formic Acid','Apivar','Other']
+    }
+  };
+
+  function v202Close(){
+    document.querySelector('.v202-inspection-overlay')?.remove();
+  }
+
+  function v202Refresh(){
+    const hiveId=V49_INSPECTION_DRAFT?.hiveId;
+    if(!hiveId) return;
+    inspectionPage(idq('view'),hiveId);
+    chrome('inspection');
+    try{
+      if(typeof persistInspectionDraftV50==='function') persistInspectionDraftV50();
+    }catch(_){}
+  }
+
+  function v202OpenEnum(field){
+    const cfg=V202_ENUMS[field];
+    if(!cfg || !V49_INSPECTION_DRAFT) return;
+
+    const current=String(V49_INSPECTION_DRAFT[field] ?? '');
+    v202Close();
+
+    const overlay=document.createElement('div');
+    overlay.className='v202-inspection-overlay';
+    overlay.innerHTML=`
+      <section class="v202-inspection-sheet" role="dialog" aria-modal="true" aria-label="${cfg.label}">
+        <div class="v202-inspection-head">
+          <b>${cfg.label}</b>
+          <button type="button" class="v202-close" aria-label="Close">×</button>
+        </div>
+
+        <div class="v202-options">
+          ${cfg.options.map(value=>`
+            <button type="button"
+                    class="v202-option ${current===value?'is-selected':''}"
+                    data-value="${value}">
+              <span>${value}</span>
+              <span class="v202-check">${current===value?'✓':''}</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.querySelector('.v202-close').onclick=v202Close;
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) v202Close(); });
+
+    overlay.querySelectorAll('.v202-option').forEach(btn=>{
+      btn.onclick=()=>{
+        V49_INSPECTION_DRAFT[field]=btn.dataset.value;
+        v202Close();
+        v202Refresh();
+      };
+    });
+  }
+
+  function v202OpenVarroa(){
+    if(!V49_INSPECTION_DRAFT) return;
+    let value=Math.max(0,Math.round(Number(V49_INSPECTION_DRAFT.varroa)||0));
+    v202Close();
+
+    const overlay=document.createElement('div');
+    overlay.className='v202-inspection-overlay';
+    overlay.innerHTML=`
+      <section class="v202-inspection-sheet v202-varroa-sheet" role="dialog" aria-modal="true" aria-label="Varroa Count">
+        <div class="v202-inspection-head">
+          <b>Varroa Count</b>
+          <button type="button" class="v202-close" aria-label="Close">×</button>
+        </div>
+
+        <div class="v202-varroa-control">
+          <button type="button" class="v202-step" data-step="-1" aria-label="Decrease">−</button>
+          <input type="number" class="v202-varroa-input" min="0" max="999" step="1" inputmode="numeric" value="${value}">
+          <button type="button" class="v202-step" data-step="1" aria-label="Increase">＋</button>
+        </div>
+
+        <div class="v202-varroa-presets">
+          ${[0,1,2,3,5,10].map(n=>`<button type="button" data-preset="${n}">${n}</button>`).join('')}
+        </div>
+
+        <button type="button" class="v202-apply">Use Count</button>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+    const input=overlay.querySelector('.v202-varroa-input');
+
+    const clamp=()=>{
+      let n=Math.round(Number(input.value));
+      if(!Number.isFinite(n)) n=0;
+      n=Math.max(0,Math.min(999,n));
+      input.value=String(n);
+      return n;
+    };
+
+    overlay.querySelector('.v202-close').onclick=v202Close;
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) v202Close(); });
+
+    overlay.querySelectorAll('.v202-step').forEach(btn=>{
+      btn.onclick=()=>{
+        const step=Number(btn.dataset.step)||0;
+        input.value=String(Math.max(0,clamp()+step));
+      };
+    });
+
+    overlay.querySelectorAll('[data-preset]').forEach(btn=>{
+      btn.onclick=()=>{ input.value=btn.dataset.preset; };
+    });
+
+    overlay.querySelector('.v202-apply').onclick=()=>{
+      V49_INSPECTION_DRAFT.varroa=clamp();
+      v202Close();
+      v202Refresh();
+    };
+
+    setTimeout(()=>input.focus({preventScroll:true}),0);
+  }
+
+  window.editInspectionV49=function(field,type='text'){
+    if(field==='varroa'){
+      v202OpenVarroa();
+      return;
+    }
+
+    if(Object.prototype.hasOwnProperty.call(V202_ENUMS,field)){
+      v202OpenEnum(field);
+      return;
+    }
+
+    /* Everything else — including all five V201 quick-select fields —
+       continues through the exact previous ownership chain. */
+    return V202_PREVIOUS_EDIT_INSPECTION.apply(this,arguments);
+  };
+
+  const style=document.createElement('style');
+  style.id='v202-inspection-risk-care-style';
+  style.textContent=`
+    .v202-inspection-overlay{
+      position:fixed!important;
+      inset:0!important;
+      z-index:13600!important;
+      display:flex!important;
+      align-items:flex-end!important;
+      justify-content:center!important;
+      background:rgba(47,59,51,.34)!important;
+    }
+
+    .v202-inspection-sheet{
+      width:min(393px,100vw)!important;
+      margin:0!important;
+      padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;
+      border-radius:18px 18px 0 0!important;
+      background:#FFFEFB!important;
+      box-shadow:0 -10px 30px rgba(47,59,51,.16)!important;
+      box-sizing:border-box!important;
+    }
+
+    .v202-inspection-head{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      min-height:58px!important;
+      border-bottom:1px solid #E6E3DA!important;
+    }
+
+    .v202-inspection-head b{
+      color:#2F3B33!important;
+      font-size:17px!important;
+      font-weight:800!important;
+    }
+
+    .v202-close{
+      width:42px!important;
+      height:42px!important;
+      padding:0!important;
+      border:0!important;
+      background:transparent!important;
+      color:#5E7350!important;
+      font-size:22px!important;
+      cursor:pointer!important;
+    }
+
+    .v202-options{
+      display:grid!important;
+      gap:10px!important;
+      padding-top:14px!important;
+    }
+
+    .v202-option{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      width:100%!important;
+      min-height:54px!important;
+      padding:0 16px!important;
+      border:1px solid #DDD8CF!important;
+      border-radius:12px!important;
+      background:#fff!important;
+      color:#2F3B33!important;
+      font:inherit!important;
+      font-size:14px!important;
+      font-weight:700!important;
+      cursor:pointer!important;
+    }
+
+    .v202-option.is-selected{
+      border-color:#5E7350!important;
+      background:#F2F5EF!important;
+      color:#36512B!important;
+    }
+
+    .v202-check{
+      width:24px!important;
+      color:#5E7350!important;
+      font-size:17px!important;
+      text-align:right!important;
+    }
+
+    .v202-varroa-control{
+      display:grid!important;
+      grid-template-columns:58px 1fr 58px!important;
+      align-items:center!important;
+      gap:10px!important;
+      padding-top:18px!important;
+    }
+
+    .v202-step{
+      width:58px!important;
+      height:58px!important;
+      border:1px solid #DDD8CF!important;
+      border-radius:14px!important;
+      background:#F7F5EF!important;
+      color:#5E7350!important;
+      font-size:25px!important;
+      font-weight:800!important;
+      cursor:pointer!important;
+    }
+
+    .v202-varroa-input{
+      width:100%!important;
+      height:58px!important;
+      padding:0 10px!important;
+      border:1px solid #5E7350!important;
+      border-radius:14px!important;
+      background:#fff!important;
+      color:#2F3B33!important;
+      font-size:24px!important;
+      font-weight:800!important;
+      text-align:center!important;
+      box-sizing:border-box!important;
+    }
+
+    .v202-varroa-presets{
+      display:grid!important;
+      grid-template-columns:repeat(6,1fr)!important;
+      gap:6px!important;
+      padding-top:12px!important;
+    }
+
+    .v202-varroa-presets button{
+      min-height:38px!important;
+      padding:0!important;
+      border:1px solid #DDD8CF!important;
+      border-radius:9px!important;
+      background:#fff!important;
+      color:#5E7350!important;
+      font-weight:800!important;
+      cursor:pointer!important;
+    }
+
+    .v202-apply{
+      width:100%!important;
+      min-height:48px!important;
+      margin-top:16px!important;
+      border:0!important;
+      border-radius:12px!important;
+      background:#5E7350!important;
+      color:#fff!important;
+      font:inherit!important;
+      font-weight:800!important;
+      cursor:pointer!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

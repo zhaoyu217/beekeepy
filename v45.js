@@ -6733,3 +6733,252 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V203 — NEXT INSPECTION DATE PICKER FIX
+   BASE: V202 FULL
+
+   Scope ONLY:
+   Inspection -> Next Inspection
+
+   Replaces the remaining browser prompt() with a real date picker.
+   Does not change the draft key, Save Inspection logic, page structure,
+   Header, Bottom Nav, Photos, Voice Notes, Timeline or Hive Actions.
+   ========================================================== */
+(function(){
+  if(window.__V203_NEXT_INSPECTION_DATE_PICKER__) return;
+  window.__V203_NEXT_INSPECTION_DATE_PICKER__=true;
+
+  const V203_PREVIOUS_EDIT_INSPECTION = window.editInspectionV49;
+
+  function v203Close(){
+    document.querySelector('.v203-next-inspection-overlay')?.remove();
+  }
+
+  function v203Refresh(){
+    const hiveId=V49_INSPECTION_DRAFT?.hiveId;
+    if(!hiveId) return;
+    inspectionPage(idq('view'),hiveId);
+    chrome('inspection');
+    try{
+      if(typeof persistInspectionDraftV50==='function'){
+        persistInspectionDraftV50();
+      }
+    }catch(_){}
+  }
+
+  function v203OpenDatePicker(){
+    if(!V49_INSPECTION_DRAFT) return;
+
+    const today=new Date().toISOString().slice(0,10);
+    const current=String(V49_INSPECTION_DRAFT.nextInspection||'').trim();
+
+    v203Close();
+
+    const overlay=document.createElement('div');
+    overlay.className='v203-next-inspection-overlay';
+    overlay.innerHTML=`
+      <section class="v203-next-inspection-sheet"
+               role="dialog"
+               aria-modal="true"
+               aria-label="Next Inspection">
+        <div class="v203-next-inspection-head">
+          <b>Next Inspection</b>
+          <button type="button" class="v203-close" aria-label="Close">×</button>
+        </div>
+
+        <label class="v203-date-field">
+          <span>Select date</span>
+          <input type="date"
+                 class="v203-date-input"
+                 min="${today}"
+                 value="${current}">
+        </label>
+
+        <div class="v203-date-shortcuts">
+          <button type="button" data-days="3">In 3 days</button>
+          <button type="button" data-days="7">In 7 days</button>
+          <button type="button" data-days="14">In 14 days</button>
+        </div>
+
+        <div class="v203-date-actions">
+          <button type="button" class="v203-clear">Clear</button>
+          <button type="button" class="v203-apply">Set Date</button>
+        </div>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+
+    const input=overlay.querySelector('.v203-date-input');
+    overlay.querySelector('.v203-close').onclick=v203Close;
+
+    overlay.addEventListener('click',e=>{
+      if(e.target===overlay) v203Close();
+    });
+
+    overlay.querySelectorAll('[data-days]').forEach(btn=>{
+      btn.onclick=()=>{
+        const d=new Date();
+        d.setDate(d.getDate()+Number(btn.dataset.days||0));
+        input.value=d.toISOString().slice(0,10);
+      };
+    });
+
+    overlay.querySelector('.v203-clear').onclick=()=>{
+      V49_INSPECTION_DRAFT.nextInspection='';
+      v203Close();
+      v203Refresh();
+    };
+
+    overlay.querySelector('.v203-apply').onclick=()=>{
+      const value=String(input.value||'').trim();
+      if(!value){
+        toast('Choose a date');
+        return;
+      }
+      V49_INSPECTION_DRAFT.nextInspection=value;
+      v203Close();
+      v203Refresh();
+    };
+
+    setTimeout(()=>{
+      try{
+        if(typeof input.showPicker==='function') input.showPicker();
+      }catch(_){}
+    },80);
+  }
+
+  window.editInspectionV49=function(field,type='text'){
+    if(field==='nextInspection'){
+      v203OpenDatePicker();
+      return;
+    }
+
+    /* Every other field remains owned by the exact V202 chain. */
+    return V203_PREVIOUS_EDIT_INSPECTION.apply(this,arguments);
+  };
+
+  const style=document.createElement('style');
+  style.id='v203-next-inspection-style';
+  style.textContent=`
+    .v203-next-inspection-overlay{
+      position:fixed!important;
+      inset:0!important;
+      z-index:13700!important;
+      display:flex!important;
+      align-items:flex-end!important;
+      justify-content:center!important;
+      background:rgba(47,59,51,.34)!important;
+    }
+
+    .v203-next-inspection-sheet{
+      width:min(393px,100vw)!important;
+      margin:0!important;
+      padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;
+      border-radius:18px 18px 0 0!important;
+      background:#FFFEFB!important;
+      box-shadow:0 -10px 30px rgba(47,59,51,.16)!important;
+      box-sizing:border-box!important;
+    }
+
+    .v203-next-inspection-head{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      min-height:58px!important;
+      border-bottom:1px solid #E6E3DA!important;
+    }
+
+    .v203-next-inspection-head b{
+      color:#2F3B33!important;
+      font-size:17px!important;
+      font-weight:800!important;
+    }
+
+    .v203-close{
+      width:42px!important;
+      height:42px!important;
+      padding:0!important;
+      border:0!important;
+      background:transparent!important;
+      color:#5E7350!important;
+      font-size:22px!important;
+      cursor:pointer!important;
+    }
+
+    .v203-date-field{
+      display:grid!important;
+      gap:8px!important;
+      padding-top:16px!important;
+    }
+
+    .v203-date-field span{
+      color:#2F3B33!important;
+      font-size:12px!important;
+      font-weight:700!important;
+    }
+
+    .v203-date-input{
+      width:100%!important;
+      height:50px!important;
+      padding:0 12px!important;
+      border:1px solid #DDD8CF!important;
+      border-radius:12px!important;
+      background:#fff!important;
+      color:#2F3B33!important;
+      font:inherit!important;
+      font-size:14px!important;
+      font-weight:700!important;
+      box-sizing:border-box!important;
+    }
+
+    .v203-date-shortcuts{
+      display:grid!important;
+      grid-template-columns:repeat(3,minmax(0,1fr))!important;
+      gap:8px!important;
+      padding-top:12px!important;
+    }
+
+    .v203-date-shortcuts button{
+      min-height:42px!important;
+      padding:0 6px!important;
+      border:1px solid #DDD8CF!important;
+      border-radius:10px!important;
+      background:#F7F5EF!important;
+      color:#5E7350!important;
+      font:inherit!important;
+      font-size:11px!important;
+      font-weight:800!important;
+      cursor:pointer!important;
+    }
+
+    .v203-date-actions{
+      display:grid!important;
+      grid-template-columns:1fr 1.4fr!important;
+      gap:10px!important;
+      padding-top:16px!important;
+    }
+
+    .v203-date-actions button{
+      min-height:48px!important;
+      border-radius:12px!important;
+      font:inherit!important;
+      font-weight:800!important;
+      cursor:pointer!important;
+    }
+
+    .v203-clear{
+      border:1px solid #DDD8CF!important;
+      background:#fff!important;
+      color:#5E7350!important;
+    }
+
+    .v203-apply{
+      border:0!important;
+      background:#5E7350!important;
+      color:#fff!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

@@ -4439,3 +4439,245 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V190 — HIVE COVER PHOTO SYNC FIX
+   Functional scope only:
+   - Photos remain normal Hive photos after upload.
+   - A photo can explicitly be set as the Hive Cover.
+   - Hive Detail hero + Hives list thumbnail use the same cover.
+   - Deleting the current cover clears it and falls back safely.
+   - No Hives/Header/Bottom Nav/route redesign.
+   ========================================================== */
+(function(){
+  if(window.__V190_HIVE_COVER_PHOTO_SYNC__) return;
+  window.__V190_HIVE_COVER_PHOTO_SYNC__=true;
+
+  function v190Photos(h){
+    return Array.isArray(h?.photos) ? h.photos : [];
+  }
+
+  function v190FallbackHivePhoto(h){
+    const s=v45s();
+    const idx=Math.max(0,(s.hives||[]).findIndex(x=>x.id===h?.id));
+    const fallback=[
+      'assets/hive_detail_hero.jpg',
+      'assets/home_final_apiary.jpg',
+      'assets/hive_detail_hero.jpg'
+    ];
+    return fallback[idx % fallback.length];
+  }
+
+  /* Single source of truth for every existing Hive image consumer.
+     Existing callers already use v101HivePrimaryPhoto():
+     Hive Detail hero, Hives cards, Inspection switch card, Map list, etc. */
+  v101HivePrimaryPhoto=function(h){
+    if(!h) return 'assets/hive_detail_hero.jpg';
+
+    const photos=v190Photos(h);
+    const coverId=String(h.coverPhotoId||'');
+    if(coverId){
+      const cover=photos.find(p=>String(p?.id||'')===coverId);
+      if(cover?.data) return cover.data;
+    }
+
+    /* No explicit cover => preserve the original/default Hive artwork.
+       Uploading a photo alone must NOT silently replace the Hive cover. */
+    return v190FallbackHivePhoto(h);
+  };
+
+  function v190ClosePhotoMenus(){
+    document.querySelectorAll('.v190-photo-menu-pop').forEach(el=>el.remove());
+  }
+
+  function v190RefreshHivePhotoUI(hiveId,reopenGallery=true){
+    v190ClosePhotoMenus();
+    document.querySelectorAll('.photo-gallery-modal-shell').forEach(el=>el.remove());
+
+    try{
+      if(typeof render==='function') render();
+    }catch(err){
+      console.error('V190 photo UI refresh failed',err);
+    }
+
+    if(reopenGallery){
+      setTimeout(()=>{
+        try{
+          if(typeof openHivePhotoGallery==='function') openHivePhotoGallery(hiveId);
+        }catch(err){
+          console.error('V190 gallery reopen failed',err);
+        }
+      },0);
+    }
+  }
+
+  window.setHiveCoverPhotoV190=function(hiveId,photoId){
+    const s=v45s();
+    const h=hive(s,hiveId);
+    if(!h) return toast('Hive not found');
+
+    const photos=v190Photos(h);
+    const photo=photos.find(p=>String(p?.id||'')===String(photoId));
+    if(!photo?.data) return toast('Photo not found');
+
+    const before=h.coverPhotoId||'';
+    h.coverPhotoId=photo.id;
+
+    if(save(s)===false){
+      h.coverPhotoId=before;
+      return toast('Hive cover could not be saved');
+    }
+
+    toast('Hive cover updated');
+    v190RefreshHivePhotoUI(hiveId,true);
+  };
+
+  /* Own the existing gallery ••• entry so Set as Cover is guaranteed
+     even if an older app.js implementation is present. */
+  window.openHivePhotoMenu=function(hiveId,photoId,anchor){
+    v190ClosePhotoMenus();
+
+    const s=v45s();
+    const h=hive(s,hiveId);
+    const p=v190Photos(h).find(x=>String(x?.id||'')===String(photoId));
+    if(!h || !p) return toast('Photo not found');
+
+    const current=String(h.coverPhotoId||'')===String(photoId);
+    const box=document.createElement('div');
+    box.className='v190-photo-menu-pop';
+    box.innerHTML=`
+      ${current
+        ? `<button type="button" class="v190-cover-current" disabled>✓ Hive Cover</button>`
+        : `<button type="button" onclick="setHiveCoverPhotoV190('${esc(hiveId)}','${esc(photoId)}')">Set as Hive Cover</button>`}
+      <button type="button" class="v190-photo-delete"
+              onclick="deleteHivePhoto('${esc(hiveId)}','${esc(photoId)}')">
+        Delete Photo
+      </button>
+    `;
+
+    document.body.appendChild(box);
+
+    const rect=anchor?.getBoundingClientRect?.();
+    if(rect){
+      const width=178;
+      const left=Math.max(10,Math.min(window.innerWidth-width-10,rect.right-width));
+      const top=Math.min(window.innerHeight-112,rect.bottom+6);
+      box.style.left=left+'px';
+      box.style.top=Math.max(10,top)+'px';
+    }
+
+    setTimeout(()=>{
+      const close=e=>{
+        if(!box.contains(e.target) && e.target!==anchor){
+          box.remove();
+          document.removeEventListener('pointerdown',close,true);
+        }
+      };
+      document.addEventListener('pointerdown',close,true);
+    },0);
+  };
+
+  /* Delete keeps the old behavior, plus cover ownership cleanup.
+     If the deleted photo is the cover, the Hive returns to its default image. */
+  deleteHivePhoto=function(hiveId,photoId){
+    const s=v45s();
+    const h=hive(s,hiveId);
+    if(!h) return toast('Hive not found');
+
+    const beforePhotos=clone(v190Photos(h));
+    const beforeCover=h.coverPhotoId||'';
+    const wasCover=String(beforeCover)===String(photoId);
+
+    h.photos=beforePhotos.filter(p=>String(p?.id||'')!==String(photoId));
+    if(wasCover) h.coverPhotoId='';
+
+    if(save(s)===false){
+      h.photos=beforePhotos;
+      h.coverPhotoId=beforeCover;
+      return toast('Photo could not be deleted');
+    }
+
+    toast(wasCover ? 'Cover photo deleted · default image restored' : 'Photo deleted');
+    v190RefreshHivePhotoUI(hiveId,true);
+  };
+
+  /* Small, scoped indicator in Gallery only. Main locked Hive screens unchanged. */
+  const V190_OPEN_HIVE_PHOTO_GALLERY=openHivePhotoGallery;
+  openHivePhotoGallery=function(hiveId){
+    V190_OPEN_HIVE_PHOTO_GALLERY(hiveId);
+
+    const s=v45s();
+    const h=hive(s,hiveId);
+    if(!h?.coverPhotoId) return;
+
+    const photos=v190Photos(h);
+    const index=photos.findIndex(p=>String(p?.id||'')===String(h.coverPhotoId));
+    if(index<0) return;
+
+    const shell=[...document.querySelectorAll('.photo-gallery-modal-shell')].pop();
+    const card=shell?.querySelectorAll('.gallery-photo-card')?.[index];
+    if(card && !card.querySelector('.v190-cover-badge')){
+      const badge=document.createElement('span');
+      badge.className='v190-cover-badge';
+      badge.textContent='Cover';
+      card.appendChild(badge);
+    }
+  };
+
+  const style=document.createElement('style');
+  style.id='v190-hive-cover-photo-style';
+  style.textContent=`
+    .v190-photo-menu-pop{
+      position:fixed;
+      z-index:7000;
+      width:178px;
+      padding:6px;
+      border:1px solid rgba(47,59,51,.12);
+      border-radius:12px;
+      background:#FFFDF9;
+      box-shadow:0 10px 28px rgba(47,59,51,.16);
+    }
+    .v190-photo-menu-pop button{
+      width:100%;
+      min-height:40px;
+      padding:8px 10px;
+      border:0;
+      border-radius:8px;
+      background:transparent;
+      color:#36512B;
+      text-align:left;
+      font:inherit;
+      font-weight:700;
+      cursor:pointer;
+    }
+    .v190-photo-menu-pop button:hover{
+      background:#F2F3EB;
+    }
+    .v190-photo-menu-pop .v190-cover-current{
+      color:#5E7350;
+      cursor:default;
+      opacity:1;
+    }
+    .v190-photo-menu-pop .v190-photo-delete{
+      color:#B53A30;
+    }
+    .gallery-photo-card{
+      position:relative;
+    }
+    .v190-cover-badge{
+      position:absolute;
+      left:8px;
+      bottom:8px;
+      z-index:3;
+      padding:4px 8px;
+      border-radius:999px;
+      background:rgba(47,59,51,.82);
+      color:#fff;
+      font-size:10px;
+      font-weight:800;
+      line-height:1;
+      pointer-events:none;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

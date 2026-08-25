@@ -7579,3 +7579,118 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   };
 })();
 
+/* ==========================================================
+   V208 — NEXT INSPECTION STATE + ACTIONS FIX
+   BASE: V207 FULL
+   ========================================================== */
+(function(){
+  if(window.__V208_NEXT_INSPECTION_STATE_ACTIONS__) return;
+  window.__V208_NEXT_INSPECTION_STATE_ACTIONS__=true;
+
+  const V208_PREVIOUS_SAVE_INSPECTION = vSaveInspection;
+
+  vSaveInspection=function(id){
+    const hiveId=String(id || V49_INSPECTION_DRAFT?.hiveId || '');
+    const nextInspection=String(V49_INSPECTION_DRAFT?.nextInspection || '').trim();
+
+    const result=V208_PREVIOUS_SAVE_INSPECTION.apply(this,arguments);
+
+    try{
+      const s=state();
+      const h=hive(s,hiveId);
+      if(h){
+        h.nextInspection=nextInspection;
+        save(s);
+      }
+    }catch(err){
+      console.error('V208 nextInspection save failed',err);
+    }
+
+    return result;
+  };
+
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest?.('.v203-clear');
+    if(!btn) return;
+
+    const hiveId=String(V49_INSPECTION_DRAFT?.hiveId || '');
+    setTimeout(()=>{
+      try{
+        const s=state();
+        const h=hive(s,hiveId);
+        if(h){
+          h.nextInspection='';
+          save(s);
+        }
+      }catch(err){
+        console.error('V208 nextInspection clear failed',err);
+      }
+    },0);
+  },true);
+
+  const V208_PREVIOUS_ACTION_ROWS = v53ActionRows;
+
+  function v208NextInspectionRows(){
+    const s=v45s();
+    const allowed=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
+
+    return allowed
+      .filter(h=>String(h?.nextInspection||'').trim())
+      .map(h=>{
+        const date=String(h.nextInspection).trim();
+        return {
+          id:'next-inspection-'+h.id,
+          hiveId:h.id,
+          type:'Inspection',
+          title:'Inspection',
+          priority:'Medium',
+          status:'Pending',
+          due:fmtDate(date),
+          date,
+          __v208NextInspection:true
+        };
+      })
+      .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  }
+
+  v53ActionRows=function(mode='Pending'){
+    const base=V208_PREVIOUS_ACTION_ROWS.apply(this,arguments);
+    const normalized=String(mode||'Pending').toLowerCase();
+
+    if(normalized==='completed') return base;
+
+    const derived=v208NextInspectionRows();
+
+    const unique=derived.filter(d=>{
+      return !(base||[]).some(a=>
+        String(a.hiveId||'')===String(d.hiveId) &&
+        String(a.type||'').toLowerCase()==='inspection' &&
+        String(a.date||'')===String(d.date||'')
+      );
+    });
+
+    return [...unique,...(base||[])];
+  };
+
+  window.V208_NEXT_INSPECTION_QA={
+    get(hiveId){
+      try{
+        const s=state();
+        return hive(s,String(hiveId||''))?.nextInspection;
+      }catch(_){
+        return undefined;
+      }
+    }
+  };
+
+  if(String(location.hash||'').replace(/^#/,'').split('/')[0]==='actions'){
+    setTimeout(()=>{
+      try{
+        v53DrawActions('Pending');
+      }catch(err){
+        console.error('V208 actions redraw failed',err);
+      }
+    },60);
+  }
+})();
+

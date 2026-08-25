@@ -1796,7 +1796,7 @@ function hiveDetail(r,id){
           ...(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Treatment'})),
           ...(Array.isArray(s.logs?.harvests)?s.logs.harvests:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Harvest'}))
         ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))));
-  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location||'Location not set')}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.queen],['Eggs',h.eggs?'Seen':'None'],['Larvae',h.larvae?'Seen':'None'],['Queen cells',h.queenCells?'Present':'None']])}${hg('Brood',[['Pattern',h.brood],['Strength',h.strength],['Abnormalities','None']])}${hg('Colony',[['Size',h.strength],['Population','8 frames'],['Temperament','Calm']])}${hg('Food Stores',[['Honey',h.honey],['Pollen',h.pollen],['Feeding need',h.honey==='Low'?'Yes':'No']])}${hg('Varroa',[['Last count',`${h.varroa}/100`],['Risk',h.varroa>=3?'High':'Low'],['Test date',fmtDate(h.lastInspection)]])}${hg('Treatment',[['History',lastTx?.type||'None'],['Active',lastTx&&!lastTx.endDate?'Active':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
+  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location||'Location not set')}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')]])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',`${Number(h.insp?.varroa??h.varroa??0)}/100`],['Risk',Number(h.insp?.varroa??h.varroa??0)>=3?'High':Number(h.insp?.varroa??h.varroa??0)>=2?'Medium':'Low'],['Test date',fmtDate(h.insp?.varroaTestDate||h.lastInspection)]])}${hg('Treatment',[['History',lastTx?.type||'None'],['Active',lastTx&&!lastTx.endDate?'Active':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
   <div class="photo-card-head-actions">
     <button class="photo-card-viewall" type="button" onclick="openHivePhotoGallery('${h.id}')">View All</button>
   </div>
@@ -1819,15 +1819,149 @@ function editInspectionV49(field,type='text'){
   if(type==='number'){val=Math.max(0,Math.min(10,Number(val)||0))} V49_INSPECTION_DRAFT[field]=val; inspectionPage(idq('view'),V49_INSPECTION_DRAFT.hiveId);chrome('inspection');
 }
 function inspectionPage(r,id){
-  const s=v45s(),h=vh(id);if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id)V49_INSPECTION_DRAFT={hiveId:h.id,queenStatus:h.queen||'Confirmed',strength:Number(String(h.strength).match(/\d+/)?.[0]||8),brood:h.brood||'Good',honey:h.honey||'Medium',pollen:h.pollen||'Medium',queenCells:h.queenCells?'Present':'None',varroa:Number(h.varroa||0),pests:h.shb||h.waxMoth?'Present':'None',disease:h.disease?'Present':'None',swarming:h.swarm?'Signs':'None',super:h.superStatus||'Installed',treatment:'None',voiceNotes:'',nextInspection:'',notes:h.notes||''};const d=V49_INSPECTION_DRAFT;
-  r.innerHTML=`<div class="vs v86-inspection"><section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section><section class="iform"><div class="irow section-start section-colony" onclick="editInspectionV49('queenStatus')"><span>Queen Status</span><b>${esc(d.queenStatus)}</b><em>›</em></div><div class="irow slide" onclick="editInspectionV49('strength','number')"><span>Colony Strength</span><i><u style="width:${d.strength*10}%"></u></i><b>${d.strength} / 10</b></div><div class="irow" onclick="editInspectionV49('brood')"><span>Brood Pattern</span><b>${esc(d.brood)}</b><em>›</em></div><div class="irow section-start section-stores status-row" onclick="editInspectionV49('honey')"><span>Honey Stores</span><b class="${String(d.honey).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.honey)}</b><em>›</em></div><div class="irow status-row" onclick="editInspectionV49('pollen')"><span>Pollen Stores</span><b class="${String(d.pollen).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.pollen)}</b><em>›</em></div><div class="irow" onclick="editInspectionV49('queenCells')"><span>Queen Cells</span><b>${esc(d.queenCells)}</b><em>›</em></div><div class="irow section-start section-risk risk-row" onclick="editInspectionV49('varroa')"><span>Varroa Count</span><b class="${Number(d.varroa)>=3?'value-danger':Number(d.varroa)>=2?'value-warn':'value-good'}">${esc(d.varroa)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('pests')"><span>Pests</span><b class="${String(d.pests).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.pests)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('disease')"><span>Disease</span><b class="${String(d.disease).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.disease)}</b><em>›</em></div><div class="irow risk-row" onclick="editInspectionV49('swarming')"><span>Swarming</span><b class="${String(d.swarming).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.swarming)}</b><em>›</em></div><div class="irow section-start section-care" onclick="editInspectionV49('super')"><span>Super</span><b>${esc(d.super)}</b><em>›</em></div><div class="irow" onclick="editInspectionV49('treatment')"><span>Treatment</span><b>${esc(d.treatment)}</b><em>›</em></div><div class="irow section-start section-capture capture-row photo-row" onclick="idq('phinput2').click()"><span>Photos</span><b>Add photos</b><em>›</em></div><input id="phinput2" hidden type="file" accept="image/*" multiple><div class="irow capture-row voice-row" onclick="openVoiceNotesV193()"><span>Voice Notes</span><b>${d.voiceNotes?'Added':'Add voice note'}</b><em>›</em></div><div class="irow section-start section-followup" onclick="editInspectionV49('nextInspection')"><span>Next Inspection</span><b>${esc(d.nextInspection||'Set date')}</b><em>›</em></div><label class="notes"><span>Notes</span><textarea id="inotes">${esc(d.notes)}</textarea></label></section><div class="dual"><button onclick="V49_INSPECTION_DRAFT.notes=idq('inotes').value;toast('Draft saved')">Save Draft</button><button onclick="vSaveInspection('${h.id}')">Save Inspection</button></div></div>`;
-  idq('ihsel').onchange=e=>{V49_INSPECTION_DRAFT=null;go('inspection/'+e.target.value)};idq('phinput2').onchange=e=>addHivePhotos(h.id,e.target)
+  const s=v45s(),h=vh(id);
+  const lastTx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[])
+    .filter(x=>x.hiveId===h.id)
+    .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+
+  if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id){
+    const hi=h.insp||{};
+    V49_INSPECTION_DRAFT={
+      hiveId:h.id,
+      queenStatus:hi.queenStatus||h.queen||'Seen',
+      eggs:hi.eggs||(h.eggs?'Seen':'Not Seen'),
+      larvae:hi.larvae||(h.larvae?'Seen':'Not Seen'),
+      queenCells:hi.queenCells||(h.queenCells?'Present':'None'),
+      strength:Number(hi.strength??String(h.strength).match(/\d+/)?.[0]??8),
+      brood:hi.brood||h.brood||'Good',
+      abnormalities:hi.abnormalities||'None',
+      populationFrames:Number(hi.populationFrames||8),
+      temperament:hi.temperament||'Calm',
+      honey:hi.honey||h.honey||'Medium',
+      pollen:hi.pollen||h.pollen||'Medium',
+      feedingNeed:hi.feedingNeed||(h.honey==='Low'?'Yes':'No'),
+      varroa:Number(hi.varroa??h.varroa??0),
+      pests:hi.pests||(h.shb||h.waxMoth?'Present':'None'),
+      disease:hi.disease||(h.disease?'Present':'None'),
+      swarming:hi.swarming||(h.swarm?'Signs':'None'),
+      super:hi.superStatus||h.superStatus||'Installed',
+      treatment:lastTx?.type||'None',
+      voiceNotes:'',
+      nextInspection:h.nextInspection||'',
+      notes:h.notes||''
+    };
+  }
+
+  const d=V49_INSPECTION_DRAFT;
+  r.innerHTML=`<div class="vs v86-inspection">
+    <section class="vc switchh">
+      <img src="${v101HivePrimaryPhoto(h)}">
+      <div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div>
+      <select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+    </section>
+
+    <section class="iform">
+      <div class="irow section-start section-colony" onclick="editInspectionV49('queenStatus')"><span>Queen Status</span><b>${esc(d.queenStatus)}</b><em>›</em></div>
+      <div class="irow" onclick="editInspectionV49('eggs')"><span>Eggs</span><b>${esc(d.eggs)}</b><em>›</em></div>
+      <div class="irow" onclick="editInspectionV49('larvae')"><span>Larvae</span><b>${esc(d.larvae)}</b><em>›</em></div>
+      <div class="irow" onclick="editInspectionV49('queenCells')"><span>Queen Cells</span><b>${esc(d.queenCells)}</b><em>›</em></div>
+
+      <div class="irow slide" onclick="editInspectionV49('strength','number')"><span>Colony Strength</span><i><u style="width:${Math.max(0,Math.min(10,Number(d.strength)||0))*10}%"></u></i><b>${d.strength} / 10</b></div>
+      <div class="irow" onclick="editInspectionV49('populationFrames')"><span>Population</span><b>${esc(d.populationFrames)} frames</b><em>›</em></div>
+      <div class="irow" onclick="editInspectionV49('temperament')"><span>Temperament</span><b>${esc(d.temperament)}</b><em>›</em></div>
+      <div class="irow" onclick="editInspectionV49('brood')"><span>Brood Pattern</span><b>${esc(d.brood)}</b><em>›</em></div>
+      <div class="irow" onclick="editInspectionV49('abnormalities')"><span>Abnormalities</span><b>${esc(d.abnormalities)}</b><em>›</em></div>
+
+      <div class="irow section-start section-stores status-row" onclick="editInspectionV49('honey')"><span>Honey Stores</span><b class="${String(d.honey).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.honey)}</b><em>›</em></div>
+      <div class="irow status-row" onclick="editInspectionV49('pollen')"><span>Pollen Stores</span><b class="${String(d.pollen).toLowerCase()==='low'?'value-warn':'value-good'}">${esc(d.pollen)}</b><em>›</em></div>
+      <div class="irow status-row" onclick="editInspectionV49('feedingNeed')"><span>Feeding Need</span><b class="${String(d.feedingNeed).toLowerCase()==='yes'?'value-warn':'value-good'}">${esc(d.feedingNeed)}</b><em>›</em></div>
+
+      <div class="irow section-start section-risk risk-row" onclick="editInspectionV49('varroa')"><span>Varroa Count</span><b class="${Number(d.varroa)>=3?'value-danger':Number(d.varroa)>=2?'value-warn':'value-good'}">${esc(d.varroa)}</b><em>›</em></div>
+      <div class="irow risk-row" onclick="editInspectionV49('pests')"><span>Pests</span><b class="${String(d.pests).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.pests)}</b><em>›</em></div>
+      <div class="irow risk-row" onclick="editInspectionV49('disease')"><span>Disease</span><b class="${String(d.disease).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.disease)}</b><em>›</em></div>
+      <div class="irow risk-row" onclick="editInspectionV49('swarming')"><span>Swarming</span><b class="${String(d.swarming).toLowerCase()!=='none'?'value-danger':'value-good'}">${esc(d.swarming)}</b><em>›</em></div>
+
+      <div class="irow section-start section-care" onclick="editInspectionV49('super')"><span>Super</span><b>${esc(d.super)}</b><em>›</em></div>
+      <div class="irow" onclick="actionForm('treatment','${h.id}')"><span>Treatment</span><b>${esc(lastTx?.type||'Add record')}</b><em>›</em></div>
+
+      <div class="irow section-start section-capture capture-row photo-row" onclick="idq('phinput2').click()"><span>Photos</span><b>Add photos</b><em>›</em></div>
+      <input id="phinput2" hidden type="file" accept="image/*" multiple>
+      <div class="irow capture-row voice-row" onclick="openVoiceNotesV193()"><span>Voice Notes</span><b>${d.voiceNotes?'Added':'Add voice note'}</b><em>›</em></div>
+
+      <div class="irow section-start section-followup" onclick="editInspectionV49('nextInspection')"><span>Next Inspection</span><b>${esc(d.nextInspection||'Set date')}</b><em>›</em></div>
+      <label class="notes"><span>Notes</span><textarea id="inotes">${esc(d.notes)}</textarea></label>
+    </section>
+
+    <div class="dual">
+      <button onclick="V49_INSPECTION_DRAFT.notes=idq('inotes').value;toast('Draft saved')">Save Draft</button>
+      <button onclick="vSaveInspection('${h.id}')">Save Inspection</button>
+    </div>
+  </div>`;
+
+  idq('ihsel').onchange=e=>{V49_INSPECTION_DRAFT=null;go('inspection/'+e.target.value)};
+  idq('phinput2').onchange=e=>addHivePhotos(h.id,e.target)
 }
+
 function vSaveInspection(id){
-  const s=v45s(),h=hive(s,id),d=V49_INSPECTION_DRAFT||{};if(!h)return;d.notes=idq('inotes')?.value||d.notes||h.notes;const date=new Date().toISOString().slice(0,10);
-  h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.varroa=Number(d.varroa)||0;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.strength||h.strength);
-  s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,strength:Number(d.strength)||0,brood:d.brood,honey:d.honey,pollen:d.pollen,queenCells:d.queenCells,varroa:Number(d.varroa)||0,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
-  save(s);V49_INSPECTION_DRAFT=null;toast('Inspection saved');go('hive/'+id)
+  const s=v45s(),h=hive(s,id),d=V49_INSPECTION_DRAFT||{};
+  if(!h)return;
+
+  d.notes=idq('inotes')?.value||d.notes||h.notes;
+  const date=new Date().toISOString().slice(0,10);
+
+  h.lastInspection=date;
+  h.notes=d.notes;
+  h.queen=d.queenStatus||h.queen;
+  h.eggs=String(d.eggs).toLowerCase()==='seen';
+  h.larvae=String(d.larvae).toLowerCase()==='seen';
+  h.queenCells=String(d.queenCells).toLowerCase().includes('present');
+  h.brood=d.brood||h.brood;
+  h.honey=d.honey||h.honey;
+  h.pollen=d.pollen||h.pollen;
+  h.varroa=Number(d.varroa)||0;
+  h.shb=String(d.pests).toLowerCase()!=='none';
+  h.disease=String(d.disease).toLowerCase()!=='none';
+  h.swarm=String(d.swarming).toLowerCase()!=='none';
+  h.superStatus=d.super||h.superStatus;
+  h.strength=String(d.strength||h.strength);
+
+  h.insp={
+    ...(h.insp||{}),
+    queenStatus:d.queenStatus,
+    eggs:d.eggs,
+    larvae:d.larvae,
+    queenCells:d.queenCells,
+    strength:Number(d.strength)||0,
+    brood:d.brood,
+    abnormalities:d.abnormalities,
+    populationFrames:Number(d.populationFrames)||0,
+    temperament:d.temperament,
+    honey:d.honey,
+    pollen:d.pollen,
+    feedingNeed:d.feedingNeed,
+    varroa:Number(d.varroa)||0,
+    varroaTestDate:date,
+    pests:d.pests,
+    disease:d.disease,
+    swarming:d.swarming,
+    superStatus:d.super
+  };
+
+  s.logs.inspections.push({
+    id:'i'+Date.now(),hiveId:id,date,
+    queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,
+    strength:Number(d.strength)||0,brood:d.brood,abnormalities:d.abnormalities,
+    populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,
+    honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,
+    varroa:Number(d.varroa)||0,pests:d.pests,disease:d.disease,swarming:d.swarming,
+    superStatus:d.super,treatment:d.treatment,voiceNotes:d.voiceNotes,
+    nextInspection:d.nextInspection,notes:d.notes
+  });
+
+  save(s);
+  V49_INSPECTION_DRAFT=null;
+  toast('Inspection saved');
+  go('hive/'+id)
 }
 
 function barsV49(monthly){const max=Math.max(1,...monthly);return `<section class="vc"><div class="vhead"><b>Monthly Harvest (${v45s().settings.units==='metric'?'kg':'lb'})</b></div><div class="bars">${monthly.map((n,i)=>`<div><i style="height:${Math.max(2,n/max*75)}px"></i><span>${'JFMAMJJASOND'[i]}</span></div>`).join('')}</div></section>`}
@@ -5576,7 +5710,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         id:'t'+Date.now(),
         hiveId,
         date,
-        type:overlay.querySelector('[name="v198TreatmentType"]').value
+        type:overlay.querySelector('[name="v198TreatmentType"]').value,
+        endDate:overlay.querySelector('[name="v210TreatmentEndDate"]')?.value||'',
+        followUp:overlay.querySelector('[name="v210TreatmentFollowUp"]')?.value||'',
+        withdrawal:overlay.querySelector('[name="v210TreatmentWithdrawal"]')?.value||'None'
       });
     }else{
       return;
@@ -5637,6 +5774,27 @@ body:has(.legal155) .vtop .iconbtn:first-child{
             <option>Formic Acid</option>
             <option>Apivar</option>
             <option>Other</option>
+          </select>
+        </label>
+
+        <label class="v198-field">
+          <span>End Date</span>
+          <input name="v210TreatmentEndDate" type="date">
+        </label>
+
+        <label class="v198-field">
+          <span>Follow-up</span>
+          <input name="v210TreatmentFollowUp" type="date">
+        </label>
+
+        <label class="v198-field">
+          <span>Withdrawal</span>
+          <select name="v210TreatmentWithdrawal">
+            <option>None</option>
+            <option>0 days</option>
+            <option>7 days</option>
+            <option>14 days</option>
+            <option>21 days</option>
           </select>
         </label>
 
@@ -7695,229 +7853,127 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 })();
 
 /* ==========================================================
-   V209 — QUEEN INSPECTION FIELD COMPLETION
-   BASE: V208 FULL
+   V210 — SIX CARD QUICK EDIT CONTROLS
    ========================================================== */
 (function(){
-  if(window.__V209_QUEEN_INSPECTION_COMPLETION__) return;
-  window.__V209_QUEEN_INSPECTION_COMPLETION__=true;
+  if(window.__V210_SIX_CARD_QUICK_CONTROLS__) return;
+  window.__V210_SIX_CARD_QUICK_CONTROLS__=true;
 
-  const V209_PREVIOUS_INSPECTION_PAGE = inspectionPage;
+  const V210_PREVIOUS_EDIT = editInspectionV49;
 
-  function v209EnsureDraftDefaults(){
-    if(!V49_INSPECTION_DRAFT) return;
-    if(typeof V49_INSPECTION_DRAFT.eggs==='undefined'){
-      V49_INSPECTION_DRAFT.eggs='Not Seen';
-    }
-    if(typeof V49_INSPECTION_DRAFT.larvae==='undefined'){
-      V49_INSPECTION_DRAFT.larvae='Not Seen';
-    }
-  }
-
-  inspectionPage=function(v,hiveId){
-    v209EnsureDraftDefaults();
-    const result=V209_PREVIOUS_INSPECTION_PAGE.apply(this,arguments);
-
-    try{
-      const root=idq('view');
-      if(!root) return result;
-
-      const rows=[...root.querySelectorAll('.irow')];
-      const queenStatusRow=rows.find(r=>/^Queen Status\b/i.test((r.textContent||'').trim()));
-      const colonyStrengthRow=rows.find(r=>/^Colony Strength\b/i.test((r.textContent||'').trim()));
-      const broodPatternRow=rows.find(r=>/^Brood Pattern\b/i.test((r.textContent||'').trim()));
-      const queenCellsRow=rows.find(r=>/^Queen Cells\b/i.test((r.textContent||'').trim()));
-
-      if(!queenStatusRow || !colonyStrengthRow || !broodPatternRow) return result;
-
-      if(!root.querySelector('.v209-eggs-row')){
-        const eggs=document.createElement('div');
-        eggs.className='irow v209-eggs-row';
-        eggs.setAttribute('onclick',"editInspectionV49('eggs')");
-        eggs.innerHTML=`<span>Eggs</span><b>${esc(V49_INSPECTION_DRAFT.eggs||'Not Seen')}</b><em>›</em>`;
-        queenStatusRow.insertAdjacentElement('afterend',eggs);
-      }
-
-      if(!root.querySelector('.v209-larvae-row')){
-        const larvae=document.createElement('div');
-        larvae.className='irow v209-larvae-row';
-        larvae.setAttribute('onclick',"editInspectionV49('larvae')");
-        larvae.innerHTML=`<span>Larvae</span><b>${esc(V49_INSPECTION_DRAFT.larvae||'Not Seen')}</b><em>›</em>`;
-        root.querySelector('.v209-eggs-row').insertAdjacentElement('afterend',larvae);
-      }
-
-      if(queenCellsRow){
-        queenCellsRow.classList.add('v209-queen-cells-moved');
-        root.querySelector('.v209-larvae-row').insertAdjacentElement('afterend',queenCellsRow);
-      }
-
-      if(queenCellsRow){
-        queenCellsRow.insertAdjacentElement('afterend',colonyStrengthRow);
-      }
-      colonyStrengthRow.insertAdjacentElement('afterend',broodPatternRow);
-
-    }catch(err){
-      console.error('V209 Inspection Queen field layout failed',err);
-    }
-
-    return result;
+  const ENUMS={
+    eggs:['Seen','Not Seen'],
+    larvae:['Seen','Not Seen'],
+    abnormalities:['None','Spotty brood','Drone brood','Other'],
+    temperament:['Calm','Normal','Defensive','Aggressive'],
+    feedingNeed:['No','Yes']
+  };
+  const LABELS={
+    eggs:'Eggs', larvae:'Larvae', abnormalities:'Abnormalities',
+    temperament:'Temperament', feedingNeed:'Feeding Need'
   };
 
-  const V209_PREVIOUS_EDIT_INSPECTION = editInspectionV49;
-
-  function v209Close(){
-    document.querySelector('.v209-queen-select-overlay')?.remove();
+  function closeV210(){
+    document.querySelector('.v210-edit-overlay')?.remove();
   }
+  function refreshV210(){
+    const hiveId=V49_INSPECTION_DRAFT?.hiveId;
+    if(!hiveId)return;
+    inspectionPage(idq('view'),hiveId);
+    chrome('inspection');
+  }
+  function enumSheet(field){
+    const options=ENUMS[field];
+    if(!options||!V49_INSPECTION_DRAFT)return;
+    const current=String(V49_INSPECTION_DRAFT[field]||options[0]);
+    closeV210();
 
-  function v209Open(field,label){
-    if(!V49_INSPECTION_DRAFT) return;
-    const options=['Seen','Not Seen'];
-    const current=String(V49_INSPECTION_DRAFT[field]||'Not Seen');
+    const o=document.createElement('div');
+    o.className='v210-edit-overlay';
+    o.innerHTML=`<section class="v210-edit-sheet">
+      <div class="v210-edit-head"><b>${LABELS[field]}</b><button type="button">×</button></div>
+      <div class="v210-edit-options">${options.map(v=>`<button type="button" data-value="${esc(v)}" class="${current===v?'is-selected':''}"><span>${esc(v)}</span><span>${current===v?'✓':''}</span></button>`).join('')}</div>
+    </section>`;
+    document.body.appendChild(o);
 
-    v209Close();
-
-    const overlay=document.createElement('div');
-    overlay.className='v209-queen-select-overlay';
-    overlay.innerHTML=`
-      <section class="v209-queen-select-sheet" role="dialog" aria-modal="true" aria-label="${label}">
-        <div class="v209-queen-select-head">
-          <b>${label}</b>
-          <button type="button" class="v209-close" aria-label="Close">×</button>
-        </div>
-        <div class="v209-options">
-          ${options.map(value=>`
-            <button type="button"
-                    class="v209-option ${current===value?'is-selected':''}"
-                    data-value="${value}">
-              <span>${value}</span>
-              <span>${current===value?'✓':''}</span>
-            </button>
-          `).join('')}
-        </div>
-      </section>
-    `;
-
-    document.body.appendChild(overlay);
-    overlay.querySelector('.v209-close').onclick=v209Close;
-    overlay.addEventListener('click',e=>{ if(e.target===overlay) v209Close(); });
-
-    overlay.querySelectorAll('.v209-option').forEach(btn=>{
-      btn.onclick=()=>{
-        V49_INSPECTION_DRAFT[field]=btn.dataset.value;
-        const hiveId=V49_INSPECTION_DRAFT.hiveId;
-        v209Close();
-        inspectionPage(idq('view'),hiveId);
-        chrome('inspection');
-        try{
-          if(typeof persistInspectionDraftV50==='function') persistInspectionDraftV50();
-        }catch(_){}
+    o.querySelector('.v210-edit-head button').onclick=closeV210;
+    o.addEventListener('click',e=>{if(e.target===o)closeV210()});
+    o.querySelectorAll('[data-value]').forEach(b=>{
+      b.onclick=()=>{
+        V49_INSPECTION_DRAFT[field]=b.dataset.value;
+        closeV210();
+        refreshV210();
       };
     });
   }
 
+  function populationSheet(){
+    if(!V49_INSPECTION_DRAFT)return;
+    closeV210();
+    const current=Math.max(1,Math.min(20,Number(V49_INSPECTION_DRAFT.populationFrames)||8));
+
+    const o=document.createElement('div');
+    o.className='v210-edit-overlay';
+    o.innerHTML=`<section class="v210-edit-sheet">
+      <div class="v210-edit-head"><b>Population</b><button type="button">×</button></div>
+      <div class="v210-number">
+        <button type="button" data-step="-1">−</button>
+        <input type="number" min="1" max="20" step="1" value="${current}">
+        <button type="button" data-step="1">＋</button>
+      </div>
+      <div class="v210-number-presets">${[4,6,8,10,12].map(n=>`<button type="button" data-preset="${n}">${n}</button>`).join('')}</div>
+      <button type="button" class="v210-use">Use Frames</button>
+    </section>`;
+    document.body.appendChild(o);
+    const input=o.querySelector('input');
+    const clamp=()=>Math.max(1,Math.min(20,Math.round(Number(input.value)||1)));
+
+    o.querySelector('.v210-edit-head button').onclick=closeV210;
+    o.addEventListener('click',e=>{if(e.target===o)closeV210()});
+    o.querySelectorAll('[data-step]').forEach(b=>{
+      b.onclick=()=>{
+        input.value=String(Math.max(1,clamp()+Number(b.dataset.step)));
+      };
+    });
+    o.querySelectorAll('[data-preset]').forEach(b=>{
+      b.onclick=()=>{ input.value=b.dataset.preset; };
+    });
+    o.querySelector('.v210-use').onclick=()=>{
+      V49_INSPECTION_DRAFT.populationFrames=clamp();
+      closeV210();
+      refreshV210();
+    };
+  }
+
   editInspectionV49=function(field,type='text'){
-    if(field==='eggs'){
-      v209Open('eggs','Eggs');
+    if(Object.prototype.hasOwnProperty.call(ENUMS,field)){
+      enumSheet(field);
       return;
     }
-    if(field==='larvae'){
-      v209Open('larvae','Larvae');
+    if(field==='populationFrames'){
+      populationSheet();
       return;
     }
-    return V209_PREVIOUS_EDIT_INSPECTION.apply(this,arguments);
-  };
-
-  const V209_PREVIOUS_SAVE_INSPECTION = vSaveInspection;
-
-  vSaveInspection=function(id){
-    const hiveId=String(id||V49_INSPECTION_DRAFT?.hiveId||'');
-    const eggs=String(V49_INSPECTION_DRAFT?.eggs||'Not Seen');
-    const larvae=String(V49_INSPECTION_DRAFT?.larvae||'Not Seen');
-
-    const result=V209_PREVIOUS_SAVE_INSPECTION.apply(this,arguments);
-
-    try{
-      const s=state();
-      const h=hive(s,hiveId);
-      if(h){
-        h.insp=h.insp||{};
-        h.insp.eggs=eggs;
-        h.insp.larvae=larvae;
-        save(s);
-      }
-    }catch(err){
-      console.error('V209 Queen inspection persistence failed',err);
-    }
-
-    return result;
+    return V210_PREVIOUS_EDIT.apply(this,arguments);
   };
 
   const style=document.createElement('style');
-  style.id='v209-queen-inspection-style';
+  style.id='v210-six-card-edit-style';
   style.textContent=`
-    .v209-queen-select-overlay{
-      position:fixed!important;
-      inset:0!important;
-      z-index:13800!important;
-      display:flex!important;
-      align-items:flex-end!important;
-      justify-content:center!important;
-      background:rgba(47,59,51,.34)!important;
-    }
-    .v209-queen-select-sheet{
-      width:min(393px,100vw)!important;
-      padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;
-      border-radius:18px 18px 0 0!important;
-      background:#FFFEFB!important;
-      box-shadow:0 -10px 30px rgba(47,59,51,.16)!important;
-      box-sizing:border-box!important;
-    }
-    .v209-queen-select-head{
-      display:flex!important;
-      align-items:center!important;
-      justify-content:space-between!important;
-      min-height:58px!important;
-      border-bottom:1px solid #E6E3DA!important;
-    }
-    .v209-queen-select-head b{
-      color:#2F3B33!important;
-      font-size:17px!important;
-      font-weight:800!important;
-    }
-    .v209-close{
-      width:42px!important;
-      height:42px!important;
-      border:0!important;
-      background:transparent!important;
-      color:#5E7350!important;
-      font-size:22px!important;
-    }
-    .v209-options{
-      display:grid!important;
-      gap:10px!important;
-      padding-top:14px!important;
-    }
-    .v209-option{
-      display:flex!important;
-      align-items:center!important;
-      justify-content:space-between!important;
-      width:100%!important;
-      min-height:54px!important;
-      padding:0 16px!important;
-      border:1px solid #DDD8CF!important;
-      border-radius:12px!important;
-      background:#fff!important;
-      color:#2F3B33!important;
-      font:inherit!important;
-      font-size:14px!important;
-      font-weight:700!important;
-      cursor:pointer!important;
-    }
-    .v209-option.is-selected{
-      border-color:#5E7350!important;
-      background:#F2F5EF!important;
-      color:#36512B!important;
-    }
+    .v210-edit-overlay{position:fixed!important;inset:0!important;z-index:13900!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;background:rgba(47,59,51,.34)!important}
+    .v210-edit-sheet{width:min(393px,100vw)!important;padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;border-radius:18px 18px 0 0!important;background:#FFFEFB!important;box-shadow:0 -10px 30px rgba(47,59,51,.16)!important;box-sizing:border-box!important}
+    .v210-edit-head{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:58px!important;border-bottom:1px solid #E6E3DA!important}
+    .v210-edit-head b{color:#2F3B33!important;font-size:17px!important;font-weight:800!important}
+    .v210-edit-head button{width:42px!important;height:42px!important;border:0!important;background:transparent!important;color:#5E7350!important;font-size:22px!important}
+    .v210-edit-options{display:grid!important;gap:10px!important;padding-top:14px!important}
+    .v210-edit-options button{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:54px!important;padding:0 16px!important;border:1px solid #DDD8CF!important;border-radius:12px!important;background:#fff!important;color:#2F3B33!important;font:inherit!important;font-weight:700!important}
+    .v210-edit-options button.is-selected{border-color:#5E7350!important;background:#F2F5EF!important;color:#36512B!important}
+    .v210-number{display:grid!important;grid-template-columns:58px 1fr 58px!important;gap:10px!important;padding-top:18px!important}
+    .v210-number button{height:58px!important;border:1px solid #DDD8CF!important;border-radius:14px!important;background:#F7F5EF!important;color:#5E7350!important;font-size:24px!important;font-weight:800!important}
+    .v210-number input{width:100%!important;height:58px!important;border:1px solid #5E7350!important;border-radius:14px!important;text-align:center!important;font-size:22px!important;font-weight:800!important;box-sizing:border-box!important}
+    .v210-number-presets{display:grid!important;grid-template-columns:repeat(5,1fr)!important;gap:7px!important;padding-top:12px!important}
+    .v210-number-presets button{min-height:38px!important;border:1px solid #DDD8CF!important;border-radius:9px!important;background:#fff!important;color:#5E7350!important;font-weight:800!important}
+    .v210-use{width:100%!important;min-height:48px!important;margin-top:16px!important;border:0!important;border-radius:12px!important;background:#5E7350!important;color:#fff!important;font:inherit!important;font-weight:800!important}
   `;
   document.head.appendChild(style);
 })();

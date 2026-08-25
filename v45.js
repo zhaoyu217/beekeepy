@@ -4988,6 +4988,16 @@ body:has(.legal155) .vtop .iconbtn:first-child{
           gap:9px;
           margin-top:16px;
         }
+        .v194-voice-delete{
+          width:100%;
+          min-height:42px;
+          margin-top:14px;
+          border:1px solid #E5C7C1;
+          border-radius:11px;
+          background:#FFF7F5;
+          color:#B53A30;
+          font-weight:800;
+        }
         .v193-voice-cancel{
           border:1px solid #DED7CC;
           background:#fff;
@@ -5024,6 +5034,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
           <button class="v193-voice-stop" type="button" disabled>■ Stop</button>
         </div>
 
+        ${v193FinalTranscript ? `
+        <button class="v194-voice-delete" type="button">Delete Voice Note</button>
+        ` : ''}
+
         <div class="v193-voice-actions">
           <button class="v193-voice-cancel" type="button">Cancel</button>
           <button class="v193-voice-use" type="button">Use Voice Note</button>
@@ -5042,6 +5056,27 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     wrap.querySelector('.v193-voice-cancel').onclick=v193CloseVoiceModal;
     wrap.querySelector('.v193-voice-start').onclick=v193StartRecognition;
     wrap.querySelector('.v193-voice-stop').onclick=v193StopRecognition;
+
+    const deleteBtn=wrap.querySelector('.v194-voice-delete');
+    if(deleteBtn){
+      deleteBtn.onclick=()=>{
+        try{
+          if(v193Recognition && v193Listening) v193Recognition.stop();
+        }catch(_){}
+
+        V49_INSPECTION_DRAFT.voiceNotes='';
+        v193FinalTranscript='';
+        v193CloseVoiceModal();
+
+        const hiveId=V49_INSPECTION_DRAFT?.hiveId;
+        if(hiveId){
+          inspectionPage(idq('view'),hiveId);
+          chrome('inspection');
+        }
+
+        toast('Voice note deleted');
+      };
+    }
 
     wrap.querySelector('.v193-voice-use').onclick=()=>{
       try{

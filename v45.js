@@ -6982,3 +6982,123 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V204 — NEXT INSPECTION REMINDER SYNC FIX
+   BASE: V203 FULL
+
+   Scope:
+   Complete the existing Next Inspection data chain without changing
+   V203 date-picker UI, Inspection structure, Header/Bottom Nav,
+   Timeline, Hive Actions, Feeding or Treatment.
+
+   Canonical source:
+     current hive.nextInspection
+
+   Synchronization:
+     Inspection draft -> existing Save Inspection -> hive.nextInspection
+     Actions/reminders derive from hive.nextInspection
+     Clear removes the canonical future date.
+   ========================================================== */
+(function(){
+  if(window.__V204_NEXT_INSPECTION_REMINDER_SYNC__) return;
+  window.__V204_NEXT_INSPECTION_REMINDER_SYNC__=true;
+
+  function v204State(){
+    try{
+      if(typeof getState==='function') return getState();
+      if(typeof load==='function') return load();
+      if(typeof state!=='undefined') return state;
+      if(typeof s!=='undefined') return s;
+    }catch(_){}
+    return null;
+  }
+
+  function v204HiveId(){
+    return V49_INSPECTION_DRAFT?.hiveId || String(location.hash||'').split('/')[1] || '';
+  }
+
+  function v204FindHive(st,hiveId){
+    if(!st || !hiveId) return null;
+    const pools=[
+      st.hives,
+      st.data?.hives,
+      st.apiary?.hives
+    ];
+    for(const pool of pools){
+      if(Array.isArray(pool)){
+        const h=pool.find(x=>String(x?.id)===String(hiveId));
+        if(h) return h;
+      }
+    }
+    return null;
+  }
+
+  function v204PersistState(st){
+    try{
+      if(typeof saveState==='function'){ saveState(st); return true; }
+      if(typeof save==='function'){ save(st); return true; }
+      if(typeof setState==='function'){ setState(st); return true; }
+    }catch(e){
+      console.error('V204 state persist failed',e);
+    }
+    return false;
+  }
+
+  function v204SyncCanonicalDate(){
+    const st=v204State();
+    const hiveId=v204HiveId();
+    const hive=v204FindHive(st,hiveId);
+    if(!hive) return false;
+
+    const next=String(V49_INSPECTION_DRAFT?.nextInspection||'').trim();
+    hive.nextInspection=next;
+
+    /* Keep one canonical field on the hive. Do not create duplicate
+       persisted Action/Notification records here. */
+    v204PersistState(st);
+    return true;
+  }
+
+  /* Hook the existing Save button at the DOM boundary, before the current
+     Save handler consumes/clears the Inspection draft. This preserves the
+     current save function and all of its existing record logic. */
+  document.addEventListener('click',function(e){
+    const root=String(location.hash||'').replace(/^#/,'').split('/')[0];
+    if(root!=='inspection') return;
+
+    const el=e.target.closest('button,[role="button"],a');
+    if(!el) return;
+    const txt=(el.textContent||'').replace(/\s+/g,' ').trim().toLowerCase();
+
+    if(txt==='save' || txt==='save inspection'){
+      v204SyncCanonicalDate();
+    }
+  },true);
+
+  /* Public read helper for existing/next UI renderers. It derives reminder
+     status from the hive field instead of maintaining a second copy. */
+  window.V204_NEXT_INSPECTION = {
+    get(hiveId){
+      const st=v204State();
+      const hive=v204FindHive(st,hiveId);
+      return String(hive?.nextInspection||'').trim();
+    },
+    status(hiveId){
+      const value=this.get(hiveId);
+      if(!value) return {date:'',days:null,due:false,upcoming:false};
+      const now=new Date(); now.setHours(0,0,0,0);
+      const d=new Date(value+'T00:00:00');
+      const days=Math.ceil((d-now)/86400000);
+      return {date:value,days,due:days<=0,upcoming:days>=0 && days<=3};
+    }
+  };
+
+  /* When V203 Clear is used, mirror the cleared draft into the canonical
+     hive immediately. We do not alter V203's picker or its handlers. */
+  document.addEventListener('click',function(e){
+    const btn=e.target.closest('.v203-clear');
+    if(!btn) return;
+    setTimeout(v204SyncCanonicalDate,0);
+  },true);
+})();
+

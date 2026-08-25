@@ -1796,7 +1796,7 @@ function hiveDetail(r,id){
           ...(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Treatment'})),
           ...(Array.isArray(s.logs?.harvests)?s.logs.harvests:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Harvest'}))
         ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))));
-  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location||'Location not set')}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')]])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',`${Number(h.insp?.varroa??h.varroa??0)}/100`],['Risk',Number(h.insp?.varroa??h.varroa??0)>=3?'High':Number(h.insp?.varroa??h.varroa??0)>=2?'Medium':'Low'],['Test date',fmtDate(h.insp?.varroaTestDate||h.lastInspection)]])}${hg('Treatment',[['History',lastTx?.type||'None'],['Active',lastTx&&!lastTx.endDate?'Active':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
+  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location||'Location not set')}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')]])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.broodStrength??h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.colonySize??h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',`${Number(h.insp?.varroa??h.varroa??0)}/100`],['Risk',Number(h.insp?.varroa??h.varroa??0)>=3?'High':Number(h.insp?.varroa??h.varroa??0)>=2?'Medium':'Low'],['Test date',fmtDate(h.insp?.varroaTestDate||h.lastInspection)]])}${hg('Treatment',[['Last treatment',lastTx?.type||'None'],['Status',lastTx&&!lastTx.endDate?'Active':lastTx?'Completed':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
   <div class="photo-card-head-actions">
     <button class="photo-card-viewall" type="button" onclick="openHivePhotoGallery('${h.id}')">View All</button>
   </div>
@@ -7978,3 +7978,151 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+
+/* ==========================================================
+   V211 — MODULAR SIX-CARD INSPECTION EDIT
+   Scope: Inspection editor + six-card data mapping only.
+   ========================================================== */
+(function(){
+  if(window.__V211_MODULAR_INSPECTION__) return;
+  window.__V211_MODULAR_INSPECTION__=true;
+
+  function v211Risk(n){ n=Number(n)||0; return n>=3?'High':n>=2?'Medium':'Low'; }
+  function v211Today(){ return new Date().toISOString().slice(0,10); }
+  function v211Close(){ document.querySelector('.v211-module-overlay')?.remove(); }
+  function v211Refresh(){ const id=V49_INSPECTION_DRAFT?.hiveId; if(id){ inspectionPage(idq('view'),id); chrome('inspection'); } }
+  function v211Row(label,value,field,type='text'){
+    return `<button type="button" class="v211-edit-row" onclick="v211EditField('${field}','${type}')"><span>${label}</span><b>${esc(value??'—')}</b><em>›</em></button>`;
+  }
+  function v211Select(label,field,value,options){
+    return `<label class="v211-field"><span>${label}</span><select data-field="${field}">${options.map(x=>`<option ${String(x)===String(value)?'selected':''}>${esc(x)}</option>`).join('')}</select></label>`;
+  }
+  function v211Input(label,field,value,type='text',attrs=''){
+    return `<label class="v211-field"><span>${label}</span><input data-field="${field}" type="${type}" value="${esc(value??'')}" ${attrs}></label>`;
+  }
+
+  window.v211EditField=function(field,type='text'){ editInspectionV49(field,type); };
+  window.v211OpenModule=function(name){
+    const d=V49_INSPECTION_DRAFT;if(!d)return;
+    v211Close();
+    let title='',body='';
+    if(name==='queen'){
+      title='Queen Inspection';
+      body=v211Select('Queen Status','queenStatus',d.queenStatus,['Seen','Not Seen','Not confirmed'])+
+           v211Select('Eggs','eggs',d.eggs,['Seen','Not Seen'])+
+           v211Select('Larvae','larvae',d.larvae,['Seen','Not Seen'])+
+           v211Select('Queen Cells','queenCells',d.queenCells,['None','Present']);
+    }else if(name==='brood'){
+      title='Brood Inspection';
+      body=v211Select('Brood Pattern','brood',d.brood,['Excellent','Good','Fair','Poor'])+
+           v211Input('Brood Strength','broodStrength',d.broodStrength,'number','min="0" max="10" step="1"')+
+           v211Select('Abnormalities','abnormalities',d.abnormalities,['None','Spotty brood','Drone brood','Other']);
+    }else if(name==='colony'){
+      title='Colony Inspection';
+      body=v211Input('Colony Size','colonySize',d.colonySize,'number','min="0" max="10" step="1"')+
+           v211Input('Population (frames)','populationFrames',d.populationFrames,'number','min="1" max="20" step="1"')+
+           v211Select('Temperament','temperament',d.temperament,['Calm','Normal','Defensive','Aggressive']);
+    }else if(name==='stores'){
+      title='Stores Inspection';
+      body=v211Select('Honey Stores','honey',d.honey,['High','Medium','Low'])+
+           v211Select('Pollen Stores','pollen',d.pollen,['High','Medium','Low'])+
+           v211Select('Feeding Need','feedingNeed',d.feedingNeed,['No','Yes']);
+    }else if(name==='varroa'){
+      title='Varroa Inspection';
+      body=v211Input('Varroa Count / 100','varroa',d.varroa,'number','min="0" max="100" step="1"')+
+           v211Input('Test Date','varroaTestDate',d.varroaTestDate||v211Today(),'date')+
+           `<div class="v211-readonly"><span>Risk</span><b id="v211RiskValue">${v211Risk(d.varroa)}</b><small>Calculated automatically from count</small></div>`;
+    }else if(name==='treatment'){
+      title='Treatment Inspection';
+      body=v211Select('Treatment','treatment',d.treatment||'None',['None','Oxalic Acid','Formic Acid','Apivar','Other'])+
+           v211Select('Status','treatmentStatus',d.treatmentStatus||'None',['None','Active','Completed'])+
+           v211Input('Follow-up','treatmentFollowUp',d.treatmentFollowUp||'','date')+
+           v211Select('Withdrawal','treatmentWithdrawal',d.treatmentWithdrawal||'None',['None','0 days','7 days','14 days','21 days']);
+    }else return;
+
+    const o=document.createElement('div');o.className='v211-module-overlay';
+    o.innerHTML=`<section class="v211-module-sheet" role="dialog" aria-modal="true"><div class="v211-module-head"><button type="button" data-close>‹</button><b>${title}</b><button type="button" data-done>Done</button></div><div class="v211-module-body">${body}</div></section>`;
+    document.body.appendChild(o);
+    o.querySelector('[data-close]').onclick=v211Close;
+    o.addEventListener('click',e=>{if(e.target===o)v211Close()});
+    const riskInput=o.querySelector('[data-field="varroa"]');
+    if(riskInput)riskInput.oninput=()=>{const x=o.querySelector('#v211RiskValue');if(x)x.textContent=v211Risk(riskInput.value)};
+    o.querySelector('[data-done]').onclick=()=>{
+      o.querySelectorAll('[data-field]').forEach(el=>{
+        const f=el.dataset.field;
+        let v=el.value;
+        if(['broodStrength','colonySize','populationFrames','varroa'].includes(f))v=Number(v)||0;
+        d[f]=v;
+      });
+      v211Close();v211Refresh();
+    };
+  };
+
+  inspectionPage=function(r,id){
+    const s=v45s(),h=vh(id);if(!h)return;
+    const lastTx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+    if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id){
+      const hi=h.insp||{};
+      V49_INSPECTION_DRAFT={
+        hiveId:h.id,queenStatus:hi.queenStatus||h.queen||'Seen',eggs:hi.eggs||(h.eggs?'Seen':'Not Seen'),larvae:hi.larvae||(h.larvae?'Seen':'Not Seen'),queenCells:hi.queenCells||(h.queenCells?'Present':'None'),
+        brood:hi.brood||h.brood||'Good',broodStrength:Number(hi.broodStrength??hi.strength??8),abnormalities:hi.abnormalities||'None',
+        colonySize:Number(hi.colonySize??hi.strength??8),populationFrames:Number(hi.populationFrames||8),temperament:hi.temperament||'Calm',
+        honey:hi.honey||h.honey||'Medium',pollen:hi.pollen||h.pollen||'Medium',feedingNeed:hi.feedingNeed||(h.honey==='Low'?'Yes':'No'),
+        varroa:Number(hi.varroa??h.varroa??0),varroaTestDate:hi.varroaTestDate||h.lastInspection||v211Today(),
+        treatment:lastTx?.type||'None',treatmentStatus:lastTx?(lastTx.endDate?'Completed':'Active'):'None',treatmentFollowUp:lastTx?.followUp||'',treatmentWithdrawal:lastTx?.withdrawal||'None',
+        pests:hi.pests||(h.shb||h.waxMoth?'Present':'None'),disease:hi.disease||(h.disease?'Present':'None'),swarming:hi.swarming||(h.swarm?'Signs':'None'),super:hi.superStatus||h.superStatus||'Installed',
+        voiceNotes:'',nextInspection:h.nextInspection||'',notes:h.notes||''
+      };
+    }
+    const d=V49_INSPECTION_DRAFT;
+    const card=(key,title,icon,rows)=>`<button type="button" class="v211-card" onclick="v211OpenModule('${key}')"><div class="v211-card-head"><b>${title}</b><i>${icon}</i></div>${rows.map(x=>`<div class="v211-card-row"><span>${x[0]}</span><strong>${esc(x[1])}</strong></div>`).join('')}</button>`;
+    r.innerHTML=`<div class="vs v86-inspection v211-inspection">
+      <section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section>
+      <div class="v211-grid">
+        ${card('queen','Queen','♛',[['Queen seen',d.queenStatus],['Eggs',d.eggs],['Larvae',d.larvae],['Queen cells',d.queenCells]])}
+        ${card('brood','Brood','✿',[['Pattern',d.brood],['Strength',String(d.broodStrength)],['Abnormalities',d.abnormalities]])}
+        ${card('colony','Colony','♙',[['Size',String(d.colonySize)],['Population',`${d.populationFrames} frames`],['Temperament',d.temperament]])}
+        ${card('stores','Food Stores','◉',[['Honey',d.honey],['Pollen',d.pollen],['Feeding need',d.feedingNeed]])}
+        ${card('varroa','Varroa','☼',[['Last count',`${d.varroa}/100`],['Risk',v211Risk(d.varroa)],['Test date',fmtDate(d.varroaTestDate)]])}
+        ${card('treatment','Treatment','＋',[['Last treatment',d.treatment],['Status',d.treatmentStatus],['Follow-up',d.treatmentFollowUp?fmtDate(d.treatmentFollowUp):'—'],['Withdrawal',d.treatmentWithdrawal||'None']])}
+      </div>
+      <section class="iform v211-secondary"><div class="sectionlabel">ADDITIONAL CHECKS</div>${v211Row('Pests',d.pests,'pests')}${v211Row('Disease',d.disease,'disease')}${v211Row('Swarming',d.swarming,'swarming')}${v211Row('Super',d.super,'super')}</section>
+      <section class="iform v211-secondary"><div class="sectionlabel">FIELD CAPTURE</div><div class="irow capture-row photo-row" onclick="idq('phinput2').click()"><span>Photos</span><b>Add photos</b><em>›</em></div><input id="phinput2" hidden type="file" accept="image/*" multiple><div class="irow capture-row voice-row" onclick="openVoiceNotesV193()"><span>Voice Notes</span><b>${d.voiceNotes?'Added':'Add voice note'}</b><em>›</em></div></section>
+      <section class="iform v211-secondary"><div class="sectionlabel">FOLLOW-UP</div>${v211Row('Next Inspection',d.nextInspection||'Set date','nextInspection')}</section>
+      <label class="notes v211-notes"><span>Notes</span><textarea id="inotes">${esc(d.notes)}</textarea></label>
+      <div class="dual"><button onclick="V49_INSPECTION_DRAFT.notes=idq('inotes').value;toast('Draft saved')">Save Draft</button><button onclick="vSaveInspection('${h.id}')">Save Inspection</button></div>
+    </div>`;
+    idq('ihsel').onchange=e=>{V49_INSPECTION_DRAFT=null;go('inspection/'+e.target.value)};
+    idq('phinput2').onchange=e=>addHivePhotos(h.id,e.target);
+  };
+
+  const v211PreviousSave=vSaveInspection;
+  vSaveInspection=function(id){
+    const s=v45s(),h=hive(s,id),d=V49_INSPECTION_DRAFT||{};if(!h)return;
+    d.notes=idq('inotes')?.value||d.notes||h.notes;
+    const date=v211Today();
+    h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=Number(d.varroa)||0;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;
+    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super};
+    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
+    if(d.treatment&&d.treatment!=='None'){
+      const tx={id:'t'+Date.now(),hiveId:id,date,type:d.treatment,endDate:d.treatmentStatus==='Completed'?date:'',followUp:d.treatmentFollowUp||'',withdrawal:d.treatmentWithdrawal||'None'};
+      s.logs.treatments.push(tx);
+    }
+    save(s);V49_INSPECTION_DRAFT=null;toast('Inspection saved');go('hive/'+id);
+  };
+
+  const style=document.createElement('style');style.id='v211-modular-inspection-style';style.textContent=`
+    .v211-grid{display:grid!important;grid-template-columns:1fr 1fr!important;gap:12px!important;margin:12px 0!important}
+    .v211-card{min-height:142px!important;padding:14px!important;border:1px solid #E2DED5!important;border-radius:16px!important;background:#FFFEFB!important;box-shadow:0 3px 10px rgba(47,59,51,.05)!important;text-align:left!important;color:#2F3B33!important}
+    .v211-card-head{display:flex!important;justify-content:space-between!important;align-items:center!important;margin-bottom:8px!important}.v211-card-head b{font-size:16px!important}.v211-card-head i{font-style:normal!important;color:#C5921A!important;font-size:18px!important}
+    .v211-card-row{display:flex!important;justify-content:space-between!important;gap:8px!important;margin:7px 0!important;font-size:12px!important}.v211-card-row span{color:#667067!important}.v211-card-row strong{color:#49643F!important;text-align:right!important;font-size:12px!important}
+    .v211-secondary{margin-top:12px!important;border-radius:16px!important;overflow:hidden!important}.v211-secondary .sectionlabel{padding:11px 12px 6px!important;font-size:10px!important;font-weight:800!important;color:#667067!important}
+    .v211-notes{display:block!important;margin:12px 0!important;padding:12px!important;border:1px solid #E2DED5!important;border-radius:16px!important;background:#FFFEFB!important}.v211-notes textarea{width:100%!important;min-height:88px!important;margin-top:8px!important;box-sizing:border-box!important}
+    .v211-module-overlay{position:fixed!important;inset:0!important;z-index:15000!important;display:flex!important;align-items:flex-end!important;justify-content:center!important;background:rgba(47,59,51,.34)!important}
+    .v211-module-sheet{width:min(393px,100vw)!important;max-height:88vh!important;overflow:auto!important;background:#F7F5EF!important;border-radius:20px 20px 0 0!important;padding-bottom:calc(18px + env(safe-area-inset-bottom,0px))!important;box-shadow:0 -12px 34px rgba(47,59,51,.18)!important}
+    .v211-module-head{position:sticky!important;top:0!important;z-index:2!important;display:grid!important;grid-template-columns:48px 1fr 60px!important;align-items:center!important;min-height:58px!important;padding:0 10px!important;background:#FFFEFB!important;border-bottom:1px solid #E4E0D7!important}.v211-module-head b{text-align:center!important;font-size:16px!important}.v211-module-head button{border:0!important;background:transparent!important;color:#5E7350!important;font-weight:800!important;font-size:15px!important}.v211-module-head button:first-child{font-size:25px!important;text-align:left!important}
+    .v211-module-body{display:grid!important;gap:12px!important;padding:16px!important}.v211-field{display:grid!important;gap:7px!important;padding:12px!important;border:1px solid #E2DED5!important;border-radius:14px!important;background:#FFFEFB!important}.v211-field span,.v211-readonly span{font-size:12px!important;color:#667067!important}.v211-field input,.v211-field select{width:100%!important;min-height:42px!important;border:1px solid #DDD8CF!important;border-radius:10px!important;background:#fff!important;padding:0 10px!important;color:#2F3B33!important;font:inherit!important;box-sizing:border-box!important}.v211-readonly{display:grid!important;grid-template-columns:1fr auto!important;gap:5px 10px!important;padding:14px!important;border:1px solid #E2DED5!important;border-radius:14px!important;background:#FFFEFB!important}.v211-readonly b{color:#49643F!important}.v211-readonly small{grid-column:1/-1!important;color:#7A817B!important}
+    .v211-edit-row{width:100%!important;display:grid!important;grid-template-columns:1fr auto 18px!important;align-items:center!important;min-height:52px!important;padding:0 12px!important;border:0!important;border-top:1px solid #ECE8DF!important;background:#FFFEFB!important;text-align:left!important}.v211-edit-row b{color:#49643F!important}.v211-edit-row em{font-style:normal!important;color:#9A9F98!important;text-align:right!important}
+    @media(max-width:350px){.v211-grid{gap:8px!important}.v211-card{padding:11px!important}.v211-card-row{font-size:11px!important}.v211-card-row strong{font-size:11px!important}}
+  `;document.head.appendChild(style);
+})();

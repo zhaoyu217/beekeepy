@@ -7311,3 +7311,159 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V206 — NEXT INSPECTION ACTIONS OWNERSHIP FIX
+   BASE: V205 FULL
+
+   Root causes fixed:
+   1) V204's helper did not reliably use the real state() ownership.
+   2) V205 tried to inject DOM after render instead of extending the
+      actual Actions data renderer.
+
+   Scope:
+   - Persist hive.nextInspection through the real state()/save() path.
+   - Extend the actual v53ActionRows() output with a derived Inspection
+     row carrying the real date.
+   - No persisted Action record is created or modified.
+   - Existing Actions page markup/visual structure stays unchanged.
+   ========================================================== */
+(function(){
+  if(window.__V206_NEXT_INSPECTION_ACTIONS_OWNERSHIP__) return;
+  window.__V206_NEXT_INSPECTION_ACTIONS_OWNERSHIP__=true;
+
+  /* ---------- 1. Persist canonical date through actual save ownership ---------- */
+  const V206_PREVIOUS_SAVE_INSPECTION = window.vSaveInspection;
+
+  window.vSaveInspection=function(id){
+    const nextInspection=String(window.V49_INSPECTION_DRAFT?.nextInspection||'').trim();
+    const hiveId=String(id||window.V49_INSPECTION_DRAFT?.hiveId||'');
+
+    /* Run the exact existing Inspection save first. */
+    const result=V206_PREVIOUS_SAVE_INSPECTION.apply(this,arguments);
+
+    /* Then persist only the canonical hive.nextInspection field via
+       the real state() / save() functions from app.js. */
+    try{
+      const s=state();
+      const h=hive(s,hiveId);
+      if(h){
+        h.nextInspection=nextInspection;
+        save(s);
+      }
+    }catch(err){
+      console.error('V206 nextInspection persistence failed',err);
+    }
+
+    return result;
+  };
+
+  /* V203 Clear should also clear the canonical Hive field immediately. */
+  document.addEventListener('click',function(e){
+    const clear=e.target.closest?.('.v203-clear');
+    if(!clear) return;
+
+    const hiveId=String(window.V49_INSPECTION_DRAFT?.hiveId||'');
+    setTimeout(()=>{
+      try{
+        const s=state();
+        const h=hive(s,hiveId);
+        if(h){
+          h.nextInspection='';
+          save(s);
+        }
+      }catch(err){
+        console.error('V206 nextInspection clear failed',err);
+      }
+    },0);
+  },true);
+
+  /* ---------- 2. Extend the real Actions row source ---------- */
+  const V206_PREVIOUS_V53_ACTION_ROWS = window.v53ActionRows;
+
+  function v206DateLabel(date){
+    if(!date) return '';
+    try{
+      return new Date(date+'T12:00:00').toLocaleDateString('en-US',{
+        month:'short',
+        day:'numeric'
+      });
+    }catch(_){
+      return date;
+    }
+  }
+
+  function v206DerivedInspectionRows(){
+    const s=v45s();
+    const allowedHives=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
+
+    return allowedHives
+      .filter(h=>String(h?.nextInspection||'').trim())
+      .map(h=>{
+        const date=String(h.nextInspection).trim();
+        return {
+          id:'derived-next-inspection-'+h.id,
+          hiveId:h.id,
+          type:'inspection',
+          title:'Inspection',
+          priority:'Medium',
+          status:'Pending',
+          due:v206DateLabel(date),
+          date,
+          __v206Derived:true
+        };
+      })
+      .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+  }
+
+  window.v53ActionRows=function(mode='Pending'){
+    const base=V206_PREVIOUS_V53_ACTION_ROWS.apply(this,arguments);
+    const normalized=String(mode||'Pending').toLowerCase();
+
+    if(normalized==='completed') return base;
+
+    const derived=v206DerivedInspectionRows();
+
+    /* Prevent duplicate display if the current renderer/data already
+       contains the same derived hive/date inspection task. */
+    const seen=new Set(
+      (base||[]).map(a=>
+        [
+          String(a.hiveId||''),
+          String(a.type||'').toLowerCase(),
+          String(a.date||a.due||'')
+        ].join('|')
+      )
+    );
+
+    const unique=derived.filter(a=>{
+      const exact=[
+        String(a.hiveId||''),
+        'inspection',
+        String(a.date||'')
+      ].join('|');
+
+      if(seen.has(exact)) return false;
+
+      /* Also avoid another V206-derived row for the same Hive. */
+      if((base||[]).some(x=>String(x.id||'')==='derived-next-inspection-'+a.hiveId)){
+        return false;
+      }
+      return true;
+    });
+
+    if(normalized==='all') return [...unique,...base];
+    return [...unique,...base];
+  };
+
+  /* If user is already on Actions after deploying V206, redraw the real list. */
+  if(String(location.hash||'').replace(/^#/,'').split('/')[0]==='actions'){
+    setTimeout(()=>{
+      try{
+        if(typeof v53DrawActions==='function') v53DrawActions('Pending');
+      }catch(err){
+        console.error('V206 Actions redraw failed',err);
+      }
+    },60);
+  }
+})();
+

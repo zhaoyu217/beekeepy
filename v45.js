@@ -5109,3 +5109,105 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   };
 })();
 
+/* ==========================================================
+   V195 — HIVE ACTIONS MODAL VISIBILITY FIX
+   Scope: Hive Detail -> ••• -> Hive Actions modal shell only.
+   The original openHiveDetailMenu() is provided by the legacy
+   app.js loaded before v45.js. We wrap it without changing any
+   action content, handlers or routes.
+   ========================================================== */
+(function(){
+  if(window.__V195_HIVE_ACTIONS_MODAL_FIX__) return;
+  window.__V195_HIVE_ACTIONS_MODAL_FIX__=true;
+
+  if(typeof window.openHiveDetailMenu!=='function'){
+    console.error('V195: openHiveDetailMenu is unavailable');
+    return;
+  }
+
+  const V195_OPEN_HIVE_DETAIL_MENU=window.openHiveDetailMenu;
+
+  window.openHiveDetailMenu=function(){
+    const result=V195_OPEN_HIVE_DETAIL_MENU.apply(this,arguments);
+
+    setTimeout(()=>{
+      try{
+        const candidates=[
+          ...document.querySelectorAll('.modal, .modalwrap, .modal-wrap, .sheet, .bottom-sheet')
+        ];
+
+        let modalEl=[...candidates].reverse().find(el=>
+          String(el.textContent||'').includes('Hive Actions')
+        );
+
+        if(!modalEl){
+          modalEl=[...document.body.children].reverse().find(el=>
+            String(el.textContent||'').includes('Hive Actions')
+          );
+        }
+
+        if(!modalEl) return;
+
+        modalEl.classList.add('v195-hive-actions-modal');
+        modalEl.style.zIndex='7000';
+        modalEl.style.paddingBottom='calc(88px + env(safe-area-inset-bottom, 0px))';
+        modalEl.style.boxSizing='border-box';
+        modalEl.style.overflow='visible';
+
+        /* Find the actual sheet/panel that contains Hive Actions.
+           Do not touch its child buttons or their handlers. */
+        const panel=[...modalEl.querySelectorAll('*')].find(el=>{
+          if(!el.children.length) return false;
+          const text=String(el.textContent||'').trim();
+          return text.startsWith('Hive Actions') && text.length>12;
+        }) || modalEl.firstElementChild || modalEl;
+
+        panel.classList.add('v195-hive-actions-panel');
+        panel.style.maxHeight='calc(100dvh - 110px)';
+        panel.style.overflowY='auto';
+        panel.style.overscrollBehavior='contain';
+        panel.style.boxSizing='border-box';
+        panel.style.paddingBottom='18px';
+
+        /* Repair only collapsed/hidden descendants. */
+        [...panel.querySelectorAll('*')].forEach(el=>{
+          const cs=getComputedStyle(el);
+          if(cs.display==='none') return;
+          if(cs.overflowY==='hidden' && el.scrollHeight>el.clientHeight){
+            el.style.overflowY='visible';
+          }
+          if(el.clientHeight===0 && el.scrollHeight>0){
+            el.style.minHeight='min-content';
+            el.style.maxHeight='none';
+          }
+        });
+
+      }catch(err){
+        console.error('V195 Hive Actions modal visibility fix failed',err);
+      }
+    },0);
+
+    return result;
+  };
+
+  const style=document.createElement('style');
+  style.id='v195-hive-actions-modal-style';
+  style.textContent=`
+    .v195-hive-actions-modal{
+      z-index:7000 !important;
+      padding-bottom:calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+      box-sizing:border-box !important;
+      overflow:visible !important;
+    }
+
+    .v195-hive-actions-modal .v195-hive-actions-panel{
+      max-height:calc(100dvh - 110px) !important;
+      overflow-y:auto !important;
+      overscroll-behavior:contain !important;
+      box-sizing:border-box !important;
+      padding-bottom:18px !important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

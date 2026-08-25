@@ -5520,3 +5520,386 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V198 — FEEDING / TREATMENT SHARED FORM RENDER FIX
+   BASE: V197 FULL
+
+   Scope:
+   - actionForm('feeding', hiveId)
+   - actionForm('treatment', hiveId)
+
+   Keeps:
+   - same Hive ID
+   - same Date field
+   - same Feeding fields
+   - same Treatment fields
+   - same save destinations (s.logs.feedings / treatments)
+   - same save(s) persistence
+   - same Hive Actions destinations
+   - same Inspection / Hive Detail / Header / Bottom Nav / routes
+
+   Fix:
+   - bypasses the legacy form-master / icon CSS collision
+   - isolated modal rendering for Feeding and Treatment only
+   ========================================================== */
+(function(){
+  if(window.__V198_FEED_TREAT_RENDER_FIX__) return;
+  window.__V198_FEED_TREAT_RENDER_FIX__=true;
+
+  const V198_LEGACY_ACTION_FORM = window.actionForm;
+
+  function v198CloseRecordForm(){
+    document.querySelector('.v198-record-overlay')?.remove();
+  }
+
+  function v198HiveOptions(s,selectedHive){
+    return (s.hives||[]).map(h=>
+      `<option value="${esc(h.id)}" ${h.id===selectedHive?'selected':''}>${esc(h.name)}</option>`
+    ).join('');
+  }
+
+  function v198SaveRecord(type,overlay){
+    const s=state();
+    const hiveId=overlay.querySelector('[name="v198Hive"]').value;
+    const date=overlay.querySelector('[name="v198Date"]').value;
+
+    if(type==='feeding'){
+      s.logs.feedings.push({
+        id:'f'+Date.now(),
+        hiveId,
+        date,
+        type:overlay.querySelector('[name="v198FeedType"]').value,
+        amount:overlay.querySelector('[name="v198FeedAmount"]').value
+      });
+    }else if(type==='treatment'){
+      s.logs.treatments.push({
+        id:'t'+Date.now(),
+        hiveId,
+        date,
+        type:overlay.querySelector('[name="v198TreatmentType"]').value
+      });
+    }else{
+      return;
+    }
+
+    if(save(s)===false){
+      toast('Record could not be saved');
+      return;
+    }
+
+    v198CloseRecordForm();
+    toast('Saved');
+    try{
+      if(typeof render==='function') render();
+    }catch(err){
+      console.error('V198 render after save failed',err);
+    }
+  }
+
+  function v198OpenRecordForm(type,selectedHive){
+    const s=state();
+    const hiveId=selectedHive || s.hives?.[0]?.id || '';
+    const active=hive(s,hiveId) || s.hives?.[0];
+    if(!active){
+      toast('Hive not found');
+      return;
+    }
+
+    v198CloseRecordForm();
+
+    const title=type==='feeding'?'New Feeding':'New Treatment';
+    const today=new Date().toISOString().slice(0,10);
+    const hiveOptions=v198HiveOptions(s,active.id);
+
+    const fields=type==='feeding'
+      ? `
+        <label class="v198-field">
+          <span>Feed Type</span>
+          <select name="v198FeedType">
+            <option>1:1 Syrup</option>
+            <option>2:1 Syrup</option>
+            <option>Pollen Patty</option>
+          </select>
+        </label>
+
+        <label class="v198-field">
+          <span>Amount</span>
+          <input name="v198FeedAmount"
+                 maxlength="40"
+                 placeholder="${s.settings.units==='metric'?'2 L':'2 gallons'}">
+        </label>
+      `
+      : `
+        <label class="v198-field">
+          <span>Treatment Type</span>
+          <select name="v198TreatmentType">
+            <option>Oxalic Acid</option>
+            <option>Formic Acid</option>
+            <option>Apivar</option>
+            <option>Other</option>
+          </select>
+        </label>
+
+        <div class="v198-notice">
+          Follow the product label and applicable local rules.
+          HiveDash does not replace label instructions.
+        </div>
+      `;
+
+    const overlay=document.createElement('div');
+    overlay.className='v198-record-overlay';
+    overlay.innerHTML=`
+      <section class="v198-record-sheet" role="dialog" aria-modal="true" aria-label="${title}">
+        <div class="v198-record-head">
+          <button type="button" class="v198-back" aria-label="Close">‹</button>
+          <b>${title}</b>
+          <button type="button" class="v198-save-top">Save</button>
+        </div>
+
+        <div class="v198-hive-summary">
+          <img src="${v101HivePrimaryPhoto(active)}" alt="${esc(active.name)}">
+          <div>
+            <b>${esc(active.name)}</b>
+            <span>${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · 9:30 AM</span>
+          </div>
+        </div>
+
+        <div class="v198-fields">
+          <label class="v198-field">
+            <span>Hive</span>
+            <select name="v198Hive">${hiveOptions}</select>
+          </label>
+
+          <label class="v198-field">
+            <span>Date</span>
+            <input name="v198Date" type="date" value="${today}">
+          </label>
+
+          ${fields}
+        </div>
+
+        <button type="button" class="v198-save-bottom">Save</button>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('.v198-back').onclick=v198CloseRecordForm;
+    overlay.addEventListener('click',e=>{
+      if(e.target===overlay) v198CloseRecordForm();
+    });
+
+    const doSave=()=>v198SaveRecord(type,overlay);
+    overlay.querySelector('.v198-save-top').onclick=doSave;
+    overlay.querySelector('.v198-save-bottom').onclick=doSave;
+
+    return overlay;
+  }
+
+  window.actionForm=function(type,selectedHive){
+    if(type==='feeding' || type==='treatment'){
+      return v198OpenRecordForm(type,selectedHive);
+    }
+    return V198_LEGACY_ACTION_FORM.apply(this,arguments);
+  };
+
+  const style=document.createElement('style');
+  style.id='v198-feed-treat-render-style';
+  style.textContent=`
+    .v198-record-overlay{
+      position:fixed !important;
+      inset:0 !important;
+      z-index:12500 !important;
+      display:flex !important;
+      align-items:flex-end !important;
+      justify-content:center !important;
+      width:100vw !important;
+      height:100dvh !important;
+      margin:0 !important;
+      padding:0 !important;
+      background:rgba(47,59,51,.34) !important;
+      box-sizing:border-box !important;
+    }
+
+    .v198-record-sheet{
+      display:flex !important;
+      flex-direction:column !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      width:min(393px,100vw) !important;
+      max-height:calc(100dvh - 44px) !important;
+      margin:0 !important;
+      padding:0 12px calc(18px + env(safe-area-inset-bottom,0px)) !important;
+      overflow-y:auto !important;
+      overscroll-behavior:contain !important;
+      border-radius:16px 16px 0 0 !important;
+      background:#FFFEFB !important;
+      box-shadow:0 -10px 30px rgba(47,59,51,.16) !important;
+      box-sizing:border-box !important;
+      transform:none !important;
+    }
+
+    .v198-record-head{
+      position:sticky !important;
+      top:0 !important;
+      z-index:3 !important;
+      display:grid !important;
+      grid-template-columns:42px 1fr 58px !important;
+      align-items:center !important;
+      min-height:54px !important;
+      margin:0 -12px 10px !important;
+      padding:0 12px !important;
+      border-bottom:1px solid #E6E3DA !important;
+      background:#FFFEFB !important;
+      box-sizing:border-box !important;
+    }
+
+    .v198-record-head>b{
+      color:#2F3B33 !important;
+      font-size:16px !important;
+      font-weight:800 !important;
+      text-align:left !important;
+    }
+
+    .v198-back,
+    .v198-save-top{
+      min-width:0 !important;
+      height:38px !important;
+      padding:0 !important;
+      border:0 !important;
+      background:transparent !important;
+      color:#5E7350 !important;
+      font:inherit !important;
+      font-weight:800 !important;
+      cursor:pointer !important;
+    }
+
+    .v198-back{
+      font-size:24px !important;
+      text-align:left !important;
+    }
+
+    .v198-save-top{
+      font-size:13px !important;
+      text-align:right !important;
+    }
+
+    .v198-hive-summary{
+      display:grid !important;
+      grid-template-columns:58px 1fr !important;
+      align-items:center !important;
+      gap:10px !important;
+      min-height:76px !important;
+      padding:9px !important;
+      border:1px solid #E6E3DA !important;
+      border-radius:12px !important;
+      background:#F7F5EF !important;
+      box-sizing:border-box !important;
+    }
+
+    .v198-hive-summary img{
+      display:block !important;
+      width:58px !important;
+      height:58px !important;
+      object-fit:cover !important;
+      border-radius:9px !important;
+    }
+
+    .v198-hive-summary div{
+      min-width:0 !important;
+      display:flex !important;
+      flex-direction:column !important;
+      gap:4px !important;
+    }
+
+    .v198-hive-summary b{
+      color:#36512B !important;
+      font-size:14px !important;
+      font-weight:800 !important;
+    }
+
+    .v198-hive-summary span{
+      color:#6B736D !important;
+      font-size:11px !important;
+    }
+
+    .v198-fields{
+      display:grid !important;
+      gap:0 !important;
+      margin-top:12px !important;
+    }
+
+    .v198-field{
+      display:grid !important;
+      grid-template-columns:112px 1fr !important;
+      align-items:center !important;
+      gap:10px !important;
+      min-height:58px !important;
+      margin:0 !important;
+      padding:8px 0 !important;
+      border-bottom:1px solid #E6E3DA !important;
+      box-sizing:border-box !important;
+    }
+
+    .v198-field>span{
+      color:#2F3B33 !important;
+      font-size:12px !important;
+      font-weight:700 !important;
+    }
+
+    .v198-field input,
+    .v198-field select{
+      display:block !important;
+      width:100% !important;
+      min-width:0 !important;
+      height:42px !important;
+      min-height:42px !important;
+      margin:0 !important;
+      padding:0 10px !important;
+      border:1px solid #DDD8CF !important;
+      border-radius:10px !important;
+      background:#fff !important;
+      color:#2F3B33 !important;
+      font:inherit !important;
+      font-size:12px !important;
+      box-sizing:border-box !important;
+      appearance:auto !important;
+    }
+
+    .v198-notice{
+      margin-top:12px !important;
+      padding:10px 11px !important;
+      border:1px solid #E6E3DA !important;
+      border-radius:10px !important;
+      background:#F7F5EF !important;
+      color:#6B736D !important;
+      font-size:11px !important;
+      line-height:1.45 !important;
+    }
+
+    .v198-save-bottom{
+      display:block !important;
+      width:100% !important;
+      min-height:44px !important;
+      margin:16px 0 0 !important;
+      padding:0 14px !important;
+      border:0 !important;
+      border-radius:11px !important;
+      background:#5E7350 !important;
+      color:#fff !important;
+      font:inherit !important;
+      font-size:13px !important;
+      font-weight:800 !important;
+      cursor:pointer !important;
+    }
+
+    @media(max-width:340px){
+      .v198-field{
+        grid-template-columns:1fr !important;
+        gap:6px !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

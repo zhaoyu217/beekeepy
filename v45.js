@@ -41,7 +41,7 @@ function v121CleanupDemoHives(s){
   save(s);
   return s;
 }
-function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';s.settings.location=(s.settings.location||'').trim();s.hives=s.hives||[];v121CleanupDemoHives(s);return s}
+function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';const rawLocation=String(s.settings.location||'').trim();if(!s.settings.locationUserSet&&rawLocation==='Colorado, USA'){s.settings.location='';}else{s.settings.location=rawLocation;}s.hives=s.hives||[];v121CleanupDemoHives(s);return s}
 function vh(id){const s=v45s();return hive(s,id)||s.hives[0]}
 function vphoto(h,i=0){return v101HivePrimaryPhoto(h)}
 function Vcard(title,body,action=''){return `<section class="vc"><div class="vhead"><b>${title}</b>${action}</div>${body}</section>`}
@@ -687,7 +687,7 @@ function apiaryPage(r){
   const s=v45s(),x=s.settings;
   r.innerHTML=`<div class="vs">${Vcard('Apiaries & Hives','<div class="lines"><button onclick="go(&quot;all-hives&quot;)"><span>All Apiaries</span><b>'+s.hives.length+' hives</b><em>›</em></button></div>')}<section class="formlist"><label><span>Apiary Name</span><input id="v48apiary" value="${esc(x.apiaryName)}"></label><label><span>Location</span><input id="v48location" value="${esc(x.location)}"></label><label><span>Default Inspection Interval</span><select id="v48cycle"><option value="7" ${x.inspectionCycle==7?'selected':''}>7 days</option><option value="14" ${x.inspectionCycle==14?'selected':''}>14 days</option><option value="21" ${x.inspectionCycle==21?'selected':''}>21 days</option></select></label><label><span>Hive Type</span><select id="v48hivetype"><option ${x.hiveType==='Langstroth'?'selected':''}>Langstroth</option><option ${x.hiveType==='Flow Hive'?'selected':''}>Flow Hive</option><option ${x.hiveType==='Top Bar'?'selected':''}>Top Bar</option></select></label></section><button class="primary" onclick="saveApiaryV48()">Save Apiary Settings</button><button class="secondary" onclick="go('seasonal-settings')">Seasonal Settings</button></div>`
 }
-function saveApiaryV48(){const s=v45s();s.settings.apiaryName=idq('v48apiary').value.trim();s.settings.location=idq('v48location').value.trim();s.settings.inspectionCycle=Number(idq('v48cycle').value);s.settings.hiveType=idq('v48hivetype').value;save(s);toast('Apiary settings saved')}
+function saveApiaryV48(){const s=v45s();s.settings.apiaryName=idq('v48apiary').value.trim();s.settings.location=idq('v48location').value.trim();s.settings.locationUserSet=true;s.settings.inspectionCycle=Number(idq('v48cycle').value);s.settings.hiveType=idq('v48hivetype').value;save(s);toast('Apiary settings saved')}
 
 function seasonalSettings(r){
   const s=v45s(),x=s.settings.seasonal;
@@ -4679,5 +4679,28 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     }
   `;
   document.head.appendChild(style);
+})();
+
+/* ==========================================================
+   V192 — LEGACY DEFAULT LOCATION PURGE
+   Clears the old seeded "Colorado, USA" value only when it was
+   never explicitly saved by the user.
+   ========================================================== */
+(function(){
+  if(window.__V192_LOCATION_PURGE__) return;
+  window.__V192_LOCATION_PURGE__=true;
+
+  try{
+    const s=v45s();
+    if(!s.settings?.locationUserSet && String(s.settings?.location||'').trim()===''){
+      s.meta=s.meta||{};
+      if(!s.meta.v192LegacyLocationPurged){
+        s.meta.v192LegacyLocationPurged=true;
+        save(s);
+      }
+    }
+  }catch(err){
+    console.error('V192 legacy location purge failed',err);
+  }
 })();
 

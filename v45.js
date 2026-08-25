@@ -7694,3 +7694,231 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 })();
 
+/* ==========================================================
+   V209 — QUEEN INSPECTION FIELD COMPLETION
+   BASE: V208 FULL
+   ========================================================== */
+(function(){
+  if(window.__V209_QUEEN_INSPECTION_COMPLETION__) return;
+  window.__V209_QUEEN_INSPECTION_COMPLETION__=true;
+
+  const V209_PREVIOUS_INSPECTION_PAGE = inspectionPage;
+
+  function v209EnsureDraftDefaults(){
+    if(!V49_INSPECTION_DRAFT) return;
+    if(typeof V49_INSPECTION_DRAFT.eggs==='undefined'){
+      V49_INSPECTION_DRAFT.eggs='Not Seen';
+    }
+    if(typeof V49_INSPECTION_DRAFT.larvae==='undefined'){
+      V49_INSPECTION_DRAFT.larvae='Not Seen';
+    }
+  }
+
+  inspectionPage=function(v,hiveId){
+    v209EnsureDraftDefaults();
+    const result=V209_PREVIOUS_INSPECTION_PAGE.apply(this,arguments);
+
+    try{
+      const root=idq('view');
+      if(!root) return result;
+
+      const rows=[...root.querySelectorAll('.irow')];
+      const queenStatusRow=rows.find(r=>/^Queen Status\b/i.test((r.textContent||'').trim()));
+      const colonyStrengthRow=rows.find(r=>/^Colony Strength\b/i.test((r.textContent||'').trim()));
+      const broodPatternRow=rows.find(r=>/^Brood Pattern\b/i.test((r.textContent||'').trim()));
+      const queenCellsRow=rows.find(r=>/^Queen Cells\b/i.test((r.textContent||'').trim()));
+
+      if(!queenStatusRow || !colonyStrengthRow || !broodPatternRow) return result;
+
+      if(!root.querySelector('.v209-eggs-row')){
+        const eggs=document.createElement('div');
+        eggs.className='irow v209-eggs-row';
+        eggs.setAttribute('onclick',"editInspectionV49('eggs')");
+        eggs.innerHTML=`<span>Eggs</span><b>${esc(V49_INSPECTION_DRAFT.eggs||'Not Seen')}</b><em>›</em>`;
+        queenStatusRow.insertAdjacentElement('afterend',eggs);
+      }
+
+      if(!root.querySelector('.v209-larvae-row')){
+        const larvae=document.createElement('div');
+        larvae.className='irow v209-larvae-row';
+        larvae.setAttribute('onclick',"editInspectionV49('larvae')");
+        larvae.innerHTML=`<span>Larvae</span><b>${esc(V49_INSPECTION_DRAFT.larvae||'Not Seen')}</b><em>›</em>`;
+        root.querySelector('.v209-eggs-row').insertAdjacentElement('afterend',larvae);
+      }
+
+      if(queenCellsRow){
+        queenCellsRow.classList.add('v209-queen-cells-moved');
+        root.querySelector('.v209-larvae-row').insertAdjacentElement('afterend',queenCellsRow);
+      }
+
+      if(queenCellsRow){
+        queenCellsRow.insertAdjacentElement('afterend',colonyStrengthRow);
+      }
+      colonyStrengthRow.insertAdjacentElement('afterend',broodPatternRow);
+
+    }catch(err){
+      console.error('V209 Inspection Queen field layout failed',err);
+    }
+
+    return result;
+  };
+
+  const V209_PREVIOUS_EDIT_INSPECTION = editInspectionV49;
+
+  function v209Close(){
+    document.querySelector('.v209-queen-select-overlay')?.remove();
+  }
+
+  function v209Open(field,label){
+    if(!V49_INSPECTION_DRAFT) return;
+    const options=['Seen','Not Seen'];
+    const current=String(V49_INSPECTION_DRAFT[field]||'Not Seen');
+
+    v209Close();
+
+    const overlay=document.createElement('div');
+    overlay.className='v209-queen-select-overlay';
+    overlay.innerHTML=`
+      <section class="v209-queen-select-sheet" role="dialog" aria-modal="true" aria-label="${label}">
+        <div class="v209-queen-select-head">
+          <b>${label}</b>
+          <button type="button" class="v209-close" aria-label="Close">×</button>
+        </div>
+        <div class="v209-options">
+          ${options.map(value=>`
+            <button type="button"
+                    class="v209-option ${current===value?'is-selected':''}"
+                    data-value="${value}">
+              <span>${value}</span>
+              <span>${current===value?'✓':''}</span>
+            </button>
+          `).join('')}
+        </div>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+    overlay.querySelector('.v209-close').onclick=v209Close;
+    overlay.addEventListener('click',e=>{ if(e.target===overlay) v209Close(); });
+
+    overlay.querySelectorAll('.v209-option').forEach(btn=>{
+      btn.onclick=()=>{
+        V49_INSPECTION_DRAFT[field]=btn.dataset.value;
+        const hiveId=V49_INSPECTION_DRAFT.hiveId;
+        v209Close();
+        inspectionPage(idq('view'),hiveId);
+        chrome('inspection');
+        try{
+          if(typeof persistInspectionDraftV50==='function') persistInspectionDraftV50();
+        }catch(_){}
+      };
+    });
+  }
+
+  editInspectionV49=function(field,type='text'){
+    if(field==='eggs'){
+      v209Open('eggs','Eggs');
+      return;
+    }
+    if(field==='larvae'){
+      v209Open('larvae','Larvae');
+      return;
+    }
+    return V209_PREVIOUS_EDIT_INSPECTION.apply(this,arguments);
+  };
+
+  const V209_PREVIOUS_SAVE_INSPECTION = vSaveInspection;
+
+  vSaveInspection=function(id){
+    const hiveId=String(id||V49_INSPECTION_DRAFT?.hiveId||'');
+    const eggs=String(V49_INSPECTION_DRAFT?.eggs||'Not Seen');
+    const larvae=String(V49_INSPECTION_DRAFT?.larvae||'Not Seen');
+
+    const result=V209_PREVIOUS_SAVE_INSPECTION.apply(this,arguments);
+
+    try{
+      const s=state();
+      const h=hive(s,hiveId);
+      if(h){
+        h.insp=h.insp||{};
+        h.insp.eggs=eggs;
+        h.insp.larvae=larvae;
+        save(s);
+      }
+    }catch(err){
+      console.error('V209 Queen inspection persistence failed',err);
+    }
+
+    return result;
+  };
+
+  const style=document.createElement('style');
+  style.id='v209-queen-inspection-style';
+  style.textContent=`
+    .v209-queen-select-overlay{
+      position:fixed!important;
+      inset:0!important;
+      z-index:13800!important;
+      display:flex!important;
+      align-items:flex-end!important;
+      justify-content:center!important;
+      background:rgba(47,59,51,.34)!important;
+    }
+    .v209-queen-select-sheet{
+      width:min(393px,100vw)!important;
+      padding:0 16px calc(18px + env(safe-area-inset-bottom,0px))!important;
+      border-radius:18px 18px 0 0!important;
+      background:#FFFEFB!important;
+      box-shadow:0 -10px 30px rgba(47,59,51,.16)!important;
+      box-sizing:border-box!important;
+    }
+    .v209-queen-select-head{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      min-height:58px!important;
+      border-bottom:1px solid #E6E3DA!important;
+    }
+    .v209-queen-select-head b{
+      color:#2F3B33!important;
+      font-size:17px!important;
+      font-weight:800!important;
+    }
+    .v209-close{
+      width:42px!important;
+      height:42px!important;
+      border:0!important;
+      background:transparent!important;
+      color:#5E7350!important;
+      font-size:22px!important;
+    }
+    .v209-options{
+      display:grid!important;
+      gap:10px!important;
+      padding-top:14px!important;
+    }
+    .v209-option{
+      display:flex!important;
+      align-items:center!important;
+      justify-content:space-between!important;
+      width:100%!important;
+      min-height:54px!important;
+      padding:0 16px!important;
+      border:1px solid #DDD8CF!important;
+      border-radius:12px!important;
+      background:#fff!important;
+      color:#2F3B33!important;
+      font:inherit!important;
+      font-size:14px!important;
+      font-weight:700!important;
+      cursor:pointer!important;
+    }
+    .v209-option.is-selected{
+      border-color:#5E7350!important;
+      background:#F2F5EF!important;
+      color:#36512B!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

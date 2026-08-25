@@ -5313,3 +5313,210 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V197 — HIVE ACTIONS RENDER ISOLATION FIX
+   BASE: V196
+   Fixes Hive Detail -> ••• -> Hive Actions by bypassing the
+   legacy #app modal CSS stack entirely.
+   Functional destinations remain exactly the same.
+   ========================================================== */
+(function(){
+  if(window.__V197_HIVE_ACTIONS_RENDER_ISOLATION__) return;
+  window.__V197_HIVE_ACTIONS_RENDER_ISOLATION__=true;
+
+  function v197CloseHiveActions(){
+    document.querySelector('.v197-hive-actions-overlay')?.remove();
+  }
+  window.v197CloseHiveActions=v197CloseHiveActions;
+
+  window.openHiveDetailMenu=function(hiveId){
+    v197CloseHiveActions();
+
+    const overlay=document.createElement('div');
+    overlay.className='v197-hive-actions-overlay';
+    overlay.innerHTML=`
+      <section class="v197-hive-actions-sheet" role="dialog" aria-modal="true" aria-label="Hive Actions">
+        <div class="v197-hive-actions-head">
+          <div class="v197-hive-actions-title">Hive Actions</div>
+          <button type="button" class="v197-hive-actions-close" aria-label="Close">×</button>
+        </div>
+
+        <div class="v197-hive-actions-grid">
+          <button type="button" class="v197-hive-action" data-action="inspection">
+            <span class="v197-hive-action-icon">⌕</span>
+            <b>Inspection</b>
+          </button>
+
+          <button type="button" class="v197-hive-action" data-action="feeding">
+            <span class="v197-hive-action-icon">▣</span>
+            <b>Feeding</b>
+          </button>
+
+          <button type="button" class="v197-hive-action" data-action="treatment">
+            <span class="v197-hive-action-icon">◉</span>
+            <b>Treatment</b>
+          </button>
+        </div>
+      </section>
+    `;
+
+    document.body.appendChild(overlay);
+
+    overlay.querySelector('.v197-hive-actions-close').onclick=v197CloseHiveActions;
+    overlay.addEventListener('click',e=>{
+      if(e.target===overlay) v197CloseHiveActions();
+    });
+
+    overlay.querySelector('[data-action="inspection"]').onclick=()=>{
+      v197CloseHiveActions();
+      go('inspection/'+hiveId);
+    };
+
+    overlay.querySelector('[data-action="feeding"]').onclick=()=>{
+      v197CloseHiveActions();
+      actionForm('feeding',hiveId);
+    };
+
+    overlay.querySelector('[data-action="treatment"]').onclick=()=>{
+      v197CloseHiveActions();
+      actionForm('treatment',hiveId);
+    };
+
+    return overlay;
+  };
+
+  const style=document.createElement('style');
+  style.id='v197-hive-actions-isolated-style';
+  style.textContent=`
+    .v197-hive-actions-overlay{
+      position:fixed !important;
+      inset:0 !important;
+      z-index:12000 !important;
+      display:flex !important;
+      align-items:flex-end !important;
+      justify-content:center !important;
+      width:100vw !important;
+      height:100dvh !important;
+      padding:0 !important;
+      margin:0 !important;
+      background:rgba(47,59,51,.34) !important;
+      box-sizing:border-box !important;
+    }
+
+    .v197-hive-actions-sheet{
+      display:block !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      width:min(393px,100vw) !important;
+      max-height:calc(100dvh - 76px) !important;
+      margin:0 auto !important;
+      padding:14px 14px calc(18px + env(safe-area-inset-bottom,0px)) !important;
+      overflow-y:auto !important;
+      box-sizing:border-box !important;
+      border-radius:16px 16px 0 0 !important;
+      background:#FFFEFB !important;
+      box-shadow:0 -8px 28px rgba(47,59,51,.16) !important;
+      transform:none !important;
+    }
+
+    .v197-hive-actions-head{
+      display:flex !important;
+      align-items:center !important;
+      justify-content:space-between !important;
+      min-height:38px !important;
+      margin:0 0 12px !important;
+    }
+
+    .v197-hive-actions-title{
+      display:block !important;
+      color:#2F3B33 !important;
+      font-size:17px !important;
+      line-height:1.2 !important;
+      font-weight:800 !important;
+    }
+
+    .v197-hive-actions-close{
+      display:grid !important;
+      place-items:center !important;
+      width:36px !important;
+      height:36px !important;
+      padding:0 !important;
+      border:0 !important;
+      background:transparent !important;
+      color:#5E7350 !important;
+      font-size:24px !important;
+      line-height:1 !important;
+      cursor:pointer !important;
+    }
+
+    .v197-hive-actions-grid{
+      display:grid !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+      gap:10px !important;
+      width:100% !important;
+      min-height:96px !important;
+      margin:0 !important;
+      padding:0 0 4px !important;
+      overflow:visible !important;
+    }
+
+    .v197-hive-action{
+      display:flex !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      flex-direction:column !important;
+      align-items:center !important;
+      justify-content:center !important;
+      gap:7px !important;
+      min-width:0 !important;
+      min-height:88px !important;
+      padding:10px 6px !important;
+      border:1px solid #E6E3DA !important;
+      border-radius:12px !important;
+      background:#F7F5EF !important;
+      color:#5E7350 !important;
+      pointer-events:auto !important;
+      cursor:pointer !important;
+      box-sizing:border-box !important;
+    }
+
+    .v197-hive-action-icon{
+      display:grid !important;
+      place-items:center !important;
+      width:30px !important;
+      height:30px !important;
+      border-radius:50% !important;
+      background:#FFFEFB !important;
+      color:#5E7350 !important;
+      font-size:16px !important;
+      line-height:1 !important;
+    }
+
+    .v197-hive-action b{
+      display:block !important;
+      visibility:visible !important;
+      color:#5E7350 !important;
+      font-size:11px !important;
+      line-height:1.2 !important;
+      font-weight:800 !important;
+      white-space:nowrap !important;
+    }
+
+    @media(max-width:340px){
+      .v197-hive-actions-grid{
+        gap:7px !important;
+      }
+      .v197-hive-action{
+        min-height:82px !important;
+        padding:8px 3px !important;
+      }
+      .v197-hive-action b{
+        font-size:10px !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

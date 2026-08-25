@@ -7989,6 +7989,27 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function v211Risk(n){ n=Number(n)||0; return n>=3?'High':n>=2?'Medium':'Low'; }
   function v211Today(){ return new Date().toISOString().slice(0,10); }
+  const V212_ENGLISH_MAP={
+    '未见':'Not Seen','未看到':'Not Seen','没看见':'Not Seen','不确定':'Not confirmed','已见':'Seen','看见':'Seen','看到':'Seen',
+    '现状':'Present','存在':'Present','无':'None','没有':'None',
+    '优秀':'Excellent','优良':'Excellent','良好':'Good','公平':'Fair','一般':'Fair','差':'Poor',
+    '斑点窝':'Spotty brood','斑驳子脾':'Spotty brood','雄蜂子脾':'Drone brood','其他':'Other',
+    '平静':'Calm','普通':'Normal','正常':'Normal','防御性':'Defensive','攻击性':'Aggressive',
+    '高':'High','中':'Medium','低':'Low','是':'Yes','是的':'Yes','否':'No','不是':'No',
+    '活跃':'Active','活动':'Active','完成':'Completed','已完成':'Completed',
+    '草酸':'Oxalic Acid','甲酸':'Formic Acid','阿米特拉':'Apivar',
+    '0天':'0 days','7天':'7 days','14天':'14 days','21天':'21 days'
+  };
+  function v212English(v){
+    if(v===null||v===undefined)return v;
+    const s=String(v).trim();
+    return Object.prototype.hasOwnProperty.call(V212_ENGLISH_MAP,s)?V212_ENGLISH_MAP[s]:v;
+  }
+  function v212NormalizeDraft(d){
+    if(!d)return d;
+    ['queenStatus','eggs','larvae','queenCells','brood','abnormalities','temperament','honey','pollen','feedingNeed','treatment','treatmentStatus','treatmentWithdrawal','pests','disease','swarming','super'].forEach(k=>{ if(k in d)d[k]=v212English(d[k]); });
+    return d;
+  }
   function v211Close(){ document.querySelector('.v211-module-overlay')?.remove(); }
   function v211Refresh(){ const id=V49_INSPECTION_DRAFT?.hiveId; if(id){ inspectionPage(idq('view'),id); chrome('inspection'); } }
   function v211Row(label,value,field,type='text'){
@@ -8074,8 +8095,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         voiceNotes:'',nextInspection:h.nextInspection||'',notes:h.notes||''
       };
     }
-    const d=V49_INSPECTION_DRAFT;
-    const card=(key,title,icon,rows)=>`<button type="button" class="v211-card" onclick="v211OpenModule('${key}')"><div class="v211-card-head"><b>${title}</b><i>${icon}</i></div>${rows.map(x=>`<div class="v211-card-row"><span>${x[0]}</span><strong>${esc(x[1])}</strong></div>`).join('')}</button>`;
+    const d=v212NormalizeDraft(V49_INSPECTION_DRAFT);
+    const card=(key,title,icon,rows)=>`<button type="button" class="v211-card" onclick="v211OpenModule('${key}')"><div class="v211-card-head"><b>${title}</b><i>${icon}</i></div>${rows.map(x=>`<div class="v211-card-row"><span>${x[0]}</span><strong>${esc(v212English(x[1]))}</strong></div>`).join('')}</button>`;
     r.innerHTML=`<div class="vs v86-inspection v211-inspection">
       <section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section>
       <div class="v211-grid">
@@ -8098,7 +8119,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   const v211PreviousSave=vSaveInspection;
   vSaveInspection=function(id){
-    const s=v45s(),h=hive(s,id),d=V49_INSPECTION_DRAFT||{};if(!h)return;
+    const s=v45s(),h=hive(s,id),d=v212NormalizeDraft(V49_INSPECTION_DRAFT||{});if(!h)return;
     d.notes=idq('inotes')?.value||d.notes||h.notes;
     const date=v211Today();
     h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=Number(d.varroa)||0;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;

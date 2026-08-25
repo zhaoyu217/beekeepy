@@ -5211,3 +5211,105 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V196 — HIVE ACTIONS CONTENT RESTORE FIX
+   BASE: V195
+   REFERENCE ONLY: old V143 app.js openHiveDetailMenu() content.
+
+   IMPORTANT:
+   - No old app.js is copied into this build.
+   - No V195 code is rolled back.
+   - Only the Hive Detail ••• menu content ownership is restored.
+   ========================================================== */
+(function(){
+  if(window.__V196_HIVE_ACTIONS_CONTENT_RESTORE__) return;
+  window.__V196_HIVE_ACTIONS_CONTENT_RESTORE__=true;
+
+  window.openHiveDetailMenu=function(hiveId){
+    const m=modal(`
+      <div class="modalhead">
+        <div class="h2">Hive Actions</div>
+        <button type="button" class="iconbtn" onclick="closeModal(this)">✕</button>
+      </div>
+
+      <div class="quick core-menu-actions v196-hive-actions-body">
+        <button type="button" class="qbtn"
+                onclick="closeModal(this);go('inspection/${hiveId}')">
+          <span class="emo">⌕</span>
+          <b>Inspection</b>
+        </button>
+
+        <button type="button" class="qbtn"
+                onclick="closeModal(this);actionForm('feeding','${hiveId}')">
+          <span class="emo">▣</span>
+          <b>Feeding</b>
+        </button>
+
+        <button type="button" class="qbtn"
+                onclick="closeModal(this);actionForm('treatment','${hiveId}')">
+          <span class="emo">◉</span>
+          <b>Treatment</b>
+        </button>
+      </div>
+    `);
+
+    if(!m) return;
+
+    m.classList.add('v196-hive-actions-modal');
+    m.style.zIndex='7000';
+    m.style.paddingBottom='calc(88px + env(safe-area-inset-bottom, 0px))';
+    m.style.boxSizing='border-box';
+
+    const panel=m.querySelector('.modalpanel') || m.firstElementChild;
+    if(panel){
+      panel.classList.add('v196-hive-actions-panel');
+      panel.style.maxHeight='calc(100dvh - 120px)';
+      panel.style.overflowY='auto';
+      panel.style.overscrollBehavior='contain';
+      panel.style.boxSizing='border-box';
+    }
+
+    return m;
+  };
+
+  const style=document.createElement('style');
+  style.id='v196-hive-actions-content-style';
+  style.textContent=`
+    .v196-hive-actions-modal{
+      z-index:7000 !important;
+      padding-bottom:calc(88px + env(safe-area-inset-bottom, 0px)) !important;
+      box-sizing:border-box !important;
+    }
+
+    .v196-hive-actions-panel{
+      max-height:calc(100dvh - 120px) !important;
+      overflow-y:auto !important;
+      overscroll-behavior:contain !important;
+      box-sizing:border-box !important;
+    }
+
+    .v196-hive-actions-body{
+      display:grid !important;
+      grid-template-columns:repeat(3,minmax(0,1fr)) !important;
+      gap:10px !important;
+      min-height:92px !important;
+      padding:12px 0 6px !important;
+      overflow:visible !important;
+    }
+
+    .v196-hive-actions-body .qbtn{
+      min-height:78px !important;
+      visibility:visible !important;
+      opacity:1 !important;
+      pointer-events:auto !important;
+    }
+
+    @media (max-width:360px){
+      .v196-hive-actions-body{
+        grid-template-columns:1fr !important;
+      }
+    }
+  `;
+  document.head.appendChild(style);
+})();
+

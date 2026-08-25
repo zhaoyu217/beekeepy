@@ -41,7 +41,7 @@ function v121CleanupDemoHives(s){
   save(s);
   return s;
 }
-function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';s.settings.location=s.settings.location||'Colorado, USA';s.hives=s.hives||[];v121CleanupDemoHives(s);return s}
+function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';s.settings.location=(s.settings.location||'').trim();s.hives=s.hives||[];v121CleanupDemoHives(s);return s}
 function vh(id){const s=v45s();return hive(s,id)||s.hives[0]}
 function vphoto(h,i=0){return v101HivePrimaryPhoto(h)}
 function Vcard(title,body,action=''){return `<section class="vc"><div class="vhead"><b>${title}</b>${action}</div>${body}</section>`}
@@ -386,7 +386,7 @@ function recordPage(r,type,id){
         <img src="${hivePhoto}" alt="${esc(active.name)}">
         <div class="feeding-hive-copy">
           <b>${esc(active.name)}</b>
-          <span>⌖ ${esc(s.settings.location||'Colorado, USA')}</span>
+          <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
           <em>✓ Healthy</em>
         </div>
         <select name="hiveId" form="rform" aria-label="Change Hive" onchange="go('feeding-record/'+this.value)">
@@ -450,7 +450,7 @@ function recordPage(r,type,id){
         <img src="${hivePhoto}" alt="${esc(active.name)}">
         <div class="treatment-hive-copy">
           <b>${esc(active.name)}</b>
-          <span>⌖ ${esc(s.settings.location||'Colorado, USA')}</span>
+          <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
           <em>✓ ${esc(active.status||'Healthy')}</em>
         </div>
         <select aria-label="Change Hive" onchange="go('treatment-record/'+this.value)">
@@ -509,7 +509,7 @@ function recordPage(r,type,id){
         <img src="${hivePhoto}" alt="${esc(active.name)}">
         <div class="harvest-hive-copy">
           <b>${esc(active.name)}</b>
-          <span>⌖ ${esc(s.settings.location||'Colorado, USA')}</span>
+          <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
           <em>✓ ${esc(active.status||'Healthy')}</em>
         </div>
         <select aria-label="Change Hive" onchange="go('harvest-record/'+this.value)">
@@ -1796,7 +1796,7 @@ function hiveDetail(r,id){
           ...(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Treatment'})),
           ...(Array.isArray(s.logs?.harvests)?s.logs.harvests:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Harvest'}))
         ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))));
-  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location)}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.queen],['Eggs',h.eggs?'Seen':'None'],['Larvae',h.larvae?'Seen':'None'],['Queen cells',h.queenCells?'Present':'None']])}${hg('Brood',[['Pattern',h.brood],['Strength',h.strength],['Abnormalities','None']])}${hg('Colony',[['Size',h.strength],['Population','8 frames'],['Temperament','Calm']])}${hg('Food Stores',[['Honey',h.honey],['Pollen',h.pollen],['Feeding need',h.honey==='Low'?'Yes':'No']])}${hg('Varroa',[['Last count',`${h.varroa}/100`],['Risk',h.varroa>=3?'High':'Low'],['Test date',fmtDate(h.lastInspection)]])}${hg('Treatment',[['History',lastTx?.type||'None'],['Active',lastTx&&!lastTx.endDate?'Active':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
+  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location||'Location not set')}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.queen],['Eggs',h.eggs?'Seen':'None'],['Larvae',h.larvae?'Seen':'None'],['Queen cells',h.queenCells?'Present':'None']])}${hg('Brood',[['Pattern',h.brood],['Strength',h.strength],['Abnormalities','None']])}${hg('Colony',[['Size',h.strength],['Population','8 frames'],['Temperament','Calm']])}${hg('Food Stores',[['Honey',h.honey],['Pollen',h.pollen],['Feeding need',h.honey==='Low'?'Yes':'No']])}${hg('Varroa',[['Last count',`${h.varroa}/100`],['Risk',h.varroa>=3?'High':'Low'],['Test date',fmtDate(h.lastInspection)]])}${hg('Treatment',[['History',lastTx?.type||'None'],['Active',lastTx&&!lastTx.endDate?'Active':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
   <div class="photo-card-head-actions">
     <button class="photo-card-viewall" type="button" onclick="openHivePhotoGallery('${h.id}')">View All</button>
   </div>
@@ -1954,7 +1954,7 @@ function drawMapListV49(){
     return;
   }
   if(V49_MAP_MODE==='Apiaries'){
-    box.innerHTML=`<section class="v109-map-info"><div class="v109-map-info-icon">⌂</div><div><b>${esc(s.settings.apiaryName)}</b><small>${esc(s.settings.location)} · ${visible.length} ${visible.length===1?'hive':'hives'}${!isPro(s)?' on Free plan':''}</small></div><button onclick="go('all-hives')">View Hives <em>›</em></button></section>`;
+    box.innerHTML=`<section class="v109-map-info"><div class="v109-map-info-icon">⌂</div><div><b>${esc(s.settings.apiaryName)}</b><small>${esc(s.settings.location||'Location not set')} · ${visible.length} ${visible.length===1?'hive':'hives'}${!isPro(s)?' on Free plan':''}</small></div><button onclick="go('all-hives')">View Hives <em>›</em></button></section>`;
     return;
   }
   box.innerHTML=`<div class="v109-map-hive-list">${visible.map(h=>`<button onclick="go('hive/${h.id}')"><img src="${v101HivePrimaryPhoto(h)}" alt="${esc(h.name)}"><span><b>${esc(h.name)}</b><small>${esc(String(h.score||0))}% health · Last ${fmtDate(h.lastInspection)}</small></span><em>›</em></button>`).join('')}</div>${!isPro(s)?'<div class="v109-map-free">Free plan · Map shows Hive #1–#3 only</div>':''}`;
@@ -1972,13 +1972,13 @@ function mapPage(r){
   const dots=visible.map((h,i)=>`<button class="v109-map-pin p${i+1}" onclick="go('hive/${h.id}')" aria-label="Open ${esc(h.name)}"><span>${i+1}</span></button>`).join('');
   r.innerHTML=`<div class="vs v109-map-page">
     <section class="v109-map-head">
-      <div><b>Apiary Map</b><span>${esc(s.settings.location)}</span></div>
+      <div><b>Apiary Map</b><span>${esc(s.settings.location||'Location not set')}</span></div>
       <small>${visible.length} ${visible.length===1?'hive':'hives'} shown</small>
     </section>
     <div class="filters v109-map-tabs"><button class="active" onclick="setMapModeV49('Apiaries',this)">Apiaries</button><button onclick="setMapModeV49('Hives',this)">Hives</button><button onclick="setMapModeV49('Forage',this)">Forage</button></div>
     <section class="v109-map-canvas" style="--hero:url('${V45.map}')">
       <div class="v109-map-shade"></div>${dots}
-      <div class="v109-map-label"><b>${esc(s.settings.apiaryName)}</b><span>${esc(s.settings.location)}</span></div>
+      <div class="v109-map-label"><b>${esc(s.settings.apiaryName)}</b><span>${esc(s.settings.location||'Location not set')}</span></div>
       <div class="v110-map-zoom" aria-label="Map zoom controls">
         <button type="button" onclick="mapZoomV110(1)" aria-label="Zoom in">+</button>
         <button type="button" onclick="mapZoomV110(-1)" aria-label="Zoom out">−</button>

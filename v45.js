@@ -5903,3 +5903,138 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   document.head.appendChild(style);
 })();
 
+/* ==========================================================
+   V199 — TIMELINE BLANK PAGE FIX
+   BASE: V198 FULL
+
+   Root cause:
+   The current Timeline renderer still referenced:
+   - V49_TIMELINE_LIMIT
+   - V49_TIMELINE_CACHE
+   - V49_TIMELINE_FILTER
+   - V49_TIMELINE_FILTER_ROUTE
+   - v49TimelineRows()
+
+   but those declarations / row-builder had been lost from the
+   current v45.js. The resulting ReferenceError stopped render()
+   before chrome('timeline'), producing an empty Timeline screen.
+
+   Scope:
+   Restore only Timeline runtime state + row aggregation.
+   V197 Hive Actions and V198 Feeding/Treatment remain untouched.
+   ========================================================== */
+(function(){
+  if(window.__V199_TIMELINE_RUNTIME_RESTORE__) return;
+  window.__V199_TIMELINE_RUNTIME_RESTORE__=true;
+
+  /* Use window-backed state so the existing Timeline functions can
+     resolve these identifiers without changing their UI or routes. */
+  if(typeof window.V49_TIMELINE_LIMIT==='undefined') window.V49_TIMELINE_LIMIT=10;
+  if(!Array.isArray(window.V49_TIMELINE_CACHE)) window.V49_TIMELINE_CACHE=[];
+  if(typeof window.V49_TIMELINE_FILTER!=='string') window.V49_TIMELINE_FILTER='All';
+  if(typeof window.V49_TIMELINE_FILTER_ROUTE!=='string') window.V49_TIMELINE_FILTER_ROUTE='';
+
+  /* Expose legacy identifier names through var bindings expected by
+     the existing current Timeline renderer. */
+  try{
+    if(typeof V49_TIMELINE_LIMIT==='undefined') V49_TIMELINE_LIMIT=window.V49_TIMELINE_LIMIT;
+  }catch(_){ window.V49_TIMELINE_LIMIT=10; }
+  try{
+    if(typeof V49_TIMELINE_CACHE==='undefined') V49_TIMELINE_CACHE=window.V49_TIMELINE_CACHE;
+  }catch(_){ window.V49_TIMELINE_CACHE=[]; }
+  try{
+    if(typeof V49_TIMELINE_FILTER==='undefined') V49_TIMELINE_FILTER=window.V49_TIMELINE_FILTER;
+  }catch(_){ window.V49_TIMELINE_FILTER='All'; }
+  try{
+    if(typeof V49_TIMELINE_FILTER_ROUTE==='undefined') V49_TIMELINE_FILTER_ROUTE=window.V49_TIMELINE_FILTER_ROUTE;
+  }catch(_){ window.V49_TIMELINE_FILTER_ROUTE=''; }
+
+  window.v49TimelineRows=function(hiveId=''){
+    const s=v45s();
+    const rows=[];
+
+    const add=(type,x,detail,img='')=>{
+      if(!x) return;
+      if(hiveId && x.hiveId!==hiveId) return;
+      rows.push({
+        key:type+':'+String(x.id||Date.now()),
+        type,
+        hiveId:x.hiveId,
+        date:x.date||'',
+        detail:detail||'',
+        img:img||''
+      });
+    };
+
+    const inspections=Array.isArray(s.logs?.inspections)?s.logs.inspections:[];
+    const feedings=Array.isArray(s.logs?.feedings)?s.logs.feedings:[];
+    const treatments=Array.isArray(s.logs?.treatments)?s.logs.treatments:[];
+    const harvests=Array.isArray(s.logs?.harvests)?s.logs.harvests:[];
+
+    inspections.forEach(x=>
+      add('Inspection',x,x.notes||'Inspection saved',V45?.inspection||'')
+    );
+
+    feedings.forEach(x=>
+      add('Feeding',x,[x.type,x.ratio,x.amount].filter(Boolean).join(' · '))
+    );
+
+    treatments.forEach(x=>
+      add('Treatment',x,[x.type,x.product,x.dose].filter(Boolean).join(' · '))
+    );
+
+    harvests.forEach(x=>
+      add(
+        'Harvest',
+        x,
+        [
+          typeof formatWeight==='function'
+            ? formatWeight(x.weightLb||0,s)
+            : String(x.weightLb||0),
+          x.moisture ? x.moisture+'% moisture' : ''
+        ].filter(Boolean).join(' · '),
+        V45?.harvest||''
+      )
+    );
+
+    (s.hives||[]).forEach(h=>{
+      const photos=typeof hivePhotos==='function'
+        ? hivePhotos(h)
+        : (Array.isArray(h?.photos)?h.photos:[]);
+
+      photos.forEach(p=>{
+        if(hiveId && h.id!==hiveId) return;
+        rows.push({
+          key:'Photo:'+String(p.id||Date.now()),
+          type:'Photo',
+          hiveId:h.id,
+          date:p.date||h.lastInspection||'',
+          detail:'Hive photo',
+          img:p.data||''
+        });
+      });
+    });
+
+    return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+  };
+
+  /* The existing timelinePage() calls the identifier directly.
+     Create the global identifier without replacing timelinePage(). */
+  try{
+    v49TimelineRows=window.v49TimelineRows;
+  }catch(_){}
+
+  /* If the browser arrived directly on #timeline/... while old code
+     had already failed once, rerender only that current route. */
+  const root=String(location.hash||'').replace(/^#/,'').split('/')[0];
+  if(root==='timeline'){
+    setTimeout(()=>{
+      try{
+        if(typeof render==='function') render();
+      }catch(err){
+        console.error('V199 Timeline rerender failed',err);
+      }
+    },0);
+  }
+})();
+

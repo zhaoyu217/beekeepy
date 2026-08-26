@@ -3084,9 +3084,29 @@ function v55ActionRoute(a){
 
 function v56HomeAction(){
   const s=v45s(), first=s.hives[0]?.id||'';
-  const rows=(s.actions||[]).filter(a=>a.status!=='Completed' && a.priority!=='Done');
+  // V221: Home Action Center must bind to a real hive and break equal-priority ties
+  // from current hive data instead of silently falling back to Hive #1.
+  const rows=(s.actions||[]).filter(a=>
+    a.status!=='Completed' && a.priority!=='Done' && a.hiveId && hive(s,a.hiveId)
+  );
   const rank={High:3,Medium:2,Low:1};
-  rows.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0));
+  const severity=a=>{
+    const h=hive(s,a.hiveId);
+    const txt=String(a?.type||a?.title||'').toLowerCase();
+    if(txt.includes('varroa')) return Number(h?.insp?.varroa??h?.varroa??0)||0;
+    return 0;
+  };
+  const freshness=a=>{
+    const h=hive(s,a.hiveId);
+    const t=Date.parse(String(h?.lastInspection||''));
+    return Number.isFinite(t)?t:0;
+  };
+  rows.sort((a,b)=>
+    ((rank[b.priority]||0)-(rank[a.priority]||0)) ||
+    (severity(b)-severity(a)) ||
+    (freshness(b)-freshness(a)) ||
+    String(a.hiveId).localeCompare(String(b.hiveId))
+  );
   const a=rows[0]||null, hid=a?.hiveId||first, txt=String(a?.type||a?.title||'inspection').toLowerCase();
   if(txt.includes('feed')) return {a,hid,label:'Open',click:`go('feeding-record/${hid}')`};
   if(txt.includes('treat')||txt.includes('varroa')) return {a,hid,label:'Open',click:`go('treatment-record/${hid}')`};
@@ -3107,7 +3127,20 @@ function home(r){
     .map(h=>({h,res:riskAssessment(h)}))
     .sort((a,b)=>{
       const rank={High:3,Medium:2,Low:1};
-      return (rank[b.res.level]||0)-(rank[a.res.level]||0);
+      const levelDiff=(rank[b.res.level]||0)-(rank[a.res.level]||0);
+      if(levelDiff) return levelDiff;
+      // V221 tie-break: more current severe signals first, then higher Varroa,
+      // then the most recently inspected hive. This prevents Hive #1 from
+      // winning every High-vs-High tie merely because it appears first.
+      const reasonDiff=(b.res.reasons?.length||0)-(a.res.reasons?.length||0);
+      if(reasonDiff) return reasonDiff;
+      const varroaDiff=(Number(b.h.insp?.varroa??b.h.varroa??0)||0)-(Number(a.h.insp?.varroa??a.h.varroa??0)||0);
+      if(varroaDiff) return varroaDiff;
+      const bt=Date.parse(String(b.h.lastInspection||''));
+      const at=Date.parse(String(a.h.lastInspection||''));
+      const dateDiff=(Number.isFinite(bt)?bt:0)-(Number.isFinite(at)?at:0);
+      if(dateDiff) return dateDiff;
+      return String(a.h.id).localeCompare(String(b.h.id));
     });
   const riskRow=riskRows.find(x=>x.res.level!=='Low')||riskRows[0]||null;
   const riskHive=riskRow?.h||null;

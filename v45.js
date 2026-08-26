@@ -8310,3 +8310,135 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   `;
   document.head.appendChild(style);
 })();
+
+
+/* =========================================================
+   V223 — Dynamic Hive Health Score + Status Sync
+   Scope locked: latest Inspection -> health score/status -> Hives,
+   Hive Detail and Home overall/count summaries.
+   Existing Voice Notes, modular Inspection UI, More, Treatment Record,
+   Action Center, Risk Alerts, routes and visual structure are unchanged.
+   ========================================================= */
+(function v223DynamicHiveHealth(){
+  if(window.__V223_DYNAMIC_HIVE_HEALTH__) return;
+  window.__V223_DYNAMIC_HIVE_HEALTH__=true;
+
+  function norm(v){ return String(v==null?'':v).trim().toLowerCase(); }
+  function isNone(v){
+    const x=norm(v);
+    return !x || x==='none' || x==='no' || x==='not present' || x==='absent';
+  }
+  function isSeen(v){
+    const x=norm(v);
+    return x==='seen' || x==='confirmed' || x==='present' || x==='yes';
+  }
+  function n(v, fallback=0){
+    const x=Number(v); return Number.isFinite(x)?x:fallback;
+  }
+
+  window.calculateHealth=function(h){
+    if(!h) return {score:0,status:'Critical'};
+    const i=h.insp||{};
+
+    // A hive with no saved Inspection snapshot keeps its existing baseline.
+    // Dynamic scoring begins once Inspection data exists.
+    if(!h.insp || !Object.keys(i).length){
+      const base=Math.max(0,Math.min(100,n(h.score,100)));
+      const st=base>=85?'Healthy':base>=70?'Attention':'Critical';
+      return {score:Math.round(base),status:st};
+    }
+
+    let score=100;
+
+    // Queen / brood continuity.
+    const queen=i.queenStatus ?? h.queen;
+    const eggs=i.eggs ?? (h.eggs?'Seen':'Not Seen');
+    const larvae=i.larvae ?? (h.larvae?'Seen':'Not Seen');
+    const queenCells=i.queenCells ?? (h.queenCells?'Present':'None');
+    if(!isSeen(queen)) score-=15;
+    if(!isSeen(eggs)) score-=10;
+    if(!isSeen(larvae)) score-=5;
+    if(!isNone(queenCells)) score-=6;
+
+    // Brood quality / strength.
+    const brood=norm(i.brood ?? h.brood);
+    if(brood==='fair') score-=10;
+    else if(brood==='poor') score-=20;
+    else if(brood==='good') score-=3;
+    const broodStrength=n(i.broodStrength ?? i.strength,8);
+    if(broodStrength<8) score-=Math.min(14,Math.max(0,(8-broodStrength)*2));
+    if(!isNone(i.abnormalities)) score-=10;
+
+    // Colony condition.
+    const colonySize=n(i.colonySize ?? i.strength ?? h.strength,8);
+    if(colonySize<4) score-=15;
+    else if(colonySize<6) score-=8;
+    else if(colonySize<8) score-=3;
+    const temperament=norm(i.temperament);
+    if(temperament==='defensive') score-=5;
+    else if(temperament==='aggressive') score-=10;
+
+    // Stores / feeding pressure.
+    const honey=norm(i.honey ?? h.honey);
+    const pollen=norm(i.pollen ?? h.pollen);
+    if(honey==='low') score-=10;
+    else if(honey==='none') score-=15;
+    if(pollen==='low') score-=7;
+    else if(pollen==='none') score-=10;
+    if(norm(i.feedingNeed)==='yes') score-=5;
+
+    // Varroa — intentionally steep above intervention threshold.
+    const varroa=n(i.varroa ?? h.varroa,0);
+    if(varroa>=5) score-=35;
+    else if(varroa>=3) score-=25;
+    else if(varroa>=2) score-=10;
+
+    // Other current Inspection risks.
+    if(!isNone(i.pests)) score-=8;
+    if(!isNone(i.disease)) score-=20;
+    if(!isNone(i.swarming)) score-=8;
+
+    score=Math.max(0,Math.min(100,Math.round(score)));
+    const status=score>=85?'Healthy':score>=70?'Attention':'Critical';
+    return {score,status};
+  };
+
+  function syncOne(h){
+    if(!h) return false;
+    const out=window.calculateHealth(h);
+    let changed=false;
+    if(Number(h.score)!==out.score){ h.score=out.score; changed=true; }
+    if(v219NormalizeHiveStatus(h.status)!==out.status){ h.status=out.status; changed=true; }
+    return changed;
+  }
+
+  window.v223SyncHiveHealth=function(s,persist=true){
+    if(!s || !Array.isArray(s.hives)) return false;
+    let changed=false;
+    s.hives.forEach(h=>{ if(syncOne(h)) changed=true; });
+    if(changed && persist && typeof save==='function') save(s);
+    return changed;
+  };
+
+  // Make every current renderer consume the same calculated score/status.
+  const baseV45s=v45s;
+  v45s=function(){
+    const s=baseV45s();
+    window.v223SyncHiveHealth(s,true);
+    return s;
+  };
+
+  // Ensure an Inspection save is followed immediately by score/status sync.
+  const baseSaveInspection=vSaveInspection;
+  vSaveInspection=function(id){
+    const result=baseSaveInspection(id);
+    try{
+      const s=baseV45s();
+      const h=hive(s,id);
+      if(h && syncOne(h)) save(s);
+    }catch(err){
+      console.error('V223 health sync after Inspection save failed',err);
+    }
+    return result;
+  };
+})();

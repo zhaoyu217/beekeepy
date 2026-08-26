@@ -270,7 +270,24 @@ function filterTimeline(type,btn){selectTab(btn);document.querySelectorAll('[dat
 /* V77 removed superseded hives */
 function hcard(h){return `<button class="hcard" onclick="go('hive/${h.id}')"><img src="${vphoto(h)}"><div><b>${esc(h.name)}</b><span>${h.score}% · Last ${fmtDate(h.lastInspection)}</span></div><em class="${Vclass(h)}">${Vstatus(h)}</em></button>`}function allHives(r){hives(r)}
 /* V77 removed superseded hiveDetail */
-function hg(t,rows){return `<section class="hg"><b>${t}</b>${rows.map(x=>`<div><span>${x[0]}</span><strong>${esc(x[1])}</strong></div>`).join('')}</section>`}
+function v220EnglishDisplay(v){
+  if(v===null||v===undefined)return v;
+  const x=String(v).trim();
+  const m={
+    '未见':'Not Seen','未看到':'Not Seen','没看见':'Not Seen','不确定':'Not confirmed','已见':'Seen','看见':'Seen','看到':'Seen',
+    '现状':'Present','存在':'Present','无':'None','没有':'None',
+    '优秀':'Excellent','优良':'Excellent','良好':'Good','公平':'Fair','一般':'Fair','差':'Poor',
+    '斑点窝':'Spotty brood','斑驳子脾':'Spotty brood','雄蜂子脾':'Drone brood','其他':'Other',
+    '平静':'Calm','普通':'Normal','正常':'Normal','防御性':'Defensive','攻击性':'Aggressive',
+    '高':'High','中':'Medium','低':'Low','是':'Yes','是的':'Yes','否':'No','不是':'No',
+    '活跃':'Active','活动':'Active','完成':'Completed','已完成':'Completed',
+    '草酸':'Oxalic Acid','甲酸':'Formic Acid','阿米特拉':'Apivar',
+    '0天':'0 days','7天':'7 days','14天':'14 days','21天':'21 days',
+    '注意':'Attention','健康':'Healthy','危急':'Critical','严重':'Critical'
+  };
+  return Object.prototype.hasOwnProperty.call(m,x)?m[x]:v;
+}
+function hg(t,rows){return `<section class="hg"><b>${t}</b>${rows.map(x=>`<div><span>${x[0]}</span><strong>${esc(v220EnglishDisplay(x[1]))}</strong></div>`).join('')}</section>`}
 /* V77 removed superseded inspectionPage */
 function ifield(a,b){return `<div class="irow"><span>${a}</span><b>${b}</b><em>›</em></div>`}function islider(a,n){return `<div class="irow slide"><span>${a}</span><i><u style="width:${n*10}%"></u></i><b>${n} / 10</b></div>`}function vSaveInspection(id){const s=v45s(),h=hive(s,id);h.lastInspection=new Date().toISOString().slice(0,10);h.notes=idq('inotes')?.value||h.notes;s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date:h.lastInspection,notes:h.notes});save(s);toast('Inspection saved');go('hive/'+id)}
 /* V77 removed superseded timelinePage */

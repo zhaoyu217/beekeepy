@@ -8983,7 +8983,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       <section class="v112-ai-hero" style="--ai-photo:url('${photo}')"><div class="v112-ai-shade"></div>
         <div class="v112-ai-score" aria-label="Health score ${d.score}"><strong>${d.score}</strong><span>${esc(d.baseHealthState)}</span></div>
         <div class="v112-ai-copy"><small>HEALTH & DECISION MODEL v1.0</small><b>${esc(h.name||'Hive')}</b><span>${esc(d.phase)} · Confidence ${esc(d.confidence.level)}</span></div>
-        <div class="v112-ai-risk"><span>Risk Level</span><strong>${esc(d.overallRisk)}</strong></div>
+        <div class="v112-ai-risk"><span>Risk Level</span><strong>${esc(d.overallRisk==='Critical'||d.overallRisk==='High'?'High':d.overallRisk==='Medium'?'Medium':'Low')}</strong></div>
       </section>
       ${Vcard('Why',`<ul class="bullets v112-ai-reasons">${reasonItems.map(x=>`<li>${esc(x)}</li>`).join('')||'<li>No current rule-based risk signal.</li>'}</ul>`)}
       ${Vcard('What to do next',`<div class="recol v112-ai-actions">${actions.length?actions.map(a=>`<button onclick="go('${a.route}')">${esc(a.recommendedAction)}</button>`).join(''):'<button onclick="go(\'inspection/'+h.id+'\')">Continue normal monitoring</button>'}</div>`)}

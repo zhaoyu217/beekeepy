@@ -2465,7 +2465,7 @@ function trendPage(r){
   };
 
   const metrics=[
-    ['Health Score','health','Derived only from sufficiently complete inspection records.'],
+    ['Health Score','health','Health & Decision Model v1.0 snapshot from sufficiently complete inspection records.'],
     ['Varroa Level','varroa','Average recorded mite level.'],
     ['Food Stores','stores','Average honey + pollen store rating.'],
     ['Brood Pattern','brood','Average recorded brood quality.'],
@@ -3250,8 +3250,8 @@ function home(r){
     <section class="v56-row-card">
       <div class="v56-row-copy">
         <span>Season Intelligence</span>
-        <b>Spring Nectar Flow</b>
-        <em>Peak flow in 12 days</em>
+        <b>${esc(v224b4SeasonSummary(s).title)}</b>
+        <em>${esc(v224b4SeasonSummary(s).detail)}</em>
       </div>
       <button class="v56-soft-btn" onclick="${isPro(s)?"go('season')":"requirePro('Season Intelligence')"}">Learn More</button>
     </section>
@@ -9166,3 +9166,229 @@ window.__HIVEDASH_V224B3__=true;
 })();
 
 window.__HIVEDASH_V224B3A__=true;
+
+
+/* ==========================================================
+   V224B4 — SEASON + TRENDS SCIENTIFIC CONSISTENCY
+   Scope locked:
+   1) Remove unsupported Home nectar-flow forecast copy and derive
+      Season Intelligence from the same V224B colony-phase/risk model.
+   2) Health Trends uses V224B historical inspection snapshots, not
+      the superseded v119 weighted-average health algorithm.
+   Locked / untouched: current Health Score weights, Risk Engine,
+   Disease provenance, Treatment-aware actions, Voice Notes,
+   Inspection card structure, More, Treatment Record, V224A Location.
+   ========================================================== */
+(function v224b4SeasonAndTrendsConsistency(){
+  if(window.__HIVEDASH_V224B4__) return;
+  window.__HIVEDASH_V224B4__=true;
+
+  const MODEL_TAG='HiveDash Health & Decision Model v1.0';
+
+  function publicRiskLevel(x){
+    return x==='Critical'||x==='High'?'High':x==='Medium'?'Medium':'Low';
+  }
+
+  function decisionMap(s){
+    try{
+      if(typeof window.v224bEvaluateAll==='function') return window.v224bEvaluateAll(s);
+    }catch(_){ }
+    return new Map();
+  }
+
+  function dominantPhase(s){
+    const map=decisionMap(s),counts=new Map();
+    (s?.hives||[]).forEach(h=>{
+      const phase=map.get(h.id)?.phase||'Uncertain';
+      counts.set(phase,(counts.get(phase)||0)+1);
+    });
+    const rows=[...counts.entries()].sort((a,b)=>b[1]-a[1]||a[0].localeCompare(b[0]));
+    if(!rows.length) return {phase:'Uncertain',count:0,mixed:false,map};
+    const top=rows[0];
+    return {phase:top[0],count:top[1],mixed:rows.length>1&&rows[1][1]===top[1],map};
+  }
+
+  window.v224b4SeasonSummary=function(s){
+    const d=dominantPhase(s),hives=s?.hives||[];
+    const all=[...d.map.values()];
+    const seasonalRisks=all.flatMap(x=>x?.risks||[]).filter(r=>['Varroa','Food','Swarm','Queen'].includes(r.type));
+    seasonalRisks.sort((a,b)=>{
+      const rank={Critical:4,High:3,Medium:2,Low:1};
+      return (rank[b.severity]||0)-(rank[a.severity]||0)||(b.rank||0)-(a.rank||0);
+    });
+    const top=seasonalRisks[0]||null;
+    const title=d.mixed?'Mixed colony phases':(d.phase==='Uncertain'?'Colony phase uncertain':d.phase);
+    const detail=top
+      ? `${top.label} · based on current hive records`
+      : `${hives.length} ${hives.length===1?'hive':'hives'} · current records only`;
+    return {title,detail,phase:d.phase,map:d.map,topRisk:top};
+  };
+
+  // Replace the old month-only seasonal assessment with a V224B phase/risk
+  // consumer while preserving the existing Season page visual structure.
+  const oldSeasonAssessment=window.v124SeasonAssessment||v124SeasonAssessment;
+  window.v124SeasonAssessment=v124SeasonAssessment=function(s,now=new Date()){
+    const base=typeof oldSeasonAssessment==='function'?oldSeasonAssessment(s,now):{};
+    const d=dominantPhase(s),map=d.map,decisions=[...map.values()];
+    const phase=d.mixed?'Mixed colony phases':(d.phase==='Uncertain'?'Colony phase uncertain':d.phase);
+    const groups={Varroa:[],Food:[],Queen:[],Swarm:[]};
+    (s?.hives||[]).forEach(h=>{
+      const x=map.get(h.id); if(!x)return;
+      (x.risks||[]).forEach(r=>{ if(groups[r.type]) groups[r.type].push({h,r,x}); });
+    });
+    const severityRank={Critical:4,High:3,Medium:2,Low:1};
+    const specs=[
+      ['Varroa','mites','Monitor Varroa risk'],
+      ['Food','food','Review food stores'],
+      ['Queen','queen','Confirm queen status'],
+      ['Swarm','swarm','Assess swarm risk']
+    ];
+    const actions=[];
+    specs.forEach(([type,key,title])=>{
+      const rows=groups[type]; if(!rows.length)return;
+      rows.sort((a,b)=>(severityRank[b.r.severity]||0)-(severityRank[a.r.severity]||0)||(b.r.rank||0)-(a.r.rank||0));
+      const worst=rows[0],high=rows.some(z=>(severityRank[z.r.severity]||0)>=3);
+      actions.push({
+        key,title,
+        detail:`${rows.length} ${rows.length===1?'hive has':'hives have'} ${worst.r.label.toLowerCase()}.`,
+        context:`Colony phase context: ${worst.x.phase}. Based on current inspection evidence; no weather or bloom forecast is inferred.`,
+        priority:high?'Priority':'Action',level:high?3:2,hiveIds:rows.map(z=>z.h.id)
+      });
+    });
+    actions.sort((a,b)=>b.level-a.level||a.title.localeCompare(b.title));
+    const anyType=t=>groups[t].length>0;
+    return {
+      ...base,
+      season:phase,
+      monthLabel:now.toLocaleDateString('en-US',{month:'long'}),
+      flags:{
+        inVarroa:anyType('Varroa'),
+        inFeeding:anyType('Food'),
+        inSwarm:anyType('Swarm'),
+        inWinter:decisions.length>0&&decisions.every(x=>String(x.phase||'').startsWith('Dormant'))
+      },
+      actions,
+      modelVersion:'V224B4',
+      source:'V224B colony phase + current risk evidence'
+    };
+  };
+
+  // Existing route ownership is preserved. Swarm actions now use the already
+  // existing Inspection route instead of creating any new route/page.
+  const oldSeasonRoute=window.v133SeasonActionRoute||v133SeasonActionRoute;
+  window.v133SeasonActionRoute=v133SeasonActionRoute=function(action){
+    const hiveId=action&&Array.isArray(action.hiveIds)?action.hiveIds.find(Boolean):null;
+    if(action?.key==='swarm'&&hiveId)return `inspection/${hiveId}`;
+    return typeof oldSeasonRoute==='function'?oldSeasonRoute(action):null;
+  };
+
+  function hasOwn(row,key){return Object.prototype.hasOwnProperty.call(row||{},key);}
+  function sufficientV224BHistory(row){
+    if(!row||row.legacySnapshot)return false;
+    const keys=['queenStatus','eggs','larvae','brood','broodStrength','colonySize','honey','pollen','varroa'];
+    return keys.filter(k=>hasOwn(row,k)).length>=8;
+  }
+
+  function snapshotHiveFromRow(h,row){
+    return {
+      ...h,
+      lastInspection:String(row.date||h.lastInspection||'').slice(0,10),
+      insp:{
+        ...(h.insp||{}),
+        queenStatus:row.queenStatus,
+        eggs:row.eggs,
+        larvae:row.larvae,
+        queenCells:row.queenCells,
+        brood:row.brood,
+        broodStrength:row.broodStrength,
+        abnormalities:row.abnormalities,
+        colonySize:row.colonySize,
+        populationFrames:row.populationFrames,
+        temperament:row.temperament,
+        honey:row.honey,
+        pollen:row.pollen,
+        feedingNeed:row.feedingNeed,
+        varroa:row.varroa,
+        varroaTestDate:row.varroaTestDate||row.date,
+        pests:row.pests,
+        disease:row.disease,
+        diseaseExplicit:row.diseaseExplicit===true,
+        swarming:row.swarming,
+        superStatus:row.superStatus??row.super,
+        treatment:row.treatment
+      }
+    };
+  }
+
+  function historicalDecision(s,row){
+    if(!s||!row||!sufficientV224BHistory(row)||typeof window.v224bEvaluateHive!=='function')return null;
+    const h=(s.hives||[]).find(x=>x.id===row.hiveId); if(!h)return null;
+    const cutoff=Date.parse(String(row.date||'').slice(0,10)+'T23:59:59');
+    if(!Number.isFinite(cutoff))return null;
+    const inspections=(s.logs?.inspections||[]).filter(x=>x&&x.hiveId===h.id&&Date.parse(String(x.date||'').slice(0,10)+'T12:00:00')<=cutoff);
+    const treatments=(s.logs?.treatments||[]).filter(x=>x&&x.hiveId===h.id&&Date.parse(String(x.date||'').slice(0,10)+'T12:00:00')<=cutoff).map(x=>{
+      const end=Date.parse(String(x.endDate||'').slice(0,10)+'T12:00:00');
+      return Number.isFinite(end)&&end>cutoff?{...x,endDate:''}:{...x};
+    });
+    const tempHive=snapshotHiveFromRow(h,row);
+    const tempState={...s,hives:[tempHive],logs:{...(s.logs||{}),inspections,treatments}};
+    try{return window.v224bEvaluateHive(tempState,tempHive);}catch(_){return null;}
+  }
+
+  window.v224b4HistoricalDecision=historicalDecision;
+
+  // v119 chart renderer remains intact, but the health metric source is replaced.
+  const oldInspectionHealth=v119InspectionHealth;
+  v119InspectionHealth=function(row){
+    const cached=Number(row?.v224bScoreSnapshot);
+    if(Number.isFinite(cached)&&cached>=0&&cached<=100)return Math.round(cached);
+    try{
+      const s=typeof v45s==='function'?v45s():null;
+      const d=historicalDecision(s,row);
+      if(d&&Number.isFinite(Number(d.score))){
+        row._v224b4Score=Number(d.score);
+        row._v224b4Phase=d.phase;
+        return Math.round(Number(d.score));
+      }
+    }catch(_){ }
+    // Do NOT fall back to the superseded v119 formula for fragmentary history.
+    return null;
+  };
+
+  // Persist the new-model snapshot onto newly saved Inspection history rows.
+  // This adds metadata only; it does not change the existing save or navigation flow.
+  const baseSave=window.vSaveInspection;
+  if(typeof baseSave==='function'){
+    window.vSaveInspection=function(id){
+      const result=baseSave.apply(this,arguments);
+      try{
+        const s=typeof v45s==='function'?v45s():null;
+        const h=s&&typeof hive==='function'?hive(s,id):null;
+        if(s&&h){
+          const rows=(s.logs?.inspections||[]).filter(x=>x&&x.hiveId===id).sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+          const latest=rows[rows.length-1];
+          const d=typeof window.v224bEvaluateHive==='function'?window.v224bEvaluateHive(s,h):null;
+          if(latest&&d&&String(latest.date||'').slice(0,10)===String(h.lastInspection||'').slice(0,10)){
+            latest.v224bScoreSnapshot=d.score;
+            latest.v224bPhaseSnapshot=d.phase;
+            latest.v224bRiskSnapshot=publicRiskLevel(d.overallRisk);
+            latest.healthModelVersion=MODEL_TAG;
+            if(typeof save==='function')save(s);
+          }
+        }
+      }catch(_){ }
+      return result;
+    };
+  }
+
+  // Repaint Home's existing Season Intelligence card with current V224B evidence
+  // if Home is already visible after a background state refresh.
+  document.addEventListener('visibilitychange',function(){
+    if(document.visibilityState!=='visible')return;
+    try{
+      if(String(location.hash||'#home').startsWith('#home')&&typeof render==='function')render();
+    }catch(_){ }
+  });
+})();
+
+window.__HIVEDASH_V224B4_VERSION__='224b4';

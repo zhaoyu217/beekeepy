@@ -3020,13 +3020,21 @@ function actions(r){
 
 function insights(r){
   const s=v45s(),score=avgHealth(s);
+  const decisions=typeof window.v224bEvaluateAll==='function'?window.v224bEvaluateAll(s):new Map();
   const critical=s.hives.filter(h=>h.status==='Critical').length;
   const pending=(s.actions||[]).filter(a=>a.priority!=='Done'&&a.status!=='Completed').length;
-  const risk=critical?'High':s.hives.some(h=>h.status==='Attention')?'Medium':'Low';
+  const riskRank={Low:1,Medium:2,High:3,Critical:4};
+  let risk='Low';
+  for(const h of (s.hives||[])){
+    const d=decisions.get?.(h.id);
+    const r=d?.overallRisk||'Low';
+    if((riskRank[r]||0)>(riskRank[risk]||0))risk=r;
+  }
+  const healthLabel=score>=85?'Strong':score>=70?'Attention':'Critical';
   r.innerHTML=`<div class="vs v53-insights">
     ${Vhero(V45.flowers,`<div class="insighttitle">Overview</div>`,'inshero')}
     <div class="isum">
-      <button onclick="${isPro(s)?"go('analysis')":"requirePro('AI Health Analysis')"}"><span>Health Score</span><b>${score}</b><small>${score>=80?'Good':score>=65?'Attention':'Critical'}</small></button>
+      <button onclick="${isPro(s)?"go('analysis')":"requirePro('AI Health Analysis')"}"><span>Health Score</span><b>${score}</b><small>${healthLabel}</small></button>
       <button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><span>Risk Level</span><b>${risk}</b><small>Overall Risk</small></button>
     </div>
     ${Vcard("Today's Highlights",`<ul class="bullets"><li>${s.hives.length} hives monitored</li><li>${pending} pending actions</li><li>${critical} critical hives</li></ul>`)}
@@ -3042,7 +3050,6 @@ function insights(r){
     </div>
   </div>`;
 }
-
 
 
 /* ==============================================================
@@ -8148,7 +8155,25 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   if(window.__V211_MODULAR_INSPECTION__) return;
   window.__V211_MODULAR_INSPECTION__=true;
 
-  function v211Risk(n){ n=Number(n)||0; return n>=3?'High':n>=2?'Medium':'Low'; }
+  function v211Risk(n){
+    const v=Math.max(0,Number(n)||0);
+    const d=V49_INSPECTION_DRAFT||{};
+    const s=v45s();
+    const h=d.hiveId?vh(d.hiveId):null;
+    let phase='Uncertain';
+    try{
+      if(h&&typeof window.v224bEvaluateHive==='function'){
+        const tempHive={...h,insp:{...(h.insp||{}),...d,varroa:v},lastInspection:d.varroaTestDate||h.lastInspection};
+        phase=window.v224bEvaluateHive(s,tempHive)?.phase||phase;
+      }else if(h&&window.V224B_DECISIONS?.get(h.id)){
+        phase=window.V224B_DECISIONS.get(h.id).phase||phase;
+      }
+    }catch(_){}
+    const thresholds=window.V224B_MODEL?.varroaThresholds||{};
+    const cfg=thresholds[phase]||thresholds.Uncertain||{acceptableBelow:1,dangerAbove:3};
+    const assessment=v<Number(cfg.acceptableBelow)?'Acceptable':v<=Number(cfg.dangerAbove)?'Caution':'Danger';
+    return assessment==='Danger'?'High':assessment==='Caution'?'Medium':'Low';
+  }
   function v211Today(){ return new Date().toISOString().slice(0,10); }
   const V212_ENGLISH_MAP={
     '未见':'Not Seen','未看到':'Not Seen','没看见':'Not Seen','不确定':'Not confirmed','已见':'Seen','看见':'Seen','看到':'Seen',
@@ -8213,7 +8238,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       title='Varroa Inspection';
       body=v211Input('Varroa Count / 100','varroa',d.varroa,'number','min="0" max="100" step="1"')+
            v211Input('Test Date','varroaTestDate',d.varroaTestDate||v211Today(),'date')+
-           `<div class="v211-readonly"><span>Risk</span><b id="v211RiskValue">${v211Risk(d.varroa)}</b><small>Calculated automatically from count</small></div>`;
+           `<div class="v211-readonly"><span>Risk</span><b id="v211RiskValue">${v211Risk(d.varroa)}</b><small>Calculated from count + colony phase</small></div>`;
     }else if(name==='treatment'){
       title='Treatment Inspection';
       body=v211Select('Treatment','treatment',d.treatment||'None',['None','Oxalic Acid','Formic Acid','Apivar','Other'])+
@@ -8790,6 +8815,22 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     if(managementScore<=2)risks.push({type:'Follow-up',severity:'High',label:'Follow-up overdue',evidence:tx?.followUp?`Follow-up ${tx.followUp}`:'Follow-up is overdue',recommendedAction:'Complete the planned reassessment and record the current result.',route:`treatment-record/${h.id}`,rank:100});
     else if(actionable&&relevantTx&&!tx.followUp)risks.push({type:'Follow-up',severity:'Medium',label:'Follow-up needed',evidence:txActive?'Active management recorded without a follow-up date':'Management recorded without a follow-up date',recommendedAction:'Set a follow-up date based on the management plan and applicable product label.',route:`treatment-record/${h.id}`,rank:68});
 
+    // V224B3: Varroa recommendations must reflect the current management state.
+    // This changes action wording only; risk severity/rank and score remain untouched.
+    const varroaRisk=risks.find(r=>r.type==='Varroa');
+    if(varroaRisk&&varroa.assessment==='Danger'){
+      const txName=String(tx?.type||'Varroa treatment');
+      if(txActive){
+        varroaRisk.recommendedAction=`Continue/review the active ${txName} management according to the product label and current colony conditions, then plan a post-management mite recheck.`;
+      }else if(tx&&!txActive&&evidenceDate>dateMs(tx.date)){
+        varroaRisk.recommendedAction='Varroa remains elevated after recorded management; reassess treatment effectiveness and the next management step, then schedule a mite recheck.';
+      }else if(tx&&!txActive){
+        varroaRisk.recommendedAction='Follow the recorded Varroa management plan and schedule a post-management mite recheck according to the applicable product label.';
+      }else{
+        varroaRisk.recommendedAction='Review an appropriate Varroa management option for the current colony phase, brood status, temperature, honey-super status and product label.';
+      }
+    }
+
     const dimensions={
       queenBrood:{label:'Queen & Brood',score:queenBroodScore,max:25,penalty:queenBroodPenalty},
       colony:{label:'Colony',score:colonyScore,max:20,penalty:colonyPenalty},
@@ -9008,3 +9049,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     return baseSave.apply(this,arguments);
   };
 })();
+
+
+/* V224B3 — Core Model Consistency Fix: phase-aware Inspection Varroa, unified Insights bands/risk, treatment-aware Varroa actions. */
+window.__HIVEDASH_V224B3__=true;

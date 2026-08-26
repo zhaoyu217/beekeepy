@@ -8483,3 +8483,456 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     return result;
   };
 })();
+
+/* =========================================================
+   V224B — Health & Decision Model v1.0
+   Scientific Traceability implementation baseline.
+   Scope:
+   - Context + structured Apiary Location
+   - Colony Phase
+   - Phase-aware Health Score
+   - Risk Engine + Critical Override
+   - Data Confidence
+   - Why + prioritized Actions
+   - Shared score/status for Hives, Hive Detail, Home
+   Protected / unchanged:
+   Voice Notes, modular Inspection cards, More, Treatment Record,
+   V224A Structured Apiary Location, navigation and locked page structure.
+   ========================================================= */
+(function v224bHealthDecisionModel(){
+  if(window.__V224B_HEALTH_DECISION_MODEL__) return;
+  window.__V224B_HEALTH_DECISION_MODEL__=true;
+
+  const MODEL_VERSION='1.0';
+  const KNOWLEDGE_VERSION='HBHC-phase-thresholds-v1';
+
+  const V224B_VARROA_THRESHOLDS={
+    'Population Increase':{acceptableBelow:1,dangerAbove:3},
+    'Peak Population':{acceptableBelow:2,dangerAbove:5},
+    'Population Decrease':{acceptableBelow:2,dangerAbove:3},
+    'Dormant with Brood':{acceptableBelow:1,dangerAbove:2},
+    'Dormant without Brood':{acceptableBelow:1,dangerAbove:3},
+    'Uncertain':{acceptableBelow:1,dangerAbove:3,provisional:true}
+  };
+
+  const NORTH_STATES=new Set(['AK','CO','CT','ID','IL','IN','IA','ME','MA','MI','MN','MT','NE','NH','NJ','NY','ND','OH','OR','PA','RI','SD','UT','VT','WA','WI','WY']);
+  const SOUTH_STATES=new Set(['AL','AZ','AR','CA','FL','GA','HI','LA','MS','NM','OK','SC','TX']);
+
+  function norm(v){return String(v==null?'':v).trim().toLowerCase()}
+  function num(v,fallback=0){const x=Number(v);return Number.isFinite(x)?x:fallback}
+  function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
+  function isUnknown(v){const x=norm(v);return !x||x==='unknown'||x==='not recorded'||x==='—'||x==='n/a'}
+  function isNone(v){const x=norm(v);return !x||x==='none'||x==='no'||x==='absent'||x==='not present'}
+  function isSeen(v){const x=norm(v);return x==='seen'||x==='confirmed'||x==='present'||x==='yes'}
+  function isPresent(v){return !isUnknown(v)&&!isNone(v)}
+  function dateMs(v){const t=Date.parse(String(v||''));return Number.isFinite(t)?t:0}
+  function ageDays(v){const t=dateMs(v);return t?Math.max(0,Math.floor((Date.now()-t)/86400000)):9999}
+  function monthOf(v){const d=v?new Date(String(v).slice(0,10)+'T12:00:00'):new Date();return Number.isFinite(d.getTime())?d.getMonth()+1:new Date().getMonth()+1}
+
+  function currentInspection(h){
+    const i=(h&&h.insp&&typeof h.insp==='object')?h.insp:{};
+    return {
+      queenStatus:i.queenStatus??h?.queen??'',
+      eggs:i.eggs??(h?.eggs?'Seen':'Not Seen'),
+      larvae:i.larvae??(h?.larvae?'Seen':'Not Seen'),
+      queenCells:i.queenCells??(h?.queenCells?'Present':'None'),
+      brood:i.brood??h?.brood??'Unknown',
+      broodStrength:i.broodStrength??i.strength??'',
+      abnormalities:i.abnormalities??'None',
+      colonySize:i.colonySize??i.strength??h?.strength??'',
+      populationFrames:i.populationFrames??'',
+      temperament:i.temperament??'Unknown',
+      honey:i.honey??h?.honey??'Unknown',
+      pollen:i.pollen??h?.pollen??'Unknown',
+      feedingNeed:i.feedingNeed??'Unknown',
+      varroa:i.varroa??h?.varroa??0,
+      varroaTestDate:i.varroaTestDate??h?.lastInspection??'',
+      pests:i.pests??((h?.shb||h?.waxMoth)?'Present':'None'),
+      disease:i.disease??(h?.disease?'Present':'None'),
+      swarming:i.swarming??(h?.swarm?'Signs':'None'),
+      superStatus:i.superStatus??h?.superStatus??'Unknown',
+      date:h?.lastInspection||''
+    };
+  }
+
+  function inspectionHistory(s,h){
+    const all=(Array.isArray(s?.logs?.inspections)?s.logs.inspections:[])
+      .filter(x=>x&&x.hiveId===h.id&&x.date)
+      .slice();
+    // Last write for a date wins; trend should use distinct inspection dates.
+    const byDate=new Map();
+    all.forEach(x=>byDate.set(String(x.date),x));
+    return [...byDate.values()].sort((a,b)=>String(a.date).localeCompare(String(b.date))).slice(-3);
+  }
+
+  function metric(row,key){
+    if(!row)return null;
+    const v=Number(row[key]);
+    return Number.isFinite(v)&&v>0?v:null;
+  }
+
+  function trendFromHistory(rows){
+    if(!Array.isArray(rows)||rows.length<2)return {direction:'Unknown',count:rows?.length||0,broodDelta:null,popDelta:null};
+    const first=rows[0],last=rows[rows.length-1];
+    const b0=metric(first,'broodStrength'),b1=metric(last,'broodStrength');
+    const p0=metric(first,'populationFrames'),p1=metric(last,'populationFrames');
+    const bd=b0!=null&&b1!=null?b1-b0:null;
+    const pd=p0!=null&&p1!=null?p1-p0:null;
+    const ups=[bd,pd].filter(x=>x!=null&&x>=1).length;
+    const downs=[bd,pd].filter(x=>x!=null&&x<=-1).length;
+    let direction='Stable';
+    if(ups&& !downs)direction='Increasing';
+    else if(downs&& !ups)direction='Decreasing';
+    else if(ups>downs)direction='Increasing';
+    else if(downs>ups)direction='Decreasing';
+    return {direction,count:rows.length,broodDelta:bd,popDelta:pd};
+  }
+
+  function regionalBand(s){
+    const loc=s?.settings?.apiaryLocation||{};
+    const code=String(loc.stateCode||'').toUpperCase();
+    if(NORTH_STATES.has(code))return 'North';
+    if(SOUTH_STATES.has(code))return 'South';
+    return code?'Mid':'Unknown';
+  }
+
+  function seasonalSupport(band,month){
+    const dormant=band==='North'?[11,12,1,2]:band==='South'?[12,1]:[12,1,2];
+    const increase=band==='North'?[3,4,5]:band==='South'?[1,2,3,4]:[2,3,4,5];
+    const peak=band==='North'?[5,6,7]:band==='South'?[3,4,5,6]:[4,5,6,7];
+    const decrease=band==='North'?[8,9,10]:band==='South'?[7,8,9,10,11]:[7,8,9,10,11];
+    return {dormant:dormant.includes(month),increase:increase.includes(month),peak:peak.includes(month),decrease:decrease.includes(month)};
+  }
+
+  function inferPhase(s,h){
+    const i=currentInspection(h),rows=inspectionHistory(s,h),trend=trendFromHistory(rows);
+    const band=regionalBand(s),month=monthOf(i.date),season=seasonalSupport(band,month);
+    const brood=num(i.broodStrength,0),pop=num(i.populationFrames,0),colony=num(i.colonySize,0);
+    const broodEvidence=isSeen(i.eggs)||isSeen(i.larvae)||brood>0;
+    const broodless=!isSeen(i.eggs)&&!isSeen(i.larvae)&&(brood===0||isUnknown(i.broodStrength));
+    let phase='Uncertain',basis=[];
+
+    if(season.dormant && broodless && (pop===0||pop<=4) && (colony===0||colony<=5)){
+      phase='Dormant without Brood';basis=['seasonal dormancy','no eggs/larvae','low brood/population evidence'];
+    }else if(season.dormant && broodEvidence && brood<=3 && (pop===0||pop<=5)){
+      phase='Dormant with Brood';basis=['seasonal dormancy','brood still present','low colony activity'];
+    }else if(trend.direction==='Increasing' && broodEvidence){
+      // Rising population/brood remains Population Increase; Peak requires a high, leveling/stable colony.
+      phase='Population Increase';basis=['inspection history increasing','brood present'];
+    }else if(trend.direction==='Decreasing'){
+      phase='Population Decrease';basis=['inspection history decreasing'];
+    }else if(season.peak && brood>=7 && pop>=7){
+      phase='Peak Population';basis=['high brood/population','season supports peak'];
+    }else if(season.increase && broodEvidence && (brood>=4||pop>=5||colony>=6)){
+      phase='Population Increase';basis=['brood present','season supports buildup'];
+    }else if(season.decrease && broodEvidence && ((brood>0&&brood<=7)||(pop>0&&pop<=8))){
+      phase='Population Decrease';basis=['moderating brood/population','season supports decline'];
+    }
+
+    return {phase,basis,trend,band,month,historyCount:rows.length};
+  }
+
+  function varroaAssessment(count,phase){
+    const cfg=V224B_VARROA_THRESHOLDS[phase]||V224B_VARROA_THRESHOLDS.Uncertain;
+    const v=Math.max(0,num(count,0));
+    let assessment='Acceptable';
+    if(v<cfg.acceptableBelow)assessment='Acceptable';
+    else if(v<=cfg.dangerAbove)assessment='Caution';
+    else assessment='Danger';
+    const farAbove=assessment==='Danger' && v>=Math.max(cfg.dangerAbove*2,cfg.dangerAbove+3);
+    const penalty=assessment==='Acceptable'?0:assessment==='Caution'?10:farAbove?28:22;
+    return {count:v,assessment,farAbove,penalty,threshold:cfg,phase,knowledgeVersion:KNOWLEDGE_VERSION};
+  }
+
+  function broodAbnormalityPenalty(v){
+    const x=norm(v);
+    if(!x||x==='none'||x==='no')return 0;
+    if(x.includes('spotty'))return 5;
+    return 5;
+  }
+
+  function latestTreatment(s,hid){
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&x.hiveId===hid)
+      .sort((a,b)=>(dateMs(b.date)-dateMs(a.date)))[0]||null;
+  }
+
+  function dataConfidence(s,h,phaseInfo,i){
+    const critical=[i.queenStatus,i.eggs,i.larvae,i.brood,i.colonySize,i.honey,i.pollen,i.varroaTestDate];
+    const unknown=critical.filter(isUnknown).length;
+    const inspAge=ageDays(h.lastInspection),varroaAge=ageDays(i.varroaTestDate);
+    const locReady=Boolean(s?.settings?.apiaryLocation?.contextReady&&s?.settings?.apiaryLocation?.stateCode);
+    let level='LOW';
+    if(locReady&&inspAge<=14&&varroaAge<=30&&unknown===0&&phaseInfo.phase!=='Uncertain'&&phaseInfo.historyCount>=2)level='HIGH';
+    else if(locReady&&inspAge<=30&&varroaAge<=60&&unknown<=2&&phaseInfo.phase!=='Uncertain')level='MEDIUM';
+    const reasons=[];
+    if(!locReady)reasons.push('Apiary location context is incomplete');
+    if(inspAge>30)reasons.push('Inspection data is old');
+    if(varroaAge>60)reasons.push('Varroa test is old or missing');
+    if(unknown)reasons.push(`${unknown} key field${unknown===1?' is':'s are'} unknown`);
+    if(phaseInfo.phase==='Uncertain')reasons.push('Colony phase could not be determined confidently');
+    if(phaseInfo.historyCount<2)reasons.push('Limited inspection trend history');
+    return {level,reasons,inspectionAgeDays:inspAge,varroaAgeDays:varroaAge,unknownCriticalFields:unknown};
+  }
+
+  function evaluateHive(s,h){
+    const i=currentInspection(h),phaseInfo=inferPhase(s,h),phase=phaseInfo.phase;
+    const dormant=phase==='Dormant without Brood'||phase==='Dormant with Brood';
+
+    // Queen & Brood /25 — correlated queen evidence is evaluated as one chain.
+    let queenEvidencePenalty=0;
+    const qSeen=isSeen(i.queenStatus),eSeen=isSeen(i.eggs),lSeen=isSeen(i.larvae);
+    const strongQueenUncertainty=!qSeen&&!eSeen&&!lSeen;
+    if(!dormant){
+      if(qSeen)queenEvidencePenalty=0;
+      else if(eSeen)queenEvidencePenalty=0;
+      else if(lSeen)queenEvidencePenalty=4;
+      else queenEvidencePenalty=8;
+    }
+    const queenCellPenalty=(!dormant&&!qSeen&&!eSeen&&isPresent(i.queenCells))?2:0;
+    const broodPattern=norm(i.brood);
+    const patternPenalty=broodPattern==='fair'?3:broodPattern==='poor'?6:0;
+    const abnormalPenalty=broodAbnormalityPenalty(i.abnormalities);
+    const broodQualityPenalty=Math.max(patternPenalty,abnormalPenalty);
+    let broodStrengthPenalty=0;
+    if(!dormant&&!isUnknown(i.broodStrength)){
+      const bs=num(i.broodStrength,0);
+      broodStrengthPenalty=bs>=8?0:bs>=6?2:bs>=4?4:bs>=1?6:0;
+    }
+    const queenBroodPenalty=Math.min(25,queenEvidencePenalty+queenCellPenalty+broodQualityPenalty+broodStrengthPenalty);
+    const queenBroodScore=25-queenBroodPenalty;
+
+    // Colony /20 — population frames are trend evidence, not an independent penalty.
+    let sizePenalty=0;
+    if(!dormant&&!isUnknown(i.colonySize)){
+      const cs=num(i.colonySize,0);
+      sizePenalty=cs>=8?0:cs>=6?2:cs>=4?5:cs>=1?8:0;
+    }
+    const swarmSignal=isPresent(i.swarming);
+    const swarmPenalty=((phase==='Population Increase'||phase==='Peak Population')&&swarmSignal)?4:0;
+    const colonyPenalty=Math.min(20,sizePenalty+swarmPenalty);
+    const colonyScore=20-colonyPenalty;
+
+    // Food /15 — Feeding Need does not double-penalize store evidence.
+    const honeyLow=norm(i.honey)==='low'||norm(i.honey)==='none';
+    const pollenLow=norm(i.pollen)==='low'||norm(i.pollen)==='none';
+    let foodPenalty=(honeyLow?5:0)+(pollenLow?4:0)+(honeyLow&&pollenLow?2:0);
+    foodPenalty=Math.min(15,foodPenalty);
+    const foodScore=15-foodPenalty;
+
+    // Varroa & Pests /30 — phase-aware threshold classification.
+    const varroa=varroaAssessment(i.varroa,phase);
+    const pestsPenalty=isPresent(i.pests)?4:0;
+    const diseasePenalty=isPresent(i.disease)?10:0;
+    const varroaPestsPenalty=Math.min(30,varroa.penalty+pestsPenalty+diseasePenalty);
+    const varroaPestsScore=30-varroaPestsPenalty;
+
+    // Preliminary risks used to evaluate management closure.
+    const trendDecline=phaseInfo.trend.direction==='Decreasing';
+    const risks=[];
+    if(varroa.assessment==='Caution')risks.push({type:'Varroa',severity:'Medium',label:'Varroa caution',evidence:`${varroa.count}/100 bees`,recommendedAction:'Recheck mite level and review current colony-phase threshold.',route:`inspection/${h.id}`,rank:70});
+    if(varroa.assessment==='Danger')risks.push({type:'Varroa',severity:'Critical',label:'Varroa elevated',evidence:`${varroa.count}/100 bees; ${phase}`,recommendedAction:'Review an appropriate Varroa management option for the current colony phase, brood status, temperature, honey-super status and product label.',route:`treatment-record/${h.id}`,rank:120});
+    if(!dormant&&strongQueenUncertainty){
+      risks.push({type:'Queen',severity:trendDecline?'Critical':'Medium',label:'Queen uncertainty',evidence:'Queen not seen; no eggs or larvae recorded',recommendedAction:'Confirm queen-right status before making an irreversible queen-management decision.',route:`inspection/${h.id}`,rank:trendDecline?110:75});
+    }else if(!dormant&&!qSeen&&!eSeen&&lSeen){
+      risks.push({type:'Queen',severity:'Medium',label:'Queen uncertainty',evidence:'Queen and eggs not seen, but larvae are present',recommendedAction:'Recheck for the queen and fresh eggs at the next inspection.',route:`inspection/${h.id}`,rank:65});
+    }
+    if(broodPattern==='poor'||abnormalPenalty>0)risks.push({type:'Brood',severity:'Medium',label:'Brood concern',evidence:broodPattern==='poor'?'Poor brood pattern':String(i.abnormalities||'Brood abnormality'),recommendedAction:'Reassess brood pattern and abnormalities at the next inspection.',route:`inspection/${h.id}`,rank:60});
+    if(honeyLow||pollenLow)risks.push({type:'Food',severity:'Medium',label:honeyLow&&pollenLow?'Honey and pollen stores low':honeyLow?'Low honey stores':'Low pollen stores',evidence:'Food stores need contextual review',recommendedAction:'Assess remaining stores, brood demand and natural forage before deciding whether supplemental feeding is needed.',route:`feeding-record/${h.id}`,rank:55});
+    if(isPresent(i.disease))risks.push({type:'Disease',severity:'Critical',label:'Disease concern',evidence:String(i.disease),recommendedAction:'Review disease evidence and obtain an appropriate diagnosis before disease-specific management.',route:`inspection/${h.id}`,rank:115});
+    if(isPresent(i.pests))risks.push({type:'Pests',severity:'Medium',label:'Pest concern',evidence:String(i.pests),recommendedAction:'Identify the pest and reassess colony impact before selecting management.',route:`inspection/${h.id}`,rank:58});
+    const swarmContext=(phase==='Population Increase'||phase==='Peak Population')&&(swarmSignal||(isPresent(i.queenCells)&&num(i.colonySize,0)>=8));
+    if(swarmContext)risks.push({type:'Swarm',severity:'High',label:'Swarm risk',evidence:'Colony phase and swarm indicators support elevated swarm risk',recommendedAction:'Assess congestion, brood-nest space, supers and queen cells using the beekeeper’s swarm-management plan.',route:`inspection/${h.id}`,rank:90});
+
+    // Management & Follow-up /10 — only actionable major risks create a closure requirement.
+    // v1.0 can only verify a management-closure record where the current data model has a compatible structured record (Varroa/Disease treatment).
+    // Queen/swarm actions remain Risk/Action outputs and are not falsely penalized for lacking a Treatment record.
+    const actionable=risks.some(r=>(r.type==='Varroa'||r.type==='Disease')&&(r.severity==='Critical'||r.severity==='High'));
+    const tx=latestTreatment(s,h.id);
+    const evidenceDate=dateMs(i.varroaTestDate||h.lastInspection);
+    const relevantTx=tx&&dateMs(tx.date)>=evidenceDate;
+    let managementScore=10,managementState='No actionable High/Critical risk';
+    if(actionable){
+      if(!relevantTx){managementScore=4;managementState='Critical/High risk with no management record';}
+      else if(tx.followUp){
+        const overdue=dateMs(tx.followUp)&&dateMs(tx.followUp)<Date.now();
+        if(overdue){managementScore=2;managementState='Management recorded; follow-up overdue';}
+        else {managementScore=10;managementState='Management recorded; follow-up planned';}
+      }else{managementScore=8;managementState='Management recorded; follow-up missing';}
+    }
+    if(managementScore<=2)risks.push({type:'Follow-up',severity:'High',label:'Follow-up overdue',evidence:tx?.followUp?`Follow-up ${tx.followUp}`:'Follow-up is overdue',recommendedAction:'Complete the planned reassessment and record the current result.',route:`treatment-record/${h.id}`,rank:100});
+    else if(actionable&&relevantTx&&!tx.followUp)risks.push({type:'Follow-up',severity:'Medium',label:'Follow-up needed',evidence:'Management recorded without a follow-up date',recommendedAction:'Set a follow-up date based on the management plan and applicable product label.',route:`treatment-record/${h.id}`,rank:68});
+
+    const dimensions={
+      queenBrood:{label:'Queen & Brood',score:queenBroodScore,max:25,penalty:queenBroodPenalty},
+      colony:{label:'Colony',score:colonyScore,max:20,penalty:colonyPenalty},
+      food:{label:'Food',score:foodScore,max:15,penalty:foodPenalty},
+      varroaPests:{label:'Varroa & Pests',score:varroaPestsScore,max:30,penalty:varroaPestsPenalty},
+      management:{label:'Management & Follow-up',score:managementScore,max:10,penalty:10-managementScore}
+    };
+    const score=clamp(Math.round(queenBroodScore+colonyScore+foodScore+varroaPestsScore+managementScore),0,100);
+    const baseHealthState=score>=85?'Healthy':score>=70?'Attention':'Critical';
+
+    // Critical Override: urgent risk is kept separate from aggregate Health Score.
+    const criticalOverride=varroa.assessment==='Danger'||isPresent(i.disease)||(!dormant&&strongQueenUncertainty&&trendDecline)||risks.filter(r=>r.severity==='Critical').length>=2;
+
+    const confidence=dataConfidence(s,h,phaseInfo,i);
+    if(ageDays(h.lastInspection)>Math.max(14,Number(s?.settings?.inspectionCycle||7)*2)){
+      risks.push({type:'Data',severity:'Medium',label:'Inspection overdue',evidence:`Last inspection ${ageDays(h.lastInspection)} days ago`,recommendedAction:'Update the inspection record before relying on the health estimate.',route:`inspection/${h.id}`,rank:50});
+    }
+    const hasHigh=risks.some(r=>r.severity==='High');
+    const hasMedium=risks.some(r=>r.severity==='Medium');
+    const overallRisk=criticalOverride?'Critical':hasHigh?'High':hasMedium?'Medium':'Low';
+    const displayStatus=criticalOverride?'Critical':baseHealthState;
+
+    risks.sort((a,b)=>b.rank-a.rank||a.label.localeCompare(b.label));
+    const reasons=risks.map(r=>r.label);
+    const positives=[];
+    if(queenEvidencePenalty===0&&!dormant)positives.push('Queen-right evidence is acceptable');
+    if(broodQualityPenalty===0&&!isUnknown(i.brood))positives.push('Brood pattern has no recorded concern');
+    if(colonyPenalty===0)positives.push('Colony condition has no current score penalty');
+    if(foodPenalty===0)positives.push('Food stores are adequate from current records');
+    if(varroa.assessment==='Acceptable')positives.push('Varroa is acceptable for the current phase');
+
+    return {
+      modelVersion:MODEL_VERSION,knowledgeVersion:KNOWLEDGE_VERSION,hiveId:h.id,
+      score,baseHealthState,displayStatus,overallRisk,criticalOverride,
+      phase:phaseInfo.phase,phaseInfo,confidence,varroa,dimensions,
+      risks,reasons,positives,managementState,current:i
+    };
+  }
+
+  window.V224B_MODEL={version:MODEL_VERSION,knowledgeVersion:KNOWLEDGE_VERSION,varroaThresholds:V224B_VARROA_THRESHOLDS};
+  window.v224bEvaluateHive=evaluateHive;
+  window.v224bEvaluateAll=function(s){
+    const out=new Map();
+    (s?.hives||[]).forEach(h=>out.set(h.id,evaluateHive(s,h)));
+    window.V224B_DECISIONS=out;
+    return out;
+  };
+
+  function cachedDecision(h){
+    return h&&window.V224B_DECISIONS?.get(h.id)||null;
+  }
+
+  // Replace V223 score sync with the frozen v1.0 model while retaining its shared renderer contract.
+  window.v223SyncHiveHealth=function(s,persist=true){
+    if(!s||!Array.isArray(s.hives))return false;
+    const decisions=window.v224bEvaluateAll(s);
+    let changed=false;
+    s.hives.forEach(h=>{
+      const d=decisions.get(h.id);if(!d)return;
+      if(Number(h.score)!==d.score){h.score=d.score;changed=true;}
+      if(v219NormalizeHiveStatus(h.status)!==d.displayStatus){h.status=d.displayStatus;changed=true;}
+    });
+    if(changed&&persist&&typeof save==='function')save(s);
+    return changed;
+  };
+
+  // Compatibility API: older pages may still call calculateHealth(h).
+  window.calculateHealth=function(h){
+    const d=cachedDecision(h);
+    if(d)return {score:d.score,status:d.displayStatus,why:d.risks.map(r=>[r.label,0]),decision:d};
+    return {score:Number(h?.score||0),status:v219NormalizeHiveStatus(h?.status||'Critical'),why:[]};
+  };
+
+  // Replace legacy risk rules with the v1.0 risk engine while keeping High/Medium/Low compatibility.
+  riskAssessment=function(h){
+    const d=cachedDecision(h);
+    if(!d){return {level:'Low',overallRisk:'Low',reasons:[],severe:0,moderate:0,signalCount:0,risks:[]};}
+    const level=d.overallRisk==='Critical'||d.overallRisk==='High'?'High':d.overallRisk==='Medium'?'Medium':'Low';
+    return {
+      level,overallRisk:d.overallRisk,reasons:d.reasons,
+      severe:d.risks.filter(r=>r.severity==='Critical'||r.severity==='High').length,
+      moderate:d.risks.filter(r=>r.severity==='Medium').length,
+      signalCount:d.risks.length,risks:d.risks,phase:d.phase,confidence:d.confidence.level,
+      criticalOverride:d.criticalOverride
+    };
+  };
+
+  // Actions now come from the same evidence model. Completed history remains handled by the existing Actions page.
+  generateActions=function(s){
+    const decisions=window.v224bEvaluateAll(s),list=[];
+    for(const h of (s.hives||[])){
+      const d=decisions.get(h.id);if(!d)continue;
+      const added=new Set();
+      for(const r of d.risks){
+        let type='Inspection',title=r.label,priority=r.severity==='Critical'||r.severity==='High'?'High':'Medium',due=priority==='High'?'Now':'Next check';
+        if(r.type==='Varroa'){type='Treatment';title=r.severity==='Critical'?'Varroa management required':'Varroa follow-up';due=priority==='High'?'Now':'Soon';}
+        else if(r.type==='Food'){type='Feeding';title='Review food stores';due='Soon';}
+        else if(r.type==='Queen'){type='Inspection';title='Confirm queen status';}
+        else if(r.type==='Swarm'){type='Inspection';title='Assess swarm risk';due='Now';}
+        else if(r.type==='Follow-up'){type='Treatment';title=r.label;due='Now';}
+        else if(r.type==='Data'){type='Inspection';title='Inspection overdue';due='Now';}
+        const key=`${r.type}:${title}`;if(added.has(key))continue;added.add(key);
+        list.push({id:`v224b-${r.type.toLowerCase()}-${h.id}`,hiveId:h.id,type,priority,title,reason:r.type==='Varroa'?`Latest Varroa result is ${d.varroa.count}/100. ${d.phase}.`:r.evidence,due,status:'Pending',modelVersion:MODEL_VERSION});
+      }
+    }
+    const rank={High:3,Medium:2,Low:1};
+    return list.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0)||String(a.hiveId).localeCompare(String(b.hiveId)));
+  };
+
+  // Professional Recommendations uses the same prioritized Action Engine.
+  v127RecommendationItems=function(s){
+    const decisions=window.v224bEvaluateAll(s),items=[];
+    for(const h of (s.hives||[])){
+      const d=decisions.get(h.id);if(!d)continue;
+      for(const r of d.risks){
+        if(r.type==='Data'&&d.risks.some(x=>x.severity==='Critical'||x.severity==='High'))continue;
+        const priority=r.severity==='Critical'||r.severity==='High'?'Priority':'Action';
+        let cta='Open Hive',route=`hive/${h.id}`,when=priority==='Priority'?'Now':'Next inspection';
+        if(r.type==='Varroa'){cta='Review Treatment',route=`treatment-record/${h.id}`,when=priority==='Priority'?'Now':'Soon';}
+        else if(r.type==='Food'){cta='Review Feeding',route=`feeding-record/${h.id}`,when='Before next inspection';}
+        else if(r.type==='Queen'||r.type==='Brood'||r.type==='Swarm'||r.type==='Data'){cta='Start Inspection',route=`inspection/${h.id}`;}
+        else if(r.type==='Follow-up'){cta='Set Follow-up',route=`treatment-record/${h.id}`;}
+        items.push({key:`${h.id}:${r.type}:${r.label}`,hiveId:h.id,hiveName:h.name||'Hive',priority,rank:r.rank,title:r.label,why:r.evidence,action:r.recommendedAction,when,cta,route});
+      }
+    }
+    return items.sort((a,b)=>b.rank-a.rank||a.hiveName.localeCompare(b.hiveName));
+  };
+
+  // AI Health Analysis: dynamic Score → Risk → Why → What to do next, without changing route or entitlement.
+  healthAnalysis=function(r){
+    if(typeof v50GuardPro==='function'&&!v50GuardPro('AI Health Analysis'))return;
+    const s=v45s(),decisions=window.v224bEvaluateAll(s);
+    const rows=(s.hives||[]).map(h=>({h,d:decisions.get(h.id)})).filter(x=>x.d).sort((a,b)=>{
+      const rr={Critical:4,High:3,Medium:2,Low:1};return (rr[b.d.overallRisk]||0)-(rr[a.d.overallRisk]||0)||(a.d.score-b.d.score);
+    });
+    const top=rows[0]||null;if(!top){r.innerHTML='<div class="vs"><div class="vc">No hive data.</div></div>';return;}
+    const {h,d}=top,photo='assets/ai_health_hero_clean.webp';
+    const reasonItems=[...d.risks.slice(0,4).map(x=>`${x.label}: ${x.evidence}`),...d.positives.slice(0,2)];
+    const actions=d.risks.slice(0,3);
+    r.innerHTML=`<div class="vs v112-ai-health">
+      <section class="v112-ai-hero" style="--ai-photo:url('${photo}')"><div class="v112-ai-shade"></div>
+        <div class="v112-ai-score" aria-label="Health score ${d.score}"><strong>${d.score}</strong><span>${esc(d.baseHealthState)}</span></div>
+        <div class="v112-ai-copy"><small>HEALTH & DECISION MODEL v1.0</small><b>${esc(h.name||'Hive')}</b><span>${esc(d.phase)} · Confidence ${esc(d.confidence.level)}</span></div>
+        <div class="v112-ai-risk"><span>Risk Level</span><strong>${esc(d.overallRisk)}</strong></div>
+      </section>
+      ${Vcard('Why',`<ul class="bullets v112-ai-reasons">${reasonItems.map(x=>`<li>${esc(x)}</li>`).join('')||'<li>No current rule-based risk signal.</li>'}</ul>`)}
+      ${Vcard('What to do next',`<div class="recol v112-ai-actions">${actions.length?actions.map(a=>`<button onclick="go('${a.route}')">${esc(a.recommendedAction)}</button>`).join(''):'<button onclick="go(\'inspection/'+h.id+'\')">Continue normal monitoring</button>'}</div>`)}
+      <button class="primary v112-ai-cta" onclick="go('recommendations')">View Recommendations</button>
+    </div>`;
+  };
+
+  // Keep the existing six-card Hive Detail structure; only make its Varroa Risk label phase-aware.
+  const baseHiveDetail224B=hiveDetail;
+  hiveDetail=function(r,id){
+    baseHiveDetail224B(r,id);
+    const s=v45s(),h=hive(s,id),d=h?cachedDecision(h):null;if(!d)return;
+    const groups=[...r.querySelectorAll('.hg')];
+    const vg=groups.find(g=>String(g.querySelector(':scope > b')?.textContent||'').trim()==='Varroa');
+    if(vg){
+      [...vg.querySelectorAll(':scope > div')].forEach(row=>{
+        if(String(row.querySelector('span')?.textContent||'').trim()==='Risk'){
+          const target=row.querySelector('strong');if(target)target.textContent=d.varroa.assessment==='Danger'?'High':d.varroa.assessment==='Caution'?'Medium':'Low';
+        }
+      });
+    }
+  };
+
+  // Refresh the current stored state once so all existing renderers consume v1.0 score/status immediately.
+  try{
+    const raw=state();
+    window.v223SyncHiveHealth(raw,true);
+  }catch(err){console.error('V224B initial health decision sync failed',err);}
+})();

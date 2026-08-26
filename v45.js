@@ -9053,3 +9053,113 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
 /* V224B3 — Core Model Consistency Fix: phase-aware Inspection Varroa, unified Insights bands/risk, treatment-aware Varroa actions. */
 window.__HIVEDASH_V224B3__=true;
+
+/* ==========================================================
+   V224B3A — EXPLICIT DISEASE EVIDENCE LINK FIX
+   Scope ONLY: connect the current saved Inspection Disease value
+   to the V224B Health & Decision Model without reviving legacy
+   hive-level disease fallbacks.
+
+   Authoritative disease evidence sources:
+   1) an explicit Disease choice made in the current Inspection draft; OR
+   2) the latest saved Inspection record for this hive/date, when that
+      record contains its own Disease field.
+
+   Non-authoritative sources remain excluded:
+   - h.disease legacy boolean
+   - migrated/default h.insp.disease with no saved/current provenance
+   ========================================================== */
+(function v224b3aExplicitDiseaseEvidenceLink(){
+  if(window.__V224B3A_DISEASE_LINK__) return;
+  window.__V224B3A_DISEASE_LINK__=true;
+
+  function latestSavedInspectionForHive(s,h){
+    const rows=(Array.isArray(s?.logs?.inspections)?s.logs.inspections:[])
+      .filter(x=>x&&x.hiveId===h?.id&&x.date)
+      .slice()
+      .sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+    if(!rows.length) return null;
+    const latest=rows[rows.length-1];
+    // Only treat the record as CURRENT evidence when it corresponds to the
+    // hive's current inspection date. This blocks unrelated historical rows.
+    if(h?.lastInspection && String(latest.date)!==String(h.lastInspection)) return null;
+    return latest;
+  }
+
+  function syncDiseaseProvenance(s,h){
+    if(!s||!h) return false;
+    const insp=(h.insp&&typeof h.insp==='object')?h.insp:{};
+    // A direct user choice captured by V224B2 remains the strongest source.
+    if(insp.diseaseExplicit===true) return false;
+
+    const latest=latestSavedInspectionForHive(s,h);
+    if(!latest || !Object.prototype.hasOwnProperty.call(latest,'disease')) return false;
+
+    // A saved CURRENT Inspection row is authoritative for both Present and None.
+    h.insp={...insp,disease:latest.disease,diseaseExplicit:true,diseaseEvidenceSource:'saved-current-inspection'};
+    return true;
+  }
+
+  // Ensure every V224B evaluation sees current saved disease provenance first.
+  const baseEvaluateHive=window.v224bEvaluateHive;
+  if(typeof baseEvaluateHive==='function'){
+    window.v224bEvaluateHive=function(s,h){
+      try{ syncDiseaseProvenance(s,h); }catch(_){ }
+      return baseEvaluateHive.apply(this,arguments);
+    };
+  }
+
+  const baseEvaluateAll=window.v224bEvaluateAll;
+  if(typeof baseEvaluateAll==='function'){
+    window.v224bEvaluateAll=function(s){
+      try{ (s?.hives||[]).forEach(h=>syncDiseaseProvenance(s,h)); }catch(_){ }
+      const out=baseEvaluateAll.apply(this,arguments);
+      // Keep cached decisions aligned with the wrapper result.
+      window.V224B_DECISIONS=out;
+      return out;
+    };
+  }
+
+  // Persist the explicit provenance into BOTH h.insp and the newly-created
+  // Inspection log so future evaluation never has to guess where the value came from.
+  const baseSaveInspection=window.vSaveInspection;
+  if(typeof baseSaveInspection==='function'){
+    window.vSaveInspection=function(id){
+      const explicit=window.V49_INSPECTION_DRAFT?.diseaseExplicit===true;
+      const selectedDisease=window.V49_INSPECTION_DRAFT?.disease;
+      const result=baseSaveInspection.apply(this,arguments);
+      if(explicit){
+        try{
+          const s=typeof v45s==='function'?v45s():null;
+          const h=s&&typeof hive==='function'?hive(s,id):null;
+          if(s&&h){
+            h.insp={...(h.insp||{}),disease:selectedDisease,diseaseExplicit:true,diseaseEvidenceSource:'explicit-current-inspection'};
+            const rows=(Array.isArray(s.logs?.inspections)?s.logs.inspections:[])
+              .filter(x=>x&&x.hiveId===id)
+              .sort((a,b)=>String(a.date||'').localeCompare(String(b.date||'')));
+            const latest=rows[rows.length-1];
+            if(latest){
+              latest.disease=selectedDisease;
+              latest.diseaseExplicit=true;
+              latest.diseaseEvidenceSource='explicit-current-inspection';
+            }
+            if(typeof save==='function') save(s);
+            if(typeof window.v223SyncHiveHealth==='function') window.v223SyncHiveHealth(s,true);
+          }
+        }catch(_){ }
+      }
+      return result;
+    };
+  }
+
+  // Initial one-time provenance sync for existing current saved Inspections.
+  try{
+    const s=typeof v45s==='function'?v45s():null;
+    let changed=false;
+    (s?.hives||[]).forEach(h=>{ if(syncDiseaseProvenance(s,h)) changed=true; });
+    if(changed&&typeof save==='function') save(s);
+    if(s&&typeof window.v223SyncHiveHealth==='function') window.v223SyncHiveHealth(s,true);
+  }catch(err){ console.error('V224B3A disease provenance sync failed',err); }
+})();
+
+window.__HIVEDASH_V224B3A__=true;

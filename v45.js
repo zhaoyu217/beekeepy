@@ -408,16 +408,14 @@ function v215FinishMoreSave(s,msg){
   render();
   return true;
 }
+function v216MoreActiveHives(s){return (s.hives||[]).filter(h=>!h.archived)}
+function v216HiveSelect(s,selectedId,selectId='v216hive'){const hs=v216MoreActiveHives(s);const chosen=hs.some(h=>String(h.id)===String(selectedId))?selectedId:(hs[0]?.id||'');return `<label>Hive<select id="${selectId}">${hs.map(h=>`<option value="${esc(h.id)}" ${String(h.id)===String(chosen)?'selected':''}>${esc(h.name||h.id)}</option>`).join('')}</select></label>`}
+function v216SelectedHive(selectId='v216hive'){return idq(selectId)?.value||''}
 function openHiveMoreV214(hiveId){
-  const s=v45s(),h=hive(s,hiveId)||s.hives[0];
-  if(!h)return toast('Hive not found');
-  const id=h.id;
-  modalV215More(`<div class="modalhead add-action-head">
-    <b>More Hive Actions</b>
-    <button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button>
-  </div>
-  <div class="quick core-menu-actions add-action-grid">
-    <button class="qbtn add-action-card" onclick="closeModal(this);go('hive/${id}');setTimeout(()=>document.getElementById('phinput')?.click(),180)"><span class="add-action-icon">▧</span><b>Add Photo</b></button>
+  const s=v45s(),hs=v216MoreActiveHives(s); if(!hs.length)return toast('No active hives');
+  const id=hs.some(h=>String(h.id)===String(hiveId))?hiveId:hs[0].id;
+  modalV215More(`<div class="modalhead add-action-head"><b>More Hive Actions</b><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="quick core-menu-actions add-action-grid">
+    <button class="qbtn add-action-card" onclick="closeModal(this);openMorePhotoV216('${id}')"><span class="add-action-icon">▧</span><b>Add Photo</b></button>
     <button class="qbtn add-action-card" onclick="closeModal(this);openHiveNoteV214('${id}')"><span class="add-action-icon">≡</span><b>Add Note</b></button>
     <button class="qbtn add-action-card" onclick="closeModal(this);openHiveReminderV214('${id}')"><span class="add-action-icon">◷</span><b>Add Reminder</b></button>
     <button class="qbtn add-action-card" onclick="closeModal(this);openHiveStatusV214('${id}')"><span class="add-action-icon">●</span><b>Hive Status</b></button>
@@ -425,22 +423,18 @@ function openHiveMoreV214(hiveId){
     <button class="qbtn add-action-card" onclick="closeModal(this);confirmArchiveHiveV214('${id}')"><span class="add-action-icon">□</span><b>Archive Hive</b></button>
   </div>`)
 }
-function openHiveNoteV214(id){
-  const s=v45s(),h=hive(s,id); if(!h)return;
-  modalV215More(`<div class="modalhead"><b>Add Note · ${esc(h.name)}</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><textarea id="v214note" rows="6" placeholder="Add a note for this hive...">${esc(h.quickNote||'')}</textarea><button class="primary" onclick="saveHiveNoteV214('${id}')">Save Note</button></div>`)
-}
-function saveHiveNoteV214(id){const s=v45s(),h=hive(s,id),el=idq('v214note');if(!h||!el)return;h.quickNote=el.value.trim();v215FinishMoreSave(s,'Hive note saved') }
-function openHiveReminderV214(id){
- const s=v45s(),h=hive(s,id);if(!h)return;const val=(h.nextInspection||'').slice(0,10);
- modalV215More(`<div class="modalhead"><b>Add Reminder · ${esc(h.name)}</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><label>Next inspection<input id="v214rem" type="date" value="${esc(val)}"></label><button class="primary" onclick="saveHiveReminderV214('${id}')">Save Reminder</button></div>`)
-}
-function saveHiveReminderV214(id){const s=v45s(),h=hive(s,id),el=idq('v214rem');if(!h||!el)return;h.nextInspection=el.value;v215FinishMoreSave(s,'Reminder saved') }
-function openHiveStatusV214(id){const s=v45s(),h=hive(s,id);if(!h)return;modalV215More(`<div class="modalhead"><b>Hive Status · ${esc(h.name)}</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><label>Status<select id="v214status"><option ${h.status==='Healthy'?'selected':''}>Healthy</option><option ${h.status==='Attention'?'selected':''}>Attention</option><option ${h.status==='Critical'?'selected':''}>Critical</option></select></label><button class="primary" onclick="saveHiveStatusV214('${id}')">Save Status</button></div>`)}
-function saveHiveStatusV214(id){const s=v45s(),h=hive(s,id),el=idq('v214status');if(!h||!el)return;h.status=el.value;v215FinishMoreSave(s,'Hive status updated') }
-function openHiveEditV214(id){const s=v45s(),h=hive(s,id);if(!h)return;modalV215More(`<div class="modalhead"><b>Edit Hive</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><label>Hive name<input id="v214name" value="${esc(h.name||'')}"></label><button class="primary" onclick="saveHiveEditV214('${id}')">Save Changes</button></div>`)}
-function saveHiveEditV214(id){const s=v45s(),h=hive(s,id),el=idq('v214name');if(!h||!el)return;const name=el.value.trim();if(!name)return toast('Enter a hive name');h.name=name;v215FinishMoreSave(s,'Hive updated') }
-function confirmArchiveHiveV214(id){const s=v45s(),h=hive(s,id);if(!h)return;modalV215More(`<div class="modalhead"><b>Archive ${esc(h.name)}?</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><p class="muted">This hive will be marked archived. Its existing records are kept.</p><button class="primary" onclick="archiveHiveV214('${id}')">Archive Hive</button><button class="secondary" onclick="closeModal(this)">Cancel</button></div>`)}
-function archiveHiveV214(id){const s=v45s(),h=hive(s,id);if(!h)return;h.archived=true;h.archivedAt=new Date().toISOString();if(!save(s))return;document.querySelector('.modal.v215-more-modal')?.remove();toast('Hive archived');go('hives') }
+function openMorePhotoV216(id){const s=v45s();modalV215More(`<div class="modalhead"><b>Add Photo</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc">${v216HiveSelect(s,id,'v216photoHive')}<button class="primary" onclick="const x=v216SelectedHive('v216photoHive');closeModal(this);go('hive/'+x);setTimeout(()=>document.getElementById('phinput')?.click(),180)">Continue to Photos</button></div>`)}
+function openHiveNoteV214(id){const s=v45s(),h=hive(s,id)||v216MoreActiveHives(s)[0];if(!h)return;modalV215More(`<div class="modalhead"><b>Add Note</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc">${v216HiveSelect(s,h.id,'v216noteHive')}<textarea id="v214note" rows="6" placeholder="Add a note for this hive...">${esc(h.quickNote||'')}</textarea><button class="primary" onclick="saveHiveNoteV216()">Save Note</button></div>`)}
+function saveHiveNoteV216(){const s=v45s(),id=v216SelectedHive('v216noteHive'),h=hive(s,id),el=idq('v214note');if(!h||!el)return;h.quickNote=el.value.trim();v215FinishMoreSave(s,'Hive note saved')}
+function openHiveReminderV214(id){const s=v45s(),h=hive(s,id)||v216MoreActiveHives(s)[0];if(!h)return;const val=(h.nextInspection||'').slice(0,10);modalV215More(`<div class="modalhead"><b>Add Reminder</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc">${v216HiveSelect(s,h.id,'v216remHive')}<label>Next inspection<input id="v214rem" type="date" value="${esc(val)}"></label><button class="primary" onclick="saveHiveReminderV216()">Save Reminder</button></div>`)}
+function saveHiveReminderV216(){const s=v45s(),id=v216SelectedHive('v216remHive'),h=hive(s,id),el=idq('v214rem');if(!h||!el)return;h.nextInspection=el.value;v215FinishMoreSave(s,'Reminder saved')}
+function openHiveStatusV214(id){const s=v45s(),h=hive(s,id)||v216MoreActiveHives(s)[0];if(!h)return;modalV215More(`<div class="modalhead"><b>Hive Status</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc">${v216HiveSelect(s,h.id,'v216statusHive')}<label>Status<select id="v214status"><option ${h.status==='Healthy'?'selected':''}>Healthy</option><option ${h.status==='Attention'?'selected':''}>Attention</option><option ${h.status==='Critical'?'selected':''}>Critical</option></select></label><button class="primary" onclick="saveHiveStatusV216()">Save Status</button></div>`)}
+function saveHiveStatusV216(){const s=v45s(),id=v216SelectedHive('v216statusHive'),h=hive(s,id),el=idq('v214status');if(!h||!el)return;h.status=el.value;v215FinishMoreSave(s,'Hive status updated')}
+function openHiveEditV214(id){const s=v45s(),h=hive(s,id)||v216MoreActiveHives(s)[0];if(!h)return;modalV215More(`<div class="modalhead"><b>Edit Hive</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc">${v216HiveSelect(s,h.id,'v216editHive')}<label>Hive name<input id="v214name" value="${esc(h.name||'')}"></label><button class="primary" onclick="saveHiveEditV216()">Save Changes</button></div>`)}
+function saveHiveEditV216(){const s=v45s(),id=v216SelectedHive('v216editHive'),h=hive(s,id),el=idq('v214name');if(!h||!el)return;const name=el.value.trim();if(!name)return toast('Enter a hive name');h.name=name;v215FinishMoreSave(s,'Hive updated')}
+function confirmArchiveHiveV214(id){const s=v45s(),h=hive(s,id)||v216MoreActiveHives(s)[0];if(!h)return;modalV215More(`<div class="modalhead"><b>Archive Hive</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc">${v216HiveSelect(s,h.id,'v216archiveHive')}<p class="muted">The selected hive will be marked archived. Its existing records are kept.</p><button class="primary" onclick="confirmArchiveSelectedV216()">Continue</button><button class="secondary" onclick="closeModal(this)">Cancel</button></div>`)}
+function confirmArchiveSelectedV216(){const s=v45s(),id=v216SelectedHive('v216archiveHive'),h=hive(s,id);if(!h)return;modalV215More(`<div class="modalhead"><b>Archive ${esc(h.name)}?</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><p class="muted">This hive will be marked archived. Its existing records are kept.</p><button class="primary" onclick="archiveHiveV214('${id}')">Archive Hive</button><button class="secondary" onclick="closeModal(this)">Cancel</button></div>`)}
+function archiveHiveV214(id){const s=v45s(),h=hive(s,id);if(!h)return;h.archived=true;h.archivedAt=new Date().toISOString();if(!save(s))return;document.querySelector('.modal.v215-more-modal')?.remove();toast('Hive archived');go('hives')}
 
 function allActions(r,mode){actions(r); if(mode){const want=String(mode).toLowerCase().startsWith('complete')?'Completed':String(mode).toLowerCase().startsWith('all')?'All':'Pending';const btn=[...document.querySelectorAll('.filters button')].find(b=>b.textContent.trim()===want);if(btn)filterActions(want,btn)}}
 

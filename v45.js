@@ -47,8 +47,8 @@ function vphoto(h,i=0){return v101HivePrimaryPhoto(h)}
 function Vcard(title,body,action=''){return `<section class="vc"><div class="vhead"><b>${title}</b>${action}</div>${body}</section>`}
 function Vhero(img,html,cls=''){return `<section class="vhero ${cls}" style="--hero:url('${img}')"><i></i>${html}</section>`}
 function Vback(title,right=''){return `<button class="iconbtn" onclick="history.back()">‹</button><div class="pagebar-title">${title}</div>${right||'<span></span>'}`}
-function Vstatus(h){return h.status==='Healthy'?'Good':h.status==='Attention'?'Needs Attention':'Critical'}
-function Vclass(h){return h.status==='Healthy'?'good':h.status==='Attention'?'attention':'critical'}
+function Vstatus(h){const st=v212English(h.status||'Healthy');return st==='Healthy'?'Good':st==='Attention'?'Needs Attention':'Critical'}
+function Vclass(h){const st=v212English(h.status||'Healthy');return st==='Healthy'?'good':st==='Attention'?'attention':'critical'}
 
 function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
 const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
@@ -520,7 +520,7 @@ function recordPage(r,type,id){
         <div class="treatment-hive-copy">
           <b>${esc(active.name)}</b>
           <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
-          <em>✓ ${esc(active.status||'Healthy')}</em>
+          <em>✓ ${esc(v212English(active.status||'Healthy'))}</em>
         </div>
         <select aria-label="Change Hive" onchange="go('treatment-record/'+this.value)">
           ${allowedHives.map(x=>`<option value="${x.id}" ${x.id===active.id?'selected':''}>${esc(x.name)}</option>`).join('')}
@@ -542,8 +542,8 @@ function recordPage(r,type,id){
         <section class="treatment-section-v102">
           <h3><i>▦</i> SCHEDULE</h3>
           <label><span>Start Date</span><input name="Start_Date" type="date" lang="en-US" value="${today}"></label>
-          <label><span>End Date</span><input name="End_Date" type="date" lang="en-US"></label>
-          <label><span>Follow-up</span><input name="Follow_up" type="date" lang="en-US"></label>
+          <label><span>End Date</span><input name="End_Date" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
+          <label><span>Follow-up</span><input name="Follow_up" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
         </section>
         <section class="treatment-section-v102">
           <h3><i>!</i> SAFETY</h3>
@@ -579,7 +579,7 @@ function recordPage(r,type,id){
         <div class="harvest-hive-copy">
           <b>${esc(active.name)}</b>
           <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
-          <em>✓ ${esc(active.status||'Healthy')}</em>
+          <em>✓ ${esc(v212English(active.status||'Healthy'))}</em>
         </div>
         <select aria-label="Change Hive" onchange="go('harvest-record/'+this.value)">
           ${allowedHives.map(x=>`<option value="${x.id}" ${x.id===active.id?'selected':''}>${esc(x.name)}</option>`).join('')}
@@ -620,8 +620,8 @@ function recordPage(r,type,id){
     <label><span>Product</span><input name="Product" value="Oxalic Acid Solution"></label>
     <label><span>Dose</span><input name="Dose" value="5 ml / seam"></label>
     <label><span>Start Date</span><input name="Start_Date" type="date" value="${today}"></label>
-    <label><span>End Date</span><input name="End_Date" type="date"></label>
-    <label><span>Follow-up</span><input name="Follow_up" type="date"></label>
+    <label><span>End Date</span><input name="End_Date" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
+    <label><span>Follow-up</span><input name="Follow_up" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
     <label><span>Withdrawal</span><input name="Withdrawal" value="None"></label>`:`
     <label><span>Date</span><input name="Date" type="date" value="${today}"></label>
     <label><span>Frames Harvested</span><input name="Frames_Harvested" type="number" value="8"></label>
@@ -5848,12 +5848,12 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
         <label class="v198-field">
           <span>End Date</span>
-          <input name="v210TreatmentEndDate" type="date">
+          <input name="v210TreatmentEndDate" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'">
         </label>
 
         <label class="v198-field">
           <span>Follow-up</span>
-          <input name="v210TreatmentFollowUp" type="date">
+          <input name="v210TreatmentFollowUp" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'">
         </label>
 
         <label class="v198-field">
@@ -8065,7 +8065,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     '斑点窝':'Spotty brood','斑驳子脾':'Spotty brood','雄蜂子脾':'Drone brood','其他':'Other',
     '平静':'Calm','普通':'Normal','正常':'Normal','防御性':'Defensive','攻击性':'Aggressive',
     '高':'High','中':'Medium','低':'Low','是':'Yes','是的':'Yes','否':'No','不是':'No',
-    '活跃':'Active','活动':'Active','完成':'Completed','已完成':'Completed',
+    '活跃':'Active','活动':'Active','完成':'Completed','已完成':'Completed','注意':'Attention','健康':'Healthy','严重':'Critical','危急':'Critical',
     '草酸':'Oxalic Acid','甲酸':'Formic Acid','阿米特拉':'Apivar',
     '0天':'0 days','7天':'7 days','14天':'14 days','21天':'21 days'
   };

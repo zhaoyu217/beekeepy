@@ -775,14 +775,47 @@ const V224A_TZ=['America/New_York','America/Chicago','America/Denver','America/P
 function v224aStateName(code){const x=V224A_US_STATES.find(v=>v[0]===String(code||''));return x?x[1]:''}
 function v224aLocationDisplay(loc){if(!loc||typeof loc!=='object')return'';const parts=[];if(String(loc.city||'').trim())parts.push(String(loc.city).trim());if(String(loc.state||'').trim())parts.push(String(loc.state).trim());if(String(loc.country||'').trim())parts.push(String(loc.country).trim()==='United States'?'USA':String(loc.country).trim());return parts.join(', ')}
 function v224aLocationPrecision(loc){if(String(loc.city||'').trim())return'city';if(String(loc.stateCode||'').trim())return'state';if(String(loc.countryCode||'').trim())return'country';return'unset'}
-function apiaryPage(r){
-  const s=v45s(),x=s.settings,l=x.apiaryLocation||{};
-  const stateOptions=['<option value="">Select state</option>',...V224A_US_STATES.map(v=>`<option value="${v[0]}" ${l.stateCode===v[0]?'selected':''}>${v[1]}</option>`)].join('');
-  const tzOptions=V224A_TZ.map(v=>`<option ${l.timezone===v?'selected':''}>${v}</option>`).join('');
-  const existing=String(x.location||'').trim();
-  r.innerHTML=`<div class="vs">${Vcard('Apiaries & Hives','<div class="lines"><button onclick="go(&quot;all-hives&quot;)"><span>All Apiaries</span><b>'+s.hives.length+' hives</b><em>›</em></button></div>')}<section class="formlist"><label><span>Apiary Name</span><input id="v48apiary" value="${esc(x.apiaryName)}"></label><label><span>Country</span><select id="v224country"><option value="US" selected>United States</option></select></label><label><span>State</span><select id="v224state">${stateOptions}</select></label><label><span>City <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224city" autocomplete="address-level2" value="${esc(l.city||'')}" placeholder="e.g. State College"></label><label><span>ZIP Code <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224zip" inputmode="numeric" autocomplete="postal-code" value="${esc(l.postalCode||'')}" placeholder="e.g. 16801"></label><label><span>Time Zone</span><select id="v224tz">${tzOptions}</select></label>${existing&&!l.stateCode?`<div class="notice">Existing location: ${esc(existing)}. Select a state once to convert it to structured location data.</div>`:''}<label><span>Default Inspection Interval</span><select id="v48cycle"><option value="7" ${x.inspectionCycle==7?'selected':''}>7 days</option><option value="14" ${x.inspectionCycle==14?'selected':''}>14 days</option><option value="21" ${x.inspectionCycle==21?'selected':''}>21 days</option></select></label><label><span>Hive Type</span><select id="v48hivetype"><option ${x.hiveType==='Langstroth'?'selected':''}>Langstroth</option><option ${x.hiveType==='Flow Hive'?'selected':''}>Flow Hive</option><option ${x.hiveType==='Top Bar'?'selected':''}>Top Bar</option></select></label></section><button class="primary" onclick="saveApiaryV48()">Save Apiary Settings</button><button class="secondary" onclick="go('seasonal-settings')">Seasonal Settings</button></div>`
+function v224aReadApiaryDraft(){
+  const d=window.V224A_APIARY_DRAFT;
+  return d&&typeof d==='object'?d:null
 }
-function saveApiaryV48(){const s=v45s();const stateCode=String(idq('v224state')?.value||'').trim();const stateName=v224aStateName(stateCode);const city=String(idq('v224city')?.value||'').trim();const postal=String(idq('v224zip')?.value||'').trim();const timezone=String(idq('v224tz')?.value||'').trim();if(!stateCode)return toast('Select a state');if(city.length>80)return toast('City must be 80 characters or fewer');if(postal&&!/^\d{5}(?:-\d{4})?$/.test(postal))return toast('Enter a valid US ZIP Code');const loc={countryCode:'US',country:'United States',stateCode,state:stateName,city,postalCode:postal,latitude:null,longitude:null,timezone:timezone||'America/Denver',precision:city?'city':'state',contextReady:true,legacyText:String(s.settings.location||'')};s.settings.apiaryName=idq('v48apiary').value.trim();s.settings.apiaryLocation=loc;s.settings.location=v224aLocationDisplay(loc);s.settings.locationUserSet=true;s.settings.region=s.settings.region||{};s.settings.region.timezone=loc.timezone;s.settings.timezone=loc.timezone;s.settings.inspectionCycle=Number(idq('v48cycle').value);s.settings.hiveType=idq('v48hivetype').value;if(save(s)===false)return;toast('Apiary settings saved');render()}
+function v224aCaptureApiaryDraft(){
+  const stateEl=idq('v224state');if(!stateEl)return;
+  window.V224A_APIARY_DRAFT={
+    apiaryName:String(idq('v48apiary')?.value||''),
+    stateCode:String(stateEl.value||''),
+    city:String(idq('v224city')?.value||''),
+    postalCode:String(idq('v224zip')?.value||''),
+    timezone:String(idq('v224tz')?.value||''),
+    inspectionCycle:String(idq('v48cycle')?.value||'7'),
+    hiveType:String(idq('v48hivetype')?.value||'Langstroth')
+  }
+}
+function v224aBindApiaryDraft(){
+  ['v48apiary','v224state','v224city','v224zip','v224tz','v48cycle','v48hivetype'].forEach(k=>{
+    const el=idq(k);if(!el)return;
+    el.addEventListener('input',v224aCaptureApiaryDraft);
+    el.addEventListener('change',v224aCaptureApiaryDraft)
+  })
+}
+function apiaryPage(r){
+  const s=v45s(),x=s.settings,l=x.apiaryLocation||{},d=v224aReadApiaryDraft();
+  const shown={
+    apiaryName:d?d.apiaryName:x.apiaryName,
+    stateCode:d?d.stateCode:l.stateCode,
+    city:d?d.city:(l.city||''),
+    postalCode:d?d.postalCode:(l.postalCode||''),
+    timezone:d?d.timezone:(l.timezone||'America/Denver'),
+    inspectionCycle:d?d.inspectionCycle:String(x.inspectionCycle||7),
+    hiveType:d?d.hiveType:(x.hiveType||'Langstroth')
+  };
+  const stateOptions=['<option value="">Select state</option>',...V224A_US_STATES.map(v=>`<option value="${v[0]}" ${shown.stateCode===v[0]?'selected':''}>${v[1]}</option>`)].join('');
+  const tzOptions=V224A_TZ.map(v=>`<option ${shown.timezone===v?'selected':''}>${v}</option>`).join('');
+  const existing=String(x.location||'').trim();
+  r.innerHTML=`<div class="vs">${Vcard('Apiaries & Hives','<div class="lines"><button onclick="go(&quot;all-hives&quot;)"><span>All Apiaries</span><b>'+s.hives.length+' hives</b><em>›</em></button></div>')}<section class="formlist"><label><span>Apiary Name</span><input id="v48apiary" value="${esc(shown.apiaryName)}"></label><label><span>Country</span><select id="v224country"><option value="US" selected>United States</option></select></label><label><span>State</span><select id="v224state">${stateOptions}</select></label><label><span>City <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224city" autocomplete="address-level2" value="${esc(shown.city)}" placeholder="e.g. State College"></label><label><span>ZIP Code <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224zip" inputmode="numeric" autocomplete="postal-code" value="${esc(shown.postalCode)}" placeholder="e.g. 16801"></label><label><span>Time Zone</span><select id="v224tz">${tzOptions}</select></label>${existing&&!l.stateCode&&!shown.stateCode?`<div class="notice">Existing location: ${esc(existing)}. Select a state once to convert it to structured location data.</div>`:''}<label><span>Default Inspection Interval</span><select id="v48cycle"><option value="7" ${shown.inspectionCycle==='7'?'selected':''}>7 days</option><option value="14" ${shown.inspectionCycle==='14'?'selected':''}>14 days</option><option value="21" ${shown.inspectionCycle==='21'?'selected':''}>21 days</option></select></label><label><span>Hive Type</span><select id="v48hivetype"><option ${shown.hiveType==='Langstroth'?'selected':''}>Langstroth</option><option ${shown.hiveType==='Flow Hive'?'selected':''}>Flow Hive</option><option ${shown.hiveType==='Top Bar'?'selected':''}>Top Bar</option></select></label></section><button class="primary" onclick="saveApiaryV48()">Save Apiary Settings</button><button class="secondary" onclick="go('seasonal-settings')">Seasonal Settings</button></div>`;
+  v224aBindApiaryDraft()
+}
+function saveApiaryV48(){const s=v45s();v224aCaptureApiaryDraft();const stateCode=String(idq('v224state')?.value||'').trim();const stateName=v224aStateName(stateCode);const city=String(idq('v224city')?.value||'').trim();const postal=String(idq('v224zip')?.value||'').trim();const timezone=String(idq('v224tz')?.value||'').trim();if(!stateCode)return toast('Select a state');if(city.length>80)return toast('City must be 80 characters or fewer');if(postal&&!/^\d{5}(?:-\d{4})?$/.test(postal))return toast('Enter a valid US ZIP Code');const loc={countryCode:'US',country:'United States',stateCode,state:stateName,city,postalCode:postal,latitude:null,longitude:null,timezone:timezone||'America/Denver',precision:city?'city':'state',contextReady:true,legacyText:String(s.settings.location||'')};s.settings.apiaryName=idq('v48apiary').value.trim();s.settings.apiaryLocation=loc;s.settings.location=v224aLocationDisplay(loc);s.settings.locationUserSet=true;s.settings.region=s.settings.region||{};s.settings.region.timezone=loc.timezone;s.settings.timezone=loc.timezone;s.settings.inspectionCycle=Number(idq('v48cycle').value);s.settings.hiveType=idq('v48hivetype').value;if(save(s)===false)return;window.V224A_APIARY_DRAFT=null;toast('Apiary settings saved');render()}
 
 function seasonalSettings(r){
   const s=v45s(),x=s.settings.seasonal;

@@ -8485,6 +8485,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 })();
 
 /* =========================================================
+   V224B1 — Health & Decision Model v1.0 evidence mapping fix
+   Based on V224B. Disease evidence + active management only.
+
    V224B — Health & Decision Model v1.0
    Scientific Traceability implementation baseline.
    Scope:
@@ -8548,7 +8551,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       varroa:i.varroa??h?.varroa??0,
       varroaTestDate:i.varroaTestDate??h?.lastInspection??'',
       pests:i.pests??((h?.shb||h?.waxMoth)?'Present':'None'),
-      disease:i.disease??(h?.disease?'Present':'None'),
+      // V224B1: disease risk requires explicit current Inspection evidence.
+      // Do not promote legacy hive-level truthy flags into a current Disease=Present observation.
+      disease:i.disease??'None',
       swarming:i.swarming??(h?.swarm?'Signs':'None'),
       superStatus:i.superStatus??h?.superStatus??'Unknown',
       date:h?.lastInspection||''
@@ -8750,18 +8755,22 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const actionable=risks.some(r=>(r.type==='Varroa'||r.type==='Disease')&&(r.severity==='Critical'||r.severity==='High'));
     const tx=latestTreatment(s,h.id);
     const evidenceDate=dateMs(i.varroaTestDate||h.lastInspection);
-    const relevantTx=tx&&dateMs(tx.date)>=evidenceDate;
+    // V224B1: an ACTIVE treatment is current management evidence even when its start date
+    // precedes the latest Varroa test. A completed treatment that predates newer evidence
+    // is not treated as closure for that newer result.
+    const txActive=Boolean(tx&&!tx.endDate);
+    const relevantTx=Boolean(tx&&(txActive||dateMs(tx.date)>=evidenceDate));
     let managementScore=10,managementState='No actionable High/Critical risk';
     if(actionable){
-      if(!relevantTx){managementScore=4;managementState='Critical/High risk with no management record';}
+      if(!relevantTx){managementScore=4;managementState='Critical/High risk with no current management record';}
       else if(tx.followUp){
         const overdue=dateMs(tx.followUp)&&dateMs(tx.followUp)<Date.now();
         if(overdue){managementScore=2;managementState='Management recorded; follow-up overdue';}
-        else {managementScore=10;managementState='Management recorded; follow-up planned';}
-      }else{managementScore=8;managementState='Management recorded; follow-up missing';}
+        else {managementScore=10;managementState=txActive?'Active management; follow-up planned':'Management recorded; follow-up planned';}
+      }else{managementScore=8;managementState=txActive?'Active management; follow-up missing':'Management recorded; follow-up missing';}
     }
     if(managementScore<=2)risks.push({type:'Follow-up',severity:'High',label:'Follow-up overdue',evidence:tx?.followUp?`Follow-up ${tx.followUp}`:'Follow-up is overdue',recommendedAction:'Complete the planned reassessment and record the current result.',route:`treatment-record/${h.id}`,rank:100});
-    else if(actionable&&relevantTx&&!tx.followUp)risks.push({type:'Follow-up',severity:'Medium',label:'Follow-up needed',evidence:'Management recorded without a follow-up date',recommendedAction:'Set a follow-up date based on the management plan and applicable product label.',route:`treatment-record/${h.id}`,rank:68});
+    else if(actionable&&relevantTx&&!tx.followUp)risks.push({type:'Follow-up',severity:'Medium',label:'Follow-up needed',evidence:txActive?'Active management recorded without a follow-up date':'Management recorded without a follow-up date',recommendedAction:'Set a follow-up date based on the management plan and applicable product label.',route:`treatment-record/${h.id}`,rank:68});
 
     const dimensions={
       queenBrood:{label:'Queen & Brood',score:queenBroodScore,max:25,penalty:queenBroodPenalty},

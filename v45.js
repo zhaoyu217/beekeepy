@@ -8270,3 +8270,43 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     @media(max-width:350px){.v211-grid{gap:8px!important}.v211-card{padding:11px!important}.v211-card-row{font-size:11px!important}.v211-card-row strong{font-size:11px!important}}
   `;document.head.appendChild(style);
 })();
+
+/* =========================================================
+   V222 — Hive Detail Hero Health Gauge Text Centering
+   Scope locked: visual alignment only.
+   - Does not change gauge dimensions, score/status values, hero imagery,
+     hive data, routes, Action Center, Risk Alerts, Inspection, Voice Notes,
+     More, Treatment Record, or Hive Detail data logic.
+   ========================================================= */
+(function v222CenterHiveDetailHealthGaugeText(){
+  const id='v222-health-gauge-center-style';
+  if(document.getElementById(id)) return;
+  const style=document.createElement('style');
+  style.id=id;
+  style.textContent=`
+    .v82-hive-detail .score{
+      display:flex!important;
+      flex-direction:column!important;
+      align-items:center!important;
+      justify-content:center!important;
+      text-align:center!important;
+      box-sizing:border-box!important;
+      padding-left:4px!important;
+      padding-right:4px!important;
+    }
+    .v82-hive-detail .score b,
+    .v82-hive-detail .score span{
+      display:block!important;
+      width:100%!important;
+      margin-left:auto!important;
+      margin-right:auto!important;
+      text-align:center!important;
+      box-sizing:border-box!important;
+    }
+    .v82-hive-detail .score span{
+      line-height:1.05!important;
+      white-space:normal!important;
+    }
+  `;
+  document.head.appendChild(style);
+})();

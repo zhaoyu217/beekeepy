@@ -8528,6 +8528,22 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   function isNone(v){const x=norm(v);return !x||x==='none'||x==='no'||x==='absent'||x==='not present'}
   function isSeen(v){const x=norm(v);return x==='seen'||x==='confirmed'||x==='present'||x==='yes'}
   function isPresent(v){return !isUnknown(v)&&!isNone(v)}
+
+  // V224B2 — Disease evidence is intentionally stricter than generic isPresent().
+  // Legacy boolean/string false values must never become a current Disease concern.
+  // A Disease risk is allowed only when the CURRENT Inspection carries affirmative evidence.
+  function hasExplicitDiseaseEvidence(v){
+    if(v===true)return true;
+    if(v===false||v==null)return false;
+    const x=norm(v);
+    if(!x||x==='false'||x==='0'||x==='none'||x==='no'||x==='absent'||x==='not present'||x==='unknown'||x==='not recorded'||x==='—'||x==='n/a')return false;
+    return true; // "Present", "Yes", or an explicit disease name/type.
+  }
+  function normalizeDiseaseEvidence(v){
+    if(v===true)return 'Present';
+    if(!hasExplicitDiseaseEvidence(v))return 'None';
+    return String(v).trim();
+  }
   function dateMs(v){const t=Date.parse(String(v||''));return Number.isFinite(t)?t:0}
   function ageDays(v){const t=dateMs(v);return t?Math.max(0,Math.floor((Date.now()-t)/86400000)):9999}
   function monthOf(v){const d=v?new Date(String(v).slice(0,10)+'T12:00:00'):new Date();return Number.isFinite(d.getTime())?d.getMonth()+1:new Date().getMonth()+1}
@@ -8551,9 +8567,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       varroa:i.varroa??h?.varroa??0,
       varroaTestDate:i.varroaTestDate??h?.lastInspection??'',
       pests:i.pests??((h?.shb||h?.waxMoth)?'Present':'None'),
-      // V224B1: disease risk requires explicit current Inspection evidence.
-      // Do not promote legacy hive-level truthy flags into a current Disease=Present observation.
-      disease:i.disease??'None',
+      // V224B2: only affirmative CURRENT Inspection disease evidence is retained.
+      // false / 'false' / 0 / None / Unknown are normalized to None and can never create Disease concern.
+      // Legacy hive-level h.disease is deliberately not consulted here.
+      disease:normalizeDiseaseEvidence(i.disease),
       swarming:i.swarming??(h?.swarm?'Signs':'None'),
       superStatus:i.superStatus??h?.superStatus??'Unknown',
       date:h?.lastInspection||''
@@ -8728,7 +8745,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     // Varroa & Pests /30 — phase-aware threshold classification.
     const varroa=varroaAssessment(i.varroa,phase);
     const pestsPenalty=isPresent(i.pests)?4:0;
-    const diseasePenalty=isPresent(i.disease)?10:0;
+    const diseasePenalty=hasExplicitDiseaseEvidence(i.disease)?10:0;
     const varroaPestsPenalty=Math.min(30,varroa.penalty+pestsPenalty+diseasePenalty);
     const varroaPestsScore=30-varroaPestsPenalty;
 
@@ -8744,7 +8761,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     }
     if(broodPattern==='poor'||abnormalPenalty>0)risks.push({type:'Brood',severity:'Medium',label:'Brood concern',evidence:broodPattern==='poor'?'Poor brood pattern':String(i.abnormalities||'Brood abnormality'),recommendedAction:'Reassess brood pattern and abnormalities at the next inspection.',route:`inspection/${h.id}`,rank:60});
     if(honeyLow||pollenLow)risks.push({type:'Food',severity:'Medium',label:honeyLow&&pollenLow?'Honey and pollen stores low':honeyLow?'Low honey stores':'Low pollen stores',evidence:'Food stores need contextual review',recommendedAction:'Assess remaining stores, brood demand and natural forage before deciding whether supplemental feeding is needed.',route:`feeding-record/${h.id}`,rank:55});
-    if(isPresent(i.disease))risks.push({type:'Disease',severity:'Critical',label:'Disease concern',evidence:String(i.disease),recommendedAction:'Review disease evidence and obtain an appropriate diagnosis before disease-specific management.',route:`inspection/${h.id}`,rank:115});
+    if(hasExplicitDiseaseEvidence(i.disease))risks.push({type:'Disease',severity:'Critical',label:'Disease concern',evidence:String(i.disease),recommendedAction:'Review disease evidence and obtain an appropriate diagnosis before disease-specific management.',route:`inspection/${h.id}`,rank:115});
     if(isPresent(i.pests))risks.push({type:'Pests',severity:'Medium',label:'Pest concern',evidence:String(i.pests),recommendedAction:'Identify the pest and reassess colony impact before selecting management.',route:`inspection/${h.id}`,rank:58});
     const swarmContext=(phase==='Population Increase'||phase==='Peak Population')&&(swarmSignal||(isPresent(i.queenCells)&&num(i.colonySize,0)>=8));
     if(swarmContext)risks.push({type:'Swarm',severity:'High',label:'Swarm risk',evidence:'Colony phase and swarm indicators support elevated swarm risk',recommendedAction:'Assess congestion, brood-nest space, supers and queen cells using the beekeeper’s swarm-management plan.',route:`inspection/${h.id}`,rank:90});
@@ -8783,12 +8800,18 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const baseHealthState=score>=85?'Healthy':score>=70?'Attention':'Critical';
 
     // Critical Override: urgent risk is kept separate from aggregate Health Score.
-    const criticalOverride=varroa.assessment==='Danger'||isPresent(i.disease)||(!dormant&&strongQueenUncertainty&&trendDecline)||risks.filter(r=>r.severity==='Critical').length>=2;
+    const criticalOverride=varroa.assessment==='Danger'||hasExplicitDiseaseEvidence(i.disease)||(!dormant&&strongQueenUncertainty&&trendDecline)||risks.filter(r=>r.severity==='Critical').length>=2;
 
     const confidence=dataConfidence(s,h,phaseInfo,i);
     if(ageDays(h.lastInspection)>Math.max(14,Number(s?.settings?.inspectionCycle||7)*2)){
       risks.push({type:'Data',severity:'Medium',label:'Inspection overdue',evidence:`Last inspection ${ageDays(h.lastInspection)} days ago`,recommendedAction:'Update the inspection record before relying on the health estimate.',route:`inspection/${h.id}`,rank:50});
     }
+    // V224B2 invariant: if current Inspection has no explicit disease evidence,
+    // Disease concern must not survive into any consumer (Home, Risk Alerts, Actions, AI analysis).
+    if(!hasExplicitDiseaseEvidence(i.disease)){
+      for(let n=risks.length-1;n>=0;n--){if(risks[n]?.type==='Disease')risks.splice(n,1);}
+    }
+
     const hasHigh=risks.some(r=>r.severity==='High');
     const hasMedium=risks.some(r=>r.severity==='Medium');
     const overallRisk=criticalOverride?'Critical':hasHigh?'High':hasMedium?'Medium':'Low';

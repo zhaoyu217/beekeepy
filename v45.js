@@ -3023,12 +3023,15 @@ function insights(r){
   const decisions=typeof window.v224bEvaluateAll==='function'?window.v224bEvaluateAll(s):new Map();
   const critical=s.hives.filter(h=>h.status==='Critical').length;
   const pending=(s.actions||[]).filter(a=>a.priority!=='Done'&&a.status!=='Completed').length;
-  const riskRank={Low:1,Medium:2,High:3,Critical:4};
+  // V224B3B: Insights uses the same public Risk taxonomy as Risk Assessment.
+  // Internal Critical overrides remain intact in the decision engine, but the
+  // user-facing overall Risk Level is consistently Low / Medium / High.
+  const riskRank={Low:1,Medium:2,High:3};
   let risk='Low';
   for(const h of (s.hives||[])){
     const d=decisions.get?.(h.id);
-    const r=d?.overallRisk||'Low';
-    if((riskRank[r]||0)>(riskRank[risk]||0))risk=r;
+    const publicRisk=d?.overallRisk==='Critical'||d?.overallRisk==='High'?'High':d?.overallRisk==='Medium'?'Medium':'Low';
+    if((riskRank[publicRisk]||0)>(riskRank[risk]||0))risk=publicRisk;
   }
   const healthLabel=score>=85?'Strong':score>=70?'Attention':'Critical';
   r.innerHTML=`<div class="vs v53-insights">

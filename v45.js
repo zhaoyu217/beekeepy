@@ -8567,10 +8567,11 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       varroa:i.varroa??h?.varroa??0,
       varroaTestDate:i.varroaTestDate??h?.lastInspection??'',
       pests:i.pests??((h?.shb||h?.waxMoth)?'Present':'None'),
-      // V224B2: only affirmative CURRENT Inspection disease evidence is retained.
-      // false / 'false' / 0 / None / Unknown are normalized to None and can never create Disease concern.
-      // Legacy hive-level h.disease is deliberately not consulted here.
-      disease:normalizeDiseaseEvidence(i.disease),
+      // V224B2 FINAL: Disease risk requires explicit user-confirmed evidence from the current Inspection.
+      // Legacy/migrated h.insp.disease values are not trusted unless diseaseExplicit === true.
+      // This prevents historical/default 'Present' values from becoming a current Disease concern.
+      disease:i.diseaseExplicit===true?normalizeDiseaseEvidence(i.disease):'None',
+      diseaseExplicit:i.diseaseExplicit===true,
       swarming:i.swarming??(h?.swarm?'Signs':'None'),
       superStatus:i.superStatus??h?.superStatus??'Unknown',
       date:h?.lastInspection||''
@@ -8745,7 +8746,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     // Varroa & Pests /30 — phase-aware threshold classification.
     const varroa=varroaAssessment(i.varroa,phase);
     const pestsPenalty=isPresent(i.pests)?4:0;
-    const diseasePenalty=hasExplicitDiseaseEvidence(i.disease)?10:0;
+    const diseasePenalty=(i.diseaseExplicit===true&&hasExplicitDiseaseEvidence(i.disease))?10:0;
     const varroaPestsPenalty=Math.min(30,varroa.penalty+pestsPenalty+diseasePenalty);
     const varroaPestsScore=30-varroaPestsPenalty;
 
@@ -8761,7 +8762,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     }
     if(broodPattern==='poor'||abnormalPenalty>0)risks.push({type:'Brood',severity:'Medium',label:'Brood concern',evidence:broodPattern==='poor'?'Poor brood pattern':String(i.abnormalities||'Brood abnormality'),recommendedAction:'Reassess brood pattern and abnormalities at the next inspection.',route:`inspection/${h.id}`,rank:60});
     if(honeyLow||pollenLow)risks.push({type:'Food',severity:'Medium',label:honeyLow&&pollenLow?'Honey and pollen stores low':honeyLow?'Low honey stores':'Low pollen stores',evidence:'Food stores need contextual review',recommendedAction:'Assess remaining stores, brood demand and natural forage before deciding whether supplemental feeding is needed.',route:`feeding-record/${h.id}`,rank:55});
-    if(hasExplicitDiseaseEvidence(i.disease))risks.push({type:'Disease',severity:'Critical',label:'Disease concern',evidence:String(i.disease),recommendedAction:'Review disease evidence and obtain an appropriate diagnosis before disease-specific management.',route:`inspection/${h.id}`,rank:115});
+    if(i.diseaseExplicit===true&&hasExplicitDiseaseEvidence(i.disease))risks.push({type:'Disease',severity:'Critical',label:'Disease concern',evidence:String(i.disease),recommendedAction:'Review disease evidence and obtain an appropriate diagnosis before disease-specific management.',route:`inspection/${h.id}`,rank:115});
     if(isPresent(i.pests))risks.push({type:'Pests',severity:'Medium',label:'Pest concern',evidence:String(i.pests),recommendedAction:'Identify the pest and reassess colony impact before selecting management.',route:`inspection/${h.id}`,rank:58});
     const swarmContext=(phase==='Population Increase'||phase==='Peak Population')&&(swarmSignal||(isPresent(i.queenCells)&&num(i.colonySize,0)>=8));
     if(swarmContext)risks.push({type:'Swarm',severity:'High',label:'Swarm risk',evidence:'Colony phase and swarm indicators support elevated swarm risk',recommendedAction:'Assess congestion, brood-nest space, supers and queen cells using the beekeeper’s swarm-management plan.',route:`inspection/${h.id}`,rank:90});
@@ -8800,7 +8801,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const baseHealthState=score>=85?'Healthy':score>=70?'Attention':'Critical';
 
     // Critical Override: urgent risk is kept separate from aggregate Health Score.
-    const criticalOverride=varroa.assessment==='Danger'||hasExplicitDiseaseEvidence(i.disease)||(!dormant&&strongQueenUncertainty&&trendDecline)||risks.filter(r=>r.severity==='Critical').length>=2;
+    const criticalOverride=varroa.assessment==='Danger'||(i.diseaseExplicit===true&&hasExplicitDiseaseEvidence(i.disease))||(!dormant&&strongQueenUncertainty&&trendDecline)||risks.filter(r=>r.severity==='Critical').length>=2;
 
     const confidence=dataConfidence(s,h,phaseInfo,i);
     if(ageDays(h.lastInspection)>Math.max(14,Number(s?.settings?.inspectionCycle||7)*2)){
@@ -8808,7 +8809,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     }
     // V224B2 invariant: if current Inspection has no explicit disease evidence,
     // Disease concern must not survive into any consumer (Home, Risk Alerts, Actions, AI analysis).
-    if(!hasExplicitDiseaseEvidence(i.disease)){
+    if(!(i.diseaseExplicit===true&&hasExplicitDiseaseEvidence(i.disease))){
       for(let n=risks.length-1;n>=0;n--){if(risks[n]?.type==='Disease')risks.splice(n,1);}
     }
 
@@ -8967,4 +8968,43 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const raw=state();
     window.v223SyncHiveHealth(raw,true);
   }catch(err){console.error('V224B initial health decision sync failed',err);}
+})();
+
+
+/* ==========================================================
+   V224B2 FINAL — DISEASE EVIDENCE PROVENANCE GUARD
+   Scope ONLY: Disease evidence provenance for Health/Risk engine.
+   - Legacy/migrated disease values are non-authoritative.
+   - Disease becomes authoritative only after the user explicitly
+     chooses a Disease value in the current Inspection editor.
+   - No UI/layout/navigation changes.
+   ========================================================== */
+(function v224b2DiseaseEvidenceProvenance(){
+  if(window.__V224B2_DISEASE_PROVENANCE__) return;
+  window.__V224B2_DISEASE_PROVENANCE__=true;
+
+  // Capture an explicit user choice in the existing Disease quick-control.
+  document.addEventListener('click',function(e){
+    const btn=e.target?.closest?.('.v202-option');
+    if(!btn||!window.V49_INSPECTION_DRAFT) return;
+    const sheet=btn.closest('.v202-inspection-sheet');
+    const title=String(sheet?.querySelector('.v202-inspection-head b')?.textContent||'').trim().toLowerCase();
+    if(title!=='disease') return;
+    V49_INSPECTION_DRAFT.diseaseExplicit=true;
+  },true);
+
+  // Persist provenance into h.insp before the existing save pipeline runs.
+  // The existing modular save spreads h.insp, so the marker survives without
+  // changing Voice Notes, card structure, routes, or save behavior.
+  const baseSave=window.vSaveInspection;
+  window.vSaveInspection=function(id){
+    try{
+      const s=typeof v45s==='function'?v45s():null;
+      const h=s&&typeof hive==='function'?hive(s,id):null;
+      if(h){
+        h.insp={...(h.insp||{}),diseaseExplicit:V49_INSPECTION_DRAFT?.diseaseExplicit===true};
+      }
+    }catch(_){}
+    return baseSave.apply(this,arguments);
+  };
 })();

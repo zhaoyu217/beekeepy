@@ -8266,6 +8266,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         if(['broodStrength','colonySize','populationFrames','varroa'].includes(f))v=Number(v)||0;
         d[f]=v;
       });
+      // V224B7: mark Treatment as explicitly confirmed on the actual lexical draft.
+      // V49_INSPECTION_DRAFT is not guaranteed to be a window property, so the
+      // V224B6 document listener could miss this flag and suppress the Treatment log.
+      if(name==='treatment') d.__v224b6TreatmentTouched=true;
       v211Close();v211Refresh();
     };
   };
@@ -9519,3 +9523,6 @@ window.__HIVEDASH_V224B5_VERSION__='224b5';
 
 window.__HIVEDASH_V224B6_VERSION__='224b6';
 
+
+/* V224B7 Treatment persistence fix: explicit Treatment Done marks lexical inspection draft. */
+window.__HIVEDASH_V224B7_VERSION__='224b7';

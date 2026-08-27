@@ -1888,7 +1888,7 @@ function filterHelpV156(value){
 function openTimelineEventV49(key){
   const e=V49_TIMELINE_CACHE.find(x=>x.key===key);if(!e)return;
   const s=v45s(),h=hive(s,e.hiveId);
-  modal(`<div class="modalhead"><b>${esc(e.type)} · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(e.date)}<br>${esc(e.detail)}</div><button class="primary" onclick="closeModal(this);go('hive/${e.hiveId}')">Open Hive</button>`)
+  modal(`<div class="modalhead"><b>${esc(e.type)} · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(e.date)}<br>${esc(e.detail)}</div><button class="primary" onclick="closeModal(this);v224b11OpenHiveFromTimeline('${e.hiveId}')">Open Hive</button>`)
 }
 function applyTimelineFilterV49(){
   const q=(idq('v49tsearch')?.value||'').toLowerCase(), route=(location.hash||'#timeline').slice(1), active=V49_TIMELINE_FILTER_ROUTE===route?(V49_TIMELINE_FILTER||'All'):'All';
@@ -9526,3 +9526,145 @@ window.__HIVEDASH_V224B6_VERSION__='224b6';
 
 /* V224B7 Treatment persistence fix: explicit Treatment Done marks lexical inspection draft. */
 window.__HIVEDASH_V224B7_VERSION__='224b7';
+
+
+
+/* ==============================================================
+   V224B10 — GENERIC MODAL DOM OWNERSHIP FIX
+   V224B9 proved selector/z-index-only suppression was not reliable in
+   the deployed runtime. This version observes the actual #app DOM:
+   whenever a direct child .modal exists, Bottom Nav is explicitly hidden;
+   when all generic modals are gone, Bottom Nav is restored exactly.
+   ============================================================== */
+(function v224b10GenericModalDomOwnership(){
+  if(window.__HIVEDASH_V224B10_MODAL_DOM__) return;
+  window.__HIVEDASH_V224B10_MODAL_DOM__=true;
+
+  const app=document.getElementById('app');
+  const nav=document.getElementById('bottomnav');
+  if(!app || !nav) return;
+
+  const sync=()=>{
+    const open=!!app.querySelector(':scope > .modal');
+    if(open){
+      if(!nav.dataset.v224b10PrevVisibility){
+        nav.dataset.v224b10PrevVisibility=nav.style.visibility||'__EMPTY__';
+        nav.dataset.v224b10PrevPointerEvents=nav.style.pointerEvents||'__EMPTY__';
+      }
+      nav.style.setProperty('visibility','hidden','important');
+      nav.style.setProperty('pointer-events','none','important');
+      nav.setAttribute('aria-hidden','true');
+    }else{
+      const prevV=nav.dataset.v224b10PrevVisibility;
+      const prevP=nav.dataset.v224b10PrevPointerEvents;
+      if(prevV!==undefined){
+        if(prevV==='__EMPTY__') nav.style.removeProperty('visibility');
+        else nav.style.visibility=prevV;
+        delete nav.dataset.v224b10PrevVisibility;
+      }
+      if(prevP!==undefined){
+        if(prevP==='__EMPTY__') nav.style.removeProperty('pointer-events');
+        else nav.style.pointerEvents=prevP;
+        delete nav.dataset.v224b10PrevPointerEvents;
+      }
+      nav.removeAttribute('aria-hidden');
+    }
+  };
+
+  const observer=new MutationObserver(sync);
+  observer.observe(app,{childList:true});
+  sync();
+})();
+window.__HIVEDASH_V224B10_VERSION__='224b10';
+
+
+
+
+/* ==============================================================
+   V224B11 — SOURCE-AWARE HIVE DETAIL BACK NAVIGATION
+   Scope:
+   - Timeline Detail -> Open Hive stores the exact source Timeline route.
+   - Hive Detail back returns to that source route only for this entry path.
+   - Normal Hives -> Hive Detail keeps existing history.back() behavior.
+   - Hive id is preserved; no cross-hive fallback.
+   ============================================================== */
+(function v224b11SourceAwareHiveBack(){
+  if(window.__HIVEDASH_V224B11__) return;
+  window.__HIVEDASH_V224B11__=true;
+
+  const KEY='hivedash:v224b11:hiveBackSource';
+
+  window.v224b11OpenHiveFromTimeline=function(hiveId){
+    const source=String(location.hash||'');
+    const targetHive=String(hiveId||'');
+    if(/^#timeline\/[^/]+/.test(source) && targetHive){
+      try{
+        sessionStorage.setItem(KEY, JSON.stringify({
+          source,
+          hiveId:targetHive,
+          createdAt:Date.now()
+        }));
+      }catch(_){}
+    }
+    go('hive/'+targetHive);
+  };
+
+  function readContext(){
+    try{
+      const raw=sessionStorage.getItem(KEY);
+      if(!raw) return null;
+      const x=JSON.parse(raw);
+      if(!x || !x.source || !x.hiveId) return null;
+      /* Do not allow stale source ownership to survive indefinitely. */
+      if(Date.now()-Number(x.createdAt||0) > 30*60*1000){
+        sessionStorage.removeItem(KEY);
+        return null;
+      }
+      return x;
+    }catch(_){
+      return null;
+    }
+  }
+
+  function clearContext(){
+    try{ sessionStorage.removeItem(KEY); }catch(_){}
+  }
+
+  /* Capture only the top-left Hive Detail back control.
+     This prevents the inline history.back() from firing for the Timeline-owned path. */
+  document.addEventListener('click',function(e){
+    const btn=e.target?.closest?.('#topbar > button.iconbtn:first-child');
+    if(!btn) return;
+
+    const m=String(location.hash||'').match(/^#hive\/([^/]+)/);
+    if(!m) return;
+
+    const ctx=readContext();
+    if(!ctx || String(ctx.hiveId)!==String(m[1])) return;
+
+    e.preventDefault();
+    e.stopImmediatePropagation();
+
+    const source=String(ctx.source||'');
+    clearContext();
+
+    if(/^#timeline\/[^/]+/.test(source)){
+      location.hash=source;
+    }else{
+      go('hives');
+    }
+  },true);
+
+  /* If the user leaves Hive Detail by any other route (bottom nav, direct route, etc.),
+     discard the source ownership so it cannot affect a later normal Hives -> Hive Detail visit. */
+  window.addEventListener('hashchange',function(){
+    const h=String(location.hash||'');
+    if(!/^#hive\/[^/]+/.test(h)){
+      const ctx=readContext();
+      if(ctx && h!==String(ctx.source||'')) clearContext();
+    }
+  });
+})();
+
+window.__HIVEDASH_V224B11_VERSION__='224b11';
+

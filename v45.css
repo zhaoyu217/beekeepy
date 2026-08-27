@@ -5501,3 +5501,55 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
 .v124-season-action.v133-season-action-clickable{cursor:pointer!important}
 .v124-season-action.v133-season-action-clickable:focus-visible{outline:2px solid #C5921A!important;outline-offset:2px!important}
 .v124-season-action.v133-season-action-clickable:active{transform:translateY(1px)!important}
+
+
+/* ==============================================================
+   V224B8 — GLOBAL MODAL / BOTTOM NAV LAYER FIX
+   Root cause:
+   - .bottomnav uses z-index:3000
+   - V96 forced #app>.modal to z-index:1000
+   - therefore shared modal() bottom sheets could be covered by Bottom Nav.
+   Scope:
+   - Shared modal() shell only.
+   - Timeline event detail (Inspection / Feeding / Treatment / Harvest / Photo)
+     and every other page using the same generic modal() helper inherit the fix.
+   - Bottom Nav visual structure, routes, and behavior are unchanged.
+   ============================================================== */
+#app > .modal{
+  z-index:5000!important;
+}
+#app > .modal > .modalpanel{
+  max-height:calc(100% - 12px)!important;
+  overflow:auto!important;
+  overscroll-behavior:contain!important;
+  padding-bottom:calc(14px + env(safe-area-inset-bottom,0px))!important;
+  box-sizing:border-box!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+
+
+/* ==============================================================
+   V224B9 — GENERIC MODAL OWNS THE BOTTOM AREA
+   V224B8 z-index alone was insufficient in the deployed fixed-nav
+   stacking behavior. Final fix: while a shared generic modal is open,
+   temporarily suppress ONLY the Bottom Nav from painting/interacting.
+   The nav DOM, layout, routes and locked visual design are unchanged.
+   ============================================================== */
+#app:has(> .modal) > #bottomnav,
+#app:has(> .modal) > .bottomnav{
+  visibility:hidden!important;
+  pointer-events:none!important;
+}
+
+/* Keep the generic sheet fully usable to the physical bottom edge. */
+#app > .modal{
+  z-index:20000!important;
+}
+#app > .modal > .modalpanel{
+  max-height:calc(100% - 12px)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  padding-bottom:calc(20px + env(safe-area-inset-bottom,0px))!important;
+  box-sizing:border-box!important;
+  -webkit-overflow-scrolling:touch!important;
+}

@@ -8319,8 +8319,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=Number(d.varroa)||0;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;
     h.insp={...(h.insp||{}),queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
     s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
-    if(d.treatment&&d.treatment!=='None'){
-      const tx={id:'t'+Date.now(),hiveId:id,date,type:d.treatment,endDate:d.treatmentStatus==='Completed'?date:'',followUp:d.treatmentFollowUp||'',withdrawal:d.treatmentWithdrawal||'None'};
+    if(d.__v224b6TreatmentTouched===true && d.treatment&&d.treatment!=='None'){
+      const tx={id:'t'+Date.now(),hiveId:id,date,type:d.treatment,endDate:d.treatmentStatus==='Completed'?date:'',followUp:d.treatmentFollowUp||'',withdrawal:d.treatmentWithdrawal||'None',source:'inspection-explicit'};
       s.logs.treatments.push(tx);
     }
     save(s);V49_INSPECTION_DRAFT=null;toast('Inspection saved');go('hive/'+id);
@@ -9398,3 +9398,124 @@ window.__HIVEDASH_V224B4_VERSION__='224b4';
 
 /* V224B5 — Queen Status Trend Aggregation Fix */
 window.__HIVEDASH_V224B5_VERSION__='224b5';
+
+
+
+/* ==========================================================
+   V224B6 — INSPECTION SAVE IDEMPOTENCY + HISTORY INTEGRITY
+   Scope:
+   - One Inspection session token -> at most one Inspection history row.
+   - Rapid/header+bottom duplicate submits are blocked.
+   - Existing historical rows are NOT deleted or merged.
+   - Carried-forward Treatment state is not re-created unless the
+     Treatment module is explicitly confirmed during this Inspection.
+   Protected / unchanged:
+   V224B Health/Risk Engine, Queen Trend aggregation, Disease provenance,
+   Treatment-aware actions, Timeline renderer, Voice Notes, six-card UI,
+   More, V224A Location, navigation.
+   ========================================================== */
+(function v224b6InspectionSaveIdempotency(){
+  if(window.__HIVEDASH_V224B6__) return;
+  window.__HIVEDASH_V224B6__=true;
+
+  const makeToken=(hiveId)=>{
+    try{
+      if(window.crypto && typeof window.crypto.randomUUID==='function'){
+        return 'insp-'+String(hiveId||'')+'-'+window.crypto.randomUUID();
+      }
+    }catch(_){}
+    return 'insp-'+String(hiveId||'')+'-'+Date.now()+'-'+Math.random().toString(36).slice(2,10);
+  };
+
+  const ensureToken=(id)=>{
+    const d=window.V49_INSPECTION_DRAFT;
+    if(!d) return '';
+    if(!d.__v224b6SaveToken) d.__v224b6SaveToken=makeToken(id||d.hiveId);
+    return String(d.__v224b6SaveToken);
+  };
+
+  // A new Inspection screen/session receives one stable save token.
+  const baseInspectionPage=window.inspectionPage;
+  if(typeof baseInspectionPage==='function'){
+    window.inspectionPage=function(r,id){
+      const result=baseInspectionPage.apply(this,arguments);
+      try{ ensureToken(id); }catch(_){}
+      return result;
+    };
+    try{ inspectionPage=window.inspectionPage; }catch(_){}
+  }
+
+  // Mark Treatment as explicit only when the user confirms the Treatment module.
+  document.addEventListener('click',function(e){
+    const done=e.target?.closest?.('[data-done]');
+    if(!done || !window.V49_INSPECTION_DRAFT) return;
+    const overlay=done.closest?.('.v211-module-overlay');
+    const title=String(overlay?.querySelector('.v211-module-head b')?.textContent||'').trim().toLowerCase();
+    if(title==='treatment inspection'){
+      V49_INSPECTION_DRAFT.__v224b6TreatmentTouched=true;
+    }
+  },true);
+
+  const baseSave=window.vSaveInspection;
+  let saving=false;
+
+  if(typeof baseSave==='function'){
+    window.vSaveInspection=function(id){
+      const hiveId=String(id||window.V49_INSPECTION_DRAFT?.hiveId||'');
+      const token=ensureToken(hiveId);
+
+      // If this exact Inspection session was already committed, do not create
+      // another row even if the user taps Save again.
+      try{
+        const s0=typeof state==='function'?state():null;
+        const already=(s0?.logs?.inspections||[]).some(x=>x&&String(x.saveToken||'')===token);
+        if(token && already){
+          if(typeof toast==='function') toast('Inspection already saved');
+          return;
+        }
+      }catch(_){}
+
+      // Block overlapping click events before the first save finishes.
+      if(saving) return;
+      saving=true;
+
+      let beforeIds=new Set();
+      try{
+        const s0=typeof state==='function'?state():null;
+        beforeIds=new Set((s0?.logs?.inspections||[]).map(x=>String(x?.id||'')));
+      }catch(_){}
+
+      try{
+        const result=baseSave.apply(this,arguments);
+
+        // Attach the session token to exactly the row(s) created by this call.
+        // This is metadata only and does not change Health/Risk calculations.
+        try{
+          const s1=typeof state==='function'?state():null;
+          if(s1){
+            const created=(s1.logs?.inspections||[]).filter(x=>
+              x && String(x.hiveId||'')===hiveId && !beforeIds.has(String(x.id||''))
+            );
+            const nowIso=new Date().toISOString();
+            created.forEach(x=>{
+              x.saveToken=token||makeToken(hiveId);
+              x.savedAt=x.savedAt||nowIso;
+              x.saveSource=x.saveSource||'inspection-form';
+            });
+            if(created.length && typeof save==='function') save(s1);
+          }
+        }catch(err){
+          console.error('V224B6 save-token annotation failed',err);
+        }
+
+        return result;
+      }finally{
+        setTimeout(()=>{ saving=false; },1200);
+      }
+    };
+    try{ vSaveInspection=window.vSaveInspection; }catch(_){}
+  }
+})();
+
+window.__HIVEDASH_V224B6_VERSION__='224b6';
+

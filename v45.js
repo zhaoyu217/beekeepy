@@ -2364,7 +2364,9 @@ function v119MetricPoint(x,key){
   if(key==='queen'){
     const q=String(x.queenStatus||'').trim().toLowerCase();
     if(!q)return null;
-    return q==='confirmed'?1:0;
+    if(q==='seen'||q==='confirmed'||q==='present'||q==='yes')return 1;
+    if(q==='not seen'||q==='not confirmed'||q==='absent'||q==='missing'||q==='no')return 0;
+    return null;
   }
   return null;
 }
@@ -9392,3 +9394,7 @@ window.__HIVEDASH_V224B3A__=true;
 })();
 
 window.__HIVEDASH_V224B4_VERSION__='224b4';
+
+
+/* V224B5 — Queen Status Trend Aggregation Fix */
+window.__HIVEDASH_V224B5_VERSION__='224b5';

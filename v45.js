@@ -10736,3 +10736,10 @@ window.__HIVEDASH_V224B31_VERSION__='224b31';
    regenerates Pending recommendations in state()/save().
    ============================================================== */
 window.__HIVEDASH_V224B32_VERSION__='224b32';
+
+/* ==============================================================
+   V224B33 — COMPLETED ACTION DURABLE PERSISTENCE
+   Scope locked: prevent true Completed/Done Actions from being lost
+   across save/state regeneration and cloud/local merge.
+   ============================================================== */
+window.__HIVEDASH_V224B33_VERSION__='224b33';

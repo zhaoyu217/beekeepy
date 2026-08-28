@@ -379,6 +379,10 @@ function normalizeStateV50(input){
   s.notifications=Array.isArray(s.notifications)?s.notifications:[];
   s.actions=Array.isArray(s.actions)?s.actions:[];
   s.meta=(s.meta&&typeof s.meta==='object')?s.meta:{};
+  /* V224B33: durable archive for true Completed/Done Action entities only. */
+  s.meta.completedActions=Array.isArray(s.meta.completedActions)
+    ? s.meta.completedActions.filter(a=>a&&typeof a==='object'&&(a.status==='Completed'||a.priority==='Done'))
+    : [];
   s.meta.schema=50;s.meta.updatedAt=s.meta.updatedAt||'';s.meta.userId=s.meta.userId||'';
   return s;
 }
@@ -391,6 +395,22 @@ function mergeStateV50(local,remote){
   const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||0)||0,primary=rt>=lt?clone(remote):clone(local),other=rt>=lt?local:remote;
   primary.logs=primary.logs||{};for(const k of ['inspections','feedings','treatments','harvests'])primary.logs[k]=unionByIdV50(primary.logs[k]||[],other.logs?.[k]||[]);
   primary.notifications=unionByIdV50(primary.notifications||[],other.notifications||[]);
+
+  /* V224B33: cloud/local merge must not erase true completed Actions.
+     Pending Actions are still regenerated normally and are NOT merged here. */
+  primary.meta=primary.meta||{};
+  const completedMerged=new Map();
+  [
+    ...(primary.meta.completedActions||[]),
+    ...(other.meta?.completedActions||[]),
+    ...((primary.actions||[]).filter(a=>a&&(a.status==='Completed'||a.priority==='Done'))),
+    ...((other.actions||[]).filter(a=>a&&(a.status==='Completed'||a.priority==='Done')))
+  ].forEach((a,i)=>{
+    const key=String(a.sourceId||a.id||`${a.hiveId||''}|${a.type||''}|${a.date||a.due||''}|${i}`);
+    completedMerged.set(key,a);
+  });
+  primary.meta.completedActions=[...completedMerged.values()];
+
   primary.hives=(primary.hives||[]).map(h=>{const o=(other.hives||[]).find(x=>x.id===h.id);if(!o)return h;const photos=unionByIdV50(h.photos||[],o.photos||[]);return {...(rt>=lt?o:h),...(rt>=lt?h:o),photos}});
   for(const oh of other.hives||[])if(!primary.hives.some(h=>h.id===oh.id))primary.hives.push(oh);
   primary.meta={...(primary.meta||{}),schema:50,updatedAt:new Date(Math.max(lt,rt,Date.now())).toISOString(),userId:currentSession?.user?.id||primary.meta?.userId||''};
@@ -453,6 +473,19 @@ function state(){
 }
 function save(s){
   s=normalizeStateV50(s);
+
+  /* V224B33: archive Completed/Done rows before generateActions() rebuilds
+     current recommendations. This is scoped to completed Actions only. */
+  const completedBeforeRegen=(Array.isArray(s.actions)?s.actions:[])
+    .filter(a=>a&&(a.status==='Completed'||a.priority==='Done'));
+  const completedById=new Map(
+    [...(s.meta.completedActions||[]),...completedBeforeRegen].map((a,i)=>[
+      String(a.sourceId||a.id||`${a.hiveId||''}|${a.type||''}|${a.date||a.due||''}|${i}`),
+      a
+    ])
+  );
+  s.meta.completedActions=[...completedById.values()];
+
   s.actions=generateActions(s);
   s.meta.schema=50;
   s.meta.updatedAt=new Date().toISOString();
@@ -697,8 +730,17 @@ function generateActions(s){
   /* V224B32 — preserve only explicitly completed Action entities.
      state()/save() both regenerate pending recommendations via generateActions().
      Before this fix, that regeneration discarded the Completed Action written by B31. */
-  const completed=(Array.isArray(s.actions)?s.actions:[])
-    .filter(a=>a && (a.status==='Completed' || a.priority==='Done'));
+  const completedCandidates=[
+    ...(Array.isArray(s.meta?.completedActions)?s.meta.completedActions:[]),
+    ...(Array.isArray(s.actions)?s.actions:[])
+  ].filter(a=>a && (a.status==='Completed' || a.priority==='Done'));
+
+  const completedMap=new Map();
+  completedCandidates.forEach((a,i)=>{
+    const key=String(a.sourceId||a.id||`${a.hiveId||''}|${a.type||''}|${a.date||a.due||''}|${i}`);
+    completedMap.set(key,a);
+  });
+  const completed=[...completedMap.values()];
 
   const rank={High:3,Medium:2,Routine:1};
   return [

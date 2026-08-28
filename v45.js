@@ -794,8 +794,8 @@ function v224aCaptureApiaryDraft(){
 function v224aBindApiaryDraft(){
   ['v48apiary','v224state','v224city','v224zip','v224tz','v48cycle','v48hivetype'].forEach(k=>{
     const el=idq(k);if(!el)return;
-    el.addEventListener('input',v224aCaptureApiaryDraft);
-    el.addEventListener('change',v224aCaptureApiaryDraft)
+    el.addEventListener('input',v224aCaptureApiaryDraft,true);
+    el.addEventListener('change',v224aCaptureApiaryDraft,true)
   })
 }
 function apiaryPage(r){
@@ -9922,7 +9922,7 @@ window.__HIVEDASH_V224B13_VERSION__='224b13';
   const guarded = route => {
     route=String(route||'');
     return /^(?:feeding-record|treatment-record|harvest-record)\/[^/]+$/.test(route) ||
-      ['account','seasonal-settings','units-region','support','faq','help'].includes(route);
+      ['account','apiary','seasonal-settings','units-region','support','faq','help'].includes(route);
   };
   const routeNow = () => String(location.hash||'#home').replace(/^#/,'');
   const dirty = window.__V224B14_DIRTY_ROUTES__ = window.__V224B14_DIRTY_ROUTES__ || new Set();
@@ -10043,4 +10043,21 @@ window.__HIVEDASH_V224B13_VERSION__='224b13';
 })();
 
 window.__HIVEDASH_V224B14_VERSION__='224b14';
+
+
+
+
+/* ==============================================================
+   V224B15 — APIARY DRAFT / SAME-ROUTE RENDER GUARD
+   Correction to V224B14 full-form audit:
+   Apiary already had V224A_APIARY_DRAFT, but it was not included in the
+   global same-route dirty-route render guard. A realtime repaint could
+   therefore still visibly jump a just-edited Time Zone/select value.
+
+   V224B15:
+   - adds route "apiary" to the B14 guarded route set;
+   - captures Apiary input/change in capture phase;
+   - leaves saveApiaryV48, location semantics, visuals and navigation intact.
+   ============================================================== */
+window.__HIVEDASH_V224B15_VERSION__='224b15';
 

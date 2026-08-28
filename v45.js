@@ -6330,7 +6330,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         hiveId:x.hiveId,
         date:x.date||'',
         detail:detail||'',
-        img:img||''
+        img:img||'',
+        /* V224B28: ordering metadata only; UI/data semantics unchanged. */
+        savedAt:x.savedAt||'',
+        sourceId:String(x.id||'')
       });
     };
 
@@ -6383,7 +6386,28 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       });
     });
 
-    return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')));
+    return rows.sort((a,b)=>{
+      const byDate=String(b.date||'').localeCompare(String(a.date||''));
+      if(byDate) return byDate;
+
+      /* V224B28 — Inspection Timeline same-day ordering only.
+         Save Inspection already stores the current d.notes correctly.
+         The stale-looking Timeline was caused by all same-day rows tying on
+         YYYY-MM-DD, leaving older Aug 28 rows ahead of the newly saved row.
+         For Inspection-vs-Inspection ties, newest savedAt/id wins.
+         Other event types keep their existing same-day order. */
+      if(a.type==='Inspection' && b.type==='Inspection'){
+        const bySaved=String(b.savedAt||'').localeCompare(String(a.savedAt||''));
+        if(bySaved) return bySaved;
+
+        const idNum=v=>{
+          const m=String(v.sourceId||'').match(/(\d{10,})/);
+          return m?Number(m[1]):0;
+        };
+        return idNum(b)-idNum(a);
+      }
+      return 0;
+    });
   };
 
   /* The existing timelinePage() calls the identifier directly.
@@ -10605,3 +10629,9 @@ window.__HIVEDASH_V224B26_VERSION__='224b26';
   document.head.appendChild(st);
 })();
 window.__HIVEDASH_V224B27_VERSION__='224b27';
+
+/* ==============================================================
+   V224B28 — INSPECTION TIMELINE SAME-DAY ORDER FIX
+   Scope locked: s.logs.inspections -> Timeline ordering only.
+   ============================================================== */
+window.__HIVEDASH_V224B28_VERSION__='224b28';

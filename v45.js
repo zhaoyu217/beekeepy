@@ -2972,37 +2972,17 @@ function v53ActionRows(mode='Pending'){
   const allowedHives=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
   const allowedIds=new Set(allowedHives.map(h=>h.id));
 
-  // Pending actions are current rule-derived recommendations only.
-  const pending=(s.actions||[])
-    .filter(a=>allowedIds.has(a.hiveId))
+  /* V224B30 — Actions semantics only.
+     Pending and Completed must come from the Action store itself.
+     Timeline/history logs are records, not completed Actions. */
+  const actionRows=(s.actions||[])
+    .filter(a=>allowedIds.has(a.hiveId));
+
+  const pending=actionRows
     .filter(a=>a.status!=='Completed' && a.priority!=='Done');
 
-  // Completed is real recorded work history. Do not mark a recommendation
-  // completed merely because a record of another type exists.
-  const completed=[
-    ...(s.logs?.inspections||[]).map(x=>({
-      id:`completed-inspection-${x.id||x.hiveId+'-'+x.date}`,
-      hiveId:x.hiveId,type:'Inspection',title:'Inspection recorded',
-      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
-    })),
-    ...(s.logs?.feedings||[]).map(x=>({
-      id:`completed-feeding-${x.id||x.hiveId+'-'+x.date}`,
-      hiveId:x.hiveId,type:'Feeding',title:'Feeding recorded',
-      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
-    })),
-    ...(s.logs?.treatments||[]).map(x=>({
-      id:`completed-treatment-${x.id||x.hiveId+'-'+x.date}`,
-      hiveId:x.hiveId,type:'Treatment',title:'Treatment recorded',
-      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
-    })),
-    ...(s.logs?.harvests||[]).map(x=>({
-      id:`completed-harvest-${x.id||x.hiveId+'-'+x.date}`,
-      hiveId:x.hiveId,type:'Harvest',title:'Harvest recorded',
-      priority:'Done',status:'Completed',due:fmtDate(x.date),date:x.date
-    }))
-  ]
-    .filter(a=>allowedIds.has(a.hiveId))
-    .sort((a,b)=>new Date(b.date||0)-new Date(a.date||0));
+  const completed=actionRows
+    .filter(a=>a.status==='Completed' || a.priority==='Done');
 
   const normalized=String(mode||'Pending').toLowerCase();
   if(normalized==='completed') return completed;
@@ -10653,3 +10633,9 @@ window.__HIVEDASH_V224B28_VERSION__='224b28';
    Scope locked: Pending / Completed / All selected state only.
    ============================================================== */
 window.__HIVEDASH_V224B29_VERSION__='224b29';
+
+/* ==============================================================
+   V224B30 — COMPLETED ACTIONS SEMANTIC ISOLATION
+   Scope locked: v53ActionRows Completed/All data source only.
+   ============================================================== */
+window.__HIVEDASH_V224B30_VERSION__='224b30';

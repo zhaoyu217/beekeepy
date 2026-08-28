@@ -2825,14 +2825,25 @@ addHivePhotos=async function(hiveId,input){
 openHivePhotoGallery=function(hiveId){
   const s=v45s(),h=hive(s,hiveId);if(!h)return;
   const photos=Array.isArray(h.photos)?h.photos:[];
+  const coverId=String(h.coverPhotoId||'');
+
   const galleryHtml=photos.length
     ? photos.map((p,i)=>`<div class="gallery-photo-card">
         <button class="gallery-photo-open" type="button" aria-label="Open photo ${i+1}">
           <img src="${p.data}" alt="${esc(h.name)} photo ${i+1}">
         </button>
-        <button class="gallery-photo-menu" type="button" aria-label="Photo options" onclick="event.stopPropagation();openHivePhotoMenu('${h.id}','${p.id}',this)">•••</button>
+        <details class="v224b27-photo-actions" data-photo-id="${esc(p.id)}">
+          <summary class="gallery-photo-menu" aria-label="Photo options">•••</summary>
+          <div class="v224b27-photo-actions-pop">
+            ${String(p.id)===coverId
+              ? `<button type="button" class="v224b27-cover-current" disabled>✓ Hive Cover</button>`
+              : `<button type="button" data-photo-action="cover">Set as Hive Cover</button>`}
+            <button type="button" class="v224b27-delete" data-photo-action="delete">Delete Photo</button>
+          </div>
+        </details>
       </div>`).join('')
     : '<div class="gallery-empty"><b>No photos yet</b><span>Add your first hive photo.</span></div>';
+
   const m=modal(`<div class="modalhead photo-gallery-head">
       <div>
         <div class="h2">${esc(h.name)} Photos</div>
@@ -2845,11 +2856,30 @@ openHivePhotoGallery=function(hiveId){
       <input id="galleryPhotoInput" hidden type="file" accept="image/*" multiple onchange="addHivePhotos('${h.id}',this)">
     </div>
     <div class="hive-gallery-modal">${galleryHtml}</div>`);
+
   m.classList.add('photo-gallery-modal-shell');
-  m.querySelectorAll('.gallery-photo-open').forEach((btn,i)=>btn.onclick=()=>{
+
+  m.querySelectorAll('.gallery-photo-open').forEach((btn,i)=>btn.addEventListener('click',()=>{
     const latest=v45s(),latestHive=hive(latest,hiveId),latestPhotos=Array.isArray(latestHive?.photos)?latestHive.photos:[];
     const p=latestPhotos[i];if(!p)return;
     modal(`<div class="modalhead"><div class="h2">Photo · ${esc(latestHive.name)}</div><button type="button" class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="setting"><img src="${p.data}" alt="${esc(latestHive.name)} photo" style="width:100%;border-radius:14px;display:block"><div class="small muted" style="margin-top:10px">${fmtDate(p.date||'')} · Hive photo</div></div>`);
+  }));
+
+  /* V224B27: photo actions only. Native <details> opens the menu, so this
+     no longer depends on any inline/delegated ••• click handler. */
+  m.querySelectorAll('.v224b27-photo-actions').forEach(actions=>{
+    const photoId=actions.dataset.photoId||'';
+    actions.querySelector('[data-photo-action="cover"]')?.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      actions.removeAttribute('open');
+      if(typeof window.setHiveCoverPhotoV190==='function') window.setHiveCoverPhotoV190(hiveId,photoId);
+    });
+    actions.querySelector('[data-photo-action="delete"]')?.addEventListener('click',e=>{
+      e.preventDefault();e.stopPropagation();
+      actions.removeAttribute('open');
+      if(!confirm('Delete this photo?'))return;
+      if(typeof deleteHivePhoto==='function') deleteHivePhoto(hiveId,photoId);
+    });
   });
 };
 
@@ -10552,3 +10582,26 @@ window.__HIVEDASH_V224B22_VERSION__='224b22';
    Removed V224B23/B24/B25 photo-menu overrides.
    ============================================================== */
 window.__HIVEDASH_V224B26_VERSION__='224b26';
+
+
+/* ==============================================================
+   V224B27 — PHOTO ACTIONS NATIVE MENU FIX
+   Scope: Hive Detail > Photos gallery action menu only.
+   ============================================================== */
+(function(){
+  if(document.getElementById('v224b27-photo-actions-style'))return;
+  const st=document.createElement('style');
+  st.id='v224b27-photo-actions-style';
+  st.textContent=`
+    .gallery-photo-card>.v224b27-photo-actions{position:absolute;top:6px;right:6px;z-index:9}
+    .gallery-photo-card>.v224b27-photo-actions>summary{list-style:none;cursor:pointer}
+    .gallery-photo-card>.v224b27-photo-actions>summary::-webkit-details-marker{display:none}
+    .gallery-photo-card>.v224b27-photo-actions>.gallery-photo-menu{position:relative!important;top:auto!important;right:auto!important;display:flex!important;align-items:center!important;justify-content:center!important}
+    .v224b27-photo-actions-pop{position:absolute;top:34px;right:0;z-index:9000;width:178px;padding:6px;border:1px solid rgba(47,59,51,.12);border-radius:12px;background:#FFFDF9;box-shadow:0 10px 28px rgba(47,59,51,.18)}
+    .v224b27-photo-actions-pop button{width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:8px;background:transparent;color:#36512B;text-align:left;font:inherit;font-weight:700;cursor:pointer}
+    .v224b27-photo-actions-pop .v224b27-cover-current{color:#5E7350;cursor:default}
+    .v224b27-photo-actions-pop .v224b27-delete{color:#B53A30}
+  `;
+  document.head.appendChild(st);
+})();
+window.__HIVEDASH_V224B27_VERSION__='224b27';

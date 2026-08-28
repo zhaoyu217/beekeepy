@@ -2972,17 +2972,34 @@ function v53ActionRows(mode='Pending'){
   const allowedHives=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
   const allowedIds=new Set(allowedHives.map(h=>h.id));
 
-  /* V224B30 — Actions semantics only.
-     Pending and Completed must come from the Action store itself.
-     Timeline/history logs are records, not completed Actions. */
+  /* V224B35 — Completed source fix only.
+     Runtime evidence showed:
+       s.actions Completed = 0
+       meta.completedActions = 2
+     Therefore the durable archive is the authoritative Completed source.
+     Pending remains sourced exactly from s.actions. */
   const actionRows=(s.actions||[])
     .filter(a=>allowedIds.has(a.hiveId));
 
   const pending=actionRows
     .filter(a=>a.status!=='Completed' && a.priority!=='Done');
 
-  const completed=actionRows
-    .filter(a=>a.status==='Completed' || a.priority==='Done');
+  const completedCandidates=[
+    ...(Array.isArray(s.meta?.completedActions)?s.meta.completedActions:[]),
+    ...actionRows.filter(a=>a.status==='Completed' || a.priority==='Done')
+  ].filter(a=>
+    a &&
+    allowedIds.has(a.hiveId) &&
+    (a.status==='Completed' || a.priority==='Done')
+  );
+
+  const completedMap=new Map();
+  completedCandidates.forEach((a,i)=>{
+    const key=String(a.sourceId||a.id||`${a.hiveId||''}|${a.type||''}|${a.date||a.due||''}|${i}`);
+    completedMap.set(key,a);
+  });
+  const completed=[...completedMap.values()]
+    .sort((a,b)=>String(b.completedAt||b.date||'').localeCompare(String(a.completedAt||a.date||'')));
 
   const normalized=String(mode||'Pending').toLowerCase();
   if(normalized==='completed') return completed;
@@ -10765,3 +10782,9 @@ window.__HIVEDASH_V224B33_VERSION__='224b33';
    Scope locked: B31 completed Inspection entity creation only.
    ============================================================== */
 window.__HIVEDASH_V224B34_VERSION__='224b34';
+
+/* ==============================================================
+   V224B35 — COMPLETED ACTION RENDER SOURCE FIX
+   Scope locked: Actions Completed/All read source only.
+   ============================================================== */
+window.__HIVEDASH_V224B35_VERSION__='224b35';

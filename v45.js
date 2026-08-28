@@ -10452,3 +10452,63 @@ window.__HIVEDASH_V224B18_VERSION__='224b18';
 
 /* V224B19 — Queen Inspection Field Completion */
 window.__HIVEDASH_V224B19_VERSION__='224b19';
+
+
+
+/* ==============================================================
+   V224B20 — TIMELINE FILTER + PAGINATION MATCH-AWARE FIX
+   Confirmed bug:
+   - Timeline cache is sorted newest-first.
+   - Legacy filter checked `i < V49_TIMELINE_LIMIT` BEFORE considering type/search.
+   - Therefore older Feeding/Treatment/Harvest/Photo records outside the first
+     N overall rows were hidden even when that filter was selected.
+   - Load More visibility was also based on total cache length, not the number
+     of rows matching the current filter/search.
+
+   Fix:
+   - Compute type/search matches first.
+   - Apply the page limit to MATCHED rows, not absolute cache indexes.
+   - Show Load More only when matching rows exceed the current matched limit.
+   - Covers All / Inspection / Feeding / Treatment / Harvest / Photos + search.
+   ============================================================== */
+(function v224b20TimelineMatchedPagination(){
+  if(window.__HIVEDASH_V224B20__) return;
+  window.__HIVEDASH_V224B20__=true;
+
+  window.applyTimelineFilterV49=function(){
+    const q=(document.getElementById('v49tsearch')?.value||'').toLowerCase();
+    const route=(location.hash||'#timeline').slice(1);
+    const active=V49_TIMELINE_FILTER_ROUTE===route
+      ? (V49_TIMELINE_FILTER||'All')
+      : 'All';
+
+    const rows=[...document.querySelectorAll('[data-v49-timeline]')];
+    let matchedIndex=0;
+    let matchedTotal=0;
+
+    rows.forEach(el=>{
+      const matchType=active==='All' || el.dataset.type===active;
+      const matchQ=!q || String(el.dataset.search||'').includes(q);
+      const matched=matchType && matchQ;
+
+      if(matched){
+        matchedTotal++;
+        const visible=matchedIndex < V49_TIMELINE_LIMIT;
+        el.style.display=visible?'grid':'none';
+        matchedIndex++;
+      }else{
+        el.style.display='none';
+      }
+    });
+
+    const more=document.getElementById('v49loadmore');
+    if(more){
+      more.style.display=matchedTotal>V49_TIMELINE_LIMIT?'block':'none';
+    }
+  };
+
+  try{ applyTimelineFilterV49=window.applyTimelineFilterV49; }catch(_){}
+})();
+
+window.__HIVEDASH_V224B20_VERSION__='224b20';
+

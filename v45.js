@@ -2852,6 +2852,21 @@ openHivePhotoGallery=function(hiveId){
     const p=latestPhotos[i];if(!p)return;
     modal(`<div class="modalhead"><div class="h2">Photo · ${esc(latestHive.name)}</div><button type="button" class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="setting"><img src="${p.data}" alt="${esc(latestHive.name)} photo" style="width:100%;border-radius:14px;display:block"><div class="small muted" style="margin-top:10px">${fmtDate(p.date||'')} · Hive photo</div></div>`);
   });
+
+  /* V224B25: restore the proven gallery-local action wiring.
+     Each visible ••• button owns its exact photo by index, then calls the
+     existing V190 action menu (Set as Hive Cover + Delete Photo). */
+  m.querySelectorAll('.gallery-photo-menu').forEach((btn,i)=>{
+    btn.onclick=(ev)=>{
+      ev.preventDefault();
+      ev.stopPropagation();
+      const latest=v45s(),latestHive=hive(latest,hiveId);
+      const latestPhotos=Array.isArray(latestHive?.photos)?latestHive.photos:[];
+      const p=latestPhotos[i];
+      if(!p)return toast('Photo not found');
+      window.openHivePhotoMenu(hiveId,p.id,btn);
+    };
+  });
 };
 
 // V138: after a successful Gallery upload, rebuild that Gallery from current saved state.
@@ -10667,7 +10682,7 @@ window.__HIVEDASH_V224B22_VERSION__='224b22';
   window.__HIVEDASH_V224B24__=true;
 
   document.addEventListener('click',function(e){
-    const btn=e.target?.closest?.('.gallery-photo-menu[data-v224b24-hive][data-v224b24-photo]');
+    const btn=null; /* V224B25: gallery owns the trigger locally */
     if(!btn) return;
 
     e.preventDefault();
@@ -10686,3 +10701,13 @@ window.__HIVEDASH_V224B22_VERSION__='224b22';
   window.__HIVEDASH_V224B24_VERSION__='224b24';
 })();
 
+
+
+/* ==============================================================
+   V224B25 — RESTORE PHOTO ACTION MENU CONTRACT
+   Restores the proven photo-gallery contract already present in V190:
+     • Set as Hive Cover
+     • Delete Photo
+   Only the visible gallery ••• trigger wiring is changed.
+   ============================================================== */
+window.__HIVEDASH_V224B25_VERSION__='224b25';

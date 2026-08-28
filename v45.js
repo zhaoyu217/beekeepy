@@ -10686,29 +10686,45 @@ window.__HIVEDASH_V224B30_VERSION__='224b30';
       if(!s||!h) return result;
 
       s.actions=Array.isArray(s.actions)?s.actions:[];
+      s.meta=(s.meta&&typeof s.meta==='object')?s.meta:{};
+      s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
       const sourceId=`scheduled-inspection:${hiveId}:${scheduledDate}`;
 
-      /* Idempotent: one completed Action for this hive/date only. */
-      const already=s.actions.some(a=>
+      /* V224B34 — create the Completed entity in the durable completed-action
+         archive directly, then mirror it into s.actions for the current render.
+         This avoids relying on a later regeneration step to discover the entity. */
+      const completedAction={
+        id:'completed-inspection-action-'+Date.now(),
+        hiveId,
+        type:'Inspection',
+        title:'Inspection',
+        priority:'Done',
+        status:'Completed',
+        due:typeof fmtDate==='function'?fmtDate(scheduledDate):scheduledDate,
+        date:scheduledDate,
+        completedAt:new Date().toISOString(),
+        sourceId,
+        completionSource:'save-inspection'
+      };
+
+      const alreadyArchived=s.meta.completedActions.some(a=>
         a &&
         String(a.sourceId||'')===sourceId &&
         String(a.status||'')==='Completed'
       );
 
-      if(!already){
-        s.actions.push({
-          id:'completed-inspection-action-'+Date.now(),
-          hiveId,
-          type:'Inspection',
-          title:'Inspection',
-          priority:'Done',
-          status:'Completed',
-          due:typeof fmtDate==='function'?fmtDate(scheduledDate):scheduledDate,
-          date:scheduledDate,
-          completedAt:new Date().toISOString(),
-          sourceId,
-          completionSource:'save-inspection'
-        });
+      if(!alreadyArchived){
+        s.meta.completedActions.push(completedAction);
+      }
+
+      const alreadyInActions=s.actions.some(a=>
+        a &&
+        String(a.sourceId||'')===sourceId &&
+        String(a.status||'')==='Completed'
+      );
+
+      if(!alreadyInActions){
+        s.actions.push(completedAction);
       }
 
       /* Remove only the exact scheduled Inspection that was just fulfilled.
@@ -10743,3 +10759,9 @@ window.__HIVEDASH_V224B32_VERSION__='224b32';
    across save/state regeneration and cloud/local merge.
    ============================================================== */
 window.__HIVEDASH_V224B33_VERSION__='224b33';
+
+/* ==============================================================
+   V224B34 — COMPLETED INSPECTION ACTION ENTITY WRITE FIX
+   Scope locked: B31 completed Inspection entity creation only.
+   ============================================================== */
+window.__HIVEDASH_V224B34_VERSION__='224b34';

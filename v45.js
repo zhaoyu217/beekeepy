@@ -3027,14 +3027,23 @@ function v53DrawActions(mode='Pending'){
 
 function actions(r){
   const first=v45s().hives[0]?.id||'';
+
+  /* V224B29: preserve only the Actions tab selection across re-render.
+     No Action data, rows, routing, or visual structure is changed. */
+  const validModes=new Set(['Pending','Completed','All']);
+  const currentMode=validModes.has(window.__hivedashActionsMode)
+    ? window.__hivedashActionsMode
+    : 'Pending';
+  window.__hivedashActionsMode=currentMode;
+
   r.innerHTML=`<div class="vs v53-actions">
     <div class="split v53-action-split">
       <img src="${V45.actions}" alt="Beekeeper inspecting hive">
       <div>
         <div class="filters v53-action-tabs">
-          <button class="active" data-v53-action="Pending">Pending</button>
-          <button data-v53-action="Completed">Completed</button>
-          <button data-v53-action="All">All</button>
+          <button class="${currentMode==='Pending'?'active':''}" data-v53-action="Pending">Pending</button>
+          <button class="${currentMode==='Completed'?'active':''}" data-v53-action="Completed">Completed</button>
+          <button class="${currentMode==='All'?'active':''}" data-v53-action="All">All</button>
         </div>
         <div class="alist" id="alist"></div>
       </div>
@@ -3049,12 +3058,15 @@ function actions(r){
   </div>`;
   document.querySelectorAll('[data-v53-action]').forEach(btn=>{
     btn.onclick=()=>{
+      const mode=btn.dataset.v53Action;
+      if(!validModes.has(mode))return;
+      window.__hivedashActionsMode=mode;
       document.querySelectorAll('[data-v53-action]').forEach(x=>x.classList.remove('active'));
       btn.classList.add('active');
-      v53DrawActions(btn.dataset.v53Action);
+      v53DrawActions(mode);
     };
   });
-  v53DrawActions('Pending');
+  v53DrawActions(currentMode);
 }
 
 function insights(r){
@@ -10635,3 +10647,9 @@ window.__HIVEDASH_V224B27_VERSION__='224b27';
    Scope locked: s.logs.inspections -> Timeline ordering only.
    ============================================================== */
 window.__HIVEDASH_V224B28_VERSION__='224b28';
+
+/* ==============================================================
+   V224B29 — ACTIONS FILTER STATE RE-RENDER GUARD
+   Scope locked: Pending / Completed / All selected state only.
+   ============================================================== */
+window.__HIVEDASH_V224B29_VERSION__='224b29';

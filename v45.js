@@ -9885,3 +9885,162 @@ window.__HIVEDASH_V224B12_VERSION__='224b12';
 
 window.__HIVEDASH_V224B13_VERSION__='224b13';
 
+
+
+
+/* ==============================================================
+   V224B14 — ROUTE FORM DRAFT INTEGRITY FIX
+   Global hardening for route-based forms that previously kept unsaved
+   edits only in the live DOM. Realtime/Supabase state may continue to
+   update, but a same-route render is not allowed to destroy an active
+   unsaved form DOM.
+
+   Guarded routes:
+   - feeding-record/*
+   - treatment-record/*
+   - harvest-record/*
+   - account
+   - seasonal-settings
+   - units-region
+   - support
+   - faq (Report Problem)
+   - help (search field)
+
+   Design:
+   - User input/change marks the CURRENT guarded route dirty.
+   - Same-route render while dirty is suppressed, preserving exact DOM
+     values, focus, selection and file inputs.
+   - Leaving the route discards the draft/dirty ownership.
+   - Successful saves/submits clear ownership.
+   - Supabase/realtime data updates are NOT blocked; only destructive
+     repaint of the active unsaved route form is prevented.
+   ============================================================== */
+(function v224b14RouteFormDraftIntegrity(){
+  if(window.__HIVEDASH_V224B14__) return;
+  window.__HIVEDASH_V224B14__=true;
+
+  const guarded = route => {
+    route=String(route||'');
+    return /^(?:feeding-record|treatment-record|harvest-record)\/[^/]+$/.test(route) ||
+      ['account','seasonal-settings','units-region','support','faq','help'].includes(route);
+  };
+  const routeNow = () => String(location.hash||'#home').replace(/^#/,'');
+  const dirty = window.__V224B14_DIRTY_ROUTES__ = window.__V224B14_DIRTY_ROUTES__ || new Set();
+  let lastRenderedRoute = routeNow();
+  let allowOneSameRouteRender = false;
+
+  const markDirty = route => {
+    route=String(route||routeNow());
+    if(guarded(route)) dirty.add(route);
+  };
+  const clearDirty = route => dirty.delete(String(route||routeNow()));
+
+  /* Only actual editable controls inside the active route view create
+     draft ownership. Readonly / hidden controls are not treated as edits. */
+  function isEditableControl(el){
+    if(!el || !el.matches?.('input,select,textarea')) return false;
+    if(el.disabled || el.readOnly) return false;
+    const type=String(el.type||'').toLowerCase();
+    if(type==='hidden') return false;
+    return !!el.closest?.('#view');
+  }
+
+  document.addEventListener('input',function(e){
+    if(isEditableControl(e.target)) markDirty(routeNow());
+  },true);
+  document.addEventListener('change',function(e){
+    if(isEditableControl(e.target)) markDirty(routeNow());
+  },true);
+
+  /* Wrap active render ownership.
+     - route change: old draft is discarded, new page renders normally.
+     - same guarded route + dirty: preserve live unsaved DOM exactly.
+     - explicit successful save can authorize one same-route repaint. */
+  const baseRender = window.render;
+  if(typeof baseRender==='function'){
+    window.render=function(){
+      const next=routeNow();
+
+      if(next!==lastRenderedRoute){
+        if(guarded(lastRenderedRoute)) clearDirty(lastRenderedRoute);
+        lastRenderedRoute=next;
+        allowOneSameRouteRender=false;
+        return baseRender.apply(this,arguments);
+      }
+
+      if(guarded(next) && dirty.has(next) && !allowOneSameRouteRender){
+        /* Realtime data has already entered app state. We intentionally
+           skip only the destructive same-route DOM rebuild. */
+        return;
+      }
+
+      allowOneSameRouteRender=false;
+      const result=baseRender.apply(this,arguments);
+      lastRenderedRoute=next;
+      return result;
+    };
+    try{ render=window.render; }catch(_){}
+  }
+
+  /* Account: authorize its intentional post-save render only if the
+     submitted values actually became state (validation failures remain dirty). */
+  const baseSaveAcct=window.saveAcct;
+  if(typeof baseSaveAcct==='function'){
+    window.saveAcct=function(){
+      const route=routeNow();
+      const name=String(document.getElementById('aname')?.value||'').trim();
+      const email=String(document.getElementById('aemail')?.value||'').trim();
+      allowOneSameRouteRender=true;
+      const result=baseSaveAcct.apply(this,arguments);
+      try{
+        const s=typeof v45s==='function'?v45s():null;
+        const ok=String(s?.user?.name||'')===name && String(s?.user?.email||'')===email;
+        if(ok) clearDirty(route);
+        else allowOneSameRouteRender=false;
+      }catch(_){ allowOneSameRouteRender=false; }
+      return result;
+    };
+    try{ saveAcct=window.saveAcct; }catch(_){}
+  }
+
+  /* Settings saves do not navigate; clear draft after successful local save path. */
+  const wrapSimpleSave=(name)=>{
+    const base=window[name];
+    if(typeof base!=='function') return;
+    window[name]=function(){
+      const route=routeNow();
+      const result=base.apply(this,arguments);
+      clearDirty(route);
+      return result;
+    };
+    try{ eval(name+'=window[name]'); }catch(_){}
+  };
+  wrapSimpleSave('saveSeason');
+  wrapSimpleSave('saveUnitsV48');
+
+  /* Report Problem stays on faq after submit. Only clear when a new request
+     was actually appended. */
+  const baseSubmitReport=window.submitReportV48;
+  if(typeof baseSubmitReport==='function'){
+    window.submitReportV48=function(){
+      const route=routeNow();
+      let before=-1;
+      try{ before=(v45s().supportRequests||[]).length; }catch(_){}
+      const result=baseSubmitReport.apply(this,arguments);
+      try{
+        const after=(v45s().supportRequests||[]).length;
+        if(after>before) clearDirty(route);
+      }catch(_){}
+      return result;
+    };
+    try{ submitReportV48=window.submitReportV48; }catch(_){}
+  }
+
+  /* Expose tiny QA helpers without changing product UI. */
+  window.v224b14DraftGuardStatus=function(){
+    return {route:routeNow(),guarded:guarded(routeNow()),dirty:dirty.has(routeNow())};
+  };
+})();
+
+window.__HIVEDASH_V224B14_VERSION__='224b14';
+

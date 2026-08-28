@@ -10729,3 +10729,10 @@ window.__HIVEDASH_V224B30_VERSION__='224b30';
 })();
 
 window.__HIVEDASH_V224B31_VERSION__='224b31';
+
+/* ==============================================================
+   V224B32 — COMPLETED ACTION PERSISTENCE THROUGH ACTION REGENERATION
+   Scope locked: preserve Completed/Done Action entities when app.js
+   regenerates Pending recommendations in state()/save().
+   ============================================================== */
+window.__HIVEDASH_V224B32_VERSION__='224b32';

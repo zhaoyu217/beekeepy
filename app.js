@@ -693,8 +693,18 @@ function generateActions(s){
     if(h.queen!=='Confirmed')list.push({id:`queen-${h.id}`,hiveId:h.id,type:'Inspection',priority:'Medium',title:'Confirm queen status',reason:'Queen has not been confirmed.',due:'Next check',status:'Pending'});
     if(h.honey==='Low'||h.pollen==='Low')list.push({id:`food-${h.id}`,hiveId:h.id,type:'Feeding',priority:'Medium',title:'Review food stores',reason:'Honey or pollen stores are low.',due:'Soon',status:'Pending'});
   }
+
+  /* V224B32 — preserve only explicitly completed Action entities.
+     state()/save() both regenerate pending recommendations via generateActions().
+     Before this fix, that regeneration discarded the Completed Action written by B31. */
+  const completed=(Array.isArray(s.actions)?s.actions:[])
+    .filter(a=>a && (a.status==='Completed' || a.priority==='Done'));
+
   const rank={High:3,Medium:2,Routine:1};
-  return list.sort((a,b)=>rank[b.priority]-rank[a.priority])
+  return [
+    ...list.sort((a,b)=>rank[b.priority]-rank[a.priority]),
+    ...completed
+  ];
 }
 
 function calculateHealth(h){

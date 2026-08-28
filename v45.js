@@ -8294,7 +8294,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         colonySize:Number(hi.colonySize??hi.strength??8),populationFrames:Number(hi.populationFrames||8),temperament:hi.temperament||'Calm',
         honey:hi.honey||h.honey||'Medium',pollen:hi.pollen||h.pollen||'Medium',feedingNeed:hi.feedingNeed||(h.honey==='Low'?'Yes':'No'),
         varroa:Number(hi.varroa??h.varroa??0),varroaTestDate:hi.varroaTestDate||h.lastInspection||v211Today(),
-        treatment:lastTx?.type||'None',treatmentStatus:lastTx?(lastTx.endDate?'Completed':'Active'):'None',treatmentFollowUp:lastTx?.followUp||'',treatmentWithdrawal:lastTx?.withdrawal||'None',
+        treatment:hi.treatment||lastTx?.type||'None',treatmentStatus:hi.treatmentStatus||(lastTx?(lastTx.endDate?'Completed':'Active'):'None'),treatmentFollowUp:hi.treatmentFollowUp||lastTx?.followUp||'',treatmentWithdrawal:hi.treatmentWithdrawal||lastTx?.withdrawal||'None',
         pests:hi.pests||(h.shb||h.waxMoth?'Present':'None'),disease:hi.disease||(h.disease?'Present':'None'),swarming:hi.swarming||(h.swarm?'Signs':'None'),super:hi.superStatus||h.superStatus||'Installed',
         voiceNotes:String(hi.voiceNotes??lastInspectionLog?.voiceNotes??''),nextInspection:h.nextInspection||'',notes:h.notes||''
       };
@@ -8327,12 +8327,13 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     d.notes=idq('inotes')?.value||d.notes||h.notes;
     const date=v211Today();
     h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=Number(d.varroa)||0;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;
-    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
-    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
-    if(d.__v224b6TreatmentTouched===true && d.treatment&&d.treatment!=='None'){
-      const tx={id:'t'+Date.now(),hiveId:id,date,type:d.treatment,endDate:d.treatmentStatus==='Completed'?date:'',followUp:d.treatmentFollowUp||'',withdrawal:d.treatmentWithdrawal||'None',source:'inspection-explicit'};
-      s.logs.treatments.push(tx);
-    }
+    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
+    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
+    /* V224B21 semantic isolation:
+       Treatment edited inside Inspection is an Inspection snapshot only.
+       It must NOT create an independent Treatment Timeline event.
+       Independent Treatment events are created only by the dedicated
+       Treatment Record / Hive Actions -> Treatment save flow. */
     save(s);V49_INSPECTION_DRAFT=null;toast('Inspection saved');go('hive/'+id);
   };
 
@@ -10512,3 +10513,14 @@ window.__HIVEDASH_V224B19_VERSION__='224b19';
 
 window.__HIVEDASH_V224B20_VERSION__='224b20';
 
+
+
+/* ==============================================================
+   V224B21 — TREATMENT TIMELINE SEMANTIC ISOLATION FIX
+   - Inspection Treatment is persisted as an Inspection snapshot.
+   - Saving Inspection no longer creates s.logs.treatments rows.
+   - Dedicated Treatment Record remains the sole creator of Treatment events.
+   - Reopening Inspection hydrates Treatment from h.insp first, with historical
+     dedicated Treatment only as a backwards-compatible fallback.
+   ============================================================== */
+window.__HIVEDASH_V224B21_VERSION__='224b21';

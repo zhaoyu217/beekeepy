@@ -1924,7 +1924,12 @@ function hiveDetail(r,id){
           ...(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Treatment'})),
           ...(Array.isArray(s.logs?.harvests)?s.logs.harvests:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Harvest'}))
         ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))));
-  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location||'Location not set')}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Queen marked',h.insp?.queenMarked||'Not confirmed'],['Queen age',h.insp?.queenAge!==''&&h.insp?.queenAge!==undefined?`${h.insp.queenAge} yr`:'—'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')],['Laying pattern',h.insp?.layingPattern||'Not assessed']])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.broodStrength??h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.colonySize??h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',`${Number(h.insp?.varroa??h.varroa??0)}/100`],['Risk',Number(h.insp?.varroa??h.varroa??0)>=3?'High':Number(h.insp?.varroa??h.varroa??0)>=2?'Medium':'Low'],['Test date',fmtDate(h.insp?.varroaTestDate||h.lastInspection)]])}${hg('Treatment',[['Last treatment',lastTx?.type||'None'],['Status',lastTx&&!lastTx.endDate?'Active':lastTx?'Completed':'None'],['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):'—'],['Withdrawal',lastTx?.withdrawal||'None']])}</div>${Vcard('Photos',`
+  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(s.settings.location||'Location not set')}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Queen marked',h.insp?.queenMarked||'Not confirmed'],['Queen age',h.insp?.queenAge!==''&&h.insp?.queenAge!==undefined?`${h.insp.queenAge} yr`:'—'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')],['Laying pattern',h.insp?.layingPattern||'Not assessed']])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.broodStrength??h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.colonySize??h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',`${Number(h.insp?.varroa??h.varroa??0)}/100`],['Risk',Number(h.insp?.varroa??h.varroa??0)>=3?'High':Number(h.insp?.varroa??h.varroa??0)>=2?'Medium':'Low'],['Test date',fmtDate(h.insp?.varroaTestDate||h.lastInspection)]])}${hg('Treatment',[
+  ['Last treatment',h.insp?.treatment||lastTx?.type||'None'],
+  ['Status',h.insp?.treatmentStatus||(lastTx&&!lastTx.endDate?'Active':lastTx?'Completed':'None')],
+  ['Follow-up',h.insp?.treatmentFollowUp?fmtDate(h.insp.treatmentFollowUp):(lastTx?.followUp?fmtDate(lastTx.followUp):'—')],
+  ['Withdrawal',h.insp?.treatmentWithdrawal||lastTx?.withdrawal||'None']
+])}</div>${Vcard('Photos',`
   <div class="photo-card-head-actions">
     <button class="photo-card-viewall" type="button" onclick="openHivePhotoGallery('${h.id}')">View All</button>
   </div>
@@ -10524,3 +10529,14 @@ window.__HIVEDASH_V224B20_VERSION__='224b20';
      dedicated Treatment only as a backwards-compatible fallback.
    ============================================================== */
 window.__HIVEDASH_V224B21_VERSION__='224b21';
+
+
+/* ==============================================================
+   V224B22 — HIVE DETAIL TREATMENT SNAPSHOT SOURCE FIX
+   Hive Detail Treatment card now reads the latest Inspection snapshot
+   (h.insp.treatment*) first, and falls back to the latest dedicated
+   Treatment record only for legacy hives without an Inspection snapshot.
+
+   No other Hive Detail card is changed.
+   ============================================================== */
+window.__HIVEDASH_V224B22_VERSION__='224b22';

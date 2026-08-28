@@ -2098,7 +2098,9 @@ function openHarvestRecordViewV49(id){
   if(!x)return;
   const h=hive(s,x.hiveId);
 
-  const m=modal(`<div class="modalhead"><b>Harvest · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}% moisture<br>${x.frames||0} frames${x.batch?` · ${esc(x.batch)}`:''}</div><button class="primary" onclick="closeModal(this);go('hive/${x.hiveId}')">Open Hive</button>`);
+  const harvestNotes=String(x.notes||'').trim();
+  const notesHtml=harvestNotes?`<div class="v224b18-harvest-notes"><b>Notes</b><div>${esc(harvestNotes)}</div></div>`:'';
+  const m=modal(`<div class="modalhead"><b>Harvest · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}% moisture<br>${x.frames||0} frames${x.batch?` · ${esc(x.batch)}`:''}${notesHtml}</div><button class="primary" onclick="closeModal(this);go('hive/${x.hiveId}')">Open Hive</button>`);
 
   if(m){
     m.classList.add('harvest-record-view-v189');
@@ -10407,3 +10409,38 @@ window.__HIVEDASH_V224B16_VERSION__='224b16';
 
 window.__HIVEDASH_V224B17_VERSION__='224b17';
 
+
+
+/* ==============================================================
+   V224B18 — Harvest Detail Notes Display
+   Scope: existing Harvest history detail modal only.
+   - Shows saved notes when non-empty.
+   - Empty notes render no blank Notes section.
+   - No Harvest save, Timeline, route, Hive Actions or data changes.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V224B18__) return;
+  window.__HIVEDASH_V224B18__=true;
+  const style=document.createElement('style');
+  style.id='v224b18-harvest-notes-style';
+  style.textContent=`
+    .harvest-record-view-v189 .v224b18-harvest-notes{
+      margin-top:10px;
+      padding-top:10px;
+      border-top:1px solid #E6E3DA;
+      color:#2F3B33;
+      line-height:1.45;
+    }
+    .harvest-record-view-v189 .v224b18-harvest-notes>b{
+      display:block;
+      margin-bottom:4px;
+      font-weight:800;
+    }
+    .harvest-record-view-v189 .v224b18-harvest-notes>div{
+      white-space:pre-wrap;
+      overflow-wrap:anywhere;
+    }
+  `;
+  document.head.appendChild(style);
+})();
+window.__HIVEDASH_V224B18_VERSION__='224b18';

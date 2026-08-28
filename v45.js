@@ -10237,3 +10237,173 @@ window.__HIVEDASH_V224B15_VERSION__='224b15';
 
 window.__HIVEDASH_V224B16_VERSION__='224b16';
 
+
+
+
+/* ==============================================================
+   V224B17 — GLOBAL ENGLISH DATE INPUT FIX
+   Problem:
+   Native <input type="date"> renders its internal placeholder according
+   to browser/OS locale. On a Chinese-localized browser this leaked
+   strings such as "yyyy/mm/日" into the otherwise English HiveDash UI.
+
+   Fix:
+   - Keep the native date input and picker behavior.
+   - Hide ONLY the browser-rendered internal date text.
+   - Paint a HiveDash-controlled English date display over the same field.
+   - Empty fields use an English placeholder derived from Date Format.
+   - Filled fields use the user's HiveDash Date Format.
+   - No save logic, value semantics, validation or picker behavior changes.
+   ============================================================== */
+(function v224b17GlobalEnglishDateInputs(){
+  if(window.__HIVEDASH_V224B17__) return;
+  window.__HIVEDASH_V224B17__=true;
+
+  let seq=0;
+
+  function dateFormatSetting(){
+    try{
+      const s=typeof state==='function'?state():null;
+      return String(s?.settings?.dateFormat || s?.settings?.region?.dateFormat || 'MM/DD/YYYY');
+    }catch(_){
+      return 'MM/DD/YYYY';
+    }
+  }
+
+  function normalizeFormat(fmt){
+    fmt=String(fmt||'MM/DD/YYYY').toUpperCase();
+    if(!/(YYYY).*(MM).*(DD)|(MM).*(DD).*(YYYY)|(DD).*(MM).*(YYYY)/.test(fmt)){
+      return 'MM/DD/YYYY';
+    }
+    return fmt;
+  }
+
+  function renderDateValue(raw){
+    const fmt=normalizeFormat(dateFormatSetting());
+    if(!raw){
+      return fmt.replace(/YYYY/g,'yyyy').replace(/MM/g,'mm').replace(/DD/g,'dd');
+    }
+    const m=String(raw).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!m) return String(raw);
+    const yyyy=m[1], mm=m[2], dd=m[3];
+    return fmt.replace(/YYYY/g,yyyy).replace(/MM/g,mm).replace(/DD/g,dd);
+  }
+
+  function positionOverlay(el, overlay){
+    if(!el.isConnected || !overlay?.isConnected) return;
+    const host=el.parentElement;
+    if(!host) return;
+    const cs=getComputedStyle(host);
+    if(cs.position==='static') host.classList.add('v224b17-date-host');
+
+    overlay.style.left=el.offsetLeft+'px';
+    overlay.style.top=el.offsetTop+'px';
+    overlay.style.width=el.offsetWidth+'px';
+    overlay.style.height=el.offsetHeight+'px';
+    overlay.textContent=renderDateValue(el.value);
+    overlay.classList.toggle('is-placeholder',!el.value);
+  }
+
+  function update(el){
+    const id=el.dataset.v224b17Overlay;
+    const overlay=id?document.getElementById(id):null;
+    if(overlay) positionOverlay(el,overlay);
+  }
+
+  function decorate(el){
+    if(!el || el.type!=='date') return;
+    el.setAttribute('lang','en-US');
+    el.setAttribute('data-hivedash-locale','en-US');
+
+    if(el.dataset.v224b17Decorated==='1'){
+      update(el);
+      return;
+    }
+
+    const host=el.parentElement;
+    if(!host) return;
+
+    const id='v224b17-date-display-'+(++seq);
+    const overlay=document.createElement('span');
+    overlay.id=id;
+    overlay.className='v224b17-date-display';
+    overlay.setAttribute('aria-hidden','true');
+
+    el.dataset.v224b17Decorated='1';
+    el.dataset.v224b17Overlay=id;
+    el.classList.add('v224b17-date-native');
+
+    host.appendChild(overlay);
+
+    const sync=()=>update(el);
+    el.addEventListener('input',sync);
+    el.addEventListener('change',sync);
+    el.addEventListener('focus',sync);
+    el.addEventListener('blur',sync);
+
+    positionOverlay(el,overlay);
+  }
+
+  function undecorate(el){
+    if(!el || el.dataset.v224b17Decorated!=='1') return;
+    const id=el.dataset.v224b17Overlay;
+    if(id) document.getElementById(id)?.remove();
+    delete el.dataset.v224b17Decorated;
+    delete el.dataset.v224b17Overlay;
+    el.classList.remove('v224b17-date-native');
+  }
+
+  function scan(root=document){
+    root.querySelectorAll?.('input[type="date"]').forEach(decorate);
+
+    /* Some existing HiveDash optional-date controls temporarily switch
+       text -> date on focus and back to text on blur. Remove the overlay
+       again when they return to text so their explicit English placeholder
+       ("Select date") remains the sole visible label. */
+    root.querySelectorAll?.('input[data-v224b17-decorated="1"]').forEach(el=>{
+      if(el.type!=='date') undecorate(el);
+    });
+  }
+
+  const observer=new MutationObserver(records=>{
+    for(const rec of records){
+      if(rec.type==='attributes'){
+        const el=rec.target;
+        if(el?.matches?.('input')){
+          if(el.type==='date') decorate(el);
+          else undecorate(el);
+        }
+      }else{
+        rec.addedNodes.forEach(node=>{
+          if(node.nodeType!==1) return;
+          if(node.matches?.('input[type="date"]')) decorate(node);
+          scan(node);
+        });
+      }
+    }
+  });
+
+  observer.observe(document.documentElement,{
+    childList:true,
+    subtree:true,
+    attributes:true,
+    attributeFilter:['type','value']
+  });
+
+  window.addEventListener('resize',()=>{
+    document.querySelectorAll('input.v224b17-date-native').forEach(update);
+  });
+
+  /* Route/realtime layouts can settle after DOM insertion without changing
+     the date element itself; refresh geometry after ordinary UI events. */
+  document.addEventListener('click',()=>{
+    queueMicrotask(()=>document.querySelectorAll('input.v224b17-date-native').forEach(update));
+  },true);
+
+  scan(document);
+
+  window.v224b17RescanDates=()=>scan(document);
+})();
+
+window.__HIVEDASH_V224B17_VERSION__='224b17';
+

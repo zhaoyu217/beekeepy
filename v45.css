@@ -5553,3 +5553,65 @@ body:has(.v109-map-page) #bottomnav{z-index:40}
   box-sizing:border-box!important;
   -webkit-overflow-scrolling:touch!important;
 }
+
+
+/* V224B10 fallback: the JS DOM observer is authoritative. */
+#app > .modal{
+  z-index:24000!important;
+}
+#app > .modal > .modalpanel{
+  max-height:calc(100dvh - 12px)!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  padding-bottom:calc(22px + env(safe-area-inset-bottom,0px))!important;
+  box-sizing:border-box!important;
+  -webkit-overflow-scrolling:touch!important;
+}
+
+
+
+
+/* ==============================================================
+   V224B17 — controlled English display for native date inputs
+   ================================================================ */
+.v224b17-date-host{
+  position:relative!important;
+}
+input.v224b17-date-native{
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  caret-color:transparent!important;
+}
+input.v224b17-date-native::-webkit-datetime-edit,
+input.v224b17-date-native::-webkit-datetime-edit-fields-wrapper,
+input.v224b17-date-native::-webkit-datetime-edit-text,
+input.v224b17-date-native::-webkit-datetime-edit-year-field,
+input.v224b17-date-native::-webkit-datetime-edit-month-field,
+input.v224b17-date-native::-webkit-datetime-edit-day-field{
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+}
+input.v224b17-date-native::-webkit-calendar-picker-indicator{
+  opacity:1!important;
+  position:relative;
+  z-index:3;
+}
+.v224b17-date-display{
+  position:absolute;
+  z-index:2;
+  display:flex;
+  align-items:center;
+  box-sizing:border-box;
+  padding-left:12px;
+  padding-right:42px;
+  pointer-events:none;
+  overflow:hidden;
+  white-space:nowrap;
+  color:#2F3B33;
+  font:inherit;
+  line-height:1;
+}
+.v224b17-date-display.is-placeholder{
+  color:#5f665f;
+}
+

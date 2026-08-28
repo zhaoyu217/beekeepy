@@ -9668,3 +9668,63 @@ window.__HIVEDASH_V224B10_VERSION__='224b10';
 
 window.__HIVEDASH_V224B11_VERSION__='224b11';
 
+
+/* ==============================================================
+   V224B12 — INSPECTION LIVE-DRAFT REHYDRATE GUARD
+   Scope:
+   - Keep live Inspection Notes in V49_INSPECTION_DRAFT while typing.
+   - Before any Inspection repaint, capture the live textarea value first.
+   - Prevent async/background repaint from restoring the previously saved
+     hive.notes over an in-progress Inspection draft.
+   - Existing module editors already write into V49_INSPECTION_DRAFT before
+     repaint; their save/event behavior is unchanged.
+   Protected / unchanged:
+   Timeline, independent Feeding/Treatment records, Health Trends,
+   Hive Detail, Voice Notes, Inspection save semantics and navigation.
+   ============================================================== */
+(function v224b12InspectionDraftRehydrateGuard(){
+  if(window.__HIVEDASH_V224B12__) return;
+  window.__HIVEDASH_V224B12__=true;
+
+  function onInspectionRoute(){
+    return /^#inspection\/[^/]+/.test(String(location.hash||''));
+  }
+
+  function captureLiveNotes(){
+    try{
+      if(!onInspectionRoute() || !V49_INSPECTION_DRAFT) return;
+      const el=document.getElementById('inotes');
+      if(!el) return;
+      V49_INSPECTION_DRAFT.notes=String(el.value??'');
+      V49_INSPECTION_DRAFT.__v224b12Dirty=true;
+    }catch(_){ }
+  }
+
+  /* Notes is the only main Inspection control that previously lived only in
+     the DOM until Save. Bind it to the same lexical draft used by all cards. */
+  document.addEventListener('input',function(e){
+    const el=e.target;
+    if(!el || el.id!=='inotes' || !onInspectionRoute()) return;
+    try{
+      if(V49_INSPECTION_DRAFT){
+        V49_INSPECTION_DRAFT.notes=String(el.value??'');
+        V49_INSPECTION_DRAFT.__v224b12Dirty=true;
+      }
+    }catch(_){ }
+  },true);
+
+  /* Any later renderer (including async state refreshes) must first absorb
+     the user's current DOM edit. The existing inspectionPage then renders
+     from V49_INSPECTION_DRAFT rather than stale persisted hive.notes. */
+  const baseInspectionPage=inspectionPage;
+  if(typeof baseInspectionPage==='function'){
+    const guarded=function(r,id){
+      captureLiveNotes();
+      return baseInspectionPage.apply(this,arguments);
+    };
+    inspectionPage=guarded;
+    try{ window.inspectionPage=guarded; }catch(_){ }
+  }
+})();
+
+window.__HIVEDASH_V224B12_VERSION__='224b12';

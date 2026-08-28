@@ -9728,3 +9728,160 @@ window.__HIVEDASH_V224B11_VERSION__='224b11';
 })();
 
 window.__HIVEDASH_V224B12_VERSION__='224b12';
+
+
+
+/* ==============================================================
+   V224B13 — TIMELINE SEARCH / FILTER STATE GUARD
+   Confirmed failure:
+   - Timeline search returned the correct result.
+   - 1–2 seconds later an async/realtime render repainted Timeline,
+     clearing the search field and showing the full filtered list again.
+
+   Scope:
+   - Preserve Timeline search query, active event filter, and Load More
+     limit across SAME-ROUTE re-renders.
+   - Do not block realtime/Supabase rendering.
+   - Do not change Timeline data source, event rows, routes or visuals.
+   ============================================================== */
+(function v224b13TimelineUiStateGuard(){
+  if(window.__HIVEDASH_V224B13_TIMELINE_UI__) return;
+  window.__HIVEDASH_V224B13_TIMELINE_UI__=true;
+
+  const store=window.__V224B13_TIMELINE_ROUTE_STATE__=
+    window.__V224B13_TIMELINE_ROUTE_STATE__||Object.create(null);
+
+  const routeNow=()=>String(location.hash||'#timeline').replace(/^#/,'');
+  const isTimelineRoute=(r)=>/^timeline(?:\/[^/]+)?$/.test(String(r||''));
+
+  function currentFilterFromDom(){
+    const btn=document.querySelector('.timeline-filters button.active[data-type]');
+    return String(btn?.dataset?.type||'');
+  }
+
+  function capture(route){
+    route=String(route||routeNow());
+    if(!isTimelineRoute(route)) return null;
+    const prev=store[route]||{};
+    const input=document.getElementById('v49tsearch');
+    const filter=currentFilterFromDom() ||
+      (String(window.V49_TIMELINE_FILTER_ROUTE||'')===route
+        ? String(window.V49_TIMELINE_FILTER||'All')
+        : String(prev.filter||'All'));
+
+    const state={
+      search: input ? String(input.value||'') : String(prev.search||''),
+      filter: filter || 'All',
+      limit: Number(window.V49_TIMELINE_LIMIT||prev.limit||10) || 10
+    };
+    store[route]=state;
+    return state;
+  }
+
+  function restore(route){
+    route=String(route||routeNow());
+    if(!isTimelineRoute(route)) return;
+    const state=store[route]||{search:'',filter:'All',limit:10};
+
+    window.V49_TIMELINE_FILTER=state.filter||'All';
+    window.V49_TIMELINE_FILTER_ROUTE=route;
+    window.V49_TIMELINE_LIMIT=Number(state.limit||10)||10;
+    try{
+      V49_TIMELINE_FILTER=window.V49_TIMELINE_FILTER;
+      V49_TIMELINE_FILTER_ROUTE=window.V49_TIMELINE_FILTER_ROUTE;
+      V49_TIMELINE_LIMIT=window.V49_TIMELINE_LIMIT;
+    }catch(_){}
+
+    const input=document.getElementById('v49tsearch');
+    if(input){
+      input.value=String(state.search||'');
+      input.oninput=function(){
+        const r=routeNow();
+        const s=store[r]||(store[r]={search:'',filter:'All',limit:10});
+        s.search=String(this.value||'');
+        s.filter=String(window.V49_TIMELINE_FILTER||s.filter||'All');
+        s.limit=Number(window.V49_TIMELINE_LIMIT||s.limit||10)||10;
+        if(typeof applyTimelineFilterV49==='function') applyTimelineFilterV49();
+      };
+    }
+
+    document.querySelectorAll('.timeline-filters button[data-type]').forEach(btn=>{
+      btn.classList.toggle('active',String(btn.dataset.type||'')===String(state.filter||'All'));
+    });
+
+    if(typeof applyTimelineFilterV49==='function') applyTimelineFilterV49();
+  }
+
+  const baseTimelinePage=window.timelinePage;
+  if(typeof baseTimelinePage==='function'){
+    window.timelinePage=function(r){
+      const route=routeNow();
+
+      /* Snapshot the live controls before the async/realtime repaint destroys them. */
+      capture(route);
+
+      const state=store[route]||{search:'',filter:'All',limit:10};
+      window.V49_TIMELINE_FILTER=state.filter||'All';
+      window.V49_TIMELINE_FILTER_ROUTE=route;
+      window.V49_TIMELINE_LIMIT=Number(state.limit||10)||10;
+      try{
+        V49_TIMELINE_FILTER=window.V49_TIMELINE_FILTER;
+        V49_TIMELINE_FILTER_ROUTE=window.V49_TIMELINE_FILTER_ROUTE;
+        V49_TIMELINE_LIMIT=window.V49_TIMELINE_LIMIT;
+      }catch(_){}
+
+      const result=baseTimelinePage.apply(this,arguments);
+
+      /* The legacy page sets limit back to 10; restore user's current limit/query/filter. */
+      restore(route);
+      return result;
+    };
+    try{ timelinePage=window.timelinePage; }catch(_){}
+  }
+
+  const baseFilter=window.filterTimelineV49;
+  if(typeof baseFilter==='function'){
+    window.filterTimelineV49=function(type,btn){
+      const result=baseFilter.apply(this,arguments);
+      const route=routeNow();
+      if(isTimelineRoute(route)){
+        const s=store[route]||(store[route]={search:'',filter:'All',limit:10});
+        s.filter=String(type||'All');
+        s.search=String(document.getElementById('v49tsearch')?.value||s.search||'');
+        s.limit=Number(window.V49_TIMELINE_LIMIT||s.limit||10)||10;
+      }
+      return result;
+    };
+    try{ filterTimelineV49=window.filterTimelineV49; }catch(_){}
+  }
+
+  const baseLoadMore=window.loadMoreTimelineV49;
+  if(typeof baseLoadMore==='function'){
+    window.loadMoreTimelineV49=function(){
+      const result=baseLoadMore.apply(this,arguments);
+      const route=routeNow();
+      if(isTimelineRoute(route)){
+        const s=store[route]||(store[route]={search:'',filter:'All',limit:10});
+        s.search=String(document.getElementById('v49tsearch')?.value||s.search||'');
+        s.filter=String(window.V49_TIMELINE_FILTER||s.filter||'All');
+        s.limit=Number(window.V49_TIMELINE_LIMIT||s.limit||10)||10;
+      }
+      return result;
+    };
+    try{ loadMoreTimelineV49=window.loadMoreTimelineV49; }catch(_){}
+  }
+
+  /* Capture before any explicit render path can repaint the same Timeline route. */
+  document.addEventListener('input',function(e){
+    if(e.target?.id!=='v49tsearch') return;
+    capture(routeNow());
+  },true);
+
+  document.addEventListener('click',function(e){
+    if(!e.target?.closest?.('.timeline-filters button[data-type],#v49loadmore')) return;
+    queueMicrotask(()=>capture(routeNow()));
+  },true);
+})();
+
+window.__HIVEDASH_V224B13_VERSION__='224b13';
+

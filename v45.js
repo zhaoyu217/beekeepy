@@ -2830,7 +2830,8 @@ openHivePhotoGallery=function(hiveId){
         <button class="gallery-photo-open" type="button" aria-label="Open photo ${i+1}">
           <img src="${p.data}" alt="${esc(h.name)} photo ${i+1}">
         </button>
-        <button class="gallery-photo-menu" type="button" aria-label="Photo options" onclick="event.stopPropagation();openHivePhotoMenu('${h.id}','${p.id}',this)">•••</button>
+        <button class="gallery-photo-menu" type="button" aria-label="Photo options"
+                data-v224b24-hive="${esc(h.id)}" data-v224b24-photo="${esc(p.id)}">•••</button>
       </div>`).join('')
     : '<div class="gallery-empty"><b>No photos yet</b><span>Add your first hive photo.</span></div>';
   const m=modal(`<div class="modalhead photo-gallery-head">
@@ -10646,3 +10647,42 @@ window.__HIVEDASH_V224B22_VERSION__='224b22';
 
   window.__HIVEDASH_V224B23_VERSION__='224b23';
 })();
+
+
+
+/* ==============================================================
+   V224B24 — PHOTO MENU TRIGGER FIX
+   Scope locked: only the existing Hive Detail Photos gallery ••• trigger.
+
+   V224B23 restored the delete menu implementation, but the gallery trigger
+   still depended on an inline onclick path. On the deployed page that click
+   produced no visible action. V224B24 moves only that trigger to one delegated
+   capture-phase handler using data attributes.
+
+   No upload, delete semantics, Timeline, Inspection, Treatment, Voice Notes,
+   navigation, or gallery visual structure is changed.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V224B24__) return;
+  window.__HIVEDASH_V224B24__=true;
+
+  document.addEventListener('click',function(e){
+    const btn=e.target?.closest?.('.gallery-photo-menu[data-v224b24-hive][data-v224b24-photo]');
+    if(!btn) return;
+
+    e.preventDefault();
+    e.stopPropagation();
+    e.stopImmediatePropagation();
+
+    const hiveId=btn.dataset.v224b24Hive||'';
+    const photoId=btn.dataset.v224b24Photo||'';
+    if(!hiveId || !photoId) return;
+
+    if(typeof window.openHivePhotoMenu==='function'){
+      window.openHivePhotoMenu(hiveId,photoId,btn);
+    }
+  },true);
+
+  window.__HIVEDASH_V224B24_VERSION__='224b24';
+})();
+

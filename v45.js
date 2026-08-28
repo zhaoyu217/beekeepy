@@ -10540,3 +10540,109 @@ window.__HIVEDASH_V224B21_VERSION__='224b21';
    No other Hive Detail card is changed.
    ============================================================== */
 window.__HIVEDASH_V224B22_VERSION__='224b22';
+
+
+/* ==============================================================
+   V224B23 — PHOTO DELETE REGRESSION FIX
+   Scope locked: Hive Detail > Photos gallery > per-photo menu/delete only.
+   No upload, Timeline filter/pagination, Inspection, card, navigation,
+   Voice Notes, Treatment, or other module logic is changed.
+   ============================================================== */
+(function(){
+  function v224b23CloseMenus(){
+    document.querySelectorAll('.v224b23-photo-menu,.v190-photo-menu-pop').forEach(el=>el.remove());
+  }
+
+  window.deleteHivePhotoV224B23=function(hiveId,photoId){
+    const s=v45s();
+    const h=hive(s,hiveId);
+    if(!h) return toast('Hive not found');
+
+    h.photos=Array.isArray(h.photos)?h.photos:[];
+    const index=h.photos.findIndex(p=>String(p?.id||'')===String(photoId));
+    if(index<0) return toast('Photo not found');
+
+    if(!confirm('Delete this photo?')) return;
+
+    const beforePhotos=clone(h.photos);
+    const beforeCover=h.coverPhotoId||'';
+    const wasCover=String(beforeCover)===String(photoId);
+
+    h.photos=h.photos.filter(p=>String(p?.id||'')!==String(photoId));
+    if(wasCover) h.coverPhotoId='';
+
+    if(save(s)===false){
+      h.photos=beforePhotos;
+      h.coverPhotoId=beforeCover;
+      return toast('Photo could not be deleted');
+    }
+
+    v224b23CloseMenus();
+    document.querySelectorAll('.photo-gallery-modal-shell').forEach(el=>el.remove());
+
+    try{ render(); }catch(err){ console.error('V224B23 render',err); }
+    toast('Photo deleted');
+
+    setTimeout(()=>{
+      try{ openHivePhotoGallery(hiveId); }catch(err){ console.error('V224B23 gallery reopen',err); }
+    },0);
+  };
+
+  window.openHivePhotoMenu=function(hiveId,photoId,anchor){
+    v224b23CloseMenus();
+
+    const s=v45s();
+    const h=hive(s,hiveId);
+    const photos=Array.isArray(h?.photos)?h.photos:[];
+    const p=photos.find(x=>String(x?.id||'')===String(photoId));
+    if(!h || !p) return toast('Photo not found');
+
+    const current=String(h.coverPhotoId||'')===String(photoId);
+    const box=document.createElement('div');
+    box.className='v224b23-photo-menu';
+    box.innerHTML=`
+      ${current
+        ? `<button type="button" disabled>✓ Hive Cover</button>`
+        : `<button type="button" onclick="setHiveCoverPhotoV190('${esc(hiveId)}','${esc(photoId)}')">Set as Hive Cover</button>`}
+      <button type="button" class="danger"
+              onclick="deleteHivePhotoV224B23('${esc(hiveId)}','${esc(photoId)}')">Delete Photo</button>
+    `;
+    document.body.appendChild(box);
+
+    const rect=anchor?.getBoundingClientRect?.();
+    const width=178;
+    const left=rect ? Math.max(10,Math.min(window.innerWidth-width-10,rect.right-width)) : 10;
+    const top=rect ? Math.max(10,Math.min(window.innerHeight-106,rect.bottom+6)) : 10;
+    box.style.left=left+'px';
+    box.style.top=top+'px';
+
+    setTimeout(()=>{
+      const close=(e)=>{
+        if(!box.contains(e.target) && e.target!==anchor){
+          box.remove();
+          document.removeEventListener('pointerdown',close,true);
+        }
+      };
+      document.addEventListener('pointerdown',close,true);
+    },0);
+  };
+
+  const style=document.createElement('style');
+  style.id='v224b23-photo-delete-style';
+  style.textContent=`
+    .v224b23-photo-menu{
+      position:fixed;z-index:20000;width:178px;padding:6px;
+      border:1px solid rgba(47,59,51,.12);border-radius:12px;
+      background:#FFFDF9;box-shadow:0 10px 28px rgba(47,59,51,.18)
+    }
+    .v224b23-photo-menu button{
+      width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:8px;
+      background:transparent;color:#36512B;text-align:left;font:inherit;font-weight:700;cursor:pointer
+    }
+    .v224b23-photo-menu button:disabled{cursor:default}
+    .v224b23-photo-menu .danger{color:#B53A30}
+  `;
+  document.head.appendChild(style);
+
+  window.__HIVEDASH_V224B23_VERSION__='224b23';
+})();

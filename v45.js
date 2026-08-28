@@ -10061,3 +10061,179 @@ window.__HIVEDASH_V224B14_VERSION__='224b14';
    ============================================================== */
 window.__HIVEDASH_V224B15_VERSION__='224b15';
 
+
+
+
+/* ==============================================================
+   V224B16 — GLOBAL ENGLISH UI LOCALE SANITIZER
+   Goal:
+   - English UI must never leak translated/legacy Chinese system values.
+   - Preserve legacy Chinese compatibility maps for old stored records.
+   - Never rewrite free-form user content such as Notes / Support messages.
+
+   Sanitized system-owned values:
+   - Time zones (including polluted values such as 美国/New_York)
+   - Region / Apiary timezone state
+   - Known enum/status values through the existing English display map
+   - Locale hints on native date/time controls
+   ============================================================== */
+(function v224b16EnglishUiLocaleSanitizer(){
+  if(window.__HIVEDASH_V224B16__) return;
+  window.__HIVEDASH_V224B16__=true;
+
+  const TZ_SUFFIX_MAP = {
+    'New_York':'America/New_York',
+    'Chicago':'America/Chicago',
+    'Denver':'America/Denver',
+    'Phoenix':'America/Phoenix',
+    'Los_Angeles':'America/Los_Angeles',
+    'Anchorage':'America/Anchorage',
+    'Honolulu':'Pacific/Honolulu'
+  };
+
+  window.v224b16NormalizeTimezone=function(value){
+    let x=String(value??'').trim();
+    if(!x) return 'America/Denver';
+
+    /* Exact valid values always win. */
+    const valid=(typeof V224A_TZ!=='undefined' && Array.isArray(V224A_TZ))
+      ? V224A_TZ
+      : ['America/New_York','America/Chicago','America/Denver','America/Phoenix',
+         'America/Los_Angeles','America/Anchorage','Pacific/Honolulu'];
+    if(valid.includes(x)) return x;
+
+    /* Browser/translation polluted country prefix, e.g. 美国/New_York. */
+    const suffix=x.split('/').pop();
+    if(TZ_SUFFIX_MAP[suffix]) return TZ_SUFFIX_MAP[suffix];
+
+    /* Known localized city fragments occasionally stored by translation layers. */
+    const localized={
+      '纽约':'America/New_York',
+      '芝加哥':'America/Chicago',
+      '丹佛':'America/Denver',
+      '凤凰城':'America/Phoenix',
+      '洛杉矶':'America/Los_Angeles',
+      '安克雷奇':'America/Anchorage',
+      '檀香山':'Pacific/Honolulu',
+      '火奴鲁鲁':'Pacific/Honolulu'
+    };
+    for(const [needle,tz] of Object.entries(localized)){
+      if(x.includes(needle)) return tz;
+    }
+
+    /* Do not invent a timezone. Keep unknown ASCII IANA-like values intact. */
+    if(/^[A-Za-z_+-]+\/[A-Za-z0-9_+.-]+$/.test(x)) return x;
+    return 'America/Denver';
+  };
+
+  window.v224b16EnglishSystemValue=function(value){
+    if(value===null || value===undefined) return value;
+    const x=String(value).trim();
+    if(!x) return value;
+    if(x.includes('/') && /[\u4e00-\u9fff]/.test(x)){
+      return v224b16NormalizeTimezone(x);
+    }
+    if(typeof v220EnglishDisplay==='function'){
+      const normalized=v220EnglishDisplay(x);
+      if(normalized!==x) return normalized;
+    }
+    return value;
+  };
+
+  function sanitizeState(){
+    let s;
+    try{s=typeof state==='function'?state():null}catch(_){s=null}
+    if(!s || typeof s!=='object') return false;
+
+    let changed=false;
+    s.settings=s.settings||{};
+    s.settings.region=s.settings.region||{};
+    s.settings.apiaryLocation=s.settings.apiaryLocation||{};
+
+    const tzCandidates=[
+      ['settings','timezone'],
+      ['region','timezone'],
+      ['apiaryLocation','timezone']
+    ];
+
+    const current=[
+      String(s.settings.timezone||''),
+      String(s.settings.region.timezone||''),
+      String(s.settings.apiaryLocation.timezone||'')
+    ];
+    const base=current.find(Boolean)||'America/Denver';
+    const clean=v224b16NormalizeTimezone(base);
+
+    if(s.settings.timezone!==clean){s.settings.timezone=clean;changed=true}
+    if(s.settings.region.timezone!==clean){s.settings.region.timezone=clean;changed=true}
+    if(s.settings.apiaryLocation.timezone!==clean){s.settings.apiaryLocation.timezone=clean;changed=true}
+
+    /* System enums only. Do NOT sanitize notes/free text. */
+    (s.hives||[]).forEach(h=>{
+      if(h && h.status){
+        const nv=v224b16EnglishSystemValue(h.status);
+        if(nv!==h.status){h.status=nv;changed=true}
+      }
+    });
+
+    return changed;
+  }
+
+  function sanitizeRenderedControls(root=document){
+    try{document.documentElement.lang='en-US'}catch(_){}
+
+    root.querySelectorAll?.('input[type="date"],input[type="datetime-local"],input[type="time"]').forEach(el=>{
+      el.setAttribute('lang','en-US');
+      el.setAttribute('data-hivedash-locale','en-US');
+    });
+
+    /* Only known timezone controls are normalized. User free text is untouched. */
+    ['v48tz','v224tz'].forEach(id=>{
+      const el=document.getElementById(id);
+      if(!el) return;
+      const clean=v224b16NormalizeTimezone(el.value);
+      if(el.value!==clean) el.value=clean;
+    });
+  }
+
+  /* Normalize persisted system state once on load without touching user-authored text. */
+  try{
+    if(sanitizeState() && typeof save==='function'){
+      const s=state();
+      save(s);
+    }
+  }catch(_){}
+
+  /* Keep sanitization active after route/realtime DOM rebuilds. */
+  const observer=new MutationObserver(()=>{
+    sanitizeRenderedControls(document);
+  });
+  if(document.documentElement){
+    observer.observe(document.documentElement,{childList:true,subtree:true});
+  }
+  sanitizeRenderedControls(document);
+
+  /* Ensure save paths cannot re-persist a translated timezone. */
+  const baseSaveUnits=window.saveUnitsV48;
+  if(typeof baseSaveUnits==='function'){
+    window.saveUnitsV48=function(){
+      const el=document.getElementById('v48tz');
+      if(el) el.value=v224b16NormalizeTimezone(el.value);
+      return baseSaveUnits.apply(this,arguments);
+    };
+    try{saveUnitsV48=window.saveUnitsV48}catch(_){}
+  }
+
+  const baseSaveApiary=window.saveApiaryV48;
+  if(typeof baseSaveApiary==='function'){
+    window.saveApiaryV48=function(){
+      const el=document.getElementById('v224tz');
+      if(el) el.value=v224b16NormalizeTimezone(el.value);
+      return baseSaveApiary.apply(this,arguments);
+    };
+    try{saveApiaryV48=window.saveApiaryV48}catch(_){}
+  }
+})();
+
+window.__HIVEDASH_V224B16_VERSION__='224b16';
+

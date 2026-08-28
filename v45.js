@@ -10639,3 +10639,93 @@ window.__HIVEDASH_V224B29_VERSION__='224b29';
    Scope locked: v53ActionRows Completed/All data source only.
    ============================================================== */
 window.__HIVEDASH_V224B30_VERSION__='224b30';
+
+
+
+/* ==============================================================
+   V224B31 — INSPECTION ACTION AUTO-COMPLETE
+   Scope locked:
+   Save Inspection -> matching scheduled Inspection Action only.
+
+   Behavior:
+   - If the saved hive currently has a nextInspection date, that exact
+     scheduled Inspection Action is considered completed by the successful
+     Save Inspection.
+   - Add one completed Action record to s.actions.
+   - Clear only that hive's matching nextInspection so the derived Pending
+     Inspection row disappears.
+   - Do not touch Varroa/Disease/Pest/Food or any other Action.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V224B31__) return;
+  window.__HIVEDASH_V224B31__=true;
+
+  const baseSaveInspection=window.vSaveInspection;
+  if(typeof baseSaveInspection!=='function') return;
+
+  window.vSaveInspection=function(id){
+    const hiveId=String(id||window.V49_INSPECTION_DRAFT?.hiveId||'');
+    let scheduledDate='';
+
+    /* Capture the exact Pending Inspection schedule before the existing
+       save pipeline runs. */
+    try{
+      const s0=typeof state==='function'?state():(typeof v45s==='function'?v45s():null);
+      const h0=s0&&typeof hive==='function'?hive(s0,hiveId):null;
+      scheduledDate=String(h0?.nextInspection||'').trim();
+    }catch(_){}
+
+    const result=baseSaveInspection.apply(this,arguments);
+
+    /* No scheduled Inspection Action -> no completion side effect. */
+    if(!scheduledDate) return result;
+
+    try{
+      const s=typeof state==='function'?state():(typeof v45s==='function'?v45s():null);
+      const h=s&&typeof hive==='function'?hive(s,hiveId):null;
+      if(!s||!h) return result;
+
+      s.actions=Array.isArray(s.actions)?s.actions:[];
+      const sourceId=`scheduled-inspection:${hiveId}:${scheduledDate}`;
+
+      /* Idempotent: one completed Action for this hive/date only. */
+      const already=s.actions.some(a=>
+        a &&
+        String(a.sourceId||'')===sourceId &&
+        String(a.status||'')==='Completed'
+      );
+
+      if(!already){
+        s.actions.push({
+          id:'completed-inspection-action-'+Date.now(),
+          hiveId,
+          type:'Inspection',
+          title:'Inspection',
+          priority:'Done',
+          status:'Completed',
+          due:typeof fmtDate==='function'?fmtDate(scheduledDate):scheduledDate,
+          date:scheduledDate,
+          completedAt:new Date().toISOString(),
+          sourceId,
+          completionSource:'save-inspection'
+        });
+      }
+
+      /* Remove only the exact scheduled Inspection that was just fulfilled.
+         If another process already changed the nextInspection date, preserve it. */
+      if(String(h.nextInspection||'').trim()===scheduledDate){
+        h.nextInspection='';
+      }
+
+      if(typeof save==='function') save(s);
+    }catch(err){
+      console.error('V224B31 Inspection Action completion failed',err);
+    }
+
+    return result;
+  };
+
+  try{ vSaveInspection=window.vSaveInspection; }catch(_){}
+})();
+
+window.__HIVEDASH_V224B31_VERSION__='224b31';

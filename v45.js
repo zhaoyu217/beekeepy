@@ -2830,8 +2830,7 @@ openHivePhotoGallery=function(hiveId){
         <button class="gallery-photo-open" type="button" aria-label="Open photo ${i+1}">
           <img src="${p.data}" alt="${esc(h.name)} photo ${i+1}">
         </button>
-        <button class="gallery-photo-menu" type="button" aria-label="Photo options"
-                data-v224b24-hive="${esc(h.id)}" data-v224b24-photo="${esc(p.id)}">•••</button>
+        <button class="gallery-photo-menu" type="button" aria-label="Photo options" onclick="event.stopPropagation();openHivePhotoMenu('${h.id}','${p.id}',this)">•••</button>
       </div>`).join('')
     : '<div class="gallery-empty"><b>No photos yet</b><span>Add your first hive photo.</span></div>';
   const m=modal(`<div class="modalhead photo-gallery-head">
@@ -2851,21 +2850,6 @@ openHivePhotoGallery=function(hiveId){
     const latest=v45s(),latestHive=hive(latest,hiveId),latestPhotos=Array.isArray(latestHive?.photos)?latestHive.photos:[];
     const p=latestPhotos[i];if(!p)return;
     modal(`<div class="modalhead"><div class="h2">Photo · ${esc(latestHive.name)}</div><button type="button" class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="setting"><img src="${p.data}" alt="${esc(latestHive.name)} photo" style="width:100%;border-radius:14px;display:block"><div class="small muted" style="margin-top:10px">${fmtDate(p.date||'')} · Hive photo</div></div>`);
-  });
-
-  /* V224B25: restore the proven gallery-local action wiring.
-     Each visible ••• button owns its exact photo by index, then calls the
-     existing V190 action menu (Set as Hive Cover + Delete Photo). */
-  m.querySelectorAll('.gallery-photo-menu').forEach((btn,i)=>{
-    btn.onclick=(ev)=>{
-      ev.preventDefault();
-      ev.stopPropagation();
-      const latest=v45s(),latestHive=hive(latest,hiveId);
-      const latestPhotos=Array.isArray(latestHive?.photos)?latestHive.photos:[];
-      const p=latestPhotos[i];
-      if(!p)return toast('Photo not found');
-      window.openHivePhotoMenu(hiveId,p.id,btn);
-    };
   });
 };
 
@@ -10558,156 +10542,13 @@ window.__HIVEDASH_V224B21_VERSION__='224b21';
 window.__HIVEDASH_V224B22_VERSION__='224b22';
 
 
-/* ==============================================================
-   V224B23 — PHOTO DELETE REGRESSION FIX
-   Scope locked: Hive Detail > Photos gallery > per-photo menu/delete only.
-   No upload, Timeline filter/pagination, Inspection, card, navigation,
-   Voice Notes, Treatment, or other module logic is changed.
-   ============================================================== */
-(function(){
-  function v224b23CloseMenus(){
-    document.querySelectorAll('.v224b23-photo-menu,.v190-photo-menu-pop').forEach(el=>el.remove());
-  }
-
-  window.deleteHivePhotoV224B23=function(hiveId,photoId){
-    const s=v45s();
-    const h=hive(s,hiveId);
-    if(!h) return toast('Hive not found');
-
-    h.photos=Array.isArray(h.photos)?h.photos:[];
-    const index=h.photos.findIndex(p=>String(p?.id||'')===String(photoId));
-    if(index<0) return toast('Photo not found');
-
-    if(!confirm('Delete this photo?')) return;
-
-    const beforePhotos=clone(h.photos);
-    const beforeCover=h.coverPhotoId||'';
-    const wasCover=String(beforeCover)===String(photoId);
-
-    h.photos=h.photos.filter(p=>String(p?.id||'')!==String(photoId));
-    if(wasCover) h.coverPhotoId='';
-
-    if(save(s)===false){
-      h.photos=beforePhotos;
-      h.coverPhotoId=beforeCover;
-      return toast('Photo could not be deleted');
-    }
-
-    v224b23CloseMenus();
-    document.querySelectorAll('.photo-gallery-modal-shell').forEach(el=>el.remove());
-
-    try{ render(); }catch(err){ console.error('V224B23 render',err); }
-    toast('Photo deleted');
-
-    setTimeout(()=>{
-      try{ openHivePhotoGallery(hiveId); }catch(err){ console.error('V224B23 gallery reopen',err); }
-    },0);
-  };
-
-  window.openHivePhotoMenu=function(hiveId,photoId,anchor){
-    v224b23CloseMenus();
-
-    const s=v45s();
-    const h=hive(s,hiveId);
-    const photos=Array.isArray(h?.photos)?h.photos:[];
-    const p=photos.find(x=>String(x?.id||'')===String(photoId));
-    if(!h || !p) return toast('Photo not found');
-
-    const current=String(h.coverPhotoId||'')===String(photoId);
-    const box=document.createElement('div');
-    box.className='v224b23-photo-menu';
-    box.innerHTML=`
-      ${current
-        ? `<button type="button" disabled>✓ Hive Cover</button>`
-        : `<button type="button" onclick="setHiveCoverPhotoV190('${esc(hiveId)}','${esc(photoId)}')">Set as Hive Cover</button>`}
-      <button type="button" class="danger"
-              onclick="deleteHivePhotoV224B23('${esc(hiveId)}','${esc(photoId)}')">Delete Photo</button>
-    `;
-    document.body.appendChild(box);
-
-    const rect=anchor?.getBoundingClientRect?.();
-    const width=178;
-    const left=rect ? Math.max(10,Math.min(window.innerWidth-width-10,rect.right-width)) : 10;
-    const top=rect ? Math.max(10,Math.min(window.innerHeight-106,rect.bottom+6)) : 10;
-    box.style.left=left+'px';
-    box.style.top=top+'px';
-
-    setTimeout(()=>{
-      const close=(e)=>{
-        if(!box.contains(e.target) && e.target!==anchor){
-          box.remove();
-          document.removeEventListener('pointerdown',close,true);
-        }
-      };
-      document.addEventListener('pointerdown',close,true);
-    },0);
-  };
-
-  const style=document.createElement('style');
-  style.id='v224b23-photo-delete-style';
-  style.textContent=`
-    .v224b23-photo-menu{
-      position:fixed;z-index:20000;width:178px;padding:6px;
-      border:1px solid rgba(47,59,51,.12);border-radius:12px;
-      background:#FFFDF9;box-shadow:0 10px 28px rgba(47,59,51,.18)
-    }
-    .v224b23-photo-menu button{
-      width:100%;min-height:40px;padding:8px 10px;border:0;border-radius:8px;
-      background:transparent;color:#36512B;text-align:left;font:inherit;font-weight:700;cursor:pointer
-    }
-    .v224b23-photo-menu button:disabled{cursor:default}
-    .v224b23-photo-menu .danger{color:#B53A30}
-  `;
-  document.head.appendChild(style);
-
-  window.__HIVEDASH_V224B23_VERSION__='224b23';
-})();
-
 
 
 /* ==============================================================
-   V224B24 — PHOTO MENU TRIGGER FIX
-   Scope locked: only the existing Hive Detail Photos gallery ••• trigger.
-
-   V224B23 restored the delete menu implementation, but the gallery trigger
-   still depended on an inline onclick path. On the deployed page that click
-   produced no visible action. V224B24 moves only that trigger to one delegated
-   capture-phase handler using data attributes.
-
-   No upload, delete semantics, Timeline, Inspection, Treatment, Voice Notes,
-   navigation, or gallery visual structure is changed.
+   V224B26 — EXACT ARCHIVED PHOTO GALLERY ROLLBACK
+   Restored the archived gallery trigger contract exactly:
+   inline ••• -> openHivePhotoMenu -> V190 menu ->
+   Set as Hive Cover / Delete Photo.
+   Removed V224B23/B24/B25 photo-menu overrides.
    ============================================================== */
-(function(){
-  if(window.__HIVEDASH_V224B24__) return;
-  window.__HIVEDASH_V224B24__=true;
-
-  document.addEventListener('click',function(e){
-    const btn=null; /* V224B25: gallery owns the trigger locally */
-    if(!btn) return;
-
-    e.preventDefault();
-    e.stopPropagation();
-    e.stopImmediatePropagation();
-
-    const hiveId=btn.dataset.v224b24Hive||'';
-    const photoId=btn.dataset.v224b24Photo||'';
-    if(!hiveId || !photoId) return;
-
-    if(typeof window.openHivePhotoMenu==='function'){
-      window.openHivePhotoMenu(hiveId,photoId,btn);
-    }
-  },true);
-
-  window.__HIVEDASH_V224B24_VERSION__='224b24';
-})();
-
-
-
-/* ==============================================================
-   V224B25 — RESTORE PHOTO ACTION MENU CONTRACT
-   Restores the proven photo-gallery contract already present in V190:
-     • Set as Hive Cover
-     • Delete Photo
-   Only the visible gallery ••• trigger wiring is changed.
-   ============================================================== */
-window.__HIVEDASH_V224B25_VERSION__='224b25';
+window.__HIVEDASH_V224B26_VERSION__='224b26';

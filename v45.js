@@ -10843,6 +10843,11 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-field{display:block;margin-top:12px}.b37-field:first-child{margin-top:0}
       .b37-field>span{display:block;font-size:10.5px;font-weight:750;color:#697169;margin-bottom:6px}
       .b37-field select,.b37-field input,.b37-field textarea{width:100%;box-sizing:border-box;border:1px solid rgba(47,59,51,.13);border-radius:13px;background:#FBFBF8;color:#2F3B33;padding:12px 13px;font:650 13px/1.35 Inter,Arial,sans-serif;outline:none;transition:.15s ease}
+      .b37-field select,.b37-field input[type="date"]{height:46px;min-height:46px;padding:0 13px;line-height:46px}
+      .b37-field input[type="date"]::-webkit-datetime-edit{display:flex;align-items:center;height:44px;line-height:44px;padding:0}
+      .b37-field input[type="date"]::-webkit-datetime-edit-fields-wrapper{display:flex;align-items:center;height:44px;padding:0}
+      .b37-field input[type="date"]::-webkit-date-and-time-value{display:flex;align-items:center;height:44px;min-height:44px;margin:0;text-align:left}
+      .b37-field input[type="date"]::-webkit-calendar-picker-indicator{margin:0;padding:4px}
       .b37-field select:focus,.b37-field input:focus,.b37-field textarea:focus{border-color:rgba(94,115,80,.55);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
       .b37-field textarea{min-height:84px;resize:vertical}
       .b37-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
@@ -11050,3 +11055,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37A — CREATE draft rerender guard: preserves operation/count/form fields across background render/sync. */
 
 /* V224B37B — Add/Remove Super visual refinement + secondary-page bottom-nav obstruction fix. */
+
+/* V224B37C — Due Date text vertical centering only; matched to Priority control height/padding. */

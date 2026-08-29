@@ -374,6 +374,16 @@ function normalizeStateV50(input){
   if(!['Free','Pro'].includes(s.user.plan))s.user.plan='Free';
   s.settings=(s.settings&&typeof s.settings==='object')?s.settings:{};
   s.hives=Array.isArray(s.hives)?s.hives.filter(h=>h&&typeof h==='object'&&String(h.id||'').length):[];
+  /* V224B37 — exact recorded Super count.
+     Legacy HiveDash stored only superStatus. Existing UI semantics treated
+     Installed/Added today as one super and None/Needed/Removed today as zero.
+     Migration runs only when an exact superCount does not yet exist. */
+  s.hives.forEach(h=>{
+    if(!Number.isInteger(Number(h.superCount)) || Number(h.superCount)<0){
+      const legacy=String(h.superStatus||'').toLowerCase();
+      h.superCount=(legacy==='installed'||legacy==='added today')?1:0;
+    }else h.superCount=Number(h.superCount);
+  });
   s.logs=(s.logs&&typeof s.logs==='object')?s.logs:{};
   for(const k of ['inspections','feedings','treatments','harvests'])s.logs[k]=Array.isArray(s.logs[k])?s.logs[k].filter(x=>x&&typeof x==='object'):[];
   s.notifications=Array.isArray(s.notifications)?s.notifications:[];
@@ -411,6 +421,15 @@ function mergeStateV50(local,remote){
   });
   primary.meta.completedActions=[...completedMerged.values()];
 
+  /* V224B37 — preserve Add / Remove Super Actions from any approved B36 V2.1 entry context across
+     local/cloud merge. Other pending recommendation semantics stay unchanged. */
+  const manualSuperMerged=new Map();
+  [
+    ...((primary.actions||[]).filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done')),
+    ...((other.actions||[]).filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done'))
+  ].forEach((a,i)=>manualSuperMerged.set(String(a.id||`super-manual-${i}`),a));
+  primary.actions=[...(primary.actions||[]).filter(a=>!(a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done')),...manualSuperMerged.values()];
+
   primary.hives=(primary.hives||[]).map(h=>{const o=(other.hives||[]).find(x=>x.id===h.id);if(!o)return h;const photos=unionByIdV50(h.photos||[],o.photos||[]);return {...(rt>=lt?o:h),...(rt>=lt?h:o),photos}});
   for(const oh of other.hives||[])if(!primary.hives.some(h=>h.id===oh.id))primary.hives.push(oh);
   primary.meta={...(primary.meta||{}),schema:50,updatedAt:new Date(Math.max(lt,rt,Date.now())).toISOString(),userId:currentSession?.user?.id||primary.meta?.userId||''};
@@ -434,9 +453,9 @@ const DEFAULT_STATE={
     cloudBackup:false
   },
   hives:[
-    {id:'h1',name:'Hive #1',score:92,status:'Healthy',queen:'Confirmed',eggs:true,larvae:true,queenCells:false,brood:'Excellent',strength:'Strong',honey:'High',pollen:'High',varroa:1,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'Installed',lastInspection:'2026-08-06',notes:'Strong colony.'},
-    {id:'h2',name:'Hive #2',score:78,status:'Attention',queen:'Not confirmed',eggs:true,larvae:true,queenCells:false,brood:'Good',strength:'Medium',honey:'Medium',pollen:'Medium',varroa:2,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'Installed',lastInspection:'2026-07-26',notes:'Queen not confirmed.'},
-    {id:'h3',name:'Hive #3',score:65,status:'Critical',queen:'Confirmed',eggs:true,larvae:true,queenCells:false,brood:'Fair',strength:'Medium',honey:'Low',pollen:'Low',varroa:4,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'Installed',lastInspection:'2026-07-08',notes:'Mite level elevated.'}
+    {id:'h1',name:'Hive #1',score:92,status:'Healthy',queen:'Confirmed',eggs:true,larvae:true,queenCells:false,brood:'Excellent',strength:'Strong',honey:'High',pollen:'High',varroa:1,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'Installed',superCount:1,lastInspection:'2026-08-06',notes:'Strong colony.'},
+    {id:'h2',name:'Hive #2',score:78,status:'Attention',queen:'Not confirmed',eggs:true,larvae:true,queenCells:false,brood:'Good',strength:'Medium',honey:'Medium',pollen:'Medium',varroa:2,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'Installed',superCount:1,lastInspection:'2026-07-26',notes:'Queen not confirmed.'},
+    {id:'h3',name:'Hive #3',score:65,status:'Critical',queen:'Confirmed',eggs:true,larvae:true,queenCells:false,brood:'Fair',strength:'Medium',honey:'Low',pollen:'Low',varroa:4,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'Installed',superCount:1,lastInspection:'2026-07-08',notes:'Mite level elevated.'}
   ],
   actions:[],
   notifications:[
@@ -727,6 +746,11 @@ function generateActions(s){
     if(h.honey==='Low'||h.pollen==='Low')list.push({id:`food-${h.id}`,hiveId:h.id,type:'Feeding',priority:'Medium',title:'Review food stores',reason:'Honey or pollen stores are low.',due:'Soon',status:'Pending'});
   }
 
+  /* V224B37 — preserve only Add / Remove Super Actions while while
+     generateActions() continues to rebuild system recommendations. */
+  const manualSuperActions=(Array.isArray(s.actions)?s.actions:[])
+    .filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done');
+
   /* V224B32 — preserve only explicitly completed Action entities.
      state()/save() both regenerate pending recommendations via generateActions().
      Before this fix, that regeneration discarded the Completed Action written by B31. */
@@ -745,6 +769,7 @@ function generateActions(s){
   const rank={High:3,Medium:2,Routine:1};
   return [
     ...list.sort((a,b)=>rank[b.priority]-rank[a.priority]),
+    ...manualSuperActions,
     ...completed
   ];
 }
@@ -1035,7 +1060,7 @@ function addHive(){
   <button type="button" class="btn primary block" id="saveHive">Create Hive</button>`);
   m.querySelector('#saveHive').onclick=()=>{
     const name=m.querySelector('#newHiveName').value.trim()||`Hive #${s.hives.length+1}`;
-    const h={id:'h'+Date.now(),name,score:80,status:'Attention',queen:'Not confirmed',eggs:false,larvae:false,queenCells:false,brood:'Good',strength:'Medium',honey:'Medium',pollen:'Medium',varroa:0,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'None',lastInspection:new Date().toISOString().slice(0,10),notes:'New hive.'};
+    const h={id:'h'+Date.now(),name,score:80,status:'Attention',queen:'Not confirmed',eggs:false,larvae:false,queenCells:false,brood:'Good',strength:'Medium',honey:'Medium',pollen:'Medium',varroa:0,shb:false,waxMoth:false,disease:false,swarm:false,superStatus:'None',superCount:0,lastInspection:new Date().toISOString().slice(0,10),notes:'New hive.'};
     s.hives.push(h);save(s);m.remove();toast('Hive added');render()
   }
 }

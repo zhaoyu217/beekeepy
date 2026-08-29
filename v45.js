@@ -10788,3 +10788,193 @@ window.__HIVEDASH_V224B34_VERSION__='224b34';
    Scope locked: Actions Completed/All read source only.
    ============================================================== */
 window.__HIVEDASH_V224B35_VERSION__='224b35';
+
+/* ==============================================================
+   V224B37 — ADD / REMOVE SUPER WORKFLOW
+   Scope locked: one low-frequency Action only.
+   - Add / Remove Super create/pending/completed workflow (simple field action)
+   - Manual pending persistence is handled in app.js
+   - Existing Home / Hives / Inspection / Feeding / Treatment / Harvest /
+     Health Model / Insights / Notifications remain unchanged
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V224B37_INIT__) return;
+  window.__HIVEDASH_V224B37_INIT__=true;
+
+  function b37ActiveHives(s){ return (s.hives||[]).filter(h=>!h.archived && h.status!=='Combined'); }
+  function b37Today(){ return new Date().toISOString().slice(0,10); }
+  function b37Action(id){
+    const s=v45s();
+    return (s.actions||[]).find(a=>String(a.id)===String(id)) ||
+      (s.meta?.completedActions||[]).find(a=>String(a.id)===String(id)) || null;
+  }
+  function b37ReasonOptions(op){
+    return op==='remove'
+      ? [['end-of-flow','End of nectar flow'],['harvest-preparation','Harvest preparation'],['reduce-space','Reduce excess space'],['seasonal-preparation','Seasonal preparation'],['other','Other']]
+      : [['nectar-flow','Nectar flow'],['space-needed','Space needed'],['congestion','Congestion'],['colony-expansion','Colony expansion'],['other','Other']];
+  }
+  function b37ReasonLabel(op,value){
+    const hit=b37ReasonOptions(op).find(x=>x[0]===value); return hit?hit[1]:'Other';
+  }
+  function b37EnsureStyle(){
+    if(document.getElementById('v224b37-style'))return;
+    const st=document.createElement('style');st.id='v224b37-style';st.textContent=`
+      .b37-page{padding:12px 12px 28px;max-width:720px;margin:0 auto;color:#2F3B33}
+      .b37-card{background:#fff;border:1px solid rgba(47,59,51,.09);border-radius:16px;padding:14px;margin:0 0 12px;box-shadow:0 5px 14px rgba(47,59,51,.055)}
+      .b37-label{font-size:11px;font-weight:800;letter-spacing:.04em;color:#5E7350;text-transform:uppercase;margin-bottom:10px}
+      .b37-hive-title{font-size:17px;font-weight:800}.b37-sub{font-size:11px;color:#727970;margin-top:3px}
+      .b37-seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.b37-seg button{min-height:48px;border:1px solid rgba(94,115,80,.22);border-radius:13px;background:#F7F5EF;color:#2F3B33;font-weight:800}.b37-seg button.active{background:#5E7350;color:#fff;border-color:#5E7350}
+      .b37-step{display:grid;grid-template-columns:48px 1fr 48px;gap:10px;align-items:center}.b37-step button{height:46px;border:0;border-radius:12px;background:#F1F3E4;color:#36512B;font-size:22px;font-weight:800}.b37-step strong{text-align:center;font-size:20px}
+      .b37-field{display:block;margin-top:12px}.b37-field>span{display:block;font-size:11px;font-weight:700;color:#697169;margin-bottom:6px}.b37-field select,.b37-field input,.b37-field textarea{width:100%;box-sizing:border-box;border:1px solid rgba(47,59,51,.14);border-radius:12px;background:#FAFAF7;color:#2F3B33;padding:12px;font:600 13px/1.3 Inter,Arial,sans-serif;outline:none}.b37-field textarea{min-height:96px;resize:vertical}
+      .b37-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.b37-meta{display:grid;grid-template-columns:1fr auto;gap:8px 14px;align-items:center}.b37-meta span{font-size:12px;color:#697169}.b37-meta b{font-size:12px;text-align:right}.b37-state{display:inline-flex;padding:5px 9px;border-radius:999px;background:#F1F3E4;color:#36512B;font-size:10px;font-weight:800}.b37-state.done{background:#E9F2E7}.b37-warn{margin-top:9px;padding:9px 10px;border-radius:10px;background:#FFF6DE;color:#7B5B0B;font-size:11px;line-height:1.35}.b37-primary{width:100%;min-height:50px;border:0;border-radius:14px;background:#C5921A;color:#fff;font-weight:800;font-size:14px}.b37-secondary{width:100%;min-height:46px;border:1px solid rgba(94,115,80,.25);border-radius:14px;background:#fff;color:#36512B;font-weight:800;font-size:13px}.b37-actions{display:grid;gap:8px;margin-top:14px}
+      .b37-picker-group{grid-column:1/-1;font-size:11px;font-weight:800;color:#5E7350;text-transform:uppercase;letter-spacing:.05em;margin:4px 2px 0}
+      @media(max-width:430px){.b37-grid2{grid-template-columns:1fr}.b37-page{padding-left:10px;padding-right:10px}}
+    `;document.head.appendChild(st);
+  }
+
+  /* B36 V2.1 — multiple entry points, one Action entity.
+     Hive Detail / Inspection can call this same creator later without
+     creating a second data source or a second Super workflow. */
+  window.b37OpenSuperAction=function(hiveId='',source='manual',reason=''){
+    window.__b37PrefillHiveId=String(hiveId||'');
+    window.__b37PrefillSource=String(source||'manual');
+    window.__b37PrefillReason=String(reason||'');
+    go('super-action/new');
+  };
+
+  window.openRecordPicker=function(){
+    b37EnsureStyle();
+    modal(`<div class="modalhead add-action-head"><b>Add Action</b><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div>
+      <div class="quick core-menu-actions add-action-grid">
+        <div class="b37-picker-group">Frequent</div>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')"><b>Inspection</b></button>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')"><b>Feeding</b></button>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')"><b>Treatment</b></button>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')"><b>Harvest</b></button>
+        <div class="b37-picker-group">Other</div>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('super-action/new')"><b>Add / Remove Super</b></button>
+      </div>`);
+  };
+
+  window.b37SetOperation=function(op){
+    const root=document.querySelector('.b37-page');if(!root)return;
+    root.dataset.operation=op;
+    root.querySelectorAll('[data-b37-op]').forEach(b=>b.classList.toggle('active',b.dataset.b37Op===op));
+    const reason=root.querySelector('#b37-reason');
+    if(reason){reason.innerHTML=b37ReasonOptions(op).map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');window.b37ReasonChanged();}
+  };
+  window.b37Step=function(delta,target='b37-count'){
+    const el=idq(target);if(!el)return;const n=Math.max(1,Math.min(10,Number(el.textContent||1)+Number(delta||0)));el.textContent=String(n);
+  };
+  window.b37ReasonChanged=function(){
+    const reason=idq('b37-reason'),wrap=idq('b37-reason-other');if(wrap)wrap.style.display=reason?.value==='other'?'block':'none';
+  };
+
+  window.b37CreateAction=function(){
+    const s=v45s(),hiveId=idq('b37-hive')?.value||'',h=hive(s,hiveId);if(!h)return toast('Select a valid hive');
+    const root=document.querySelector('.b37-page'),op=root?.dataset.operation||'add',count=Number(idq('b37-count')?.textContent||0),reason=idq('b37-reason')?.value||window.__b37PrefillReason||'',due=idq('b37-due')?.value||'',priority=idq('b37-priority')?.value||'Medium',notes=(idq('b37-notes')?.value||'').trim(),reasonDetails=(idq('b37-reason-details')?.value||'').trim();
+    if(!['add','remove'].includes(op))return toast('Choose Add or Remove');
+    if(!Number.isInteger(count)||count<1||count>10)return toast('Choose a valid number of supers');
+    /* B36 V2.1: Reason is optional for simple field work. */
+    if(reason==='other'&&!reasonDetails){ /* optional free-text reason may remain blank */ }
+    if(!due)return toast('Choose a due date');
+    const now=new Date().toISOString();
+    const a={id:'super-action-'+Date.now(),hiveId,type:'super-management',title:op==='add'?'Add Super':'Remove Super',status:'Pending',priority,due,dueDate:due,date:due,createdAt:now,startedAt:'',completedAt:'',followUpDate:'',source:(window.__b37PrefillSource||'manual'),reasonCode:(reason||'manual'),workflowData:{operation:op,numberOfSupers:count,reason,reasonDetails,recordedSuperCount:Number(h.superCount)||0},resultData:null,linkedRecordId:'',linkedActionId:'',parentActionId:'',notes};
+    s.actions=Array.isArray(s.actions)?s.actions:[];s.actions.push(a);
+    if(save(s)===false)return;
+    window.__hivedashActionsMode='Pending';window.__b37PrefillHiveId='';window.__b37PrefillSource='';window.__b37PrefillReason='';toast('Action created');go('actions');
+  };
+
+  window.b37CompleteAction=function(id){
+    const s=v45s(),a=(s.actions||[]).find(x=>String(x.id)===String(id))||(s.meta?.completedActions||[]).find(x=>String(x.id)===String(id));
+    if(!a||a.type!=='super-management')return toast('Action not found');
+    if(a.status==='Completed'||a.resultAppliedAt)return toast('Action already completed');
+    const h=hive(s,a.hiveId);if(!h)return toast('Hive not found');
+    const op=a.workflowData?.operation||'add',actual=Number(idq('b37-actual-count')?.textContent||0),completedDate=idq('b37-completed-date')?.value||b37Today();
+    if(!Number.isInteger(actual)||actual<1||actual>10)return toast('Choose the actual number of supers');
+    const current=Math.max(0,Number(h.superCount)||0);
+    if(op==='remove'&&actual>current)return toast(`Only ${current} super${current===1?' is':'s are'} currently recorded on this hive.`);
+    const next=op==='add'?current+actual:current-actual;
+    const stamp=new Date().toISOString();
+    a.resultData={operation:op,numberOfSupers:actual,completedDate,superCountBefore:current,superCountAfter:next};
+    a.status='Completed';a.priority='Done';a.completedAt=stamp;a.date=completedDate;a.due=a.due||a.dueDate||completedDate;a.resultAppliedAt=stamp;
+    h.superCount=next;h.superStatus=next>0?'Installed':'None';h.superUpdatedAt=stamp;
+    s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+    if(!s.meta.completedActions.some(x=>String(x.id)===String(a.id)))s.meta.completedActions.push(a);
+    if(save(s)===false)return;
+    window.__hivedashActionsMode='Completed';toast('Super action completed');go('actions');
+  };
+
+  function b37RenderPage(r,id){
+    b37EnsureStyle();
+    const s=v45s(),hs=b37ActiveHives(s);if(!hs.length)return noHiveStateV51(r);
+    const isNew=!id||id==='new',a=isNew?null:b37Action(id);if(!isNew&&(!a||a.type!=='super-management')){r.innerHTML='<div class="b37-page"><section class="b37-card"><b>Action not found.</b></section></div>';return;}
+    const selectedId=a?.hiveId||window.__b37PrefillHiveId||hs[0].id,h=hive(s,selectedId)||hs[0],op=a?.workflowData?.operation||'add',count=Number(a?.workflowData?.numberOfSupers||1),status=a?.status||'Create',done=status==='Completed';
+    const reason=a?.workflowData?.reason||window.__b37PrefillReason||b37ReasonOptions(op)[0][0],reasonDetails=a?.workflowData?.reasonDetails||'',due=a?.dueDate||a?.date||b37Today(),priority=a?.priority==='Done'?'Medium':(a?.priority||'Medium'),actual=Number(a?.resultData?.numberOfSupers||count),completedDate=a?.resultData?.completedDate||b37Today();
+    const hiveSelector=isNew?`<label class="b37-field"><span>Hive</span><select id="b37-hive">${hs.map(x=>`<option value="${esc(x.id)}" ${x.id===selectedId?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:`<div class="b37-hive-title">${esc(h.name)}</div><div class="b37-sub">${esc(h.location||s.settings?.apiaryName||'Apiary')} · ${Number(h.superCount)||0} super${Number(h.superCount)===1?'':'s'} recorded</div>`;
+    r.innerHTML=`<div class="b37-page" data-operation="${op}">
+      <section class="b37-card"><div class="b37-label">Hive</div>${hiveSelector}</section>
+      ${isNew?`<section class="b37-card"><div class="b37-label">Super Action</div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><label class="b37-field"><span>Number of Supers</span><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></label></section>
+      <section class="b37-card"><div class="b37-label">Reason</div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()">${b37ReasonOptions(op).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>
+      <section class="b37-card"><div class="b37-label">Schedule</div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><input id="b37-due" type="date" value="${esc(due)}"></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
+      <section class="b37-card"><div class="b37-label">Notes</div><label class="b37-field"><textarea id="b37-notes" placeholder="Add notes...">${esc(a?.notes||'')}</textarea></label></section><button class="b37-primary" onclick="b37CreateAction()">Create Action</button>`:
+      `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
+      ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''}></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
+      <div class="b37-actions">${status==='Pending'?`<button class="b37-primary" onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`:`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
+    </div>`;
+  }
+
+  const oldOpenActionByType=window.openActionByType||openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){
+    if(String(type||'').toLowerCase()==='super-management'){
+      const s=v45s();
+      const candidates=(s.actions||[]).filter(a=>a.type==='super-management'&&a.hiveId===hiveId&&a.status!=='Completed');
+      const found=actionId?candidates.find(a=>a.id===actionId):candidates[0];
+      return go('super-action/'+(found?.id||'new'));
+    }
+    return oldOpenActionByType(type,hiveId);
+  };
+  try{openActionByType=window.openActionByType}catch(_){ }
+
+  const oldDraw=window.v53DrawActions||v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    const box=idq('alist');if(!box)return oldDraw(mode);
+    const s=v45s(),rows=v53ActionRows(mode);
+    box.innerHTML=rows.length?rows.map(a=>{
+      const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';
+      const done=a.priority==='Done'||a.status==='Completed';
+      const click=a.type==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);
+      return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`;
+    }).join(''):'<div class="v53-empty-inline">No matching actions.</div>';
+  };
+  try{v53DrawActions=window.v53DrawActions}catch(_){ }
+
+  const oldTimelineRows=window.v49TimelineRows;
+  if(typeof oldTimelineRows==='function'){
+    window.v49TimelineRows=function(hiveId=''){
+      const rows=oldTimelineRows(hiveId),s=v45s();
+      const completed=(s.meta?.completedActions||[]).filter(a=>a&&a.type==='super-management'&&a.status==='Completed'&&(!hiveId||a.hiveId===hiveId));
+      completed.forEach(a=>{
+        const op=a.resultData?.operation||a.workflowData?.operation||'add',n=Number(a.resultData?.numberOfSupers||0),date=a.resultData?.completedDate||String(a.completedAt||'').slice(0,10);
+        const key='Super:'+String(a.id);if(rows.some(r=>r.key===key))return;
+        rows.push({key,type:'Super',hiveId:a.hiveId,date,detail:`${op==='add'?'Added':'Removed'} ${n} super${n===1?'':'s'}`,img:'',savedAt:a.completedAt||'',sourceId:String(a.id||'')});
+      });
+      return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+    };
+    try{v49TimelineRows=window.v49TimelineRows}catch(_){ }
+  }
+
+  const oldRender=window.render||render;
+  window.render=function(){
+    const raw=(location.hash||'#home').slice(1),parts=raw.split('/'),page=parts[0],id=parts[1]||'';
+    if(page!=='super-action')return oldRender();
+    const r=idq('view');if(!r)return;
+    r.className='view secondary';
+    b37RenderPage(r,id);
+    const top=idq('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Add / Remove Super</div><span></span>`;}
+    const bottom=idq('bottomnav');if(bottom)bottom.classList.remove('hidden');
+  };
+  try{render=window.render}catch(_){ }
+
+  window.__HIVEDASH_V224B37_VERSION__='224b37-v2';
+})();

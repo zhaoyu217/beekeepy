@@ -430,7 +430,35 @@ function mergeStateV50(local,remote){
   ].forEach((a,i)=>manualSuperMerged.set(String(a.id||`super-manual-${i}`),a));
   primary.actions=[...(primary.actions||[]).filter(a=>!(a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done')),...manualSuperMerged.values()];
 
-  primary.hives=(primary.hives||[]).map(h=>{const o=(other.hives||[]).find(x=>x.id===h.id);if(!o)return h;const photos=unionByIdV50(h.photos||[],o.photos||[]);return {...(rt>=lt?o:h),...(rt>=lt?h:o),photos}});
+  /* V224B37J — Hive Merge Freshness Fix.
+     `h` always comes from `primary`, which was already selected from the newer
+     state by meta.updatedAt. Merge the older matching hive first, then the
+     newer primary hive, so fresh fields (including superCount/superStatus)
+     cannot be overwritten by stale cloud/local values. Photos remain unioned. */
+  primary.hives=(primary.hives||[]).map(h=>{
+    const o=(other.hives||[]).find(x=>x.id===h.id);
+    if(!o)return h;
+    const photos=unionByIdV50(h.photos||[],o.photos||[]);
+
+    /* V224B37L — Super fields need their own freshness clock.
+       State-level meta.updatedAt can become newer because of an unrelated
+       cloud/local write while carrying an older superCount. Therefore the
+       whole newer state must NOT automatically win for Super configuration.
+       Use superUpdatedAt per Hive for superCount/superStatus freshness. */
+    const ht=Date.parse(h.superUpdatedAt||0)||0;
+    const ot=Date.parse(o.superUpdatedAt||0)||0;
+    let superSource=h;
+    if(ot>ht) superSource=o;
+    else if(ht===0 && ot>0) superSource=o;
+
+    const merged={...o,...h,photos};
+    if(superSource && Number.isFinite(Number(superSource.superCount))){
+      merged.superCount=Math.max(0,Number(superSource.superCount));
+      merged.superStatus=String(superSource.superStatus||'') || (merged.superCount>0?'Installed':'None');
+      merged.superUpdatedAt=String(superSource.superUpdatedAt||'');
+    }
+    return merged;
+  });
   for(const oh of other.hives||[])if(!primary.hives.some(h=>h.id===oh.id))primary.hives.push(oh);
   primary.meta={...(primary.meta||{}),schema:50,updatedAt:new Date(Math.max(lt,rt,Date.now())).toISOString(),userId:currentSession?.user?.id||primary.meta?.userId||''};
   return normalizeStateV50(primary);

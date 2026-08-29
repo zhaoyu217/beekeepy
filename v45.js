@@ -11008,16 +11008,42 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
   window.openRecordPicker=function(){
     b37EnsureStyle();
-    modal(`<div class="modalhead add-action-head"><b>Add Action</b><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div>
+    const m=modal(`<div class="modalhead add-action-head">
+        <div>
+          <b>Add Action</b>
+          <small>Choose what you want to record or plan</small>
+        </div>
+        <button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button>
+      </div>
       <div class="quick core-menu-actions add-action-grid">
         <div class="b37-picker-group">Frequent</div>
-        <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')"><b>Inspection</b></button>
-        <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')"><b>Feeding</b></button>
-        <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')"><b>Treatment</b></button>
-        <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')"><b>Harvest</b></button>
+
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">✓</span><b>Inspection</b><small>Check hive condition</small>
+        </button>
+
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">▣</span><b>Feeding</b><small>Record feed given</small>
+        </button>
+
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">＋</span><b>Treatment</b><small>Record hive treatment</small>
+        </button>
+
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">◇</span><b>Harvest</b><small>Record honey harvest</small>
+        </button>
+
         <div class="b37-picker-group">Other</div>
-        <button class="qbtn add-action-card" onclick="closeModal(this);b37OpenSuperAction()"><b>Add / Remove Super</b></button>
+
+        <button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b37OpenSuperAction()">
+          <span class="add-action-icon">▤</span>
+          <span class="add-action-copy"><b>Add / Remove Super</b><small>Plan a hive configuration change</small></span>
+          <span class="add-action-arrow">›</span>
+        </button>
       </div>`);
+    m?.classList.add('v224-add-action-picker');
+    requestAnimationFrame(()=>m?.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}));
   };
 
   window.b37SetOperation=function(op){
@@ -11331,3 +11357,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37T — code fix: clean photo crop only; source-image baked text/+ excluded; B37 logic untouched. */
 
 /* V224B37U — VISUAL ONLY: hero photo flush to card edges + duplicate Hive field label removed. */
+
+/* V224B37W — Add Action picker visual/position only. */

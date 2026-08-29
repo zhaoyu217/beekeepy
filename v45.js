@@ -10921,6 +10921,63 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-footer{position:sticky;bottom:0;z-index:4;margin:16px -2px 0;padding:10px 2px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,rgba(247,245,239,0),rgba(247,245,239,.92) 24%,#F7F5EF 58%)}
       .b37-primary{width:100%;min-height:52px;border:0;border-radius:15px;background:#C5921A;color:#fff;font-weight:850;font-size:14px;box-shadow:0 8px 18px rgba(197,146,26,.18)}
       .b37-primary:disabled{opacity:.48;cursor:not-allowed;box-shadow:none}
+
+      /* V224B37O — approved visual master for low-frequency Action pages.
+         VISUAL ONLY: compact Harvest-aligned type scale, proportional cards,
+         beekeeping hero image, and locked HiveDash green selected state. */
+      .b37-page{max-width:390px;padding:14px 12px max(28px,env(safe-area-inset-bottom));}
+      .b37-intro{
+        position:relative;overflow:hidden;min-height:94px;
+        padding:14px 62px 13px 15px;margin:0 0 10px;border-radius:15px;
+        background:
+          linear-gradient(90deg,rgba(247,245,239,.98) 0%,rgba(247,245,239,.93) 40%,rgba(247,245,239,.55) 58%,rgba(247,245,239,.12) 100%),
+          url('assets/b37/super-action-hero.png') center right/cover no-repeat;
+        border:1px solid rgba(94,115,80,.10);
+        box-shadow:0 4px 12px rgba(47,59,51,.045);
+      }
+      .b37-intro-copy{position:relative;z-index:2;max-width:205px}
+      .b37-intro-title{font-size:14px;line-height:1.16;font-weight:800;color:#2F3B33}
+      .b37-intro-sub{margin-top:4px;font-size:10px;line-height:1.34;font-weight:600;color:#566057;max-width:190px}
+      .b37-intro-badge{
+        position:absolute;right:12px;top:12px;z-index:3;min-width:42px;width:42px;height:42px;
+        border-radius:12px;font-size:18px;background:rgba(255,255,255,.94);color:#5E7350;
+        box-shadow:0 4px 10px rgba(47,59,51,.07)
+      }
+      .b37-card{border-radius:14px;padding:13px;margin:0 0 10px;box-shadow:0 4px 12px rgba(47,59,51,.045)}
+      .b37-card-head{gap:10px;margin-bottom:9px}
+      .b37-label{font-size:9.5px;font-weight:800;letter-spacing:.06em}
+      .b37-hint{font-size:9.5px;font-weight:650}
+      .b37-hive-title{font-size:15px;font-weight:800}
+      .b37-sub{font-size:10px;line-height:1.3;margin-top:3px}
+      .b37-seg{gap:8px}
+      .b37-seg button{min-height:44px;border-radius:11px;font-size:12px;font-weight:800}
+      .b37-seg button::before{width:19px;height:19px;margin-right:6px;border-radius:7px;font-size:13px}
+      .b37-seg button.active{background:#5E7350!important;color:#fff!important;border-color:#5E7350!important;box-shadow:0 4px 10px rgba(94,115,80,.16)!important}
+      .b37-seg button.active::before{background:rgba(255,255,255,.17)!important;color:#fff!important}
+      .b37-count-wrap{margin-top:10px;padding:10px 11px;border-radius:12px}
+      .b37-count-top{margin-bottom:7px}
+      .b37-count-top span:first-child{font-size:10px;font-weight:700}.b37-count-top span:last-child{font-size:9.5px}
+      .b37-step{grid-template-columns:42px 1fr 42px;gap:9px}
+      .b37-step button{height:42px;border-radius:11px;font-size:15px}
+      .b37-step strong{font-size:21px;font-weight:800}
+      .b37-field{margin-top:9px}
+      .b37-field>span{font-size:9.5px;font-weight:700;margin-bottom:5px}
+      .b37-field select,.b37-field input,.b37-field textarea{border-radius:11px;padding:10px 11px;font:650 12px/1.3 Inter,Arial,sans-serif}
+      .b37-field select,.b37-field input[type="date"]{height:42px;min-height:42px;padding:0 11px;line-height:42px}
+      .b37-date-shell{height:42px;min-height:42px;border-radius:11px}
+      .b37-date-button{padding:0 10px 0 11px;font:650 12px/1 Inter,Arial,sans-serif}
+      .b37-date-icon{width:16px;height:16px}.b37-date-icon svg{width:14px;height:14px}
+      .b37-field textarea{min-height:58px}
+      .b37-grid2{gap:8px}
+      .b37-meta{gap:7px 12px}.b37-meta span,.b37-meta b{font-size:11px}
+      .b37-state{font-size:9px;padding:4px 8px}
+      .b37-warn{margin-top:8px;padding:8px 9px;border-radius:10px;font-size:10px}
+      .b37-footer{margin:12px -1px 0;padding:8px 1px calc(7px + env(safe-area-inset-bottom))}
+      .b37-primary{min-height:46px;border-radius:11px;font-size:12px;font-weight:800;box-shadow:0 6px 14px rgba(197,146,26,.16)}
+      .b37-secondary{min-height:44px;border-radius:11px;font-size:12px}
+      .b37-actions{gap:7px;margin-top:11px}
+      @media(max-width:430px){.b37-page{padding-left:9px;padding-right:9px}.b37-intro{padding:13px 58px 12px 14px}.b37-card{padding:12px}}
+
       .b37-secondary{width:100%;min-height:48px;border:1px solid rgba(94,115,80,.24);border-radius:14px;background:#fff;color:#36512B;font-weight:800;font-size:13px}
       .b37-actions{display:grid;gap:8px;margin-top:14px}
       .b37-picker-group{grid-column:1/-1;font-size:11px;font-weight:800;color:#5E7350;text-transform:uppercase;letter-spacing:.05em;margin:4px 2px 0}
@@ -11254,3 +11311,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37M — Super Completion Baseline Guard. */
 
 /* V224B37N — Completion conflict feedback + durable archive commit verification. */
+
+/* V224B37O — Add / Remove Super visual master template approved by user. */

@@ -10920,6 +10920,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-warn{margin-top:10px;padding:10px 11px;border-radius:11px;background:#FFF6DE;color:#7B5B0B;font-size:11px;line-height:1.4}
       .b37-footer{position:sticky;bottom:0;z-index:4;margin:16px -2px 0;padding:10px 2px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,rgba(247,245,239,0),rgba(247,245,239,.92) 24%,#F7F5EF 58%)}
       .b37-primary{width:100%;min-height:52px;border:0;border-radius:15px;background:#C5921A;color:#fff;font-weight:850;font-size:14px;box-shadow:0 8px 18px rgba(197,146,26,.18)}
+      .b37-primary:disabled{opacity:.48;cursor:not-allowed;box-shadow:none}
       .b37-secondary{width:100%;min-height:48px;border:1px solid rgba(94,115,80,.24);border-radius:14px;background:#fff;color:#36512B;font-weight:800;font-size:13px}
       .b37-actions{display:grid;gap:8px;margin-top:14px}
       .b37-picker-group{grid-column:1/-1;font-size:11px;font-weight:800;color:#5E7350;text-transform:uppercase;letter-spacing:.05em;margin:4px 2px 0}
@@ -11084,7 +11085,10 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
        This prevents a stale/replaced Hive state from silently producing an
        incorrect before/after result such as 0 -> 1 becoming 1 -> 2. */
     if(baseline!==null && current!==baseline){
-      return toast(`Hive super count changed from ${baseline} to ${current}. Review the action before completing.`);
+      window.__b37CompletionErrors=window.__b37CompletionErrors||{};
+      window.__b37CompletionErrors[String(a.id)]=`Hive super count changed from ${baseline} to ${current}. Review this Pending action before completing.`;
+      try{ b37RenderPage(idq('view'),String(a.id)); }catch(_){}
+      return toast(`Hive super count changed from ${baseline} to ${current}.`);
     }
 
     if(op==='remove'&&actual>current)return toast(`Only ${current} super${current===1?' is':'s are'} currently recorded on this hive.`);
@@ -11096,6 +11100,27 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
     if(!s.meta.completedActions.some(x=>String(x.id)===String(a.id)))s.meta.completedActions.push(a);
     if(save(s)===false)return;
+
+    /* V224B37N — commit verification.
+       Do not leave the Action page until the just-completed entity is present
+       in the durable Completed archive that Actions > Completed actually reads. */
+    let committed=false;
+    try{
+      const verify=typeof state==='function'?state():v45s();
+      committed=(verify.meta?.completedActions||[]).some(x=>
+        x &&
+        String(x.id||'')===String(a.id) &&
+        (x.status==='Completed'||x.priority==='Done')
+      );
+    }catch(_){}
+    if(!committed){
+      window.__b37CompletionErrors=window.__b37CompletionErrors||{};
+      window.__b37CompletionErrors[String(a.id)]='Completion could not be verified in the durable Completed archive. The page was kept open to prevent a silent lost Action.';
+      try{ b37RenderPage(idq('view'),String(a.id)); }catch(_){}
+      return toast('Completion was not verified. Action was not closed.');
+    }
+
+    if(window.__b37CompletionErrors)delete window.__b37CompletionErrors[String(a.id)];
     if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[String(a.id)];
     window.__hivedashActionsMode='Completed';toast('Super action completed');go('actions');
   };
@@ -11110,6 +11135,13 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       count=Number(a?.workflowData?.numberOfSupers||draft?.count||1),
       status=a?.status||'Create',done=status==='Completed';
     const resultDraft=(!isNew&&!done)?(window.__b37ResultDrafts?.[String(a?.id||'')]||null):null;
+    const baselineRaw=(!isNew&&!done)?a?.workflowData?.recordedSuperCount:null;
+    const baseline=Number.isFinite(Number(baselineRaw))?Math.max(0,Number(baselineRaw)):null;
+    const liveSuperCount=Math.max(0,Number(h?.superCount)||0);
+    const baselineConflict=(!isNew&&!done&&baseline!==null&&liveSuperCount!==baseline)
+      ? `Hive super count changed from ${baseline} to ${liveSuperCount}. Review this Pending action before completing.`
+      : '';
+    const completionError=(!isNew&&!done)?String(window.__b37CompletionErrors?.[String(a?.id||'')]||baselineConflict):'';
     const reason=a?.workflowData?.reason||draft?.reason||window.__b37PrefillReason||b37ReasonOptions(op)[0][0],
       reasonDetails=a?.workflowData?.reasonDetails||draft?.reasonDetails||'',
       due=a?.dueDate||a?.date||draft?.due||b37Today(),
@@ -11126,7 +11158,8 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b37-notes" placeholder="Add a note for your next apiary visit...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><div class="b37-footer"><button class="b37-primary" onclick="b37CreateAction()">Create Action</button></div>`:
       `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
       ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''}></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
-      <div class="b37-actions">${status==='Pending'?`<button class="b37-primary" onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`:`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
+      ${completionError?`<div class="b37-warn" role="alert">${esc(completionError)}</div>`:''}
+      <div class="b37-actions">${status==='Pending'?`<button class="b37-primary" ${completionError?'disabled aria-disabled="true"':''} onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`:`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
     </div>`;
     if(isNew){
       const d=window.__b37CreateDraft=window.__b37CreateDraft||{};
@@ -11219,3 +11252,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37K — Pending Result quantity rerender guard: per-action Result draft survives background/global render until completion. */
 
 /* V224B37M — Super Completion Baseline Guard. */
+
+/* V224B37N — Completion conflict feedback + durable archive commit verification. */

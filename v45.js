@@ -10864,14 +10864,15 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-date-shell{position:relative;height:46px;min-height:46px;border:1px solid rgba(47,59,51,.13);border-radius:13px;background:#FBFBF8;display:flex;align-items:center;box-sizing:border-box;overflow:hidden}
       .b37-date-shell:focus-within{border-color:rgba(94,115,80,.55);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
       .b37-date-button{
-        width:calc(100% - 46px);
+        width:100%;
         height:100%;
         border:0;
         background:transparent;
         display:flex;
         align-items:center;
-        justify-content:flex-start;
-        padding:0 0 0 13px;
+        justify-content:space-between;
+        gap:10px;
+        padding:0 12px 0 13px;
         color:#2F3B33;
         font:650 13px/1 Inter,Arial,sans-serif;
         text-align:left;
@@ -10879,32 +10880,35 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       }
       .b37-date-display{display:flex;align-items:center;height:100%;line-height:1;white-space:nowrap}
       .b37-date-icon{
-        position:absolute;
-        right:14px;
-        top:50%;
-        transform:translateY(-50%);
+        flex:0 0 18px;
         width:18px;
         height:18px;
         display:grid;
         place-items:center;
         color:#2F3B33;
         pointer-events:none;
-        z-index:3;
       }
       .b37-date-icon svg{width:16px;height:16px;display:block}
+      .b37-cal-backdrop{position:fixed;inset:0;z-index:9999;background:rgba(30,36,31,.28);display:flex;align-items:center;justify-content:center;padding:18px;box-sizing:border-box}
+      .b37-cal-card{width:min(330px,calc(100vw - 36px));background:#fff;border:1px solid rgba(47,59,51,.1);border-radius:18px;padding:15px;box-shadow:0 18px 50px rgba(47,59,51,.18)}
+      .b37-cal-head{display:grid;grid-template-columns:40px 1fr 40px;align-items:center;gap:8px;margin-bottom:12px}
+      .b37-cal-head strong{text-align:center;font-size:14px;color:#2F3B33}.b37-cal-head button{height:38px;border:0;border-radius:11px;background:#EEF1E4;color:#36512B;font-size:22px}
+      .b37-cal-week,.b37-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:5px}.b37-cal-week{margin-bottom:6px}
+      .b37-cal-week span{text-align:center;font-size:9px;font-weight:750;color:#8A8E87}.b37-cal-day,.b37-cal-empty{aspect-ratio:1;display:grid;place-items:center}
+      .b37-cal-day{border:0;border-radius:10px;background:#FAFAF7;color:#2F3B33;font:700 12px Inter,Arial,sans-serif}.b37-cal-day.selected{background:#5E7350;color:#fff}
+      .b37-cal-cancel{width:100%;height:40px;margin-top:12px;border:1px solid rgba(94,115,80,.2);border-radius:12px;background:#fff;color:#36512B;font-weight:800}
+
       .b37-date-native{
-        position:absolute!important;
-        right:0!important;
-        top:0!important;
-        width:46px!important;
-        height:46px!important;
+        position:fixed!important;
+        left:-10000px!important;
+        top:-10000px!important;
+        width:1px!important;
+        height:1px!important;
         opacity:0!important;
-        cursor:pointer!important;
-        pointer-events:auto!important;
+        pointer-events:none!important;
         padding:0!important;
         margin:0!important;
         border:0!important;
-        z-index:5!important;
       }
 
       .b37-field select:focus,.b37-field input:focus,.b37-field textarea:focus{border-color:rgba(94,115,80,.55);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
@@ -10984,14 +10988,53 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   };
   window.b37OpenDatePicker=function(){
     const input=idq('b37-due');if(!input)return;
-    try{
-      input.focus({preventScroll:true});
-      if(typeof input.showPicker==='function'){input.showPicker();return;}
-      input.click();
-    }catch(e){
-      try{input.focus();input.click();}catch(_e){}
-    }
+    const current=String(input.value||b37Today());
+    const m=current.match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    const y=Number(m?.[1]||new Date().getFullYear()),mo=Number(m?.[2]||1),d=Number(m?.[3]||1);
+    window.__b37Calendar={year:y,month:mo,selected:current};
+    b37DrawCalendar();
   };
+  function b37CalendarISO(y,m,d){return `${y}-${String(m).padStart(2,'0')}-${String(d).padStart(2,'0')}`;}
+  function b37CalendarLabel(y,m){return new Date(y,m-1,1).toLocaleDateString('en-US',{month:'long',year:'numeric'});}
+  window.b37CalendarShift=function(delta){
+    const c=window.__b37Calendar;if(!c)return;
+    let m=c.month+Number(delta||0),y=c.year;
+    if(m<1){m=12;y--;}if(m>12){m=1;y++;}
+    c.year=y;c.month=m;b37DrawCalendar();
+  };
+  window.b37CalendarPick=function(iso){
+    const input=idq('b37-due');if(!input)return;
+    input.value=iso;
+    window.b37SyncDateDisplay();
+    const modal=idq('b37-calendar-modal');if(modal)modal.remove();
+    window.__b37Calendar=null;
+  };
+  window.b37CalendarClose=function(){
+    const modal=idq('b37-calendar-modal');if(modal)modal.remove();
+    window.__b37Calendar=null;
+  };
+  function b37DrawCalendar(){
+    const c=window.__b37Calendar;if(!c)return;
+    let modal=idq('b37-calendar-modal');
+    if(!modal){
+      modal=document.createElement('div');modal.id='b37-calendar-modal';modal.className='b37-cal-backdrop';
+      document.body.appendChild(modal);
+    }
+    const first=new Date(c.year,c.month-1,1),days=new Date(c.year,c.month,0).getDate(),offset=first.getDay();
+    const cells=[];
+    for(let i=0;i<offset;i++)cells.push('<span class="b37-cal-empty"></span>');
+    for(let day=1;day<=days;day++){
+      const iso=b37CalendarISO(c.year,c.month,day),sel=iso===c.selected;
+      cells.push(`<button type="button" class="b37-cal-day ${sel?'selected':''}" onclick="b37CalendarPick('${iso}')">${day}</button>`);
+    }
+    modal.innerHTML=`<div class="b37-cal-card" role="dialog" aria-modal="true" aria-label="Choose due date">
+      <div class="b37-cal-head"><button type="button" onclick="b37CalendarShift(-1)" aria-label="Previous month">‹</button><strong>${b37CalendarLabel(c.year,c.month)}</strong><button type="button" onclick="b37CalendarShift(1)" aria-label="Next month">›</button></div>
+      <div class="b37-cal-week">${['Sun','Mon','Tue','Wed','Thu','Fri','Sat'].map(x=>`<span>${x}</span>`).join('')}</div>
+      <div class="b37-cal-grid">${cells.join('')}</div>
+      <button type="button" class="b37-cal-cancel" onclick="b37CalendarClose()">Cancel</button>
+    </div>`;
+    modal.onclick=(e)=>{if(e.target===modal)b37CalendarClose();};
+  }
   window.b37ReasonChanged=function(){
     const reason=idq('b37-reason'),wrap=idq('b37-reason-other');
     if(wrap)wrap.style.display=reason?.value==='other'?'block':'none';
@@ -11148,3 +11191,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37G — Pending Add/Remove Super persistence through V224B generateActions override. */
 
 /* V224B37H — Date picker interaction fix: native date input remains on-screen as invisible calendar-icon hit area; custom centered date text retained. */
+
+/* V224B37I — Native date rendering fully isolated; HiveDash in-app calendar picker prevents any browser date-text overlap. */

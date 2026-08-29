@@ -10848,12 +10848,13 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-field input[type="date"]::-webkit-datetime-edit-fields-wrapper{display:flex;align-items:center;height:44px;padding:0}
       .b37-field input[type="date"]::-webkit-date-and-time-value{display:flex;align-items:center;height:44px;min-height:44px;margin:0;text-align:left}
       .b37-field input[type="date"]::-webkit-calendar-picker-indicator{margin:0;padding:4px}
-      .b37-date-shell{position:relative;height:46px;min-height:46px;border:1px solid rgba(47,59,51,.13);border-radius:13px;background:#FBFBF8;display:flex;align-items:center;padding:0 42px 0 13px;box-sizing:border-box;overflow:hidden}
+      .b37-date-shell{position:relative;height:46px;min-height:46px;border:1px solid rgba(47,59,51,.13);border-radius:13px;background:#FBFBF8;display:flex;align-items:center;box-sizing:border-box;overflow:hidden}
       .b37-date-shell:focus-within{border-color:rgba(94,115,80,.55);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
-      .b37-date-display{display:flex;align-items:center;height:100%;font:650 13px/1 Inter,Arial,sans-serif;color:#2F3B33;white-space:nowrap;pointer-events:none}
-      .b37-date-native{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer;z-index:2}
-      .b37-date-icon{position:absolute;right:12px;top:50%;transform:translateY(-50%);width:18px;height:18px;display:grid;place-items:center;color:#2F3B33;pointer-events:none;z-index:1}
+      .b37-date-button{width:100%;height:100%;border:0;background:transparent;display:flex;align-items:center;justify-content:space-between;gap:10px;padding:0 12px 0 13px;color:#2F3B33;font:650 13px/1 Inter,Arial,sans-serif;text-align:left;cursor:pointer}
+      .b37-date-display{display:flex;align-items:center;height:100%;line-height:1;white-space:nowrap}
+      .b37-date-icon{flex:0 0 18px;width:18px;height:18px;display:grid;place-items:center;color:#2F3B33}
       .b37-date-icon svg{width:16px;height:16px;display:block}
+      .b37-date-native{position:absolute!important;width:1px!important;height:1px!important;left:-9999px!important;top:auto!important;opacity:0!important;pointer-events:none!important;padding:0!important;border:0!important}
 
       .b37-field select:focus,.b37-field input:focus,.b37-field textarea:focus{border-color:rgba(94,115,80,.55);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
       .b37-field textarea{min-height:84px;resize:vertical}
@@ -10929,6 +10930,16 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     window.__b37CreateDraft=window.__b37CreateDraft||{};
     if(input)window.__b37CreateDraft.due=input.value||'';
   };
+  window.b37OpenDatePicker=function(){
+    const input=idq('b37-due');if(!input)return;
+    try{
+      if(typeof input.showPicker==='function'){input.showPicker();return;}
+    }catch(e){}
+    input.style.pointerEvents='auto';
+    input.focus();
+    input.click();
+    setTimeout(()=>{input.style.pointerEvents='none';},0);
+  };
   window.b37ReasonChanged=function(){
     const reason=idq('b37-reason'),wrap=idq('b37-reason-other');
     if(wrap)wrap.style.display=reason?.value==='other'?'block':'none';
@@ -10994,7 +11005,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">${isNew?'Select target hive':''}</div></div>${hiveSelector}</section>
       ${isNew?`<section class="b37-card"><div class="b37-card-head"><div class="b37-label">Super Action</div><div class="b37-hint">Planned work</div></div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><div class="b37-count-wrap"><div class="b37-count-top"><span>Number of Supers</span><span>1–10</span></div><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Reason</div><div class="b37-hint">Optional context</div></div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()">${b37ReasonOptions(op).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>
-      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><div class="b37-date-shell"><span id="b37-due-display" class="b37-date-display">${esc(b37DisplayDate(due))}</span><span class="b37-date-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10h17"></path></svg></span><input id="b37-due" class="b37-date-native" type="date" value="${esc(due)}" onchange="b37SyncDateDisplay()"></div></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><div class="b37-date-shell"><button type="button" class="b37-date-button" onclick="b37OpenDatePicker()" aria-label="Choose due date"><span id="b37-due-display" class="b37-date-display">${esc(b37DisplayDate(due))}</span><span class="b37-date-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10h17"></path></svg></span></button><input id="b37-due" class="b37-date-native" type="date" value="${esc(due)}" onchange="b37SyncDateDisplay()"></div></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b37-notes" placeholder="Add a note for your next apiary visit...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><div class="b37-footer"><button class="b37-primary" onclick="b37CreateAction()">Create Action</button></div>`:
       `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
       ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''}></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
@@ -11077,3 +11088,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37C — Due Date text vertical centering only; matched to Priority control height/padding. */
 
 /* V224B37D — Due Date visual shell: native date picker retained, displayed date vertically centered with same control geometry as Priority. */
+
+/* V224B37E — Date input removed from visible layer; custom centered display/button opens native picker. */

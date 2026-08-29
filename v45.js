@@ -10819,16 +10819,42 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   function b37EnsureStyle(){
     if(document.getElementById('v224b37-style'))return;
     const st=document.createElement('style');st.id='v224b37-style';st.textContent=`
-      .b37-page{padding:12px 12px 28px;max-width:720px;margin:0 auto;color:#2F3B33}
-      .b37-card{background:#fff;border:1px solid rgba(47,59,51,.09);border-radius:16px;padding:14px;margin:0 0 12px;box-shadow:0 5px 14px rgba(47,59,51,.055)}
-      .b37-label{font-size:11px;font-weight:800;letter-spacing:.04em;color:#5E7350;text-transform:uppercase;margin-bottom:10px}
-      .b37-hive-title{font-size:17px;font-weight:800}.b37-sub{font-size:11px;color:#727970;margin-top:3px}
-      .b37-seg{display:grid;grid-template-columns:1fr 1fr;gap:8px}.b37-seg button{min-height:48px;border:1px solid rgba(94,115,80,.22);border-radius:13px;background:#F7F5EF;color:#2F3B33;font-weight:800}.b37-seg button.active{background:#5E7350;color:#fff;border-color:#5E7350}
-      .b37-step{display:grid;grid-template-columns:48px 1fr 48px;gap:10px;align-items:center}.b37-step button{height:46px;border:0;border-radius:12px;background:#F1F3E4;color:#36512B;font-size:22px;font-weight:800}.b37-step strong{text-align:center;font-size:20px}
-      .b37-field{display:block;margin-top:12px}.b37-field>span{display:block;font-size:11px;font-weight:700;color:#697169;margin-bottom:6px}.b37-field select,.b37-field input,.b37-field textarea{width:100%;box-sizing:border-box;border:1px solid rgba(47,59,51,.14);border-radius:12px;background:#FAFAF7;color:#2F3B33;padding:12px;font:600 13px/1.3 Inter,Arial,sans-serif;outline:none}.b37-field textarea{min-height:96px;resize:vertical}
-      .b37-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}.b37-meta{display:grid;grid-template-columns:1fr auto;gap:8px 14px;align-items:center}.b37-meta span{font-size:12px;color:#697169}.b37-meta b{font-size:12px;text-align:right}.b37-state{display:inline-flex;padding:5px 9px;border-radius:999px;background:#F1F3E4;color:#36512B;font-size:10px;font-weight:800}.b37-state.done{background:#E9F2E7}.b37-warn{margin-top:9px;padding:9px 10px;border-radius:10px;background:#FFF6DE;color:#7B5B0B;font-size:11px;line-height:1.35}.b37-primary{width:100%;min-height:50px;border:0;border-radius:14px;background:#C5921A;color:#fff;font-weight:800;font-size:14px}.b37-secondary{width:100%;min-height:46px;border:1px solid rgba(94,115,80,.25);border-radius:14px;background:#fff;color:#36512B;font-weight:800;font-size:13px}.b37-actions{display:grid;gap:8px;margin-top:14px}
+      .b37-page{padding:16px 14px max(34px,env(safe-area-inset-bottom));max-width:720px;margin:0 auto;color:#2F3B33}
+      .b37-intro{display:flex;align-items:flex-start;justify-content:space-between;gap:14px;padding:17px 17px 15px;margin:0 0 14px;border-radius:18px;background:linear-gradient(135deg,#EEF1E7 0%,#F8F6EF 100%);border:1px solid rgba(94,115,80,.12)}
+      .b37-intro-copy{min-width:0}.b37-intro-title{font-size:16px;font-weight:850;line-height:1.2;color:#2F3B33}.b37-intro-sub{margin-top:5px;font-size:11.5px;line-height:1.45;color:#687167}
+      .b37-intro-badge{flex:0 0 auto;min-width:52px;height:52px;border-radius:16px;background:#fff;border:1px solid rgba(94,115,80,.14);display:grid;place-items:center;color:#5E7350;font-size:22px;font-weight:850;box-shadow:0 5px 14px rgba(47,59,51,.05)}
+      .b37-card{background:rgba(255,255,255,.96);border:1px solid rgba(47,59,51,.09);border-radius:18px;padding:16px;margin:0 0 12px;box-shadow:0 7px 20px rgba(47,59,51,.055)}
+      .b37-card-head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:12px}
+      .b37-label{font-size:10.5px;font-weight:850;letter-spacing:.075em;color:#5E7350;text-transform:uppercase;margin:0}
+      .b37-hint{font-size:10.5px;color:#8A8E87;white-space:nowrap}
+      .b37-hive-title{font-size:17px;font-weight:850}.b37-sub{font-size:11.5px;color:#727970;margin-top:4px}
+      .b37-seg{display:grid;grid-template-columns:1fr 1fr;gap:9px}
+      .b37-seg button{position:relative;min-height:54px;border:1px solid rgba(94,115,80,.18);border-radius:15px;background:#F7F5EF;color:#2F3B33;font-weight:800;font-size:13px;transition:.15s ease}
+      .b37-seg button::before{display:inline-grid;place-items:center;width:22px;height:22px;margin-right:7px;border-radius:8px;background:rgba(94,115,80,.08);color:#5E7350;font-size:16px;font-weight:900;vertical-align:-1px}
+      .b37-seg button[data-b37-op="add"]::before{content:"+"}.b37-seg button[data-b37-op="remove"]::before{content:"−"}
+      .b37-seg button.active{background:#5E7350;color:#fff;border-color:#5E7350;box-shadow:0 5px 12px rgba(94,115,80,.16)}
+      .b37-seg button.active::before{background:rgba(255,255,255,.17);color:#fff}
+      .b37-count-wrap{margin-top:14px;padding:13px 14px;border-radius:15px;background:#FAFAF7;border:1px solid rgba(47,59,51,.07)}
+      .b37-count-top{display:flex;justify-content:space-between;align-items:center;margin-bottom:9px}
+      .b37-count-top span:first-child{font-size:11px;font-weight:750;color:#697169}.b37-count-top span:last-child{font-size:10.5px;color:#93978F}
+      .b37-step{display:grid;grid-template-columns:52px 1fr 52px;gap:12px;align-items:center}
+      .b37-step button{height:48px;border:1px solid rgba(94,115,80,.08);border-radius:14px;background:#EEF1E4;color:#36512B;font-size:20px;font-weight:850;box-shadow:inset 0 0 0 1px rgba(255,255,255,.45)}
+      .b37-step strong{text-align:center;font-size:24px;line-height:1;font-weight:850;color:#38443B}
+      .b37-field{display:block;margin-top:12px}.b37-field:first-child{margin-top:0}
+      .b37-field>span{display:block;font-size:10.5px;font-weight:750;color:#697169;margin-bottom:6px}
+      .b37-field select,.b37-field input,.b37-field textarea{width:100%;box-sizing:border-box;border:1px solid rgba(47,59,51,.13);border-radius:13px;background:#FBFBF8;color:#2F3B33;padding:12px 13px;font:650 13px/1.35 Inter,Arial,sans-serif;outline:none;transition:.15s ease}
+      .b37-field select:focus,.b37-field input:focus,.b37-field textarea:focus{border-color:rgba(94,115,80,.55);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
+      .b37-field textarea{min-height:84px;resize:vertical}
+      .b37-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .b37-meta{display:grid;grid-template-columns:1fr auto;gap:9px 14px;align-items:center}.b37-meta span{font-size:12px;color:#697169}.b37-meta b{font-size:12px;text-align:right}
+      .b37-state{display:inline-flex;padding:5px 9px;border-radius:999px;background:#F1F3E4;color:#36512B;font-size:10px;font-weight:800}.b37-state.done{background:#E9F2E7}
+      .b37-warn{margin-top:10px;padding:10px 11px;border-radius:11px;background:#FFF6DE;color:#7B5B0B;font-size:11px;line-height:1.4}
+      .b37-footer{position:sticky;bottom:0;z-index:4;margin:16px -2px 0;padding:10px 2px calc(8px + env(safe-area-inset-bottom));background:linear-gradient(to bottom,rgba(247,245,239,0),rgba(247,245,239,.92) 24%,#F7F5EF 58%)}
+      .b37-primary{width:100%;min-height:52px;border:0;border-radius:15px;background:#C5921A;color:#fff;font-weight:850;font-size:14px;box-shadow:0 8px 18px rgba(197,146,26,.18)}
+      .b37-secondary{width:100%;min-height:48px;border:1px solid rgba(94,115,80,.24);border-radius:14px;background:#fff;color:#36512B;font-weight:800;font-size:13px}
+      .b37-actions{display:grid;gap:8px;margin-top:14px}
       .b37-picker-group{grid-column:1/-1;font-size:11px;font-weight:800;color:#5E7350;text-transform:uppercase;letter-spacing:.05em;margin:4px 2px 0}
-      @media(max-width:430px){.b37-grid2{grid-template-columns:1fr}.b37-page{padding-left:10px;padding-right:10px}}
+      @media(max-width:430px){.b37-grid2{grid-template-columns:1fr}.b37-page{padding-left:10px;padding-right:10px}.b37-intro{padding:15px}.b37-card{padding:14px}}
     `;document.head.appendChild(st);
   }
 
@@ -10860,6 +10886,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   window.b37SetOperation=function(op){
     const root=document.querySelector('.b37-page');if(!root)return;
     root.dataset.operation=op;
+    const badge=root.querySelector('.b37-intro-badge');if(badge)badge.textContent=op==='add'?'+':'−';
     window.__b37CreateDraft=window.__b37CreateDraft||{};
     window.__b37CreateDraft.operation=op;
     root.querySelectorAll('[data-b37-op]').forEach(b=>b.classList.toggle('active',b.dataset.b37Op===op));
@@ -10941,11 +10968,12 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       completedDate=a?.resultData?.completedDate||b37Today();
     const hiveSelector=isNew?`<label class="b37-field"><span>Hive</span><select id="b37-hive">${hs.map(x=>`<option value="${esc(x.id)}" ${x.id===selectedId?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:`<div class="b37-hive-title">${esc(h.name)}</div><div class="b37-sub">${esc(h.location||s.settings?.apiaryName||'Apiary')} · ${Number(h.superCount)||0} super${Number(h.superCount)===1?'':'s'} recorded</div>`;
     r.innerHTML=`<div class="b37-page" data-operation="${op}">
-      <section class="b37-card"><div class="b37-label">Hive</div>${hiveSelector}</section>
-      ${isNew?`<section class="b37-card"><div class="b37-label">Super Action</div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><label class="b37-field"><span>Number of Supers</span><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></label></section>
-      <section class="b37-card"><div class="b37-label">Reason</div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()">${b37ReasonOptions(op).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>
-      <section class="b37-card"><div class="b37-label">Schedule</div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><input id="b37-due" type="date" value="${esc(due)}"></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
-      <section class="b37-card"><div class="b37-label">Notes</div><label class="b37-field"><textarea id="b37-notes" placeholder="Add notes...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><button class="b37-primary" onclick="b37CreateAction()">Create Action</button>`:
+      ${isNew?`<div class="b37-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Plan a super change</div><div class="b37-intro-sub">Schedule the work now. Hive configuration changes only after the action is completed.</div></div><div class="b37-intro-badge">${op==='add'?'+':'−'}</div></div>`:''}
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">${isNew?'Select target hive':''}</div></div>${hiveSelector}</section>
+      ${isNew?`<section class="b37-card"><div class="b37-card-head"><div class="b37-label">Super Action</div><div class="b37-hint">Planned work</div></div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><div class="b37-count-wrap"><div class="b37-count-top"><span>Number of Supers</span><span>1–10</span></div><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></div></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Reason</div><div class="b37-hint">Optional context</div></div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()">${b37ReasonOptions(op).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><input id="b37-due" type="date" value="${esc(due)}"></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b37-notes" placeholder="Add a note for your next apiary visit...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><div class="b37-footer"><button class="b37-primary" onclick="b37CreateAction()">Create Action</button></div>`:
       `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
       ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''}></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
       <div class="b37-actions">${status==='Pending'?`<button class="b37-primary" onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`:`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
@@ -11012,7 +11040,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     r.className='view secondary';
     b37RenderPage(r,id);
     const top=idq('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Add / Remove Super</div><span></span>`;}
-    const bottom=idq('bottomnav');if(bottom)bottom.classList.remove('hidden');
+    const bottom=idq('bottomnav');if(bottom)bottom.classList.add('hidden');
   };
   try{render=window.render}catch(_){ }
 
@@ -11020,3 +11048,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 })();
 
 /* V224B37A — CREATE draft rerender guard: preserves operation/count/form fields across background render/sync. */
+
+/* V224B37B — Add/Remove Super visual refinement + secondary-page bottom-nav obstruction fix. */

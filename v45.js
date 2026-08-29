@@ -11073,7 +11073,20 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const h=hive(s,a.hiveId);if(!h)return toast('Hive not found');
     const op=a.workflowData?.operation||'add',actual=Number(idq('b37-actual-count')?.textContent||0),completedDate=idq('b37-completed-date')?.value||b37Today();
     if(!Number.isInteger(actual)||actual<1||actual>10)return toast('Choose the actual number of supers');
+
     const current=Math.max(0,Number(h.superCount)||0);
+    const baselineRaw=a.workflowData?.recordedSuperCount;
+    const baseline=Number.isFinite(Number(baselineRaw))?Math.max(0,Number(baselineRaw)):null;
+
+    /* V224B37M — Completion baseline validation only.
+       The Action captured the Hive Super count when it was created.
+       If the live count changed before completion, stop before any mutation.
+       This prevents a stale/replaced Hive state from silently producing an
+       incorrect before/after result such as 0 -> 1 becoming 1 -> 2. */
+    if(baseline!==null && current!==baseline){
+      return toast(`Hive super count changed from ${baseline} to ${current}. Review the action before completing.`);
+    }
+
     if(op==='remove'&&actual>current)return toast(`Only ${current} super${current===1?' is':'s are'} currently recorded on this hive.`);
     const next=op==='add'?current+actual:current-actual;
     const stamp=new Date().toISOString();
@@ -11204,3 +11217,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37I — Native date rendering fully isolated; HiveDash in-app calendar picker prevents any browser date-text overlap. */
 
 /* V224B37K — Pending Result quantity rerender guard: per-action Result draft survives background/global render until completion. */
+
+/* V224B37M — Super Completion Baseline Guard. */

@@ -10974,6 +10974,13 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     if(target==='b37-count'){
       window.__b37CreateDraft=window.__b37CreateDraft||{};
       window.__b37CreateDraft.count=n;
+    }else if(target==='b37-actual-count'){
+      const root=document.querySelector('.b37-page'),actionId=String(root?.dataset.actionId||'');
+      if(actionId){
+        window.__b37ResultDrafts=window.__b37ResultDrafts||{};
+        window.__b37ResultDrafts[actionId]=window.__b37ResultDrafts[actionId]||{};
+        window.__b37ResultDrafts[actionId].actual=n;
+      }
     }
   };
   function b37DisplayDate(v){
@@ -11076,6 +11083,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
     if(!s.meta.completedActions.some(x=>String(x.id)===String(a.id)))s.meta.completedActions.push(a);
     if(save(s)===false)return;
+    if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[String(a.id)];
     window.__hivedashActionsMode='Completed';toast('Super action completed');go('actions');
   };
 
@@ -11088,14 +11096,15 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       op=a?.workflowData?.operation||draft?.operation||'add',
       count=Number(a?.workflowData?.numberOfSupers||draft?.count||1),
       status=a?.status||'Create',done=status==='Completed';
+    const resultDraft=(!isNew&&!done)?(window.__b37ResultDrafts?.[String(a?.id||'')]||null):null;
     const reason=a?.workflowData?.reason||draft?.reason||window.__b37PrefillReason||b37ReasonOptions(op)[0][0],
       reasonDetails=a?.workflowData?.reasonDetails||draft?.reasonDetails||'',
       due=a?.dueDate||a?.date||draft?.due||b37Today(),
       priority=a?.priority==='Done'?'Medium':(a?.priority||draft?.priority||'Medium'),
-      actual=Number(a?.resultData?.numberOfSupers||count),
+      actual=Number(a?.resultData?.numberOfSupers??resultDraft?.actual??count),
       completedDate=a?.resultData?.completedDate||b37Today();
     const hiveSelector=isNew?`<label class="b37-field"><span>Hive</span><select id="b37-hive">${hs.map(x=>`<option value="${esc(x.id)}" ${x.id===selectedId?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:`<div class="b37-hive-title">${esc(h.name)}</div><div class="b37-sub">${esc(h.location||s.settings?.apiaryName||'Apiary')} · ${Number(h.superCount)||0} super${Number(h.superCount)===1?'':'s'} recorded</div>`;
-    r.innerHTML=`<div class="b37-page" data-operation="${op}">
+    r.innerHTML=`<div class="b37-page" data-operation="${op}" data-action-id="${esc(a?.id||'')}">
       ${isNew?`<div class="b37-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Plan a super change</div><div class="b37-intro-sub">Schedule the work now. Hive configuration changes only after the action is completed.</div></div><div class="b37-intro-badge">${op==='add'?'+':'−'}</div></div>`:''}
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">${isNew?'Select target hive':''}</div></div>${hiveSelector}</section>
       ${isNew?`<section class="b37-card"><div class="b37-card-head"><div class="b37-label">Super Action</div><div class="b37-hint">Planned work</div></div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><div class="b37-count-wrap"><div class="b37-count-top"><span>Number of Supers</span><span>1–10</span></div><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></div></section>
@@ -11193,3 +11202,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37H — Date picker interaction fix: native date input remains on-screen as invisible calendar-icon hit area; custom centered date text retained. */
 
 /* V224B37I — Native date rendering fully isolated; HiveDash in-app calendar picker prevents any browser date-text overlap. */
+
+/* V224B37K — Pending Result quantity rerender guard: per-action Result draft survives background/global render until completion. */

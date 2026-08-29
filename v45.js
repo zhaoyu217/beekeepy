@@ -9026,8 +9026,21 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         list.push({id:`v224b-${r.type.toLowerCase()}-${h.id}`,hiveId:h.id,type,priority,title,reason:r.type==='Varroa'?`Latest Varroa result is ${d.varroa.count}/100. ${d.phase}.`:r.evidence,due,status:'Pending',modelVersion:MODEL_VERSION});
       }
     }
+
+    /* V224B37G — preserve only B37 Add / Remove Super planned Actions.
+       V224B's Health/Decision override replaced app.js generateActions(), so
+       save()/state() regenerated health recommendations and silently dropped
+       the newly-created super-management Pending Action. Keep that one manual
+       Action family alongside the unchanged Health/Decision recommendations. */
+    const pendingSuperMap=new Map();
+    (Array.isArray(s.actions)?s.actions:[])
+      .filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done')
+      .forEach((a,i)=>pendingSuperMap.set(String(a.id||`super-management-${i}`),a));
+    const pendingSuperActions=[...pendingSuperMap.values()];
+
     const rank={High:3,Medium:2,Low:1};
-    return list.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0)||String(a.hiveId).localeCompare(String(b.hiveId)));
+    const recommendations=list.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0)||String(a.hiveId).localeCompare(String(b.hiveId)));
+    return [...recommendations,...pendingSuperActions];
   };
 
   // Professional Recommendations uses the same prioritized Action Engine.
@@ -11093,3 +11106,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37E — Date input removed from visible layer; custom centered display/button opens native picker. */
 
 /* V224B37F — Schedule two-column field alignment: Due Date and Priority outer controls share the same top baseline. */
+
+/* V224B37G — Pending Add/Remove Super persistence through V224B generateActions override. */

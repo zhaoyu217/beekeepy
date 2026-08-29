@@ -10859,6 +10859,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-field select:focus,.b37-field input:focus,.b37-field textarea:focus{border-color:rgba(94,115,80,.55);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
       .b37-field textarea{min-height:84px;resize:vertical}
       .b37-grid2{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .b37-grid2>.b37-field{margin-top:0}
       .b37-meta{display:grid;grid-template-columns:1fr auto;gap:9px 14px;align-items:center}.b37-meta span{font-size:12px;color:#697169}.b37-meta b{font-size:12px;text-align:right}
       .b37-state{display:inline-flex;padding:5px 9px;border-radius:999px;background:#F1F3E4;color:#36512B;font-size:10px;font-weight:800}.b37-state.done{background:#E9F2E7}
       .b37-warn{margin-top:10px;padding:10px 11px;border-radius:11px;background:#FFF6DE;color:#7B5B0B;font-size:11px;line-height:1.4}
@@ -11090,3 +11091,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37D — Due Date visual shell: native date picker retained, displayed date vertically centered with same control geometry as Priority. */
 
 /* V224B37E — Date input removed from visible layer; custom centered display/button opens native picker. */
+
+/* V224B37F — Schedule two-column field alignment: Due Date and Priority outer controls share the same top baseline. */

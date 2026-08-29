@@ -10839,6 +10839,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     window.__b37PrefillHiveId=String(hiveId||'');
     window.__b37PrefillSource=String(source||'manual');
     window.__b37PrefillReason=String(reason||'');
+    window.__b37CreateDraft=null;
     go('super-action/new');
   };
 
@@ -10852,22 +10853,40 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
         <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')"><b>Treatment</b></button>
         <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')"><b>Harvest</b></button>
         <div class="b37-picker-group">Other</div>
-        <button class="qbtn add-action-card" onclick="closeModal(this);go('super-action/new')"><b>Add / Remove Super</b></button>
+        <button class="qbtn add-action-card" onclick="closeModal(this);b37OpenSuperAction()"><b>Add / Remove Super</b></button>
       </div>`);
   };
 
   window.b37SetOperation=function(op){
     const root=document.querySelector('.b37-page');if(!root)return;
     root.dataset.operation=op;
+    window.__b37CreateDraft=window.__b37CreateDraft||{};
+    window.__b37CreateDraft.operation=op;
     root.querySelectorAll('[data-b37-op]').forEach(b=>b.classList.toggle('active',b.dataset.b37Op===op));
     const reason=root.querySelector('#b37-reason');
-    if(reason){reason.innerHTML=b37ReasonOptions(op).map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');window.b37ReasonChanged();}
+    if(reason){
+      reason.innerHTML=b37ReasonOptions(op).map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');
+      window.__b37CreateDraft.reason=reason.value||'';
+      window.__b37CreateDraft.reasonDetails='';
+      window.b37ReasonChanged();
+    }
   };
   window.b37Step=function(delta,target='b37-count'){
-    const el=idq(target);if(!el)return;const n=Math.max(1,Math.min(10,Number(el.textContent||1)+Number(delta||0)));el.textContent=String(n);
+    const el=idq(target);if(!el)return;
+    const n=Math.max(1,Math.min(10,Number(el.textContent||1)+Number(delta||0)));
+    el.textContent=String(n);
+    if(target==='b37-count'){
+      window.__b37CreateDraft=window.__b37CreateDraft||{};
+      window.__b37CreateDraft.count=n;
+    }
   };
   window.b37ReasonChanged=function(){
-    const reason=idq('b37-reason'),wrap=idq('b37-reason-other');if(wrap)wrap.style.display=reason?.value==='other'?'block':'none';
+    const reason=idq('b37-reason'),wrap=idq('b37-reason-other');
+    if(wrap)wrap.style.display=reason?.value==='other'?'block':'none';
+    if(reason){
+      window.__b37CreateDraft=window.__b37CreateDraft||{};
+      window.__b37CreateDraft.reason=reason.value||'';
+    }
   };
 
   window.b37CreateAction=function(){
@@ -10882,7 +10901,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const a={id:'super-action-'+Date.now(),hiveId,type:'super-management',title:op==='add'?'Add Super':'Remove Super',status:'Pending',priority,due,dueDate:due,date:due,createdAt:now,startedAt:'',completedAt:'',followUpDate:'',source:(window.__b37PrefillSource||'manual'),reasonCode:(reason||'manual'),workflowData:{operation:op,numberOfSupers:count,reason,reasonDetails,recordedSuperCount:Number(h.superCount)||0},resultData:null,linkedRecordId:'',linkedActionId:'',parentActionId:'',notes};
     s.actions=Array.isArray(s.actions)?s.actions:[];s.actions.push(a);
     if(save(s)===false)return;
-    window.__hivedashActionsMode='Pending';window.__b37PrefillHiveId='';window.__b37PrefillSource='';window.__b37PrefillReason='';toast('Action created');go('actions');
+    window.__hivedashActionsMode='Pending';window.__b37PrefillHiveId='';window.__b37PrefillSource='';window.__b37PrefillReason='';window.__b37CreateDraft=null;toast('Action created');go('actions');
   };
 
   window.b37CompleteAction=function(id){
@@ -10909,19 +10928,40 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     b37EnsureStyle();
     const s=v45s(),hs=b37ActiveHives(s);if(!hs.length)return noHiveStateV51(r);
     const isNew=!id||id==='new',a=isNew?null:b37Action(id);if(!isNew&&(!a||a.type!=='super-management')){r.innerHTML='<div class="b37-page"><section class="b37-card"><b>Action not found.</b></section></div>';return;}
-    const selectedId=a?.hiveId||window.__b37PrefillHiveId||hs[0].id,h=hive(s,selectedId)||hs[0],op=a?.workflowData?.operation||'add',count=Number(a?.workflowData?.numberOfSupers||1),status=a?.status||'Create',done=status==='Completed';
-    const reason=a?.workflowData?.reason||window.__b37PrefillReason||b37ReasonOptions(op)[0][0],reasonDetails=a?.workflowData?.reasonDetails||'',due=a?.dueDate||a?.date||b37Today(),priority=a?.priority==='Done'?'Medium':(a?.priority||'Medium'),actual=Number(a?.resultData?.numberOfSupers||count),completedDate=a?.resultData?.completedDate||b37Today();
+    const draft=isNew?(window.__b37CreateDraft=window.__b37CreateDraft||{}):null;
+    const selectedId=a?.hiveId||draft?.hiveId||window.__b37PrefillHiveId||hs[0].id,h=hive(s,selectedId)||hs[0],
+      op=a?.workflowData?.operation||draft?.operation||'add',
+      count=Number(a?.workflowData?.numberOfSupers||draft?.count||1),
+      status=a?.status||'Create',done=status==='Completed';
+    const reason=a?.workflowData?.reason||draft?.reason||window.__b37PrefillReason||b37ReasonOptions(op)[0][0],
+      reasonDetails=a?.workflowData?.reasonDetails||draft?.reasonDetails||'',
+      due=a?.dueDate||a?.date||draft?.due||b37Today(),
+      priority=a?.priority==='Done'?'Medium':(a?.priority||draft?.priority||'Medium'),
+      actual=Number(a?.resultData?.numberOfSupers||count),
+      completedDate=a?.resultData?.completedDate||b37Today();
     const hiveSelector=isNew?`<label class="b37-field"><span>Hive</span><select id="b37-hive">${hs.map(x=>`<option value="${esc(x.id)}" ${x.id===selectedId?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:`<div class="b37-hive-title">${esc(h.name)}</div><div class="b37-sub">${esc(h.location||s.settings?.apiaryName||'Apiary')} · ${Number(h.superCount)||0} super${Number(h.superCount)===1?'':'s'} recorded</div>`;
     r.innerHTML=`<div class="b37-page" data-operation="${op}">
       <section class="b37-card"><div class="b37-label">Hive</div>${hiveSelector}</section>
       ${isNew?`<section class="b37-card"><div class="b37-label">Super Action</div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><label class="b37-field"><span>Number of Supers</span><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></label></section>
       <section class="b37-card"><div class="b37-label">Reason</div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()">${b37ReasonOptions(op).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>
       <section class="b37-card"><div class="b37-label">Schedule</div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><input id="b37-due" type="date" value="${esc(due)}"></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
-      <section class="b37-card"><div class="b37-label">Notes</div><label class="b37-field"><textarea id="b37-notes" placeholder="Add notes...">${esc(a?.notes||'')}</textarea></label></section><button class="b37-primary" onclick="b37CreateAction()">Create Action</button>`:
+      <section class="b37-card"><div class="b37-label">Notes</div><label class="b37-field"><textarea id="b37-notes" placeholder="Add notes...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><button class="b37-primary" onclick="b37CreateAction()">Create Action</button>`:
       `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
       ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''}></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
       <div class="b37-actions">${status==='Pending'?`<button class="b37-primary" onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`:`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
     </div>`;
+    if(isNew){
+      const d=window.__b37CreateDraft=window.__b37CreateDraft||{};
+      d.hiveId=selectedId; d.operation=op; d.count=count; d.reason=reason; d.reasonDetails=reasonDetails;
+      d.due=due; d.priority=priority; d.notes=d.notes||'';
+      const bind=(id,key,event='change')=>{const el=idq(id);if(el)el.addEventListener(event,()=>{window.__b37CreateDraft=window.__b37CreateDraft||{};window.__b37CreateDraft[key]=el.value;});};
+      bind('b37-hive','hiveId');
+      bind('b37-reason','reason');
+      bind('b37-reason-details','reasonDetails','input');
+      bind('b37-due','due');
+      bind('b37-priority','priority');
+      bind('b37-notes','notes','input');
+    }
   }
 
   const oldOpenActionByType=window.openActionByType||openActionByType;
@@ -10978,3 +11018,5 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
   window.__HIVEDASH_V224B37_VERSION__='224b37-v2';
 })();
+
+/* V224B37A — CREATE draft rerender guard: preserves operation/count/form fields across background render/sync. */

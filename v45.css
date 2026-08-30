@@ -6641,3 +6641,100 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
 .b38-detail-page .b38-follow-date-field{
   margin-top:0!important;
 }
+
+
+/* ==============================================================
+   V224B38U — Queen Pending Detail: 3 VISUAL FIXES ONLY
+   1) Completed Date native text vertical centering
+   2) Follow-up Date native text vertical centering
+   3) Detail Hero image full-bleed, no left cream/white overlay
+   ============================================================== */
+
+/* 1 + 2: date fields only on Queen Management DETAIL page */
+.b38-detail-page #b38-completed,
+.b38-detail-page #b38-follow-date{
+  display:block!important;
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+  padding:0 10px!important;
+  box-sizing:border-box!important;
+  line-height:normal!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  color:#2F3B33!important;
+}
+
+/* Chromium / Edge native date text vertical centering */
+.b38-detail-page #b38-completed::-webkit-datetime-edit,
+.b38-detail-page #b38-follow-date::-webkit-datetime-edit{
+  display:flex!important;
+  align-items:center!important;
+  height:40px!important;
+  padding:0!important;
+  line-height:40px!important;
+}
+
+.b38-detail-page #b38-completed::-webkit-datetime-edit-fields-wrapper,
+.b38-detail-page #b38-follow-date::-webkit-datetime-edit-fields-wrapper{
+  display:flex!important;
+  align-items:center!important;
+  height:40px!important;
+  padding:0!important;
+}
+
+.b38-detail-page #b38-completed::-webkit-datetime-edit-text,
+.b38-detail-page #b38-completed::-webkit-datetime-edit-month-field,
+.b38-detail-page #b38-completed::-webkit-datetime-edit-day-field,
+.b38-detail-page #b38-completed::-webkit-datetime-edit-year-field,
+.b38-detail-page #b38-follow-date::-webkit-datetime-edit-text,
+.b38-detail-page #b38-follow-date::-webkit-datetime-edit-month-field,
+.b38-detail-page #b38-follow-date::-webkit-datetime-edit-day-field,
+.b38-detail-page #b38-follow-date::-webkit-datetime-edit-year-field{
+  padding:0!important;
+  line-height:40px!important;
+}
+
+.b38-detail-page #b38-completed::-webkit-calendar-picker-indicator,
+.b38-detail-page #b38-follow-date::-webkit-calendar-picker-indicator{
+  align-self:center!important;
+  margin:0!important;
+}
+
+/* 3: DETAIL Hero image only — remove the create-page cream fade overlay */
+.b38-detail-page .b38-intro{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:0!important;
+  min-height:94px!important;
+  background:transparent!important;
+}
+
+.b38-detail-page .b38-intro::before{
+  content:none!important;
+  display:none!important;
+  background:none!important;
+}
+
+.b38-detail-page .b38-intro::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:0!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  border-radius:inherit!important;
+}
+
+/* Hide the detail Hero copy so the image itself fills cleanly edge-to-edge.
+   This affects only the detail page, not the create page Hero. */
+.b38-detail-page .b38-intro > div{
+  visibility:hidden!important;
+  position:relative!important;
+  z-index:1!important;
+  min-height:94px!important;
+}

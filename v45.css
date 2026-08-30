@@ -6460,3 +6460,24 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   opacity:1!important;
   cursor:pointer!important;
 }
+
+
+/* V224B38J — Due Date ghost/double-text fix ONLY */
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-fields-wrapper,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-text,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-month-field,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-day-field,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-year-field{
+  opacity:0!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  text-shadow:none!important;
+}
+
+/* Keep only the calendar icon visible. */
+.b38-page .b38-date-shell #b38-due::-webkit-calendar-picker-indicator{
+  opacity:1!important;
+  display:block!important;
+  visibility:visible!important;
+}

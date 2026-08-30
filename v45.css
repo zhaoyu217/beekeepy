@@ -6090,3 +6090,241 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   padding:13px 14px!important;
   box-sizing:border-box!important;
 }
+
+
+/* ==============================================================
+   V224B38F — QUEEN MANAGEMENT VISUAL RESET
+   Re-lock B38 to V224B37W visual master.
+   VISUAL ONLY — no workflow/data/routing changes.
+   ============================================================== */
+
+.b38-page{
+  max-width:390px!important;
+  margin:0 auto!important;
+  padding:14px 12px max(28px,env(safe-area-inset-bottom))!important;
+  box-sizing:border-box!important;
+  background:#F7F5EF!important;
+  color:#2F3B33!important;
+  font-family:Inter,Arial,sans-serif!important;
+}
+
+/* HERO — full-bleed inside its own rounded card */
+.b38-page .b38-intro{
+  position:relative!important;
+  overflow:hidden!important;
+  width:100%!important;
+  min-height:94px!important;
+  box-sizing:border-box!important;
+  margin:0 0 10px!important;
+  padding:0!important;
+  border:1px solid rgba(94,115,80,.10)!important;
+  border-radius:15px!important;
+  background:#F7F5EF!important;
+  box-shadow:0 4px 12px rgba(47,59,51,.045)!important;
+}
+.b38-page .b38-intro::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:0!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  border-radius:inherit!important;
+}
+.b38-page .b38-intro::before{
+  content:""!important;
+  position:absolute!important;
+  z-index:1!important;
+  inset:0!important;
+  background:linear-gradient(
+    90deg,
+    rgba(247,245,239,.99) 0%,
+    rgba(247,245,239,.97) 38%,
+    rgba(247,245,239,.80) 52%,
+    rgba(247,245,239,.20) 72%,
+    rgba(247,245,239,0) 88%
+  )!important;
+  border-radius:inherit!important;
+  pointer-events:none!important;
+}
+.b38-page .b38-intro .b37-intro-copy{
+  position:relative!important;
+  z-index:2!important;
+  max-width:205px!important;
+  margin:0!important;
+  padding:13px 14px!important;
+  box-sizing:border-box!important;
+}
+.b38-page .b37-intro-title{
+  font-size:14px!important;
+  line-height:1.16!important;
+  font-weight:800!important;
+  color:#2F3B33!important;
+}
+.b38-page .b37-intro-sub{
+  margin-top:4px!important;
+  max-width:190px!important;
+  font-size:10px!important;
+  line-height:1.34!important;
+  font-weight:600!important;
+  color:#566057!important;
+}
+
+/* CARDS — exact compact B37W rhythm */
+.b38-page .b37-card{
+  display:block!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  margin:0 0 10px!important;
+  padding:13px!important;
+  background:rgba(255,255,255,.96)!important;
+  border:1px solid rgba(47,59,51,.09)!important;
+  border-radius:14px!important;
+  box-shadow:0 4px 12px rgba(47,59,51,.045)!important;
+}
+.b38-page .b37-card-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:10px!important;
+  margin:0 0 9px!important;
+}
+.b38-page .b37-label{
+  margin:0!important;
+  font-size:9.5px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  letter-spacing:.06em!important;
+  text-transform:uppercase!important;
+  color:#5E7350!important;
+}
+.b38-page .b37-hint{
+  margin:0!important;
+  font-size:9.5px!important;
+  line-height:1.2!important;
+  font-weight:650!important;
+  white-space:nowrap!important;
+  color:#8A8E87!important;
+}
+
+/* FIELDS */
+.b38-page .b37-field{
+  display:block!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  margin:9px 0 0!important;
+}
+.b38-page .b37-field:first-child{margin-top:0!important}
+.b38-page .b37-field>span{
+  display:block!important;
+  margin:0 0 5px!important;
+  font-size:9.5px!important;
+  line-height:1.2!important;
+  font-weight:700!important;
+  color:#697169!important;
+}
+.b38-page .b37-field select,
+.b38-page .b37-field input,
+.b38-page .b37-field textarea{
+  width:100%!important;
+  box-sizing:border-box!important;
+  border:1px solid rgba(47,59,51,.13)!important;
+  border-radius:11px!important;
+  background:#FBFBF8!important;
+  color:#2F3B33!important;
+  padding:10px 11px!important;
+  font:650 12px/1.3 Inter,Arial,sans-serif!important;
+}
+.b38-page .b37-field select,
+.b38-page .b37-field input[type="date"]{
+  height:42px!important;
+  min-height:42px!important;
+  padding:0 11px!important;
+  line-height:42px!important;
+}
+.b38-page .b37-field textarea{
+  min-height:58px!important;
+  resize:vertical!important;
+}
+
+/* QUEEN ACTION */
+.b38-page .b38-task-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+}
+.b38-page .b38-task{
+  min-height:44px!important;
+  padding:8px 10px!important;
+  border:1px solid rgba(47,59,51,.12)!important;
+  border-radius:11px!important;
+  background:#F7F5EF!important;
+  color:#2F3B33!important;
+  font:800 11px/1.2 Inter,Arial,sans-serif!important;
+  box-shadow:none!important;
+}
+.b38-page .b38-task.active{
+  background:#5E7350!important;
+  border-color:#5E7350!important;
+  color:#FFFFFF!important;
+  box-shadow:0 4px 10px rgba(94,115,80,.16)!important;
+}
+
+/* SCHEDULE — keep locked two-column layout */
+.b38-page .b37-grid2{
+  display:grid!important;
+  grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  gap:8px!important;
+  align-items:start!important;
+}
+.b38-page .b37-grid2>.b37-field{
+  margin-top:0!important;
+}
+.b38-page #b38-due,
+.b38-page #b38-priority{
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+}
+
+/* FOOTER / CTA */
+.b38-page .b37-footer{
+  position:relative!important;
+  width:100%!important;
+  box-sizing:border-box!important;
+  margin:12px 0 0!important;
+  padding:0!important;
+  background:transparent!important;
+}
+.b38-page .b37-primary{
+  display:block!important;
+  width:100%!important;
+  min-height:46px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+  border:0!important;
+  border-radius:11px!important;
+  background:#C5921A!important;
+  color:#FFFFFF!important;
+  font:800 12px/1 Inter,Arial,sans-serif!important;
+  text-align:center!important;
+  box-shadow:0 6px 14px rgba(197,146,26,.16)!important;
+}
+
+@media(max-width:430px){
+  .b38-page{
+    padding-left:9px!important;
+    padding-right:9px!important;
+  }
+  .b38-page .b37-card{
+    padding:12px!important;
+  }
+  .b38-page .b37-grid2{
+    grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+  }
+}

@@ -11399,20 +11399,52 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const display=document.getElementById('b38-date-display');
     if(display)display.textContent=fmtDate(value);
   };
+  window.b38HiveChanged=function(select){
+    window.__b38Draft=window.__b38Draft||{};
+    window.__b38Draft.hiveId=select?.value||'';
+  };
+  window.b38QueenSourceChanged=function(select){
+    window.__b38Draft=window.__b38Draft||{};
+    window.__b38Draft.queenSource=select?.value||'Not specified';
+  };
+  window.b38IntroMethodChanged=function(select){
+    window.__b38Draft=window.__b38Draft||{};
+    window.__b38Draft.introductionMethod=select?.value||'Not specified';
+  };
+  window.b38PriorityChanged=function(select){
+    window.__b38Draft=window.__b38Draft||{};
+    window.__b38Draft.priority=select?.value||'Medium';
+  };
+
 
 
   function createHTML(){
     const s=S(),d=window.__b38Draft||{},h=s.hives.find(x=>x.id===d.hiveId)||s.hives[0];
     const selectedTask=d.taskType||'Requeen';
     const selectedDueDate=d.dueDate||TODAY();
+    const selectedQueenSource=d.queenSource||'Not specified';
+    const selectedIntroMethod=d.introductionMethod||'Not specified';
+    const selectedPriority=d.priority||'Medium';
     const hops=s.hives.filter(x=>!['Archived','Combined'].includes(x.status)).map(x=>`<option value="${E(x.id)}" ${x.id===h.id?'selected':''}>${E(x.name)}</option>`).join('');
     return `<div class="b37-page b38-page">
       <section class="b37-intro b38-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Manage your queen</div><div class="b37-intro-sub">Plan, record and verify queen management actions. Biological queen status is confirmed by Inspection evidence.</div></div></section>
-      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Select target hive</div></div><label class="b37-field"><select id="b38-hive" aria-label="Hive">${hops}</select></label></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Select target hive</div></div><label class="b37-field"><select id="b38-hive" aria-label="Hive" onchange="b38HiveChanged(this)">${hops}</select></label></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Queen Action</div><div class="b37-hint">Planned work</div></div><div class="b38-task-grid">${TASKS.map(t=>`<button type="button" class="b38-task ${t===selectedTask?'active':''}" data-task="${E(t)}" onclick="b38SelectTask(this)">${E(t)}</button>`).join('')}</div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Plan</div><div class="b37-hint">Optional context</div></div>
-        <label class="b37-field"><span>Queen Source</span><select id="b38-source"><option>Not specified</option><option>Purchased</option><option>Raised in apiary</option><option>From another hive</option><option>Other</option></select></label>
-        <label class="b37-field"><span>Introduction Method</span><select id="b38-method"><option>Not specified</option><option>Caged introduction</option><option>Direct introduction</option><option>Queen cell</option><option>Other</option></select></label>
+        <label class="b37-field"><span>Queen Source</span><select id="b38-source" onchange="b38QueenSourceChanged(this)">
+<option ${selectedQueenSource==='Not specified'?'selected':''}>Not specified</option>
+<option ${selectedQueenSource==='Purchased'?'selected':''}>Purchased</option>
+<option ${selectedQueenSource==='Raised in apiary'?'selected':''}>Raised in apiary</option>
+<option ${selectedQueenSource==='From another hive'?'selected':''}>From another hive</option>
+<option ${selectedQueenSource==='Other'?'selected':''}>Other</option>
+</select></label>
+        <label class="b37-field"><span>Introduction Method</span><select id="b38-method" onchange="b38IntroMethodChanged(this)">
+<option ${selectedIntroMethod==='Not specified'?'selected':''}>Not specified</option>
+<option ${selectedIntroMethod==='Caged introduction'?'selected':''}>Caged introduction</option>
+<option ${selectedIntroMethod==='Direct introduction'?'selected':''}>Direct introduction</option>
+<option ${selectedIntroMethod==='Queen cell'?'selected':''}>Queen cell</option>
+<option ${selectedIntroMethod==='Other'?'selected':''}>Other</option>
+</select></label>
       </section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2">
         <label class="b37-field"><span>Due Date</span>
@@ -11421,7 +11453,11 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
             <input id="b38-due" type="date" value="${selectedDueDate}" onchange="b38DueChanged(this)">
           </div>
         </label>
-        <label class="b37-field"><span>Priority</span><select id="b38-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></label>
+        <label class="b37-field"><span>Priority</span><select id="b38-priority" onchange="b38PriorityChanged(this)">
+<option ${selectedPriority==='Low'?'selected':''}>Low</option>
+<option ${selectedPriority==='Medium'?'selected':''}>Medium</option>
+<option ${selectedPriority==='High'?'selected':''}>High</option>
+</select></label>
       </div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b38-notes" placeholder="Add a note for your next apiary visit..."></textarea></label></section>
       <div class="b37-footer"><button class="b37-primary" onclick="b38CreateAction()">Create Action</button></div>
@@ -11429,7 +11465,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   }
   window.b38CreateAction=function(){
     const s=S(),task=window.__b38Draft?.taskType||document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=window.__b38Draft?.dueDate||idq('b38-due')?.value||TODAY();
-    const a={id:'queen-action-'+Date.now(),hiveId:idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:idq('b38-source').value,introductionMethod:idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:idq('b38-notes').value||''};
+    const a={id:'queen-action-'+Date.now(),hiveId:window.__b38Draft?.hiveId||idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:window.__b38Draft?.priority||idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:window.__b38Draft?.queenSource||idq('b38-source').value,introductionMethod:window.__b38Draft?.introductionMethod||idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:idq('b38-notes').value||''};
     upsert(s,a);save(s);window.__b38Draft=null;go('actions');
   };
 

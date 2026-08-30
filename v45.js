@@ -11041,6 +11041,12 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
           <span class="add-action-copy"><b>Add / Remove Super</b><small>Plan a hive configuration change</small></span>
           <span class="add-action-arrow">›</span>
         </button>
+
+        <button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b38OpenQueenAction()">
+          <span class="add-action-icon">Q</span>
+          <span class="add-action-copy"><b>Queen Management</b><small>Plan or verify queen work</small></span>
+          <span class="add-action-arrow">›</span>
+        </button>
       </div>`);
     m?.classList.add('v224-add-action-picker');
     requestAnimationFrame(()=>m?.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}));
@@ -11359,3 +11365,100 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 /* V224B37U — VISUAL ONLY: hero photo flush to card edges + duplicate Hive field label removed. */
 
 /* V224B37W — Add Action picker visual/position only. */
+
+
+/* V224B38 — Queen Management only. Reuses locked V224B37W visual master. */
+(function(){
+  const TYPE='queen-management', TASKS=['Requeen','Introduce Queen','Mark Queen','Verify Queen','Other'];
+  const BIO_FOLLOW=new Set(['Requeen','Introduce Queen']);
+  const S=()=>v45s();
+  const E=v=>esc(String(v??''));
+  const TODAY=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+  function all(s){return [...(s.actions||[]),...(s.meta?.completedActions||[])]}
+  function find(s,id){return all(s).find(a=>a&&a.id===id&&a.type===TYPE)||null}
+  function upsert(s,a){s.actions=Array.isArray(s.actions)?s.actions:[];const i=s.actions.findIndex(x=>x&&x.id===a.id);if(i>=0)s.actions[i]=a;else s.actions.push(a)}
+  function archive(s,a){s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&x.id===a.id);const cp=JSON.parse(JSON.stringify(a));if(i>=0)s.meta.completedActions[i]=cp;else s.meta.completedActions.unshift(cp)}
+  function opt(cur,val){return cur===val?'selected':''}
+
+  window.b38OpenQueenAction=function(hiveId='',source='manual',reason='queen'){
+    const s=S(),h=s.hives.find(x=>x.id===hiveId)||s.hives[0];if(!h)return;
+    window.__b38Draft={hiveId:h.id,source:String(source||'manual'),reasonCode:String(reason||'queen')};go('queen-action/new');
+  };
+  window.b38SelectTask=function(btn){document.querySelectorAll('.b38-task').forEach(x=>x.classList.remove('active'));btn.classList.add('active')};
+
+  function createHTML(){
+    const s=S(),d=window.__b38Draft||{},h=s.hives.find(x=>x.id===d.hiveId)||s.hives[0];
+    const hops=s.hives.filter(x=>!['Archived','Combined'].includes(x.status)).map(x=>`<option value="${E(x.id)}" ${x.id===h.id?'selected':''}>${E(x.name)}</option>`).join('');
+    return `<div class="b37-page b38-page">
+      <section class="b37-intro b38-intro"><div><b>Plan queen work</b><small>Record the management step now. Biological queen status is confirmed by Inspection evidence.</small></div></section>
+      <section class="b37-card"><div class="b37-section-title"><b>HIVE</b><span>Select target hive</span></div><div class="b37-field"><select id="b38-hive">${hops}</select></div></section>
+      <section class="b37-card"><div class="b37-section-title"><b>QUEEN ACTION</b><span>Planned work</span></div><div class="b38-task-grid">${TASKS.map((t,i)=>`<button type="button" class="b38-task ${i===0?'active':''}" data-task="${E(t)}" onclick="b38SelectTask(this)">${E(t)}</button>`).join('')}</div></section>
+      <section class="b37-card"><div class="b37-section-title"><b>PLAN</b><span>Optional context</span></div>
+        <div class="b37-field"><label>Queen Source</label><select id="b38-source"><option>Not specified</option><option>Purchased</option><option>Raised in apiary</option><option>From another hive</option><option>Other</option></select></div>
+        <div class="b37-field"><label>Introduction Method</label><select id="b38-method"><option>Not specified</option><option>Caged introduction</option><option>Direct introduction</option><option>Queen cell</option><option>Other</option></select></div>
+      </section>
+      <section class="b37-card"><div class="b37-section-title"><b>SCHEDULE</b><span>When to do it</span></div><div class="b37-grid2">
+        <div class="b37-field"><label>Due Date</label><input id="b38-due" type="date" value="${TODAY()}"></div><div class="b37-field"><label>Priority</label><select id="b38-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
+      </div></section>
+      <section class="b37-card"><div class="b37-section-title"><b>NOTES</b><span>Optional</span></div><div class="b37-field"><textarea id="b38-notes" placeholder="Add a note for your next apiary visit..."></textarea></div></section>
+      <div class="b37-footer"><button class="b37-primary" onclick="b38CreateAction()">Create Action</button></div>
+    </div>`;
+  }
+  window.b38CreateAction=function(){
+    const s=S(),task=document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=idq('b38-due')?.value||TODAY();
+    const a={id:'queen-action-'+Date.now(),hiveId:idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:idq('b38-source').value,introductionMethod:idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:idq('b38-notes').value||''};
+    upsert(s,a);save(s);window.__b38Draft=null;go('actions');
+  };
+
+  function detailHTML(a){
+    const s=S(),h=hive(s,a.hiveId)||s.hives[0],r=a.resultData||{},task=a.workflowData?.taskType||a.title||'Queen Management',done=a.status==='Completed';
+    return `<div class="b37-page b38-page">
+      <section class="b37-intro b38-intro"><div><b>Queen management</b><small>Management completion does not by itself confirm biological queen success.</small></div></section>
+      <section class="b37-card"><div class="b37-section-title"><b>HIVE</b><span>${E(h?.name||a.hiveId)}</span></div></section>
+      <section class="b37-card"><div class="b37-section-title"><b>PLAN</b><span class="b37-state">${E(a.status)}</span></div>
+        <div class="b37-meta"><span>Action</span><b>${E(task)}</b><span>Queen source</span><b>${E(a.workflowData?.queenSource||'Not specified')}</b><span>Introduction</span><b>${E(a.workflowData?.introductionMethod||'Not specified')}</b><span>Due</span><b>${E(a.dueDate||a.due||'')}</b><span>Priority</span><b>${E(a.priority||'Medium')}</b></div>
+      </section>
+      <section class="b37-card"><div class="b37-section-title"><b>RESULT</b><span>Actual result</span></div>
+        <div class="b37-field"><label>Queen Accepted</label><select id="b38-accepted" ${done?'disabled':''}><option ${opt(r.queenAccepted,'Not checked')}>Not checked</option><option ${opt(r.queenAccepted,'Yes')}>Yes</option><option ${opt(r.queenAccepted,'No')}>No</option><option ${opt(r.queenAccepted,'Uncertain')}>Uncertain</option></select></div>
+        <div class="b37-field"><label>Queen Seen</label><select id="b38-seen" ${done?'disabled':''}><option ${opt(r.queenSeen,'Not checked')}>Not checked</option><option ${opt(r.queenSeen,'Yes')}>Yes</option><option ${opt(r.queenSeen,'No')}>No</option></select></div>
+        <div class="b37-field"><label>Eggs Present</label><select id="b38-eggs" ${done?'disabled':''}><option ${opt(r.eggsPresent,'Not checked')}>Not checked</option><option ${opt(r.eggsPresent,'Yes')}>Yes</option><option ${opt(r.eggsPresent,'No')}>No</option></select></div>
+        <div class="b37-field"><label>Laying Pattern</label><select id="b38-laying" ${done?'disabled':''}><option ${opt(r.layingPattern,'Not checked')}>Not checked</option><option ${opt(r.layingPattern,'Good')}>Good</option><option ${opt(r.layingPattern,'Spotty')}>Spotty</option><option ${opt(r.layingPattern,'Poor')}>Poor</option><option ${opt(r.layingPattern,'None')}>None</option></select></div>
+        <div class="b37-field"><label>Completed Date</label><input id="b38-completed" type="date" value="${E(r.completedDate||TODAY())}" ${done?'disabled':''}></div>
+        ${done?'<div class="b38-note">Management action completed. Inspection remains the biological evidence source.</div>':''}
+      </section>
+      ${done?'':`<section class="b37-card"><div class="b37-section-title"><b>FOLLOW-UP</b><span>${BIO_FOLLOW.has(task)?'Recommended':'Optional'}</span></div><label class="b38-check"><input id="b38-follow" type="checkbox" ${a.status==='Follow-up'||BIO_FOLLOW.has(task)?'checked':''}> Require biological follow-up</label><div class="b37-field"><label>Follow-up Date</label><input id="b38-follow-date" type="date" value="${E(a.followUpDate||'')}"></div></section>`}
+      <div class="b37-footer">${done?'<button class="b37-secondary" onclick="go(\'actions\')">Back to Actions</button>':`<button class="b37-primary" onclick="b38SaveResult('${E(a.id)}')">${BIO_FOLLOW.has(task)?'Save Result':'Complete Action'}</button>`}</div>
+    </div>`;
+  }
+  window.b38SaveResult=function(id){
+    const s=S(),a=find(s,id);if(!a||a.status==='Completed')return;
+    a.resultData={queenAccepted:idq('b38-accepted').value,queenSeen:idq('b38-seen').value,eggsPresent:idq('b38-eggs').value,layingPattern:idq('b38-laying').value,completedDate:idq('b38-completed').value||TODAY()};
+    const follow=!!idq('b38-follow')?.checked;a.followUpDate=idq('b38-follow-date')?.value||null;
+    if(follow){a.status='Follow-up';a.completedAt=null;upsert(s,a);save(s);go('actions');return;}
+    a.status='Completed';a.priority='Done';a.completedAt=new Date().toISOString();archive(s,a);s.actions=(s.actions||[]).filter(x=>x&&x.id!==a.id);save(s);go('actions');
+  };
+
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){
+    if(String(type||'').toLowerCase()===TYPE){const s=S(),a=actionId?find(s,actionId):(s.actions||[]).find(x=>x&&x.type===TYPE&&x.hiveId===hiveId&&x.status!=='Completed');return go('queen-action/'+(a?.id||'new'));}
+    return prevOpen.apply(this,arguments);
+  };try{openActionByType=window.openActionByType}catch(_){ }
+
+  const prevDraw=window.v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    const box=idq('alist');if(!box)return prevDraw(mode);const s=S(),rows=v53ActionRows(mode);
+    box.innerHTML=rows.length?rows.map(a=>{const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed';const click=a.type===TYPE?`go('queen-action/${a.id}')`:(a.type==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`));return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>';
+  };try{v53DrawActions=window.v53DrawActions}catch(_){ }
+
+  const prevRender=window.render;
+  window.render=function(){
+    const raw=(location.hash||'#home').slice(1),parts=raw.split('/'),page=parts[0],id=parts[1]||'';
+    if(page!=='queen-action')return prevRender();
+    const r=idq('view');if(!r)return;r.className='view secondary';
+    if(id==='new')r.innerHTML=createHTML();else{const a=find(S(),id);r.innerHTML=a?detailHTML(a):'<div class="b37-page"><section class="b37-card">Queen Management action not found.</section></div>'}
+    const top=idq('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Queen Management</div><span></span>`}
+    const bottom=idq('bottomnav');if(bottom)bottom.classList.add('hidden');
+  };try{render=window.render}catch(_){ }
+  window.__HIVEDASH_V224B38_VERSION__='224b38';
+})();
+

@@ -425,10 +425,10 @@ function mergeStateV50(local,remote){
      local/cloud merge. Other pending recommendation semantics stay unchanged. */
   const manualSuperMerged=new Map();
   [
-    ...((primary.actions||[]).filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done')),
-    ...((other.actions||[]).filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done'))
+    ...((primary.actions||[]).filter(a=>a&&(a.type==='super-management'||a.type==='queen-management')&&a.status!=='Completed'&&a.priority!=='Done')),
+    ...((other.actions||[]).filter(a=>a&&(a.type==='super-management'||a.type==='queen-management')&&a.status!=='Completed'&&a.priority!=='Done'))
   ].forEach((a,i)=>manualSuperMerged.set(String(a.id||`super-manual-${i}`),a));
-  primary.actions=[...(primary.actions||[]).filter(a=>!(a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done')),...manualSuperMerged.values()];
+  primary.actions=[...(primary.actions||[]).filter(a=>!(a&&(a.type==='super-management'||a.type==='queen-management')&&a.status!=='Completed'&&a.priority!=='Done')),...manualSuperMerged.values()];
 
   /* V224B37J — Hive Merge Freshness Fix.
      `h` always comes from `primary`, which was already selected from the newer
@@ -777,7 +777,7 @@ function generateActions(s){
   /* V224B37 — preserve only Add / Remove Super Actions while while
      generateActions() continues to rebuild system recommendations. */
   const manualSuperActions=(Array.isArray(s.actions)?s.actions:[])
-    .filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done');
+    .filter(a=>a&&(a.type==='super-management'||a.type==='queen-management')&&a.status!=='Completed'&&a.priority!=='Done');
 
   /* V224B32 — preserve only explicitly completed Action entities.
      state()/save() both regenerate pending recommendations via generateActions().

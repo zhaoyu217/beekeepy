@@ -5792,3 +5792,11 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
     max-height:calc(100dvh - 96px)!important;
   }
 }
+
+/* V224B38 — Queen Management: inherit locked V224B37W low-frequency Action visual master. */
+.b38-intro{background:linear-gradient(90deg,rgba(255,253,249,.98) 0%,rgba(255,253,249,.90) 44%,rgba(255,253,249,.08) 78%),url("assets/b37-super-hero.jpg") right center/cover no-repeat!important}
+.b38-task-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}
+.b38-task{min-height:44px;border:1px solid rgba(94,115,80,.16);border-radius:11px;background:#F7F5EF;color:#2F3B33;font-size:11px;font-weight:800}
+.b38-task.active{background:#5E7350;color:#fff;border-color:#5E7350}
+.b38-check{display:flex;align-items:center;gap:7px;margin:3px 0 9px;font-size:10px;font-weight:700;color:#566158}.b38-check input{width:auto;height:auto}
+.b38-note{margin-top:8px;padding:8px 9px;border-radius:10px;background:#FFF6D9;color:#6B5A22;font-size:10px;font-weight:700}

@@ -6345,3 +6345,45 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   background-repeat:no-repeat!important;
   border-radius:inherit!important;
 }
+
+
+/* V224B38H — Queen Management Due Date vertical alignment only */
+.b38-page #b38-due{
+  display:block!important;
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+  padding:0 10px!important;
+  box-sizing:border-box!important;
+  line-height:normal!important;
+  font-size:12px!important;
+  font-weight:650!important;
+  color:#2F3B33!important;
+}
+
+/* Chromium/Edge native date text box vertical centering */
+.b38-page #b38-due::-webkit-datetime-edit{
+  display:flex!important;
+  align-items:center!important;
+  height:40px!important;
+  padding:0!important;
+  line-height:40px!important;
+}
+.b38-page #b38-due::-webkit-datetime-edit-fields-wrapper{
+  display:flex!important;
+  align-items:center!important;
+  height:40px!important;
+  padding:0!important;
+}
+.b38-page #b38-due::-webkit-datetime-edit-text,
+.b38-page #b38-due::-webkit-datetime-edit-month-field,
+.b38-page #b38-due::-webkit-datetime-edit-day-field,
+.b38-page #b38-due::-webkit-datetime-edit-year-field{
+  padding:0!important;
+  line-height:40px!important;
+}
+.b38-page #b38-due::-webkit-calendar-picker-indicator{
+  align-self:center!important;
+  margin:0!important;
+}

@@ -11374,6 +11374,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   const S=()=>v45s();
   const E=v=>esc(String(v??''));
   const TODAY=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+ const fmtDate=v=>{if(!v)return "";const p=String(v).slice(0,10).split("-");return p.length===3?`${p[1]}/${p[2]}/${p[0]}`:v};
   function all(s){return [...(s.actions||[]),...(s.meta?.completedActions||[])]}
   function find(s,id){return all(s).find(a=>a&&a.id===id&&a.type===TYPE)||null}
   function upsert(s,a){s.actions=Array.isArray(s.actions)?s.actions:[];const i=s.actions.findIndex(x=>x&&x.id===a.id);if(i>=0)s.actions[i]=a;else s.actions.push(a)}
@@ -11398,7 +11399,12 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
         <label class="b37-field"><span>Introduction Method</span><select id="b38-method"><option>Not specified</option><option>Caged introduction</option><option>Direct introduction</option><option>Queen cell</option><option>Other</option></select></label>
       </section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2">
-        <label class="b37-field"><span>Due Date</span><input id="b38-due" type="date" value="${TODAY()}"></label>
+        <label class="b37-field"><span>Due Date</span>
+          <div class="b38-date-shell">
+            <span class="b38-date-display" id="b38-date-display">${fmtDate(TODAY())}</span>
+            <input id="b38-due" type="date" value="${TODAY()}" onchange="document.getElementById('b38-date-display').textContent=fmtDate(this.value)">
+          </div>
+        </label>
         <label class="b37-field"><span>Priority</span><select id="b38-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></label>
       </div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b38-notes" placeholder="Add a note for your next apiary visit..."></textarea></label></section>

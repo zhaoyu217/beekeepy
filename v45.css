@@ -6387,3 +6387,76 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   align-self:center!important;
   margin:0!important;
 }
+
+
+/* V224B38I — Due Date visual shell ONLY
+   Native date input stays interactive; visible date text is custom-centered. */
+.b38-page .b38-date-shell{
+  position:relative!important;
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  border:1px solid rgba(47,59,51,.13)!important;
+  border-radius:11px!important;
+  background:#FBFBF8!important;
+  overflow:hidden!important;
+}
+
+.b38-page .b38-date-display{
+  position:absolute!important;
+  z-index:1!important;
+  left:11px!important;
+  right:36px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  display:block!important;
+  margin:0!important;
+  padding:0!important;
+  font-size:12px!important;
+  line-height:1!important;
+  font-weight:650!important;
+  color:#2F3B33!important;
+  pointer-events:none!important;
+  white-space:nowrap!important;
+}
+
+/* Native control overlays the whole shell for click/calendar behavior,
+   but its own date text is hidden to prevent vertical drift. */
+.b38-page .b38-date-shell #b38-due{
+  position:absolute!important;
+  z-index:2!important;
+  inset:0!important;
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  margin:0!important;
+  padding:0!important;
+  border:0!important;
+  outline:0!important;
+  background:transparent!important;
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+  box-shadow:none!important;
+  cursor:pointer!important;
+}
+
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-fields-wrapper,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-text,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-month-field,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-day-field,
+.b38-page .b38-date-shell #b38-due::-webkit-datetime-edit-year-field{
+  color:transparent!important;
+  -webkit-text-fill-color:transparent!important;
+}
+
+.b38-page .b38-date-shell #b38-due::-webkit-calendar-picker-indicator{
+  position:absolute!important;
+  right:10px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  margin:0!important;
+  opacity:1!important;
+  cursor:pointer!important;
+}

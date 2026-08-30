@@ -9032,15 +9032,15 @@ body:has(.legal155) .vtop .iconbtn:first-child{
        save()/state() regenerated health recommendations and silently dropped
        the newly-created super-management Pending Action. Keep that one manual
        Action family alongside the unchanged Health/Decision recommendations. */
-    const pendingSuperMap=new Map();
+    const pendingLowFreqMap=new Map();
     (Array.isArray(s.actions)?s.actions:[])
-      .filter(a=>a&&a.type==='super-management'&&a.status!=='Completed'&&a.priority!=='Done')
-      .forEach((a,i)=>pendingSuperMap.set(String(a.id||`super-management-${i}`),a));
-    const pendingSuperActions=[...pendingSuperMap.values()];
+      .filter(a=>a&&(a.type==='super-management'||a.type==='queen-management')&&a.status!=='Completed'&&a.priority!=='Done')
+      .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`super-management-${i}`),a));
+    const pendingLowFreqActions=[...pendingLowFreqMap.values()];
 
     const rank={High:3,Medium:2,Low:1};
     const recommendations=list.sort((a,b)=>(rank[b.priority]||0)-(rank[a.priority]||0)||String(a.hiveId).localeCompare(String(b.hiveId)));
-    return [...recommendations,...pendingSuperActions];
+    return [...recommendations,...pendingLowFreqActions];
   };
 
   // Professional Recommendations uses the same prioritized Action Engine.

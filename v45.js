@@ -11392,10 +11392,19 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     document.querySelectorAll('.b38-task').forEach(x=>x.classList.remove('active'));
     btn?.classList.add('active');
   };
+  window.b38DueChanged=function(input){
+    const value=input?.value||TODAY();
+    window.__b38Draft=window.__b38Draft||{};
+    window.__b38Draft.dueDate=value;
+    const display=document.getElementById('b38-date-display');
+    if(display)display.textContent=fmtDate(value);
+  };
+
 
   function createHTML(){
     const s=S(),d=window.__b38Draft||{},h=s.hives.find(x=>x.id===d.hiveId)||s.hives[0];
     const selectedTask=d.taskType||'Requeen';
+    const selectedDueDate=d.dueDate||TODAY();
     const hops=s.hives.filter(x=>!['Archived','Combined'].includes(x.status)).map(x=>`<option value="${E(x.id)}" ${x.id===h.id?'selected':''}>${E(x.name)}</option>`).join('');
     return `<div class="b37-page b38-page">
       <section class="b37-intro b38-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Manage your queen</div><div class="b37-intro-sub">Plan, record and verify queen management actions. Biological queen status is confirmed by Inspection evidence.</div></div></section>
@@ -11408,8 +11417,8 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2">
         <label class="b37-field"><span>Due Date</span>
           <div class="b38-date-shell">
-            <span class="b38-date-display" id="b38-date-display">${fmtDate(TODAY())}</span>
-            <input id="b38-due" type="date" value="${TODAY()}" onchange="document.getElementById('b38-date-display').textContent=fmtDate(this.value)">
+            <span class="b38-date-display" id="b38-date-display">${fmtDate(selectedDueDate)}</span>
+            <input id="b38-due" type="date" value="${selectedDueDate}" onchange="b38DueChanged(this)">
           </div>
         </label>
         <label class="b37-field"><span>Priority</span><select id="b38-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></label>
@@ -11419,7 +11428,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     </div>`;
   }
   window.b38CreateAction=function(){
-    const s=S(),task=window.__b38Draft?.taskType||document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=idq('b38-due')?.value||TODAY();
+    const s=S(),task=window.__b38Draft?.taskType||document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=window.__b38Draft?.dueDate||idq('b38-due')?.value||TODAY();
     const a={id:'queen-action-'+Date.now(),hiveId:idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:idq('b38-source').value,introductionMethod:idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:idq('b38-notes').value||''};
     upsert(s,a);save(s);window.__b38Draft=null;go('actions');
   };

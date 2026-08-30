@@ -11385,15 +11385,22 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const s=S(),h=s.hives.find(x=>x.id===hiveId)||s.hives[0];if(!h)return;
     window.__b38Draft={hiveId:h.id,source:String(source||'manual'),reasonCode:String(reason||'queen')};go('queen-action/new');
   };
-  window.b38SelectTask=function(btn){document.querySelectorAll('.b38-task').forEach(x=>x.classList.remove('active'));btn.classList.add('active')};
+  window.b38SelectTask=function(btn){
+    const task=btn?.dataset?.task||'Requeen';
+    window.__b38Draft=window.__b38Draft||{};
+    window.__b38Draft.taskType=task;
+    document.querySelectorAll('.b38-task').forEach(x=>x.classList.remove('active'));
+    btn?.classList.add('active');
+  };
 
   function createHTML(){
     const s=S(),d=window.__b38Draft||{},h=s.hives.find(x=>x.id===d.hiveId)||s.hives[0];
+    const selectedTask=d.taskType||'Requeen';
     const hops=s.hives.filter(x=>!['Archived','Combined'].includes(x.status)).map(x=>`<option value="${E(x.id)}" ${x.id===h.id?'selected':''}>${E(x.name)}</option>`).join('');
     return `<div class="b37-page b38-page">
       <section class="b37-intro b38-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Manage your queen</div><div class="b37-intro-sub">Plan, record and verify queen management actions. Biological queen status is confirmed by Inspection evidence.</div></div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Select target hive</div></div><label class="b37-field"><select id="b38-hive" aria-label="Hive">${hops}</select></label></section>
-      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Queen Action</div><div class="b37-hint">Planned work</div></div><div class="b38-task-grid">${TASKS.map((t,i)=>`<button type="button" class="b38-task ${i===0?'active':''}" data-task="${E(t)}" onclick="b38SelectTask(this)">${E(t)}</button>`).join('')}</div></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Queen Action</div><div class="b37-hint">Planned work</div></div><div class="b38-task-grid">${TASKS.map(t=>`<button type="button" class="b38-task ${t===selectedTask?'active':''}" data-task="${E(t)}" onclick="b38SelectTask(this)">${E(t)}</button>`).join('')}</div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Plan</div><div class="b37-hint">Optional context</div></div>
         <label class="b37-field"><span>Queen Source</span><select id="b38-source"><option>Not specified</option><option>Purchased</option><option>Raised in apiary</option><option>From another hive</option><option>Other</option></select></label>
         <label class="b37-field"><span>Introduction Method</span><select id="b38-method"><option>Not specified</option><option>Caged introduction</option><option>Direct introduction</option><option>Queen cell</option><option>Other</option></select></label>
@@ -11412,7 +11419,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     </div>`;
   }
   window.b38CreateAction=function(){
-    const s=S(),task=document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=idq('b38-due')?.value||TODAY();
+    const s=S(),task=window.__b38Draft?.taskType||document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=idq('b38-due')?.value||TODAY();
     const a={id:'queen-action-'+Date.now(),hiveId:idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:idq('b38-source').value,introductionMethod:idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:idq('b38-notes').value||''};
     upsert(s,a);save(s);window.__b38Draft=null;go('actions');
   };

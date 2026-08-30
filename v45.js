@@ -11689,11 +11689,35 @@ function detailHTML(a){
   const prevRender=window.render;
   window.render=function(){
     const raw=(location.hash||'#home').slice(1),parts=raw.split('/'),page=parts[0],id=parts[1]||'';
-    if(page!=='queen-action')return prevRender();
-    if(id==='new')b38RecoverDraftFromDOM();
-    else b38RecoverDetailDraftFromDOM(id);
+    if(page!=='queen-action'){
+      window.__b38DetailRenderedId=null;
+      return prevRender();
+    }
+
+    if(id==='new'){
+      window.__b38DetailRenderedId=null;
+      b38RecoverDraftFromDOM();
+    }else{
+      b38RecoverDetailDraftFromDOM(id);
+
+      /* V224B38X:
+         Once this exact Queen Pending Detail action is already mounted,
+         do not let periodic same-route renders destroy unsaved field state.
+         Navigation to a different action id still performs a full render. */
+      const mounted=idq('view')?.querySelector?.('.b38-detail-page');
+      if(mounted && window.__b38DetailRenderedId===id){
+        return;
+      }
+    }
+
     const r=idq('view');if(!r)return;r.className='view secondary';
-    if(id==='new')r.innerHTML=createHTML();else{const a=find(S(),id);r.innerHTML=a?detailHTML(a):'<div class="b37-page"><section class="b37-card">Queen Management action not found.</section></div>'}
+    if(id==='new'){
+      r.innerHTML=createHTML();
+    }else{
+      const a=find(S(),id);
+      r.innerHTML=a?detailHTML(a):'<div class="b37-page"><section class="b37-card">Queen Management action not found.</section></div>';
+      window.__b38DetailRenderedId=id;
+    }
     const top=idq('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Queen Management</div><span></span>`}
     const bottom=idq('bottomnav');if(bottom)bottom.classList.add('hidden');
   };try{render=window.render}catch(_){ }

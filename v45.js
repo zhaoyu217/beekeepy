@@ -11374,7 +11374,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   const S=()=>v45s();
   const E=v=>esc(String(v??''));
   const TODAY=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
- const fmtDate=v=>{if(!v)return "";const p=String(v).slice(0,10).split("-");return p.length===3?`${p[1]}/${p[2]}/${p[0]}`:v};
+ const fmtDate=v=>{if(!v)return "";const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v);};
   function all(s){return [...(s.actions||[]),...(s.meta?.completedActions||[])]}
   function find(s,id){return all(s).find(a=>a&&a.id===id&&a.type===TYPE)||null}
   function upsert(s,a){s.actions=Array.isArray(s.actions)?s.actions:[];const i=s.actions.findIndex(x=>x&&x.id===a.id);if(i>=0)s.actions[i]=a;else s.actions.push(a)}

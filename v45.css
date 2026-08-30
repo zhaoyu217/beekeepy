@@ -6033,3 +6033,60 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   margin:0!important;
   padding:13px 14px!important;
 }
+
+
+/* ==============================================================
+   V224B38E — TRUE QUEEN HERO FULL-BLEED FIX ONLY
+   Actual B38 Hero element is .b38-intro.
+   ============================================================== */
+
+.b38-page .b38-intro{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:0!important;
+  min-height:94px!important;
+  border-radius:15px!important;
+  background:transparent!important;
+}
+
+/* Photo now fills the ENTIRE Hero card, edge-to-edge. */
+.b38-page .b38-intro::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:0!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  background-position:center center!important;
+  background-size:cover!important;
+  background-repeat:no-repeat!important;
+  border-radius:inherit!important;
+}
+
+/* Left cream fade remains only as an overlay for readable live HTML text. */
+.b38-page .b38-intro::before{
+  content:""!important;
+  position:absolute!important;
+  z-index:1!important;
+  inset:0!important;
+  border-radius:inherit!important;
+  background:linear-gradient(
+    90deg,
+    rgba(247,245,239,.99) 0%,
+    rgba(247,245,239,.97) 38%,
+    rgba(247,245,239,.78) 52%,
+    rgba(247,245,239,.22) 70%,
+    rgba(247,245,239,0) 86%
+  )!important;
+  pointer-events:none!important;
+}
+
+/* Move spacing to the live text itself, not the Hero outer box. */
+.b38-page .b38-intro .b37-intro-copy{
+  position:relative!important;
+  z-index:2!important;
+  max-width:205px!important;
+  margin:0!important;
+  padding:13px 14px!important;
+  box-sizing:border-box!important;
+}

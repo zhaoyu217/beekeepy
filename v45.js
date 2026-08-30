@@ -11492,8 +11492,72 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     upsert(s,a);save(s);window.__b38Draft=null;go('actions');
   };
 
-  function detailHTML(a){
+  
+  function b38DetailDraftFor(a){
+    const existing=window.__b38ResultDraft;
+    if(existing && existing.actionId===a.id) return existing;
+    const r=a.resultData||{};
+    const task=a.workflowData?.taskType||a.title||'Queen Management';
+    const d={
+      actionId:a.id,
+      queenAccepted:r.queenAccepted||'Not checked',
+      queenSeen:r.queenSeen||'Not checked',
+      eggsPresent:r.eggsPresent||'Not checked',
+      layingPattern:r.layingPattern||'Not checked',
+      completedDate:r.completedDate||TODAY(),
+      requireFollowUp:(a.status==='Follow-up'||BIO_FOLLOW.has(task)),
+      followUpDate:a.followUpDate||''
+    };
+    window.__b38ResultDraft=d;
+    return d;
+  }
+
+  window.b38DetailFieldChanged=function(field,value){
+    const d=window.__b38ResultDraft;
+    if(!d)return;
+    d[field]=value;
+  };
+
+  window.b38DetailFollowChanged=function(input){
+    const d=window.__b38ResultDraft;
+    if(!d)return;
+    d.requireFollowUp=!!input?.checked;
+  };
+
+  function b38RecoverDetailDraftFromDOM(actionId){
+    const raw=(location.hash||'').slice(1);
+    if(raw!=='queen-action/'+actionId)return;
+    const d=window.__b38ResultDraft;
+    if(!d || d.actionId!==actionId)return;
+
+    const accepted=idq('b38-accepted');
+    const seen=idq('b38-seen');
+    const eggs=idq('b38-eggs');
+    const laying=idq('b38-laying');
+    const completed=idq('b38-completed');
+    const follow=idq('b38-follow');
+    const followDate=idq('b38-follow-date');
+
+    if(accepted)d.queenAccepted=accepted.value;
+    if(seen)d.queenSeen=seen.value;
+    if(eggs)d.eggsPresent=eggs.value;
+    if(laying)d.layingPattern=laying.value;
+    if(completed)d.completedDate=completed.value||TODAY();
+    if(follow)d.requireFollowUp=!!follow.checked;
+    if(followDate)d.followUpDate=followDate.value||'';
+  }
+
+function detailHTML(a){
     const s=S(),h=hive(s,a.hiveId)||s.hives[0],r=a.resultData||{},task=a.workflowData?.taskType||a.title||'Queen Management',done=a.status==='Completed';
+    const d=done?{
+      queenAccepted:r.queenAccepted||'Not checked',
+      queenSeen:r.queenSeen||'Not checked',
+      eggsPresent:r.eggsPresent||'Not checked',
+      layingPattern:r.layingPattern||'Not checked',
+      completedDate:r.completedDate||TODAY(),
+      requireFollowUp:false,
+      followUpDate:a.followUpDate||''
+    }:b38DetailDraftFor(a);
     return `<div class="b37-page b38-page b38-detail-page">
       <section class="b37-intro b38-intro"><div><b>Queen management</b><small>Management completion does not by itself confirm biological queen success.</small></div></section>
 
@@ -11527,49 +11591,49 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
         <label class="b37-field">
           <span>Queen Accepted</span>
-          <select id="b38-accepted" ${done?'disabled':''}>
-            <option ${opt(r.queenAccepted,'Not checked')}>Not checked</option>
-            <option ${opt(r.queenAccepted,'Yes')}>Yes</option>
-            <option ${opt(r.queenAccepted,'No')}>No</option>
-            <option ${opt(r.queenAccepted,'Uncertain')}>Uncertain</option>
+          <select id="b38-accepted" ${done?'disabled':''} onchange="b38DetailFieldChanged('queenAccepted',this.value)">
+            <option ${opt(d.queenAccepted,'Not checked')}>Not checked</option>
+            <option ${opt(d.queenAccepted,'Yes')}>Yes</option>
+            <option ${opt(d.queenAccepted,'No')}>No</option>
+            <option ${opt(d.queenAccepted,'Uncertain')}>Uncertain</option>
           </select>
         </label>
 
         <label class="b37-field">
           <span>Queen Seen</span>
-          <select id="b38-seen" ${done?'disabled':''}>
-            <option ${opt(r.queenSeen,'Not checked')}>Not checked</option>
-            <option ${opt(r.queenSeen,'Yes')}>Yes</option>
-            <option ${opt(r.queenSeen,'No')}>No</option>
+          <select id="b38-seen" ${done?'disabled':''} onchange="b38DetailFieldChanged('queenSeen',this.value)">
+            <option ${opt(d.queenSeen,'Not checked')}>Not checked</option>
+            <option ${opt(d.queenSeen,'Yes')}>Yes</option>
+            <option ${opt(d.queenSeen,'No')}>No</option>
           </select>
         </label>
 
         <label class="b37-field">
           <span>Eggs Present</span>
-          <select id="b38-eggs" ${done?'disabled':''}>
-            <option ${opt(r.eggsPresent,'Not checked')}>Not checked</option>
-            <option ${opt(r.eggsPresent,'Yes')}>Yes</option>
-            <option ${opt(r.eggsPresent,'No')}>No</option>
+          <select id="b38-eggs" ${done?'disabled':''} onchange="b38DetailFieldChanged('eggsPresent',this.value)">
+            <option ${opt(d.eggsPresent,'Not checked')}>Not checked</option>
+            <option ${opt(d.eggsPresent,'Yes')}>Yes</option>
+            <option ${opt(d.eggsPresent,'No')}>No</option>
           </select>
         </label>
 
         <label class="b37-field">
           <span>Laying Pattern</span>
-          <select id="b38-laying" ${done?'disabled':''}>
-            <option ${opt(r.layingPattern,'Not checked')}>Not checked</option>
-            <option ${opt(r.layingPattern,'Good')}>Good</option>
-            <option ${opt(r.layingPattern,'Spotty')}>Spotty</option>
-            <option ${opt(r.layingPattern,'Poor')}>Poor</option>
-            <option ${opt(r.layingPattern,'None')}>None</option>
+          <select id="b38-laying" ${done?'disabled':''} onchange="b38DetailFieldChanged('layingPattern',this.value)">
+            <option ${opt(d.layingPattern,'Not checked')}>Not checked</option>
+            <option ${opt(d.layingPattern,'Good')}>Good</option>
+            <option ${opt(d.layingPattern,'Spotty')}>Spotty</option>
+            <option ${opt(d.layingPattern,'Poor')}>Poor</option>
+            <option ${opt(d.layingPattern,'None')}>None</option>
           </select>
         </label>
 
         <label class="b37-field">
           <span>Completed Date</span>
           <div class="b38-detail-date-shell">
-            <span class="b38-detail-date-display" id="b38-completed-display">${fmtDate(r.completedDate||TODAY())}</span>
-            <input id="b38-completed" type="date" value="${E(r.completedDate||TODAY())}" ${done?'disabled':''}
-              onchange="b38SyncDetailDate('b38-completed-display',this.value)">
+            <span class="b38-detail-date-display" id="b38-completed-display">${fmtDate(d.completedDate||TODAY())}</span>
+            <input id="b38-completed" type="date" value="${E(d.completedDate||TODAY())}" ${done?'disabled':''}
+              onchange="b38DetailFieldChanged('completedDate',this.value);b38SyncDetailDate('b38-completed-display',this.value)">
           </div>
         </label>
 
@@ -11582,15 +11646,15 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
           <div class="b37-hint">${BIO_FOLLOW.has(task)?'Recommended':'Optional'}</div>
         </div>
         <label class="b38-detail-follow-toggle">
-          <input id="b38-follow" type="checkbox" ${a.status==='Follow-up'||BIO_FOLLOW.has(task)?'checked':''}>
+          <input id="b38-follow" type="checkbox" ${d.requireFollowUp?'checked':''} onchange="b38DetailFollowChanged(this)">
           <span>Require biological follow-up</span>
         </label>
         <label class="b37-field b38-follow-date-field">
           <span>Follow-up Date</span>
           <div class="b38-detail-date-shell">
-            <span class="b38-detail-date-display" id="b38-follow-date-display">${a.followUpDate?fmtDate(a.followUpDate):'mm/dd/yyyy'}</span>
-            <input id="b38-follow-date" type="date" value="${E(a.followUpDate||'')}"
-              onchange="b38SyncDetailDate('b38-follow-date-display',this.value,'mm/dd/yyyy')">
+            <span class="b38-detail-date-display" id="b38-follow-date-display">${d.followUpDate?fmtDate(d.followUpDate):'mm/dd/yyyy'}</span>
+            <input id="b38-follow-date" type="date" value="${E(d.followUpDate||'')}"
+              onchange="b38DetailFieldChanged('followUpDate',this.value);b38SyncDetailDate('b38-follow-date-display',this.value,'mm/dd/yyyy')">
           </div>
         </label>
       </section>`}
@@ -11627,6 +11691,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const raw=(location.hash||'#home').slice(1),parts=raw.split('/'),page=parts[0],id=parts[1]||'';
     if(page!=='queen-action')return prevRender();
     if(id==='new')b38RecoverDraftFromDOM();
+    else b38RecoverDetailDraftFromDOM(id);
     const r=idq('view');if(!r)return;r.className='view secondary';
     if(id==='new')r.innerHTML=createHTML();else{const a=find(S(),id);r.innerHTML=a?detailHTML(a):'<div class="b37-page"><section class="b37-card">Queen Management action not found.</section></div>'}
     const top=idq('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Queen Management</div><span></span>`}

@@ -11415,6 +11415,11 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     window.__b38Draft=window.__b38Draft||{};
     window.__b38Draft.priority=select?.value||'Medium';
   };
+  window.b38NotesChanged=function(textarea){
+    window.__b38Draft=window.__b38Draft||{};
+    window.__b38Draft.notes=textarea?.value||'';
+  };
+
 
 
 
@@ -11425,12 +11430,14 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const sourceEl=idq('b38-source');
     const methodEl=idq('b38-method');
     const priorityEl=idq('b38-priority');
-    if(!hiveEl&&!sourceEl&&!methodEl&&!priorityEl)return;
+    const notesEl=idq('b38-notes');
+    if(!hiveEl&&!sourceEl&&!methodEl&&!priorityEl&&!notesEl)return;
     window.__b38Draft=window.__b38Draft||{};
     if(hiveEl)window.__b38Draft.hiveId=hiveEl.value||window.__b38Draft.hiveId||'';
     if(sourceEl)window.__b38Draft.queenSource=sourceEl.value||'Not specified';
     if(methodEl)window.__b38Draft.introductionMethod=methodEl.value||'Not specified';
     if(priorityEl)window.__b38Draft.priority=priorityEl.value||'Medium';
+    if(notesEl)window.__b38Draft.notes=notesEl.value||'';
   };
 
   function createHTML(){
@@ -11440,6 +11447,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const selectedQueenSource=d.queenSource||'Not specified';
     const selectedIntroMethod=d.introductionMethod||'Not specified';
     const selectedPriority=d.priority||'Medium';
+    const selectedNotes=d.notes||'';
     const hops=s.hives.filter(x=>!['Archived','Combined'].includes(x.status)).map(x=>`<option value="${E(x.id)}" ${x.id===h.id?'selected':''}>${E(x.name)}</option>`).join('');
     return `<div class="b37-page b38-page">
       <section class="b37-intro b38-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Manage your queen</div><div class="b37-intro-sub">Plan, record and verify queen management actions. Biological queen status is confirmed by Inspection evidence.</div></div></section>
@@ -11474,13 +11482,13 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 <option ${selectedPriority==='High'?'selected':''}>High</option>
 </select></label>
       </div></section>
-      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b38-notes" placeholder="Add a note for your next apiary visit..."></textarea></label></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b38-notes" placeholder="Add a note for your next apiary visit..." oninput="b38NotesChanged(this)">${E(selectedNotes)}</textarea></label></section>
       <div class="b37-footer"><button class="b37-primary" onclick="b38CreateAction()">Create Action</button></div>
     </div>`;
   }
   window.b38CreateAction=function(){
     const s=S(),task=window.__b38Draft?.taskType||document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=window.__b38Draft?.dueDate||idq('b38-due')?.value||TODAY();
-    const a={id:'queen-action-'+Date.now(),hiveId:window.__b38Draft?.hiveId||idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:window.__b38Draft?.priority||idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:window.__b38Draft?.queenSource||idq('b38-source').value,introductionMethod:window.__b38Draft?.introductionMethod||idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:idq('b38-notes').value||''};
+    const a={id:'queen-action-'+Date.now(),hiveId:window.__b38Draft?.hiveId||idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:window.__b38Draft?.priority||idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:window.__b38Draft?.queenSource||idq('b38-source').value,introductionMethod:window.__b38Draft?.introductionMethod||idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:(window.__b38Draft?.notes ?? idq('b38-notes').value ?? '')};
     upsert(s,a);save(s);window.__b38Draft=null;go('actions');
   };
 

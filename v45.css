@@ -5800,3 +5800,22 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
 .b38-task.active{background:#5E7350;color:#fff;border-color:#5E7350}
 .b38-check{display:flex;align-items:center;gap:7px;margin:3px 0 9px;font-size:10px;font-weight:700;color:#566158}.b38-check input{width:auto;height:auto}
 .b38-note{margin-top:8px;padding:8px 9px;border-radius:10px;background:#FFF6D9;color:#6B5A22;font-size:10px;font-weight:700}
+
+
+/* V224B38A — visual class correction only; inherit locked V224B37W structure */
+.b38-page .b38-task.active{
+  background:#5E7350!important;
+  border-color:#5E7350!important;
+  color:#fff!important;
+}
+.b38-page #b38-due,
+.b38-page #b38-priority{
+  width:100%!important;
+  height:42px!important;
+  min-height:42px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+}
+.b38-page .b37-grid2{
+  align-items:start!important;
+}

@@ -11390,17 +11390,18 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const s=S(),d=window.__b38Draft||{},h=s.hives.find(x=>x.id===d.hiveId)||s.hives[0];
     const hops=s.hives.filter(x=>!['Archived','Combined'].includes(x.status)).map(x=>`<option value="${E(x.id)}" ${x.id===h.id?'selected':''}>${E(x.name)}</option>`).join('');
     return `<div class="b37-page b38-page">
-      <section class="b37-intro b38-intro"><div><b>Plan queen work</b><small>Record the management step now. Biological queen status is confirmed by Inspection evidence.</small></div></section>
-      <section class="b37-card"><div class="b37-section-title"><b>HIVE</b><span>Select target hive</span></div><div class="b37-field"><select id="b38-hive">${hops}</select></div></section>
-      <section class="b37-card"><div class="b37-section-title"><b>QUEEN ACTION</b><span>Planned work</span></div><div class="b38-task-grid">${TASKS.map((t,i)=>`<button type="button" class="b38-task ${i===0?'active':''}" data-task="${E(t)}" onclick="b38SelectTask(this)">${E(t)}</button>`).join('')}</div></section>
-      <section class="b37-card"><div class="b37-section-title"><b>PLAN</b><span>Optional context</span></div>
-        <div class="b37-field"><label>Queen Source</label><select id="b38-source"><option>Not specified</option><option>Purchased</option><option>Raised in apiary</option><option>From another hive</option><option>Other</option></select></div>
-        <div class="b37-field"><label>Introduction Method</label><select id="b38-method"><option>Not specified</option><option>Caged introduction</option><option>Direct introduction</option><option>Queen cell</option><option>Other</option></select></div>
+      <section class="b37-intro b38-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Manage your queen</div><div class="b37-intro-sub">Plan, record and verify queen management actions. Biological queen status is confirmed by Inspection evidence.</div></div></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Select target hive</div></div><label class="b37-field"><select id="b38-hive" aria-label="Hive">${hops}</select></label></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Queen Action</div><div class="b37-hint">Planned work</div></div><div class="b38-task-grid">${TASKS.map((t,i)=>`<button type="button" class="b38-task ${i===0?'active':''}" data-task="${E(t)}" onclick="b38SelectTask(this)">${E(t)}</button>`).join('')}</div></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Plan</div><div class="b37-hint">Optional context</div></div>
+        <label class="b37-field"><span>Queen Source</span><select id="b38-source"><option>Not specified</option><option>Purchased</option><option>Raised in apiary</option><option>From another hive</option><option>Other</option></select></label>
+        <label class="b37-field"><span>Introduction Method</span><select id="b38-method"><option>Not specified</option><option>Caged introduction</option><option>Direct introduction</option><option>Queen cell</option><option>Other</option></select></label>
       </section>
-      <section class="b37-card"><div class="b37-section-title"><b>SCHEDULE</b><span>When to do it</span></div><div class="b37-grid2">
-        <div class="b37-field"><label>Due Date</label><input id="b38-due" type="date" value="${TODAY()}"></div><div class="b37-field"><label>Priority</label><select id="b38-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></div>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2">
+        <label class="b37-field"><span>Due Date</span><input id="b38-due" type="date" value="${TODAY()}"></label>
+        <label class="b37-field"><span>Priority</span><select id="b38-priority"><option>Low</option><option selected>Medium</option><option>High</option></select></label>
       </div></section>
-      <section class="b37-card"><div class="b37-section-title"><b>NOTES</b><span>Optional</span></div><div class="b37-field"><textarea id="b38-notes" placeholder="Add a note for your next apiary visit..."></textarea></div></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b38-notes" placeholder="Add a note for your next apiary visit..."></textarea></label></section>
       <div class="b37-footer"><button class="b37-primary" onclick="b38CreateAction()">Create Action</button></div>
     </div>`;
   }

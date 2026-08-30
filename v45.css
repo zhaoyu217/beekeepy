@@ -6481,3 +6481,40 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   display:block!important;
   visibility:visible!important;
 }
+
+
+/* V224B38K — Queen Due Date native-text physical mask ONLY */
+.b38-page .b38-date-shell{
+  isolation:isolate!important;
+}
+
+/* Opaque mask over Chromium's native date glyphs.
+   Stops before the calendar icon hit/paint area. */
+.b38-page .b38-date-shell::after{
+  content:""!important;
+  position:absolute!important;
+  z-index:3!important;
+  left:1px!important;
+  top:1px!important;
+  bottom:1px!important;
+  right:34px!important;
+  background:#FBFBF8!important;
+  border-radius:10px 0 0 10px!important;
+  pointer-events:none!important;
+}
+
+/* Our single visible date layer sits above the mask. */
+.b38-page .b38-date-display{
+  z-index:4!important;
+  left:11px!important;
+  top:50%!important;
+  transform:translateY(-50%)!important;
+  line-height:1!important;
+  text-shadow:none!important;
+}
+
+/* Native input remains the interaction layer underneath.
+   Its calendar area on the right is not covered by the mask. */
+.b38-page .b38-date-shell #b38-due{
+  z-index:2!important;
+}

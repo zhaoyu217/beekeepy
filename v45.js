@@ -11418,6 +11418,21 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
 
 
+  function b38RecoverDraftFromDOM(){
+    const raw=(location.hash||'').slice(1);
+    if(raw!=='queen-action/new')return;
+    const hiveEl=idq('b38-hive');
+    const sourceEl=idq('b38-source');
+    const methodEl=idq('b38-method');
+    const priorityEl=idq('b38-priority');
+    if(!hiveEl&&!sourceEl&&!methodEl&&!priorityEl)return;
+    window.__b38Draft=window.__b38Draft||{};
+    if(hiveEl)window.__b38Draft.hiveId=hiveEl.value||window.__b38Draft.hiveId||'';
+    if(sourceEl)window.__b38Draft.queenSource=sourceEl.value||'Not specified';
+    if(methodEl)window.__b38Draft.introductionMethod=methodEl.value||'Not specified';
+    if(priorityEl)window.__b38Draft.priority=priorityEl.value||'Medium';
+  };
+
   function createHTML(){
     const s=S(),d=window.__b38Draft||{},h=s.hives.find(x=>x.id===d.hiveId)||s.hives[0];
     const selectedTask=d.taskType||'Requeen';
@@ -11513,6 +11528,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   window.render=function(){
     const raw=(location.hash||'#home').slice(1),parts=raw.split('/'),page=parts[0],id=parts[1]||'';
     if(page!=='queen-action')return prevRender();
+    if(id==='new')b38RecoverDraftFromDOM();
     const r=idq('view');if(!r)return;r.className='view secondary';
     if(id==='new')r.innerHTML=createHTML();else{const a=find(S(),id);r.innerHTML=a?detailHTML(a):'<div class="b37-page"><section class="b37-card">Queen Management action not found.</section></div>'}
     const top=idq('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Queen Management</div><span></span>`}

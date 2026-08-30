@@ -11566,7 +11566,11 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
         <label class="b37-field">
           <span>Completed Date</span>
-          <input id="b38-completed" type="date" value="${E(r.completedDate||TODAY())}" ${done?'disabled':''}>
+          <div class="b38-detail-date-shell">
+            <span class="b38-detail-date-display" id="b38-completed-display">${fmtDate(r.completedDate||TODAY())}</span>
+            <input id="b38-completed" type="date" value="${E(r.completedDate||TODAY())}" ${done?'disabled':''}
+              onchange="b38SyncDetailDate('b38-completed-display',this.value)">
+          </div>
         </label>
 
         ${done?'<div class="b38-note">Management action completed. Inspection remains the biological evidence source.</div>':''}
@@ -11583,13 +11587,21 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
         </label>
         <label class="b37-field b38-follow-date-field">
           <span>Follow-up Date</span>
-          <input id="b38-follow-date" type="date" value="${E(a.followUpDate||'')}">
+          <div class="b38-detail-date-shell">
+            <span class="b38-detail-date-display" id="b38-follow-date-display">${a.followUpDate?fmtDate(a.followUpDate):'mm/dd/yyyy'}</span>
+            <input id="b38-follow-date" type="date" value="${E(a.followUpDate||'')}"
+              onchange="b38SyncDetailDate('b38-follow-date-display',this.value,'mm/dd/yyyy')">
+          </div>
         </label>
       </section>`}
 
       <div class="b37-footer">${done?'<button class="b37-secondary" onclick="go(\'actions\')">Back to Actions</button>':`<button class="b37-primary" onclick="b38SaveResult('${E(a.id)}')">${BIO_FOLLOW.has(task)?'Save Result':'Complete Action'}</button>`}</div>
     </div>`;
   }
+  window.b38SyncDetailDate=function(displayId,value,emptyText=''){
+    const el=document.getElementById(displayId);
+    if(el)el.textContent=value?fmtDate(value):emptyText;
+  };
   window.b38SaveResult=function(id){
     const s=S(),a=find(s,id);if(!a||a.status==='Completed')return;
     a.resultData={queenAccepted:idq('b38-accepted').value,queenSeen:idq('b38-seen').value,eggsPresent:idq('b38-eggs').value,layingPattern:idq('b38-laying').value,completedDate:idq('b38-completed').value||TODAY()};

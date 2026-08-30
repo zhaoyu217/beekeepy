@@ -11494,21 +11494,99 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
   function detailHTML(a){
     const s=S(),h=hive(s,a.hiveId)||s.hives[0],r=a.resultData||{},task=a.workflowData?.taskType||a.title||'Queen Management',done=a.status==='Completed';
-    return `<div class="b37-page b38-page">
+    return `<div class="b37-page b38-page b38-detail-page">
       <section class="b37-intro b38-intro"><div><b>Queen management</b><small>Management completion does not by itself confirm biological queen success.</small></div></section>
-      <section class="b37-card"><div class="b37-section-title"><b>HIVE</b><span>${E(h?.name||a.hiveId)}</span></div></section>
-      <section class="b37-card"><div class="b37-section-title"><b>PLAN</b><span class="b37-state">${E(a.status)}</span></div>
-        <div class="b37-meta"><span>Action</span><b>${E(task)}</b><span>Queen source</span><b>${E(a.workflowData?.queenSource||'Not specified')}</b><span>Introduction</span><b>${E(a.workflowData?.introductionMethod||'Not specified')}</b><span>Due</span><b>${E(a.dueDate||a.due||'')}</b><span>Priority</span><b>${E(a.priority||'Medium')}</b></div>
+
+      <section class="b37-card b38-detail-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Hive</div>
+          <div class="b37-hint">Target hive</div>
+        </div>
+        <div class="b38-detail-hive">${E(h?.name||a.hiveId)}</div>
       </section>
-      <section class="b37-card"><div class="b37-section-title"><b>RESULT</b><span>Actual result</span></div>
-        <div class="b37-field"><label>Queen Accepted</label><select id="b38-accepted" ${done?'disabled':''}><option ${opt(r.queenAccepted,'Not checked')}>Not checked</option><option ${opt(r.queenAccepted,'Yes')}>Yes</option><option ${opt(r.queenAccepted,'No')}>No</option><option ${opt(r.queenAccepted,'Uncertain')}>Uncertain</option></select></div>
-        <div class="b37-field"><label>Queen Seen</label><select id="b38-seen" ${done?'disabled':''}><option ${opt(r.queenSeen,'Not checked')}>Not checked</option><option ${opt(r.queenSeen,'Yes')}>Yes</option><option ${opt(r.queenSeen,'No')}>No</option></select></div>
-        <div class="b37-field"><label>Eggs Present</label><select id="b38-eggs" ${done?'disabled':''}><option ${opt(r.eggsPresent,'Not checked')}>Not checked</option><option ${opt(r.eggsPresent,'Yes')}>Yes</option><option ${opt(r.eggsPresent,'No')}>No</option></select></div>
-        <div class="b37-field"><label>Laying Pattern</label><select id="b38-laying" ${done?'disabled':''}><option ${opt(r.layingPattern,'Not checked')}>Not checked</option><option ${opt(r.layingPattern,'Good')}>Good</option><option ${opt(r.layingPattern,'Spotty')}>Spotty</option><option ${opt(r.layingPattern,'Poor')}>Poor</option><option ${opt(r.layingPattern,'None')}>None</option></select></div>
-        <div class="b37-field"><label>Completed Date</label><input id="b38-completed" type="date" value="${E(r.completedDate||TODAY())}" ${done?'disabled':''}></div>
+
+      <section class="b37-card b38-detail-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Plan</div>
+          <div class="b38-status-pill">${E(a.status)}</div>
+        </div>
+        <div class="b38-plan-list">
+          <div class="b38-plan-row"><span>Action</span><b>${E(task)}</b></div>
+          <div class="b38-plan-row"><span>Queen source</span><b>${E(a.workflowData?.queenSource||'Not specified')}</b></div>
+          <div class="b38-plan-row"><span>Introduction</span><b>${E(a.workflowData?.introductionMethod||'Not specified')}</b></div>
+          <div class="b38-plan-row"><span>Due</span><b>${E(a.dueDate||a.due||'')}</b></div>
+          <div class="b38-plan-row"><span>Priority</span><b>${E(a.priority||'Medium')}</b></div>
+        </div>
+      </section>
+
+      <section class="b37-card b38-detail-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Result</div>
+          <div class="b37-hint">Actual result</div>
+        </div>
+
+        <label class="b37-field">
+          <span>Queen Accepted</span>
+          <select id="b38-accepted" ${done?'disabled':''}>
+            <option ${opt(r.queenAccepted,'Not checked')}>Not checked</option>
+            <option ${opt(r.queenAccepted,'Yes')}>Yes</option>
+            <option ${opt(r.queenAccepted,'No')}>No</option>
+            <option ${opt(r.queenAccepted,'Uncertain')}>Uncertain</option>
+          </select>
+        </label>
+
+        <label class="b37-field">
+          <span>Queen Seen</span>
+          <select id="b38-seen" ${done?'disabled':''}>
+            <option ${opt(r.queenSeen,'Not checked')}>Not checked</option>
+            <option ${opt(r.queenSeen,'Yes')}>Yes</option>
+            <option ${opt(r.queenSeen,'No')}>No</option>
+          </select>
+        </label>
+
+        <label class="b37-field">
+          <span>Eggs Present</span>
+          <select id="b38-eggs" ${done?'disabled':''}>
+            <option ${opt(r.eggsPresent,'Not checked')}>Not checked</option>
+            <option ${opt(r.eggsPresent,'Yes')}>Yes</option>
+            <option ${opt(r.eggsPresent,'No')}>No</option>
+          </select>
+        </label>
+
+        <label class="b37-field">
+          <span>Laying Pattern</span>
+          <select id="b38-laying" ${done?'disabled':''}>
+            <option ${opt(r.layingPattern,'Not checked')}>Not checked</option>
+            <option ${opt(r.layingPattern,'Good')}>Good</option>
+            <option ${opt(r.layingPattern,'Spotty')}>Spotty</option>
+            <option ${opt(r.layingPattern,'Poor')}>Poor</option>
+            <option ${opt(r.layingPattern,'None')}>None</option>
+          </select>
+        </label>
+
+        <label class="b37-field">
+          <span>Completed Date</span>
+          <input id="b38-completed" type="date" value="${E(r.completedDate||TODAY())}" ${done?'disabled':''}>
+        </label>
+
         ${done?'<div class="b38-note">Management action completed. Inspection remains the biological evidence source.</div>':''}
       </section>
-      ${done?'':`<section class="b37-card"><div class="b37-section-title"><b>FOLLOW-UP</b><span>${BIO_FOLLOW.has(task)?'Recommended':'Optional'}</span></div><label class="b38-check"><input id="b38-follow" type="checkbox" ${a.status==='Follow-up'||BIO_FOLLOW.has(task)?'checked':''}> Require biological follow-up</label><div class="b37-field"><label>Follow-up Date</label><input id="b38-follow-date" type="date" value="${E(a.followUpDate||'')}"></div></section>`}
+
+      ${done?'':`<section class="b37-card b38-detail-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Follow-up</div>
+          <div class="b37-hint">${BIO_FOLLOW.has(task)?'Recommended':'Optional'}</div>
+        </div>
+        <label class="b38-detail-follow-toggle">
+          <input id="b38-follow" type="checkbox" ${a.status==='Follow-up'||BIO_FOLLOW.has(task)?'checked':''}>
+          <span>Require biological follow-up</span>
+        </label>
+        <label class="b37-field b38-follow-date-field">
+          <span>Follow-up Date</span>
+          <input id="b38-follow-date" type="date" value="${E(a.followUpDate||'')}">
+        </label>
+      </section>`}
+
       <div class="b37-footer">${done?'<button class="b37-secondary" onclick="go(\'actions\')">Back to Actions</button>':`<button class="b37-primary" onclick="b38SaveResult('${E(a.id)}')">${BIO_FOLLOW.has(task)?'Save Result':'Complete Action'}</button>`}</div>
     </div>`;
   }

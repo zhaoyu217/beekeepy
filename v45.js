@@ -11767,31 +11767,57 @@ function detailHTML(a){
   };
   const activeHives=s=>(s.hives||[]).filter(h=>!h.archived && String(h.status||'').toLowerCase()!=='combined');
 
+  const B39_DRAFT_KEY='hivedash_b39_split_create_draft';
+
+  function b39LoadPersistedDraft(){
+    try{
+      const raw=localStorage.getItem(B39_DRAFT_KEY);
+      if(!raw)return null;
+      const d=JSON.parse(raw);
+      return d&&typeof d==='object'?d:null;
+    }catch(_){
+      return null;
+    }
+  }
+
+  function b39PersistDraft(d){
+    try{
+      localStorage.setItem(B39_DRAFT_KEY,JSON.stringify(d||{}));
+    }catch(_){}
+  }
+
+  function b39ClearPersistedDraft(){
+    try{localStorage.removeItem(B39_DRAFT_KEY)}catch(_){}
+  }
+
   function initDraft(){
     const s=S(),hs=activeHives(s);
     if(!window.__b39Draft){
+      const persisted=b39LoadPersistedDraft()||{};
       window.__b39Draft={
-        hiveId:hs[0]?.id||'',
-        colonyStrength:'Not checked',
-        broodAvailability:'Not checked',
-        foodStores:'Not checked',
-        queenPlan:'Not decided',
-        plannedBroodFrames:2,
-        plannedFoodFrames:1,
-        newHiveName:'',
-        dueDate:TODAY(),
-        priority:'Medium',
-        notes:''
+        hiveId:persisted.hiveId??hs[0]?.id??'',
+        colonyStrength:persisted.colonyStrength??'Not checked',
+        broodAvailability:persisted.broodAvailability??'Not checked',
+        foodStores:persisted.foodStores??'Not checked',
+        queenPlan:persisted.queenPlan??'Not decided',
+        plannedBroodFrames:Number.isFinite(Number(persisted.plannedBroodFrames))?Number(persisted.plannedBroodFrames):2,
+        plannedFoodFrames:Number.isFinite(Number(persisted.plannedFoodFrames))?Number(persisted.plannedFoodFrames):1,
+        newHiveName:persisted.newHiveName??'',
+        dueDate:persisted.dueDate??TODAY(),
+        priority:persisted.priority??'Medium',
+        notes:persisted.notes??''
       };
     }
     const d=window.__b39Draft;
     if(!hs.some(h=>String(h.id)===String(d.hiveId))) d.hiveId=hs[0]?.id||'';
+    b39PersistDraft(d);
     return d;
   }
 
   function setDraft(field,value){
     const d=initDraft();
     d[field]=value;
+    b39PersistDraft(d);
   }
   window.b39SetDraft=function(field,value){ setDraft(field,value); };
 
@@ -11799,6 +11825,7 @@ function detailHTML(a){
     const d=initDraft();
     const limits=field==='plannedFoodFrames'?[0,10]:[1,10];
     d[field]=Math.max(limits[0],Math.min(limits[1],Number(d[field]||0)+Number(delta||0)));
+    b39PersistDraft(d);
     const el=idq(field==='plannedFoodFrames'?'b39-food-frames':'b39-brood-frames');
     if(el)el.textContent=String(d[field]);
   };
@@ -11806,6 +11833,7 @@ function detailHTML(a){
   window.b39SyncDate=function(input){
     const d=initDraft();
     d.dueDate=input?.value||TODAY();
+    b39PersistDraft(d);
     const display=idq('b39-due-display');
     if(display)display.textContent=fmtDate(d.dueDate);
   };
@@ -11829,6 +11857,7 @@ function detailHTML(a){
       const el=idq(id);
       if(el) d[key]=el.value;
     });
+    b39PersistDraft(d);
   }
 
   function options(items,selected){
@@ -12023,15 +12052,20 @@ function detailHTML(a){
       if(i>=0)s.actions[i]=a; else s.actions.push(a);
     }
     save(s);
+    b39ClearPersistedDraft();
     window.__b39Draft=null;
     go('actions');
   };
 
   window.b39OpenSplitAction=function(hiveId=''){
     const s=S(),hs=activeHives(s);
+    b39ClearPersistedDraft();
     window.__b39Draft=null;
     const d=initDraft();
-    if(hiveId && hs.some(h=>String(h.id)===String(hiveId))) d.hiveId=hiveId;
+    if(hiveId && hs.some(h=>String(h.id)===String(hiveId))){
+      d.hiveId=hiveId;
+      b39PersistDraft(d);
+    }
     go('split-action/new');
   };
 

@@ -6818,3 +6818,32 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   display:block!important;
   visibility:visible!important;
 }
+
+
+/* V224B38Y — Completed Detail Back to Actions visual ONLY */
+.b38-detail-page .b37-secondary{
+  display:block!important;
+  width:100%!important;
+  min-height:46px!important;
+  box-sizing:border-box!important;
+  margin:12px 0 0!important;
+  padding:0 16px!important;
+  border:0!important;
+  border-radius:11px!important;
+  background:#C5921A!important;
+  color:#FFFFFF!important;
+  font:800 12px/1 Inter,Arial,sans-serif!important;
+  text-align:center!important;
+  box-shadow:0 6px 14px rgba(197,146,26,.18)!important;
+  cursor:pointer!important;
+  appearance:none!important;
+  -webkit-appearance:none!important;
+}
+.b38-detail-page .b37-secondary:hover,
+.b38-detail-page .b37-secondary:focus,
+.b38-detail-page .b37-secondary:active{
+  background:#C5921A!important;
+  color:#FFFFFF!important;
+  outline:none!important;
+  transform:none!important;
+}

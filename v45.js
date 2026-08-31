@@ -11304,12 +11304,36 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   if(typeof oldTimelineRows==='function'){
     window.v49TimelineRows=function(hiveId=''){
       const rows=oldTimelineRows(hiveId),s=v45s();
-      const completed=(s.meta?.completedActions||[]).filter(a=>a&&a.type==='super-management'&&a.status==='Completed'&&(!hiveId||a.hiveId===hiveId));
-      completed.forEach(a=>{
+
+      const completedSupers=(s.meta?.completedActions||[]).filter(a=>a&&a.type==='super-management'&&a.status==='Completed'&&(!hiveId||a.hiveId===hiveId));
+      completedSupers.forEach(a=>{
         const op=a.resultData?.operation||a.workflowData?.operation||'add',n=Number(a.resultData?.numberOfSupers||0),date=a.resultData?.completedDate||String(a.completedAt||'').slice(0,10);
         const key='Super:'+String(a.id);if(rows.some(r=>r.key===key))return;
         rows.push({key,type:'Super',hiveId:a.hiveId,date,detail:`${op==='add'?'Added':'Removed'} ${n} super${n===1?'':'s'}`,img:'',savedAt:a.completedAt||'',sourceId:String(a.id||'')});
       });
+
+      /* V224B38Z — Queen Management completed Action -> Timeline projection only.
+         This is a read-only management event projection from the durable Completed
+         Action archive. It does NOT create an Inspection record and does NOT alter
+         Queen biological evidence, Health Model inputs, or hive biological state. */
+      const completedQueens=(s.meta?.completedActions||[]).filter(a=>a&&a.type==='queen-management'&&a.status==='Completed'&&(!hiveId||a.hiveId===hiveId));
+      completedQueens.forEach(a=>{
+        const task=a.workflowData?.taskType||a.title||'Queen Management';
+        const date=a.resultData?.completedDate||String(a.completedAt||'').slice(0,10);
+        const key='Queen Management:'+String(a.id);
+        if(rows.some(r=>r.key===key||String(r.sourceId||'')===String(a.id||'')))return;
+        rows.push({
+          key,
+          type:'Queen Management',
+          hiveId:a.hiveId,
+          date,
+          detail:String(task),
+          img:'',
+          savedAt:a.completedAt||'',
+          sourceId:String(a.id||'')
+        });
+      });
+
       return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
     };
     try{v49TimelineRows=window.v49TimelineRows}catch(_){ }

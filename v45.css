@@ -7424,3 +7424,54 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   box-sizing:border-box!important;
   background:transparent!important;
 }
+
+
+/* V224B39E — Hero rendered with real IMG element only */
+.b39-create-page .b39-create-hero{
+  position:relative!important;
+  min-height:94px!important;
+  margin:0 0 10px!important;
+  padding:0!important;
+  overflow:hidden!important;
+  border:1px solid rgba(47,59,51,.10)!important;
+  border-radius:16px!important;
+  background:none!important;
+}
+
+.b39-create-page .b39-hero-img{
+  position:absolute!important;
+  z-index:0!important;
+  inset:0!important;
+  width:100%!important;
+  height:100%!important;
+  object-fit:cover!important;
+  object-position:center center!important;
+  display:block!important;
+}
+
+.b39-create-page .b39-hero-shade{
+  position:absolute!important;
+  z-index:1!important;
+  inset:0!important;
+  background:linear-gradient(
+    90deg,
+    rgba(247,245,239,.97) 0%,
+    rgba(247,245,239,.90) 38%,
+    rgba(247,245,239,.30) 60%,
+    rgba(247,245,239,0) 76%
+  )!important;
+  pointer-events:none!important;
+}
+
+.b39-create-page .b39-hero-copy{
+  position:relative!important;
+  z-index:2!important;
+  width:58%!important;
+  min-height:94px!important;
+  padding:14px!important;
+  box-sizing:border-box!important;
+  display:flex!important;
+  flex-direction:column!important;
+  justify-content:center!important;
+  background:transparent!important;
+}

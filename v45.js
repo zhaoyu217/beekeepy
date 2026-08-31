@@ -11839,15 +11839,15 @@ function detailHTML(a){
     const s=S(),d=initDraft(),hs=activeHives(s);
     const hiveOptions=hs.map(h=>`<option value="${E(h.id)}" ${String(h.id)===String(d.hiveId)?'selected':''}>${E(h.name||h.id)}</option>`).join('');
 
-    return `<div class="b37-page b39-page">
-      <section class="b39-hero">
+    return `<div class="b37-page b39-page b39-create-page">
+      <section class="b39-hero b39-create-hero">
         <div class="b39-hero-copy">
           <b>Plan a hive split</b>
           <small>Plan the work now. A new hive is created only after the split is actually completed.</small>
         </div>
       </section>
 
-      <section class="b37-card">
+      <section class="b37-card b39-card">
         <div class="b37-card-head">
           <div class="b37-label">Source Hive</div>
           <div class="b37-hint">Select parent hive</div>
@@ -11858,7 +11858,7 @@ function detailHTML(a){
         </label>
       </section>
 
-      <section class="b37-card">
+      <section class="b37-card b39-card">
         <div class="b37-card-head">
           <div class="b37-label">Pre-check</div>
           <div class="b37-hint">Before planning the split</div>
@@ -11893,30 +11893,30 @@ function detailHTML(a){
         </label>
       </section>
 
-      <section class="b37-card">
+      <section class="b37-card b39-card">
         <div class="b37-card-head">
           <div class="b37-label">Split Plan</div>
           <div class="b37-hint">Planned transfer</div>
         </div>
 
-        <div class="b39-step-card">
-          <div>
-            <b>Brood Frames</b>
+        <div class="b39-count-box">
+          <div class="b39-count-head">
+            <span>Brood Frames</span>
             <small>Planned frames to transfer</small>
           </div>
-          <div class="b39-stepper">
+          <div class="b39-count-controls">
             <button type="button" onclick="b39Step('plannedBroodFrames',-1)">−</button>
             <strong id="b39-brood-frames">${Number(d.plannedBroodFrames||2)}</strong>
             <button type="button" onclick="b39Step('plannedBroodFrames',1)">+</button>
           </div>
         </div>
 
-        <div class="b39-step-card">
-          <div>
-            <b>Food Frames</b>
+        <div class="b39-count-box">
+          <div class="b39-count-head">
+            <span>Food Frames</span>
             <small>Planned frames to transfer</small>
           </div>
-          <div class="b39-stepper">
+          <div class="b39-count-controls">
             <button type="button" onclick="b39Step('plannedFoodFrames',-1)">−</button>
             <strong id="b39-food-frames">${Number(d.plannedFoodFrames||0)}</strong>
             <button type="button" onclick="b39Step('plannedFoodFrames',1)">+</button>
@@ -11924,7 +11924,7 @@ function detailHTML(a){
         </div>
       </section>
 
-      <section class="b37-card">
+      <section class="b37-card b39-card">
         <div class="b37-card-head">
           <div class="b37-label">New Hive</div>
           <div class="b37-hint">Created after successful split</div>
@@ -11937,7 +11937,7 @@ function detailHTML(a){
         <div class="b39-info">Planning this action does not create a new hive yet.</div>
       </section>
 
-      <section class="b37-card">
+      <section class="b37-card b39-card">
         <div class="b37-card-head">
           <div class="b37-label">Schedule</div>
           <div class="b37-hint">When to do it</div>
@@ -11959,7 +11959,7 @@ function detailHTML(a){
         </div>
       </section>
 
-      <section class="b37-card">
+      <section class="b37-card b39-card">
         <div class="b37-card-head">
           <div class="b37-label">Notes</div>
           <div class="b37-hint">Optional</div>
@@ -11968,7 +11968,7 @@ function detailHTML(a){
           oninput="b39SetDraft('notes',this.value)">${E(d.notes||'')}</textarea>
       </section>
 
-      <div class="b37-footer">
+      <div class="b37-footer b39-footer">
         <button class="b37-primary" onclick="b39CreateAction()">Create Action</button>
       </div>
     </div>`;
@@ -12119,16 +12119,32 @@ function detailHTML(a){
   const prevRender=window.render||render;
   window.render=function(){
     const raw=(location.hash||'#home').slice(1),parts=raw.split('/'),page=parts[0],id=parts[1]||'';
-    if(page!=='split-action')return prevRender();
 
-    if(id==='new')recoverDraftFromDOM();
+    if(page!=='split-action'){
+      window.__b39RenderedRoute=null;
+      return prevRender();
+    }
+
+    if(id==='new'){
+      recoverDraftFromDOM();
+
+      /* V224B39B — Create-page draft guard.
+         If this exact Split Hive create route is already mounted, do not let
+         periodic same-route renders destroy unsaved form state. */
+      const mounted=idq('view')?.querySelector?.('.b39-create-page');
+      if(mounted && window.__b39RenderedRoute==='split-action/new'){
+        return;
+      }
+    }
 
     const r=idq('view');if(!r)return;
     r.className='view secondary';
 
     if(id==='new'){
       r.innerHTML=createHTML();
+      window.__b39RenderedRoute='split-action/new';
     }else{
+      window.__b39RenderedRoute='split-action/'+id;
       const s=S(),a=(s.actions||[]).find(x=>x&&x.id===id);
       r.innerHTML=a?pendingHTML(a):'<div class="b37-page"><section class="b37-card">Split Hive action not found.</section></div>';
     }

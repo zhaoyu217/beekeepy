@@ -9034,7 +9034,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
        Action family alongside the unchanged Health/Decision recommendations. */
     const pendingLowFreqMap=new Map();
     (Array.isArray(s.actions)?s.actions:[])
-      .filter(a=>a&&(a.type==='super-management'||a.type==='queen-management')&&a.status!=='Completed'&&a.priority!=='Done')
+      .filter(a=>a&&(a.type==='super-management'||a.type==='queen-management'||a.type==='split-hive')&&a.status!=='Completed'&&a.priority!=='Done')
       .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`super-management-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
 
@@ -11748,3 +11748,399 @@ function detailHTML(a){
   window.__HIVEDASH_V224B38_VERSION__='224b38';
 })();
 
+
+
+/* ==============================================================
+   V224B39A — Split Hive
+   Scope: + Add Action entry + Create page + Pending persistence ONLY.
+   No actual split result, no new Hive entity, no lineage write yet.
+   ============================================================== */
+(function(){
+  const TYPE='split-hive';
+  const TODAY=()=>new Date().toISOString().slice(0,10);
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const idq=id=>document.getElementById(id);
+  const fmtDate=v=>{
+    const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'');
+  };
+  const activeHives=s=>(s.hives||[]).filter(h=>!h.archived && String(h.status||'').toLowerCase()!=='combined');
+
+  function initDraft(){
+    const s=S(),hs=activeHives(s);
+    if(!window.__b39Draft){
+      window.__b39Draft={
+        hiveId:hs[0]?.id||'',
+        colonyStrength:'Not checked',
+        broodAvailability:'Not checked',
+        foodStores:'Not checked',
+        queenPlan:'Not decided',
+        plannedBroodFrames:2,
+        plannedFoodFrames:1,
+        newHiveName:'',
+        dueDate:TODAY(),
+        priority:'Medium',
+        notes:''
+      };
+    }
+    const d=window.__b39Draft;
+    if(!hs.some(h=>String(h.id)===String(d.hiveId))) d.hiveId=hs[0]?.id||'';
+    return d;
+  }
+
+  function setDraft(field,value){
+    const d=initDraft();
+    d[field]=value;
+  }
+  window.b39SetDraft=function(field,value){ setDraft(field,value); };
+
+  window.b39Step=function(field,delta){
+    const d=initDraft();
+    const limits=field==='plannedFoodFrames'?[0,10]:[1,10];
+    d[field]=Math.max(limits[0],Math.min(limits[1],Number(d[field]||0)+Number(delta||0)));
+    const el=idq(field==='plannedFoodFrames'?'b39-food-frames':'b39-brood-frames');
+    if(el)el.textContent=String(d[field]);
+  };
+
+  window.b39SyncDate=function(input){
+    const d=initDraft();
+    d.dueDate=input?.value||TODAY();
+    const display=idq('b39-due-display');
+    if(display)display.textContent=fmtDate(d.dueDate);
+  };
+
+  function recoverDraftFromDOM(){
+    const raw=(location.hash||'').slice(1);
+    if(raw!=='split-action/new')return;
+    const d=initDraft();
+    const map=[
+      ['b39-hive','hiveId'],
+      ['b39-colony','colonyStrength'],
+      ['b39-brood','broodAvailability'],
+      ['b39-food','foodStores'],
+      ['b39-queen','queenPlan'],
+      ['b39-new-name','newHiveName'],
+      ['b39-due','dueDate'],
+      ['b39-priority','priority'],
+      ['b39-notes','notes']
+    ];
+    map.forEach(([id,key])=>{
+      const el=idq(id);
+      if(el) d[key]=el.value;
+    });
+  }
+
+  function options(items,selected){
+    return items.map(x=>`<option ${String(x)===String(selected)?'selected':''}>${E(x)}</option>`).join('');
+  }
+
+  function createHTML(){
+    const s=S(),d=initDraft(),hs=activeHives(s);
+    const hiveOptions=hs.map(h=>`<option value="${E(h.id)}" ${String(h.id)===String(d.hiveId)?'selected':''}>${E(h.name||h.id)}</option>`).join('');
+
+    return `<div class="b37-page b39-page">
+      <section class="b39-hero">
+        <div class="b39-hero-copy">
+          <b>Plan a hive split</b>
+          <small>Plan the work now. A new hive is created only after the split is actually completed.</small>
+        </div>
+      </section>
+
+      <section class="b37-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Source Hive</div>
+          <div class="b37-hint">Select parent hive</div>
+        </div>
+        <label class="b37-field">
+          <span>Hive</span>
+          <select id="b39-hive" onchange="b39SetDraft('hiveId',this.value)">${hiveOptions}</select>
+        </label>
+      </section>
+
+      <section class="b37-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Pre-check</div>
+          <div class="b37-hint">Before planning the split</div>
+        </div>
+
+        <label class="b37-field">
+          <span>Colony Strength</span>
+          <select id="b39-colony" onchange="b39SetDraft('colonyStrength',this.value)">
+            ${options(['Not checked','Strong','Moderate','Weak'],d.colonyStrength)}
+          </select>
+        </label>
+
+        <label class="b37-field">
+          <span>Brood Availability</span>
+          <select id="b39-brood" onchange="b39SetDraft('broodAvailability',this.value)">
+            ${options(['Not checked','Adequate','Limited','None'],d.broodAvailability)}
+          </select>
+        </label>
+
+        <label class="b37-field">
+          <span>Food Stores</span>
+          <select id="b39-food" onchange="b39SetDraft('foodStores',this.value)">
+            ${options(['Not checked','Adequate','Low'],d.foodStores)}
+          </select>
+        </label>
+
+        <label class="b37-field">
+          <span>Queen Plan</span>
+          <select id="b39-queen" onchange="b39SetDraft('queenPlan',this.value)">
+            ${options(['Not decided','Parent keeps queen','New hive gets queen','Queen cell','Introduce queen later'],d.queenPlan)}
+          </select>
+        </label>
+      </section>
+
+      <section class="b37-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Split Plan</div>
+          <div class="b37-hint">Planned transfer</div>
+        </div>
+
+        <div class="b39-step-card">
+          <div>
+            <b>Brood Frames</b>
+            <small>Planned frames to transfer</small>
+          </div>
+          <div class="b39-stepper">
+            <button type="button" onclick="b39Step('plannedBroodFrames',-1)">−</button>
+            <strong id="b39-brood-frames">${Number(d.plannedBroodFrames||2)}</strong>
+            <button type="button" onclick="b39Step('plannedBroodFrames',1)">+</button>
+          </div>
+        </div>
+
+        <div class="b39-step-card">
+          <div>
+            <b>Food Frames</b>
+            <small>Planned frames to transfer</small>
+          </div>
+          <div class="b39-stepper">
+            <button type="button" onclick="b39Step('plannedFoodFrames',-1)">−</button>
+            <strong id="b39-food-frames">${Number(d.plannedFoodFrames||0)}</strong>
+            <button type="button" onclick="b39Step('plannedFoodFrames',1)">+</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="b37-card">
+        <div class="b37-card-head">
+          <div class="b37-label">New Hive</div>
+          <div class="b37-hint">Created after successful split</div>
+        </div>
+        <label class="b37-field">
+          <span>Planned New Hive Name</span>
+          <input id="b39-new-name" type="text" value="${E(d.newHiveName||'')}" placeholder="e.g. Hive #4"
+            oninput="b39SetDraft('newHiveName',this.value)">
+        </label>
+        <div class="b39-info">Planning this action does not create a new hive yet.</div>
+      </section>
+
+      <section class="b37-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Schedule</div>
+          <div class="b37-hint">When to do it</div>
+        </div>
+        <div class="b39-schedule-grid">
+          <label class="b37-field">
+            <span>Due Date</span>
+            <div class="b39-date-shell">
+              <span id="b39-due-display">${fmtDate(d.dueDate||TODAY())}</span>
+              <input id="b39-due" type="date" value="${E(d.dueDate||TODAY())}" onchange="b39SyncDate(this)">
+            </div>
+          </label>
+          <label class="b37-field">
+            <span>Priority</span>
+            <select id="b39-priority" onchange="b39SetDraft('priority',this.value)">
+              ${options(['Low','Medium','High'],d.priority)}
+            </select>
+          </label>
+        </div>
+      </section>
+
+      <section class="b37-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Notes</div>
+          <div class="b37-hint">Optional</div>
+        </div>
+        <textarea id="b39-notes" rows="3" placeholder="Add a note for the planned split..."
+          oninput="b39SetDraft('notes',this.value)">${E(d.notes||'')}</textarea>
+      </section>
+
+      <div class="b37-footer">
+        <button class="b37-primary" onclick="b39CreateAction()">Create Action</button>
+      </div>
+    </div>`;
+  }
+
+  window.b39CreateAction=function(){
+    recoverDraftFromDOM();
+    const s=S(),d=initDraft();
+    if(!d.hiveId)return toast('Select a source hive');
+    if(!String(d.newHiveName||'').trim())return toast('Enter a planned new hive name');
+
+    const a={
+      id:'split-action-'+Date.now(),
+      hiveId:d.hiveId,
+      type:TYPE,
+      title:'Split Hive',
+      status:'Pending',
+      priority:d.priority||'Medium',
+      due:d.dueDate||TODAY(),
+      dueDate:d.dueDate||TODAY(),
+      date:d.dueDate||TODAY(),
+      createdAt:new Date().toISOString(),
+      startedAt:null,
+      completedAt:null,
+      followUpDate:null,
+      source:'manual',
+      reasonCode:'management',
+      workflowData:{
+        colonyStrength:d.colonyStrength||'Not checked',
+        broodAvailability:d.broodAvailability||'Not checked',
+        foodStores:d.foodStores||'Not checked',
+        queenPlan:d.queenPlan||'Not decided',
+        plannedBroodFrames:Number(d.plannedBroodFrames||0),
+        plannedFoodFrames:Number(d.plannedFoodFrames||0),
+        plannedNewHiveName:String(d.newHiveName||'').trim()
+      },
+      resultData:null,
+      linkedRecordId:null,
+      linkedActionId:null,
+      parentActionId:null,
+      notes:d.notes||''
+    };
+
+    /* Important B39 invariant:
+       Creating a Pending Split Action must NOT create a Hive entity. */
+    if(typeof upsert==='function')upsert(s,a);
+    else{
+      s.actions=Array.isArray(s.actions)?s.actions:[];
+      const i=s.actions.findIndex(x=>x&&x.id===a.id);
+      if(i>=0)s.actions[i]=a; else s.actions.push(a);
+    }
+    save(s);
+    window.__b39Draft=null;
+    go('actions');
+  };
+
+  window.b39OpenSplitAction=function(hiveId=''){
+    const s=S(),hs=activeHives(s);
+    window.__b39Draft=null;
+    const d=initDraft();
+    if(hiveId && hs.some(h=>String(h.id)===String(hiveId))) d.hiveId=hiveId;
+    go('split-action/new');
+  };
+
+  /* Extend the unified Add Action picker with Split Hive only.
+     Existing B37/B38 entries and Frequent entries are unchanged. */
+  window.openRecordPicker=function(){
+    if(typeof b37EnsureStyle==='function')b37EnsureStyle();
+    const m=modal(`<div class="modalhead add-action-head">
+        <div>
+          <b>Add Action</b>
+          <small>Choose what you want to record or plan</small>
+        </div>
+        <button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button>
+      </div>
+      <div class="quick core-menu-actions add-action-grid">
+        <div class="b37-picker-group">Frequent</div>
+
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">✓</span><b>Inspection</b><small>Check hive condition</small>
+        </button>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">▣</span><b>Feeding</b><small>Record feed given</small>
+        </button>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">＋</span><b>Treatment</b><small>Record hive treatment</small>
+        </button>
+        <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')">
+          <span class="add-action-icon">◇</span><b>Harvest</b><small>Record honey harvest</small>
+        </button>
+
+        <div class="b37-picker-group">Other</div>
+        <button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b37OpenSuperAction()">
+          <span class="add-action-icon">▤</span>
+          <span class="add-action-copy"><b>Add / Remove Super</b><small>Plan a hive configuration change</small></span>
+          <span class="add-action-arrow">›</span>
+        </button>
+        <button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b38OpenQueenAction()">
+          <span class="add-action-icon">Q</span>
+          <span class="add-action-copy"><b>Queen Management</b><small>Plan or verify queen work</small></span>
+          <span class="add-action-arrow">›</span>
+        </button>
+        <button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b39OpenSplitAction()">
+          <span class="add-action-icon">↗</span>
+          <span class="add-action-copy"><b>Split Hive</b><small>Plan a new colony from a source hive</small></span>
+          <span class="add-action-arrow">›</span>
+        </button>
+      </div>`);
+    m?.classList.add('v224-add-action-picker');
+    requestAnimationFrame(()=>m?.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}));
+  };
+
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){
+    if(String(type||'').toLowerCase()===TYPE){
+      return go('split-action/'+(actionId||'new'));
+    }
+    return prevOpen.apply(this,arguments);
+  };
+  try{openActionByType=window.openActionByType}catch(_){}
+
+  /* B39 route. First version supports only /new and a simple Pending summary
+     so a Pending Split card can safely reopen without entering another module. */
+  function pendingHTML(a){
+    const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId);
+    return `<div class="b37-page b39-page">
+      <section class="b39-hero">
+        <div class="b39-hero-copy"><b>Planned hive split</b><small>This action is still Pending. No new hive has been created.</small></div>
+      </section>
+      <section class="b37-card">
+        <div class="b37-card-head"><div class="b37-label">Source Hive</div><div class="b37-hint">Pending</div></div>
+        <div class="b39-summary-strong">${E(h?.name||a.hiveId)}</div>
+      </section>
+      <section class="b37-card">
+        <div class="b37-card-head"><div class="b37-label">Plan</div><div class="b37-hint">Planned work</div></div>
+        <div class="b39-summary-row"><span>New hive</span><b>${E(a.workflowData?.plannedNewHiveName||'')}</b></div>
+        <div class="b39-summary-row"><span>Brood frames</span><b>${E(a.workflowData?.plannedBroodFrames??'')}</b></div>
+        <div class="b39-summary-row"><span>Food frames</span><b>${E(a.workflowData?.plannedFoodFrames??'')}</b></div>
+        <div class="b39-summary-row"><span>Queen plan</span><b>${E(a.workflowData?.queenPlan||'Not decided')}</b></div>
+        <div class="b39-summary-row"><span>Due</span><b>${E(a.dueDate||a.due||'')}</b></div>
+        <div class="b39-summary-row"><span>Priority</span><b>${E(a.priority||'Medium')}</b></div>
+      </section>
+      <div class="b39-pending-note">Execution / Actual Result will be added in the next B39 step. This version does not create a new hive.</div>
+      <div class="b37-footer"><button class="b37-secondary" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  const prevRender=window.render||render;
+  window.render=function(){
+    const raw=(location.hash||'#home').slice(1),parts=raw.split('/'),page=parts[0],id=parts[1]||'';
+    if(page!=='split-action')return prevRender();
+
+    if(id==='new')recoverDraftFromDOM();
+
+    const r=idq('view');if(!r)return;
+    r.className='view secondary';
+
+    if(id==='new'){
+      r.innerHTML=createHTML();
+    }else{
+      const s=S(),a=(s.actions||[]).find(x=>x&&x.id===id);
+      r.innerHTML=a?pendingHTML(a):'<div class="b37-page"><section class="b37-card">Split Hive action not found.</section></div>';
+    }
+
+    const top=idq('topbar');
+    if(top){
+      top.className='topbar vtop';
+      top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Split Hive</div><span></span>`;
+    }
+    const bottom=idq('bottomnav');if(bottom)bottom.classList.add('hidden');
+  };
+  try{render=window.render}catch(_){}
+
+  window.__HIVEDASH_V224B39_VERSION__='224b39a';
+})();

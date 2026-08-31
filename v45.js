@@ -12352,6 +12352,14 @@ function detailHTML(a){
     pop.appendChild(foot);
 
     shell.appendChild(pop);
+
+    /* V224B39Z — Result calendar viewport fit only.
+       Keep the B39 anchored calendar, but make sure the complete month is
+       brought into the visible viewport instead of being cut off at the bottom. */
+    requestAnimationFrame(()=>{
+      try{ pop.scrollIntoView({block:'nearest',inline:'nearest',behavior:'auto'}); }
+      catch(_){ try{ pop.scrollIntoView(false); }catch(__){} }
+    });
   }
 
   window.b39mToggleCalendar=function(id,button){
@@ -12955,19 +12963,19 @@ function detailHTML(a){
         font-family:Inter,Arial,sans-serif;
       }
       .b39m-follow-pair .b39m-date-popover{left:auto;right:0}
-      .b39m-cal-head{display:grid;grid-template-columns:32px 1fr 32px;align-items:center;gap:6px;margin-bottom:8px}
-      .b39m-cal-title{text-align:center;font:800 12px/32px Inter,Arial,sans-serif}
-      .b39m-cal-nav{width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:#5E7350;font:800 22px/32px Inter,Arial,sans-serif;cursor:pointer}
+      .b39m-cal-head{display:grid;grid-template-columns:30px 1fr 30px;align-items:center;gap:6px;margin-bottom:6px}
+      .b39m-cal-title{text-align:center;font:800 12px/30px Inter,Arial,sans-serif}
+      .b39m-cal-nav{width:30px;height:30px;border:0;border-radius:8px;background:transparent;color:#5E7350;font:800 20px/30px Inter,Arial,sans-serif;cursor:pointer}
       .b39m-cal-nav:hover{background:#F3F1E9}
       .b39m-cal-week,.b39m-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
-      .b39m-cal-week span{text-align:center;color:#7B817B;font:700 8px/24px Inter,Arial,sans-serif}
-      .b39m-cal-blank{height:32px}
-      .b39m-cal-day{height:32px;border:0;border-radius:8px;background:transparent;color:#2F3B33;font:700 10px/32px Inter,Arial,sans-serif;text-align:center;cursor:pointer}
+      .b39m-cal-week span{text-align:center;color:#7B817B;font:700 8px/20px Inter,Arial,sans-serif}
+      .b39m-cal-blank{height:26px}
+      .b39m-cal-day{height:26px;border:0;border-radius:8px;background:transparent;color:#2F3B33;font:700 10px/26px Inter,Arial,sans-serif;text-align:center;cursor:pointer}
       .b39m-cal-day:hover{background:#F3F1E9}
       .b39m-cal-day.is-today{outline:1px solid rgba(197,146,26,.55);outline-offset:-1px}
       .b39m-cal-day.is-selected{background:#5E7350;color:#fff}
-      .b39m-cal-foot{display:flex;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(47,59,51,.09)}
-      .b39m-cal-foot button{border:0;background:transparent;color:#5E7350;font:800 10px/28px Inter,Arial,sans-serif;cursor:pointer;padding:0 6px}
+      .b39m-cal-foot{display:flex;justify-content:space-between;gap:8px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(47,59,51,.09)}
+      .b39m-cal-foot button{border:0;background:transparent;color:#5E7350;font:800 10px/24px Inter,Arial,sans-serif;cursor:pointer;padding:0 6px}
 
       .b39m-result-info{
         margin-top:10px!important;
@@ -12990,7 +12998,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39v';
+  window.__HIVEDASH_V224B39_VERSION__='224b39z';
 })();
 
 

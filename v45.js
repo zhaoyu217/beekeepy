@@ -12250,8 +12250,33 @@ function detailHTML(a){
     }
   }
 
+  function b39mClearValidationFeedback(){
+    document.querySelectorAll('.b39m-validation-error').forEach(el=>el.remove());
+    document.querySelectorAll('[aria-invalid="true"]').forEach(el=>el.removeAttribute('aria-invalid'));
+  }
+
+  function b39mValidationFail(message,targetId){
+    b39mClearValidationFeedback();
+    const target=idq(targetId);
+    if(!target){ toast(message); return false; }
+    target.setAttribute('aria-invalid','true');
+    const host=target.closest('.b37-field')||target.closest('.b39m-pair')||target.parentElement;
+    const msg=document.createElement('div');
+    msg.className='b39m-validation-error';
+    msg.setAttribute('role','alert');
+    msg.textContent=message;
+    msg.style.cssText='margin-top:6px;font-size:12px;line-height:1.35;color:#8a4b08;font-weight:600;';
+    host?.appendChild(msg);
+    requestAnimationFrame(()=>{
+      try{ target.focus({preventScroll:true}); }catch(_){ try{target.focus()}catch(__){} }
+      try{ host?.scrollIntoView({behavior:'smooth',block:'center'}); }catch(_){}
+    });
+    return false;
+  }
+
   function b39mPersistResultDraft(actionId){
     if(!actionId)return;
+    b39mClearValidationFeedback();
     const success=String(idq('b39m-success')?.value||'');
     const dateInput=idq('b39m-date');
     const nameInput=idq('b39m-name');
@@ -12737,7 +12762,7 @@ function detailHTML(a){
 
           <div class="b39m-date-shell b39m-pair-control">
             <span id="b39m-follow-date-display">${E(b39mDisplayDate(rd.followUpDate))}</span>
-            <button type="button" class="b39m-calendar-button"
+            <button id="b39m-follow-date-button" type="button" class="b39m-calendar-button"
               onclick="event.stopPropagation();b39mToggleCalendar('b39m-follow-date',this)" aria-label="Choose follow-up date">▣</button>
             <input id="b39m-follow-date" type="hidden" value="${E(rd.followUpDate||'')}">
           </div>
@@ -12758,24 +12783,25 @@ function detailHTML(a){
     if(!a || a.type!==TYPE) return toast('Split Hive action not found');
     if(a.status==='Completed' || a.priority==='Done' || a.resultAppliedAt) return toast('Split already completed');
 
+    b39mClearValidationFeedback();
     const success=String(idq('b39m-success')?.value||'');
-    if(success!=='yes') return toast('Set Split Completed to Yes before completing');
+    if(success!=='yes') return b39mValidationFail('Set Split Completed to Yes before completing.','b39m-success');
 
     const completedDate=String(idq('b39m-date')?.value||'');
-    if(!completedDate) return toast('Select the completed date');
+    if(!completedDate) return b39mValidationFail('Select the completed date.','b39m-date-button');
     const actualBrood=Math.max(0,Number(idq('b39m-brood')?.value||0));
     const actualFood=Math.max(0,Number(idq('b39m-food')?.value||0));
     const queenOutcome=String(idq('b39m-queen')?.value||'');
-    if(!queenOutcome) return toast('Record the queen outcome');
+    if(!queenOutcome) return b39mValidationFail('Record the queen outcome.','b39m-queen');
     const followUpRequired=String(idq('b39m-follow')?.value||'yes')==='yes';
     const followUpDate=followUpRequired?String(idq('b39m-follow-date')?.value||''):'';
-    if(followUpRequired && !followUpDate) return toast('Select a follow-up date');
+    if(followUpRequired && !followUpDate) return b39mValidationFail('Select a follow-up date.','b39m-follow-date-button');
     const sourceHive=(s.hives||[]).find(h=>h&&String(h.id)===String(a.hiveId));
     if(!sourceHive) return toast('Source hive not found');
 
     let newHiveId=null;
     const newHiveName=String(idq('b39m-name')?.value||'').trim();
-    if(!newHiveName) return toast('Enter the actual new hive name');
+    if(!newHiveName) return b39mValidationFail('Enter the actual new hive name to complete the split.','b39m-name');
     const existing=(s.hives||[]).find(h=>h&&h.createdFromSplitActionId===a.id);
     if(existing){
       newHiveId=existing.id;

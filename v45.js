@@ -12238,9 +12238,9 @@ function detailHTML(a){
       const raw=localStorage.getItem(b39mResultDraftKey(a?.id));
       const d=raw?JSON.parse(raw):null;
       const out=d&&typeof d==='object'?{...base,...d}:base;
-      if(out.success!=='yes'){
-        out.completedDate='';
-      }else{
+      /* V224B39AB — Completed Date is an editable result draft even before confirmation.
+         Split Completed gates when the draft becomes a confirmed fact; it does not gate entry. */
+      if(out.success==='yes'){
         if(!String(out.actualNewHiveName||'').trim()) out.actualNewHiveName=String(w.plannedNewHiveName||'');
         if(!String(out.completedDate||'')) out.completedDate=new Date().toISOString().slice(0,10);
       }
@@ -12264,9 +12264,6 @@ function detailHTML(a){
         if(planned) nameInput.value=planned;
       }
       if(dateInput && !dateInput.value) dateInput.value=new Date().toISOString().slice(0,10);
-    }else{
-      if(dateInput) dateInput.value='';
-      b39mCloseCalendar();
     }
 
     const d={
@@ -12275,7 +12272,8 @@ function detailHTML(a){
       actualFoodFrames:Math.max(0,Number(idq('b39m-food')?.value||0)),
       queenOutcome:String(idq('b39m-queen')?.value||''),
       actualNewHiveName:String(nameInput?.value||''),
-      completedDate:success==='yes'?String(dateInput?.value||''):'',
+      /* Draft value persists regardless of confirmation state. */
+      completedDate:String(dateInput?.value||''),
       followUpRequired:String(idq('b39m-follow')?.value||'yes'),
       followUpDate:String(idq('b39m-follow-date')?.value||'')
     };
@@ -12283,10 +12281,11 @@ function detailHTML(a){
 
     const completedDisplay=idq('b39m-date-display');
     if(completedDisplay)completedDisplay.textContent=d.completedDate?fmtDate(d.completedDate):'MM/DD/YYYY';
+    /* Completed Date remains editable while Pending; confirmation only changes semantics. */
     const completedButton=idq('b39m-date-button');
-    if(completedButton)completedButton.disabled=success!=='yes';
+    if(completedButton)completedButton.disabled=false;
     const completedShell=idq('b39m-date-shell');
-    if(completedShell)completedShell.classList.toggle('is-disabled',success!=='yes');
+    if(completedShell)completedShell.classList.remove('is-disabled');
     if(nameInput){
       nameInput.setAttribute('aria-required',success==='yes'?'true':'false');
       nameInput.classList.toggle('b39m-required-now',success==='yes');
@@ -12402,8 +12401,6 @@ function detailHTML(a){
     const input=idq(id);
     const shell=button?.closest('.b39m-date-shell');
     if(!input||!shell)return;
-    if(id==='b39m-date' && String(idq('b39m-success')?.value||'')!=='yes') return;
-
     const open=shell.querySelector('.b39m-date-popover');
     if(open){ b39mCloseCalendar(); return; }
 
@@ -12705,9 +12702,9 @@ function detailHTML(a){
 
         <label class="b37-field b39m-full-field">
           <span>Completed Date</span>
-          <div id="b39m-date-shell" class="b39m-date-shell ${rd.success==='yes'?'':'is-disabled'}">
+          <div id="b39m-date-shell" class="b39m-date-shell">
             <span id="b39m-date-display">${E(rd.completedDate?fmt(rd.completedDate):'MM/DD/YYYY')}</span>
-            <button id="b39m-date-button" type="button" class="b39m-calendar-button" ${rd.success==='yes'?'':'disabled'}
+            <button id="b39m-date-button" type="button" class="b39m-calendar-button"
               onclick="event.stopPropagation();b39mToggleCalendar('b39m-date',this)" aria-label="Choose completed date">▣</button>
             <input id="b39m-date" type="hidden" value="${E(rd.completedDate)}">
           </div>
@@ -13037,7 +13034,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39aa';
+  window.__HIVEDASH_V224B39_VERSION__='224b39ab';
 })();
 
 

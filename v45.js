@@ -12187,6 +12187,18 @@ function detailHTML(a){
 
   window.b39mPersistResultDraft=b39mPersistResultDraft;
 
+  window.b39mOpenDatePicker=function(id){
+    const el=idq(id);
+    if(!el)return;
+    try{
+      if(typeof el.showPicker==='function') el.showPicker();
+      else el.click();
+    }catch(_){
+      try{el.click()}catch(__){}
+    }
+  };
+
+
   function pendingHTML(a){
     const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
     const fmt=v=>{const m=String(v||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'');};
@@ -12337,7 +12349,9 @@ function detailHTML(a){
           <span>Completed Date</span>
           <div class="b39m-date-shell">
             <span id="b39m-date-display">${E(fmt(rd.completedDate))}</span>
-            <input id="b39m-date" type="date" value="${E(rd.completedDate)}"
+            <button type="button" class="b39m-date-btn" aria-label="Choose completed date"
+              onclick="b39mOpenDatePicker('b39m-date')">▣</button>
+            <input id="b39m-date" class="b39m-date-native" type="date" value="${E(rd.completedDate)}"
               onchange="b39mPersistResultDraft('${E(a.id)}')">
           </div>
         </label>
@@ -12354,7 +12368,9 @@ function detailHTML(a){
             <span>Follow-up Date</span>
             <div class="b39m-date-shell">
               <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'mm/dd/yyyy')}</span>
-              <input id="b39m-follow-date" type="date" value="${E(rd.followUpDate||'')}"
+              <button type="button" class="b39m-date-btn" aria-label="Choose follow-up date"
+                onclick="b39mOpenDatePicker('b39m-follow-date')">▣</button>
+              <input id="b39m-follow-date" class="b39m-date-native" type="date" value="${E(rd.followUpDate||'')}"
                 onchange="b39mPersistResultDraft('${E(a.id)}')">
             </div>
           </label>
@@ -12483,94 +12499,150 @@ function detailHTML(a){
     const st=document.createElement('style');st.id='v224b39m-style';
     st.textContent=`
       .b39m-result-card .b37-field{
-        display:block;width:100%;margin:10px 0 0;box-sizing:border-box;
-      }
-      .b39m-result-card .b37-field>span{
-        display:block;min-height:12px;margin:0 0 5px;color:#697169;
-        font:700 9.5px/1.2 Inter,Arial,sans-serif;
-      }
-      .b39m-result-grid{
-        display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-        gap:9px;align-items:start;width:100%;
-      }
-      .b39m-result-grid>.b37-field{min-width:0;margin-top:10px}
-      .b39m-result-card input:not([type="date"]),
-      .b39m-result-card select{
-        display:block;width:100%;height:42px;min-height:42px;box-sizing:border-box;
-        margin:0;padding:0 11px;border:1px solid rgba(47,59,51,.13);
-        border-radius:11px;background:#FBFBF8;color:#2F3B33;
-        font:650 12px/1.2 Inter,Arial,sans-serif;
-      }
-      .b39m-result-card select{padding-right:34px}
-      .b39m-result-card input[type="number"]{line-height:42px}
-      .b39m-date-shell{
-        position:relative;display:block;width:100%;height:42px;min-height:42px;
-        box-sizing:border-box;margin:0;border:1px solid rgba(47,59,51,.13);
-        border-radius:11px;background:#FBFBF8;overflow:hidden;isolation:isolate;
-      }
-      .b39m-date-shell::after{
-        content:"";position:absolute;z-index:3;left:1px;top:1px;bottom:1px;right:34px;
-        background:#FBFBF8;border-radius:10px 0 0 10px;pointer-events:none;
-      }
-      .b39m-date-shell>span{
-        position:absolute;z-index:4;left:11px;right:36px;top:50%;
-        transform:translateY(-50%);margin:0;padding:0;color:#2F3B33;
-        white-space:nowrap;pointer-events:none;font:650 12px/1 Inter,Arial,sans-serif;
-      }
-      .b39m-date-shell input[type="date"]{
-        position:absolute;z-index:2;inset:0;width:100%;height:42px;min-height:42px;
-        margin:0;padding:0;border:0;outline:0;background:transparent;color:transparent;
-        -webkit-text-fill-color:transparent;box-shadow:none;cursor:pointer;
-      }
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-fields-wrapper,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-text,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-month-field,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-day-field,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-year-field{
-        opacity:0;color:transparent;-webkit-text-fill-color:transparent;
+        display:grid;
+        grid-template-rows:18px 42px;
+        row-gap:5px;
+        width:100%;
+        margin:10px 0 0;
+        box-sizing:border-box;
+        align-content:start;
       }
 
-      .b39m-date-shell input[type="date"]{
-        color:transparent!important;
-        -webkit-text-fill-color:transparent!important;
-        text-shadow:none!important;
-        caret-color:transparent!important;
+      .b39m-result-card .b37-field>span{
+        display:flex;
+        align-items:flex-end;
+        min-height:18px;
+        height:18px;
+        margin:0;
+        color:#697169;
+        font:700 9.5px/1.1 Inter,Arial,sans-serif;
+        box-sizing:border-box;
       }
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit{
-        color:transparent!important;
-        -webkit-text-fill-color:transparent!important;
+
+      .b39m-result-grid{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        column-gap:9px;
+        width:100%;
+        align-items:start;
+      }
+
+      .b39m-result-grid>.b37-field{
+        min-width:0;
+        margin-top:10px;
+      }
+
+      .b39m-result-card input:not([type="date"]),
+      .b39m-result-card select{
+        display:flex;
+        align-items:center;
+        width:100%;
+        height:42px;
+        min-height:42px;
+        max-height:42px;
+        box-sizing:border-box;
+        margin:0;
+        padding:0 11px;
+        border:1px solid rgba(47,59,51,.13);
+        border-radius:11px;
+        background:#FBFBF8;
+        color:#2F3B33;
+        font:650 12px/42px Inter,Arial,sans-serif;
+      }
+
+      .b39m-result-card select{
+        padding-right:34px;
+      }
+
+      .b39m-result-card input[type="number"]{
+        line-height:42px;
+      }
+
+      .b39m-date-shell{
+        position:relative;
+        display:block;
+        width:100%;
+        height:42px;
+        min-height:42px;
+        max-height:42px;
+        box-sizing:border-box;
+        margin:0;
+        border:1px solid rgba(47,59,51,.13);
+        border-radius:11px;
+        background:#FBFBF8;
+        overflow:hidden;
+      }
+
+      .b39m-date-shell>span{
+        position:absolute;
+        left:11px;
+        right:44px;
+        top:50%;
+        transform:translateY(-50%);
+        margin:0;
+        padding:0;
+        color:#2F3B33;
+        white-space:nowrap;
+        pointer-events:none;
+        font:650 12px/1 Inter,Arial,sans-serif;
+      }
+
+      .b39m-date-btn{
+        position:absolute;
+        z-index:3;
+        right:0;
+        top:0;
+        width:42px;
+        height:42px;
+        min-width:42px;
+        min-height:42px;
+        padding:0;
+        margin:0;
+        border:0;
+        background:transparent;
+        color:#2F3B33;
+        font:700 13px/42px Inter,Arial,sans-serif;
+        text-align:center;
+        cursor:pointer;
+        appearance:none;
+        -webkit-appearance:none;
+      }
+
+      .b39m-date-native{
+        position:absolute!important;
+        left:-9999px!important;
+        top:0!important;
+        width:1px!important;
+        height:1px!important;
         opacity:0!important;
+        pointer-events:none!important;
+        margin:0!important;
+        padding:0!important;
+        border:0!important;
       }
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-fields-wrapper{
-        color:transparent!important;
-        -webkit-text-fill-color:transparent!important;
-        opacity:0!important;
+
+      .b39m-result-info{
+        margin-top:10px!important;
       }
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-text,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-month-field,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-day-field,
-      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-year-field{
-        color:transparent!important;
-        -webkit-text-fill-color:transparent!important;
-        opacity:0!important;
-      }
-      .b39m-date-shell input[type="date"]::-webkit-calendar-picker-indicator{
-        position:absolute;right:10px;top:50%;transform:translateY(-50%);
-        margin:0;opacity:1;display:block;cursor:pointer;
-      }
-      .b39m-result-info{margin-top:10px!important}
+
       .b39m-back{
-        width:100%;min-height:46px;box-sizing:border-box;margin-top:8px;
-        border:1px solid rgba(47,59,51,.14);background:#fffdf9;color:#5e7350;
-        border-radius:11px;padding:0 16px;font:800 12px/1 Inter,Arial,sans-serif;
+        width:100%;
+        min-height:46px;
+        box-sizing:border-box;
+        margin-top:8px;
+        border:1px solid rgba(47,59,51,.14);
+        background:#fffdf9;
+        color:#5e7350;
+        border-radius:11px;
+        padding:0 16px;
+        font:800 12px/1 Inter,Arial,sans-serif;
         text-align:center;
       }
     `;
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39o';
+  window.__HIVEDASH_V224B39_VERSION__='224b39p';
 })();
 
 

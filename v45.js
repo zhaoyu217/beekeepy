@@ -12219,6 +12219,9 @@ function detailHTML(a){
     return 'hivedash_b39_split_result_draft_'+String(actionId||'');
   }
 
+  /* V224B39AA — B39 logic closure.
+     Frozen rule: workflowData stays plan-only; result draft may be edited while Pending,
+     but completion facts are valid only after Split Completed is explicitly Yes. */
   function b39mLoadResultDraft(a){
     const w=a?.workflowData||{};
     const base={
@@ -12226,16 +12229,22 @@ function detailHTML(a){
       actualBroodFrames:Number(w.plannedBroodFrames??0),
       actualFoodFrames:Number(w.plannedFoodFrames??0),
       queenOutcome:'',
-      actualNewHiveName:String(w.plannedNewHiveName||''),
-      completedDate:new Date().toISOString().slice(0,10),
+      actualNewHiveName:'',
+      completedDate:'',
       followUpRequired:'yes',
       followUpDate:''
     };
     try{
       const raw=localStorage.getItem(b39mResultDraftKey(a?.id));
-      if(!raw)return base;
-      const d=JSON.parse(raw);
-      return d&&typeof d==='object'?{...base,...d}:base;
+      const d=raw?JSON.parse(raw):null;
+      const out=d&&typeof d==='object'?{...base,...d}:base;
+      if(out.success!=='yes'){
+        out.completedDate='';
+      }else{
+        if(!String(out.actualNewHiveName||'').trim()) out.actualNewHiveName=String(w.plannedNewHiveName||'');
+        if(!String(out.completedDate||'')) out.completedDate=new Date().toISOString().slice(0,10);
+      }
+      return out;
     }catch(_){
       return base;
     }
@@ -12243,21 +12252,48 @@ function detailHTML(a){
 
   function b39mPersistResultDraft(actionId){
     if(!actionId)return;
+    const success=String(idq('b39m-success')?.value||'');
+    const dateInput=idq('b39m-date');
+    const nameInput=idq('b39m-name');
+
+    if(success==='yes'){
+      if(nameInput && !String(nameInput.value||'').trim()){
+        const s=S();
+        const a=(s.actions||[]).find(x=>x&&String(x.id)===String(actionId));
+        const planned=String(a?.workflowData?.plannedNewHiveName||'').trim();
+        if(planned) nameInput.value=planned;
+      }
+      if(dateInput && !dateInput.value) dateInput.value=new Date().toISOString().slice(0,10);
+    }else{
+      if(dateInput) dateInput.value='';
+      b39mCloseCalendar();
+    }
+
     const d={
-      success:String(idq('b39m-success')?.value||''),
+      success,
       actualBroodFrames:Math.max(0,Number(idq('b39m-brood')?.value||0)),
       actualFoodFrames:Math.max(0,Number(idq('b39m-food')?.value||0)),
       queenOutcome:String(idq('b39m-queen')?.value||''),
-      actualNewHiveName:String(idq('b39m-name')?.value||''),
-      completedDate:String(idq('b39m-date')?.value||''),
+      actualNewHiveName:String(nameInput?.value||''),
+      completedDate:success==='yes'?String(dateInput?.value||''):'',
       followUpRequired:String(idq('b39m-follow')?.value||'yes'),
       followUpDate:String(idq('b39m-follow-date')?.value||'')
     };
     try{localStorage.setItem(b39mResultDraftKey(actionId),JSON.stringify(d))}catch(_){}
+
     const completedDisplay=idq('b39m-date-display');
-    if(completedDisplay)completedDisplay.textContent=fmtDate(d.completedDate);
+    if(completedDisplay)completedDisplay.textContent=d.completedDate?fmtDate(d.completedDate):'MM/DD/YYYY';
+    const completedButton=idq('b39m-date-button');
+    if(completedButton)completedButton.disabled=success!=='yes';
+    const completedShell=idq('b39m-date-shell');
+    if(completedShell)completedShell.classList.toggle('is-disabled',success!=='yes');
+    if(nameInput){
+      nameInput.setAttribute('aria-required',success==='yes'?'true':'false');
+      nameInput.classList.toggle('b39m-required-now',success==='yes');
+    }
+
     const followDisplay=idq('b39m-follow-date-display');
-    if(followDisplay)followDisplay.textContent=d.followUpDate?fmtDate(d.followUpDate):'mm/dd/yyyy';
+    if(followDisplay)followDisplay.textContent=d.followUpDate?fmtDate(d.followUpDate):'MM/DD/YYYY';
   }
 
   function b39mClearResultDraft(actionId){
@@ -12366,6 +12402,7 @@ function detailHTML(a){
     const input=idq(id);
     const shell=button?.closest('.b39m-date-shell');
     if(!input||!shell)return;
+    if(id==='b39m-date' && String(idq('b39m-success')?.value||'')!=='yes') return;
 
     const open=shell.querySelector('.b39m-date-popover');
     if(open){ b39mCloseCalendar(); return; }
@@ -12662,14 +12699,15 @@ function detailHTML(a){
         <label class="b37-field b39m-full-field">
           <span>Actual New Hive Name</span>
           <input id="b39m-name" type="text" maxlength="40" value="${E(rd.actualNewHiveName)}"
+            aria-required="${rd.success==='yes'?'true':'false'}" class="${rd.success==='yes'?'b39m-required-now':''}"
             oninput="b39mPersistResultDraft('${E(a.id)}')">
         </label>
 
         <label class="b37-field b39m-full-field">
           <span>Completed Date</span>
-          <div class="b39m-date-shell">
-            <span id="b39m-date-display">${E(fmt(rd.completedDate))}</span>
-            <button type="button" class="b39m-calendar-button"
+          <div id="b39m-date-shell" class="b39m-date-shell ${rd.success==='yes'?'':'is-disabled'}">
+            <span id="b39m-date-display">${E(rd.completedDate?fmt(rd.completedDate):'MM/DD/YYYY')}</span>
+            <button id="b39m-date-button" type="button" class="b39m-calendar-button" ${rd.success==='yes'?'':'disabled'}
               onclick="event.stopPropagation();b39mToggleCalendar('b39m-date',this)" aria-label="Choose completed date">▣</button>
             <input id="b39m-date" type="hidden" value="${E(rd.completedDate)}">
           </div>
@@ -12686,7 +12724,7 @@ function detailHTML(a){
           </select>
 
           <div class="b39m-date-shell b39m-pair-control">
-            <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'mm/dd/yyyy')}</span>
+            <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'MM/DD/YYYY')}</span>
             <button type="button" class="b39m-calendar-button"
               onclick="event.stopPropagation();b39mToggleCalendar('b39m-follow-date',this)" aria-label="Choose follow-up date">▣</button>
             <input id="b39m-follow-date" type="hidden" value="${E(rd.followUpDate||'')}">
@@ -12709,9 +12747,10 @@ function detailHTML(a){
     if(a.status==='Completed' || a.priority==='Done' || a.resultAppliedAt) return toast('Split already completed');
 
     const success=String(idq('b39m-success')?.value||'');
-    if(!success) return toast('Confirm whether the split was completed');
+    if(success!=='yes') return toast('Set Split Completed to Yes before completing');
 
-    const completedDate=String(idq('b39m-date')?.value||new Date().toISOString().slice(0,10));
+    const completedDate=String(idq('b39m-date')?.value||'');
+    if(!completedDate) return toast('Select the completed date');
     const actualBrood=Math.max(0,Number(idq('b39m-brood')?.value||0));
     const actualFood=Math.max(0,Number(idq('b39m-food')?.value||0));
     const queenOutcome=String(idq('b39m-queen')?.value||'');
@@ -12723,27 +12762,24 @@ function detailHTML(a){
     if(!sourceHive) return toast('Source hive not found');
 
     let newHiveId=null;
-    let newHiveName='';
-    if(success==='yes'){
-      newHiveName=String(idq('b39m-name')?.value||'').trim();
-      if(!newHiveName) return toast('Enter the actual new hive name');
-      const existing=(s.hives||[]).find(h=>h&&h.createdFromSplitActionId===a.id);
-      if(existing){
-        newHiveId=existing.id;
-      }else{
-        let seq=Date.now(),candidate='h'+seq;
-        while((s.hives||[]).some(h=>String(h.id)===candidate)){seq++;candidate='h'+seq}
-        newHiveId=candidate;
-        const newHive={
-          id:newHiveId,name:newHiveName,score:75,status:'Attention',
-          queen:'Unknown',eggs:false,larvae:false,queenCells:false,brood:'Unknown',strength:'5',
-          honey:'Medium',pollen:'Medium',varroa:0,shb:false,waxMoth:false,disease:false,swarm:false,
-          superStatus:'None',superCount:0,lastInspection:'',notes:'Created from Split Hive action.',photos:[],
-          parentHiveId:sourceHive.id,createdFromSplitActionId:a.id,createdAt:new Date().toISOString()
-        };
-        s.hives=s.hives||[];
-        s.hives.push(newHive);
-      }
+    const newHiveName=String(idq('b39m-name')?.value||'').trim();
+    if(!newHiveName) return toast('Enter the actual new hive name');
+    const existing=(s.hives||[]).find(h=>h&&h.createdFromSplitActionId===a.id);
+    if(existing){
+      newHiveId=existing.id;
+    }else{
+      let seq=Date.now(),candidate='h'+seq;
+      while((s.hives||[]).some(h=>String(h.id)===candidate)){seq++;candidate='h'+seq}
+      newHiveId=candidate;
+      const newHive={
+        id:newHiveId,name:newHiveName,score:75,status:'Attention',
+        queen:'Unknown',eggs:false,larvae:false,queenCells:false,brood:'Unknown',strength:'5',
+        honey:'Medium',pollen:'Medium',varroa:0,shb:false,waxMoth:false,disease:false,swarm:false,
+        superStatus:'None',superCount:0,lastInspection:'',notes:'Created from Split Hive action.',photos:[],
+        parentHiveId:sourceHive.id,createdFromSplitActionId:a.id,createdAt:new Date().toISOString()
+      };
+      s.hives=s.hives||[];
+      s.hives.push(newHive);
     }
 
     const now=new Date().toISOString();
@@ -12765,7 +12801,7 @@ function detailHTML(a){
 
     if(save(s)===false) return toast('Split result could not be saved');
     b39mClearResultDraft(a.id);
-    toast(success==='yes'?'Split completed — new hive created':'Split result saved — no new hive created');
+    toast('Split completed — new hive created');
     go('actions');
   };
 
@@ -12977,6 +13013,9 @@ function detailHTML(a){
       .b39m-cal-foot{display:flex;justify-content:space-between;gap:8px;margin-top:6px;padding-top:6px;border-top:1px solid rgba(47,59,51,.09)}
       .b39m-cal-foot button{border:0;background:transparent;color:#5E7350;font:800 10px/24px Inter,Arial,sans-serif;cursor:pointer;padding:0 6px}
 
+      .b39m-date-shell.is-disabled{opacity:.62;background:#F6F5F0}
+      .b39m-date-shell.is-disabled .b39m-calendar-button{cursor:not-allowed;opacity:.55}
+      .b39m-required-now:focus{outline:2px solid rgba(197,146,26,.22);outline-offset:1px}
       .b39m-result-info{
         margin-top:10px!important;
       }
@@ -12998,7 +13037,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39z';
+  window.__HIVEDASH_V224B39_VERSION__='224b39aa';
 })();
 
 

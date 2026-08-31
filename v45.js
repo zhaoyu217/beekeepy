@@ -12219,6 +12219,25 @@ function detailHTML(a){
     return 'hivedash_b39_split_result_draft_'+String(actionId||'');
   }
 
+  /* V224B39AG — Queen Outcome normalization.
+     Keep a stable English value even if a browser page translator mutates visible option text.
+     Legacy translated values are rendered back to the frozen English UI label. */
+  function b39QueenOutcomeEnglish(v){
+    const raw=String(v||'').trim();
+    const key=raw.toLowerCase();
+    const map={
+      '父母保留蜂王':'Parent keeps queen',
+      '亲本保留蜂王':'Parent keeps queen',
+      '母群保留蜂王':'Parent keeps queen',
+      'parent keeps queen':'Parent keeps queen',
+      'new hive receives queen':'New hive receives queen',
+      'queen cell':'Queen cell',
+      'introduced queen':'Introduced queen',
+      'unknown':'Unknown'
+    };
+    return map[raw]||map[key]||raw;
+  }
+
   /* V224B39AA — B39 logic closure.
      Frozen rule: workflowData stays plan-only; result draft may be edited while Pending,
      but completion facts are valid only after Split Completed is explicitly Yes. */
@@ -12244,6 +12263,7 @@ function detailHTML(a){
         if(!String(out.actualNewHiveName||'').trim()) out.actualNewHiveName=String(w.plannedNewHiveName||'');
         if(!String(out.completedDate||'')) out.completedDate=new Date().toISOString().slice(0,10);
       }
+      out.queenOutcome=b39QueenOutcomeEnglish(out.queenOutcome);
       return out;
     }catch(_){
       return base;
@@ -12725,11 +12745,11 @@ function detailHTML(a){
           <span>Queen Outcome</span>
           <select id="b39m-queen" onchange="b39mPersistResultDraft('${E(a.id)}')">
             <option value="" ${rd.queenOutcome===''?'selected':''}>Not recorded</option>
-            <option ${rd.queenOutcome==='Parent keeps queen'?'selected':''}>Parent keeps queen</option>
-            <option ${rd.queenOutcome==='New hive receives queen'?'selected':''}>New hive receives queen</option>
-            <option ${rd.queenOutcome==='Queen cell'?'selected':''}>Queen cell</option>
-            <option ${rd.queenOutcome==='Introduced queen'?'selected':''}>Introduced queen</option>
-            <option ${rd.queenOutcome==='Unknown'?'selected':''}>Unknown</option>
+            <option value="Parent keeps queen" ${b39QueenOutcomeEnglish(rd.queenOutcome)==='Parent keeps queen'?'selected':''}>Parent keeps queen</option>
+            <option value="New hive receives queen" ${b39QueenOutcomeEnglish(rd.queenOutcome)==='New hive receives queen'?'selected':''}>New hive receives queen</option>
+            <option value="Queen cell" ${b39QueenOutcomeEnglish(rd.queenOutcome)==='Queen cell'?'selected':''}>Queen cell</option>
+            <option value="Introduced queen" ${b39QueenOutcomeEnglish(rd.queenOutcome)==='Introduced queen'?'selected':''}>Introduced queen</option>
+            <option value="Unknown" ${b39QueenOutcomeEnglish(rd.queenOutcome)==='Unknown'?'selected':''}>Unknown</option>
           </select>
         </label>
 
@@ -12786,40 +12806,84 @@ function detailHTML(a){
     const w=a.workflowData||{},rd=a.resultData||{};
     const displayDate=v=>b39mDisplayDate(String(v||''));
     const yesNo=v=>v===true||String(v).toLowerCase()==='yes'?'Yes':'No';
+    const queenOutcome=b39QueenOutcomeEnglish(rd.queenOutcome)||'Unknown';
+    const followYes=rd.followUpRequired===true||String(rd.followUpRequired).toLowerCase()==='yes';
+    const plannedPriority=(a.workflowData&&a.workflowData.priority)||((a.priority&&a.priority!=='Done')?a.priority:'Done');
     return `<div class="b37-page b39-page b39-pending-detail-page b39-completed-detail-page">
       <section class="b39-hero b39-create-hero">
         <img class="b39-hero-img" src="assets/split_hive_hero_clean.webp" alt="">
         <div class="b39-hero-shade"></div>
-        <div class="b39-hero-copy"><b>Hive split completed</b><small>Review the saved plan and confirmed result.</small></div>
+        <div class="b39-hero-copy">
+          <b>Hive split completed</b>
+          <small>Review the saved plan and confirmed result.</small>
+        </div>
       </section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Source Hive</div><div class="b37-hint">Completed</div></div><div class="b39-summary-strong">${E(h?.name||a.hiveId||'—')}</div></section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Pre-check</div><div class="b37-hint">Saved plan</div></div>
+
+      <section class="b37-card b39-card">
+        <div class="b37-card-head"><div class="b37-label">Source Hive</div><div class="b37-hint">Completed</div></div>
+        <div class="b39-summary-strong">${E(h?.name||a.hiveId||'—')}</div>
+      </section>
+
+      <section class="b37-card b39-card">
+        <div class="b37-card-head"><div class="b37-label">Pre-check</div><div class="b37-hint">Saved plan</div></div>
         <div class="b39-summary-row"><span>Colony Strength</span><b>${E(w.colonyStrength||'Not checked')}</b></div>
         <div class="b39-summary-row"><span>Brood Availability</span><b>${E(w.broodAvailability||'Not checked')}</b></div>
         <div class="b39-summary-row"><span>Food Stores</span><b>${E(w.foodStores||'Not checked')}</b></div>
         <div class="b39-summary-row"><span>Queen Plan</span><b>${E(w.queenPlan||'Not decided')}</b></div>
       </section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Split Plan</div><div class="b37-hint">Planned transfer</div></div>
-        <div class="b39-summary-row"><span>Brood Frames</span><b>${E(w.plannedBroodFrames??'—')}</b></div>
-        <div class="b39-summary-row"><span>Food Frames</span><b>${E(w.plannedFoodFrames??'—')}</b></div>
+
+      <section class="b37-card b39-card">
+        <div class="b37-card-head"><div class="b37-label">Split Plan</div><div class="b37-hint">Planned transfer</div></div>
+        <div class="b39-count-box">
+          <div class="b39-count-head"><span>Brood Frames</span><small>Planned frames to transfer</small></div>
+          <div class="b39-count-controls"><button type="button" disabled>−</button><strong>${E(w.plannedBroodFrames??'—')}</strong><button type="button" disabled>+</button></div>
+        </div>
+        <div class="b39-count-box">
+          <div class="b39-count-head"><span>Food Frames</span><small>Planned frames to transfer</small></div>
+          <div class="b39-count-controls"><button type="button" disabled>−</button><strong>${E(w.plannedFoodFrames??'—')}</strong><button type="button" disabled>+</button></div>
+        </div>
       </section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">New Hive</div><div class="b37-hint">Plan</div></div>
-        <div class="b39-summary-row"><span>Planned New Hive Name</span><b>${E(w.plannedNewHiveName||'—')}</b></div>
+
+      <section class="b37-card b39-card">
+        <div class="b37-card-head"><div class="b37-label">New Hive</div><div class="b37-hint">Created after successful split</div></div>
+        <label class="b37-field"><span>Planned New Hive Name</span><input type="text" value="${E(w.plannedNewHiveName||'')}" readonly></label>
+        <div class="b39-info">This plan is preserved as the original Split Hive plan.</div>
       </section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">Completed</div></div>
-        <div class="b39-summary-row"><span>Due Date</span><b>${E(displayDate(a.dueDate||a.due||a.date))}</b></div>
-        <div class="b39-summary-row"><span>Priority</span><b>${E(a.priority==='Done'?'Done':a.priority||'—')}</b></div>
+
+      <section class="b37-card b39-card">
+        <div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">Completed</div></div>
+        <div class="b39-schedule-grid">
+          <label class="b37-field"><span>Due Date</span><input type="text" value="${E(displayDate(a.dueDate||a.due||a.date))}" readonly></label>
+          <label class="b37-field"><span>Priority</span><select disabled><option selected>${E(plannedPriority)}</option></select></label>
+        </div>
       </section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Saved</div></div><div class="b39-summary-strong">${E(a.notes||'—')}</div></section>
-      <section class="b37-card b39-card b39m-result-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Confirmed</div></div>
-        <div class="b39-summary-row"><span>Split Completed?</span><b>${rd.splitCompleted?'Yes':'No'}</b></div>
-        <div class="b39-summary-row"><span>Actual Brood Frames</span><b>${E(rd.actualBroodFrames??'—')}</b></div>
-        <div class="b39-summary-row"><span>Actual Food Frames</span><b>${E(rd.actualFoodFrames??'—')}</b></div>
-        <div class="b39-summary-row"><span>Queen Outcome</span><b>${E(rd.queenOutcome||'—')}</b></div>
-        <div class="b39-summary-row"><span>Actual New Hive Name</span><b>${E(rd.actualNewHiveName||'—')}</b></div>
-        <div class="b39-summary-row"><span>Completed Date</span><b>${E(displayDate(rd.completedDate))}</b></div>
-        <div class="b39-summary-row"><span>Follow-up Required?</span><b>${yesNo(rd.followUpRequired)}</b></div>
-        <div class="b39-summary-row"><span>Follow-up Date</span><b>${rd.followUpRequired?E(displayDate(rd.followUpDate)):'—'}</b></div>
+
+      <section class="b37-card b39-card">
+        <div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Saved</div></div>
+        <textarea rows="3" readonly>${E(a.notes||'')}</textarea>
+      </section>
+
+      <section class="b37-card b39-card b39m-result-card">
+        <div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Confirmed</div></div>
+        <label class="b37-field b39m-full-field"><span>Split Completed?</span><select disabled><option selected>${rd.splitCompleted?'Yes':'No'}</option></select></label>
+        <div class="b39m-pair">
+          <div class="b39m-pair-label">Actual Brood Frames</div><div class="b39m-pair-label">Actual Food Frames</div>
+          <input class="b39m-pair-control" type="number" value="${E(rd.actualBroodFrames??'')}" readonly>
+          <input class="b39m-pair-control" type="number" value="${E(rd.actualFoodFrames??'')}" readonly>
+        </div>
+        <label class="b37-field b39m-full-field"><span>Queen Outcome</span>
+          <select disabled><option value="${E(queenOutcome)}" selected>${E(queenOutcome)}</option></select>
+        </label>
+        <label class="b37-field b39m-full-field"><span>Actual New Hive Name</span><input type="text" value="${E(rd.actualNewHiveName||'')}" readonly></label>
+        <label class="b37-field b39m-full-field"><span>Completed Date</span>
+          <div class="b39m-date-shell"><span>${E(displayDate(rd.completedDate))}</span><button type="button" class="b39m-calendar-button" disabled aria-label="Completed date">▣</button></div>
+        </label>
+        <div class="b39m-pair b39m-follow-pair">
+          <div class="b39m-pair-label">Follow-up Required?</div><div class="b39m-pair-label">Follow-up Date</div>
+          <select class="b39m-pair-control" disabled><option selected>${yesNo(rd.followUpRequired)}</option></select>
+          <div class="b39m-date-shell b39m-pair-control"><span>${followYes?E(displayDate(rd.followUpDate)):'—'}</span><button type="button" class="b39m-calendar-button" disabled aria-label="Follow-up date">▣</button></div>
+        </div>
+        <div class="b39-info b39m-result-info">This completed result is read-only. The new Hive entity was created from this confirmed Split.</div>
       </section>
       <div class="b37-footer b39-footer"><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
     </div>`;
@@ -12839,7 +12903,7 @@ function detailHTML(a){
     if(!completedDate) return b39mValidationFail('Select the completed date.','b39m-date-button');
     const actualBrood=Math.max(0,Number(idq('b39m-brood')?.value||0));
     const actualFood=Math.max(0,Number(idq('b39m-food')?.value||0));
-    const queenOutcome=String(idq('b39m-queen')?.value||'');
+    const queenOutcome=b39QueenOutcomeEnglish(String(idq('b39m-queen')?.value||''));
     if(!queenOutcome) return b39mValidationFail('Record the queen outcome.','b39m-queen');
     const followUpRequired=String(idq('b39m-follow')?.value||'yes')==='yes';
     const followUpDate=followUpRequired?String(idq('b39m-follow-date')?.value||''):'';
@@ -13123,7 +13187,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39af';
+  window.__HIVEDASH_V224B39_VERSION__='224b39ag';
 })();
 
 

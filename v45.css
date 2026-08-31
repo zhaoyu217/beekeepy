@@ -7475,3 +7475,17 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   justify-content:center!important;
   background:transparent!important;
 }
+
+/* V224B39I — Pending Split Detail support only */
+.b39-pending-detail-page .b39-pending-notes{
+  min-height:46px!important;padding:10px 11px!important;box-sizing:border-box!important;
+  border:1px solid rgba(47,59,51,.10)!important;border-radius:11px!important;
+  background:#FBFBF8!important;color:#2F3B33!important;white-space:pre-wrap!important;
+  font:650 11px/1.35 Inter,Arial,sans-serif!important;
+}
+.b39-pending-detail-page .b37-footer .b37-secondary{
+  display:block!important;width:100%!important;min-height:46px!important;box-sizing:border-box!important;
+  margin:0!important;padding:0 16px!important;border:0!important;border-radius:11px!important;
+  background:#C5921A!important;color:#FFF!important;font:800 12px/1 Inter,Arial,sans-serif!important;
+  text-align:center!important;box-shadow:0 6px 14px rgba(197,146,26,.18)!important;
+}

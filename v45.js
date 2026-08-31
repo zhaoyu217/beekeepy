@@ -349,7 +349,7 @@ function drawV48Actions(mode='Pending'){
   box.innerHTML=rows.length?rows.map(a=>{
     const h=hive(s,a.hiveId)||s.hives[0];
     const done=a.priority==='Done';
-    return `<button onclick="${done?`go('hive/${h.id}')`:`openActionByType('${a.type}','${h.id}')`}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type)}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(a.priority||'Low')}</em><small>${esc(a.due||'')}</small></button>`
+    return `<button onclick="${done?(a.type==='split-hive'&&a.id?`go('split-action/${a.id}')`:`go('hive/${h.id}')`):`openActionByType('${a.type}','${h.id}')`}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type)}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(a.priority||'Low')}</em><small>${esc(a.due||'')}</small></button>`
   }).join(''):'<div class="vc small muted">No matching actions.</div>';
 }
 function filterActions(mode,btn){selectTab(btn);drawV48Actions(mode)}
@@ -12777,6 +12777,54 @@ function detailHTML(a){
     </div>`;
   }
 
+
+  /* V224B39AE — Completed Split history detail.
+     Frozen rule: reuse the B39 card system, render workflowData + confirmed resultData
+     read-only, and never expose Complete Split again after completion. */
+  function b39aeCompletedHTML(a){
+    const s=S(),h=(s.hives||[]).find(x=>x&&String(x.id)===String(a.hiveId));
+    const w=a.workflowData||{},rd=a.resultData||{};
+    const displayDate=v=>b39mDisplayDate(String(v||''));
+    const yesNo=v=>v===true||String(v).toLowerCase()==='yes'?'Yes':'No';
+    return `<div class="b37-page b39-page b39-pending-detail-page b39-completed-detail-page">
+      <section class="b39-hero b39-create-hero">
+        <img class="b39-hero-img" src="assets/split_hive_hero_clean.webp" alt="">
+        <div class="b39-hero-shade"></div>
+        <div class="b39-hero-copy"><b>Hive split completed</b><small>Review the saved plan and confirmed result.</small></div>
+      </section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Source Hive</div><div class="b37-hint">Completed</div></div><div class="b39-summary-strong">${E(h?.name||a.hiveId||'—')}</div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Pre-check</div><div class="b37-hint">Saved plan</div></div>
+        <div class="b39-summary-row"><span>Colony Strength</span><b>${E(w.colonyStrength||'Not checked')}</b></div>
+        <div class="b39-summary-row"><span>Brood Availability</span><b>${E(w.broodAvailability||'Not checked')}</b></div>
+        <div class="b39-summary-row"><span>Food Stores</span><b>${E(w.foodStores||'Not checked')}</b></div>
+        <div class="b39-summary-row"><span>Queen Plan</span><b>${E(w.queenPlan||'Not decided')}</b></div>
+      </section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Split Plan</div><div class="b37-hint">Planned transfer</div></div>
+        <div class="b39-summary-row"><span>Brood Frames</span><b>${E(w.plannedBroodFrames??'—')}</b></div>
+        <div class="b39-summary-row"><span>Food Frames</span><b>${E(w.plannedFoodFrames??'—')}</b></div>
+      </section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">New Hive</div><div class="b37-hint">Plan</div></div>
+        <div class="b39-summary-row"><span>Planned New Hive Name</span><b>${E(w.plannedNewHiveName||'—')}</b></div>
+      </section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">Completed</div></div>
+        <div class="b39-summary-row"><span>Due Date</span><b>${E(displayDate(a.dueDate||a.due||a.date))}</b></div>
+        <div class="b39-summary-row"><span>Priority</span><b>${E(a.priority==='Done'?'Done':a.priority||'—')}</b></div>
+      </section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Saved</div></div><div class="b39-summary-strong">${E(a.notes||'—')}</div></section>
+      <section class="b37-card b39-card b39m-result-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Confirmed</div></div>
+        <div class="b39-summary-row"><span>Split Completed?</span><b>${rd.splitCompleted?'Yes':'No'}</b></div>
+        <div class="b39-summary-row"><span>Actual Brood Frames</span><b>${E(rd.actualBroodFrames??'—')}</b></div>
+        <div class="b39-summary-row"><span>Actual Food Frames</span><b>${E(rd.actualFoodFrames??'—')}</b></div>
+        <div class="b39-summary-row"><span>Queen Outcome</span><b>${E(rd.queenOutcome||'—')}</b></div>
+        <div class="b39-summary-row"><span>Actual New Hive Name</span><b>${E(rd.actualNewHiveName||'—')}</b></div>
+        <div class="b39-summary-row"><span>Completed Date</span><b>${E(displayDate(rd.completedDate))}</b></div>
+        <div class="b39-summary-row"><span>Follow-up Required?</span><b>${yesNo(rd.followUpRequired)}</b></div>
+        <div class="b39-summary-row"><span>Follow-up Date</span><b>${rd.followUpRequired?E(displayDate(rd.followUpDate)):'—'}</b></div>
+      </section>
+      <div class="b37-footer b39-footer"><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
   window.b39mCompleteSplit=function(actionId){
     const s=S();
     const a=(s.actions||[]).find(x=>x&&String(x.id)===String(actionId));
@@ -12873,7 +12921,7 @@ function detailHTML(a){
     }else{
       window.__b39RenderedRoute='split-action/'+id;
       const s=S(),a=(s.actions||[]).find(x=>x&&x.id===id);
-      r.innerHTML=a?pendingHTML(a):'<div class="b37-page"><section class="b37-card">Split Hive action not found.</section></div>';
+      r.innerHTML=a?((a.status==='Completed'||a.priority==='Done'||a.resultAppliedAt)?b39aeCompletedHTML(a):pendingHTML(a)):'<div class="b37-page"><section class="b37-card">Split Hive action not found.</section></div>';
     }
 
     const top=idq('topbar');

@@ -12808,8 +12808,12 @@ function detailHTML(a){
     const yesNo=v=>v===true||String(v).toLowerCase()==='yes'?'Yes':'No';
     const queenOutcome=b39QueenOutcomeEnglish(rd.queenOutcome)||'Unknown';
     const followYes=rd.followUpRequired===true||String(rd.followUpRequired).toLowerCase()==='yes';
-    const plannedPriority=(a.workflowData&&a.workflowData.priority)||((a.priority&&a.priority!=='Done')?a.priority:'Done');
-    return `<div class="b37-page b39-page b39-pending-detail-page b39-completed-detail-page">
+    const plannedPriority=(w.priority)||((a.plannedPriority&&['Low','Medium','High'].includes(a.plannedPriority))?a.plannedPriority:'—');
+    const readonlyControl=(value,extra='')=>`<div class="b39-readonly-control ${extra}">${E(value||'—')}</div>`;
+    const readonlySelect=value=>`<div class="b39-readonly-control b39-readonly-select"><span>${E(value||'—')}</span></div>`;
+    const readonlyDate=value=>`<div class="b39m-date-shell b39-readonly-date"><span>${E(value||'—')}</span><span class="b39-readonly-calendar" aria-hidden="true">▣</span></div>`;
+
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page">
       <section class="b39-hero b39-create-hero">
         <img class="b39-hero-img" src="assets/split_hive_hero_clean.webp" alt="">
         <div class="b39-hero-shade"></div>
@@ -12836,52 +12840,48 @@ function detailHTML(a){
         <div class="b37-card-head"><div class="b37-label">Split Plan</div><div class="b37-hint">Planned transfer</div></div>
         <div class="b39-count-box">
           <div class="b39-count-head"><span>Brood Frames</span><small>Planned frames to transfer</small></div>
-          <div class="b39-count-controls"><button type="button" disabled>−</button><strong>${E(w.plannedBroodFrames??'—')}</strong><button type="button" disabled>+</button></div>
+          <div class="b39-count-controls b39-count-readonly"><span class="b39-step-shell" aria-hidden="true">−</span><strong>${E(w.plannedBroodFrames??'—')}</strong><span class="b39-step-shell" aria-hidden="true">+</span></div>
         </div>
         <div class="b39-count-box">
           <div class="b39-count-head"><span>Food Frames</span><small>Planned frames to transfer</small></div>
-          <div class="b39-count-controls"><button type="button" disabled>−</button><strong>${E(w.plannedFoodFrames??'—')}</strong><button type="button" disabled>+</button></div>
+          <div class="b39-count-controls b39-count-readonly"><span class="b39-step-shell" aria-hidden="true">−</span><strong>${E(w.plannedFoodFrames??'—')}</strong><span class="b39-step-shell" aria-hidden="true">+</span></div>
         </div>
       </section>
 
       <section class="b37-card b39-card">
         <div class="b37-card-head"><div class="b37-label">New Hive</div><div class="b37-hint">Created after successful split</div></div>
-        <label class="b37-field"><span>Planned New Hive Name</span><input type="text" value="${E(w.plannedNewHiveName||'')}" readonly></label>
+        <label class="b37-field"><span>Planned New Hive Name</span>${readonlyControl(w.plannedNewHiveName||'—')}</label>
         <div class="b39-info">This plan is preserved as the original Split Hive plan.</div>
       </section>
 
       <section class="b37-card b39-card">
         <div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">Completed</div></div>
         <div class="b39-schedule-grid">
-          <label class="b37-field"><span>Due Date</span><input type="text" value="${E(displayDate(a.dueDate||a.due||a.date))}" readonly></label>
-          <label class="b37-field"><span>Priority</span><select disabled><option selected>${E(plannedPriority)}</option></select></label>
+          <label class="b37-field"><span>Due Date</span>${readonlyDate(displayDate(a.dueDate||a.due||a.date))}</label>
+          <label class="b37-field"><span>Priority</span>${readonlySelect(plannedPriority)}</label>
         </div>
       </section>
 
       <section class="b37-card b39-card">
         <div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Saved</div></div>
-        <textarea rows="3" readonly>${E(a.notes||'')}</textarea>
+        <div class="b39-readonly-notes">${E(a.notes||'—')}</div>
       </section>
 
       <section class="b37-card b39-card b39m-result-card">
         <div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Confirmed</div></div>
-        <label class="b37-field b39m-full-field"><span>Split Completed?</span><select disabled><option selected>${rd.splitCompleted?'Yes':'No'}</option></select></label>
+        <label class="b37-field b39m-full-field"><span>Split Completed?</span>${readonlySelect(rd.splitCompleted?'Yes':'No')}</label>
         <div class="b39m-pair">
           <div class="b39m-pair-label">Actual Brood Frames</div><div class="b39m-pair-label">Actual Food Frames</div>
-          <input class="b39m-pair-control" type="number" value="${E(rd.actualBroodFrames??'')}" readonly>
-          <input class="b39m-pair-control" type="number" value="${E(rd.actualFoodFrames??'')}" readonly>
+          ${readonlyControl(rd.actualBroodFrames??'—','b39m-pair-control')}
+          ${readonlyControl(rd.actualFoodFrames??'—','b39m-pair-control')}
         </div>
-        <label class="b37-field b39m-full-field"><span>Queen Outcome</span>
-          <select disabled><option value="${E(queenOutcome)}" selected>${E(queenOutcome)}</option></select>
-        </label>
-        <label class="b37-field b39m-full-field"><span>Actual New Hive Name</span><input type="text" value="${E(rd.actualNewHiveName||'')}" readonly></label>
-        <label class="b37-field b39m-full-field"><span>Completed Date</span>
-          <div class="b39m-date-shell"><span>${E(displayDate(rd.completedDate))}</span><button type="button" class="b39m-calendar-button" disabled aria-label="Completed date">▣</button></div>
-        </label>
+        <label class="b37-field b39m-full-field"><span>Queen Outcome</span>${readonlySelect(queenOutcome)}</label>
+        <label class="b37-field b39m-full-field"><span>Actual New Hive Name</span>${readonlyControl(rd.actualNewHiveName||'—')}</label>
+        <label class="b37-field b39m-full-field"><span>Completed Date</span>${readonlyDate(displayDate(rd.completedDate))}</label>
         <div class="b39m-pair b39m-follow-pair">
           <div class="b39m-pair-label">Follow-up Required?</div><div class="b39m-pair-label">Follow-up Date</div>
-          <select class="b39m-pair-control" disabled><option selected>${yesNo(rd.followUpRequired)}</option></select>
-          <div class="b39m-date-shell b39m-pair-control"><span>${followYes?E(displayDate(rd.followUpDate)):'—'}</span><button type="button" class="b39m-calendar-button" disabled aria-label="Follow-up date">▣</button></div>
+          ${readonlySelect(yesNo(rd.followUpRequired)).replace('b39-readonly-control b39-readonly-select','b39-readonly-control b39-readonly-select b39m-pair-control')}
+          ${readonlyDate(followYes?displayDate(rd.followUpDate):'—').replace('b39m-date-shell b39-readonly-date','b39m-date-shell b39-readonly-date b39m-pair-control')}
         </div>
         <div class="b39-info b39m-result-info">This completed result is read-only. The new Hive entity was created from this confirmed Split.</div>
       </section>
@@ -13170,6 +13170,97 @@ function detailHTML(a){
         margin-top:10px!important;
       }
 
+      .b39-completed-detail-page .b39-readonly-control{
+        display:flex;
+        align-items:center;
+        width:100%;
+        height:42px;
+        min-height:42px;
+        box-sizing:border-box;
+        margin:0;
+        padding:0 11px;
+        border:1px solid rgba(47,59,51,.13);
+        border-radius:11px;
+        background:#FBFBF8;
+        color:#2F3B33;
+        font:650 12px/1.2 Inter,Arial,sans-serif;
+        pointer-events:none;
+        user-select:text;
+      }
+      .b39-completed-detail-page .b39-readonly-select{
+        position:relative;
+        padding-right:34px;
+      }
+      .b39-completed-detail-page .b39-readonly-select::after{
+        content:"⌄";
+        position:absolute;
+        right:12px;
+        top:50%;
+        transform:translateY(-52%);
+        color:#5E7350;
+        font:800 14px/1 Inter,Arial,sans-serif;
+        opacity:.78;
+      }
+      .b39-completed-detail-page .b39-readonly-date{
+        overflow:hidden;
+        pointer-events:none;
+      }
+      .b39-completed-detail-page .b39-readonly-date>span:first-child{
+        position:absolute;
+        left:11px;
+        right:42px;
+        top:50%;
+        transform:translateY(-50%);
+        color:#2F3B33;
+        white-space:nowrap;
+        font:650 12px/1 Inter,Arial,sans-serif;
+      }
+      .b39-completed-detail-page .b39-readonly-calendar{
+        position:absolute;
+        right:0;
+        top:0;
+        width:42px;
+        height:42px;
+        text-align:center;
+        color:#2F3B33;
+        font:700 13px/42px Inter,Arial,sans-serif;
+      }
+      .b39-completed-detail-page .b39-count-readonly .b39-step-shell{
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        width:38px;
+        height:38px;
+        box-sizing:border-box;
+        border:1px solid rgba(94,115,80,.14);
+        border-radius:10px;
+        background:#F0F4EA;
+        color:#5E7350;
+        font:800 14px/1 Inter,Arial,sans-serif;
+        opacity:.72;
+        pointer-events:none;
+      }
+      .b39-completed-detail-page .b39-readonly-notes{
+        display:block;
+        width:100%;
+        min-height:72px;
+        box-sizing:border-box;
+        margin:0;
+        padding:11px;
+        border:1px solid rgba(47,59,51,.13);
+        border-radius:11px;
+        background:#FBFBF8;
+        color:#2F3B33;
+        white-space:pre-wrap;
+        overflow-wrap:anywhere;
+        font:650 12px/1.25 Inter,Arial,sans-serif;
+        user-select:text;
+      }
+      .b39-completed-detail-page .b39m-pair .b39-readonly-control,
+      .b39-completed-detail-page .b39m-pair .b39-readonly-date{
+        margin:0!important;
+      }
+
       .b39m-back{
         width:100%;
         min-height:46px;
@@ -13187,7 +13278,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39ag';
+  window.__HIVEDASH_V224B39_VERSION__='224b39ah';
 })();
 
 

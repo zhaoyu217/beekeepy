@@ -12589,13 +12589,10 @@ function detailHTML(a){
         <div class="b39-schedule-grid">
           <label class="b37-field">
             <span>Due Date</span>
-            <div class="b39-date-shell b39-plan-date-shell b39v-pending-date-shell">
-              <input id="b39v-due" class="b39-plan-date-hidden" type="hidden" value="${E(a.dueDate||a.due||'')}">
-              <button type="button" class="b39v-pending-date-button" ${editable?'':'disabled'}
-                onclick="b39vTogglePendingCalendar('${E(a.id)}',this)" aria-label="Choose due date">
-                <span id="b39v-due-display">${E(fmt(a.dueDate||a.due||''))}</span>
-                <span class="b39v-pending-date-icon" aria-hidden="true">▣</span>
-              </button>
+            <div class="b39-date-shell b39v-pending-native-date-shell">
+              <input id="b39v-due" class="b39v-pending-native-date" type="date"
+                value="${E(a.dueDate||a.due||a.date||'')}" ${editable?'':'disabled'}
+                onchange="b39vSyncPendingDue('${E(a.id)}',this)" aria-label="Choose due date">
             </div>
           </label>
           <label class="b37-field">

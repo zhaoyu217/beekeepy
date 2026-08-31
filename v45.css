@@ -7524,3 +7524,38 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   position:static!important;transform:none!important;flex:0 0 auto!important;
   font:700 12px/1 Inter,Arial,sans-serif!important;color:#2F3B33!important;pointer-events:none!important;
 }
+
+
+/* V224B39Y — Pending Split Hive Schedule Due Date complete correction only.
+   Use one real, in-place native date input: no duplicate custom text layer and no
+   off-screen picker anchor. This restores actual date entry and keeps the browser
+   picker anchored to the visible Schedule control. */
+.b39-pending-detail-page .b39v-pending-native-date-shell{
+  position:relative!important;
+  overflow:visible!important;
+  isolation:auto!important;
+}
+.b39-pending-detail-page .b39v-pending-native-date{
+  position:static!important;
+  inset:auto!important;
+  transform:none!important;
+  width:100%!important;
+  height:40px!important;
+  min-height:40px!important;
+  box-sizing:border-box!important;
+  margin:0!important;
+  padding:0 10px!important;
+  border:0!important;
+  outline:0!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:#2F3B33!important;
+  -webkit-text-fill-color:#2F3B33!important;
+  opacity:1!important;
+  font:650 12px/1 Inter,Arial,sans-serif!important;
+  cursor:pointer!important;
+}
+.b39-pending-detail-page .b39v-pending-native-date:disabled{
+  cursor:default!important;
+  opacity:.72!important;
+}

@@ -11840,7 +11840,7 @@ function detailHTML(a){
     const hiveOptions=hs.map(h=>`<option value="${E(h.id)}" ${String(h.id)===String(d.hiveId)?'selected':''}>${E(h.name||h.id)}</option>`).join('');
 
     return `<div class="b37-page b39-page b39-create-page">
-      <section class="b39-hero b39-create-hero">
+      <section class="b39-hero b39-create-hero" style="background-image:linear-gradient(90deg,rgba(247,245,239,.96) 0%,rgba(247,245,239,.88) 38%,rgba(247,245,239,.28) 58%,rgba(247,245,239,0) 74%),url('assets/split_hive_hero.webp')">
         <div class="b39-hero-copy">
           <b>Plan a hive split</b>
           <small>Plan the work now. A new hive is created only after the split is actually completed.</small>

@@ -12187,56 +12187,114 @@ function detailHTML(a){
 
   window.b39mPersistResultDraft=b39mPersistResultDraft;
 
-  window.b39mPickHiddenDate=function(id){
-    const valueEl=idq(id);
-    if(!valueEl)return;
+  function b39mDateISO(y,m,d){
+    return String(y).padStart(4,'0')+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  }
 
-    const picker=document.createElement('input');
-    picker.type='date';
-    picker.value=String(valueEl.value||'');
-    picker.setAttribute('aria-hidden','true');
-    picker.style.position='fixed';
-    picker.style.left='-10000px';
-    picker.style.top='-10000px';
-    picker.style.width='1px';
-    picker.style.height='1px';
-    picker.style.opacity='0';
-    picker.style.pointerEvents='none';
+  function b39mDateParts(value){
+    const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    if(!m)return null;
+    return {y:Number(m[1]),m:Number(m[2])-1,d:Number(m[3])};
+  }
 
-    const cleanup=()=>{
-      try{picker.remove()}catch(_){}
-    };
+  function b39mCloseCalendar(){
+    document.querySelectorAll('.b39m-date-popover').forEach(el=>el.remove());
+  }
 
-    picker.addEventListener('change',()=>{
-      valueEl.value=picker.value||'';
-      b39mPersistResultDraft(
-        String((location.hash||'').split('/')[1]||'')
-      );
-      cleanup();
-    },{once:true});
+  function b39mRenderCalendar(targetId, shell, y, m){
+    b39mCloseCalendar();
+    const input=idq(targetId);
+    if(!input||!shell)return;
 
-    picker.addEventListener('blur',()=>{
-      setTimeout(cleanup,0);
-    },{once:true});
+    const selected=b39mDateParts(input.value);
+    const today=new Date();
+    const first=new Date(y,m,1);
+    const daysInMonth=new Date(y,m+1,0).getDate();
+    const leading=(first.getDay()+6)%7; // Monday-first
 
-    document.body.appendChild(picker);
+    const pop=document.createElement('div');
+    pop.className='b39m-date-popover';
+    pop.setAttribute('role','dialog');
+    pop.setAttribute('aria-label','Choose date');
+    pop.addEventListener('click',e=>e.stopPropagation());
 
-    try{
-      if(typeof picker.showPicker==='function'){
-        picker.showPicker();
-      }else{
-        picker.focus();
-        picker.click();
-      }
-    }catch(_){
-      try{
-        picker.focus();
-        picker.click();
-      }catch(__){
-        cleanup();
-      }
+    const head=document.createElement('div');
+    head.className='b39m-cal-head';
+
+    const prev=document.createElement('button');
+    prev.type='button'; prev.className='b39m-cal-nav'; prev.textContent='‹'; prev.setAttribute('aria-label','Previous month');
+    prev.onclick=()=>{ const d=new Date(y,m-1,1); b39mRenderCalendar(targetId,shell,d.getFullYear(),d.getMonth()); };
+
+    const title=document.createElement('strong');
+    title.className='b39m-cal-title';
+    title.textContent=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(y,m,1));
+
+    const next=document.createElement('button');
+    next.type='button'; next.className='b39m-cal-nav'; next.textContent='›'; next.setAttribute('aria-label','Next month');
+    next.onclick=()=>{ const d=new Date(y,m+1,1); b39mRenderCalendar(targetId,shell,d.getFullYear(),d.getMonth()); };
+
+    head.append(prev,title,next);
+    pop.appendChild(head);
+
+    const week=document.createElement('div');
+    week.className='b39m-cal-week';
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(x=>{const e=document.createElement('span');e.textContent=x;week.appendChild(e)});
+    pop.appendChild(week);
+
+    const grid=document.createElement('div');
+    grid.className='b39m-cal-grid';
+    for(let i=0;i<leading;i++){ const blank=document.createElement('span'); blank.className='b39m-cal-blank'; grid.appendChild(blank); }
+    for(let day=1;day<=daysInMonth;day++){
+      const b=document.createElement('button');
+      b.type='button';
+      b.className='b39m-cal-day';
+      b.textContent=String(day);
+      const iso=b39mDateISO(y,m,day);
+      if(selected && selected.y===y && selected.m===m && selected.d===day)b.classList.add('is-selected');
+      if(today.getFullYear()===y && today.getMonth()===m && today.getDate()===day)b.classList.add('is-today');
+      b.onclick=()=>{
+        input.value=iso;
+        b39mPersistResultDraft(String((location.hash||'').split('/')[1]||''));
+        b39mCloseCalendar();
+      };
+      grid.appendChild(b);
     }
+    pop.appendChild(grid);
+
+    const foot=document.createElement('div');
+    foot.className='b39m-cal-foot';
+    const clear=document.createElement('button');
+    clear.type='button'; clear.textContent='Clear';
+    clear.onclick=()=>{ input.value=''; b39mPersistResultDraft(String((location.hash||'').split('/')[1]||'')); b39mCloseCalendar(); };
+    const todayBtn=document.createElement('button');
+    todayBtn.type='button'; todayBtn.textContent='Today';
+    todayBtn.onclick=()=>{ input.value=b39mDateISO(today.getFullYear(),today.getMonth(),today.getDate()); b39mPersistResultDraft(String((location.hash||'').split('/')[1]||'')); b39mCloseCalendar(); };
+    foot.append(clear,todayBtn);
+    pop.appendChild(foot);
+
+    shell.appendChild(pop);
+  }
+
+  window.b39mToggleCalendar=function(id,button){
+    const input=idq(id);
+    const shell=button?.closest('.b39m-date-shell');
+    if(!input||!shell)return;
+
+    const open=shell.querySelector('.b39m-date-popover');
+    if(open){ b39mCloseCalendar(); return; }
+
+    const selected=b39mDateParts(input.value);
+    const base=selected ? new Date(selected.y,selected.m,1) : new Date();
+    b39mRenderCalendar(id,shell,base.getFullYear(),base.getMonth());
   };
+
+  if(!window.__HIVEDASH_B39_CAL_OUTSIDE__){
+    window.__HIVEDASH_B39_CAL_OUTSIDE__=true;
+    document.addEventListener('click',e=>{
+      if(!e.target.closest?.('.b39m-date-shell')) b39mCloseCalendar();
+    });
+    window.addEventListener('hashchange',b39mCloseCalendar);
+  }
 
 
 
@@ -12387,7 +12445,7 @@ function detailHTML(a){
           <div class="b39m-date-shell">
             <span id="b39m-date-display">${E(fmt(rd.completedDate))}</span>
             <button type="button" class="b39m-calendar-button"
-              onclick="b39mPickHiddenDate('b39m-date')" aria-label="Choose completed date">▣</button>
+              onclick="event.stopPropagation();b39mToggleCalendar('b39m-date',this)" aria-label="Choose completed date">▣</button>
             <input id="b39m-date" type="hidden" value="${E(rd.completedDate)}">
           </div>
         </label>
@@ -12405,7 +12463,7 @@ function detailHTML(a){
           <div class="b39m-date-shell b39m-pair-control">
             <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'mm/dd/yyyy')}</span>
             <button type="button" class="b39m-calendar-button"
-              onclick="b39mPickHiddenDate('b39m-follow-date')" aria-label="Choose follow-up date">▣</button>
+              onclick="event.stopPropagation();b39mToggleCalendar('b39m-follow-date',this)" aria-label="Choose follow-up date">▣</button>
             <input id="b39m-follow-date" type="hidden" value="${E(rd.followUpDate||'')}">
           </div>
         </div>
@@ -12612,7 +12670,7 @@ function detailHTML(a){
         border:1px solid rgba(47,59,51,.13);
         border-radius:11px;
         background:#FBFBF8;
-        overflow:hidden;
+        overflow:visible;
       }
 
       .b39m-date-shell>span[id]{
@@ -12664,6 +12722,36 @@ function detailHTML(a){
         border:0!important;
       }
 
+      .b39m-date-popover{
+        position:absolute;
+        z-index:200;
+        top:calc(100% + 6px);
+        left:0;
+        width:280px;
+        box-sizing:border-box;
+        padding:10px;
+        border:1px solid rgba(47,59,51,.16);
+        border-radius:12px;
+        background:#fffdf9;
+        box-shadow:0 12px 28px rgba(47,59,51,.18);
+        color:#2F3B33;
+        font-family:Inter,Arial,sans-serif;
+      }
+      .b39m-follow-pair .b39m-date-popover{left:auto;right:0}
+      .b39m-cal-head{display:grid;grid-template-columns:32px 1fr 32px;align-items:center;gap:6px;margin-bottom:8px}
+      .b39m-cal-title{text-align:center;font:800 12px/32px Inter,Arial,sans-serif}
+      .b39m-cal-nav{width:32px;height:32px;border:0;border-radius:8px;background:transparent;color:#5E7350;font:800 22px/32px Inter,Arial,sans-serif;cursor:pointer}
+      .b39m-cal-nav:hover{background:#F3F1E9}
+      .b39m-cal-week,.b39m-cal-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:2px}
+      .b39m-cal-week span{text-align:center;color:#7B817B;font:700 8px/24px Inter,Arial,sans-serif}
+      .b39m-cal-blank{height:32px}
+      .b39m-cal-day{height:32px;border:0;border-radius:8px;background:transparent;color:#2F3B33;font:700 10px/32px Inter,Arial,sans-serif;text-align:center;cursor:pointer}
+      .b39m-cal-day:hover{background:#F3F1E9}
+      .b39m-cal-day.is-today{outline:1px solid rgba(197,146,26,.55);outline-offset:-1px}
+      .b39m-cal-day.is-selected{background:#5E7350;color:#fff}
+      .b39m-cal-foot{display:flex;justify-content:space-between;gap:8px;margin-top:8px;padding-top:8px;border-top:1px solid rgba(47,59,51,.09)}
+      .b39m-cal-foot button{border:0;background:transparent;color:#5E7350;font:800 10px/28px Inter,Arial,sans-serif;cursor:pointer;padding:0 6px}
+
       .b39m-result-info{
         margin-top:10px!important;
       }
@@ -12685,7 +12773,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39s';
+  window.__HIVEDASH_V224B39_VERSION__='224b39u';
 })();
 
 

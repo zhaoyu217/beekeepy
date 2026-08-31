@@ -12280,7 +12280,7 @@ function detailHTML(a){
     try{localStorage.setItem(b39mResultDraftKey(actionId),JSON.stringify(d))}catch(_){}
 
     const completedDisplay=idq('b39m-date-display');
-    if(completedDisplay)completedDisplay.textContent=d.completedDate?fmtDate(d.completedDate):'MM/DD/YYYY';
+    if(completedDisplay)completedDisplay.textContent=b39mDisplayDate(d.completedDate);
     /* Completed Date remains editable while Pending; confirmation only changes semantics. */
     const completedButton=idq('b39m-date-button');
     if(completedButton)completedButton.disabled=false;
@@ -12292,7 +12292,7 @@ function detailHTML(a){
     }
 
     const followDisplay=idq('b39m-follow-date-display');
-    if(followDisplay)followDisplay.textContent=d.followUpDate?fmtDate(d.followUpDate):'MM/DD/YYYY';
+    if(followDisplay)followDisplay.textContent=b39mDisplayDate(d.followUpDate);
   }
 
   function b39mClearResultDraft(actionId){
@@ -12309,6 +12309,20 @@ function detailHTML(a){
     const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
     if(!m)return null;
     return {y:Number(m[1]),m:Number(m[2])-1,d:Number(m[3])};
+  }
+
+  /* V224B39AC — result-date display formatter only.
+     Storage remains ISO YYYY-MM-DD; visible B39 result dates are MM/DD/YYYY. */
+  function b39mDisplayDate(value){
+    const p=b39mDateParts(value);
+    if(!p)return 'MM/DD/YYYY';
+    return String(p.m+1).padStart(2,'0')+'/'+String(p.d).padStart(2,'0')+'/'+String(p.y).padStart(4,'0');
+  }
+  function b39mRefreshDateDisplay(targetId){
+    const input=idq(targetId);
+    const displayId=targetId==='b39m-follow-date'?'b39m-follow-date-display':'b39m-date-display';
+    const display=idq(displayId);
+    if(display)display.textContent=b39mDisplayDate(input?.value||'');
   }
 
   function b39mCloseCalendar(){
@@ -12368,6 +12382,7 @@ function detailHTML(a){
       if(today.getFullYear()===y && today.getMonth()===m && today.getDate()===day)b.classList.add('is-today');
       b.onclick=()=>{
         input.value=iso;
+        b39mRefreshDateDisplay(targetId);
         b39mPersistResultDraft(String((location.hash||'').split('/')[1]||''));
         b39mCloseCalendar();
       };
@@ -12379,10 +12394,10 @@ function detailHTML(a){
     foot.className='b39m-cal-foot';
     const clear=document.createElement('button');
     clear.type='button'; clear.textContent='Clear';
-    clear.onclick=()=>{ input.value=''; b39mPersistResultDraft(String((location.hash||'').split('/')[1]||'')); b39mCloseCalendar(); };
+    clear.onclick=()=>{ input.value=''; b39mRefreshDateDisplay(targetId); b39mPersistResultDraft(String((location.hash||'').split('/')[1]||'')); b39mCloseCalendar(); };
     const todayBtn=document.createElement('button');
     todayBtn.type='button'; todayBtn.textContent='Today';
-    todayBtn.onclick=()=>{ input.value=b39mDateISO(today.getFullYear(),today.getMonth(),today.getDate()); b39mPersistResultDraft(String((location.hash||'').split('/')[1]||'')); b39mCloseCalendar(); };
+    todayBtn.onclick=()=>{ input.value=b39mDateISO(today.getFullYear(),today.getMonth(),today.getDate()); b39mRefreshDateDisplay(targetId); b39mPersistResultDraft(String((location.hash||'').split('/')[1]||'')); b39mCloseCalendar(); };
     foot.append(clear,todayBtn);
     pop.appendChild(foot);
 
@@ -12703,7 +12718,7 @@ function detailHTML(a){
         <label class="b37-field b39m-full-field">
           <span>Completed Date</span>
           <div id="b39m-date-shell" class="b39m-date-shell">
-            <span id="b39m-date-display">${E(rd.completedDate?fmt(rd.completedDate):'MM/DD/YYYY')}</span>
+            <span id="b39m-date-display">${E(b39mDisplayDate(rd.completedDate))}</span>
             <button id="b39m-date-button" type="button" class="b39m-calendar-button"
               onclick="event.stopPropagation();b39mToggleCalendar('b39m-date',this)" aria-label="Choose completed date">▣</button>
             <input id="b39m-date" type="hidden" value="${E(rd.completedDate)}">
@@ -12721,7 +12736,7 @@ function detailHTML(a){
           </select>
 
           <div class="b39m-date-shell b39m-pair-control">
-            <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'MM/DD/YYYY')}</span>
+            <span id="b39m-follow-date-display">${E(b39mDisplayDate(rd.followUpDate))}</span>
             <button type="button" class="b39m-calendar-button"
               onclick="event.stopPropagation();b39mToggleCalendar('b39m-follow-date',this)" aria-label="Choose follow-up date">▣</button>
             <input id="b39m-follow-date" type="hidden" value="${E(rd.followUpDate||'')}">
@@ -13034,7 +13049,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39ab';
+  window.__HIVEDASH_V224B39_VERSION__='224b39ac';
 })();
 
 

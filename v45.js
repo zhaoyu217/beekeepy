@@ -12920,7 +12920,7 @@ function detailHTML(a){
       window.__b39RenderedRoute='split-action/new';
     }else{
       window.__b39RenderedRoute='split-action/'+id;
-      const s=S(),a=(s.actions||[]).find(x=>x&&x.id===id);
+      const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id))||(Array.isArray(s.meta?.completedActions)?s.meta.completedActions.find(x=>x&&String(x.id)===String(id)):null);
       r.innerHTML=a?((a.status==='Completed'||a.priority==='Done'||a.resultAppliedAt)?b39aeCompletedHTML(a):pendingHTML(a)):'<div class="b37-page"><section class="b37-card">Split Hive action not found.</section></div>';
     }
 
@@ -13123,7 +13123,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39ac';
+  window.__HIVEDASH_V224B39_VERSION__='224b39af';
 })();
 
 
@@ -13167,4 +13167,44 @@ function detailHTML(a){
 
   /* BFCache/page restore only; same-route guard prevents destructive redraw. */
   window.addEventListener('pageshow',b39ImmediateFirstPaint);
+})();
+
+
+/* ==============================================================
+   V224B39AF — Completed Split Action Routing Closure
+   Scope: Actions list click routing for type=split-hive only.
+   Keeps all other Action routes exactly as provided by the current renderer.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V224B39AF__) return;
+  window.__HIVEDASH_V224B39AF__=true;
+
+  const previousDraw=window.v53DrawActions||v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    const box=idq('alist');
+    if(!box) return previousDraw(mode);
+
+    const s=v45s(),rows=v53ActionRows(mode);
+    box.innerHTML=rows.length?rows.map(a=>{
+      const h=hive(s,a.hiveId)||s.hives[0];
+      if(!h)return '';
+      const done=a.priority==='Done'||a.status==='Completed';
+      let click='';
+
+      if(String(a.type||'').toLowerCase()==='split-hive' && a.id){
+        /* Pending and Completed Split actions both open their own B39 detail.
+           The B39 renderer decides editable vs read-only from persisted state. */
+        click=`go('split-action/${a.id}')`;
+      }else if(String(a.type||'').toLowerCase()==='queen-management'){
+        click=`go('queen-action/${a.id}')`;
+      }else if(String(a.type||'').toLowerCase()==='super-management'){
+        click=`go('super-action/${a.id}')`;
+      }else{
+        click=done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`;
+      }
+
+      return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`;
+    }).join(''):'<div class="v53-empty-inline">No matching actions.</div>';
+  };
+  try{v53DrawActions=window.v53DrawActions}catch(_){ }
 })();

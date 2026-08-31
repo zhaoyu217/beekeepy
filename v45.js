@@ -12233,11 +12233,115 @@ function detailHTML(a){
         <textarea rows="3" readonly>${E(a.notes||'')}</textarea>
       </section>
 
+      <section class="b37-card b39-card b39m-result-card">
+        <div class="b37-card-head">
+          <div class="b37-label">Actual Result</div>
+          <div class="b37-hint">Record what actually happened</div>
+        </div>
+        <label class="b37-field">
+          <span>Split Completed?</span>
+          <select id="b39m-success">
+            <option value="">Not confirmed</option>
+            <option value="yes">Yes</option>
+            <option value="no">No</option>
+          </select>
+        </label>
+        <div class="b39m-result-grid">
+          <label class="b37-field"><span>Actual Brood Frames</span><input id="b39m-brood" type="number" min="0" max="20" value="${E(w.plannedBroodFrames??0)}"></label>
+          <label class="b37-field"><span>Actual Food Frames</span><input id="b39m-food" type="number" min="0" max="20" value="${E(w.plannedFoodFrames??0)}"></label>
+        </div>
+        <label class="b37-field">
+          <span>Queen Outcome</span>
+          <select id="b39m-queen">
+            <option value="">Not recorded</option>
+            <option>Parent keeps queen</option>
+            <option>New hive receives queen</option>
+            <option>Queen cell</option>
+            <option>Introduced queen</option>
+            <option>Unknown</option>
+          </select>
+        </label>
+        <label class="b37-field"><span>Actual New Hive Name</span><input id="b39m-name" type="text" maxlength="40" value="${E(w.plannedNewHiveName||'')}"></label>
+        <label class="b37-field"><span>Completed Date</span><input id="b39m-date" type="date" value="${new Date().toISOString().slice(0,10)}"></label>
+        <div class="b39m-result-grid">
+          <label class="b37-field"><span>Follow-up Required?</span><select id="b39m-follow"><option value="yes">Yes</option><option value="no">No</option></select></label>
+          <label class="b37-field"><span>Follow-up Date</span><input id="b39m-follow-date" type="date"></label>
+        </div>
+        <div class="b39-info">A new Hive entity is created only when Split Completed is confirmed Yes.</div>
+      </section>
+
       <div class="b37-footer b39-footer">
-        <button class="b37-primary" onclick="go('actions')">Back to Actions</button>
+        <button class="b37-primary" onclick="b39mCompleteSplit('${E(a.id)}')">Complete Split</button>
+        <button class="b39m-back" onclick="go('actions')">Back to Actions</button>
       </div>
     </div>`;
   }
+
+  window.b39mCompleteSplit=function(actionId){
+    const s=S();
+    const a=(s.actions||[]).find(x=>x&&String(x.id)===String(actionId));
+    if(!a || a.type!==TYPE) return toast('Split Hive action not found');
+    if(a.status==='Completed' || a.priority==='Done' || a.resultAppliedAt) return toast('Split already completed');
+
+    const success=String(idq('b39m-success')?.value||'');
+    if(!success) return toast('Confirm whether the split was completed');
+
+    const completedDate=String(idq('b39m-date')?.value||new Date().toISOString().slice(0,10));
+    const actualBrood=Math.max(0,Number(idq('b39m-brood')?.value||0));
+    const actualFood=Math.max(0,Number(idq('b39m-food')?.value||0));
+    const queenOutcome=String(idq('b39m-queen')?.value||'');
+    if(!queenOutcome) return toast('Record the queen outcome');
+    const followUpRequired=String(idq('b39m-follow')?.value||'yes')==='yes';
+    const followUpDate=followUpRequired?String(idq('b39m-follow-date')?.value||''):'';
+    if(followUpRequired && !followUpDate) return toast('Select a follow-up date');
+    const sourceHive=(s.hives||[]).find(h=>h&&String(h.id)===String(a.hiveId));
+    if(!sourceHive) return toast('Source hive not found');
+
+    let newHiveId=null;
+    let newHiveName='';
+    if(success==='yes'){
+      newHiveName=String(idq('b39m-name')?.value||'').trim();
+      if(!newHiveName) return toast('Enter the actual new hive name');
+      const existing=(s.hives||[]).find(h=>h&&h.createdFromSplitActionId===a.id);
+      if(existing){
+        newHiveId=existing.id;
+      }else{
+        let seq=Date.now(),candidate='h'+seq;
+        while((s.hives||[]).some(h=>String(h.id)===candidate)){seq++;candidate='h'+seq}
+        newHiveId=candidate;
+        const newHive={
+          id:newHiveId,name:newHiveName,score:75,status:'Attention',
+          queen:'Unknown',eggs:false,larvae:false,queenCells:false,brood:'Unknown',strength:'5',
+          honey:'Medium',pollen:'Medium',varroa:0,shb:false,waxMoth:false,disease:false,swarm:false,
+          superStatus:'None',superCount:0,lastInspection:'',notes:'Created from Split Hive action.',photos:[],
+          parentHiveId:sourceHive.id,createdFromSplitActionId:a.id,createdAt:new Date().toISOString()
+        };
+        s.hives=s.hives||[];
+        s.hives.push(newHive);
+      }
+    }
+
+    const now=new Date().toISOString();
+    a.resultData={
+      splitCompleted:success==='yes',
+      actualBroodFrames:actualBrood,actualFoodFrames:actualFood,queenOutcome,
+      actualNewHiveName:newHiveName,newHiveId,completedDate,followUpRequired,followUpDate
+    };
+    a.status='Completed';
+    a.priority='Done';
+    a.completedAt=now;
+    a.followUpDate=followUpDate||null;
+    a.resultAppliedAt=now;
+
+    s.meta=s.meta||{};
+    s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+    const ai=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));
+    if(ai>=0)s.meta.completedActions[ai]=a; else s.meta.completedActions.push(a);
+
+    if(save(s)===false) return toast('Split result could not be saved');
+    toast(success==='yes'?'Split completed — new hive created':'Split result saved — no new hive created');
+    go('actions');
+  };
 
   const prevRender=window.render||render;
   window.render=function(){
@@ -12281,7 +12385,19 @@ function detailHTML(a){
   };
   try{render=window.render}catch(_){}
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39a';
+  (function b39mStyle(){
+    if(document.getElementById('v224b39m-style'))return;
+    const st=document.createElement('style');st.id='v224b39m-style';
+    st.textContent=`
+      .b39m-result-card .b37-field{margin-top:10px}
+      .b39m-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
+      .b39m-result-card input,.b39m-result-card select{width:100%;box-sizing:border-box}
+      .b39m-back{width:100%;margin-top:8px;border:1px solid rgba(47,59,51,.14);background:#fffdf9;color:#5e7350;border-radius:12px;padding:12px;font-weight:700}
+    `;
+    document.head.appendChild(st);
+  })();
+
+  window.__HIVEDASH_V224B39_VERSION__='224b39m';
 })();
 
 

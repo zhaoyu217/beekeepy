@@ -11838,6 +11838,84 @@ function detailHTML(a){
     if(display)display.textContent=fmtDate(d.dueDate);
   };
 
+  /* V224B39W — Schedule Due Date control only.
+     Frozen B36/B37 rule: keep Schedule geometry and workflowData semantics;
+     remove native date text layering that can ghost/overlap in translated or Chromium-rendered pages. */
+  function b39PlanCloseCalendar(){
+    document.querySelectorAll('.b39-plan-date-popover').forEach(el=>el.remove());
+  }
+  function b39PlanDateParts(value){
+    const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    return m?{y:Number(m[1]),m:Number(m[2])-1,d:Number(m[3])}:null;
+  }
+  function b39PlanDateISO(y,m,d){
+    return String(y).padStart(4,'0')+'-'+String(m+1).padStart(2,'0')+'-'+String(d).padStart(2,'0');
+  }
+  function b39PlanCommitDate(iso){
+    const input=idq('b39-due');
+    if(!input)return;
+    input.value=iso||TODAY();
+    b39SyncDate(input);
+  }
+  function b39PlanRenderCalendar(shell,y,m){
+    b39PlanCloseCalendar();
+    const input=idq('b39-due');
+    if(!input||!shell)return;
+    const selected=b39PlanDateParts(input.value);
+    const today=new Date();
+    const first=new Date(y,m,1);
+    const leading=(first.getDay()+6)%7;
+    const daysInMonth=new Date(y,m+1,0).getDate();
+    const pop=document.createElement('div');
+    pop.className='b39-plan-date-popover';
+    pop.setAttribute('role','dialog');
+    pop.setAttribute('aria-label','Choose due date');
+    pop.addEventListener('click',e=>e.stopPropagation());
+
+    const head=document.createElement('div'); head.className='b39-plan-cal-head';
+    const prev=document.createElement('button'); prev.type='button'; prev.className='b39-plan-cal-nav'; prev.textContent='‹'; prev.setAttribute('aria-label','Previous month');
+    prev.onclick=()=>{const d=new Date(y,m-1,1);b39PlanRenderCalendar(shell,d.getFullYear(),d.getMonth())};
+    const title=document.createElement('strong'); title.className='b39-plan-cal-title';
+    title.textContent=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(y,m,1));
+    const next=document.createElement('button'); next.type='button'; next.className='b39-plan-cal-nav'; next.textContent='›'; next.setAttribute('aria-label','Next month');
+    next.onclick=()=>{const d=new Date(y,m+1,1);b39PlanRenderCalendar(shell,d.getFullYear(),d.getMonth())};
+    head.append(prev,title,next); pop.appendChild(head);
+
+    const week=document.createElement('div'); week.className='b39-plan-cal-week';
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(x=>{const e=document.createElement('span');e.textContent=x;week.appendChild(e)});
+    pop.appendChild(week);
+    const grid=document.createElement('div'); grid.className='b39-plan-cal-grid';
+    for(let i=0;i<leading;i++){const blank=document.createElement('span');blank.className='b39-plan-cal-blank';grid.appendChild(blank)}
+    for(let day=1;day<=daysInMonth;day++){
+      const b=document.createElement('button'); b.type='button'; b.className='b39-plan-cal-day'; b.textContent=String(day);
+      const iso=b39PlanDateISO(y,m,day);
+      if(selected&&selected.y===y&&selected.m===m&&selected.d===day)b.classList.add('is-selected');
+      if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day)b.classList.add('is-today');
+      b.onclick=()=>{b39PlanCommitDate(iso);b39PlanCloseCalendar()};
+      grid.appendChild(b);
+    }
+    pop.appendChild(grid);
+    const foot=document.createElement('div'); foot.className='b39-plan-cal-foot';
+    const todayBtn=document.createElement('button'); todayBtn.type='button'; todayBtn.textContent='Today';
+    todayBtn.onclick=()=>{b39PlanCommitDate(b39PlanDateISO(today.getFullYear(),today.getMonth(),today.getDate()));b39PlanCloseCalendar()};
+    foot.appendChild(todayBtn); pop.appendChild(foot);
+    shell.appendChild(pop);
+  }
+  window.b39PlanToggleCalendar=function(button){
+    const shell=button?.closest('.b39-plan-date-shell');
+    const input=idq('b39-due');
+    if(!shell||!input)return;
+    if(shell.querySelector('.b39-plan-date-popover')){b39PlanCloseCalendar();return}
+    const selected=b39PlanDateParts(input.value);
+    const base=selected?new Date(selected.y,selected.m,1):new Date();
+    b39PlanRenderCalendar(shell,base.getFullYear(),base.getMonth());
+  };
+  if(!window.__HIVEDASH_B39_PLAN_CAL_OUTSIDE__){
+    window.__HIVEDASH_B39_PLAN_CAL_OUTSIDE__=true;
+    document.addEventListener('click',e=>{if(!e.target.closest?.('.b39-plan-date-shell'))b39PlanCloseCalendar()});
+    window.addEventListener('hashchange',b39PlanCloseCalendar);
+  }
+
   function recoverDraftFromDOM(){
     const raw=(location.hash||'').slice(1);
     if(raw!=='split-action/new')return;
@@ -11976,9 +12054,10 @@ function detailHTML(a){
         <div class="b39-schedule-grid">
           <label class="b37-field">
             <span>Due Date</span>
-            <div class="b39-date-shell">
+            <div class="b39-date-shell b39-plan-date-shell">
               <span id="b39-due-display">${fmtDate(d.dueDate||TODAY())}</span>
-              <input id="b39-due" type="date" value="${E(d.dueDate||TODAY())}" onchange="b39SyncDate(this)">
+              <input id="b39-due" class="b39-plan-date-hidden" type="hidden" value="${E(d.dueDate||TODAY())}">
+              <button type="button" class="b39-plan-calendar-button" onclick="b39PlanToggleCalendar(this)" aria-label="Choose due date">▣</button>
             </div>
           </label>
           <label class="b37-field">

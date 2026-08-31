@@ -12429,6 +12429,79 @@ function detailHTML(a){
     if(display) display.textContent=fmtDate(value);
   };
 
+  /* V224B39X — Pending-detail Due Date rebuild only.
+     Do not use a visible native date input here: Chromium can render its own
+     date text on top of the custom display. Keep the saved value in a hidden
+     field and use the same anchored in-page calendar language as B39 create. */
+  function b39vRenderPendingCalendar(actionId,shell,y,m){
+    b39PlanCloseCalendar();
+    const input=idq('b39v-due');
+    if(!input||!shell)return;
+    const selected=b39PlanDateParts(input.value);
+    const today=new Date();
+    const first=new Date(y,m,1);
+    const leading=(first.getDay()+6)%7;
+    const daysInMonth=new Date(y,m+1,0).getDate();
+    const pop=document.createElement('div');
+    pop.className='b39-plan-date-popover';
+    pop.setAttribute('role','dialog');
+    pop.setAttribute('aria-label','Choose due date');
+    pop.addEventListener('click',e=>e.stopPropagation());
+
+    const head=document.createElement('div'); head.className='b39-plan-cal-head';
+    const prev=document.createElement('button'); prev.type='button'; prev.className='b39-plan-cal-nav'; prev.textContent='‹'; prev.setAttribute('aria-label','Previous month');
+    prev.onclick=()=>{const d=new Date(y,m-1,1);b39vRenderPendingCalendar(actionId,shell,d.getFullYear(),d.getMonth())};
+    const title=document.createElement('strong'); title.className='b39-plan-cal-title';
+    title.textContent=new Intl.DateTimeFormat('en-US',{month:'long',year:'numeric'}).format(new Date(y,m,1));
+    const next=document.createElement('button'); next.type='button'; next.className='b39-plan-cal-nav'; next.textContent='›'; next.setAttribute('aria-label','Next month');
+    next.onclick=()=>{const d=new Date(y,m+1,1);b39vRenderPendingCalendar(actionId,shell,d.getFullYear(),d.getMonth())};
+    head.append(prev,title,next); pop.appendChild(head);
+
+    const week=document.createElement('div'); week.className='b39-plan-cal-week';
+    ['Mon','Tue','Wed','Thu','Fri','Sat','Sun'].forEach(x=>{const e=document.createElement('span');e.textContent=x;week.appendChild(e)});
+    pop.appendChild(week);
+    const grid=document.createElement('div'); grid.className='b39-plan-cal-grid';
+    for(let i=0;i<leading;i++){const blank=document.createElement('span');blank.className='b39-plan-cal-blank';grid.appendChild(blank)}
+    for(let day=1;day<=daysInMonth;day++){
+      const b=document.createElement('button'); b.type='button'; b.className='b39-plan-cal-day'; b.textContent=String(day);
+      const iso=b39PlanDateISO(y,m,day);
+      if(selected&&selected.y===y&&selected.m===m&&selected.d===day)b.classList.add('is-selected');
+      if(today.getFullYear()===y&&today.getMonth()===m&&today.getDate()===day)b.classList.add('is-today');
+      b.onclick=()=>{
+        input.value=iso;
+        if(b39vSavePendingPlan(actionId,'dueDate',iso)){
+          const display=idq('b39v-due-display');
+          if(display)display.textContent=fmtDate(iso);
+        }
+        b39PlanCloseCalendar();
+      };
+      grid.appendChild(b);
+    }
+    pop.appendChild(grid);
+    const foot=document.createElement('div'); foot.className='b39-plan-cal-foot';
+    const todayBtn=document.createElement('button'); todayBtn.type='button'; todayBtn.textContent='Today';
+    todayBtn.onclick=()=>{
+      const iso=b39PlanDateISO(today.getFullYear(),today.getMonth(),today.getDate());
+      input.value=iso;
+      if(b39vSavePendingPlan(actionId,'dueDate',iso)){
+        const display=idq('b39v-due-display');
+        if(display)display.textContent=fmtDate(iso);
+      }
+      b39PlanCloseCalendar();
+    };
+    foot.appendChild(todayBtn); pop.appendChild(foot);
+    shell.appendChild(pop);
+  }
+  window.b39vTogglePendingCalendar=function(actionId,button){
+    const shell=button?.closest('.b39-plan-date-shell');
+    const input=idq('b39v-due');
+    if(!shell||!input)return;
+    if(shell.querySelector('.b39-plan-date-popover')){b39PlanCloseCalendar();return}
+    const selected=b39PlanDateParts(input.value);
+    const base=selected?new Date(selected.y,selected.m,1):new Date();
+    b39vRenderPendingCalendar(actionId,shell,base.getFullYear(),base.getMonth());
+  };
+
   function pendingHTML(a){
     const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
     const fmt=v=>{const m=String(v||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'');};
@@ -12516,10 +12589,13 @@ function detailHTML(a){
         <div class="b39-schedule-grid">
           <label class="b37-field">
             <span>Due Date</span>
-            <div class="b39-date-shell">
-              <span id="b39v-due-display">${E(fmt(a.dueDate||a.due||''))}</span>
-              <input id="b39v-due" type="date" value="${E(a.dueDate||a.due||'')}" ${editable?'':'disabled'}
-                onchange="b39vSyncPendingDue('${E(a.id)}',this)">
+            <div class="b39-date-shell b39-plan-date-shell b39v-pending-date-shell">
+              <input id="b39v-due" class="b39-plan-date-hidden" type="hidden" value="${E(a.dueDate||a.due||'')}">
+              <button type="button" class="b39v-pending-date-button" ${editable?'':'disabled'}
+                onclick="b39vTogglePendingCalendar('${E(a.id)}',this)" aria-label="Choose due date">
+                <span id="b39v-due-display">${E(fmt(a.dueDate||a.due||''))}</span>
+                <span class="b39v-pending-date-icon" aria-hidden="true">▣</span>
+              </button>
             </div>
           </label>
           <label class="b37-field">

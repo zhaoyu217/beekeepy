@@ -7504,3 +7504,23 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
 .b39-plan-cal-day.is-selected{background:#5E7350!important;color:#fff!important}
 .b39-plan-cal-foot{display:flex!important;justify-content:flex-end!important;margin-top:8px!important;padding-top:8px!important;border-top:1px solid rgba(47,59,51,.09)!important}
 .b39-plan-cal-foot button{border:0!important;background:transparent!important;color:#5E7350!important;font:800 10px/28px Inter,Arial,sans-serif!important;cursor:pointer!important;padding:0 6px!important}
+
+
+/* V224B39X — Pending Split Hive Schedule Due Date only.
+   Replace the visible native date control with one in-page anchored control. */
+.b39-pending-detail-page .b39v-pending-date-shell{overflow:visible!important}
+.b39-pending-detail-page .b39v-pending-date-button{
+  width:100%!important;height:42px!important;min-height:42px!important;box-sizing:border-box!important;
+  display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;
+  margin:0!important;padding:0 10px 0 11px!important;border:0!important;border-radius:11px!important;
+  background:transparent!important;color:#2F3B33!important;appearance:none!important;-webkit-appearance:none!important;
+  font:650 12px/1 Inter,Arial,sans-serif!important;text-align:left!important;cursor:pointer!important;
+}
+.b39-pending-detail-page .b39v-pending-date-button:disabled{cursor:default!important;opacity:.72!important}
+.b39-pending-detail-page .b39v-pending-date-button #b39v-due-display{
+  position:static!important;transform:none!important;pointer-events:none!important;
+}
+.b39-pending-detail-page .b39v-pending-date-icon{
+  position:static!important;transform:none!important;flex:0 0 auto!important;
+  font:700 12px/1 Inter,Arial,sans-serif!important;color:#2F3B33!important;pointer-events:none!important;
+}

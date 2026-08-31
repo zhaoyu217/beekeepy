@@ -12196,3 +12196,46 @@ function detailHTML(a){
 
   window.__HIVEDASH_V224B39_VERSION__='224b39a';
 })();
+
+
+/* ==============================================================
+   V224B39H — Split Hive Draft Immediate Render Fix
+   Scope: #split-action/new first paint only.
+   Render synchronously from local state + persisted B39 draft while
+   authenticated cloud hydration continues in the background.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V224B39H__) return;
+  window.__HIVEDASH_V224B39H__=true;
+
+  function b39ImmediateFirstPaint(){
+    const raw=String(location.hash||'').replace(/^#/,'');
+    if(raw!=='split-action/new') return;
+
+    const view=document.getElementById('view');
+    if(!view) return;
+
+    /* If B39 already painted, never rebuild it here. */
+    if(view.querySelector('.b39-create-page')) return;
+
+    try{
+      if(typeof render==='function'){
+        render();
+      }
+    }catch(err){
+      console.error('V224B39H immediate Split Hive render failed',err);
+    }
+  }
+
+  /* app.js registers initializeCloudApp on DOMContentLoaded first.
+     Its async cloud/auth await yields immediately; this later listener
+     paints B39 synchronously without waiting for that network round-trip. */
+  if(document.readyState==='loading'){
+    window.addEventListener('DOMContentLoaded',b39ImmediateFirstPaint,{once:true});
+  }else{
+    b39ImmediateFirstPaint();
+  }
+
+  /* BFCache/page restore only; same-route guard prevents destructive redraw. */
+  window.addEventListener('pageshow',b39ImmediateFirstPaint);
+})();

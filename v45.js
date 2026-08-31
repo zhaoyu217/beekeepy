@@ -12187,17 +12187,6 @@ function detailHTML(a){
 
   window.b39mPersistResultDraft=b39mPersistResultDraft;
 
-  window.b39mOpenDatePicker=function(id){
-    const el=idq(id);
-    if(!el)return;
-    try{
-      if(typeof el.showPicker==='function') el.showPicker();
-      else el.click();
-    }catch(_){
-      try{el.click()}catch(__){}
-    }
-  };
-
 
   function pendingHTML(a){
     const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
@@ -12314,17 +12303,13 @@ function detailHTML(a){
           </select>
         </label>
 
-        <div class="b39m-result-grid">
-          <label class="b37-field">
-            <span>Actual Brood Frames</span>
-            <input id="b39m-brood" type="number" min="0" max="20" value="${E(rd.actualBroodFrames)}"
-              oninput="b39mPersistResultDraft('${E(a.id)}')">
-          </label>
-          <label class="b37-field">
-            <span>Actual Food Frames</span>
-            <input id="b39m-food" type="number" min="0" max="20" value="${E(rd.actualFoodFrames)}"
-              oninput="b39mPersistResultDraft('${E(a.id)}')">
-          </label>
+        <div class="b39m-pair">
+          <div class="b39m-pair-label">Actual Brood Frames</div>
+          <div class="b39m-pair-label">Actual Food Frames</div>
+          <input id="b39m-brood" class="b39m-pair-control" type="number" min="0" max="20"
+            value="${E(rd.actualBroodFrames)}" oninput="b39mPersistResultDraft('${E(a.id)}')">
+          <input id="b39m-food" class="b39m-pair-control" type="number" min="0" max="20"
+            value="${E(rd.actualFoodFrames)}" oninput="b39mPersistResultDraft('${E(a.id)}')">
         </div>
 
         <label class="b37-field b39m-full-field">
@@ -12349,31 +12334,28 @@ function detailHTML(a){
           <span>Completed Date</span>
           <div class="b39m-date-shell">
             <span id="b39m-date-display">${E(fmt(rd.completedDate))}</span>
-            <button type="button" class="b39m-date-btn" aria-label="Choose completed date"
-              onclick="b39mOpenDatePicker('b39m-date')">▣</button>
+            <span class="b39m-calendar-icon" aria-hidden="true">▣</span>
             <input id="b39m-date" class="b39m-date-native" type="date" value="${E(rd.completedDate)}"
-              onchange="b39mPersistResultDraft('${E(a.id)}')">
+              onchange="b39mPersistResultDraft('${E(a.id)}')" aria-label="Choose completed date">
           </div>
         </label>
 
-        <div class="b39m-result-grid b39m-follow-grid">
-          <label class="b37-field">
-            <span>Follow-up Required?</span>
-            <select id="b39m-follow" onchange="b39mPersistResultDraft('${E(a.id)}')">
-              <option value="yes" ${rd.followUpRequired==='yes'?'selected':''}>Yes</option>
-              <option value="no" ${rd.followUpRequired==='no'?'selected':''}>No</option>
-            </select>
-          </label>
-          <label class="b37-field">
-            <span>Follow-up Date</span>
-            <div class="b39m-date-shell">
-              <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'mm/dd/yyyy')}</span>
-              <button type="button" class="b39m-date-btn" aria-label="Choose follow-up date"
-                onclick="b39mOpenDatePicker('b39m-follow-date')">▣</button>
-              <input id="b39m-follow-date" class="b39m-date-native" type="date" value="${E(rd.followUpDate||'')}"
-                onchange="b39mPersistResultDraft('${E(a.id)}')">
-            </div>
-          </label>
+        <div class="b39m-pair b39m-follow-pair">
+          <div class="b39m-pair-label">Follow-up Required?</div>
+          <div class="b39m-pair-label">Follow-up Date</div>
+
+          <select id="b39m-follow" class="b39m-pair-control"
+            onchange="b39mPersistResultDraft('${E(a.id)}')">
+            <option value="yes" ${rd.followUpRequired==='yes'?'selected':''}>Yes</option>
+            <option value="no" ${rd.followUpRequired==='no'?'selected':''}>No</option>
+          </select>
+
+          <div class="b39m-date-shell b39m-pair-control">
+            <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'mm/dd/yyyy')}</span>
+            <span class="b39m-calendar-icon" aria-hidden="true">▣</span>
+            <input id="b39m-follow-date" class="b39m-date-native" type="date" value="${E(rd.followUpDate||'')}"
+              onchange="b39mPersistResultDraft('${E(a.id)}')" aria-label="Choose follow-up date">
+          </div>
         </div>
 
         <div class="b39-info b39m-result-info">A new Hive entity is created only when Split Completed is confirmed Yes.</div>
@@ -12499,43 +12481,24 @@ function detailHTML(a){
     const st=document.createElement('style');st.id='v224b39m-style';
     st.textContent=`
       .b39m-result-card .b37-field{
-        display:grid;
-        grid-template-rows:18px 42px;
-        row-gap:5px;
+        display:block;
         width:100%;
         margin:10px 0 0;
         box-sizing:border-box;
-        align-content:start;
       }
 
       .b39m-result-card .b37-field>span{
-        display:flex;
-        align-items:flex-end;
-        min-height:18px;
-        height:18px;
-        margin:0;
+        display:block;
+        height:16px;
+        margin:0 0 5px;
         color:#697169;
-        font:700 9.5px/1.1 Inter,Arial,sans-serif;
+        font:700 9.5px/16px Inter,Arial,sans-serif;
         box-sizing:border-box;
-      }
-
-      .b39m-result-grid{
-        display:grid;
-        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
-        column-gap:9px;
-        width:100%;
-        align-items:start;
-      }
-
-      .b39m-result-grid>.b37-field{
-        min-width:0;
-        margin-top:10px;
       }
 
       .b39m-result-card input:not([type="date"]),
       .b39m-result-card select{
-        display:flex;
-        align-items:center;
+        display:block;
         width:100%;
         height:42px;
         min-height:42px;
@@ -12554,8 +12517,35 @@ function detailHTML(a){
         padding-right:34px;
       }
 
-      .b39m-result-card input[type="number"]{
-        line-height:42px;
+      .b39m-pair{
+        display:grid;
+        grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        grid-template-rows:16px 42px;
+        column-gap:9px;
+        row-gap:5px;
+        width:100%;
+        margin-top:10px;
+        align-items:stretch;
+      }
+
+      .b39m-pair-label{
+        height:16px;
+        margin:0;
+        color:#697169;
+        font:700 9.5px/16px Inter,Arial,sans-serif;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      .b39m-pair-control{
+        width:100%!important;
+        height:42px!important;
+        min-height:42px!important;
+        max-height:42px!important;
+        box-sizing:border-box!important;
+        margin:0!important;
+        align-self:stretch!important;
       }
 
       .b39m-date-shell{
@@ -12573,7 +12563,7 @@ function detailHTML(a){
         overflow:hidden;
       }
 
-      .b39m-date-shell>span{
+      .b39m-date-shell>span[id]{
         position:absolute;
         left:11px;
         right:44px;
@@ -12587,38 +12577,45 @@ function detailHTML(a){
         font:650 12px/1 Inter,Arial,sans-serif;
       }
 
-      .b39m-date-btn{
+      .b39m-calendar-icon{
         position:absolute;
-        z-index:3;
         right:0;
         top:0;
         width:42px;
         height:42px;
-        min-width:42px;
-        min-height:42px;
-        padding:0;
-        margin:0;
-        border:0;
-        background:transparent;
         color:#2F3B33;
         font:700 13px/42px Inter,Arial,sans-serif;
         text-align:center;
-        cursor:pointer;
-        appearance:none;
-        -webkit-appearance:none;
+        pointer-events:none;
+        z-index:2;
       }
 
       .b39m-date-native{
         position:absolute!important;
-        left:-9999px!important;
+        z-index:3!important;
+        right:0!important;
         top:0!important;
-        width:1px!important;
-        height:1px!important;
-        opacity:0!important;
-        pointer-events:none!important;
+        width:42px!important;
+        height:42px!important;
+        min-width:42px!important;
+        min-height:42px!important;
         margin:0!important;
         padding:0!important;
         border:0!important;
+        opacity:0!important;
+        cursor:pointer!important;
+        pointer-events:auto!important;
+      }
+
+      .b39m-date-native::-webkit-calendar-picker-indicator{
+        position:absolute!important;
+        inset:0!important;
+        width:42px!important;
+        height:42px!important;
+        margin:0!important;
+        padding:0!important;
+        opacity:1!important;
+        cursor:pointer!important;
       }
 
       .b39m-result-info{
@@ -12642,7 +12639,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39p';
+  window.__HIVEDASH_V224B39_VERSION__='224b39q';
 })();
 
 

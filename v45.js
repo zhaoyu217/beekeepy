@@ -12187,6 +12187,58 @@ function detailHTML(a){
 
   window.b39mPersistResultDraft=b39mPersistResultDraft;
 
+  window.b39mPickHiddenDate=function(id){
+    const valueEl=idq(id);
+    if(!valueEl)return;
+
+    const picker=document.createElement('input');
+    picker.type='date';
+    picker.value=String(valueEl.value||'');
+    picker.setAttribute('aria-hidden','true');
+    picker.style.position='fixed';
+    picker.style.left='-10000px';
+    picker.style.top='-10000px';
+    picker.style.width='1px';
+    picker.style.height='1px';
+    picker.style.opacity='0';
+    picker.style.pointerEvents='none';
+
+    const cleanup=()=>{
+      try{picker.remove()}catch(_){}
+    };
+
+    picker.addEventListener('change',()=>{
+      valueEl.value=picker.value||'';
+      b39mPersistResultDraft(
+        String((location.hash||'').split('/')[1]||'')
+      );
+      cleanup();
+    },{once:true});
+
+    picker.addEventListener('blur',()=>{
+      setTimeout(cleanup,0);
+    },{once:true});
+
+    document.body.appendChild(picker);
+
+    try{
+      if(typeof picker.showPicker==='function'){
+        picker.showPicker();
+      }else{
+        picker.focus();
+        picker.click();
+      }
+    }catch(_){
+      try{
+        picker.focus();
+        picker.click();
+      }catch(__){
+        cleanup();
+      }
+    }
+  };
+
+
 
   function pendingHTML(a){
     const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
@@ -12334,9 +12386,9 @@ function detailHTML(a){
           <span>Completed Date</span>
           <div class="b39m-date-shell">
             <span id="b39m-date-display">${E(fmt(rd.completedDate))}</span>
-            <span class="b39m-calendar-icon" aria-hidden="true">▣</span>
-            <input id="b39m-date" class="b39m-date-native" type="date" value="${E(rd.completedDate)}"
-              onchange="b39mPersistResultDraft('${E(a.id)}')" aria-label="Choose completed date">
+            <button type="button" class="b39m-calendar-button"
+              onclick="b39mPickHiddenDate('b39m-date')" aria-label="Choose completed date">▣</button>
+            <input id="b39m-date" type="hidden" value="${E(rd.completedDate)}">
           </div>
         </label>
 
@@ -12352,9 +12404,9 @@ function detailHTML(a){
 
           <div class="b39m-date-shell b39m-pair-control">
             <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'mm/dd/yyyy')}</span>
-            <span class="b39m-calendar-icon" aria-hidden="true">▣</span>
-            <input id="b39m-follow-date" class="b39m-date-native" type="date" value="${E(rd.followUpDate||'')}"
-              onchange="b39mPersistResultDraft('${E(a.id)}')" aria-label="Choose follow-up date">
+            <button type="button" class="b39m-calendar-button"
+              onclick="b39mPickHiddenDate('b39m-follow-date')" aria-label="Choose follow-up date">▣</button>
+            <input id="b39m-follow-date" type="hidden" value="${E(rd.followUpDate||'')}">
           </div>
         </div>
 
@@ -12577,45 +12629,39 @@ function detailHTML(a){
         font:650 12px/1 Inter,Arial,sans-serif;
       }
 
-      .b39m-calendar-icon{
+      .b39m-calendar-button{
         position:absolute;
+        z-index:3;
         right:0;
         top:0;
         width:42px;
         height:42px;
+        min-width:42px;
+        min-height:42px;
+        margin:0;
+        padding:0;
+        border:0;
+        background:transparent;
         color:#2F3B33;
         font:700 13px/42px Inter,Arial,sans-serif;
         text-align:center;
-        pointer-events:none;
-        z-index:2;
+        cursor:pointer;
+        appearance:none;
+        -webkit-appearance:none;
       }
 
-      .b39m-date-native{
-        position:absolute!important;
-        z-index:3!important;
-        right:0!important;
-        top:0!important;
-        width:42px!important;
-        height:42px!important;
-        min-width:42px!important;
-        min-height:42px!important;
+      .b39m-date-hidden{
+        display:none!important;
+        position:fixed!important;
+        left:-10000px!important;
+        top:-10000px!important;
+        width:1px!important;
+        height:1px!important;
+        opacity:0!important;
+        pointer-events:none!important;
         margin:0!important;
         padding:0!important;
         border:0!important;
-        opacity:0!important;
-        cursor:pointer!important;
-        pointer-events:auto!important;
-      }
-
-      .b39m-date-native::-webkit-calendar-picker-indicator{
-        position:absolute!important;
-        inset:0!important;
-        width:42px!important;
-        height:42px!important;
-        margin:0!important;
-        padding:0!important;
-        opacity:1!important;
-        cursor:pointer!important;
       }
 
       .b39m-result-info{
@@ -12639,7 +12685,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39q';
+  window.__HIVEDASH_V224B39_VERSION__='224b39s';
 })();
 
 

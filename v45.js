@@ -12530,6 +12530,31 @@ function detailHTML(a){
       .b39m-date-shell input[type="date"]::-webkit-datetime-edit-year-field{
         opacity:0;color:transparent;-webkit-text-fill-color:transparent;
       }
+
+      .b39m-date-shell input[type="date"]{
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        text-shadow:none!important;
+        caret-color:transparent!important;
+      }
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit{
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        opacity:0!important;
+      }
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-fields-wrapper{
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        opacity:0!important;
+      }
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-text,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-month-field,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-day-field,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-year-field{
+        color:transparent!important;
+        -webkit-text-fill-color:transparent!important;
+        opacity:0!important;
+      }
       .b39m-date-shell input[type="date"]::-webkit-calendar-picker-indicator{
         position:absolute;right:10px;top:50%;transform:translateY(-50%);
         margin:0;opacity:1;display:block;cursor:pointer;
@@ -12545,7 +12570,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39n';
+  window.__HIVEDASH_V224B39_VERSION__='224b39o';
 })();
 
 

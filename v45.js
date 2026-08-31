@@ -12134,9 +12134,63 @@ function detailHTML(a){
 
   /* B39 route. First version supports only /new and a simple Pending summary
      so a Pending Split card can safely reopen without entering another module. */
+
+  /* V224B39N — Actual Result draft persistence, scoped per Split Action ID. */
+  function b39mResultDraftKey(actionId){
+    return 'hivedash_b39_split_result_draft_'+String(actionId||'');
+  }
+
+  function b39mLoadResultDraft(a){
+    const w=a?.workflowData||{};
+    const base={
+      success:'',
+      actualBroodFrames:Number(w.plannedBroodFrames??0),
+      actualFoodFrames:Number(w.plannedFoodFrames??0),
+      queenOutcome:'',
+      actualNewHiveName:String(w.plannedNewHiveName||''),
+      completedDate:new Date().toISOString().slice(0,10),
+      followUpRequired:'yes',
+      followUpDate:''
+    };
+    try{
+      const raw=localStorage.getItem(b39mResultDraftKey(a?.id));
+      if(!raw)return base;
+      const d=JSON.parse(raw);
+      return d&&typeof d==='object'?{...base,...d}:base;
+    }catch(_){
+      return base;
+    }
+  }
+
+  function b39mPersistResultDraft(actionId){
+    if(!actionId)return;
+    const d={
+      success:String(idq('b39m-success')?.value||''),
+      actualBroodFrames:Math.max(0,Number(idq('b39m-brood')?.value||0)),
+      actualFoodFrames:Math.max(0,Number(idq('b39m-food')?.value||0)),
+      queenOutcome:String(idq('b39m-queen')?.value||''),
+      actualNewHiveName:String(idq('b39m-name')?.value||''),
+      completedDate:String(idq('b39m-date')?.value||''),
+      followUpRequired:String(idq('b39m-follow')?.value||'yes'),
+      followUpDate:String(idq('b39m-follow-date')?.value||'')
+    };
+    try{localStorage.setItem(b39mResultDraftKey(actionId),JSON.stringify(d))}catch(_){}
+    const completedDisplay=idq('b39m-date-display');
+    if(completedDisplay)completedDisplay.textContent=fmtDate(d.completedDate);
+    const followDisplay=idq('b39m-follow-date-display');
+    if(followDisplay)followDisplay.textContent=d.followUpDate?fmtDate(d.followUpDate):'mm/dd/yyyy';
+  }
+
+  function b39mClearResultDraft(actionId){
+    try{localStorage.removeItem(b39mResultDraftKey(actionId))}catch(_){}
+  }
+
+  window.b39mPersistResultDraft=b39mPersistResultDraft;
+
   function pendingHTML(a){
     const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
     const fmt=v=>{const m=String(v||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'');};
+    const rd=b39mLoadResultDraft(a);
 
     return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page">
       <section class="b39-hero b39-create-hero">
@@ -12238,38 +12292,76 @@ function detailHTML(a){
           <div class="b37-label">Actual Result</div>
           <div class="b37-hint">Record what actually happened</div>
         </div>
-        <label class="b37-field">
-          <span>Split Completed?</span>
-          <select id="b39m-success">
-            <option value="">Not confirmed</option>
-            <option value="yes">Yes</option>
-            <option value="no">No</option>
-          </select>
-        </label>
-        <div class="b39m-result-grid">
-          <label class="b37-field"><span>Actual Brood Frames</span><input id="b39m-brood" type="number" min="0" max="20" value="${E(w.plannedBroodFrames??0)}"></label>
-          <label class="b37-field"><span>Actual Food Frames</span><input id="b39m-food" type="number" min="0" max="20" value="${E(w.plannedFoodFrames??0)}"></label>
-        </div>
-        <label class="b37-field">
-          <span>Queen Outcome</span>
-          <select id="b39m-queen">
-            <option value="">Not recorded</option>
-            <option>Parent keeps queen</option>
-            <option>New hive receives queen</option>
-            <option>Queen cell</option>
-            <option>Introduced queen</option>
-            <option>Unknown</option>
-          </select>
-        </label>
-        <label class="b37-field"><span>Actual New Hive Name</span><input id="b39m-name" type="text" maxlength="40" value="${E(w.plannedNewHiveName||'')}"></label>
-        <label class="b37-field"><span>Completed Date</span><input id="b39m-date" type="date" value="${new Date().toISOString().slice(0,10)}"></label>
-        <div class="b39m-result-grid">
-          <label class="b37-field"><span>Follow-up Required?</span><select id="b39m-follow"><option value="yes">Yes</option><option value="no">No</option></select></label>
-          <label class="b37-field"><span>Follow-up Date</span><input id="b39m-follow-date" type="date"></label>
-        </div>
-        <div class="b39-info">A new Hive entity is created only when Split Completed is confirmed Yes.</div>
-      </section>
 
+        <label class="b37-field b39m-full-field">
+          <span>Split Completed?</span>
+          <select id="b39m-success" onchange="b39mPersistResultDraft('${E(a.id)}')">
+            <option value="" ${rd.success===''?'selected':''}>Not confirmed</option>
+            <option value="yes" ${rd.success==='yes'?'selected':''}>Yes</option>
+            <option value="no" ${rd.success==='no'?'selected':''}>No</option>
+          </select>
+        </label>
+
+        <div class="b39m-result-grid">
+          <label class="b37-field">
+            <span>Actual Brood Frames</span>
+            <input id="b39m-brood" type="number" min="0" max="20" value="${E(rd.actualBroodFrames)}"
+              oninput="b39mPersistResultDraft('${E(a.id)}')">
+          </label>
+          <label class="b37-field">
+            <span>Actual Food Frames</span>
+            <input id="b39m-food" type="number" min="0" max="20" value="${E(rd.actualFoodFrames)}"
+              oninput="b39mPersistResultDraft('${E(a.id)}')">
+          </label>
+        </div>
+
+        <label class="b37-field b39m-full-field">
+          <span>Queen Outcome</span>
+          <select id="b39m-queen" onchange="b39mPersistResultDraft('${E(a.id)}')">
+            <option value="" ${rd.queenOutcome===''?'selected':''}>Not recorded</option>
+            <option ${rd.queenOutcome==='Parent keeps queen'?'selected':''}>Parent keeps queen</option>
+            <option ${rd.queenOutcome==='New hive receives queen'?'selected':''}>New hive receives queen</option>
+            <option ${rd.queenOutcome==='Queen cell'?'selected':''}>Queen cell</option>
+            <option ${rd.queenOutcome==='Introduced queen'?'selected':''}>Introduced queen</option>
+            <option ${rd.queenOutcome==='Unknown'?'selected':''}>Unknown</option>
+          </select>
+        </label>
+
+        <label class="b37-field b39m-full-field">
+          <span>Actual New Hive Name</span>
+          <input id="b39m-name" type="text" maxlength="40" value="${E(rd.actualNewHiveName)}"
+            oninput="b39mPersistResultDraft('${E(a.id)}')">
+        </label>
+
+        <label class="b37-field b39m-full-field">
+          <span>Completed Date</span>
+          <div class="b39m-date-shell">
+            <span id="b39m-date-display">${E(fmt(rd.completedDate))}</span>
+            <input id="b39m-date" type="date" value="${E(rd.completedDate)}"
+              onchange="b39mPersistResultDraft('${E(a.id)}')">
+          </div>
+        </label>
+
+        <div class="b39m-result-grid b39m-follow-grid">
+          <label class="b37-field">
+            <span>Follow-up Required?</span>
+            <select id="b39m-follow" onchange="b39mPersistResultDraft('${E(a.id)}')">
+              <option value="yes" ${rd.followUpRequired==='yes'?'selected':''}>Yes</option>
+              <option value="no" ${rd.followUpRequired==='no'?'selected':''}>No</option>
+            </select>
+          </label>
+          <label class="b37-field">
+            <span>Follow-up Date</span>
+            <div class="b39m-date-shell">
+              <span id="b39m-follow-date-display">${E(rd.followUpDate?fmt(rd.followUpDate):'mm/dd/yyyy')}</span>
+              <input id="b39m-follow-date" type="date" value="${E(rd.followUpDate||'')}"
+                onchange="b39mPersistResultDraft('${E(a.id)}')">
+            </div>
+          </label>
+        </div>
+
+        <div class="b39-info b39m-result-info">A new Hive entity is created only when Split Completed is confirmed Yes.</div>
+      </section>
       <div class="b37-footer b39-footer">
         <button class="b37-primary" onclick="b39mCompleteSplit('${E(a.id)}')">Complete Split</button>
         <button class="b39m-back" onclick="go('actions')">Back to Actions</button>
@@ -12339,6 +12431,7 @@ function detailHTML(a){
     if(ai>=0)s.meta.completedActions[ai]=a; else s.meta.completedActions.push(a);
 
     if(save(s)===false) return toast('Split result could not be saved');
+    b39mClearResultDraft(a.id);
     toast(success==='yes'?'Split completed — new hive created':'Split result saved — no new hive created');
     go('actions');
   };
@@ -12389,15 +12482,70 @@ function detailHTML(a){
     if(document.getElementById('v224b39m-style'))return;
     const st=document.createElement('style');st.id='v224b39m-style';
     st.textContent=`
-      .b39m-result-card .b37-field{margin-top:10px}
-      .b39m-result-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px}
-      .b39m-result-card input,.b39m-result-card select{width:100%;box-sizing:border-box}
-      .b39m-back{width:100%;margin-top:8px;border:1px solid rgba(47,59,51,.14);background:#fffdf9;color:#5e7350;border-radius:12px;padding:12px;font-weight:700}
+      .b39m-result-card .b37-field{
+        display:block;width:100%;margin:10px 0 0;box-sizing:border-box;
+      }
+      .b39m-result-card .b37-field>span{
+        display:block;min-height:12px;margin:0 0 5px;color:#697169;
+        font:700 9.5px/1.2 Inter,Arial,sans-serif;
+      }
+      .b39m-result-grid{
+        display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1fr);
+        gap:9px;align-items:start;width:100%;
+      }
+      .b39m-result-grid>.b37-field{min-width:0;margin-top:10px}
+      .b39m-result-card input:not([type="date"]),
+      .b39m-result-card select{
+        display:block;width:100%;height:42px;min-height:42px;box-sizing:border-box;
+        margin:0;padding:0 11px;border:1px solid rgba(47,59,51,.13);
+        border-radius:11px;background:#FBFBF8;color:#2F3B33;
+        font:650 12px/1.2 Inter,Arial,sans-serif;
+      }
+      .b39m-result-card select{padding-right:34px}
+      .b39m-result-card input[type="number"]{line-height:42px}
+      .b39m-date-shell{
+        position:relative;display:block;width:100%;height:42px;min-height:42px;
+        box-sizing:border-box;margin:0;border:1px solid rgba(47,59,51,.13);
+        border-radius:11px;background:#FBFBF8;overflow:hidden;isolation:isolate;
+      }
+      .b39m-date-shell::after{
+        content:"";position:absolute;z-index:3;left:1px;top:1px;bottom:1px;right:34px;
+        background:#FBFBF8;border-radius:10px 0 0 10px;pointer-events:none;
+      }
+      .b39m-date-shell>span{
+        position:absolute;z-index:4;left:11px;right:36px;top:50%;
+        transform:translateY(-50%);margin:0;padding:0;color:#2F3B33;
+        white-space:nowrap;pointer-events:none;font:650 12px/1 Inter,Arial,sans-serif;
+      }
+      .b39m-date-shell input[type="date"]{
+        position:absolute;z-index:2;inset:0;width:100%;height:42px;min-height:42px;
+        margin:0;padding:0;border:0;outline:0;background:transparent;color:transparent;
+        -webkit-text-fill-color:transparent;box-shadow:none;cursor:pointer;
+      }
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-fields-wrapper,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-text,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-month-field,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-day-field,
+      .b39m-date-shell input[type="date"]::-webkit-datetime-edit-year-field{
+        opacity:0;color:transparent;-webkit-text-fill-color:transparent;
+      }
+      .b39m-date-shell input[type="date"]::-webkit-calendar-picker-indicator{
+        position:absolute;right:10px;top:50%;transform:translateY(-50%);
+        margin:0;opacity:1;display:block;cursor:pointer;
+      }
+      .b39m-result-info{margin-top:10px!important}
+      .b39m-back{
+        width:100%;min-height:46px;box-sizing:border-box;margin-top:8px;
+        border:1px solid rgba(47,59,51,.14);background:#fffdf9;color:#5e7350;
+        border-radius:11px;padding:0 16px;font:800 12px/1 Inter,Arial,sans-serif;
+        text-align:center;
+      }
     `;
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39m';
+  window.__HIVEDASH_V224B39_VERSION__='224b39n';
 })();
 
 

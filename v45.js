@@ -12298,10 +12298,63 @@ function detailHTML(a){
 
 
 
+  /* V224B39V — Pending plan editing only.
+     Frozen B36/B37 rule: workflowData is the plan source; resultData remains actual execution only. */
+  function b39vPendingEditable(a){
+    return !!(a && a.status!=='Completed' && a.priority!=='Done' && !a.resultAppliedAt);
+  }
+
+  function b39vSavePendingPlan(actionId,field,value){
+    const s=S();
+    const a=(s.actions||[]).find(x=>x&&String(x.id)===String(actionId));
+    if(!a || a.type!==TYPE || !b39vPendingEditable(a)) return false;
+    a.workflowData=a.workflowData&&typeof a.workflowData==='object'?a.workflowData:{};
+
+    if(field==='plannedBroodFrames'){
+      a.workflowData.plannedBroodFrames=Math.max(1,Math.min(10,Number(value||0)));
+    }else if(field==='plannedFoodFrames'){
+      a.workflowData.plannedFoodFrames=Math.max(0,Math.min(10,Number(value||0)));
+    }else if(field==='plannedNewHiveName'){
+      a.workflowData.plannedNewHiveName=String(value||'');
+    }else if(field==='dueDate'){
+      const v=String(value||'');
+      if(!/^\d{4}-\d{2}-\d{2}$/.test(v)) return false;
+      a.dueDate=v; a.due=v; a.date=v;
+    }else if(field==='priority'){
+      const v=['Low','Medium','High'].includes(String(value))?String(value):'Medium';
+      a.priority=v;
+    }else if(field==='notes'){
+      a.notes=String(value||'');
+    }else return false;
+
+    return save(s)!==false;
+  }
+  window.b39vSavePendingPlan=b39vSavePendingPlan;
+
+  window.b39vStepPendingPlan=function(actionId,field,delta){
+    const s=S();
+    const a=(s.actions||[]).find(x=>x&&String(x.id)===String(actionId));
+    if(!a || a.type!==TYPE || !b39vPendingEditable(a)) return;
+    const w=a.workflowData=a.workflowData&&typeof a.workflowData==='object'?a.workflowData:{};
+    const min=field==='plannedFoodFrames'?0:1, max=10;
+    const next=Math.max(min,Math.min(max,Number(w[field]||0)+Number(delta||0)));
+    if(!b39vSavePendingPlan(actionId,field,next)) return;
+    const el=idq(field==='plannedFoodFrames'?'b39v-food-frames':'b39v-brood-frames');
+    if(el) el.textContent=String(next);
+  };
+
+  window.b39vSyncPendingDue=function(actionId,input){
+    const value=String(input?.value||'');
+    if(!b39vSavePendingPlan(actionId,'dueDate',value)) return;
+    const display=idq('b39v-due-display');
+    if(display) display.textContent=fmtDate(value);
+  };
+
   function pendingHTML(a){
     const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
     const fmt=v=>{const m=String(v||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'');};
     const rd=b39mLoadResultDraft(a);
+    const editable=b39vPendingEditable(a);
 
     return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page">
       <section class="b39-hero b39-create-hero">
@@ -12344,7 +12397,9 @@ function detailHTML(a){
             <small>Planned frames to transfer</small>
           </div>
           <div class="b39-count-controls">
-            <strong>${E(w.plannedBroodFrames??'')}</strong>
+            <button type="button" ${editable?'':'disabled'} onclick="b39vStepPendingPlan('${E(a.id)}','plannedBroodFrames',-1)">−</button>
+            <strong id="b39v-brood-frames">${E(w.plannedBroodFrames??'')}</strong>
+            <button type="button" ${editable?'':'disabled'} onclick="b39vStepPendingPlan('${E(a.id)}','plannedBroodFrames',1)">+</button>
           </div>
         </div>
 
@@ -12354,7 +12409,9 @@ function detailHTML(a){
             <small>Planned frames to transfer</small>
           </div>
           <div class="b39-count-controls">
-            <strong>${E(w.plannedFoodFrames??'')}</strong>
+            <button type="button" ${editable?'':'disabled'} onclick="b39vStepPendingPlan('${E(a.id)}','plannedFoodFrames',-1)">−</button>
+            <strong id="b39v-food-frames">${E(w.plannedFoodFrames??'')}</strong>
+            <button type="button" ${editable?'':'disabled'} onclick="b39vStepPendingPlan('${E(a.id)}','plannedFoodFrames',1)">+</button>
           </div>
         </div>
       </section>
@@ -12366,7 +12423,8 @@ function detailHTML(a){
         </div>
         <label class="b37-field">
           <span>Planned New Hive Name</span>
-          <input type="text" value="${E(w.plannedNewHiveName||'')}" readonly>
+          <input id="b39v-new-name" type="text" maxlength="40" value="${E(w.plannedNewHiveName||'')}" ${editable?'':'readonly'}
+            onchange="b39vSavePendingPlan('${E(a.id)}','plannedNewHiveName',this.value)">
         </label>
         <div class="b39-info">Planning this action does not create a new hive yet.</div>
       </section>
@@ -12380,12 +12438,18 @@ function detailHTML(a){
           <label class="b37-field">
             <span>Due Date</span>
             <div class="b39-date-shell">
-              <span>${E(fmt(a.dueDate||a.due||''))}</span>
+              <span id="b39v-due-display">${E(fmt(a.dueDate||a.due||''))}</span>
+              <input id="b39v-due" type="date" value="${E(a.dueDate||a.due||'')}" ${editable?'':'disabled'}
+                onchange="b39vSyncPendingDue('${E(a.id)}',this)">
             </div>
           </label>
           <label class="b37-field">
             <span>Priority</span>
-            <input type="text" value="${E(a.priority||'Medium')}" readonly>
+            <select id="b39v-priority" ${editable?'':'disabled'} onchange="b39vSavePendingPlan('${E(a.id)}','priority',this.value)">
+              <option ${String(a.priority||'Medium')==='Low'?'selected':''}>Low</option>
+              <option ${String(a.priority||'Medium')==='Medium'?'selected':''}>Medium</option>
+              <option ${String(a.priority||'Medium')==='High'?'selected':''}>High</option>
+            </select>
           </label>
         </div>
       </section>
@@ -12395,7 +12459,8 @@ function detailHTML(a){
           <div class="b37-label">Notes</div>
           <div class="b37-hint">Saved</div>
         </div>
-        <textarea rows="3" readonly>${E(a.notes||'')}</textarea>
+        <textarea id="b39v-notes" rows="3" ${editable?'':'readonly'}
+          onchange="b39vSavePendingPlan('${E(a.id)}','notes',this.value)">${E(a.notes||'')}</textarea>
       </section>
 
       <section class="b37-card b39-card b39m-result-card">
@@ -12773,7 +12838,7 @@ function detailHTML(a){
     document.head.appendChild(st);
   })();
 
-  window.__HIVEDASH_V224B39_VERSION__='224b39u';
+  window.__HIVEDASH_V224B39_VERSION__='224b39v';
 })();
 
 

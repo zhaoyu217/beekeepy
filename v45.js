@@ -2922,7 +2922,7 @@ function safeBackV51(fallback='home'){
 }
 Vback=function(title,right=''){
   const raw=(location.hash||'#home').slice(1).split('/'),page=raw[0],id=raw[1]||'';
-  const fallback={hive:'hives',inspection:id?'hive/'+id:'hives',timeline:id?'hive/'+id:'home',honey:'home',map:'home','all-hives':'hives','all-actions':'actions','feeding-record':'actions','treatment-record':'actions','harvest-record':'honey',analysis:'insights',trend:'insights',risk:'insights',season:'insights','honey-analytics':'insights',recommendations:'insights',settings:'home',account:'settings',subscription:'settings',apiary:'settings','seasonal-settings':'apiary','notification-preferences':'settings','units-region':'settings','smart-features':'settings','data-backup':'settings',security:'settings',store:'settings',notifications:'home',help:'settings',faq:'help',support:'help',about:'settings',version:'about',privacy:'security',terms:'security'}[page]||'home';
+  const fallback={hive:'hives',inspection:id?'hive/'+id:'hives',timeline:id?'hive/'+id:'home',honey:'home',map:'home','all-hives':'hives','all-actions':'actions','feeding-record':'actions','treatment-record':'actions','harvest-record':'honey',analysis:'insights',trend:'insights',risk:'insights',season:'insights','honey-analytics':'insights',recommendations:'insights',settings:'home',account:'settings',subscription:(id&&String(id).startsWith('split-action-')?'split-action/'+id:'settings'),apiary:'settings','seasonal-settings':'apiary','notification-preferences':'settings','units-region':'settings','smart-features':'settings','data-backup':'settings',security:'settings',store:'settings',notifications:'home',help:'settings',faq:'help',support:'help',about:'settings',version:'about',privacy:'security',terms:'security'}[page]||'home';
   return `<button class="iconbtn" onclick="safeBackV51('${fallback}')">‹</button><div class="pagebar-title">${title}</div>${right||'<span></span>'}`
 };
 function noHiveStateV51(r,title='No hives yet'){
@@ -12890,6 +12890,11 @@ function detailHTML(a){
     </div>`;
   }
 
+  /* V224B39AK — Subscription return-context fix.
+     Split-limit Upgrade opens subscription/<split-action-id>; Vback returns only that
+     flow to its original Split Action. Normal Settings -> Subscription still returns
+     to Settings. No Split result, capacity, completion, or lineage logic changed. */
+
   /* V224B39AJ — Subscription capacity gate.
      Frozen membership rule: Free supports up to 3 hives; Pro is unlimited.
      A Split plan may exist at the Free limit, but completion must not create
@@ -12909,7 +12914,7 @@ function detailHTML(a){
       const close=()=>m?.remove();
       m.querySelector('[data-b39-limit-close]')?.addEventListener('click',close);
       m.querySelector('[data-b39-limit-later]')?.addEventListener('click',close);
-      m.querySelector('[data-b39-limit-upgrade]')?.addEventListener('click',()=>{close();go('subscription')});
+      m.querySelector('[data-b39-limit-upgrade]')?.addEventListener('click',()=>{close();go('subscription/'+encodeURIComponent(String(actionId||'')))});
       return;
     }
     if(typeof subscriptionModal==='function'){

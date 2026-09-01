@@ -9027,15 +9027,21 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       }
     }
 
-    /* V224B37G — preserve only B37 Add / Remove Super planned Actions.
-       V224B's Health/Decision override replaced app.js generateActions(), so
-       save()/state() regenerated health recommendations and silently dropped
-       the newly-created super-management Pending Action. Keep that one manual
-       Action family alongside the unchanged Health/Decision recommendations. */
+    /* V224B39AN — durable low-frequency/workflow Pending Actions.
+       IMPORTANT: this V224B override is the active generateActions() used by
+       save()/state() after v45.js loads. Therefore it must preserve the same
+       durable workflow families as app.js, including the B39 Split follow-up.
+       Otherwise the follow-up is created correctly, then erased immediately
+       by this later override during save(). */
     const pendingLowFreqMap=new Map();
     (Array.isArray(s.actions)?s.actions:[])
-      .filter(a=>a&&(a.type==='super-management'||a.type==='queen-management'||a.type==='split-hive')&&a.status!=='Completed'&&a.priority!=='Done')
-      .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`super-management-${i}`),a));
+      .filter(a=>a&&(
+        a.type==='super-management'||
+        a.type==='queen-management'||
+        a.type==='split-hive'||
+        String(a.source||'')==='split-hive-follow-up'
+      )&&a.status!=='Completed'&&a.priority!=='Done')
+      .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`durable-workflow-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
 
     const rank={High:3,Medium:2,Low:1};

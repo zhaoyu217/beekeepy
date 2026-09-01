@@ -12890,6 +12890,35 @@ function detailHTML(a){
     </div>`;
   }
 
+  /* V224B39AJ — Subscription capacity gate.
+     Frozen membership rule: Free supports up to 3 hives; Pro is unlimited.
+     A Split plan may exist at the Free limit, but completion must not create
+     a fourth Hive or mark the Action Completed until Pro entitlement exists. */
+  function b39mShowHiveLimitUpgrade(actionId){
+    /* Persist the user's confirmed result draft before opening the membership prompt. */
+    b39mPersistResultDraft(actionId);
+    if(typeof modal==='function'){
+      const m=modal(`<div class="modalhead"><div class="h2">Hive limit reached</div><button type="button" class="iconbtn" data-b39-limit-close>✕</button></div>
+        <div class="setting">
+          <div class="small muted">Your Free plan supports up to 3 hives. This split will create a new hive. Upgrade to Pro to complete the split and keep tracking both colonies.</div>
+          <div class="h2" style="margin-top:10px">Upgrade to HiveDash Pro</div>
+          <div class="small" style="margin-top:6px">Unlimited hives · Keep this Split draft · Complete it after upgrading</div>
+          <button type="button" class="btn primary block" data-b39-limit-upgrade style="margin-top:12px">Upgrade to Pro</button>
+          <button type="button" class="secondary block" data-b39-limit-later style="margin-top:8px">Not Now</button>
+        </div>`);
+      const close=()=>m?.remove();
+      m.querySelector('[data-b39-limit-close]')?.addEventListener('click',close);
+      m.querySelector('[data-b39-limit-later]')?.addEventListener('click',close);
+      m.querySelector('[data-b39-limit-upgrade]')?.addEventListener('click',()=>{close();go('subscription')});
+      return;
+    }
+    if(typeof subscriptionModal==='function'){
+      subscriptionModal('more than 3 hives');
+      return;
+    }
+    toast('Free plan supports up to 3 hives');
+  }
+
   window.b39mCompleteSplit=function(actionId){
     const s=S();
     const a=(s.actions||[]).find(x=>x&&String(x.id)===String(actionId));
@@ -12915,7 +12944,14 @@ function detailHTML(a){
     let newHiveId=null;
     const newHiveName=String(idq('b39m-name')?.value||'').trim();
     if(!newHiveName) return b39mValidationFail('Enter the actual new hive name to complete the split.','b39m-name');
+
+    /* Capacity is checked only when this Split still needs to create its child Hive.
+       Do not change status/result/lineage before this gate passes. */
     const existing=(s.hives||[]).find(h=>h&&h.createdFromSplitActionId===a.id);
+    if(!existing && !isPro(s) && (s.hives||[]).length>=3){
+      b39mShowHiveLimitUpgrade(a.id);
+      return;
+    }
     if(existing){
       newHiveId=existing.id;
     }else{

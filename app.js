@@ -421,14 +421,20 @@ function mergeStateV50(local,remote){
   });
   primary.meta.completedActions=[...completedMerged.values()];
 
-  /* V224B37 — preserve Add / Remove Super Actions from any approved B36 V2.1 entry context across
-     local/cloud merge. Other pending recommendation semantics stay unchanged. */
+  /* V224B39AM — preserve approved manual/workflow Pending Actions across
+     local/cloud merge. Split follow-up must not disappear during cloud hydration. */
+  const isDurablePendingAction=a=>a&&(
+    a.type==='super-management'||
+    a.type==='queen-management'||
+    a.type==='split-hive'||
+    String(a.source||'')==='split-hive-follow-up'
+  )&&a.status!=='Completed'&&a.priority!=='Done';
   const manualSuperMerged=new Map();
   [
-    ...((primary.actions||[]).filter(a=>a&&(a.type==='super-management'||a.type==='queen-management'||a.type==='split-hive')&&a.status!=='Completed'&&a.priority!=='Done')),
-    ...((other.actions||[]).filter(a=>a&&(a.type==='super-management'||a.type==='queen-management'||a.type==='split-hive')&&a.status!=='Completed'&&a.priority!=='Done'))
-  ].forEach((a,i)=>manualSuperMerged.set(String(a.id||`super-manual-${i}`),a));
-  primary.actions=[...(primary.actions||[]).filter(a=>!(a&&(a.type==='super-management'||a.type==='queen-management'||a.type==='split-hive')&&a.status!=='Completed'&&a.priority!=='Done')),...manualSuperMerged.values()];
+    ...((primary.actions||[]).filter(isDurablePendingAction)),
+    ...((other.actions||[]).filter(isDurablePendingAction))
+  ].forEach((a,i)=>manualSuperMerged.set(String(a.id||`durable-pending-${i}`),a));
+  primary.actions=[...(primary.actions||[]).filter(a=>!isDurablePendingAction(a)),...manualSuperMerged.values()];
 
   /* V224B37J — Hive Merge Freshness Fix.
      `h` always comes from `primary`, which was already selected from the newer
@@ -774,10 +780,16 @@ function generateActions(s){
     if(h.honey==='Low'||h.pollen==='Low')list.push({id:`food-${h.id}`,hiveId:h.id,type:'Feeding',priority:'Medium',title:'Review food stores',reason:'Honey or pollen stores are low.',due:'Soon',status:'Pending'});
   }
 
-  /* V224B37 — preserve only Add / Remove Super Actions while while
-     generateActions() continues to rebuild system recommendations. */
+  /* V224B39AM — preserve durable manual/workflow Pending Actions while
+     generateActions() continues to rebuild system recommendations.
+     B39 Split follow-up is a real Pending Action and must survive save()/reload. */
   const manualSuperActions=(Array.isArray(s.actions)?s.actions:[])
-    .filter(a=>a&&(a.type==='super-management'||a.type==='queen-management'||a.type==='split-hive')&&a.status!=='Completed'&&a.priority!=='Done');
+    .filter(a=>a&&(
+      a.type==='super-management'||
+      a.type==='queen-management'||
+      a.type==='split-hive'||
+      String(a.source||'')==='split-hive-follow-up'
+    )&&a.status!=='Completed'&&a.priority!=='Done');
 
   /* V224B32 — preserve only explicitly completed Action entities.
      state()/save() both regenerate pending recommendations via generateActions().

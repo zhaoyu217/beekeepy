@@ -12986,6 +12986,39 @@ function detailHTML(a){
     a.followUpDate=followUpDate||null;
     a.resultAppliedAt=now;
 
+    /* V224B39AL — Split follow-up action closure.
+       When the confirmed Split requires follow-up, create exactly one Pending
+       Inspection for the newly created child Hive on the selected follow-up date.
+       Keep the completed Split as the parent/source of that follow-up. */
+    if(followUpRequired && followUpDate){
+      s.actions=Array.isArray(s.actions)?s.actions:[];
+      const followId='split-followup-'+String(a.id);
+      const hasFollow=s.actions.some(x=>x&&(
+        String(x.id)===followId ||
+        (String(x.parentActionId||'')===String(a.id) && String(x.source||'')==='split-hive-follow-up')
+      ));
+      if(!hasFollow){
+        s.actions.push({
+          id:followId,
+          hiveId:newHiveId,
+          type:'Inspection',
+          title:'Split follow-up',
+          status:'Pending',
+          priority:'Medium',
+          due:followUpDate,
+          dueDate:followUpDate,
+          date:followUpDate,
+          createdAt:now,
+          source:'split-hive-follow-up',
+          parentActionId:a.id,
+          linkedActionId:a.id,
+          createdFromSplitActionId:a.id,
+          sourceHiveId:sourceHive.id,
+          notes:'Follow up on the newly created hive after the split.'
+        });
+      }
+    }
+
     s.meta=s.meta||{};
     s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
     const ai=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));

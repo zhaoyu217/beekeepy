@@ -427,6 +427,7 @@ function mergeStateV50(local,remote){
     a.type==='super-management'||
     a.type==='queen-management'||
     a.type==='split-hive'||
+    a.type==='combine-hive'||
     String(a.source||'')==='split-hive-follow-up'
   )&&a.status!=='Completed'&&a.priority!=='Done';
   const manualSuperMerged=new Map();
@@ -788,6 +789,7 @@ function generateActions(s){
       a.type==='super-management'||
       a.type==='queen-management'||
       a.type==='split-hive'||
+      a.type==='combine-hive'||
       String(a.source||'')==='split-hive-follow-up'
     )&&a.status!=='Completed'&&a.priority!=='Done');
 

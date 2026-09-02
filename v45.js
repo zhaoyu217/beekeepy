@@ -11015,10 +11015,37 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-pending-page .b37-step{grid-template-columns:42px 1fr 42px;gap:10px;margin-top:2px}
       .b37-pending-page .b37-step button{height:42px;border-radius:11px;background:#EEF1E4;color:#36512B}
       .b37-pending-page .b37-step strong{font-size:21px}
-      .b37-pending-page #b37-completed-date{height:42px;min-height:42px;border-radius:11px;background:#FBFBF8;padding-top:0;padding-bottom:0;line-height:normal}
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit{height:auto;display:block;padding:0;transform:translateY(1px)}
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-fields-wrapper{padding:0;line-height:1.2}
-      .b37-pending-page #b37-completed-date::-webkit-date-and-time-value{margin:0;text-align:left;line-height:1.2}
+      /* V224B37W4 — reuse the proven B38 native-date centering method.
+         Important: B37 has an earlier 44px Chromium pseudo-element rule, while
+         the compact visual master later shrinks the actual input to 42px.
+         Override EVERY native date subpart here so the old 44px inner box
+         cannot push the date text against the top edge. */
+      .b37-pending-page #b37-completed-date{
+        height:42px!important;min-height:42px!important;box-sizing:border-box!important;
+        margin:0!important;padding:0 11px!important;line-height:normal!important;
+        border-radius:11px;background:#FBFBF8;
+      }
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit{
+        display:flex!important;align-items:center!important;height:40px!important;
+        padding:0!important;line-height:40px!important;transform:none!important;
+      }
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-fields-wrapper{
+        display:flex!important;align-items:center!important;height:40px!important;
+        padding:0!important;line-height:40px!important;
+      }
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-text,
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-month-field,
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-day-field,
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-year-field{
+        padding:0!important;line-height:40px!important;
+      }
+      .b37-pending-page #b37-completed-date::-webkit-date-and-time-value{
+        display:flex!important;align-items:center!important;height:40px!important;
+        min-height:40px!important;margin:0!important;text-align:left!important;line-height:40px!important;
+      }
+      .b37-pending-page #b37-completed-date::-webkit-calendar-picker-indicator{
+        align-self:center!important;margin:0!important;padding:4px!important;
+      }
       .b37-pending-page>.b37-warn{margin:2px 0 12px;padding:10px 11px;border-radius:11px}
       .b37-pending-page>.b37-actions{margin-top:12px}
       .b37-pending-page>.b37-actions .b37-primary{min-height:46px;border-radius:11px}

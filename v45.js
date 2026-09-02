@@ -11015,36 +11015,39 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-pending-page .b37-step{grid-template-columns:42px 1fr 42px;gap:10px;margin-top:2px}
       .b37-pending-page .b37-step button{height:42px;border-radius:11px;background:#EEF1E4;color:#36512B}
       .b37-pending-page .b37-step strong{font-size:21px}
-      /* V224B37W4 — reuse the proven B38 native-date centering method.
-         Important: B37 has an earlier 44px Chromium pseudo-element rule, while
-         the compact visual master later shrinks the actual input to 42px.
-         Override EVERY native date subpart here so the old 44px inner box
-         cannot push the date text against the top edge. */
-      .b37-pending-page #b37-completed-date{
-        height:42px!important;min-height:42px!important;box-sizing:border-box!important;
-        margin:0!important;padding:0 11px!important;line-height:normal!important;
-        border-radius:11px;background:#FBFBF8;
+      /* V224B37W5 — Completed Date uses the proven B38 overlay pattern.
+         The visible date is a normal span centered with top:50%; the native
+         date input stays transparent above it only for picker/value handling. */
+      .b37-pending-page .b37-completed-date-shell{
+        position:relative!important;width:100%!important;height:42px!important;min-height:42px!important;
+        box-sizing:border-box!important;border:1px solid rgba(47,59,51,.13)!important;
+        border-radius:11px!important;background:#FBFBF8!important;overflow:hidden!important;isolation:isolate!important;
       }
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit{
-        display:flex!important;align-items:center!important;height:40px!important;
-        padding:0!important;line-height:40px!important;transform:none!important;
+      .b37-pending-page .b37-completed-date-shell::after{
+        content:""!important;position:absolute!important;z-index:3!important;left:1px!important;top:1px!important;
+        bottom:1px!important;right:34px!important;background:#FBFBF8!important;border-radius:10px 0 0 10px!important;pointer-events:none!important;
       }
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-fields-wrapper{
-        display:flex!important;align-items:center!important;height:40px!important;
-        padding:0!important;line-height:40px!important;
+      .b37-pending-page .b37-completed-date-display{
+        position:absolute!important;z-index:4!important;left:11px!important;right:36px!important;top:50%!important;
+        transform:translateY(-50%)!important;margin:0!important;padding:0!important;font-size:12px!important;line-height:1!important;
+        font-weight:650!important;color:#2F3B33!important;white-space:nowrap!important;pointer-events:none!important;
       }
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-text,
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-month-field,
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-day-field,
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-year-field{
-        padding:0!important;line-height:40px!important;
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date{
+        position:absolute!important;z-index:2!important;inset:0!important;width:100%!important;height:42px!important;min-height:42px!important;
+        margin:0!important;padding:0!important;border:0!important;outline:0!important;background:transparent!important;
+        color:transparent!important;-webkit-text-fill-color:transparent!important;box-shadow:none!important;cursor:pointer!important;
       }
-      .b37-pending-page #b37-completed-date::-webkit-date-and-time-value{
-        display:flex!important;align-items:center!important;height:40px!important;
-        min-height:40px!important;margin:0!important;text-align:left!important;line-height:40px!important;
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date::-webkit-datetime-edit,
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date::-webkit-datetime-edit-fields-wrapper,
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date::-webkit-datetime-edit-text,
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date::-webkit-datetime-edit-month-field,
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date::-webkit-datetime-edit-day-field,
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date::-webkit-datetime-edit-year-field{
+        opacity:0!important;color:transparent!important;-webkit-text-fill-color:transparent!important;text-shadow:none!important;
       }
-      .b37-pending-page #b37-completed-date::-webkit-calendar-picker-indicator{
-        align-self:center!important;margin:0!important;padding:4px!important;
+      .b37-pending-page .b37-completed-date-shell #b37-completed-date::-webkit-calendar-picker-indicator{
+        position:absolute!important;right:10px!important;top:50%!important;transform:translateY(-50%)!important;
+        margin:0!important;opacity:1!important;display:block!important;visibility:visible!important;cursor:pointer!important;
       }
       .b37-pending-page>.b37-warn{margin:2px 0 12px;padding:10px 11px;border-radius:11px}
       .b37-pending-page>.b37-actions{margin-top:12px}
@@ -11150,6 +11153,10 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     if(display)display.textContent=b37DisplayDate(input?.value||'');
     window.__b37CreateDraft=window.__b37CreateDraft||{};
     if(input)window.__b37CreateDraft.due=input.value||'';
+  };
+  window.b37SyncCompletedDateDisplay=function(value){
+    const display=idq('b37-completed-date-display');
+    if(display)display.textContent=b37DisplayDate(value||'');
   };
   window.b37OpenDatePicker=function(){
     const input=idq('b37-due');if(!input)return;
@@ -11314,7 +11321,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><div class="b37-date-shell"><button type="button" class="b37-date-button" onclick="b37OpenDatePicker()" aria-label="Choose due date"><span id="b37-due-display" class="b37-date-display">${esc(b37DisplayDate(due))}</span><span class="b37-date-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10h17"></path></svg></span></button><input id="b37-due" class="b37-date-native" type="date" value="${esc(due)}" onchange="b37SyncDateDisplay()" aria-label="Choose due date"></div></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b37-notes" placeholder="Add a note for your next apiary visit...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><div class="b37-footer"><button class="b37-primary" onclick="b37CreateAction()">Create Action</button></div>`:
       `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
-      ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''}></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
+      ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><div class="b37-completed-date-shell"><span id="b37-completed-date-display" class="b37-completed-date-display">${esc(b37DisplayDate(completedDate))}</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''} onchange="b37SyncCompletedDateDisplay(this.value)"></div></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
       ${completionError?`<div class="b37-warn" role="alert">${esc(completionError)}</div>`:''}
       <div class="b37-actions">${status==='Pending'?`<button class="b37-primary" ${completionError?'disabled aria-disabled="true"':''} onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`:`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
     </div>`;

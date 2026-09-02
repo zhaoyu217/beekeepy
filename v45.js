@@ -11016,8 +11016,9 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-pending-page .b37-step button{height:42px;border-radius:11px;background:#EEF1E4;color:#36512B}
       .b37-pending-page .b37-step strong{font-size:21px}
       .b37-pending-page #b37-completed-date{height:42px;min-height:42px;border-radius:11px;background:#FBFBF8;padding-top:0;padding-bottom:0;line-height:normal}
-      .b37-pending-page #b37-completed-date::-webkit-datetime-edit{height:100%;display:flex;align-items:center;padding:0}
-      .b37-pending-page #b37-completed-date::-webkit-date-and-time-value{margin:0;text-align:left}
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit{height:auto;display:block;padding:0;transform:translateY(1px)}
+      .b37-pending-page #b37-completed-date::-webkit-datetime-edit-fields-wrapper{padding:0;line-height:1.2}
+      .b37-pending-page #b37-completed-date::-webkit-date-and-time-value{margin:0;text-align:left;line-height:1.2}
       .b37-pending-page>.b37-warn{margin:2px 0 12px;padding:10px 11px;border-radius:11px}
       .b37-pending-page>.b37-actions{margin-top:12px}
       .b37-pending-page>.b37-actions .b37-primary{min-height:46px;border-radius:11px}

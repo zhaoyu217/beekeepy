@@ -10997,6 +10997,28 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       .b37-secondary{width:100%;min-height:48px;border:1px solid rgba(94,115,80,.24);border-radius:14px;background:#fff;color:#36512B;font-weight:800;font-size:13px}
       .b37-actions{display:grid;gap:8px;margin-top:14px}
       .b37-picker-group{grid-column:1/-1;font-size:11px;font-weight:800;color:#5E7350;text-transform:uppercase;letter-spacing:.05em;margin:4px 2px 0}
+
+      /* V224B37W1 — PENDING DETAIL VISUAL ONLY.
+         Scope: Add / Remove Super Pending Detail only.
+         No ids, handlers, persistence, routing, counters, dates, or completion logic changed. */
+      .b37-pending-page .b37-intro{margin-bottom:12px;min-height:88px}
+      .b37-pending-page .b37-intro-title{font-size:15px;line-height:1.25}
+      .b37-pending-page .b37-intro-sub{max-width:52%;font-size:10px;line-height:1.45}
+      .b37-pending-page .b37-card{padding:14px;margin-bottom:10px;border-radius:15px}
+      .b37-pending-page .b37-card>.b37-label{display:block;margin-bottom:10px}
+      .b37-pending-page .b37-hive-title{font-size:16px;line-height:1.2}
+      .b37-pending-page .b37-sub{font-size:10.5px;line-height:1.35}
+      .b37-pending-page .b37-meta{gap:8px 12px}
+      .b37-pending-page .b37-meta span{font-size:10.5px;color:#6F776F}
+      .b37-pending-page .b37-meta b{font-size:11px;color:#2F3B33}
+      .b37-pending-page .b37-state{padding:5px 10px;font-size:9px}
+      .b37-pending-page .b37-step{grid-template-columns:42px 1fr 42px;gap:10px;margin-top:2px}
+      .b37-pending-page .b37-step button{height:42px;border-radius:11px;background:#EEF1E4;color:#36512B}
+      .b37-pending-page .b37-step strong{font-size:21px}
+      .b37-pending-page #b37-completed-date{height:42px;min-height:42px;border-radius:11px;background:#FBFBF8}
+      .b37-pending-page>.b37-warn{margin:2px 0 12px;padding:10px 11px;border-radius:11px}
+      .b37-pending-page>.b37-actions{margin-top:12px}
+      .b37-pending-page>.b37-actions .b37-primary{min-height:46px;border-radius:11px}
       @media(max-width:430px){.b37-grid2{grid-template-columns:1fr}.b37-page{padding-left:10px;padding-right:10px}.b37-intro{padding:15px}.b37-card{padding:14px}}
     `;document.head.appendChild(st);
   }
@@ -11254,8 +11276,8 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       actual=Number(a?.resultData?.numberOfSupers??resultDraft?.actual??count),
       completedDate=a?.resultData?.completedDate||b37Today();
     const hiveSelector=isNew?`<label class="b37-field"><select id="b37-hive" aria-label="Hive">${hs.map(x=>`<option value="${esc(x.id)}" ${x.id===selectedId?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:`<div class="b37-hive-title">${esc(h.name)}</div><div class="b37-sub">${esc(h.location||s.settings?.apiaryName||'Apiary')} · ${Number(h.superCount)||0} super${Number(h.superCount)===1?'':'s'} recorded</div>`;
-    r.innerHTML=`<div class="b37-page" data-operation="${op}" data-action-id="${esc(a?.id||'')}">
-      ${isNew?`<div class="b37-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Plan a super change</div><div class="b37-intro-sub">Schedule the work now. Hive configuration changes only after the action is completed.</div></div></div>`:''}
+    r.innerHTML=`<div class="b37-page${(!isNew&&!done)?' b37-pending-page':''}" data-operation="${op}" data-action-id="${esc(a?.id||'')}">
+      ${isNew?`<div class="b37-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Plan a super change</div><div class="b37-intro-sub">Schedule the work now. Hive configuration changes only after the action is completed.</div></div></div>`:(!done?`<div class="b37-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Complete the super change</div><div class="b37-intro-sub">Confirm the actual supers added or removed, then complete this planned action.</div></div></div>`:'')}
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">${isNew?'Select target hive':''}</div></div>${hiveSelector}</section>
       ${isNew?`<section class="b37-card"><div class="b37-card-head"><div class="b37-label">Super Action</div><div class="b37-hint">Planned work</div></div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><div class="b37-count-wrap"><div class="b37-count-top"><span>Number of Supers</span><span>1–10</span></div><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Reason</div><div class="b37-hint">Optional context</div></div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()">${b37ReasonOptions(op).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>

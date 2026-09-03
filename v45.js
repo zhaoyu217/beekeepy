@@ -51,7 +51,7 @@ function v219NormalizeHiveStatus(v){const x=String(v||'').trim();return ({'注�
 function Vstatus(h){const st=v219NormalizeHiveStatus(h?.status);return st==='Healthy'?'Good':st==='Attention'?'Needs Attention':'Critical'}
 function Vclass(h){const st=v219NormalizeHiveStatus(h?.status);return st==='Healthy'?'good':st==='Attention'?'attention':'critical'}
 
-function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||s.hives[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
+function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||v224ActiveTrackedHives(s)[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
 const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
 
@@ -359,25 +359,25 @@ function openRecordPicker(){
     <button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button>
   </div>
   <div class="quick core-menu-actions add-action-grid">
-    <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')">
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v224ActiveTrackedHives(v45s())[0]?.id||''}')">
       <span class="add-action-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5.2" y="4.8" width="13.6" height="16.2" rx="2.2"/><path d="M8.5 4.3h7M9.4 2.7h5.2c.5 0 .9.4.9.9v1.5H8.5V3.6c0-.5.4-.9.9-.9Z"/><path d="m8.2 10 1.5 1.5 2.4-2.7M13.8 10.3h2.3M8.2 15.2l1.5 1.5 2.4-2.7M13.8 15.5h2.3"/></svg>
       </span>
       <b>Inspection</b>
     </button>
-    <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')">
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v224ActiveTrackedHives(v45s())[0]?.id||''}')">
       <span class="add-action-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 9h10l-1.1 10.2a1.5 1.5 0 0 1-1.5 1.3H9.6a1.5 1.5 0 0 1-1.5-1.3L7 9Z"/><path d="M8.5 9V6.8a3.5 3.5 0 0 1 7 0V9"/><path d="M9.5 13.2h5M10.2 16h3.6"/></svg>
       </span>
       <b>Feeding</b>
     </button>
-    <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')">
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v224ActiveTrackedHives(v45s())[0]?.id||''}')">
       <span class="add-action-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true"><rect x="6" y="5" width="12" height="14" rx="2"/><path d="M9 5V3h6v2"/><path d="M12 8v8M8 12h8"/></svg>
       </span>
       <b>Treatment</b>
     </button>
-    <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')">
+    <button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v224ActiveTrackedHives(v45s())[0]?.id||''}')">
       <span class="add-action-icon">
         <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M8 5h8l1 3H7l1-3Z"/><path d="M7 8h10v10.5A1.5 1.5 0 0 1 15.5 20h-7A1.5 1.5 0 0 1 7 18.5V8Z"/><path d="M9 12c1.6 1 4.4 1 6 0M10 15h4"/></svg>
       </span>
@@ -426,7 +426,7 @@ function v215FinishMoreSave(s,msg){
   render();
   return true;
 }
-function v216MoreActiveHives(s){return (s.hives||[]).filter(h=>!h.archived)}
+function v216MoreActiveHives(s){return v224ActiveTrackedHives(s)}
 function v216HiveSelect(s,selectedId,selectId='v216hive'){const hs=v216MoreActiveHives(s);const chosen=hs.some(h=>String(h.id)===String(selectedId))?selectedId:(hs[0]?.id||'');return `<label>Hive<select id="${selectId}">${hs.map(h=>`<option value="${esc(h.id)}" ${String(h.id)===String(chosen)?'selected':''}>${esc(h.name||h.id)}</option>`).join('')}</select></label>`}
 function v216SelectedHive(selectId='v216hive'){return idq(selectId)?.value||''}
 function openHiveMoreV214(hiveId){
@@ -461,7 +461,7 @@ function recordPage(r,type,id){
   const today=new Date().toISOString().slice(0,10);
 
   if(type==='feeding'){
-    const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
     const qtyUnit=metric?'L':'qt';
@@ -511,7 +511,7 @@ function recordPage(r,type,id){
 
 
   if(type==='treatment'){
-    const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const hivePhoto=v101HivePrimaryPhoto(active);
 
@@ -583,7 +583,7 @@ function recordPage(r,type,id){
 
 
   if(type==='harvest'){
-    const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const hivePhoto=v101HivePrimaryPhoto(active);
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
@@ -646,7 +646,7 @@ function recordPage(r,type,id){
     <label><span>Honey Weight</span><input name="Honey_Weight" type="number" step=".1" value="28"></label>
     <label><span>Moisture</span><input name="Moisture" type="number" step=".1" value="16.4"></label>
     <label><span>Batch Name</span><input name="Batch_Name" value="${today}-01"></label>`;
-  r.innerHTML=`<div class="vs"><div class="split rec"><img src="${cfg[1]}"><form id="rform"><label><span>Hive</span><select name="hiveId">${s.hives.map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>${fields}<label><span>Notes</span><textarea name="Notes"></textarea></label></form></div><button class="primary" onclick="saveRec('${type}')">Save Record</button></div>`
+  r.innerHTML=`<div class="vs"><div class="split rec"><img src="${cfg[1]}"><form id="rform"><label><span>Hive</span><select name="hiveId">${v224ActiveTrackedHives(s).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>${fields}<label><span>Notes</span><textarea name="Notes"></textarea></label></form></div><button class="primary" onclick="saveRec('${type}')">Save Record</button></div>`
 }
 function nextHarvestBatchV107(date,state){
   const d=String(date||new Date().toISOString().slice(0,10));
@@ -1990,7 +1990,7 @@ function inspectionPage(r,id){
     <section class="vc switchh">
       <img src="${v101HivePrimaryPhoto(h)}">
       <div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div>
-      <select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+      <select id="ihsel">${(isPro(s)?v224ActiveTrackedHives(s):v224ActiveTrackedHives(s).slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
     </section>
 
     <section class="iform">
@@ -2169,7 +2169,7 @@ function honeyPage(r){
         <b>${totalDisplay.toFixed(1)} ${unit}</b>
         <small>Total recorded honey</small>
       </div>
-      <button class="harvest-add-v106" onclick="go('harvest-record/${s.hives[0]?.id||''}')">＋ Add Harvest</button>
+      <button class="harvest-add-v106" onclick="go('harvest-record/${v224ActiveTrackedHives(s)[0]?.id||''}')">＋ Add Harvest</button>
     </section>
 
     <section class="harvest-stats-v106">
@@ -2203,12 +2203,12 @@ function honeyPage(r){
       <div class="harvest-recent-list">${recent}</div>
     </section>
 
-    <button class="harvest-primary-v106" onclick="go('harvest-record/${s.hives[0]?.id||''}')">＋ Add Harvest Record</button>
+    <button class="harvest-primary-v106" onclick="go('harvest-record/${v224ActiveTrackedHives(s)[0]?.id||''}')">＋ Add Harvest Record</button>
   </div>`;
 }
 
 let V49_MAP_MODE='Apiaries',V49_MAP_ZOOM=false;
-function v109MapHives(){const s=v45s();return isPro(s)?s.hives:s.hives.slice(0,3)}
+function v109MapHives(){const s=v45s(),hs=v224ActiveTrackedHives(s);return isPro(s)?hs:hs.slice(0,3)}
 function setMapModeV49(mode,btn){V49_MAP_MODE=mode;selectTab(btn);drawMapListV49()}
 function zoomMapV49(){
   V49_MAP_ZOOM=!V49_MAP_ZOOM;
@@ -2444,7 +2444,7 @@ function v119HealthChart(series){
 function trendPage(r){
   const s=v45s();
   v120SyncInspectionHistory(s);
-  const allowedHives=isPro(s)?s.hives:s.hives.slice(0,3);
+  const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
   const allowedIds=new Set(allowedHives.map(h=>h.id));
   const {start,end}=v119TrendStart(V49_TREND_RANGE);
 
@@ -3472,6 +3472,10 @@ function v62FilterMenu(){
    Pro users: existing additional hives remain available.
    ============================================================== */
 
+function v224ActiveTrackedHives(s){
+  return (s?.hives||[]).filter(h=>!h?.archived && String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
+}
+
 function v101HivePrimaryPhoto(h){
   const photos=(typeof hivePhotos==='function'?hivePhotos(h):(Array.isArray(h?.photos)?h.photos:[]));
   if(photos.length && photos[0]?.data) return photos[0].data;
@@ -3482,7 +3486,7 @@ function v101HivePrimaryPhoto(h){
 
 function v63VisibleHives(){
   const s=v45s();
-  const active=(s.hives||[]).filter(h=>!h.archived && String(h.lifecycleStatus||h.status||'').toLowerCase()!=='combined');
+  const active=v224ActiveTrackedHives(s);
   return isPro(s) ? active : active.slice(0,3);
 }
 
@@ -3513,7 +3517,7 @@ function v63Menu(){
   const old=document.querySelector('.v63-menu');
   if(old){old.remove();return;}
   const s=v45s();
-  const freeFull=!isPro(s) && s.hives.length>=3;
+  const freeFull=!isPro(s) && v224ActiveTrackedHives(s).length>=3;
   const box=document.createElement('div');
   box.className='v63-menu';
   box.innerHTML=`
@@ -4238,7 +4242,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   window.v185SaveHive=function(){
     const s=v45s();
 
-    if(!isPro(s) && (s.hives||[]).length>=3){
+    if(!isPro(s) && v224ActiveTrackedHives(s).length>=3){
       v185CloseAddHive();
       if(typeof subscriptionModal==='function'){
         subscriptionModal('more than 3 hives');
@@ -4310,7 +4314,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   window.addHive=function(){
     const s=v45s();
 
-    if(!isPro(s) && (s.hives||[]).length>=3){
+    if(!isPro(s) && v224ActiveTrackedHives(s).length>=3){
       if(typeof subscriptionModal==='function'){
         subscriptionModal('more than 3 hives');
       }else{
@@ -4469,7 +4473,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
     const s=v45s();
     const hives=Array.isArray(s.hives)?s.hives:[];
-    const isFull=!isPro(s) && hives.length>=3;
+    const isFull=!isPro(s) && v224ActiveTrackedHives(s).length>=3;
 
     const rows=hives.length
       ? hives.map(h=>`
@@ -5907,7 +5911,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 
   function v198HiveOptions(s,selectedHive){
-    return (s.hives||[]).map(h=>
+    return v224ActiveTrackedHives(s).map(h=>
       `<option value="${esc(h.id)}" ${h.id===selectedHive?'selected':''}>${esc(h.name)}</option>`
     ).join('');
   }
@@ -8371,7 +8375,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const d=v212NormalizeDraft(V49_INSPECTION_DRAFT);
     const card=(key,title,icon,rows)=>`<button type="button" class="v211-card" onclick="v211OpenModule('${key}')"><div class="v211-card-head"><b>${title}</b><i>${icon}</i></div>${rows.map(x=>`<div class="v211-card-row"><span>${x[0]}</span><strong>${esc(v212English(x[1]))}</strong></div>`).join('')}</button>`;
     r.innerHTML=`<div class="vs v86-inspection v211-inspection">
-      <section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?s.hives:s.hives.slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section>
+      <section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?v224ActiveTrackedHives(s):v224ActiveTrackedHives(s).slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section>
       <div class="v211-grid">
         ${card('queen','Queen','♛',[['Queen seen',d.queenStatus],['Queen marked',d.queenMarked||'Not confirmed'],['Queen age',d.queenAge!==''&&d.queenAge!==undefined?`${d.queenAge} yr`:'—'],['Eggs',d.eggs],['Larvae',d.larvae],['Queen cells',d.queenCells],['Laying pattern',d.layingPattern||'Not assessed']])}
         ${card('brood','Brood','✿',[['Pattern',d.brood],['Strength',String(d.broodStrength)],['Abnormalities',d.abnormalities]])}
@@ -13021,7 +13025,7 @@ function detailHTML(a){
     /* Capacity is checked only when this Split still needs to create its child Hive.
        Do not change status/result/lineage before this gate passes. */
     const existing=(s.hives||[]).find(h=>h&&h.createdFromSplitActionId===a.id);
-    if(!existing && !isPro(s) && (s.hives||[]).length>=3){
+    if(!existing && !isPro(s) && v224ActiveTrackedHives(s).length>=3){
       b39mShowHiveLimitUpgrade(a.id);
       return;
     }
@@ -13675,11 +13679,11 @@ function detailHTML(a){
   const prevOpen=window.openActionByType;
   window.openActionByType=function(type,hiveId,actionId){if(String(type||'').toLowerCase()===TYPE){if(actionId)return go('combine-action/'+actionId);const a=(S().actions||[]).filter(x=>x&&x.type===TYPE&&x.status!=='Completed'&&String(x.hiveId||'')===String(hiveId||'')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];return a?go('combine-action/'+a.id):toast('Combine Hives action not found')}return prevOpen.apply(this,arguments)};try{openActionByType=window.openActionByType}catch(_){}
 
-  window.openRecordPicker=function(){if(typeof b37EnsureStyle==='function')b37EnsureStyle();const m=modal(`<div class="modalhead add-action-head"><div><b>Add Action</b><small>Choose what you want to record or plan</small></div><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="quick core-menu-actions add-action-grid"><div class="b37-picker-group">Frequent</div><button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v45s().hives[0]?.id||''}')"><span class="add-action-icon">✓</span><b>Inspection</b><small>Check hive condition</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v45s().hives[0]?.id||''}')"><span class="add-action-icon">▣</span><b>Feeding</b><small>Record feed given</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v45s().hives[0]?.id||''}')"><span class="add-action-icon">＋</span><b>Treatment</b><small>Record hive treatment</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v45s().hives[0]?.id||''}')"><span class="add-action-icon">◇</span><b>Harvest</b><small>Record honey harvest</small></button><div class="b37-picker-group">Other</div><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b37OpenSuperAction()"><span class="add-action-icon">▤</span><span class="add-action-copy"><b>Add / Remove Super</b><small>Plan a hive configuration change</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b38OpenQueenAction()"><span class="add-action-icon">Q</span><span class="add-action-copy"><b>Queen Management</b><small>Plan or verify queen work</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b39OpenSplitAction()"><span class="add-action-icon">↗</span><span class="add-action-copy"><b>Split Hive</b><small>Plan a new colony from a source hive</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b40OpenCombineAction()"><span class="add-action-icon">⇉</span><span class="add-action-copy"><b>Combine Hives</b><small>Plan two colonies into one receiving hive</small></span><span class="add-action-arrow">›</span></button></div>`);m?.classList.add('v224-add-action-picker');requestAnimationFrame(()=>m?.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}))};
+  window.openRecordPicker=function(){if(typeof b37EnsureStyle==='function')b37EnsureStyle();const m=modal(`<div class="modalhead add-action-head"><div><b>Add Action</b><small>Choose what you want to record or plan</small></div><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="quick core-menu-actions add-action-grid"><div class="b37-picker-group">Frequent</div><button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${v224ActiveTrackedHives(v45s())[0]?.id||''}')"><span class="add-action-icon">✓</span><b>Inspection</b><small>Check hive condition</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${v224ActiveTrackedHives(v45s())[0]?.id||''}')"><span class="add-action-icon">▣</span><b>Feeding</b><small>Record feed given</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${v224ActiveTrackedHives(v45s())[0]?.id||''}')"><span class="add-action-icon">＋</span><b>Treatment</b><small>Record hive treatment</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${v224ActiveTrackedHives(v45s())[0]?.id||''}')"><span class="add-action-icon">◇</span><b>Harvest</b><small>Record honey harvest</small></button><div class="b37-picker-group">Other</div><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b37OpenSuperAction()"><span class="add-action-icon">▤</span><span class="add-action-copy"><b>Add / Remove Super</b><small>Plan a hive configuration change</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b38OpenQueenAction(v224ActiveTrackedHives(v45s())[0]?.id||'')"><span class="add-action-icon">Q</span><span class="add-action-copy"><b>Queen Management</b><small>Plan or verify queen work</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b39OpenSplitAction()"><span class="add-action-icon">↗</span><span class="add-action-copy"><b>Split Hive</b><small>Plan a new colony from a source hive</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b40OpenCombineAction()"><span class="add-action-icon">⇉</span><span class="add-action-copy"><b>Combine Hives</b><small>Plan two colonies into one receiving hive</small></span><span class="add-action-arrow">›</span></button></div>`);m?.classList.add('v224-add-action-picker');requestAnimationFrame(()=>m?.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}))};
 
   const prevDraw=window.v53DrawActions||v53DrawActions;
   window.v53DrawActions=function(mode='Pending'){const box=document.getElementById('alist');if(!box)return prevDraw(mode);const s=v45s(),rows=v53ActionRows(mode);box.innerHTML=rows.length?rows.map(a=>{const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed',t=String(a.type||'').toLowerCase();let click=t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>'};try{v53DrawActions=window.v53DrawActions}catch(_){}
 
   if(!document.getElementById('v224b40a-style')){const st=document.createElement('style');st.id='v224b40a-style';st.textContent=`.b40-date-shell{position:relative;display:flex;align-items:center;width:100%;height:42px;border:1px solid rgba(47,59,51,.13);border-radius:11px;background:#fff;box-sizing:border-box;overflow:hidden;padding:0 38px 0 11px;color:#2f3b33;font:700 12px/1 Inter,Arial,sans-serif}.b40-date-shell>span{display:flex;align-items:center;height:100%}.b40-date-shell>input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.b40-date-shell>i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;pointer-events:none}.b40-row{display:flex;justify-content:space-between;gap:18px;padding:7px 0;border-bottom:1px solid rgba(47,59,51,.08);font-size:11px;line-height:1.35}.b40-row:last-child{border-bottom:0}.b40-row span{color:#697169}.b40-row b{text-align:right;max-width:58%;color:#2f3b33}.b40-note{font-size:11px;line-height:1.55;white-space:pre-wrap}`;document.head.appendChild(st)}
-  window.__HIVEDASH_V224B40_VERSION__='224b40b1';
+  window.__HIVEDASH_V224B40_VERSION__='224b40b4-final-audit';
 })();

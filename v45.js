@@ -9047,7 +9047,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         a.type==='combine-hive'||
         a.type==='swarm-control'||
         String(a.source||'')==='split-hive-follow-up'||
-        String(a.source||'')==='combine-hive-follow-up'
+        String(a.source||'')==='combine-hive-follow-up'||
+        String(a.source||'')==='swarm-control-follow-up'
       )&&a.status!=='Completed'&&a.priority!=='Done')
       .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`durable-workflow-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
@@ -13873,6 +13874,11 @@ function detailHTML(a){
     a.plannedPriority=a.priority;
     a.resultData={controlCompleted:true,actualMethod:d.actualMethod,swarmOutcome:d.swarmOutcome,queenCellOutcome:d.queenCellOutcome,completedDate:d.completedDate,followUpRequired:follow,followUpDate:follow?d.followUpDate:'',resultNotes:d.resultNotes||''};
     a.status='Completed';a.priority='Done';a.completedAt=now;a.followUpDate=follow?d.followUpDate:null;a.resultAppliedAt=now;
+    if(follow){
+      const followId=`swarm-follow-${a.id}`;
+      const exists=(s.actions||[]).some(x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(a.id)&&String(x.source||'')==='swarm-control-follow-up')));
+      if(!exists)s.actions.push({id:followId,hiveId:h.id,type:'Inspection',title:'Swarm follow-up',status:'Pending',priority:'Medium',due:d.followUpDate,dueDate:d.followUpDate,date:d.followUpDate,createdAt:now,source:'swarm-control-follow-up',parentActionId:a.id,linkedActionId:a.id,notes:'Follow up on the hive after swarm control.'});
+    }
     s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
     const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=a;else s.meta.completedActions.push(a);
     if(save(s)===false)return toast('Swarm Control result could not be saved');
@@ -13888,5 +13894,5 @@ function detailHTML(a){
     r.innerHTML=a&&a.type===TYPE?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Swarm Control action not found.</section></div>';
     const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Swarm Control</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');
   };try{render=window.render}catch(_){ }
-  window.__HIVEDASH_V224B41_VERSION__='224b41c-actual-complete';
+  window.__HIVEDASH_V224B41_VERSION__='224b41d-followup-closure';
 })();

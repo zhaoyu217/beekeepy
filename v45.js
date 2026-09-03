@@ -14082,6 +14082,12 @@ function detailHTML(a){
     a.status='Completed';a.priority='Done';a.completedAt=now;a.followUpDate=follow?d.followUpDate:null;a.resultAppliedAt=now;
     s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
     const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));
+    /* V224B42D — create exactly one equipment follow-up from confirmed resultData. */
+    if(follow&&d.followUpDate){
+      const followId='equipment-follow-'+a.id;
+      const exists=(s.actions||[]).some(x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(a.id)&&String(x.source||'')==='equipment-maintenance-follow-up')));
+      if(!exists)s.actions.push({id:followId,hiveId:a.hiveId,type:'equipment-follow-up',title:'Equipment follow-up',status:'Pending',priority:'Medium',due:d.followUpDate,dueDate:d.followUpDate,date:d.followUpDate,createdAt:now,source:'equipment-maintenance-follow-up',reasonCode:'management',parentActionId:a.id,linkedActionId:a.id,workflowData:{component:a.workflowData?.component||'',maintenanceActionId:a.id},resultData:null,notes:'Follow up on the equipment after maintenance.'});
+    }
     if(save(s)===false)return toast('Equipment Maintenance result could not be saved');
     try{localStorage.removeItem(PREFIX+a.id)}catch(_){}
     toast('Equipment Maintenance completed');go('actions');
@@ -14102,4 +14108,54 @@ function detailHTML(a){
     box.innerHTML=rows.length?rows.map(a=>{const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed',t=String(a.type||'').toLowerCase();let click=t===TYPE&&a.id?`go('equipment-action/${a.id}')`:t==='swarm-control'&&a.id?`go('swarm-action/${a.id}')`:t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>';
   };try{v53DrawActions=window.v53DrawActions}catch(_){}
   window.__HIVEDASH_V224B42_VERSION__='224b42c-actual-complete';
+})();
+
+
+/* =========================================================
+   V224B42D — Equipment Maintenance Follow-up + Timeline Closure
+   Scope: B42 only. B42B/C/C1 UI and completed detail remain frozen.
+   - Exactly one follow-up Action when confirmed result requires it.
+   - Follow-up is equipment evidence, not biological Inspection evidence.
+   - Completed Equipment Maintenance projects one read-only Timeline event.
+   ========================================================= */
+(function v224b42dEquipmentClosure(){
+  if(window.__HIVEDASH_V224B42D__)return;
+  window.__HIVEDASH_V224B42D__=true;
+  const SOURCE='equipment-maintenance-follow-up', TYPE='equipment-follow-up';
+  const S=()=>v45s(), E=x=>esc(String(x??'')), HERO='assets/hive_detail_hero.jpg';
+  const fmt=d=>{if(!d)return'—';try{return fmtUSDateInput(d)}catch(_){return String(d)}};
+  const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
+
+  function parentFor(s,a){return (s.meta?.completedActions||[]).find(x=>x&&String(x.id)===String(a.parentActionId||a.linkedActionId||''))||(s.actions||[]).find(x=>x&&String(x.id)===String(a.parentActionId||a.linkedActionId||''));}
+  function findFollow(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id)&&String(a.source||'')===SOURCE)||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id)&&String(a.source||'')===SOURCE);}
+
+  /* Reconcile only pre-B42D completed B42 records that already contain a confirmed
+     follow-up requirement. This lets the browser-tested B42C1 record close its chain
+     without changing the frozen completed maintenance result. */
+  function reconcile(){
+    const s=S();s.actions=Array.isArray(s.actions)?s.actions:[];let changed=false;
+    (s.meta?.completedActions||[]).filter(a=>a&&a.type==='equipment-maintenance'&&a.status==='Completed'&&a.resultData?.followUpRequired&&a.resultData?.followUpDate).forEach(a=>{
+      const followId='equipment-follow-'+a.id;
+      const exists=s.actions.some(x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(a.id)&&String(x.source||'')===SOURCE)));
+      if(!exists){s.actions.push({id:followId,hiveId:a.hiveId,type:TYPE,title:'Equipment follow-up',status:'Pending',priority:'Medium',due:a.resultData.followUpDate,dueDate:a.resultData.followUpDate,date:a.resultData.followUpDate,createdAt:a.completedAt||new Date().toISOString(),source:SOURCE,reasonCode:'management',parentActionId:a.id,linkedActionId:a.id,workflowData:{component:a.workflowData?.component||'',maintenanceActionId:a.id},resultData:null,notes:'Follow up on the equipment after maintenance.'});changed=true;}
+    });
+    if(changed)save(s);
+  }
+  reconcile();
+
+  function pending(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),component=a.workflowData?.component||p?.workflowData?.component||'Equipment';return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b42-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review equipment follow-up</b><small>Confirm the equipment condition after maintenance. This does not change hive biological data.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up</div><div class="b37-hint">Equipment evidence</div></div>${row('Hive',h?.name||a.hiveId)}${row('Component',component)}${row('Due',fmt(a.dueDate||a.due))}</section><section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Confirm condition</div></div><label class="b37-field"><span>Component Status</span><select id="b42d-status"><option value="Not recorded">Not recorded</option><option value="Serviceable">Serviceable</option><option value="Needs more work">Needs more work</option><option value="Out of service">Out of service</option></select></label><label class="b37-field"><span>Notes</span><textarea id="b42d-notes" rows="3" placeholder="Optional follow-up notes..."></textarea></label><div class="b39-info">This follow-up records equipment condition only. It does not infer Queen, brood, food, pests, health score, supers, location, or hive lifecycle.</div></section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="b42dCompleteFollow('${E(a.id)}')">Complete Follow-up</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;}
+  function completed(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),rd=a.resultData||{},component=a.workflowData?.component||p?.workflowData?.component||'Equipment';return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b42-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Equipment follow-up completed</b><small>Follow-up history is read-only and remains separate from hive biological evidence.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Completed</div></div>${row('Hive',h?.name||a.hiveId)}${row('Component',component)}${row('Component Status',rd.componentStatus)}${row('Completed Date',fmt(rd.completedDate))}${rd.notes?row('Notes',rd.notes):''}</section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;}
+  window.b42dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Equipment follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Equipment follow-up already completed');const status=document.getElementById('b42d-status')?.value||'Not recorded',notes=document.getElementById('b42d-notes')?.value||'';if(status==='Not recorded')return toast('Record the component status before completing');const now=new Date().toISOString(),date=now.slice(0,10);a.resultData={componentStatus:status,completedDate:date,notes};a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Equipment follow-up could not be saved');toast('Equipment follow-up completed');go('actions');};
+
+  const prevRender=window.render||render;
+  window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='equipment-follow')return prevRender();const r=document.getElementById('view');if(!r)return;const a=findFollow(id);r.className='view secondary';r.innerHTML=a?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Equipment follow-up not found.</section></div>';const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Equipment Follow-up</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');};try{render=window.render}catch(_){}
+
+  const prevDraw=window.v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){const box=document.getElementById('alist');if(!box)return prevDraw(mode);const s=S(),rows=v53ActionRows(mode);box.innerHTML=rows.length?rows.map(a=>{const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed',src=String(a.source||''),t=String(a.type||'').toLowerCase();let click=src===SOURCE&&a.id?`go('equipment-follow/${a.id}')`:t==='equipment-maintenance'&&a.id?`go('equipment-action/${a.id}')`:t==='swarm-control'&&a.id?`go('swarm-action/${a.id}')`:t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>';};try{v53DrawActions=window.v53DrawActions}catch(_){}
+
+  const prevTimeline=window.v49TimelineRows;
+  if(typeof prevTimeline==='function'){
+    window.v49TimelineRows=function(hiveId=''){const rows=prevTimeline(hiveId),s=S();(s.meta?.completedActions||[]).filter(a=>a&&a.type==='equipment-maintenance'&&a.status==='Completed'&&(!hiveId||String(a.hiveId)===String(hiveId))).forEach(a=>{const key='Equipment Maintenance:'+String(a.id);if(rows.some(r=>r.key===key||String(r.sourceId||'')===String(a.id||'')))return;const rd=a.resultData||{},component=a.workflowData?.component||'Equipment',date=rd.completedDate||String(a.completedAt||'').slice(0,10);rows.push({key,type:'Equipment Maintenance',hiveId:a.hiveId,date,detail:`${component} — ${rd.actualWork||'Maintenance'} — ${rd.componentOutcome||'Completed'}`,img:'',savedAt:a.completedAt||'',sourceId:String(a.id||'')});});return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.savedAt||'').localeCompare(String(a.savedAt||'')));};try{v49TimelineRows=window.v49TimelineRows}catch(_){}
+  }
+  window.__HIVEDASH_V224B42_VERSION__='224b42d-followup-timeline';
 })();

@@ -13974,3 +13974,132 @@ function detailHTML(a){
   window.openRecordPicker=function(){const ret=prevPicker.apply(this,arguments);const grid=document.querySelector('.v224-add-action-picker .add-action-grid');if(grid&&!grid.querySelector('[data-b42-equipment]')){const b=document.createElement('button');b.className='qbtn add-action-card add-action-card-wide';b.setAttribute('data-b42-equipment','1');b.onclick=function(){closeModal(this);b42OpenEquipmentAction(v224ActiveTrackedHives(v45s())[0]?.id||'')};b.innerHTML='<span class="add-action-icon">⌘</span><span class="add-action-copy"><b>Equipment Maintenance</b><small>Plan equipment repair or upkeep</small></span><span class="add-action-arrow">›</span>';grid.appendChild(b)}return ret};try{openRecordPicker=window.openRecordPicker}catch(_){ }
   window.__HIVEDASH_V224B42_VERSION__='224b42b-create-pending';
 })();
+
+/* =========================================================
+   V224B42C — Equipment Maintenance Actual Result + Complete Gate
+   Extends the frozen B42B1 planning/Pending implementation only.
+   No Hive biological/configuration fields are changed by completion.
+   Follow-up linkage is recorded here; follow-up Action generation closes in B42D.
+   ========================================================= */
+(function(){
+  if(window.__HIVEDASH_V224B42C__)return;
+  window.__HIVEDASH_V224B42C__=true;
+  const TYPE='equipment-maintenance', PREFIX='hivedash_b42_equipment_result_', HERO='assets/hive_detail_hero.jpg';
+  const S=()=>v45s();
+  const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]||m));
+  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
+  const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
+  const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
+  const find=id=>{const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))};
+
+  function defaults(a){
+    return {maintenanceCompleted:'Not confirmed',actualWork:'Not recorded',componentOutcome:'Not recorded',replacementInstalled:'Not recorded',completedDate:today(),followUpRequired:'No',followUpDate:'',resultNotes:''};
+  }
+  function draft(a){
+    let d=defaults(a);try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}
+    if(d.componentOutcome==='Still needs work'||d.componentOutcome==='Out of service')d.followUpRequired='Yes';
+    if(d.actualWork!=='Replaced')d.replacementInstalled='Not recorded';
+    if(d.followUpRequired!=='Yes')d.followUpDate='';
+    return d;
+  }
+  function persist(a){
+    const d=draft(a), ids={maintenanceCompleted:'b42-result-completed',actualWork:'b42-result-work',componentOutcome:'b42-result-outcome',replacementInstalled:'b42-result-replacement',completedDate:'b42-result-date',followUpRequired:'b42-result-follow',followUpDate:'b42-result-follow-date',resultNotes:'b42-result-notes'};
+    Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});
+    const forced=d.componentOutcome==='Still needs work'||d.componentOutcome==='Out of service';
+    if(forced)d.followUpRequired='Yes';
+    if(d.actualWork!=='Replaced')d.replacementInstalled='Not recorded';
+    if(d.followUpRequired!=='Yes')d.followUpDate='';
+    try{localStorage.setItem(PREFIX+a.id,JSON.stringify(d))}catch(_){}
+    const rep=document.getElementById('b42-result-replacement-shell');if(rep)rep.style.display=d.actualWork==='Replaced'?'block':'none';
+    const follow=document.getElementById('b42-result-follow-shell');if(follow)follow.style.display=d.followUpRequired==='Yes'?'block':'none';
+    const sel=document.getElementById('b42-result-follow');if(sel){sel.value=d.followUpRequired;sel.disabled=forced;}
+    const hint=document.getElementById('b42-follow-rule');if(hint)hint.style.display=forced?'block':'none';
+    const dateDisplay=document.getElementById('b42-result-date-display');if(dateDisplay)dateDisplay.textContent=fmt(d.completedDate);
+    const followDisplay=document.getElementById('b42-result-follow-date-display');if(followDisplay)followDisplay.textContent=fmt(d.followUpDate);
+    return d;
+  }
+  window.b42PersistResult=function(id){const a=find(id);if(a)persist(a)};
+
+  function planCards(a){
+    const s=S(),w=a.workflowData||{},h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId));
+    return `<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Planned hive</div></div>${row('Hive',h?.name||a.hiveId)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Equipment</div><div class="b37-hint">Original plan</div></div>${row('Component',w.component)}${row('Issue',w.issue)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Maintenance Plan</div><div class="b37-hint">Original plan</div></div>${row('Planned Work',w.plannedWork)}${row('Due',fmt(a.dueDate||a.due))}${row('Priority',a.plannedPriority||a.priority)}</section>
+      ${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${esc(a.notes)}</div></section>`:''}`;
+  }
+
+  function pending(a){
+    const d=draft(a), forced=d.componentOutcome==='Still needs work'||d.componentOutcome==='Out of service';
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b42-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Record the maintenance result</b><small>The original plan is preserved. Completion records equipment work only and does not change hive biological data.</small></div></section>
+      ${planCards(a)}
+      <section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Complete maintenance</div></div>
+        <label class="b37-field"><span>Maintenance Completed?</span><select id="b42-result-completed" onchange="b42PersistResult('${esc(a.id)}')">${opts(['Not confirmed','Yes'],d.maintenanceCompleted)}</select></label>
+        <label class="b37-field"><span>Actual Work</span><select id="b42-result-work" onchange="b42PersistResult('${esc(a.id)}')">${opts(['Not recorded','Inspected','Cleaned','Repaired','Replaced','Repainted / resealed','Tightened / secured','No work performed','Other'],d.actualWork)}</select></label>
+        <label class="b37-field"><span>Component Outcome</span><select id="b42-result-outcome" onchange="b42PersistResult('${esc(a.id)}')">${opts(['Not recorded','Serviceable','Improved','Temporarily usable','Still needs work','Out of service','Unknown'],d.componentOutcome)}</select></label>
+        <label id="b42-result-replacement-shell" class="b37-field" style="${d.actualWork==='Replaced'?'':'display:none'}"><span>Replacement Installed?</span><select id="b42-result-replacement" onchange="b42PersistResult('${esc(a.id)}')">${opts(['Not recorded','Yes','No'],d.replacementInstalled)}</select></label>
+        <label class="b37-field"><span>Completed Date</span><div class="b40-date-shell"><span id="b42-result-date-display">${fmt(d.completedDate)}</span><input id="b42-result-date" type="date" value="${esc(d.completedDate)}" onchange="b42PersistResult('${esc(a.id)}')" data-v224b17-decorated="1" aria-label="Completed Date"><i>▣</i></div></label>
+        <div class="b39-schedule-grid"><label class="b37-field"><span>Follow-up Required?</span><select id="b42-result-follow" ${forced?'disabled':''} onchange="b42PersistResult('${esc(a.id)}')">${opts(['No','Yes'],forced?'Yes':d.followUpRequired)}</select></label><label id="b42-result-follow-shell" class="b37-field" style="${(forced||d.followUpRequired==='Yes')?'':'display:none'}"><span>Follow-up Date</span><div class="b40-date-shell"><span id="b42-result-follow-date-display">${fmt(d.followUpDate)}</span><input id="b42-result-follow-date" type="date" value="${esc(d.followUpDate)}" onchange="b42PersistResult('${esc(a.id)}')" data-v224b17-decorated="1" aria-label="Follow-up Date"><i>▣</i></div></label></div>
+        <div id="b42-follow-rule" class="b39-info" style="${forced?'':'display:none'}">Still needs work or out-of-service equipment requires a follow-up.</div>
+        <label class="b37-field"><span>Result Notes</span><textarea id="b42-result-notes" rows="3" placeholder="Optional completion notes..." oninput="b42PersistResult('${esc(a.id)}')">${esc(d.resultNotes||'')}</textarea></label>
+        <div class="b39-info">Only the confirmed equipment result is recorded. Queen, brood, food, pests, health score, supers, location, and hive lifecycle are not changed by this action.</div>
+      </section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b42CompleteMaintenance('${esc(a.id)}')">Complete Equipment Maintenance</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  function completed(a){
+    const rd=a.resultData||{};
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b42-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Equipment maintenance completed</b><small>Completed history is read-only. No hive biological state was inferred from this action.</small></div></section>
+      ${planCards(a)}
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Completed</div></div>
+        ${row('Status','Completed')}${row('Actual Work',rd.actualWork)}${row('Component Outcome',rd.componentOutcome)}${rd.actualWork==='Replaced'?row('Replacement Installed',rd.replacementInstalled?'Yes':'No'):''}${row('Completed Date',fmt(rd.completedDate))}${row('Follow-up Required',rd.followUpRequired?'Yes':'No')}${rd.followUpRequired?row('Follow-up Date',fmt(rd.followUpDate)):''}${rd.resultNotes?row('Result Notes',rd.resultNotes):''}
+      </section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  window.b42CompleteMaintenance=function(id){
+    const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id));
+    if(!a||a.type!==TYPE)return toast('Equipment Maintenance action not found');
+    if(a.status==='Completed'||a.priority==='Done'||a.resultAppliedAt)return toast('Equipment Maintenance already completed');
+    const d=persist(a);
+    if(d.maintenanceCompleted!=='Yes')return toast('Set Maintenance Completed to Yes before completing');
+    if(!d.actualWork||d.actualWork==='Not recorded')return toast('Record the actual work before completing');
+    if(!d.componentOutcome||d.componentOutcome==='Not recorded')return toast('Record the component outcome before completing');
+    if(d.actualWork==='Replaced'&&(!d.replacementInstalled||d.replacementInstalled==='Not recorded'))return toast('Record whether the replacement was installed');
+    if(!d.completedDate)return toast('Select the completed date');
+    const forced=d.componentOutcome==='Still needs work'||d.componentOutcome==='Out of service', follow=forced||d.followUpRequired==='Yes';
+    if(follow&&!d.followUpDate)return toast('Select a follow-up date');
+    const h=(s.hives||[]).find(x=>x&&String(x.id)===String(a.hiveId));
+    if(!h)return toast('The selected hive no longer exists');
+    if(h.archived||String(h.lifecycleStatus||h.status||'').toLowerCase()==='combined')return toast('The selected hive is no longer active');
+    const now=new Date().toISOString();
+    a.plannedPriority=a.priority;
+    a.resultData={maintenanceCompleted:true,actualWork:d.actualWork,componentOutcome:d.componentOutcome,replacementInstalled:d.actualWork==='Replaced'?d.replacementInstalled==='Yes':null,completedDate:d.completedDate,followUpRequired:follow,followUpDate:follow?d.followUpDate:'',resultNotes:d.resultNotes||''};
+    a.status='Completed';a.priority='Done';a.completedAt=now;a.followUpDate=follow?d.followUpDate:null;a.resultAppliedAt=now;
+    s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+    const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));
+    if(save(s)===false)return toast('Equipment Maintenance result could not be saved');
+    try{localStorage.removeItem(PREFIX+a.id)}catch(_){}
+    toast('Equipment Maintenance completed');go('actions');
+  };
+
+  const prevRender=window.render||render;
+  window.render=function(){
+    const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';
+    if(page!=='equipment-action'||id==='new')return prevRender();
+    const r=document.getElementById('view');if(!r)return;const a=find(id);r.className='view secondary';
+    r.innerHTML=a&&a.type===TYPE?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Equipment Maintenance action not found.</section></div>';
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Equipment Maintenance</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');
+  };try{render=window.render}catch(_){}
+
+  const prevDraw=window.v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    const box=document.getElementById('alist');if(!box)return prevDraw(mode);const s=S(),rows=v53ActionRows(mode);
+    box.innerHTML=rows.length?rows.map(a=>{const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed',t=String(a.type||'').toLowerCase();let click=t===TYPE&&a.id?`go('equipment-action/${a.id}')`:t==='swarm-control'&&a.id?`go('swarm-action/${a.id}')`:t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>';
+  };try{v53DrawActions=window.v53DrawActions}catch(_){}
+  window.__HIVEDASH_V224B42_VERSION__='224b42c-actual-complete';
+})();

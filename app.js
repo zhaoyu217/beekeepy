@@ -652,7 +652,23 @@ function unread(s){
 function avgHealth(s){return Math.round(s.hives.reduce((n,h)=>n+h.score,0)/Math.max(1,s.hives.length))}
 function isPro(s){return s.user.plan==='Pro'}
 function statusPill(status){return `<span class="pill ${status==='Critical'?'danger':status==='Attention'?'warn':''}">${esc(status)}</span>`}
-function toast(msg){const t=idq('toast');t.textContent=msg;t.classList.add('show');setTimeout(()=>t.classList.remove('show'),1500)}
+function toast(msg){
+  const t=idq('toast');
+  if(!t)return;
+  const text=String(msg??'').trim();
+  if(!text)return;
+  if(t.__hivedashToastTimer)clearTimeout(t.__hivedashToastTimer);
+  t.textContent=text;
+  t.setAttribute('role','status');
+  t.setAttribute('aria-live','polite');
+  t.setAttribute('aria-atomic','true');
+  t.classList.add('show');
+  const duration=Math.min(6000,Math.max(3500,2600+(text.length*45)));
+  t.__hivedashToastTimer=setTimeout(()=>{
+    t.classList.remove('show');
+    t.__hivedashToastTimer=null;
+  },duration);
+}
 function modal(html){const el=document.createElement('div');el.className='modal';el.innerHTML=`<div class="modalpanel">${html}</div>`;el.addEventListener('click',e=>{if(e.target===el)el.remove()});(document.getElementById('app')||document.body).appendChild(el);return el}
 function closeModal(el){el.closest('.modal').remove()}
 function go(hash){location.hash=hash}

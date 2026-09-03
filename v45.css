@@ -7559,3 +7559,216 @@ input.v224b17-date-native::-webkit-calendar-picker-indicator{
   cursor:default!important;
   opacity:.72!important;
 }
+
+/* ==============================================================
+   V225A — ACTION PICKERS VISUAL POLISH ONLY
+   Scope locked: Actions -> + Add Action picker and More Hive Actions
+   modal only. No routes, handlers, data, action labels, persistence,
+   workflow logic, or frozen B37-B41 behavior is changed here.
+   ============================================================== */
+
+/* Shared overlay: calmer focus, same modal mechanics. */
+html body #app > .modal.v224-add-action-picker,
+html body #app > .modal.v215-more-modal{
+  background:rgba(47,59,51,.34)!important;
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+  box-sizing:border-box!important;
+}
+
+/* Shared panel geometry. */
+html body #app > .modal.v224-add-action-picker > .modalpanel,
+html body #app > .modal.v215-more-modal > .modalpanel{
+  width:min(384px,calc(100vw - 24px))!important;
+  max-width:384px!important;
+  max-height:85dvh!important;
+  margin:0!important;
+  padding:16px 16px 18px!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:rgba(94,115,80,.30) transparent!important;
+  border:1px solid rgba(47,59,51,.11)!important;
+  border-radius:20px!important;
+  background:#FFFEFB!important;
+  box-shadow:0 18px 46px rgba(47,59,51,.18)!important;
+  box-sizing:border-box!important;
+}
+html body #app > .modal.v224-add-action-picker > .modalpanel::-webkit-scrollbar,
+html body #app > .modal.v215-more-modal > .modalpanel::-webkit-scrollbar{width:5px!important}
+html body #app > .modal.v224-add-action-picker > .modalpanel::-webkit-scrollbar-track,
+html body #app > .modal.v215-more-modal > .modalpanel::-webkit-scrollbar-track{background:transparent!important}
+html body #app > .modal.v224-add-action-picker > .modalpanel::-webkit-scrollbar-thumb,
+html body #app > .modal.v215-more-modal > .modalpanel::-webkit-scrollbar-thumb{
+  background:rgba(94,115,80,.30)!important;
+  border-radius:999px!important;
+}
+
+/* Shared header. */
+html body #app > .modal.v224-add-action-picker .add-action-head,
+html body #app > .modal.v215-more-modal .add-action-head{
+  display:flex!important;
+  align-items:center!important;
+  justify-content:space-between!important;
+  gap:12px!important;
+  min-height:42px!important;
+  padding:0 0 12px!important;
+  margin:0 0 12px!important;
+  border-bottom:1px solid rgba(47,59,51,.11)!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-head b,
+html body #app > .modal.v215-more-modal .add-action-head b{
+  font-size:17px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  color:#2F3B33!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-head small{display:none!important}
+html body #app > .modal.v224-add-action-picker .add-action-close,
+html body #app > .modal.v215-more-modal .add-action-close{
+  width:32px!important;
+  height:32px!important;
+  min-height:32px!important;
+  padding:0!important;
+  border:0!important;
+  border-radius:10px!important;
+  background:transparent!important;
+  color:#6D746D!important;
+  font-size:18px!important;
+  line-height:32px!important;
+  box-shadow:none!important;
+}
+
+/* Shared card system. */
+html body #app > .modal.v224-add-action-picker .add-action-grid,
+html body #app > .modal.v215-more-modal .add-action-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+  padding:0!important;
+}
+html body #app > .modal.v224-add-action-picker .b37-picker-group{
+  grid-column:1/-1!important;
+  margin:4px 1px 1px!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  letter-spacing:.055em!important;
+  font-weight:800!important;
+  text-transform:uppercase!important;
+  color:#5E7350!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-card,
+html body #app > .modal.v215-more-modal .add-action-card{
+  min-height:82px!important;
+  padding:10px 8px!important;
+  border:1px solid rgba(47,59,51,.12)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:0 3px 10px rgba(47,59,51,.045)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:5px!important;
+  text-align:center!important;
+  color:#2F3B33!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-card:active,
+html body #app > .modal.v215-more-modal .add-action-card:active{
+  background:#FFF9EA!important;
+  border-color:rgba(197,146,26,.62)!important;
+}
+
+/* Accent-color icons requested by the locked visual choice. */
+html body #app > .modal.v224-add-action-picker .add-action-icon,
+html body #app > .modal.v215-more-modal .add-action-icon{
+  width:32px!important;
+  height:32px!important;
+  border-radius:10px!important;
+  display:grid!important;
+  place-items:center!important;
+  flex:0 0 32px!important;
+  background:#FBF4DF!important;
+  color:#C5921A!important;
+  font-size:16px!important;
+  line-height:1!important;
+  font-weight:800!important;
+  box-shadow:none!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-icon svg,
+html body #app > .modal.v215-more-modal .add-action-icon svg{
+  width:19px!important;
+  height:19px!important;
+  stroke:#C5921A!important;
+  color:#C5921A!important;
+  fill:none!important;
+  stroke-width:1.7!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-card b,
+html body #app > .modal.v215-more-modal .add-action-card b{
+  font-size:11px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  color:#2F3B33!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-card small,
+html body #app > .modal.v215-more-modal .add-action-card small{
+  font-size:9px!important;
+  line-height:1.25!important;
+  font-weight:600!important;
+  color:#858B84!important;
+}
+
+/* Add Action: compact low-frequency rows; visual/order/click targets unchanged. */
+html body #app > .modal.v224-add-action-picker .add-action-card-wide{
+  grid-column:1/-1!important;
+  min-height:57px!important;
+  padding:8px 11px!important;
+  flex-direction:row!important;
+  justify-content:flex-start!important;
+  gap:9px!important;
+  text-align:left!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-card-wide .add-action-copy{
+  min-width:0!important;
+  display:flex!important;
+  flex:1!important;
+  flex-direction:column!important;
+  gap:2px!important;
+}
+html body #app > .modal.v224-add-action-picker .add-action-card-wide .add-action-arrow{
+  margin-left:auto!important;
+  color:#6C776D!important;
+  font-size:20px!important;
+  line-height:1!important;
+}
+
+/* More Hive Actions: same visual family, still 2 x 3 and same handlers. */
+html body #app > .modal.v215-more-modal{
+  position:fixed!important;
+  inset:0!important;
+  z-index:25000!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px 12px calc(92px + env(safe-area-inset-bottom,0px))!important;
+}
+html body #app > .modal.v215-more-modal > .modalpanel{
+  max-height:min(85dvh,620px)!important;
+}
+html body #app > .modal.v215-more-modal .add-action-card{
+  min-height:88px!important;
+}
+
+@media(max-width:430px){
+  html body #app > .modal.v224-add-action-picker{
+    padding:62px 12px 18px!important;
+  }
+  html body #app > .modal.v224-add-action-picker > .modalpanel{
+    max-height:85dvh!important;
+  }
+  html body #app > .modal.v215-more-modal{
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+}

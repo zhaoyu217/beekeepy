@@ -14136,7 +14136,8 @@ function detailHTML(a){
     const s=S();s.actions=Array.isArray(s.actions)?s.actions:[];let changed=false;
     (s.meta?.completedActions||[]).filter(a=>a&&a.type==='equipment-maintenance'&&a.status==='Completed'&&a.resultData?.followUpRequired&&a.resultData?.followUpDate).forEach(a=>{
       const followId='equipment-follow-'+a.id;
-      const exists=s.actions.some(x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(a.id)&&String(x.source||'')===SOURCE)));
+      const followMatch=x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(a.id)&&String(x.source||'')===SOURCE));
+      const exists=s.actions.some(followMatch)||(s.meta?.completedActions||[]).some(followMatch);
       if(!exists){s.actions.push({id:followId,hiveId:a.hiveId,type:TYPE,title:'Equipment follow-up',status:'Pending',priority:'Medium',due:a.resultData.followUpDate,dueDate:a.resultData.followUpDate,date:a.resultData.followUpDate,createdAt:a.completedAt||new Date().toISOString(),source:SOURCE,reasonCode:'management',parentActionId:a.id,linkedActionId:a.id,workflowData:{component:a.workflowData?.component||'',maintenanceActionId:a.id},resultData:null,notes:'Follow up on the equipment after maintenance.'});changed=true;}
     });
     if(changed)save(s);

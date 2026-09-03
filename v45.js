@@ -3482,7 +3482,8 @@ function v101HivePrimaryPhoto(h){
 
 function v63VisibleHives(){
   const s=v45s();
-  return isPro(s) ? s.hives : s.hives.slice(0,3);
+  const active=(s.hives||[]).filter(h=>!h.archived && String(h.lifecycleStatus||h.status||'').toLowerCase()!=='combined');
+  return isPro(s) ? active : active.slice(0,3);
 }
 
 function v63Thumb(h){

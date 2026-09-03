@@ -9040,7 +9040,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         a.type==='queen-management'||
         a.type==='split-hive'||
         a.type==='combine-hive'||
-        String(a.source||'')==='split-hive-follow-up'
+        String(a.source||'')==='split-hive-follow-up'||
+        String(a.source||'')==='combine-hive-follow-up'
       )&&a.status!=='Completed'&&a.priority!=='Done')
       .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`durable-workflow-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
@@ -13578,14 +13579,97 @@ function detailHTML(a){
   window.b40OpenCombineAction=function(hiveId=''){clear();window.__b40Draft=null;const d=draft(),hs=activeHives(S());if(hiveId&&hs.some(h=>String(h.id)===String(hiveId))){d.sourceHiveId=hiveId;normalize(d,hs);persist(d)}go('combine-action/new')};
 
   function findAction(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))}
+  const B40_RESULT_PREFIX='hivedash_b40_combine_result_';
+  function b40ResultDraft(a){
+    const key=B40_RESULT_PREFIX+a.id;
+    let d={combineCompleted:'',diseaseStatus:'Not checked',queenOutcome:'',completedDate:TODAY(),followUpRequired:'yes',followUpDate:addDays(TODAY(),7),resultNotes:''};
+    try{const x=JSON.parse(localStorage.getItem(key)||'null');if(x&&typeof x==='object')d={...d,...x}}catch(_){ }
+    if(a.resultData)d={...d,...a.resultData};
+    return d;
+  }
+  function b40PersistResult(a){
+    const d=b40ResultDraft(a);
+    const map={combineCompleted:'b40-result-completed',diseaseStatus:'b40-result-disease',queenOutcome:'b40-result-queen',completedDate:'b40-result-date',followUpRequired:'b40-result-follow',followUpDate:'b40-result-follow-date',resultNotes:'b40-result-notes'};
+    Object.entries(map).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});
+    d.followUpRequired=String(d.followUpRequired).toLowerCase()==='yes'?'yes':'no';
+    if(d.followUpRequired!=='yes')d.followUpDate='';
+    try{localStorage.setItem(B40_RESULT_PREFIX+a.id,JSON.stringify(d))}catch(_){ }
+    const dateDisplay=document.getElementById('b40-result-date-display');if(dateDisplay)dateDisplay.textContent=fmtDate(d.completedDate);
+    const followDisplay=document.getElementById('b40-result-follow-date-display');if(followDisplay)followDisplay.textContent=fmtDate(d.followUpDate);
+    const followShell=document.getElementById('b40-result-follow-shell');if(followShell)followShell.style.display=d.followUpRequired==='yes'?'flex':'none';
+    return d;
+  }
+  function addDays(iso,n){const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return iso;const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]+Number(n||0)));return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`}
+  window.b40PersistResult=function(actionId){const a=findAction(actionId);if(a)b40PersistResult(a)};
+
   function pendingHTML(a){
-    const s=S(),w=a.workflowData||{},sh=(s.hives||[]).find(h=>String(h.id)===String(w.sourceHiveId||a.hiveId)),th=(s.hives||[]).find(h=>String(h.id)===String(w.targetHiveId));
+    const s=S(),w=a.workflowData||{},sh=(s.hives||[]).find(h=>String(h.id)===String(w.sourceHiveId||a.hiveId)),th=(s.hives||[]).find(h=>String(h.id)===String(w.targetHiveId)),rd=b40ResultDraft(a);
     const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
-    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b40-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review the combine plan</b><small>This is the preserved plan. No hive data has been changed.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hives</div><div class="b37-hint">Planned pair</div></div>${row('Hive to Combine',sh?.name||w.sourceHiveId)}${row('Receiving Hive',th?.name||w.targetHiveId)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Pre-check</div><div class="b37-hint">Original plan</div></div>${row('Source Condition',w.sourceCondition)}${row('Receiving Capacity',w.targetCapacity)}${row('Disease Check',w.diseaseCheck)}${row('Queen Plan',w.queenPlan)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Combine Plan</div><div class="b37-hint">Pending</div></div>${row('Status','Pending')}${row('Reason',w.reason)}${row('Method',w.method)}${row('Due',fmtDate(a.dueDate||a.due))}${row('Priority',a.priority)}</section>${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${E(a.notes)}</div></section>`:''}<div class="b39-info">B40A is planning only. Actual Result and completion will be implemented in the next B40 step.</div><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;
+    const opts2=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b40-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review the combine plan</b><small>This is the preserved plan. Hive data changes only after completion is confirmed.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hives</div><div class="b37-hint">Planned pair</div></div>${row('Hive to Combine',sh?.name||w.sourceHiveId)}${row('Receiving Hive',th?.name||w.targetHiveId)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Pre-check</div><div class="b37-hint">Original plan</div></div>${row('Source Condition',w.sourceCondition)}${row('Receiving Capacity',w.targetCapacity)}${row('Disease Check',w.diseaseCheck)}${row('Queen Plan',w.queenPlan)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Combine Plan</div><div class="b37-hint">Pending</div></div>${row('Status','Pending')}${row('Reason',w.reason)}${row('Method',w.method)}${row('Due',fmtDate(a.dueDate||a.due))}${row('Priority',a.priority)}</section>${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${E(a.notes)}</div></section>`:''}
+      <section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Complete combine</div></div>
+        <label class="b37-field"><span>Combine Completed?</span><select id="b40-result-completed" onchange="b40PersistResult('${E(a.id)}')">${opts2(['Not confirmed','Yes'],rd.combineCompleted||'Not confirmed')}</select></label>
+        <label class="b37-field"><span>Disease Status at Combine</span><select id="b40-result-disease" onchange="b40PersistResult('${E(a.id)}')">${opts2(['Not checked','No concern seen','Concern resolved','Concern present'],rd.diseaseStatus)}</select></label>
+        <label class="b37-field"><span>Queen Outcome</span><select id="b40-result-queen" onchange="b40PersistResult('${E(a.id)}')">${opts2(['Not recorded','Kept receiving hive queen','Kept source hive queen','Queenless after combine','Unknown'],rd.queenOutcome||'Not recorded')}</select></label>
+        <label class="b37-field"><span>Completed Date</span><div class="b40-date-shell"><span id="b40-result-date-display">${fmtDate(rd.completedDate)}</span><input id="b40-result-date" type="date" value="${E(rd.completedDate)}" onchange="b40PersistResult('${E(a.id)}')" data-v224b17-decorated="1" aria-label="Completed Date"><i>▣</i></div></label>
+        <div class="b39-schedule-grid"><label class="b37-field"><span>Follow-up Required?</span><select id="b40-result-follow" onchange="b40PersistResult('${E(a.id)}')">${opts2(['Yes','No'],String(rd.followUpRequired).toLowerCase()==='no'?'No':'Yes')}</select></label><label id="b40-result-follow-shell" class="b37-field" style="${String(rd.followUpRequired).toLowerCase()==='no'?'display:none':''}"><span>Follow-up Date</span><div class="b40-date-shell"><span id="b40-result-follow-date-display">${fmtDate(rd.followUpDate)}</span><input id="b40-result-follow-date" type="date" value="${E(rd.followUpDate)}" onchange="b40PersistResult('${E(a.id)}')" data-v224b17-decorated="1" aria-label="Follow-up Date"><i>▣</i></div></label></div>
+        <label class="b37-field"><span>Result Notes</span><textarea id="b40-result-notes" rows="3" placeholder="Optional completion notes..." oninput="b40PersistResult('${E(a.id)}')">${E(rd.resultNotes||'')}</textarea></label>
+        <div class="b39-info">The source hive is removed from active use only after a confirmed successful combine. The receiving hive remains active.</div>
+      </section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b40CompleteCombine('${E(a.id)}')">Complete Combine</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
   }
 
+  function completedHTML(a){
+    const s=S(),w=a.workflowData||{},rd=a.resultData||{},sh=(s.hives||[]).find(h=>String(h.id)===String(w.sourceHiveId||a.hiveId)),th=(s.hives||[]).find(h=>String(h.id)===String(w.targetHiveId));
+    const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b40-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Combine completed</b><small>Completed history is read-only. The receiving hive remains active.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hives</div><div class="b37-hint">Completed pair</div></div>${row('Combined Hive',sh?.name||w.sourceHiveId)}${row('Receiving Hive',th?.name||w.targetHiveId)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Original Plan</div><div class="b37-hint">Preserved</div></div>${row('Reason',w.reason)}${row('Method',w.method)}${row('Queen Plan',w.queenPlan)}${row('Priority',a.plannedPriority||w.priority||'—')}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Completed</div></div>${row('Status','Completed')}${row('Disease Status',rd.diseaseStatus)}${row('Queen Outcome',rd.queenOutcome)}${row('Completed Date',fmtDate(rd.completedDate))}${row('Follow-up Required',rd.followUpRequired?'Yes':'No')}${rd.followUpRequired?row('Follow-up Date',fmtDate(rd.followUpDate)):''}${rd.resultNotes?row('Result Notes',rd.resultNotes):''}</section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;
+  }
+
+  window.b40CompleteCombine=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(actionId));
+    if(!a||a.type!==TYPE)return toast('Combine Hives action not found');
+    if(a.status==='Completed'||a.priority==='Done'||a.resultAppliedAt)return toast('Combine already completed');
+    const d=b40PersistResult(a),w=a.workflowData||{};
+    if(String(d.combineCompleted)!=='Yes')return toast('Set Combine Completed to Yes before completing');
+    if(!d.completedDate)return toast('Select the completed date');
+    if(!d.diseaseStatus||d.diseaseStatus==='Not checked')return toast('Record the disease status before completing');
+    if(d.diseaseStatus==='Concern present')return toast('Resolve the disease concern before combining hives');
+    if(!d.queenOutcome||d.queenOutcome==='Not recorded')return toast('Record the queen outcome before completing');
+    const followUpRequired=String(d.followUpRequired).toLowerCase()!=='no'&&String(d.followUpRequired)!=='No';
+    if(followUpRequired&&!d.followUpDate)return toast('Select a follow-up date');
+    const source=(s.hives||[]).find(h=>h&&String(h.id)===String(w.sourceHiveId||a.hiveId));
+    const target=(s.hives||[]).find(h=>h&&String(h.id)===String(w.targetHiveId));
+    if(!source||!target)return toast('One of the selected hives no longer exists');
+    if(String(source.id)===String(target.id))return toast('Source and receiving hive must be different');
+    if(source.archived||String(source.lifecycleStatus||source.status||'').toLowerCase()==='combined')return toast('Source hive has already been combined');
+    if(target.archived||String(target.lifecycleStatus||'').toLowerCase()==='combined')return toast('Receiving hive is no longer active');
+    const now=new Date().toISOString();
+    source.archived=true;
+    source.status='Combined';
+    source.lifecycleStatus='Combined';
+    source.combinedIntoHiveId=target.id;
+    source.combinedByActionId=a.id;
+    source.combinedDate=d.completedDate;
+    source.combinedAt=now;
+    a.plannedPriority=a.priority;
+    a.resultData={combineCompleted:true,sourceHiveId:source.id,targetHiveId:target.id,diseaseStatus:d.diseaseStatus,queenOutcome:d.queenOutcome,completedDate:d.completedDate,followUpRequired,followUpDate:followUpRequired?d.followUpDate:'',resultNotes:d.resultNotes||''};
+    a.status='Completed';a.priority='Done';a.completedAt=now;a.followUpDate=followUpRequired?d.followUpDate:null;a.resultAppliedAt=now;
+    if(followUpRequired&&d.followUpDate){
+      s.actions=Array.isArray(s.actions)?s.actions:[];
+      const followId='combine-followup-'+String(a.id);
+      const exists=s.actions.some(x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(a.id)&&String(x.source||'')==='combine-hive-follow-up')));
+      if(!exists)s.actions.push({id:followId,hiveId:target.id,type:'Inspection',title:'Combine follow-up',status:'Pending',priority:'Medium',due:d.followUpDate,dueDate:d.followUpDate,date:d.followUpDate,createdAt:now,source:'combine-hive-follow-up',parentActionId:a.id,linkedActionId:a.id,sourceHiveId:source.id,targetHiveId:target.id,notes:'Follow up on the receiving hive after the combine.'});
+    }
+    s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+    const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=a;else s.meta.completedActions.push(a);
+    if(save(s)===false)return toast('Combine result could not be saved');
+    try{localStorage.removeItem(B40_RESULT_PREFIX+a.id)}catch(_){ }
+    toast('Combine completed');go('actions');
+  };
+
+
   const prevRender=window.render||render;
-  window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='combine-action')return prevRender();const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=id==='new'?createHTML():(findAction(id)?.type===TYPE?pendingHTML(findAction(id)):'<div class="b37-page"><section class="b37-card">Combine Hives action not found.</section></div>');const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Combine Hives</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden')};try{render=window.render}catch(_){}
+  window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='combine-action')return prevRender();const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=id==='new'?createHTML():(findAction(id)?.type===TYPE?(findAction(id).status==='Completed'||findAction(id).priority==='Done'?completedHTML(findAction(id)):pendingHTML(findAction(id))):'<div class="b37-page"><section class="b37-card">Combine Hives action not found.</section></div>');const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Combine Hives</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden')};try{render=window.render}catch(_){}
 
   const prevOpen=window.openActionByType;
   window.openActionByType=function(type,hiveId,actionId){if(String(type||'').toLowerCase()===TYPE){if(actionId)return go('combine-action/'+actionId);const a=(S().actions||[]).filter(x=>x&&x.type===TYPE&&x.status!=='Completed'&&String(x.hiveId||'')===String(hiveId||'')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];return a?go('combine-action/'+a.id):toast('Combine Hives action not found')}return prevOpen.apply(this,arguments)};try{openActionByType=window.openActionByType}catch(_){}
@@ -13596,5 +13680,5 @@ function detailHTML(a){
   window.v53DrawActions=function(mode='Pending'){const box=document.getElementById('alist');if(!box)return prevDraw(mode);const s=v45s(),rows=v53ActionRows(mode);box.innerHTML=rows.length?rows.map(a=>{const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed',t=String(a.type||'').toLowerCase();let click=t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>'};try{v53DrawActions=window.v53DrawActions}catch(_){}
 
   if(!document.getElementById('v224b40a-style')){const st=document.createElement('style');st.id='v224b40a-style';st.textContent=`.b40-date-shell{position:relative;display:flex;align-items:center;width:100%;height:42px;border:1px solid rgba(47,59,51,.13);border-radius:11px;background:#fff;box-sizing:border-box;overflow:hidden;padding:0 38px 0 11px;color:#2f3b33;font:700 12px/1 Inter,Arial,sans-serif}.b40-date-shell>span{display:flex;align-items:center;height:100%}.b40-date-shell>input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.b40-date-shell>i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;pointer-events:none}.b40-row{display:flex;justify-content:space-between;gap:18px;padding:7px 0;border-bottom:1px solid rgba(47,59,51,.08);font-size:11px;line-height:1.35}.b40-row:last-child{border-bottom:0}.b40-row span{color:#697169}.b40-row b{text-align:right;max-width:58%;color:#2f3b33}.b40-note{font-size:11px;line-height:1.55;white-space:pre-wrap}`;document.head.appendChild(st)}
-  window.__HIVEDASH_V224B40_VERSION__='224b40a3';
+  window.__HIVEDASH_V224B40_VERSION__='224b40b1';
 })();

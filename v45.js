@@ -9045,6 +9045,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         a.type==='queen-management'||
         a.type==='split-hive'||
         a.type==='combine-hive'||
+        a.type==='swarm-control'||
         String(a.source||'')==='split-hive-follow-up'||
         String(a.source||'')==='combine-hive-follow-up'
       )&&a.status!=='Completed'&&a.priority!=='Done')

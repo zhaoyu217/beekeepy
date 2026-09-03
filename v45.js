@@ -13687,3 +13687,100 @@ function detailHTML(a){
   if(!document.getElementById('v224b40a-style')){const st=document.createElement('style');st.id='v224b40a-style';st.textContent=`.b40-date-shell{position:relative;display:flex;align-items:center;width:100%;height:42px;border:1px solid rgba(47,59,51,.13);border-radius:11px;background:#fff;box-sizing:border-box;overflow:hidden;padding:0 38px 0 11px;color:#2f3b33;font:700 12px/1 Inter,Arial,sans-serif}.b40-date-shell>span{display:flex;align-items:center;height:100%}.b40-date-shell>input{position:absolute;inset:0;width:100%;height:100%;opacity:0;cursor:pointer}.b40-date-shell>i{position:absolute;right:12px;top:50%;transform:translateY(-50%);font-style:normal;pointer-events:none}.b40-row{display:flex;justify-content:space-between;gap:18px;padding:7px 0;border-bottom:1px solid rgba(47,59,51,.08);font-size:11px;line-height:1.35}.b40-row:last-child{border-bottom:0}.b40-row span{color:#697169}.b40-row b{text-align:right;max-width:58%;color:#2f3b33}.b40-note{font-size:11px;line-height:1.55;white-space:pre-wrap}`;document.head.appendChild(st)}
   window.__HIVEDASH_V224B40_VERSION__='224b40b4-final-audit';
 })();
+
+/* ==============================================================
+   V224B41B — Swarm Control Create + Pending
+   Scope: Add Action entry + Create + Pending detail/persistence ONLY.
+   Reuses the locked B39/B40 low-frequency Action visual system.
+   No Hive biological/lifecycle data is changed in this phase.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V224B41B__)return;
+  window.__HIVEDASH_V224B41B__=true;
+
+  const TYPE='swarm-control', DRAFT_KEY='hivedash_b41_swarm_create_draft';
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const TODAY=()=>{
+    const s=S();
+    const tz=String(s?.settings?.apiaryLocation?.timezone||s?.settings?.region?.timezone||s?.settings?.timezone||'America/Denver').trim()||'America/Denver';
+    try{
+      const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
+      const get=t=>parts.find(x=>x.type===t)?.value||'';
+      const y=get('year'),m=get('month'),d=get('day');
+      if(y&&m&&d)return `${y}-${m}-${d}`;
+    }catch(_){ }
+    const d=new Date();
+    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+  };
+  const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const fmtDate=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'')};
+  const activeHives=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h.archived&&String(h.lifecycleStatus||h.status||'').toLowerCase()!=='combined');
+  const HERO='assets/inspection_beekeeper.jpg';
+
+  function baseDraft(){const hs=activeHives(S());return {hiveId:hs[0]?.id||'',swarmRisk:'Moderate',queenCellStatus:'Not checked',colonyCongestion:'Moderate',spaceAvailable:'Not checked',plannedMethod:'Add space',dueDate:TODAY(),priority:'Medium',notes:''}}
+  function normalize(d,hs=activeHives(S())){if(!hs.some(h=>String(h.id)===String(d.hiveId)))d.hiveId=hs[0]?.id||'';if(!/^\d{4}-\d{2}-\d{2}$/.test(String(d.dueDate||'')))d.dueDate=TODAY();return d}
+  function readDraft(){let d=baseDraft();try{const x=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');if(x&&typeof x==='object')d={...d,...x}}catch(_){ }return normalize(d)}
+  function persist(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){ }return d}
+  function clear(){try{localStorage.removeItem(DRAFT_KEY)}catch(_){ }}
+  const opts=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
+
+  window.b41SetDraft=function(key,val){const d=readDraft();d[key]=val;normalize(d);persist(d)};
+  window.b41SyncDate=function(input){const d=readDraft();d.dueDate=input?.value||TODAY();persist(d);const out=document.getElementById('b41-due-display');if(out)out.textContent=fmtDate(d.dueDate)};
+
+  function createHTML(){
+    const s=S(),hs=activeHives(s),d=readDraft();
+    if(!hs.length)return `<div class="b37-page b39-page"><section class="b37-card b39-card"><div class="b37-label">Swarm Control</div><div class="b39-info">No active hives are available.</div></section><div class="b37-footer b39-footer"><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
+    const hiveOpts=hs.map(h=>`<option value="${E(h.id)}" ${String(h.id)===String(d.hiveId)?'selected':''}>${E(h.name||h.id)}</option>`).join('');
+    return `<div class="b37-page b39-page b39-create-page b41-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Plan swarm control</b><small>Record the observed swarm risk and the planned intervention. Planning does not change hive data.</small></div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Active hive</div></div><label class="b37-field"><span>Hive</span><select id="b41-hive" onchange="b41SetDraft('hiveId',this.value)">${hiveOpts}</select></label></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Swarm Check</div><div class="b37-hint">Current observations</div></div><label class="b37-field"><span>Swarm Risk</span><select id="b41-risk" onchange="b41SetDraft('swarmRisk',this.value)">${opts(['Low','Moderate','High','Imminent'],d.swarmRisk)}</select></label><label class="b37-field"><span>Queen Cell Status</span><select id="b41-queen-cells" onchange="b41SetDraft('queenCellStatus',this.value)">${opts(['None seen','Cups only','Charged cells','Capped swarm cells','Not checked'],d.queenCellStatus)}</select></label><label class="b37-field"><span>Colony Congestion</span><select id="b41-congestion" onchange="b41SetDraft('colonyCongestion',this.value)">${opts(['Low','Moderate','High','Severe'],d.colonyCongestion)}</select></label><label class="b37-field"><span>Space Available</span><select id="b41-space" onchange="b41SetDraft('spaceAvailable',this.value)">${opts(['Adequate','Limited','None','Not checked'],d.spaceAvailable)}</select></label></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Control Plan</div><div class="b37-hint">Planned method</div></div><label class="b37-field"><span>Planned Method</span><select id="b41-method" onchange="b41SetDraft('plannedMethod',this.value)">${opts(['Add space','Remove swarm cells','Create split','Requeen','Equalize colony','Other'],d.plannedMethod)}</select></label><div class="b39-info">This action records the swarm-control plan only. Add Super, Split Hive, and Queen Management remain separate actions.</div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b39-schedule-grid"><label class="b37-field"><span>Due Date</span><div class="b40-date-shell"><span id="b41-due-display">${fmtDate(d.dueDate)}</span><input id="b41-due" type="date" value="${E(d.dueDate)}" onchange="b41SyncDate(this)" aria-label="Due Date" data-v224b17-decorated="1"><i>▣</i></div></label><label class="b37-field"><span>Priority</span><select id="b41-priority" onchange="b41SetDraft('priority',this.value)">${opts(['Low','Medium','High'],d.priority)}</select></label></div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><textarea id="b41-notes" rows="3" placeholder="Add a note for the planned swarm control..." oninput="b41SetDraft('notes',this.value)">${E(d.notes)}</textarea></section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b41CreateAction()">Create Action</button></div></div>`;
+  }
+
+  window.b41CreateAction=function(){
+    const s=S(),hs=activeHives(s),d=readDraft();
+    const ids={hiveId:'b41-hive',swarmRisk:'b41-risk',queenCellStatus:'b41-queen-cells',colonyCongestion:'b41-congestion',spaceAvailable:'b41-space',plannedMethod:'b41-method',dueDate:'b41-due',priority:'b41-priority',notes:'b41-notes'};
+    Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});normalize(d,hs);persist(d);
+    if(!hs.length)return toast('No active hive is available');
+    if(!d.hiveId||!hs.some(h=>String(h.id)===String(d.hiveId)))return toast('Select an active hive');
+    const now=new Date().toISOString();
+    const a={id:'swarm-action-'+Date.now(),hiveId:d.hiveId,type:TYPE,title:'Swarm Control',status:'Pending',priority:d.priority||'Medium',due:d.dueDate||TODAY(),dueDate:d.dueDate||TODAY(),date:d.dueDate||TODAY(),createdAt:now,startedAt:null,completedAt:null,followUpDate:null,source:'manual',reasonCode:'management',workflowData:{swarmRisk:d.swarmRisk,queenCellStatus:d.queenCellStatus,colonyCongestion:d.colonyCongestion,spaceAvailable:d.spaceAvailable,plannedMethod:d.plannedMethod},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:d.notes||''};
+    if(typeof upsert==='function')upsert(s,a);else{s.actions=Array.isArray(s.actions)?s.actions:[];s.actions.push(a)}
+    if(save(s)===false)return toast('Swarm control plan could not be saved');
+    clear();go('actions');
+  };
+  window.b41OpenSwarmAction=function(hiveId=''){clear();const d=readDraft(),hs=activeHives(S());if(hiveId&&hs.some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;persist(d)}go('swarm-action/new')};
+
+  function findAction(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))}
+  function pendingHTML(a){
+    const s=S(),w=a.workflowData||{},h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId));
+    const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b41-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review the swarm-control plan</b><small>This is the preserved plan. No hive data has been changed.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Planned hive</div></div>${row('Hive',h?.name||a.hiveId)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Swarm Check</div><div class="b37-hint">Original plan</div></div>${row('Swarm Risk',w.swarmRisk)}${row('Queen Cell Status',w.queenCellStatus)}${row('Colony Congestion',w.colonyCongestion)}${row('Space Available',w.spaceAvailable)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Control Plan</div><div class="b37-hint">Pending</div></div>${row('Status','Pending')}${row('Planned Method',w.plannedMethod)}${row('Due',fmtDate(a.dueDate||a.due))}${row('Priority',a.priority)}</section>${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${E(a.notes)}</div></section>`:''}<div class="b39-info">B41B is planning only. Actual Result and completion are implemented in the next B41 step.</div><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;
+  }
+
+  const prevRender=window.render||render;
+  window.render=function(){
+    const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';
+    if(page!=='swarm-action')return prevRender();
+    const r=document.getElementById('view');if(!r)return;
+    r.className='view secondary';
+    const a=id==='new'?null:findAction(id);
+    r.innerHTML=id==='new'?createHTML():(a&&a.type===TYPE&&a.status!=='Completed'?pendingHTML(a):'<div class="b37-page"><section class="b37-card">Swarm Control action not found.</section></div>');
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Swarm Control</div><span></span>`}
+    document.getElementById('bottomnav')?.classList.add('hidden');
+  };try{render=window.render}catch(_){}
+
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){if(String(type||'').toLowerCase()===TYPE){if(actionId)return go('swarm-action/'+actionId);const a=(S().actions||[]).filter(x=>x&&x.type===TYPE&&x.status!=='Completed'&&String(x.hiveId||'')===String(hiveId||'')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];return a?go('swarm-action/'+a.id):toast('Swarm Control action not found')}return prevOpen.apply(this,arguments)};try{openActionByType=window.openActionByType}catch(_){}
+
+  window.openRecordPicker=function(){if(typeof b37EnsureStyle==='function')b37EnsureStyle();const first=v224ActiveTrackedHives(v45s())[0]?.id||'';const m=modal(`<div class="modalhead add-action-head"><div><b>Add Action</b><small>Choose what you want to record or plan</small></div><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="quick core-menu-actions add-action-grid"><div class="b37-picker-group">Frequent</div><button class="qbtn add-action-card" onclick="closeModal(this);go('inspection/${first}')"><span class="add-action-icon">✓</span><b>Inspection</b><small>Check hive condition</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('feeding-record/${first}')"><span class="add-action-icon">▣</span><b>Feeding</b><small>Record feed given</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('treatment-record/${first}')"><span class="add-action-icon">＋</span><b>Treatment</b><small>Record hive treatment</small></button><button class="qbtn add-action-card" onclick="closeModal(this);go('harvest-record/${first}')"><span class="add-action-icon">◇</span><b>Harvest</b><small>Record honey harvest</small></button><div class="b37-picker-group">Other</div><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b37OpenSuperAction()"><span class="add-action-icon">▤</span><span class="add-action-copy"><b>Add / Remove Super</b><small>Plan a hive configuration change</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b38OpenQueenAction('${first}')"><span class="add-action-icon">Q</span><span class="add-action-copy"><b>Queen Management</b><small>Plan or verify queen work</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b39OpenSplitAction()"><span class="add-action-icon">↗</span><span class="add-action-copy"><b>Split Hive</b><small>Plan a new colony from a source hive</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b40OpenCombineAction()"><span class="add-action-icon">⇉</span><span class="add-action-copy"><b>Combine Hives</b><small>Plan two colonies into one receiving hive</small></span><span class="add-action-arrow">›</span></button><button class="qbtn add-action-card add-action-card-wide" onclick="closeModal(this);b41OpenSwarmAction('${first}')"><span class="add-action-icon">≈</span><span class="add-action-copy"><b>Swarm Control</b><small>Plan an intervention for swarm risk</small></span><span class="add-action-arrow">›</span></button></div>`);m?.classList.add('v224-add-action-picker');requestAnimationFrame(()=>m?.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}))};
+
+  const prevDraw=window.v53DrawActions||v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){const box=document.getElementById('alist');if(!box)return prevDraw(mode);const s=v45s(),rows=v53ActionRows(mode);box.innerHTML=rows.length?rows.map(a=>{const h=hive(s,a.hiveId)||s.hives[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed',t=String(a.type||'').toLowerCase();let click=t===TYPE&&a.id?`go('swarm-action/${a.id}')`:t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>'};try{v53DrawActions=window.v53DrawActions}catch(_){}
+
+  window.__HIVEDASH_V224B41_VERSION__='224b41b-create-pending';
+})();

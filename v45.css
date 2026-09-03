@@ -7772,3 +7772,164 @@ html body #app > .modal.v215-more-modal .add-action-card{
     padding-right:12px!important;
   }
 }
+
+/* ==============================================================
+   V225A1 — ACTION PICKERS VISUAL CORRECTION ONLY
+   Root cause: the Add Action modal can render before/without the
+   v224-add-action-picker class being available to the active selector chain.
+   This block targets the actual visual structure itself via :has(), while
+   preserving every existing button, label, handler, route and workflow.
+   ============================================================== */
+
+/* Add Action picker — robust structural targeting. */
+html body #app > .modal:has(.add-action-grid .b37-picker-group){
+  position:fixed!important;
+  inset:0!important;
+  z-index:25000!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:center!important;
+  padding:18px 12px calc(18px + env(safe-area-inset-bottom,0px))!important;
+  overflow:hidden!important;
+  background:rgba(47,59,51,.34)!important;
+  backdrop-filter:blur(3px)!important;
+  -webkit-backdrop-filter:blur(3px)!important;
+  box-sizing:border-box!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) > .modalpanel{
+  position:relative!important;
+  width:min(384px,calc(100vw - 24px))!important;
+  max-width:384px!important;
+  max-height:min(85dvh,690px)!important;
+  margin:0!important;
+  padding:16px 16px 18px!important;
+  overflow-y:auto!important;
+  overscroll-behavior:contain!important;
+  scrollbar-width:thin!important;
+  scrollbar-color:rgba(94,115,80,.24) transparent!important;
+  border:1px solid rgba(47,59,51,.11)!important;
+  border-radius:20px!important;
+  background:#FFFEFB!important;
+  box-shadow:0 18px 46px rgba(47,59,51,.18)!important;
+  box-sizing:border-box!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) > .modalpanel::-webkit-scrollbar{width:4px!important}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) > .modalpanel::-webkit-scrollbar-track{background:transparent!important}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) > .modalpanel::-webkit-scrollbar-thumb{background:rgba(94,115,80,.24)!important;border-radius:999px!important}
+
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-head{
+  min-height:42px!important;
+  padding:0 0 12px!important;
+  margin:0 0 12px!important;
+  align-items:center!important;
+  border-bottom:1px solid rgba(47,59,51,.11)!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-head b{
+  font-size:17px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  color:#2F3B33!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-head small{display:none!important}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-close{
+  width:32px!important;height:32px!important;min-height:32px!important;padding:0!important;
+  border:0!important;border-radius:10px!important;background:transparent!important;
+  color:#6D746D!important;font-size:18px!important;line-height:32px!important;box-shadow:none!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-grid{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:9px!important;
+  padding:0!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .b37-picker-group{
+  grid-column:1/-1!important;
+  margin:4px 1px 1px!important;
+  font-size:10px!important;
+  line-height:1.2!important;
+  letter-spacing:.055em!important;
+  font-weight:800!important;
+  text-transform:uppercase!important;
+  color:#5E7350!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card{
+  min-height:94px!important;
+  padding:12px 9px!important;
+  border:1px solid rgba(47,59,51,.12)!important;
+  border-radius:14px!important;
+  background:#fff!important;
+  box-shadow:0 3px 10px rgba(47,59,51,.045)!important;
+  display:flex!important;
+  flex-direction:column!important;
+  align-items:center!important;
+  justify-content:center!important;
+  gap:6px!important;
+  text-align:center!important;
+  color:#2F3B33!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-icon{
+  width:36px!important;
+  height:36px!important;
+  flex:0 0 36px!important;
+  border-radius:11px!important;
+  display:grid!important;
+  place-items:center!important;
+  background:#FBF4DF!important;
+  color:#C5921A!important;
+  font-size:18px!important;
+  line-height:1!important;
+  font-weight:800!important;
+  box-shadow:none!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card b{
+  font-size:11px!important;
+  line-height:1.2!important;
+  font-weight:800!important;
+  color:#2F3B33!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card small{
+  font-size:9px!important;
+  line-height:1.25!important;
+  font-weight:600!important;
+  color:#858B84!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card-wide{
+  grid-column:1/-1!important;
+  min-height:61px!important;
+  padding:9px 12px!important;
+  flex-direction:row!important;
+  justify-content:flex-start!important;
+  gap:10px!important;
+  text-align:left!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card-wide .add-action-icon{
+  width:34px!important;height:34px!important;flex-basis:34px!important;font-size:17px!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card-wide .add-action-copy{
+  min-width:0!important;display:flex!important;flex:1!important;flex-direction:column!important;gap:2px!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card-wide .add-action-arrow{
+  margin-left:auto!important;color:#6C776D!important;font-size:20px!important;line-height:1!important;
+}
+html body #app > .modal:has(.add-action-grid .b37-picker-group) .add-action-card:active{
+  background:#FFF9EA!important;border-color:rgba(197,146,26,.62)!important;
+}
+
+/* More Hive Actions — same proportions as the selected visual, CSS only. */
+html body #app > .modal.v215-more-modal .add-action-card{
+  min-height:104px!important;
+  padding:14px 10px!important;
+  gap:7px!important;
+}
+html body #app > .modal.v215-more-modal .add-action-icon{
+  width:36px!important;height:36px!important;flex:0 0 36px!important;
+  border-radius:11px!important;background:#FBF4DF!important;color:#C5921A!important;font-size:18px!important;
+}
+html body #app > .modal.v215-more-modal .add-action-card b{
+  font-size:11px!important;line-height:1.2!important;font-weight:800!important;
+}
+
+@media(max-width:430px){
+  html body #app > .modal:has(.add-action-grid .b37-picker-group){padding:12px!important}
+  html body #app > .modal:has(.add-action-grid .b37-picker-group) > .modalpanel{max-height:88dvh!important}
+}

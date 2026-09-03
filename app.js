@@ -429,9 +429,11 @@ function mergeStateV50(local,remote){
     a.type==='split-hive'||
     a.type==='combine-hive'||
     a.type==='swarm-control'||
+    a.type==='equipment-maintenance'||
     String(a.source||'')==='split-hive-follow-up'||
     String(a.source||'')==='combine-hive-follow-up'||
-    String(a.source||'')==='swarm-control-follow-up'
+    String(a.source||'')==='swarm-control-follow-up'||
+    String(a.source||'')==='equipment-maintenance-follow-up'
   )&&a.status!=='Completed'&&a.priority!=='Done';
   const manualSuperMerged=new Map();
   [
@@ -810,9 +812,11 @@ function generateActions(s){
       a.type==='split-hive'||
       a.type==='combine-hive'||
       a.type==='swarm-control'||
+      a.type==='equipment-maintenance'||
       String(a.source||'')==='split-hive-follow-up'||
       String(a.source||'')==='combine-hive-follow-up'||
-    String(a.source||'')==='swarm-control-follow-up'
+    String(a.source||'')==='swarm-control-follow-up'||
+    String(a.source||'')==='equipment-maintenance-follow-up'
     )&&a.status!=='Completed'&&a.priority!=='Done');
 
   /* V224B32 — preserve only explicitly completed Action entities.

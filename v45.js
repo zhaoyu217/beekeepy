@@ -9046,9 +9046,11 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         a.type==='split-hive'||
         a.type==='combine-hive'||
         a.type==='swarm-control'||
+        a.type==='equipment-maintenance'||
         String(a.source||'')==='split-hive-follow-up'||
         String(a.source||'')==='combine-hive-follow-up'||
-        String(a.source||'')==='swarm-control-follow-up'
+        String(a.source||'')==='swarm-control-follow-up'||
+        String(a.source||'')==='equipment-maintenance-follow-up'
       )&&a.status!=='Completed'&&a.priority!=='Done')
       .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`durable-workflow-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
@@ -13895,4 +13897,62 @@ function detailHTML(a){
     const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Swarm Control</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');
   };try{render=window.render}catch(_){ }
   window.__HIVEDASH_V224B41_VERSION__='224b41d-followup-closure';
+})();
+
+
+/* =========================================================
+   V224B42B — Equipment Maintenance Create + Pending
+   B42A frozen workflow: Component → issue → planned work → result → complete.
+   This stage implements planning/persistence/Pending only. It intentionally
+   does not alter Hive biological/configuration state. Future follow-up source
+   is pre-authorized in durability lists to avoid the B41 preservation gap.
+   ========================================================= */
+(function(){
+  if(window.__HIVEDASH_V224B42B__)return;
+  window.__HIVEDASH_V224B42B__=true;
+  const TYPE='equipment-maintenance', DRAFT_KEY='hivedash_b42_equipment_create_draft';
+  const HERO='assets/hive_detail_hero.jpg';
+  const S=()=>v45s(), esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
+  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const fmt=d=>{if(!d)return '—';try{const [y,m,day]=String(d).split('-');return `${m}/${day}/${y}`}catch(_){return String(d)}};
+  const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
+  const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
+  function defaultDraft(){const h=active(S())[0];return {hiveId:h?.id||'',component:'Hive body',issue:'Routine maintenance',plannedWork:'Inspect',dueDate:today(),priority:'Medium',notes:''}}
+  function loadDraft(){try{return {...defaultDraft(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return defaultDraft()}}
+  function saveDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}}
+  window.b42SetDraft=function(k,v){const d=loadDraft();d[k]=v;saveDraft(d)};
+  window.b42DateChanged=function(v){b42SetDraft('dueDate',v);const el=document.getElementById('b42-date-display');if(el)el.textContent=fmt(v)};
+  window.b42OpenEquipmentAction=function(hiveId){const d=defaultDraft();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId)))d.hiveId=hiveId;saveDraft(d);go('equipment-action/new')};
+  function createHTML(){
+    const s=S(),hs=active(s),d=loadDraft();if(!hs.some(h=>String(h.id)===String(d.hiveId)))d.hiveId=hs[0]?.id||'';saveDraft(d);
+    if(!hs.length)return `<div class="b37-page b39-page"><section class="b37-card b39-card"><div class="b37-label">Equipment Maintenance</div><div class="b39-info">No active hives are available.</div></section><div class="b37-footer b39-footer"><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
+    const hiveOpts=hs.map(h=>`<option value="${esc(h.id)}" ${String(h.id)===String(d.hiveId)?'selected':''}>${esc(h.name||h.id)}</option>`).join('');
+    return `<div class="b37-page b39-page b39-create-page b42-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Plan equipment maintenance</b><small>Record the equipment issue and planned work. Planning does not change hive biological data.</small></div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Active hive</div></div><label class="b37-field"><span>Hive</span><select id="b42-hive" onchange="b42SetDraft('hiveId',this.value)">${hiveOpts}</select></label></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Equipment</div><div class="b37-hint">What needs attention</div></div>
+        <label class="b37-field"><span>Component</span><select id="b42-component" onchange="b42SetDraft('component',this.value)">${opts(['Hive body','Super box','Bottom board','Inner cover','Outer cover','Frames','Foundation','Entrance reducer','Queen excluder','Feeder','Hive stand','Other'],d.component)}</select></label>
+        <label class="b37-field"><span>Issue</span><select id="b42-issue" onchange="b42SetDraft('issue',this.value)">${opts(['Damaged','Worn','Broken','Dirty','Mold / moisture','Loose / unstable','Paint / coating deterioration','Pest damage','Missing part','Routine maintenance','Other'],d.issue)}</select></label>
+      </section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Maintenance Plan</div><div class="b37-hint">Planned work</div></div><label class="b37-field"><span>Planned Work</span><select id="b42-work" onchange="b42SetDraft('plannedWork',this.value)">${opts(['Inspect','Clean','Repair','Replace','Repaint / reseal','Tighten / secure','Other'],d.plannedWork)}</select></label><div class="b39-info">This action records equipment work only. Hive health and biological observations remain separate workflows.</div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b39-schedule-grid"><label class="b37-field"><span>Due Date</span><div class="b40-date-shell"><span id="b42-date-display">${fmt(d.dueDate)}</span><input id="b42-date" type="date" value="${esc(d.dueDate)}" onchange="b42DateChanged(this.value)" data-v224b17-decorated="1" aria-label="Due Date"><i>▣</i></div></label><label class="b37-field"><span>Priority</span><select id="b42-priority" onchange="b42SetDraft('priority',this.value)">${opts(['Low','Medium','High'],d.priority)}</select></label></div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b42-notes" rows="3" placeholder="Add a note for the planned maintenance..." oninput="b42SetDraft('notes',this.value)">${esc(d.notes||'')}</textarea></label></section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b42CreateAction()">Create Action</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
+  }
+  window.b42CreateAction=function(){
+    const s=S(),d=loadDraft(),h=active(s).find(x=>String(x.id)===String(d.hiveId));
+    if(!h)return toast('Select an active hive');if(!d.component)return toast('Select the equipment component');if(!d.issue)return toast('Record the equipment issue');if(!d.plannedWork)return toast('Select the planned work');if(!d.dueDate)return toast('Select a due date');
+    const now=new Date().toISOString(),a={id:'equipment-action-'+Date.now(),hiveId:h.id,type:TYPE,title:'Equipment Maintenance',status:'Pending',priority:d.priority||'Medium',due:d.dueDate,dueDate:d.dueDate,date:d.dueDate,createdAt:now,startedAt:null,completedAt:null,followUpDate:null,source:'manual',reasonCode:'management',workflowData:{component:d.component,issue:d.issue,plannedWork:d.plannedWork},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:d.notes||''};
+    s.actions=Array.isArray(s.actions)?s.actions:[];s.actions.push(a);if(save(s)===false)return toast('Equipment Maintenance action could not be saved');try{localStorage.removeItem(DRAFT_KEY)}catch(_){ }toast('Equipment Maintenance action created');go('actions');
+  };
+  function find(id){const s=S();return [...(s.actions||[]),...(s.meta?.completedActions||[])].find(a=>a&&String(a.id)===String(id))}
+  function pendingHTML(a){const s=S(),w=a.workflowData||{},h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId));return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b42-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review the maintenance plan</b><small>The original plan is preserved. No hive biological data has been changed.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Planned hive</div></div>${row('Hive',h?.name||a.hiveId)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Equipment</div><div class="b37-hint">Original plan</div></div>${row('Component',w.component)}${row('Issue',w.issue)}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Maintenance Plan</div><div class="b37-hint">Pending</div></div>${row('Status','Pending')}${row('Planned Work',w.plannedWork)}${row('Due',fmt(a.dueDate||a.due))}${row('Priority',a.priority)}</section>${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${esc(a.notes)}</div></section>`:''}<div class="b39-info">Record the actual maintenance result after the work is performed.</div><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`}
+  const prevRender=window.render||render;
+  window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='equipment-action')return prevRender();const r=document.getElementById('view');if(!r)return;r.className='view secondary';const a=id==='new'?null:find(id);r.innerHTML=id==='new'?createHTML():(a&&a.type===TYPE&&a.status!=='Completed'?pendingHTML(a):'<div class="b37-page"><section class="b37-card">Equipment Maintenance action not found.</section></div>');const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Equipment Maintenance</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden')};try{render=window.render}catch(_){ }
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){if(String(type||'').toLowerCase()===TYPE){if(actionId)return go('equipment-action/'+actionId);const a=(S().actions||[]).filter(x=>x&&x.type===TYPE&&x.status!=='Completed'&&String(x.hiveId||'')===String(hiveId||'')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];return a?go('equipment-action/'+a.id):toast('Equipment Maintenance action not found')}return prevOpen.apply(this,arguments)};try{openActionByType=window.openActionByType}catch(_){ }
+  const prevPicker=window.openRecordPicker;
+  window.openRecordPicker=function(){const ret=prevPicker.apply(this,arguments);const grid=document.querySelector('.v224-add-action-picker .add-action-grid');if(grid&&!grid.querySelector('[data-b42-equipment]')){const b=document.createElement('button');b.className='qbtn add-action-card add-action-card-wide';b.setAttribute('data-b42-equipment','1');b.onclick=function(){closeModal(this);b42OpenEquipmentAction(v224ActiveTrackedHives(v45s())[0]?.id||'')};b.innerHTML='<span class="add-action-icon">⌘</span><span class="add-action-copy"><b>Equipment Maintenance</b><small>Plan equipment repair or upkeep</small></span><span class="add-action-arrow">›</span>';grid.appendChild(b)}return ret};try{openRecordPicker=window.openRecordPicker}catch(_){ }
+  window.__HIVEDASH_V224B42_VERSION__='224b42b-create-pending';
 })();

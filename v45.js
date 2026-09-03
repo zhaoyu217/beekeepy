@@ -13911,6 +13911,24 @@ function detailHTML(a){
   if(window.__HIVEDASH_V224B42B__)return;
   window.__HIVEDASH_V224B42B__=true;
   const TYPE='equipment-maintenance', DRAFT_KEY='hivedash_b42_equipment_create_draft';
+
+  /* V224B42B1 — runtime preservation guard.
+     B42B browser QA proved the Action was created but could disappear before
+     the Actions list rendered. Keep B42 ownership local to this workflow and
+     preserve Pending Equipment Maintenance rows after every upstream
+     generateActions() implementation, without changing B37–B41 behavior. */
+  const prevGenerateActionsB42=window.generateActions||generateActions;
+  window.generateActions=function(s){
+    const owned=(Array.isArray(s?.actions)?s.actions:[]).filter(a=>a&&(
+      a.type===TYPE||String(a.source||'')==='equipment-maintenance-follow-up'
+    )&&a.status!=='Completed'&&a.priority!=='Done');
+    const base=prevGenerateActionsB42(s)||[];
+    const map=new Map();
+    base.forEach((a,i)=>map.set(String(a?.id||`base-${i}`),a));
+    owned.forEach((a,i)=>map.set(String(a?.id||`equipment-${i}`),a));
+    return [...map.values()];
+  };
+  try{generateActions=window.generateActions}catch(_){ }
   const HERO='assets/hive_detail_hero.jpg';
   const S=()=>v45s(), esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
   const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');

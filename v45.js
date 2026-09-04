@@ -9050,11 +9050,13 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         a.type==='swarm-control'||
         a.type==='equipment-maintenance'||
         a.type==='move-hive'||
+        a.type==='winter-preparation'||
         String(a.source||'')==='split-hive-follow-up'||
         String(a.source||'')==='combine-hive-follow-up'||
         String(a.source||'')==='swarm-control-follow-up'||
         String(a.source||'')==='equipment-maintenance-follow-up'||
-        String(a.source||'')==='move-hive-follow-up'
+        String(a.source||'')==='move-hive-follow-up'||
+        String(a.source||'')==='winter-preparation-follow-up'
       )&&a.status!=='Completed'&&a.priority!=='Done')
       .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`durable-workflow-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
@@ -14324,4 +14326,143 @@ function detailHTML(a){
     window.v49TimelineRows=function(hiveId=''){const rows=prevTimeline(hiveId),s=S();(s.meta?.completedActions||[]).filter(a=>a&&a.type===PARENT_TYPE&&a.status==='Completed'&&(!hiveId||String(a.hiveId)===String(hiveId))).forEach(a=>{const key='Move Hive:'+String(a.id);if(rows.some(r=>r.key===key||String(r.sourceId||'')===String(a.id||'')))return;const rd=a.resultData||{},date=rd.completedDate||String(a.completedAt||'').slice(0,10),from=locLabel(rd.actualFromLocation||{}),to=locLabel(rd.actualToLocation||{}),reason=String(a.workflowData?.moveReason||'').trim();rows.push({key,type:'Move Hive',hiveId:a.hiveId,date,detail:`${from} → ${to}${reason?` — ${reason}`:''}`,img:'',savedAt:a.completedAt||'',sourceId:String(a.id||'')});});return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.savedAt||'').localeCompare(String(a.savedAt||'')));};try{v49TimelineRows=window.v49TimelineRows}catch(_){}
   }
   window.__HIVEDASH_V224B43_VERSION__='224b43d-followup-timeline';
+})();
+
+/* =========================================================
+   V224B44B — Winter Preparation Create + Pending
+   B44A frozen workflow:
+   Colony / Food / Varroa / Hive setup checklist → complete.
+   This stage implements planning, persistence and Pending detail only.
+   It does not write Inspection, Feeding, Treatment or biological Hive state.
+   ========================================================= */
+(function(){
+  if(window.__HIVEDASH_V224B44B__)return;
+  window.__HIVEDASH_V224B44B__=true;
+
+  const TYPE='winter-preparation', FOLLOW_SOURCE='winter-preparation-follow-up',
+        DRAFT_KEY='hivedash_b44_winter_create_draft', HERO='assets/hive_detail_hero.jpg';
+
+  const S=()=>v45s();
+  const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
+  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
+  const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
+  const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
+
+  const prevGenerateActionsB44=window.generateActions||generateActions;
+  window.generateActions=function(s){
+    const owned=(Array.isArray(s?.actions)?s.actions:[]).filter(a=>a&&(
+      a.type===TYPE||String(a.source||'')===FOLLOW_SOURCE
+    )&&a.status!=='Completed'&&a.priority!=='Done');
+    const baseRows=prevGenerateActionsB44(s)||[];
+    const map=new Map();
+    baseRows.forEach((a,i)=>map.set(String(a?.id||`base-${i}`),a));
+    owned.forEach((a,i)=>map.set(String(a?.id||`winter-${i}`),a));
+    return [...map.values()];
+  };
+  try{generateActions=window.generateActions}catch(_){}
+
+  function defaults(){
+    const h=active(S())[0];
+    return {
+      hiveId:h?.id||'',
+      colonyStrengthChecked:'Not yet',
+      winterStoresChecked:'Not yet',
+      feedingNeeded:'Not sure',
+      varroaStatusChecked:'Not yet',
+      varroaActionNeeded:'Not sure',
+      entranceReduced:'Not yet',
+      moistureVentilationChecked:'Not yet',
+      hiveSecured:'Not yet',
+      pestGuardChecked:'Not yet',
+      weatherProtectionChecked:'Not yet',
+      dueDate:today(),
+      priority:'Medium',
+      notes:''
+    };
+  }
+  function loadDraft(){try{return {...defaults(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return defaults()}}
+  function writeDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}}
+  window.b44SetDraft=function(k,v){const d=loadDraft();d[k]=v;writeDraft(d)};
+  window.b44DateChanged=function(v){b44SetDraft('dueDate',v);const el=document.getElementById('b44-date-display');if(el)el.textContent=fmt(v)};
+  window.b44OpenWinterPreparation=function(hiveId){const d=defaults();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId)))d.hiveId=hiveId;writeDraft(d);go('winter-action/new')};
+
+  function createHTML(){
+    const s=S(), hs=active(s), d=loadDraft();
+    if(!hs.some(h=>String(h.id)===String(d.hiveId)))d.hiveId=hs[0]?.id||'';
+    writeDraft(d);
+    if(!hs.length)return `<div class="b37-page b39-page"><section class="b37-card b39-card"><div class="b37-label">Winter Preparation</div><div class="b39-info">No active hives are available.</div></section><div class="b37-footer b39-footer"><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
+    const hiveOpts=hs.map(h=>`<option value="${esc(h.id)}" ${String(h.id)===String(d.hiveId)?'selected':''}>${esc(h.name||h.id)}</option>`).join('');
+    return `<div class="b37-page b39-page b39-create-page b44-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Prepare this hive for winter</b><small>Review winter-readiness tasks. Planning does not replace inspection, mite testing, feeding, or treatment records.</small></div></section>
+
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Active hive</div></div><label class="b37-field"><span>Hive</span><select id="b44-hive" onchange="b44SetDraft('hiveId',this.value)">${hiveOpts}</select></label></section>
+
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Colony</div><div class="b37-hint">Readiness check</div></div><label class="b37-field"><span>Colony Strength Checked?</span><select onchange="b44SetDraft('colonyStrengthChecked',this.value)">${opts(['Not yet','Yes'],d.colonyStrengthChecked)}</select></label></section>
+
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Food</div><div class="b37-hint">Winter stores</div></div><label class="b37-field"><span>Winter Stores Checked?</span><select onchange="b44SetDraft('winterStoresChecked',this.value)">${opts(['Not yet','Yes'],d.winterStoresChecked)}</select></label><label class="b37-field"><span>Feeding Needed?</span><select onchange="b44SetDraft('feedingNeeded',this.value)">${opts(['Not sure','No','Yes'],d.feedingNeeded)}</select></label></section>
+
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Varroa</div><div class="b37-hint">Management status</div></div><label class="b37-field"><span>Varroa Status Checked?</span><select onchange="b44SetDraft('varroaStatusChecked',this.value)">${opts(['Not yet','Yes'],d.varroaStatusChecked)}</select></label><label class="b37-field"><span>Varroa Action Needed?</span><select onchange="b44SetDraft('varroaActionNeeded',this.value)">${opts(['Not sure','No','Yes'],d.varroaActionNeeded)}</select></label><div class="b39-info">This checklist does not create a Varroa test or Treatment record.</div></section>
+
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive Setup</div><div class="b37-hint">Physical winter preparation</div></div><label class="b37-field"><span>Entrance Reduced?</span><select onchange="b44SetDraft('entranceReduced',this.value)">${opts(['Not yet','Yes','Not needed'],d.entranceReduced)}</select></label><label class="b37-field"><span>Moisture / Ventilation Checked?</span><select onchange="b44SetDraft('moistureVentilationChecked',this.value)">${opts(['Not yet','Yes'],d.moistureVentilationChecked)}</select></label><label class="b37-field"><span>Hive Secured?</span><select onchange="b44SetDraft('hiveSecured',this.value)">${opts(['Not yet','Yes'],d.hiveSecured)}</select></label><label class="b37-field"><span>Mouse / Pest Guard Checked?</span><select onchange="b44SetDraft('pestGuardChecked',this.value)">${opts(['Not yet','Yes','Not needed'],d.pestGuardChecked)}</select></label><label class="b37-field"><span>Weather Protection Checked?</span><select onchange="b44SetDraft('weatherProtectionChecked',this.value)">${opts(['Not yet','Yes','Not needed'],d.weatherProtectionChecked)}</select></label></section>
+
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to prepare</div></div><div class="b39-schedule-grid"><label class="b37-field"><span>Due Date</span><div class="b40-date-shell"><span id="b44-date-display">${fmt(d.dueDate)}</span><input id="b44-date" type="date" value="${esc(d.dueDate)}" onchange="b44DateChanged(this.value)" data-v224b17-decorated="1" aria-label="Due Date"><i>▣</i></div></label><label class="b37-field"><span>Priority</span><select onchange="b44SetDraft('priority',this.value)">${opts(['Low','Medium','High'],d.priority)}</select></label></div></section>
+
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea rows="3" placeholder="Add a note for the winter preparation..." oninput="b44SetDraft('notes',this.value)">${esc(d.notes||'')}</textarea></label></section>
+
+      <div class="b39-info">This Action records winter-preparation management only. It does not change Queen, Brood, Food, Varroa, Health, Feeding, or Treatment evidence.</div>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b44CreateAction()">Create Action</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  window.b44CreateAction=function(){
+    const s=S(), d=loadDraft(), h=active(s).find(x=>String(x.id)===String(d.hiveId));
+    if(!h)return toast('Select an active hive');
+    if(!d.dueDate)return toast('Select a due date');
+    const now=new Date().toISOString();
+    const a={id:'winter-action-'+Date.now(),hiveId:h.id,type:TYPE,title:'Winter Preparation',status:'Pending',priority:d.priority||'Medium',due:d.dueDate,dueDate:d.dueDate,date:d.dueDate,createdAt:now,startedAt:null,completedAt:null,followUpDate:null,source:'manual',reasonCode:'seasonal',workflowData:{colonyStrengthChecked:d.colonyStrengthChecked,winterStoresChecked:d.winterStoresChecked,feedingNeeded:d.feedingNeeded,varroaStatusChecked:d.varroaStatusChecked,varroaActionNeeded:d.varroaActionNeeded,entranceReduced:d.entranceReduced,moistureVentilationChecked:d.moistureVentilationChecked,hiveSecured:d.hiveSecured,pestGuardChecked:d.pestGuardChecked,weatherProtectionChecked:d.weatherProtectionChecked},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:d.notes||''};
+    s.actions=Array.isArray(s.actions)?s.actions:[];
+    s.actions.push(a);
+    if(save(s)===false)return toast('Winter Preparation action could not be saved');
+    try{localStorage.removeItem(DRAFT_KEY)}catch(_){}
+    toast('Winter Preparation action created');
+    go('actions');
+  };
+
+  function find(id){const s=S();return [...(s.actions||[]),...(s.meta?.completedActions||[])].find(a=>a&&String(a.id)===String(id))}
+
+  function pendingHTML(a){
+    const s=S(),w=a.workflowData||{},h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId));
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b44-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review winter preparation</b><small>The original checklist is preserved. No biological or treatment evidence has been changed.</small></div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Planned hive</div></div>${row('Hive',h?.name||a.hiveId)}${row('Status','Pending')}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Colony</div><div class="b37-hint">Original plan</div></div>${row('Colony Strength Checked',w.colonyStrengthChecked)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Food</div><div class="b37-hint">Original plan</div></div>${row('Winter Stores Checked',w.winterStoresChecked)}${row('Feeding Needed',w.feedingNeeded)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Varroa</div><div class="b37-hint">Original plan</div></div>${row('Varroa Status Checked',w.varroaStatusChecked)}${row('Varroa Action Needed',w.varroaActionNeeded)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive Setup</div><div class="b37-hint">Original plan</div></div>${row('Entrance Reduced',w.entranceReduced)}${row('Moisture / Ventilation Checked',w.moistureVentilationChecked)}${row('Hive Secured',w.hiveSecured)}${row('Mouse / Pest Guard Checked',w.pestGuardChecked)}${row('Weather Protection Checked',w.weatherProtectionChecked)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">Pending</div></div>${row('Due',fmt(a.dueDate||a.due))}${row('Priority',a.priority)}</section>
+      ${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${esc(a.notes)}</div></section>`:''}
+      <div class="b39-info">Record the final winter-readiness result after the preparation work is performed.</div>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  const prevRender=window.render||render;
+  window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='winter-action')return prevRender();const r=document.getElementById('view');if(!r)return;r.className='view secondary';const a=id==='new'?null:find(id);r.innerHTML=id==='new'?createHTML():(a&&a.type===TYPE&&a.status!=='Completed'?pendingHTML(a):'<div class="b37-page"><section class="b37-card">Winter Preparation action not found.</section></div>');const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Winter Preparation</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden')};
+  try{render=window.render}catch(_){}
+
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){if(String(type||'').toLowerCase()===TYPE){if(actionId)return go('winter-action/'+actionId);const a=(S().actions||[]).filter(x=>x&&x.type===TYPE&&x.status!=='Completed'&&String(x.hiveId||'')===String(hiveId||'')).sort((a,b)=>String(b.createdAt||'').localeCompare(String(a.createdAt||'')))[0];return a?go('winter-action/'+a.id):toast('Winter Preparation action not found')}return prevOpen.apply(this,arguments)};
+  try{openActionByType=window.openActionByType}catch(_){}
+
+  const prevPicker=window.openRecordPicker;
+  window.openRecordPicker=function(){const ret=prevPicker.apply(this,arguments);const grid=document.querySelector('.v224-add-action-picker .add-action-grid');if(grid&&!grid.querySelector('[data-b44-winter]')){const b=document.createElement('button');b.className='qbtn add-action-card add-action-card-wide';b.setAttribute('data-b44-winter','1');b.onclick=function(){closeModal(this);b44OpenWinterPreparation(active(S())[0]?.id||'')};b.innerHTML='<span class="add-action-icon">❄</span><span class="add-action-copy"><b>Winter Preparation</b><small>Plan winter-readiness work</small></span><span class="add-action-arrow">›</span>';grid.appendChild(b)}return ret};
+  try{openRecordPicker=window.openRecordPicker}catch(_){}
+
+  const prevDraw=window.v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){const box=document.getElementById('alist');if(!box)return prevDraw(mode);const s=S(),rows=v53ActionRows(mode);box.innerHTML=rows.length?rows.map(a=>{const h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId))||s.hives?.[0];if(!h)return'';const done=a.priority==='Done'||a.status==='Completed',src=String(a.source||''),t=String(a.type||'').toLowerCase();let click=t===TYPE&&a.id?`go('winter-action/${a.id}')`:src==='move-hive-follow-up'&&a.id?`go('move-follow/${a.id}')`:t==='move-hive'&&a.id?`go('move-hive-action/${a.id}')`:src==='equipment-maintenance-follow-up'&&a.id?`go('equipment-follow/${a.id}')`:t==='equipment-maintenance'&&a.id?`go('equipment-action/${a.id}')`:t==='swarm-control'&&a.id?`go('swarm-action/${a.id}')`:t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`}).join(''):'<div class="v53-empty-inline">No matching actions.</div>'};
+  try{v53DrawActions=window.v53DrawActions}catch(_){}
+
+  window.__HIVEDASH_V224B44_VERSION__='224b44b-create-pending';
 })();

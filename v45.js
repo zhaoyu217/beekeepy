@@ -15386,10 +15386,11 @@ function detailHTML(a){
 
   window.v49TimelineRows=function(hiveId=''){
     const rows=prevTimeline(hiveId),s=S();
-    completed(s).filter(a=>!hiveId||String(a.hiveId)===String(hiveId)).forEach(a=>{
+    completed(s).forEach(a=>{
       const t=String(a.type||'').toLowerCase(),rd=a.resultData||{},w=a.workflowData||{};
 
       if(t==='split-hive'){
+        if(hiveId&&String(a.hiveId)!==String(hiveId))return;
         const date=rd.completedDate||String(a.completedAt||'').slice(0,10);
         const newHive=String(rd.actualNewHiveName||'').trim()||hiveName(s,rd.newHiveId);
         const q=String(rd.queenOutcome||'').trim();
@@ -15399,15 +15400,18 @@ function detailHTML(a){
       }
 
       if(t==='combine-hive'){
-        const date=rd.completedDate||String(a.completedAt||'').slice(0,10);
         const sourceId=rd.sourceHiveId||w.sourceHiveId||a.hiveId;
         const targetId=rd.targetHiveId||w.targetHiveId;
+        if(hiveId&&String(sourceId)!==String(hiveId)&&String(targetId)!==String(hiveId))return;
+        const date=rd.completedDate||String(a.completedAt||'').slice(0,10);
         const detail=`${hiveName(s,sourceId)} → ${hiveName(s,targetId)}`;
-        push(rows,a,'Combine Hives',date,detail);
+        const key='Combine Hives:'+String(a.id||'');
+        if(!hasRow(rows,a,key))rows.push({key,type:'Combine Hives',hiveId:hiveId||a.hiveId,date,detail,img:'',savedAt:a.completedAt||'',sourceId:String(a.id||'')});
         return;
       }
 
       if(t==='swarm-control'){
+        if(hiveId&&String(a.hiveId)!==String(hiveId))return;
         const date=rd.completedDate||String(a.completedAt||'').slice(0,10);
         const method=String(rd.actualMethod||w.plannedMethod||'').trim();
         const outcome=String(rd.swarmOutcome||'').trim();

@@ -7934,15 +7934,17 @@ html body #app > .modal.v215-more-modal .add-action-card b{
   html body #app > .modal:has(.add-action-grid .b37-picker-group) > .modalpanel{max-height:88dvh!important}
 }
 
-/* V224B44C1 — Winter Preparation unresolved-items visual polish only.
+/* V224B44C1/B45C1 — Winter + Spring Preparation unresolved-items visual polish only.
    Scope: presentation only; no workflow, persistence, validation, or values changed. */
-.b44-page .b44-check-list{
+.b44-page .b44-check-list,
+.b45-page .b44-check-list{
   display:grid!important;
   grid-template-columns:repeat(2,minmax(0,1fr))!important;
   gap:8px!important;
   margin-top:7px!important;
 }
-.b44-page .b44-check-list .b44-check-row{
+.b44-page .b44-check-list .b44-check-row,
+.b45-page .b44-check-list .b44-check-row{
   box-sizing:border-box!important;
   display:flex!important;
   align-items:center!important;
@@ -7957,7 +7959,8 @@ html body #app > .modal.v215-more-modal .add-action-card b{
   cursor:pointer!important;
   line-height:1.2!important;
 }
-.b44-page .b44-check-list .b44-check-row input[type="checkbox"]{
+.b44-page .b44-check-list .b44-check-row input[type="checkbox"],
+.b45-page .b44-check-list .b44-check-row input[type="checkbox"]{
   appearance:auto!important;
   -webkit-appearance:checkbox!important;
   box-sizing:border-box!important;
@@ -7973,7 +7976,8 @@ html body #app > .modal.v215-more-modal .add-action-card b{
   accent-color:#C5921A!important;
   box-shadow:none!important;
 }
-.b44-page .b44-check-list .b44-check-row span{
+.b44-page .b44-check-list .b44-check-row span,
+.b45-page .b44-check-list .b44-check-row span{
   display:block!important;
   min-width:0!important;
   color:#445147!important;
@@ -7981,14 +7985,17 @@ html body #app > .modal.v215-more-modal .add-action-card b{
   font-weight:700!important;
   line-height:1.2!important;
 }
-.b44-page .b44-check-list .b44-check-row:has(input:checked){
+.b44-page .b44-check-list .b44-check-row:has(input:checked),
+.b45-page .b44-check-list .b44-check-row:has(input:checked){
   background:#FBF4DF!important;
   border-color:rgba(197,146,26,.58)!important;
   box-shadow:0 1px 0 rgba(197,146,26,.08)!important;
 }
-.b44-page .b44-check-list .b44-check-row:has(input:checked) span{
+.b44-page .b44-check-list .b44-check-row:has(input:checked) span,
+.b45-page .b44-check-list .b44-check-row:has(input:checked) span{
   color:#5E7350!important;
 }
 @media(max-width:360px){
-  .b44-page .b44-check-list{grid-template-columns:1fr!important;}
+  .b44-page .b44-check-list,
+  .b45-page .b44-check-list{grid-template-columns:1fr!important;}
 }

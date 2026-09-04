@@ -433,6 +433,7 @@ function mergeStateV50(local,remote){
     a.type==='move-hive'||
     a.type==='winter-preparation'||
     a.type==='spring-preparation'||
+    a.type==='other-task'||
     String(a.source||'')==='split-hive-follow-up'||
     String(a.source||'')==='combine-hive-follow-up'||
     String(a.source||'')==='swarm-control-follow-up'||
@@ -822,6 +823,7 @@ function generateActions(s){
       a.type==='move-hive'||
     a.type==='winter-preparation'||
     a.type==='spring-preparation'||
+    a.type==='other-task'||
       String(a.source||'')==='split-hive-follow-up'||
       String(a.source||'')==='combine-hive-follow-up'||
     String(a.source||'')==='swarm-control-follow-up'||

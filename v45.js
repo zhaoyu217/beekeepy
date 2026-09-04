@@ -15247,3 +15247,117 @@ function detailHTML(a){
   window.__HIVEDASH_V224B46_VERSION__='224b46b-create-pending';
 })();
 
+
+
+/* =========================================================
+   V224B46C — Other Task Actual Result + Complete + Timeline
+   Scope: B46 only. B46B planning/Pending remains frozen.
+   - Completion requires explicit Task Completed = Yes.
+   - Completed Date is required.
+   - Completion records Other Task management result only.
+   - No Follow-up Action is generated for generic Other Task.
+   - Completed Other Task projects one read-only Timeline event.
+   ========================================================= */
+(function v224b46cOtherTaskClosure(){
+  if(window.__HIVEDASH_V224B46C__)return;
+  window.__HIVEDASH_V224B46C__=true;
+
+  const TYPE='other-task', PREFIX='hivedash_b46_other_task_result_', HERO='assets/hive_detail_hero.jpg';
+  const S=()=>v45s();
+  const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
+  const fmt=d=>{if(!d)return'—';try{return fmtUSDateInput(d)}catch(_){const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)}};
+  const today=()=>{try{return typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
+  const opts=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
+  function find(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id));}
+  function defaults(){return{taskCompleted:'Not confirmed',completedDate:today(),resultNotes:''};}
+  function draft(a){let d=defaults();try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}return d;}
+  function persist(a){
+    const d=draft(a), ids={taskCompleted:'b46-result-completed',completedDate:'b46-result-date',resultNotes:'b46-result-notes'};
+    Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});
+    try{localStorage.setItem(PREFIX+a.id,JSON.stringify(d))}catch(_){}
+    const dateDisplay=document.getElementById('b46-result-date-display');if(dateDisplay)dateDisplay.textContent=fmt(d.completedDate);
+    return d;
+  }
+  window.b46PersistResult=function(id){const a=find(id);if(a)persist(a);};
+
+  function planCards(a){
+    const s=S(),w=a.workflowData||{},h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId));
+    return `<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Planned hive</div></div>${row('Hive',h?.name||a.hiveId)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Task</div><div class="b37-hint">Original plan</div></div>${row('Task',w.taskTitle||a.title)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">Original plan</div></div>${row('Due',fmt(a.dueDate||a.due))}${row('Priority',a.plannedPriority||a.priority)}</section>
+      ${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${E(a.notes)}</div></section>`:''}`;
+  }
+  function pending(a){
+    const d=draft(a);
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b46-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Record task result</b><small>The original task is preserved. Completion records the management result only and does not change biological or hive-entity state.</small></div></section>
+      ${planCards(a)}
+      <section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Complete task</div></div>
+        <label class="b37-field"><span>Task Completed?</span><select id="b46-result-completed" onchange="b46PersistResult('${E(a.id)}')">${opts(['Not confirmed','Yes'],d.taskCompleted)}</select></label>
+        <label class="b37-field"><span>Completed Date</span><div class="b40-date-shell"><span id="b46-result-date-display">${fmt(d.completedDate)}</span><input id="b46-result-date" type="date" value="${E(d.completedDate)}" onchange="b46PersistResult('${E(a.id)}')" data-v224b17-decorated="1" aria-label="Completed Date"><i>▣</i></div></label>
+        <label class="b37-field"><span>Result Notes</span><textarea id="b46-result-notes" rows="3" placeholder="Optional completion notes..." oninput="b46PersistResult('${E(a.id)}')">${E(d.resultNotes||'')}</textarea></label>
+        <div class="b39-info">This result records Other Task management work only. It does not change Health Score, biological evidence, hive configuration, location, equipment state, or hive lifecycle.</div>
+      </section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b46CompleteOtherTask('${E(a.id)}')">Complete Other Task</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+  function completed(a){
+    const rd=a.resultData||{};
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b46-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Other task completed</b><small>Completed history is read-only. This management result is not biological or hive-entity evidence.</small></div></section>
+      ${planCards(a)}
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Completed</div></div>
+        ${row('Status','Completed')}${row('Completed Date',fmt(rd.completedDate))}${rd.resultNotes?row('Result Notes',rd.resultNotes):''}
+      </section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  window.b46CompleteOtherTask=function(id){
+    const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id));
+    if(!a||a.type!==TYPE)return toast('Other Task action not found');
+    if(a.status==='Completed'||a.priority==='Done'||a.resultAppliedAt)return toast('Other Task already completed');
+    const d=persist(a);
+    if(d.taskCompleted!=='Yes')return toast('Set Task Completed to Yes before completing');
+    if(!d.completedDate)return toast('Select the completed date');
+    const h=(s.hives||[]).find(x=>x&&String(x.id)===String(a.hiveId));
+    if(!h)return toast('The selected hive no longer exists');
+    const now=new Date().toISOString();
+    a.plannedPriority=a.priority;
+    a.resultData={taskCompleted:true,completedDate:d.completedDate,resultNotes:d.resultNotes||'',resultAppliedAt:now};
+    a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;
+    s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+    const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));
+    if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));
+    if(save(s)===false)return toast('Other Task result could not be saved');
+    try{localStorage.removeItem(PREFIX+a.id)}catch(_){}
+    toast('Other Task completed');go('actions');
+  };
+
+  const prevRender=window.render||render;
+  window.render=function(){
+    const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';
+    if(page!=='other-task'||id==='new')return prevRender();
+    const r=document.getElementById('view');if(!r)return;const a=find(id);r.className='view secondary';
+    r.innerHTML=a&&a.type===TYPE?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Other Task action not found.</section></div>';
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Other Task</div><span></span>`}
+    document.getElementById('bottomnav')?.classList.add('hidden');
+  };try{render=window.render}catch(_){}
+
+  const prevTimeline=window.v49TimelineRows;
+  if(typeof prevTimeline==='function'){
+    window.v49TimelineRows=function(hiveId=''){
+      const rows=prevTimeline(hiveId),s=S();
+      (s.meta?.completedActions||[]).filter(a=>a&&a.type===TYPE&&a.status==='Completed'&&(!hiveId||String(a.hiveId)===String(hiveId))).forEach(a=>{
+        const key='Other Task:'+String(a.id);if(rows.some(r=>r.key===key||String(r.sourceId||'')===String(a.id||'')))return;
+        const rd=a.resultData||{},date=rd.completedDate||String(a.completedAt||'').slice(0,10),title=String(a.workflowData?.taskTitle||a.title||'Other Task').trim();
+        const detail=rd.resultNotes?`${title} — ${rd.resultNotes}`:title;
+        rows.push({key,type:'Other Task',hiveId:a.hiveId,date,detail,img:'',savedAt:a.completedAt||'',sourceId:String(a.id||'')});
+      });
+      return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+    };try{v49TimelineRows=window.v49TimelineRows}catch(_){}
+  }
+
+  window.__HIVEDASH_V224B46_VERSION__='224b46c-actual-complete-timeline';
+})();

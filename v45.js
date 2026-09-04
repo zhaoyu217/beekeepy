@@ -14883,3 +14883,155 @@ function detailHTML(a){
 
   window.__HIVEDASH_V224B45_VERSION__='224b45b-create-pending';
 })();
+
+/* =========================================================
+   V224B45C — Spring Preparation Actual Result + Complete Gate
+   Extends frozen B45B planning/Pending implementation only.
+   Completion records spring-readiness management outcome only.
+   It does not create Inspection / Feeding / Queen Management /
+   Equipment Maintenance / Add-Remove Super / Split / Swarm evidence
+   or update Queen, Brood, Food, Strength, Swarm Risk, Health, Supers,
+   Location, or lifecycle. Follow-up Action generation closes in B45D.
+   ========================================================= */
+(function(){
+  if(window.__HIVEDASH_V224B45C__)return;
+  window.__HIVEDASH_V224B45C__=true;
+
+  const TYPE='spring-preparation', PREFIX='hivedash_b45_spring_result_', HERO='assets/hive_detail_hero.jpg';
+  const S=()=>v45s();
+  const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]||m));
+  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
+  const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
+  const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
+  const find=id=>{const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))};
+  const unresolvedOptions=['Winter survival','Food stores','Feeding','Queen','Brood','Colony strength','Equipment','Expansion','Swarm risk','Other'];
+
+  function defaults(){
+    return {preparationCompleted:'Not confirmed',finalReadiness:'Not recorded',unresolvedItems:[],completedDate:today(),followUpRequired:'No',followUpDate:'',resultNotes:''};
+  }
+  function forced(readiness){return readiness==='Ready with follow-up needed'||readiness==='Not ready'}
+  function draft(a){
+    let d=defaults();
+    try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}
+    d.unresolvedItems=Array.isArray(d.unresolvedItems)?d.unresolvedItems:[];
+    if(d.finalReadiness==='Ready for spring')d.unresolvedItems=[];
+    if(forced(d.finalReadiness))d.followUpRequired='Yes';
+    if(d.followUpRequired!=='Yes')d.followUpDate='';
+    return d;
+  }
+  function persist(a){
+    const d=draft(a);
+    const ids={preparationCompleted:'b45-result-completed',finalReadiness:'b45-result-readiness',completedDate:'b45-result-date',followUpRequired:'b45-result-follow',followUpDate:'b45-result-follow-date',resultNotes:'b45-result-notes'};
+    Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});
+    d.unresolvedItems=[...document.querySelectorAll('input[name="b45-unresolved"]:checked')].map(el=>el.value);
+    if(d.finalReadiness==='Ready for spring')d.unresolvedItems=[];
+    const mustFollow=forced(d.finalReadiness);
+    if(mustFollow)d.followUpRequired='Yes';
+    if(d.followUpRequired!=='Yes')d.followUpDate='';
+    try{localStorage.setItem(PREFIX+a.id,JSON.stringify(d))}catch(_){}
+
+    const unresolvedShell=document.getElementById('b45-unresolved-shell');
+    if(unresolvedShell)unresolvedShell.style.display=(d.finalReadiness==='Ready with follow-up needed'||d.finalReadiness==='Not ready')?'block':'none';
+    if(d.finalReadiness==='Ready for spring')document.querySelectorAll('input[name="b45-unresolved"]').forEach(el=>{el.checked=false});
+    const followSel=document.getElementById('b45-result-follow');
+    if(followSel){followSel.value=d.followUpRequired;followSel.disabled=mustFollow;}
+    const followShell=document.getElementById('b45-result-follow-shell');
+    if(followShell)followShell.style.display=d.followUpRequired==='Yes'?'block':'none';
+    const rule=document.getElementById('b45-follow-rule');if(rule)rule.style.display=mustFollow?'block':'none';
+    const dateDisplay=document.getElementById('b45-result-date-display');if(dateDisplay)dateDisplay.textContent=fmt(d.completedDate);
+    const followDisplay=document.getElementById('b45-result-follow-date-display');if(followDisplay)followDisplay.textContent=fmt(d.followUpDate);
+    return d;
+  }
+  window.b45PersistResult=function(id){const a=find(id);if(a)persist(a)};
+
+  function planCards(a){
+    const s=S(),w=a.workflowData||{},h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId));
+    return `<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Planned hive</div></div>${row('Hive',h?.name||a.hiveId)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Survival</div><div class="b37-hint">Original plan</div></div>${row('Winter Survival Checked',w.winterSurvivalChecked)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Food</div><div class="b37-hint">Original plan</div></div>${row('Food Stores Checked',w.foodStoresChecked)}${row('Feeding Needed',w.feedingNeeded)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Queen</div><div class="b37-hint">Original plan</div></div>${row('Queen Status Checked',w.queenStatusChecked)}${row('Queen Action Needed',w.queenActionNeeded)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Brood</div><div class="b37-hint">Original plan</div></div>${row('Brood Checked',w.broodChecked)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Colony Strength</div><div class="b37-hint">Original plan</div></div>${row('Colony Strength Checked',w.colonyStrengthChecked)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Equipment</div><div class="b37-hint">Original plan</div></div>${row('Equipment Checked',w.equipmentChecked)}${row('Equipment Work Needed',w.equipmentWorkNeeded)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Expansion</div><div class="b37-hint">Original plan</div></div>${row('Expansion Need Checked',w.expansionNeedChecked)}${row('Expansion Needed',w.expansionNeeded)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Swarm</div><div class="b37-hint">Original plan</div></div>${row('Swarm Risk Checked',w.swarmRiskChecked)}${row('Swarm Action Needed',w.swarmActionNeeded)}</section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">Original plan</div></div>${row('Due',fmt(a.dueDate||a.due))}${row('Priority',a.plannedPriority||a.priority)}</section>
+      ${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${esc(a.notes)}</div></section>`:''}`;
+  }
+
+  function unresolvedChecks(d){
+    return unresolvedOptions.map(x=>`<label class="b44-check-row"><input type="checkbox" name="b45-unresolved" value="${esc(x)}" ${d.unresolvedItems.includes(x)?'checked':''} onchange="b45PersistResult(window.__B45_CURRENT_ID__)"><span>${esc(x)}</span></label>`).join('');
+  }
+
+  function pending(a){
+    const d=draft(a),mustFollow=forced(d.finalReadiness),showUnresolved=d.finalReadiness==='Ready with follow-up needed'||d.finalReadiness==='Not ready';
+    window.__B45_CURRENT_ID__=a.id;
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b45-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Record spring readiness</b><small>The original checklist is preserved. Completion records management readiness only; it does not replace inspection or linked management workflows.</small></div></section>
+      ${planCards(a)}
+      <section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Complete preparation</div></div>
+        <label class="b37-field"><span>Preparation Completed?</span><select id="b45-result-completed" onchange="b45PersistResult('${esc(a.id)}')">${opts(['Not confirmed','Yes'],d.preparationCompleted)}</select></label>
+        <label class="b37-field"><span>Final Spring Readiness</span><select id="b45-result-readiness" onchange="b45PersistResult('${esc(a.id)}')">${opts(['Not recorded','Ready for spring','Ready with follow-up needed','Not ready'],d.finalReadiness)}</select></label>
+        <div id="b45-unresolved-shell" style="${showUnresolved?'':'display:none'}"><div class="b37-field"><span>Unresolved Items</span><div class="b44-check-list">${unresolvedChecks(d)}</div></div></div>
+        <label class="b37-field"><span>Completed Date</span><div class="b40-date-shell"><span id="b45-result-date-display">${fmt(d.completedDate)}</span><input id="b45-result-date" type="date" value="${esc(d.completedDate)}" onchange="b45PersistResult('${esc(a.id)}')" data-v224b17-decorated="1" aria-label="Completed Date"><i>▣</i></div></label>
+        <div class="b39-schedule-grid"><label class="b37-field"><span>Follow-up Required?</span><select id="b45-result-follow" ${mustFollow?'disabled':''} onchange="b45PersistResult('${esc(a.id)}')">${opts(['No','Yes'],mustFollow?'Yes':d.followUpRequired)}</select></label><label id="b45-result-follow-shell" class="b37-field" style="${d.followUpRequired==='Yes'?'':'display:none'}"><span>Follow-up Date</span><div class="b40-date-shell"><span id="b45-result-follow-date-display">${fmt(d.followUpDate)}</span><input id="b45-result-follow-date" type="date" value="${esc(d.followUpDate)}" onchange="b45PersistResult('${esc(a.id)}')" data-v224b17-decorated="1" aria-label="Follow-up Date"><i>▣</i></div></label></div>
+        <div id="b45-follow-rule" class="b39-info" style="${mustFollow?'':'display:none'}">Ready with follow-up needed or not ready requires a follow-up.</div>
+        <label class="b37-field"><span>Result Notes</span><textarea id="b45-result-notes" rows="3" placeholder="Optional completion notes..." oninput="b45PersistResult('${esc(a.id)}')">${esc(d.resultNotes||'')}</textarea></label>
+        <div class="b39-info">This result records spring-preparation management only. It does not change Queen, Brood, Food, Colony Strength, Swarm Risk, Health Score, Feeding, Equipment, Supers, Location, or hive lifecycle.</div>
+      </section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b45CompleteSpringPreparation('${esc(a.id)}')">Complete Spring Preparation</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  function completed(a){
+    const rd=a.resultData||{};
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b45-page">
+      <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Spring preparation completed</b><small>Completed history is read-only. Readiness here is a management result, not new biological evidence.</small></div></section>
+      ${planCards(a)}
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Actual Result</div><div class="b37-hint">Completed</div></div>
+        ${row('Status','Completed')}${row('Final Spring Readiness',rd.finalReadiness)}${Array.isArray(rd.unresolvedItems)&&rd.unresolvedItems.length?row('Unresolved Items',rd.unresolvedItems.join(', ')):''}${row('Completed Date',fmt(rd.completedDate))}${row('Follow-up Required',rd.followUpRequired?'Yes':'No')}${rd.followUpRequired?row('Follow-up Date',fmt(rd.followUpDate)):''}${rd.resultNotes?row('Result Notes',rd.resultNotes):''}
+      </section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  window.b45CompleteSpringPreparation=function(id){
+    const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id));
+    if(!a||a.type!==TYPE)return toast('Spring Preparation action not found');
+    if(a.status==='Completed'||a.priority==='Done'||a.resultAppliedAt)return toast('Spring Preparation already completed');
+    const d=persist(a);
+    if(d.preparationCompleted!=='Yes')return toast('Set Preparation Completed to Yes before completing');
+    if(!d.finalReadiness||d.finalReadiness==='Not recorded')return toast('Record the final spring readiness before completing');
+    const needsItems=d.finalReadiness==='Ready with follow-up needed'||d.finalReadiness==='Not ready';
+    if(needsItems&&(!Array.isArray(d.unresolvedItems)||!d.unresolvedItems.length))return toast('Select at least one unresolved item');
+    if(!d.completedDate)return toast('Select the completed date');
+    const mustFollow=forced(d.finalReadiness),follow=mustFollow||d.followUpRequired==='Yes';
+    if(follow&&!d.followUpDate)return toast('Select a follow-up date');
+    const h=(s.hives||[]).find(x=>x&&String(x.id)===String(a.hiveId));
+    if(!h)return toast('The selected hive no longer exists');
+    if(h.archived||String(h.lifecycleStatus||h.status||'').toLowerCase()==='combined')return toast('The selected hive is no longer active');
+
+    const now=new Date().toISOString();
+    a.plannedPriority=a.priority;
+    a.resultData={preparationCompleted:true,finalReadiness:d.finalReadiness,unresolvedItems:needsItems?[...d.unresolvedItems]:[],completedDate:d.completedDate,followUpRequired:follow,followUpDate:follow?d.followUpDate:'',resultNotes:d.resultNotes||'',resultAppliedAt:now};
+    a.status='Completed';a.priority='Done';a.completedAt=now;a.followUpDate=follow?d.followUpDate:null;a.resultAppliedAt=now;
+    s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+    const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));
+    if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));
+    if(save(s)===false)return toast('Spring Preparation result could not be saved');
+    try{localStorage.removeItem(PREFIX+a.id)}catch(_){}
+    toast('Spring Preparation completed');go('actions');
+  };
+
+  const prevRender=window.render||render;
+  window.render=function(){
+    const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';
+    if(page!=='spring-action'||id==='new')return prevRender();
+    const r=document.getElementById('view');if(!r)return;const a=find(id);r.className='view secondary';
+    r.innerHTML=a&&a.type===TYPE?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Spring Preparation action not found.</section></div>';
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Spring Preparation</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');
+  };try{render=window.render}catch(_){}
+
+  window.__HIVEDASH_V224B45_VERSION__='224b45c-actual-complete';
+})();

@@ -7933,3 +7933,62 @@ html body #app > .modal.v215-more-modal .add-action-card b{
   html body #app > .modal:has(.add-action-grid .b37-picker-group){padding:12px!important}
   html body #app > .modal:has(.add-action-grid .b37-picker-group) > .modalpanel{max-height:88dvh!important}
 }
+
+/* V224B44C1 — Winter Preparation unresolved-items visual polish only.
+   Scope: presentation only; no workflow, persistence, validation, or values changed. */
+.b44-page .b44-check-list{
+  display:grid!important;
+  grid-template-columns:repeat(2,minmax(0,1fr))!important;
+  gap:8px!important;
+  margin-top:7px!important;
+}
+.b44-page .b44-check-list .b44-check-row{
+  box-sizing:border-box!important;
+  display:flex!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:8px!important;
+  min-height:42px!important;
+  margin:0!important;
+  padding:8px 10px!important;
+  border:1px solid rgba(94,115,80,.18)!important;
+  border-radius:11px!important;
+  background:#fff!important;
+  cursor:pointer!important;
+  line-height:1.2!important;
+}
+.b44-page .b44-check-list .b44-check-row input[type="checkbox"]{
+  appearance:auto!important;
+  -webkit-appearance:checkbox!important;
+  box-sizing:border-box!important;
+  width:16px!important;
+  min-width:16px!important;
+  max-width:16px!important;
+  height:16px!important;
+  min-height:16px!important;
+  max-height:16px!important;
+  margin:0!important;
+  padding:0!important;
+  flex:0 0 16px!important;
+  accent-color:#C5921A!important;
+  box-shadow:none!important;
+}
+.b44-page .b44-check-list .b44-check-row span{
+  display:block!important;
+  min-width:0!important;
+  color:#445147!important;
+  font-size:12px!important;
+  font-weight:700!important;
+  line-height:1.2!important;
+}
+.b44-page .b44-check-list .b44-check-row:has(input:checked){
+  background:#FBF4DF!important;
+  border-color:rgba(197,146,26,.58)!important;
+  box-shadow:0 1px 0 rgba(197,146,26,.08)!important;
+}
+.b44-page .b44-check-list .b44-check-row:has(input:checked) span{
+  color:#5E7350!important;
+}
+@media(max-width:360px){
+  .b44-page .b44-check-list{grid-template-columns:1fr!important;}
+}

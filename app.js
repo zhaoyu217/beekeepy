@@ -432,12 +432,14 @@ function mergeStateV50(local,remote){
     a.type==='equipment-maintenance'||
     a.type==='move-hive'||
     a.type==='winter-preparation'||
+    a.type==='spring-preparation'||
     String(a.source||'')==='split-hive-follow-up'||
     String(a.source||'')==='combine-hive-follow-up'||
     String(a.source||'')==='swarm-control-follow-up'||
     String(a.source||'')==='equipment-maintenance-follow-up'||
     String(a.source||'')==='move-hive-follow-up'||
-    String(a.source||'')==='winter-preparation-follow-up'
+    String(a.source||'')==='winter-preparation-follow-up'||
+    String(a.source||'')==='spring-preparation-follow-up'
   )&&a.status!=='Completed'&&a.priority!=='Done';
   const manualSuperMerged=new Map();
   [
@@ -819,12 +821,14 @@ function generateActions(s){
       a.type==='equipment-maintenance'||
       a.type==='move-hive'||
     a.type==='winter-preparation'||
+    a.type==='spring-preparation'||
       String(a.source||'')==='split-hive-follow-up'||
       String(a.source||'')==='combine-hive-follow-up'||
     String(a.source||'')==='swarm-control-follow-up'||
     String(a.source||'')==='equipment-maintenance-follow-up'||
     String(a.source||'')==='move-hive-follow-up'||
-    String(a.source||'')==='winter-preparation-follow-up'
+    String(a.source||'')==='winter-preparation-follow-up'||
+    String(a.source||'')==='spring-preparation-follow-up'
     )&&a.status!=='Completed'&&a.priority!=='Done');
 
   /* V224B32 — preserve only explicitly completed Action entities.

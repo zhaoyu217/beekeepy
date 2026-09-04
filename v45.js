@@ -15361,3 +15361,62 @@ function detailHTML(a){
 
   window.__HIVEDASH_V224B46_VERSION__='224b46c-actual-complete-timeline';
 })();
+
+/* ==============================================================
+   POST-B46A — Timeline Consistency Closure
+   Scope: read-only Timeline projection ONLY for completed
+   Split Hive, Combine Hives, and Swarm Control actions.
+   Frozen workflow Create / Complete / Follow-up / entity logic is untouched.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_POST_B46A_TIMELINE__)return;
+  window.__HIVEDASH_POST_B46A_TIMELINE__=true;
+
+  const prevTimeline=window.v49TimelineRows;
+  if(typeof prevTimeline!=='function')return;
+  const S=()=>v45s();
+  const completed=(s)=>(s.meta?.completedActions||[]).filter(a=>a&&a.status==='Completed');
+  const hiveName=(s,id)=>(s.hives||[]).find(h=>h&&String(h.id)===String(id))?.name||String(id||'Hive');
+  const hasRow=(rows,a,key)=>rows.some(r=>String(r.key||'')===key||String(r.sourceId||'')===String(a.id||''));
+  const push=(rows,a,type,date,detail)=>{
+    const key=type+':'+String(a.id||'');
+    if(hasRow(rows,a,key))return;
+    rows.push({key,type,hiveId:a.hiveId,date:date||String(a.completedAt||'').slice(0,10),detail:detail||type,img:'',savedAt:a.completedAt||'',sourceId:String(a.id||'')});
+  };
+
+  window.v49TimelineRows=function(hiveId=''){
+    const rows=prevTimeline(hiveId),s=S();
+    completed(s).filter(a=>!hiveId||String(a.hiveId)===String(hiveId)).forEach(a=>{
+      const t=String(a.type||'').toLowerCase(),rd=a.resultData||{},w=a.workflowData||{};
+
+      if(t==='split-hive'){
+        const date=rd.completedDate||String(a.completedAt||'').slice(0,10);
+        const newHive=String(rd.actualNewHiveName||'').trim()||hiveName(s,rd.newHiveId);
+        const q=String(rd.queenOutcome||'').trim();
+        const detail=`New hive: ${newHive}${q?` — Queen: ${q}`:''}`;
+        push(rows,a,'Split Hive',date,detail);
+        return;
+      }
+
+      if(t==='combine-hive'){
+        const date=rd.completedDate||String(a.completedAt||'').slice(0,10);
+        const sourceId=rd.sourceHiveId||w.sourceHiveId||a.hiveId;
+        const targetId=rd.targetHiveId||w.targetHiveId;
+        const detail=`${hiveName(s,sourceId)} → ${hiveName(s,targetId)}`;
+        push(rows,a,'Combine Hives',date,detail);
+        return;
+      }
+
+      if(t==='swarm-control'){
+        const date=rd.completedDate||String(a.completedAt||'').slice(0,10);
+        const method=String(rd.actualMethod||w.plannedMethod||'').trim();
+        const outcome=String(rd.swarmOutcome||'').trim();
+        const parts=[];if(method)parts.push(`Method: ${method}`);if(outcome)parts.push(`Outcome: ${outcome}`);
+        push(rows,a,'Swarm Control',date,parts.join(' — ')||'Swarm control completed');
+      }
+    });
+    return rows.sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.savedAt||'').localeCompare(String(a.savedAt||'')));
+  };
+  try{v49TimelineRows=window.v49TimelineRows}catch(_){}
+  window.__HIVEDASH_POST_B46A_VERSION__='post-b46a-timeline-consistency';
+})();

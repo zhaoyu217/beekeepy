@@ -660,7 +660,7 @@ function unread(s){
   return activeNotificationsV135(s).filter(n=>!n.read).length;
 }
 
-function avgHealth(s){return Math.round(s.hives.reduce((n,h)=>n+h.score,0)/Math.max(1,s.hives.length))}
+function avgHealth(s){const hs=typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');return Math.round(hs.reduce((n,h)=>n+Number(h.score||0),0)/Math.max(1,hs.length))}
 function isPro(s){return s.user.plan==='Pro'}
 function statusPill(status){return `<span class="pill ${status==='Critical'?'danger':status==='Attention'?'warn':''}">${esc(status)}</span>`}
 function toast(msg){
@@ -1446,7 +1446,8 @@ function riskPage(r){
   const s=state();
   if(!isPro(s)){subscriptionModal('Risk Assessment');go('insights');return}
 
-  const rows=s.hives.map(h=>({h,res:riskAssessment(h)}));
+  const currentHives=typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
+  const rows=currentHives.map(h=>({h,res:riskAssessment(h)}));
   const counts={
     High:rows.filter(x=>x.res.level==='High').length,
     Medium:rows.filter(x=>x.res.level==='Medium').length,

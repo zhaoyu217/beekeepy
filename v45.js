@@ -2971,7 +2971,7 @@ function v53HiveCard(h){
 
 function v53ActionRows(mode='Pending'){
   const s=v45s();
-  const allowedHives=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
+  const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
   const allowedIds=new Set(allowedHives.map(h=>h.id));
 
   /* V224B35 — Completed source fix only.
@@ -3069,16 +3069,16 @@ function actions(r){
 }
 
 function insights(r){
-  const s=v45s(),score=avgHealth(s);
+  const s=v45s(),managed=v224ActiveTrackedHives(s),managedIds=new Set(managed.map(h=>h.id)),score=managed.length?Math.round(managed.reduce((n,h)=>n+Number(h.score||0),0)/managed.length):0;
   const decisions=typeof window.v224bEvaluateAll==='function'?window.v224bEvaluateAll(s):new Map();
-  const critical=s.hives.filter(h=>h.status==='Critical').length;
-  const pending=(s.actions||[]).filter(a=>a.priority!=='Done'&&a.status!=='Completed').length;
+  const critical=managed.filter(h=>h.status==='Critical').length;
+  const pending=(s.actions||[]).filter(a=>a.priority!=='Done'&&a.status!=='Completed'&&managedIds.has(a.hiveId)).length;
   // V224B3B: Insights uses the same public Risk taxonomy as Risk Assessment.
   // Internal Critical overrides remain intact in the decision engine, but the
   // user-facing overall Risk Level is consistently Low / Medium / High.
   const riskRank={Low:1,Medium:2,High:3};
   let risk='Low';
-  for(const h of (s.hives||[])){
+  for(const h of managed){
     const d=decisions.get?.(h.id);
     const publicRisk=d?.overallRisk==='Critical'||d?.overallRisk==='High'?'High':d?.overallRisk==='Medium'?'Medium':'Low';
     if((riskRank[publicRisk]||0)>(riskRank[risk]||0))risk=publicRisk;
@@ -3090,7 +3090,7 @@ function insights(r){
       <button onclick="${isPro(s)?"go('analysis')":"requirePro('AI Health Analysis')"}"><span>Health Score</span><b>${score}</b><small>${healthLabel}</small></button>
       <button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}"><span>Risk Level</span><b>${risk}</b><small>Overall Risk</small></button>
     </div>
-    ${Vcard("Today's Highlights",`<ul class="bullets"><li>${s.hives.length} hives monitored</li><li>${pending} pending actions</li><li>${critical} critical hives</li></ul>`)}
+    ${Vcard("Today's Highlights",`<ul class="bullets"><li>${managed.length} hives monitored</li><li>${pending} pending actions</li><li>${critical} critical hives</li></ul>`)}
     ${Vcard('AI Recommendation',`<div class="recol"><button onclick="${isPro(s)?"go('recommendations')":"requirePro('Professional Recommendations')"}">${pending?'Review priority actions':'Continue regular inspection'}</button><button onclick="${isPro(s)?"go('risk')":"requirePro('Risk Prediction')"}">Review current risk forecast</button></div>`)}
     <div class="inav v53-insight-grid">
       <button class="v108-harvest-entry" onclick="go('honey')"><span>Harvest</span><small>Records & totals</small></button>
@@ -3184,11 +3184,11 @@ function v55ActionRoute(a){
    ============================================================== */
 
 function v56HomeAction(){
-  const s=v45s(), first=s.hives[0]?.id||'';
+  const s=v45s(), activeHives=v224ActiveTrackedHives(s), activeIds=new Set(activeHives.map(h=>h.id)), first=activeHives[0]?.id||'';
   // V221: Home Action Center must bind to a real hive and break equal-priority ties
   // from current hive data instead of silently falling back to Hive #1.
   const rows=(s.actions||[]).filter(a=>
-    a.status!=='Completed' && a.priority!=='Done' && a.hiveId && hive(s,a.hiveId)
+    a.status!=='Completed' && a.priority!=='Done' && a.hiveId && activeIds.has(a.hiveId)
   );
   const rank={High:3,Medium:2,Low:1};
   const severity=a=>{
@@ -3217,14 +3217,14 @@ function v56HomeAction(){
 }
 
 function home(r){
-  const s=v45s(), score=avgHealth(s);
-  const strong=s.hives.filter(h=>h.status==='Healthy').length;
-  const attention=s.hives.filter(h=>h.status==='Attention').length;
-  const critical=s.hives.filter(h=>h.status==='Critical').length;
-  const first=s.hives[0]?.id||'';
+  const s=v45s(), managed=v224ActiveTrackedHives(s), score=managed.length?Math.round(managed.reduce((n,h)=>n+Number(h.score||0),0)/managed.length):0;
+  const strong=managed.filter(h=>h.status==='Healthy').length;
+  const attention=managed.filter(h=>h.status==='Attention').length;
+  const critical=managed.filter(h=>h.status==='Critical').length;
+  const first=managed[0]?.id||'';
   const action=v56HomeAction();
   const actionHive=hive(s,action.hid);
-  const riskRows=s.hives
+  const riskRows=managed
     .map(h=>({h,res:riskAssessment(h)}))
     .sort((a,b)=>{
       const rank={High:3,Medium:2,Low:1};
@@ -3271,7 +3271,7 @@ function home(r){
       </button>
 
       <div class="v56-health-stats">
-        <button onclick="go('all-hives/All')"><b>${s.hives.length}</b><span>Total Hives</span></button>
+        <button onclick="go('all-hives/All')"><b>${managed.length}</b><span>Total Hives</span></button>
         <button onclick="go('all-hives/Healthy')"><b>${strong}</b><span>Strong</span></button>
         <button onclick="go('all-hives/Attention')"><b>${attention}</b><span>Attention</span></button>
         <button onclick="go('all-hives/Critical')"><b>${critical}</b><span>Critical</span></button>
@@ -7802,7 +7802,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function v206DerivedInspectionRows(){
     const s=v45s();
-    const allowedHives=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
 
     return allowedHives
       .filter(h=>String(h?.nextInspection||'').trim())
@@ -8971,7 +8971,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   window.v224bEvaluateHive=evaluateHive;
   window.v224bEvaluateAll=function(s){
     const out=new Map();
-    (s?.hives||[]).forEach(h=>out.set(h.id,evaluateHive(s,h)));
+    v224ActiveTrackedHives(s).forEach(h=>out.set(h.id,evaluateHive(s,h)));
     window.V224B_DECISIONS=out;
     return out;
   };
@@ -8985,7 +8985,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     if(!s||!Array.isArray(s.hives))return false;
     const decisions=window.v224bEvaluateAll(s);
     let changed=false;
-    s.hives.forEach(h=>{
+    v224ActiveTrackedHives(s).forEach(h=>{
       const d=decisions.get(h.id);if(!d)return;
       if(Number(h.score)!==d.score){h.score=d.score;changed=true;}
       if(v219NormalizeHiveStatus(h.status)!==d.displayStatus){h.status=d.displayStatus;changed=true;}
@@ -9018,7 +9018,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   // Actions now come from the same evidence model. Completed history remains handled by the existing Actions page.
   generateActions=function(s){
     const decisions=window.v224bEvaluateAll(s),list=[];
-    for(const h of (s.hives||[])){
+    for(const h of v224ActiveTrackedHives(s)){
       const d=decisions.get(h.id);if(!d)continue;
       const added=new Set();
       for(const r of d.risks){
@@ -9071,7 +9071,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   // Professional Recommendations uses the same prioritized Action Engine.
   v127RecommendationItems=function(s){
     const decisions=window.v224bEvaluateAll(s),items=[];
-    for(const h of (s.hives||[])){
+    for(const h of v224ActiveTrackedHives(s)){
       const d=decisions.get(h.id);if(!d)continue;
       for(const r of d.risks){
         if(r.type==='Data'&&d.risks.some(x=>x.severity==='Critical'||x.severity==='High'))continue;
@@ -9091,7 +9091,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   healthAnalysis=function(r){
     if(typeof v50GuardPro==='function'&&!v50GuardPro('AI Health Analysis'))return;
     const s=v45s(),decisions=window.v224bEvaluateAll(s);
-    const rows=(s.hives||[]).map(h=>({h,d:decisions.get(h.id)})).filter(x=>x.d).sort((a,b)=>{
+    const rows=v224ActiveTrackedHives(s).map(h=>({h,d:decisions.get(h.id)})).filter(x=>x.d).sort((a,b)=>{
       const rr={Critical:4,High:3,Medium:2,Low:1};return (rr[b.d.overallRisk]||0)-(rr[a.d.overallRisk]||0)||(a.d.score-b.d.score);
     });
     const top=rows[0]||null;if(!top){r.innerHTML='<div class="vs"><div class="vc">No hive data.</div></div>';return;}
@@ -9234,7 +9234,7 @@ window.__HIVEDASH_V224B3__=true;
   const baseEvaluateAll=window.v224bEvaluateAll;
   if(typeof baseEvaluateAll==='function'){
     window.v224bEvaluateAll=function(s){
-      try{ (s?.hives||[]).forEach(h=>syncDiseaseProvenance(s,h)); }catch(_){ }
+      try{ v224ActiveTrackedHives(s).forEach(h=>syncDiseaseProvenance(s,h)); }catch(_){ }
       const out=baseEvaluateAll.apply(this,arguments);
       // Keep cached decisions aligned with the wrapper result.
       window.V224B_DECISIONS=out;
@@ -9317,7 +9317,7 @@ window.__HIVEDASH_V224B3A__=true;
 
   function dominantPhase(s){
     const map=decisionMap(s),counts=new Map();
-    (s?.hives||[]).forEach(h=>{
+    v224ActiveTrackedHives(s).forEach(h=>{
       const phase=map.get(h.id)?.phase||'Uncertain';
       counts.set(phase,(counts.get(phase)||0)+1);
     });
@@ -9328,7 +9328,7 @@ window.__HIVEDASH_V224B3A__=true;
   }
 
   window.v224b4SeasonSummary=function(s){
-    const d=dominantPhase(s),hives=s?.hives||[];
+    const d=dominantPhase(s),hives=v224ActiveTrackedHives(s);
     const all=[...d.map.values()];
     const seasonalRisks=all.flatMap(x=>x?.risks||[]).filter(r=>['Varroa','Food','Swarm','Queen'].includes(r.type));
     seasonalRisks.sort((a,b)=>{
@@ -9351,7 +9351,7 @@ window.__HIVEDASH_V224B3A__=true;
     const d=dominantPhase(s),map=d.map,decisions=[...map.values()];
     const phase=d.mixed?'Mixed colony phases':(d.phase==='Uncertain'?'Colony phase uncertain':d.phase);
     const groups={Varroa:[],Food:[],Queen:[],Swarm:[]};
-    (s?.hives||[]).forEach(h=>{
+    v224ActiveTrackedHives(s).forEach(h=>{
       const x=map.get(h.id); if(!x)return;
       (x.risks||[]).forEach(r=>{ if(groups[r.type]) groups[r.type].push({h,r,x}); });
     });
@@ -15424,3 +15424,7 @@ function detailHTML(a){
   try{v49TimelineRows=window.v49TimelineRows}catch(_){}
   window.__HIVEDASH_POST_B46A_VERSION__='post-b46a-timeline-consistency';
 })();
+
+
+/* V2.0-P0A — Current Managed Hives consistency. Current-state consumers exclude archived/Combined hives; historical facts remain stored. */
+window.__HIVEDASH_V2_P0A__='v2-p0a-current-managed-hives';

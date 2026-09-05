@@ -15534,6 +15534,27 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   const low=v=>txt(v).toLowerCase();
   const dateMs=v=>{const t=Date.parse(txt(v).slice(0,10)+'T12:00:00');return Number.isFinite(t)?t:0};
 
+  // V2P2A4: keep unsaved CURRENT TREATMENT edits alive across realtime/full
+  // rerenders. This is an in-memory UI draft only; Treatment remains the sole
+  // persisted management fact and is written only by Update Current Treatment.
+  const currentDrafts=window.__V2P2A_CURRENT_TREATMENT_DRAFTS__ ||= new Map();
+  const treatmentFields=['Problem','Treatment','Product','Dose','Start_Date','End_Date','Follow_up','Withdrawal','Notes'];
+  function treatmentDraft(txId){return currentDrafts.get(String(txId))||null}
+  function captureTreatmentDraft(txId,form){
+    if(!form)return;
+    const d={};
+    treatmentFields.forEach(name=>{
+      const el=form.elements?.[name];
+      if(el)d[name]=txt(el.value)||txt(el.dataset?.v2p2aPersistValue);
+    });
+    currentDrafts.set(String(txId),d);
+  }
+  function clearTreatmentDraft(txId){currentDrafts.delete(String(txId))}
+  window.addEventListener('hashchange',()=>{
+    const parts=(location.hash||'').slice(1).split('/');
+    if(!(parts[0]==='treatment-record'&&parts[2]==='current'))currentDrafts.clear();
+  });
+
   // English UI must never leak legacy localized treatment labels stored in
   // historical/local test data. Keep the stored fact untouched and normalize
   // only at the display/edit boundary.
@@ -15749,15 +15770,17 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
   function decorateCurrentTreatment(r,s,h,tx){
     const form=r.querySelector('#rform');if(!form||!tx)return;
-    setFormValue(form,'Problem',englishTreatmentProblem(tx.problem||'Varroa Mites'));
-    setFormValue(form,'Treatment',englishTreatmentName(tx.type||''));
-    setFormValue(form,'Product',tx.product||'');
-    setFormValue(form,'Dose',tx.dose||'');
-    setFormValue(form,'Start_Date',tx.date||'');
-    setFormValue(form,'End_Date',tx.endDate||'');
-    setFormValue(form,'Follow_up',tx.followUp||'');
-    setFormValue(form,'Withdrawal',tx.withdrawal||'None');
-    setFormValue(form,'Notes',tx.notes||'');
+    const draft=treatmentDraft(tx.id)||{};
+    const pick=(name,persisted)=>Object.prototype.hasOwnProperty.call(draft,name)?draft[name]:persisted;
+    setFormValue(form,'Problem',pick('Problem',englishTreatmentProblem(tx.problem||'Varroa Mites')));
+    setFormValue(form,'Treatment',pick('Treatment',englishTreatmentName(tx.type||'')));
+    setFormValue(form,'Product',pick('Product',tx.product||''));
+    setFormValue(form,'Dose',pick('Dose',tx.dose||''));
+    setFormValue(form,'Start_Date',pick('Start_Date',tx.date||''));
+    setFormValue(form,'End_Date',pick('End_Date',tx.endDate||''));
+    setFormValue(form,'Follow_up',pick('Follow_up',tx.followUp||''));
+    setFormValue(form,'Withdrawal',pick('Withdrawal',tx.withdrawal||'None'));
+    setFormValue(form,'Notes',pick('Notes',tx.notes||''));
 
     // V2P2A3: optional date inputs begin life as text and switch to native
     // date controls on focus. Preserve the user's selected ISO value at the
@@ -15766,7 +15789,16 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     ['End_Date','Follow_up'].forEach(name=>{
       const el=form.elements?.[name];if(!el)return;
       el.dataset.v2p2aPersistValue=txt(el.value);
-      const capture=()=>{if(txt(el.value))el.dataset.v2p2aPersistValue=txt(el.value)};
+      const capture=()=>{
+        if(txt(el.value))el.dataset.v2p2aPersistValue=txt(el.value);
+        captureTreatmentDraft(tx.id,form);
+      };
+      el.addEventListener('input',capture);
+      el.addEventListener('change',capture);
+    });
+    treatmentFields.filter(name=>!['End_Date','Follow_up'].includes(name)).forEach(name=>{
+      const el=form.elements?.[name];if(!el)return;
+      const capture=()=>captureTreatmentDraft(tx.id,form);
       el.addEventListener('input',capture);
       el.addEventListener('change',capture);
     });
@@ -15876,6 +15908,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       }
     }
 
+    clearTreatmentDraft(treatmentId);
     toast(endDate?'Treatment completed · Varroa retest is now due':'Current Treatment updated');
     go('actions');
   };
@@ -15896,5 +15929,5 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     try{v127RecommendationItems=window.v127RecommendationItems}catch(_){}
   }
 
-  window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a3-current-treatment-enddate-persistence';
+  window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a4-treatment-realtime-rollback-guard';
 })();

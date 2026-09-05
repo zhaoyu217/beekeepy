@@ -400,10 +400,32 @@ function writeLocalV50(s){
   try{const raw=JSON.stringify(normalizeStateV50(s));if(raw.length>4500000)return false;localStorage.setItem(STORAGE_KEY,raw);return true}catch(e){console.error('Local write failed',e);return false}
 }
 function unionByIdV50(a=[],b=[]){const m=new Map();[...a,...b].forEach((x,i)=>{if(!x||typeof x!=='object')return;const id=String(x.id||`${x.hiveId||''}|${x.date||''}|${i}`);m.set(id,{...(m.get(id)||{}),...x})});return [...m.values()]}
+
+/* V2P2A4 — Treatment merge freshness.
+   Realtime cloud reconciliation must never let an older copy of the SAME
+   Treatment entity erase a freshly saved End Date / Follow-up / status.
+   Prefer per-record updatedAt when available; otherwise the state-level
+   `primary` copy wins because mergeStateV50 already selected it as newer. */
+function mergeTreatmentRowsV2P2A4(primaryRows=[],otherRows=[]){
+  const key=(x,i)=>String(x?.id||`${x?.hiveId||''}|${x?.date||''}|treatment|${i}`);
+  const m=new Map();
+  (otherRows||[]).forEach((x,i)=>{if(x&&typeof x==='object')m.set(key(x,i),clone(x))});
+  (primaryRows||[]).forEach((x,i)=>{
+    if(!x||typeof x!=='object')return;
+    const k=key(x,i),prev=m.get(k);
+    if(!prev){m.set(k,clone(x));return}
+    const pt=Date.parse(x.updatedAt||0)||0,ot=Date.parse(prev.updatedAt||0)||0;
+    if(pt||ot){m.set(k,clone(pt>=ot?x:prev));return}
+    m.set(k,clone(x));
+  });
+  return [...m.values()];
+}
 function mergeStateV50(local,remote){
   if(!local)return normalizeStateV50(remote);if(!remote)return normalizeStateV50(local);
   const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||0)||0,primary=rt>=lt?clone(remote):clone(local),other=rt>=lt?local:remote;
-  primary.logs=primary.logs||{};for(const k of ['inspections','feedings','treatments','harvests'])primary.logs[k]=unionByIdV50(primary.logs[k]||[],other.logs?.[k]||[]);
+  primary.logs=primary.logs||{};
+  for(const k of ['inspections','feedings','harvests'])primary.logs[k]=unionByIdV50(primary.logs[k]||[],other.logs?.[k]||[]);
+  primary.logs.treatments=mergeTreatmentRowsV2P2A4(primary.logs.treatments||[],other.logs?.treatments||[]);
   primary.notifications=unionByIdV50(primary.notifications||[],other.notifications||[]);
 
   /* V224B33: cloud/local merge must not erase true completed Actions.

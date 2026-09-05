@@ -1928,7 +1928,7 @@ function openTimelineEventV49(key){
 }
 function applyTimelineFilterV49(){
   const q=(idq('v49tsearch')?.value||'').toLowerCase(), route=(location.hash||'#timeline').slice(1), active=V49_TIMELINE_FILTER_ROUTE===route?(V49_TIMELINE_FILTER||'All'):'All';
-  document.querySelectorAll('[data-v49-timeline]').forEach((el,i)=>{const matchType=active==='All'||el.dataset.type===active, matchQ=!q||el.dataset.search.includes(q);el.style.display=(i<V49_TIMELINE_LIMIT&&matchType&&matchQ)?'grid':'none'});
+  document.querySelectorAll('[data-v49-timeline]').forEach((el,i)=>{const matchType=active==='All'||(active==='Varroa'?String(el.dataset.type||'').startsWith('Varroa'):el.dataset.type===active), matchQ=!q||el.dataset.search.includes(q);el.style.display=(i<V49_TIMELINE_LIMIT&&matchType&&matchQ)?'grid':'none'});
   const more=idq('v49loadmore');if(more)more.style.display=V49_TIMELINE_CACHE.length>V49_TIMELINE_LIMIT?'block':'none';
 }
 function filterTimelineV49(type,btn){V49_TIMELINE_FILTER=type||'All';V49_TIMELINE_FILTER_ROUTE=(location.hash||'#timeline').slice(1);selectTab(btn);applyTimelineFilterV49()}
@@ -1941,7 +1941,7 @@ function timelinePage(r){
   if(V49_TIMELINE_FILTER_ROUTE!==route){V49_TIMELINE_FILTER='All';V49_TIMELINE_FILTER_ROUTE=route}
   V49_TIMELINE_LIMIT=10;V49_TIMELINE_CACHE=v49TimelineRows(hiveId);
   const s=v45s(), title=hiveId?esc(hive(s,hiveId)?.name||'Hive'):'';
-  r.innerHTML=`<div class="vs v88-timeline timeline"><div class="fadephoto" style="--hero:url('assets/hive_detail_hero.jpg')"></div>${title?`<div class="small muted timeline-history-title">${title} history</div>`:''}<div class="search"><span>⌕</span><input id="v49tsearch" placeholder="Search timeline"></div><div class="filters timeline-filters"><button class="timeline-event ${V49_TIMELINE_FILTER==='All'?'active':''}" data-type="All" onclick="filterTimelineV49('All',this)">All</button><button class="${V49_TIMELINE_FILTER==='Inspection'?'active':''}" data-type="Inspection" onclick="filterTimelineV49('Inspection',this)">Inspection</button><button class="${V49_TIMELINE_FILTER==='Feeding'?'active':''}" data-type="Feeding" onclick="filterTimelineV49('Feeding',this)">Feeding</button><button class="${V49_TIMELINE_FILTER==='Treatment'?'active':''}" data-type="Treatment" onclick="filterTimelineV49('Treatment',this)">Treatment</button><button class="${V49_TIMELINE_FILTER==='Harvest'?'active':''}" data-type="Harvest" onclick="filterTimelineV49('Harvest',this)">Harvest</button><button class="${V49_TIMELINE_FILTER==='Photo'?'active':''}" data-type="Photo" onclick="filterTimelineV49('Photo',this)">Photos</button></div><div class="tlist">${V49_TIMELINE_CACHE.map(e=>{const h=hive(s,e.hiveId);return `<button data-v49-timeline data-type="${e.type}" data-search="${esc((e.type+' '+(h?.name||'')+' '+e.detail).toLowerCase())}" onclick="openTimelineEventV49('${e.key}')"><time>${fmtDate(e.date)}</time><i></i><div><b>${e.type}</b><span>${esc(h?.name||'Hive')}</span><small>${esc(e.detail)}</small></div>${e.img?`<img src="${e.img}">`:''}</button>`}).join('')||'<div class="vc small muted">No history yet.</div>'}</div><button id="v49loadmore" class="secondary" onclick="loadMoreTimelineV49()">Load More</button></div>`;
+  r.innerHTML=`<div class="vs v88-timeline timeline"><div class="fadephoto" style="--hero:url('assets/hive_detail_hero.jpg')"></div>${title?`<div class="small muted timeline-history-title">${title} history</div>`:''}<div class="search"><span>⌕</span><input id="v49tsearch" placeholder="Search timeline"></div><div class="filters timeline-filters"><button class="timeline-event ${V49_TIMELINE_FILTER==='All'?'active':''}" data-type="All" onclick="filterTimelineV49('All',this)">All</button><button class="${V49_TIMELINE_FILTER==='Inspection'?'active':''}" data-type="Inspection" onclick="filterTimelineV49('Inspection',this)">Inspection</button><button class="${V49_TIMELINE_FILTER==='Feeding'?'active':''}" data-type="Feeding" onclick="filterTimelineV49('Feeding',this)">Feeding</button><button class="${V49_TIMELINE_FILTER==='Treatment'?'active':''}" data-type="Treatment" onclick="filterTimelineV49('Treatment',this)">Treatment</button><button class="${V49_TIMELINE_FILTER==='Harvest'?'active':''}" data-type="Harvest" onclick="filterTimelineV49('Harvest',this)">Harvest</button><button class="${V49_TIMELINE_FILTER==='Varroa'?'active':''}" data-type="Varroa" onclick="filterTimelineV49('Varroa',this)">Varroa</button><button class="${V49_TIMELINE_FILTER==='Photo'?'active':''}" data-type="Photo" onclick="filterTimelineV49('Photo',this)">Photos</button></div><div class="tlist">${V49_TIMELINE_CACHE.map(e=>{const h=hive(s,e.hiveId);return `<button data-v49-timeline data-type="${e.type}" data-search="${esc((e.type+' '+(h?.name||'')+' '+e.detail).toLowerCase())}" onclick="openTimelineEventV49('${e.key}')"><time>${fmtDate(e.date)}</time><i></i><div><b>${e.type}</b><span>${esc(h?.name||'Hive')}</span><small>${esc(e.detail)}</small></div>${e.img?`<img src="${e.img}">`:''}</button>`}).join('')||'<div class="vc small muted">No history yet.</div>'}</div><button id="v49loadmore" class="secondary" onclick="loadMoreTimelineV49()">Load More</button></div>`;
   idq('v49tsearch').oninput=applyTimelineFilterV49;applyTimelineFilterV49();
 }
 
@@ -16162,4 +16162,77 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   };
 
   window.__HIVEDASH_V2_P2B_VERSION__='v2-p2b-varroa-test-retest';
+})();
+
+
+/* ==============================================================
+   V2.0-P2B2 — VARROA TEST / RETEST TIMELINE INTEGRATION
+   Scope ONLY:
+   - Project saved s.logs.varroaTests as independent read-only Timeline facts.
+   - Post-treatment tests display as "Varroa Retest"; other tests as "Varroa Test".
+   - Do NOT create or modify Inspection records or Last Inspection Date.
+   - Do NOT duplicate Treatment records or alter Health & Decision scoring.
+   - Add one Timeline filter group "Varroa" for both test/retest event types.
+   Existing saved Varroa tests are projected retroactively; no re-entry required.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V2_P2B2_TIMELINE__)return;
+  window.__HIVEDASH_V2_P2B2_TIMELINE__=true;
+
+  const prevTimeline=window.v49TimelineRows;
+  if(typeof prevTimeline!=='function')return;
+
+  const txt=v=>String(v??'').trim();
+  const num=v=>Number.isFinite(Number(v))?Number(v):0;
+  const rateText=v=>{
+    const n=Number(v);
+    if(!Number.isFinite(n))return '—';
+    return Number.isInteger(n)?String(n):n.toFixed(1).replace(/\.0$/,'');
+  };
+
+  window.v49TimelineRows=function(hiveId=''){
+    const rows=prevTimeline(hiveId),s=v45s();
+    const tests=Array.isArray(s.logs?.varroaTests)?s.logs.varroaTests:[];
+
+    tests.forEach(x=>{
+      if(!x||typeof x!=='object')return;
+      if(hiveId&&String(x.hiveId)!==String(hiveId))return;
+
+      const sourceId=txt(x.id);
+      const key='Varroa Test:'+sourceId;
+      if(rows.some(r=>String(r.key||'')===key||String(r.sourceId||'')===sourceId))return;
+
+      const isRetest=txt(x.testType).toLowerCase().includes('retest');
+      const type=isRetest?'Varroa Retest':'Varroa Test';
+      const sample=num(x.sampleSize),mites=num(x.miteCount);
+      const method=txt(x.method)||'Method not recorded';
+      const testType=txt(x.testType)||type;
+      const parts=[
+        testType,
+        method,
+        sample?`${sample} bees`:'',
+        Number.isFinite(Number(x.miteCount))?`${mites} mites`:'',
+        Number.isFinite(Number(x.mitesPer100))?`${rateText(x.mitesPer100)}/100 bees`:''
+      ].filter(Boolean);
+
+      rows.push({
+        key,
+        type,
+        hiveId:x.hiveId,
+        date:txt(x.date),
+        detail:parts.join(' · '),
+        img:'',
+        savedAt:txt(x.recordedAt||x.updatedAt),
+        sourceId
+      });
+    });
+
+    return rows.sort((a,b)=>
+      String(b.date||'').localeCompare(String(a.date||''))||
+      String(b.savedAt||'').localeCompare(String(a.savedAt||''))
+    );
+  };
+
+  try{v49TimelineRows=window.v49TimelineRows}catch(_){ }
+  window.__HIVEDASH_V2_P2B2_VERSION__='v2-p2b2-varroa-timeline';
 })();

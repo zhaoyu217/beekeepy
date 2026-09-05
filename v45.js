@@ -15534,6 +15534,30 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   const low=v=>txt(v).toLowerCase();
   const dateMs=v=>{const t=Date.parse(txt(v).slice(0,10)+'T12:00:00');return Number.isFinite(t)?t:0};
 
+  // English UI must never leak legacy localized treatment labels stored in
+  // historical/local test data. Keep the stored fact untouched and normalize
+  // only at the display/edit boundary.
+  function englishTreatmentName(v){
+    const x=txt(v), compact=x.replace(/\s+/g,'');
+    if(!x)return 'Varroa treatment';
+    if(/草酸/.test(compact)){
+      if(/滴|dribble/i.test(compact))return 'Oxalic Acid (Dribble)';
+      if(/蒸|熏|气化|vapor/i.test(compact))return 'Oxalic Acid (Vapor)';
+      return 'Oxalic Acid';
+    }
+    if(/甲酸/.test(compact))return 'Formic Acid';
+    if(/阿米特拉/.test(compact))return 'Apivar';
+    if(/[\u3400-\u9fff]/.test(x))return 'Varroa treatment';
+    return x;
+  }
+  function englishTreatmentProblem(v){
+    const x=txt(v);
+    if(!x)return 'Varroa Mites';
+    if(/瓦螨|蜂螨/.test(x))return 'Varroa Mites';
+    if(/[\u3400-\u9fff]/.test(x))return 'Varroa Mites';
+    return x;
+  }
+
   function latestTreatment(s,hid){
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
       .filter(x=>x&&String(x.hiveId)===String(hid))
@@ -15559,7 +15583,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const testDate=txt(i.varroaTestDate||h.varroaTestDate||'');
     const txActive=Boolean(tx&&!txt(tx.endDate));
     const inspectionTxActive=!txActive && low(i.treatmentStatus)==='active';
-    const txName=txt(tx?.type||i.treatment||'Varroa treatment')||'Varroa treatment';
+    const txName=englishTreatmentName(tx?.type||i.treatment||'Varroa treatment');
     const txEnd=txt(tx?.endDate||'');
     const testedAfterCompletedTreatment=Boolean(tx&&txEnd&&testDate&&dateMs(testDate)>dateMs(txEnd));
 
@@ -15712,8 +15736,8 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
   function decorateCurrentTreatment(r,s,h,tx){
     const form=r.querySelector('#rform');if(!form||!tx)return;
-    setFormValue(form,'Problem',tx.problem||'Varroa Mites');
-    setFormValue(form,'Treatment',tx.type||'');
+    setFormValue(form,'Problem',englishTreatmentProblem(tx.problem||'Varroa Mites'));
+    setFormValue(form,'Treatment',englishTreatmentName(tx.type||''));
     setFormValue(form,'Product',tx.product||'');
     setFormValue(form,'Dose',tx.dose||'');
     setFormValue(form,'Start_Date',tx.date||'');

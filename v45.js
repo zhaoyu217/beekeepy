@@ -15512,3 +15512,297 @@ window.__HIVEDASH_V2_P1A_VERSION__='v2-p1a-hives-filter-persistence';
 
 /* V2.0-P1B — Frequent Record currentLocation + per-Hive business-date context. */
 window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
+
+/* ==============================================================
+   V2.0-P2A — VARROA MANAGEMENT STAGE AWARENESS
+   Scope:
+   - Separate Varroa biological risk from management stage / next action.
+   - Active treatment => continue/review the CURRENT treatment; never open a
+     blank New Treatment form from Varroa recommendations.
+   - Completed treatment without newer mite evidence => retest needed.
+   - Home Risk Alerts shows Varroa evidence + current management context.
+   - Current-treatment review updates the existing Treatment record in place.
+   - No Varroa Test/Retest record type yet (reserved for V2P2B).
+   - No professional Treatment schema expansion yet (reserved for V2P2C).
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V2_P2A_VARROA_STAGE__) return;
+  window.__HIVEDASH_V2_P2A_VARROA_STAGE__=true;
+
+  const S=()=>v45s();
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const dateMs=v=>{const t=Date.parse(txt(v).slice(0,10)+'T12:00:00');return Number.isFinite(t)?t:0};
+
+  function latestTreatment(s,hid){
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&String(x.hiveId)===String(hid))
+      .slice()
+      .sort((a,b)=>dateMs(b.date)-dateMs(a.date))[0]||null;
+  }
+
+  function varroaDecision(s,h){
+    try{return window.v224bEvaluateAll?.(s)?.get?.(h.id)||null}catch(_){return null}
+  }
+
+  function isVarroaAction(a){
+    const hay=low([a?.id,a?.type,a?.title,a?.reason,a?.reasonCode].filter(Boolean).join(' '));
+    return hay.includes('varroa') || hay.includes('mite');
+  }
+
+  function stageFor(s,h){
+    if(!h)return null;
+    const d=varroaDecision(s,h), i=h.insp||{}, tx=latestTreatment(s,h.id);
+    const count=Number(d?.varroa?.count ?? i.varroa ?? h.varroa ?? 0)||0;
+    const assessment=txt(d?.varroa?.assessment)||'Unknown';
+    const risk=assessment==='Danger'?'High':assessment==='Caution'?'Medium':assessment==='Acceptable'?'Low':'Unknown';
+    const testDate=txt(i.varroaTestDate||h.varroaTestDate||'');
+    const txActive=Boolean(tx&&!txt(tx.endDate));
+    const inspectionTxActive=!txActive && low(i.treatmentStatus)==='active';
+    const txName=txt(tx?.type||i.treatment||'Varroa treatment')||'Varroa treatment';
+    const txEnd=txt(tx?.endDate||'');
+    const testedAfterCompletedTreatment=Boolean(tx&&txEnd&&testDate&&dateMs(testDate)>dateMs(txEnd));
+
+    let stage='untested', label='Varroa test needed', next='Test for Varroa';
+
+    // Management execution wins over a risk-only recommendation: a beekeeper
+    // already treating the colony should continue the current course, not
+    // create another treatment merely because the pre-treatment risk is High.
+    if(txActive){
+      stage='treatment-active';label='Treatment in progress';next='Continue current Varroa treatment';
+    }else if(inspectionTxActive){
+      stage='treatment-active-unlinked';label='Treatment marked active';next='Review current treatment';
+    }else if(tx&&txEnd&&!testedAfterCompletedTreatment){
+      stage='awaiting-retest';label='Treatment complete · retest needed';next='Perform a Varroa retest';
+    }else if(testedAfterCompletedTreatment&&risk==='High'){
+      stage='retest-still-high';label='Varroa remains high after treatment';next='Reassess the next management step';
+    }else if(testedAfterCompletedTreatment&&risk==='Medium'){
+      stage='retest-caution';label='Post-treatment Varroa remains elevated';next='Continue monitoring / reassess';
+    }else if(testedAfterCompletedTreatment&&risk==='Low'){
+      stage='retest-low';label='Post-treatment Varroa low';next='Continue routine monitoring';
+    }else if(!testDate){
+      stage='untested';label='Varroa data missing';next='Test for Varroa';
+    }else if(risk==='High'){
+      stage='high-untreated';label='High Varroa · management needed';next='Select a Varroa management option';
+    }else if(risk==='Medium'){
+      stage='monitoring';label='Varroa elevated';next='Recheck mite level';
+    }else{
+      stage='low';label='Varroa low';next='Continue routine monitoring';
+    }
+
+    return {stage,label,next,risk,count,testDate,assessment,phase:txt(d?.phase),tx,txActive,txName,txEnd,testedAfterCompletedTreatment};
+  }
+  window.v2p2aVarroaStage=stageFor;
+
+  function actionCopy(a,s){
+    if(!a||!isVarroaAction(a))return a;
+    const h=hive(s,a.hiveId);if(!h)return a;
+    const st=stageFor(s,h);if(!st)return a;
+    const evidence=st.testDate?`Latest Varroa result is ${st.count}/100 bees.`:'No current Varroa test is recorded.';
+    let type=a.type||'Treatment',title=a.title||'Varroa management',due=a.due||'Now',route='';
+    if(st.stage==='treatment-active'){
+      type='Treatment';title='Continue Varroa treatment';due='Now';route=`treatment-record/${h.id}/current`;
+    }else if(st.stage==='treatment-active-unlinked'){
+      type='Treatment';title='Review current Varroa treatment';due='Now';route=`hive/${h.id}`;
+    }else if(st.stage==='awaiting-retest'){
+      type='Inspection';title='Varroa retest needed';due='Now';route=`inspection/${h.id}`;
+    }else if(st.stage==='retest-still-high'){
+      type='Treatment';title='Varroa still high after treatment';due='Now';route=`hive/${h.id}`;
+    }else if(st.stage==='monitoring'){
+      type='Inspection';title='Recheck Varroa level';due='Soon';route=`inspection/${h.id}`;
+    }else if(st.stage==='untested'){
+      type='Inspection';title='Varroa test needed';due='Now';route=`inspection/${h.id}`;
+    }else if(st.stage==='low'||st.stage==='retest-low'){
+      type='Inspection';title='Continue Varroa monitoring';due='Next check';route=`inspection/${h.id}`;
+    }else{
+      type='Treatment';title='Varroa management required';due='Now';route=`treatment-record/${h.id}`;
+    }
+    const reason=st.stage==='treatment-active'
+      ? `${st.txName} is active. ${evidence} Complete the current course before post-treatment retesting.`
+      : `${evidence}${st.phase?` ${st.phase}.`:''}`;
+    return {...a,type,title,due,reason,varroaStage:st.stage,varroaRoute:route};
+  }
+
+  // Preserve every existing generated/durable Action; only reinterpret the
+  // current Varroa Action's title/type/due from the shared stage model.
+  const prevGenerate=window.generateActions||generateActions;
+  window.generateActions=function(s){
+    return (prevGenerate(s)||[]).map(a=>actionCopy(a,s));
+  };
+  try{generateActions=window.generateActions}catch(_){}
+
+  // Actions list consumes the same stage-aware row copy even before the next
+  // persistence cycle regenerates s.actions.
+  const prevRows=window.v53ActionRows||v53ActionRows;
+  window.v53ActionRows=function(mode='Pending'){
+    const s=S();
+    return (prevRows(mode)||[]).map(a=>actionCopy(a,s));
+  };
+  try{v53ActionRows=window.v53ActionRows}catch(_){}
+
+  // Any generic open of a Varroa/Treatment Action respects the current stage.
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){
+    const s=S(),h=hive(s,hiveId),t=low(type);
+    if(h&&(t.includes('treat')||t.includes('varroa'))){
+      const st=stageFor(s,h);
+      if(st?.stage==='treatment-active'&&st.tx)return go(`treatment-record/${h.id}/current`);
+      if(st?.stage==='treatment-active-unlinked')return go(`hive/${h.id}`);
+      if(st?.stage==='awaiting-retest'||st?.stage==='monitoring'||st?.stage==='untested')return go(`inspection/${h.id}`);
+      if(st?.stage==='retest-still-high')return go(`hive/${h.id}`);
+    }
+    return typeof prevOpen==='function'?prevOpen.apply(this,arguments):go(`hive/${hiveId}`);
+  };
+  try{openActionByType=window.openActionByType}catch(_){}
+
+  // Home Action Center: keep the five-card mother-board, but make the current
+  // Varroa management stage visible and route to the existing Treatment.
+  const prevHomeAction=window.v56HomeAction||v56HomeAction;
+  window.v56HomeAction=function(){
+    const out=prevHomeAction();
+    const s=S(),a=out?.a,h=hive(s,out?.hid);
+    if(!a||!h||!isVarroaAction(a))return out;
+    const st=stageFor(s,h);if(!st)return out;
+    const copy=actionCopy(a,s);
+    let label='Open',click=out.click;
+    if(st.stage==='treatment-active'&&st.tx){label='Continue';click=`go('treatment-record/${h.id}/current')`;}
+    else if(st.stage==='awaiting-retest'){label='Retest';click=`go('inspection/${h.id}')`;}
+    else if(st.stage==='treatment-active-unlinked'||st.stage==='retest-still-high'){label='Review';click=`go('hive/${h.id}')`;}
+    else if(st.stage==='monitoring'||st.stage==='untested'){label='Check';click=`go('inspection/${h.id}')`;}
+    return {...out,a:copy,label,click};
+  };
+  try{v56HomeAction=window.v56HomeAction}catch(_){}
+
+  const prevHome=window.home||home;
+  window.home=function(r){
+    prevHome(r);
+    const s=S(),action=window.v56HomeAction(),h=hive(s,action?.hid);
+    const st=h?stageFor(s,h):null;
+    if(!h||!st||!isVarroaAction(action?.a))return;
+
+    const cards=[...r.querySelectorAll('.v56-row-card')];
+    const riskCard=cards.find(c=>txt(c.querySelector('.v56-row-copy > span')?.textContent)==='Risk Alerts');
+    if(riskCard){
+      const main=riskCard.querySelector('.v56-row-copy > b');
+      const meta=riskCard.querySelector('.v56-row-copy > em');
+      const btn=riskCard.querySelector('.v56-soft-btn');
+      if(main)main.textContent=`Varroa: ${st.risk}${st.testDate?` · ${st.count}/100 bees`:''}`;
+      if(meta){
+        const mgmt=st.stage==='treatment-active'?`Treatment active: ${st.txName}`:st.label;
+        meta.textContent=`${h.name} · ${mgmt}`;
+      }
+      if(btn){btn.textContent='View';btn.setAttribute('onclick',`go('hive/${h.id}')`);}
+    }
+  };
+  try{home=window.home}catch(_){}
+
+  function activeTreatmentFor(s,hid){
+    const tx=latestTreatment(s,hid);
+    return tx&&!txt(tx.endDate)?tx:null;
+  }
+
+  function setFormValue(form,name,value){
+    const el=form?.elements?.[name];if(!el)return;
+    const val=txt(value);
+    if(el.tagName==='SELECT'&&val&&!Array.from(el.options).some(o=>o.value===val)){
+      const o=document.createElement('option');o.value=val;o.textContent=val;el.appendChild(o);
+    }
+    if(val||el.tagName!=='SELECT')el.value=val;
+  }
+
+  function decorateCurrentTreatment(r,s,h,tx){
+    const form=r.querySelector('#rform');if(!form||!tx)return;
+    setFormValue(form,'Problem',tx.problem||'Varroa Mites');
+    setFormValue(form,'Treatment',tx.type||'');
+    setFormValue(form,'Product',tx.product||'');
+    setFormValue(form,'Dose',tx.dose||'');
+    setFormValue(form,'Start_Date',tx.date||'');
+    setFormValue(form,'End_Date',tx.endDate||'');
+    setFormValue(form,'Follow_up',tx.followUp||'');
+    setFormValue(form,'Withdrawal',tx.withdrawal||'None');
+    setFormValue(form,'Notes',tx.notes||'');
+
+    const hiveCard=r.querySelector('.treatment-hive-card');
+    if(hiveCard&&!r.querySelector('.v2p2a-current-treatment')){
+      const banner=document.createElement('section');
+      banner.className='v2p2a-current-treatment';
+      banner.innerHTML=`<b>CURRENT TREATMENT</b><span>Treatment in progress · editing this record will not create a duplicate treatment.</span>`;
+      hiveCard.insertAdjacentElement('afterend',banner);
+    }
+    const sel=r.querySelector('.treatment-hive-card select');
+    if(sel)sel.setAttribute('onchange',"go('treatment-record/'+this.value+'/current')");
+    const btn=r.querySelector('.treatment-save-v102');
+    if(btn){btn.innerHTML='▣&nbsp;&nbsp; Update Current Treatment';btn.setAttribute('onclick',`v2p2aSaveCurrentTreatment('${String(tx.id).replace(/'/g,"\\'")}')`);}
+
+    if(!document.getElementById('v2p2a-varroa-style')){
+      const st=document.createElement('style');st.id='v2p2a-varroa-style';st.textContent=`
+        .v2p2a-current-treatment{margin:10px 0;padding:12px 14px;border:1px solid #D9D2B8;border-radius:12px;background:#FFF9E9;color:#3F5139;display:flex;flex-direction:column;gap:3px}
+        .v2p2a-current-treatment b{font-size:11px;letter-spacing:.04em;color:#8B6A00}
+        .v2p2a-current-treatment span{font-size:11px;line-height:1.35}
+      `;document.head.appendChild(st);
+    }
+  }
+
+  // Only /current enters edit-current mode. The ordinary Treatment quick action
+  // remains a New Treatment form when no stage-aware Varroa Action opened it.
+  const prevRecord=window.recordPage||recordPage;
+  window.recordPage=function(r,type,id){
+    prevRecord(r,type,id);
+    if(type!=='treatment')return;
+    const mode=(location.hash||'').slice(1).split('/')[2]||'';
+    if(mode!=='current')return;
+    const s=S(),h=hive(s,id),tx=h?activeTreatmentFor(s,h.id):null;
+    if(!h||!tx){
+      toast('No active Treatment record was found');
+      return;
+    }
+    decorateCurrentTreatment(r,s,h,tx);
+  };
+  try{recordPage=window.recordPage}catch(_){}
+
+  window.v2p2aSaveCurrentTreatment=function(treatmentId){
+    const s=S(),form=document.getElementById('rform');if(!form)return toast('Treatment form is unavailable');
+    const fd=new FormData(form),hiveId=txt(fd.get('hiveId'));
+    const rows=Array.isArray(s.logs?.treatments)?s.logs.treatments:[];
+    const tx=rows.find(x=>x&&String(x.id)===String(treatmentId)&&String(x.hiveId)===String(hiveId));
+    if(!tx)return toast('Current Treatment record was not found');
+    tx.problem=fd.get('Problem')||tx.problem||'';
+    tx.type=fd.get('Treatment')||tx.type||'';
+    tx.product=fd.get('Product')||tx.product||'';
+    tx.dose=fd.get('Dose')||tx.dose||'';
+    tx.date=fd.get('Start_Date')||tx.date||v2p1bDateInHiveTimezone(s,hive(s,hiveId));
+    tx.endDate=fd.get('End_Date')||'';
+    tx.followUp=fd.get('Follow_up')||'';
+    tx.withdrawal=fd.get('Withdrawal')||'None';
+    tx.notes=fd.get('Notes')||'';
+    tx.updatedAt=new Date().toISOString();
+
+    if(tx.followUp){
+      s.actions=Array.isArray(s.actions)?s.actions:[];
+      if(!s.actions.some(a=>a&&String(a.hiveId)===String(hiveId)&&a.type==='Treatment'&&String(a.sourceId||'')===String(tx.id))){
+        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:tx.followUp,status:'Pending',sourceId:tx.id});
+      }
+    }
+    if(save(s)===false)return toast('Current Treatment could not be updated');
+    toast('Current Treatment updated');
+    go('actions');
+  };
+
+  // Recommendations use the same stage vocabulary and do not send an active
+  // treatment to a blank New Treatment form.
+  const prevRecommendations=window.v127RecommendationItems;
+  if(typeof prevRecommendations==='function'){
+    window.v127RecommendationItems=function(s){
+      return (prevRecommendations(s)||[]).map(item=>{
+        if(!item||low(item.key).indexOf(':varroa:')<0)return item;
+        const h=hive(s,item.hiveId),st=h?stageFor(s,h):null;if(!st)return item;
+        if(st.stage==='treatment-active'&&st.tx)return {...item,title:'Varroa elevated',action:`Continue the active ${st.txName} treatment, then perform a post-treatment mite recheck.`,cta:'Continue Treatment',route:`treatment-record/${h.id}/current`,when:'Now'};
+        if(st.stage==='awaiting-retest')return {...item,title:'Varroa retest needed',action:'Treatment is complete. Record new mite evidence before deciding whether further management is required.',cta:'Start Inspection',route:`inspection/${h.id}`,when:'Now'};
+        return item;
+      });
+    };
+    try{v127RecommendationItems=window.v127RecommendationItems}catch(_){}
+  }
+
+  window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a-varroa-management-stage';
+})();

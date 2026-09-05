@@ -10638,7 +10638,8 @@ window.__HIVEDASH_V224B19_VERSION__='224b19';
     let matchedTotal=0;
 
     rows.forEach(el=>{
-      const matchType=active==='All' || el.dataset.type===active;
+      const rowType=String(el.dataset.type||'');
+      const matchType=active==='All' || (active==='Varroa' ? rowType.startsWith('Varroa') : rowType===active);
       const matchQ=!q || String(el.dataset.search||'').includes(q);
       const matched=matchType && matchQ;
 
@@ -16236,3 +16237,13 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   try{v49TimelineRows=window.v49TimelineRows}catch(_){ }
   window.__HIVEDASH_V2_P2B2_VERSION__='v2-p2b2-varroa-timeline';
 })();
+
+
+/* ==============================================================
+   V2.0-P2B3 — VARROA TIMELINE FILTER GROUP MATCH FIX
+   Scope ONLY:
+   - The V224B20 matched-pagination override previously required exact type equality.
+   - "Varroa" group now matches both "Varroa Test" and "Varroa Retest".
+   - All other Timeline filters keep exact-type behavior.
+   ============================================================== */
+window.__HIVEDASH_V2_P2B3_VERSION__='v2-p2b3-varroa-filter-group';

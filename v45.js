@@ -15759,6 +15759,18 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     setFormValue(form,'Withdrawal',tx.withdrawal||'None');
     setFormValue(form,'Notes',tx.notes||'');
 
+    // V2P2A3: optional date inputs begin life as text and switch to native
+    // date controls on focus. Preserve the user's selected ISO value at the
+    // input/change boundary so a later blur / locale-decoration pass cannot
+    // erase the value before Update Current Treatment reads the form.
+    ['End_Date','Follow_up'].forEach(name=>{
+      const el=form.elements?.[name];if(!el)return;
+      el.dataset.v2p2aPersistValue=txt(el.value);
+      const capture=()=>{if(txt(el.value))el.dataset.v2p2aPersistValue=txt(el.value)};
+      el.addEventListener('input',capture);
+      el.addEventListener('change',capture);
+    });
+
     const hiveCard=r.querySelector('.treatment-hive-card');
     if(hiveCard&&!r.querySelector('.v2p2a-current-treatment')){
       const banner=document.createElement('section');
@@ -15799,19 +15811,34 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
   window.v2p2aSaveCurrentTreatment=function(treatmentId){
     const s=S(),form=document.getElementById('rform');if(!form)return toast('Treatment form is unavailable');
-    const fd=new FormData(form),hiveId=txt(fd.get('hiveId'));
+    const fd=new FormData(form);
+    const valueOf=name=>{
+      const el=form.elements?.[name];
+      const live=txt(el?.value),captured=txt(el?.dataset?.v2p2aPersistValue),fromData=txt(fd.get(name));
+      return live||captured||fromData;
+    };
+    const hiveId=valueOf('hiveId');
     const rows=Array.isArray(s.logs?.treatments)?s.logs.treatments:[];
     const tx=rows.find(x=>x&&String(x.id)===String(treatmentId)&&String(x.hiveId)===String(hiveId));
     if(!tx)return toast('Current Treatment record was not found');
-    tx.problem=fd.get('Problem')||tx.problem||'';
-    tx.type=fd.get('Treatment')||tx.type||'';
-    tx.product=fd.get('Product')||tx.product||'';
-    tx.dose=fd.get('Dose')||tx.dose||'';
-    tx.date=fd.get('Start_Date')||tx.date||v2p1bDateInHiveTimezone(s,hive(s,hiveId));
-    tx.endDate=txt(fd.get('End_Date'));
-    tx.followUp=fd.get('Follow_up')||'';
-    tx.withdrawal=fd.get('Withdrawal')||'None';
-    tx.notes=fd.get('Notes')||'';
+
+    const startDate=valueOf('Start_Date')||tx.date||v2p1bDateInHiveTimezone(s,hive(s,hiveId));
+    const endDate=valueOf('End_Date');
+    const followUp=valueOf('Follow_up');
+    if(endDate&&dateMs(endDate)<dateMs(startDate))return toast('End date cannot be before start date');
+    if(followUp&&dateMs(followUp)<dateMs(startDate))return toast('Follow-up cannot be before start date');
+
+    tx.problem=valueOf('Problem')||tx.problem||'';
+    tx.type=valueOf('Treatment')||tx.type||'';
+    tx.product=valueOf('Product')||tx.product||'';
+    tx.dose=valueOf('Dose')||tx.dose||'';
+    tx.date=startDate;
+    tx.endDate=endDate;
+    tx.followUp=followUp;
+    tx.withdrawal=valueOf('Withdrawal')||'None';
+    tx.notes=valueOf('Notes');
+    tx.status=endDate?'Completed':'Active';
+    tx.completedAt=endDate||'';
     tx.updatedAt=new Date().toISOString();
 
     // Keep the old Inspection summary from contradicting the formal Treatment
@@ -15821,19 +15848,35 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     if(currentHive){
       currentHive.insp=currentHive.insp||{};
       currentHive.insp.treatment=tx.type||currentHive.insp.treatment||'';
-      currentHive.insp.treatmentStatus=tx.endDate?'Completed':'Active';
-      currentHive.insp.treatmentFollowUp=tx.followUp||'';
+      currentHive.insp.treatmentStatus=endDate?'Completed':'Active';
+      currentHive.insp.treatmentFollowUp=followUp;
       currentHive.insp.treatmentWithdrawal=tx.withdrawal||'None';
     }
 
-    if(tx.followUp){
+    if(followUp){
       s.actions=Array.isArray(s.actions)?s.actions:[];
       if(!s.actions.some(a=>a&&String(a.hiveId)===String(hiveId)&&a.type==='Treatment'&&String(a.sourceId||'')===String(tx.id))){
-        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:tx.followUp,status:'Pending',sourceId:tx.id});
+        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:followUp,status:'Pending',sourceId:tx.id});
       }
     }
     if(save(s)===false)return toast('Current Treatment could not be updated');
-    toast('Current Treatment updated');
+
+    // Verify the SAME Treatment entity was durably written before routing
+    // away. If an older optional-date handler dropped End Date during the
+    // click/blur boundary, repair that exact record in the canonical state;
+    // do not create a second Treatment or a shadow fact store.
+    if(endDate){
+      const persisted=state();
+      const ptx=(persisted.logs?.treatments||[]).find(x=>x&&String(x.id)===String(treatmentId)&&String(x.hiveId)===String(hiveId));
+      if(ptx&&txt(ptx.endDate)!==endDate){
+        ptx.endDate=endDate;ptx.status='Completed';ptx.completedAt=endDate;ptx.updatedAt=tx.updatedAt;
+        const ph=hive(persisted,hiveId);if(ph){ph.insp=ph.insp||{};ph.insp.treatmentStatus='Completed'}
+        if(typeof writeLocalV50==='function')writeLocalV50(persisted);else save(persisted);
+        try{if(typeof scheduleCloudSave==='function')scheduleCloudSave(persisted)}catch(_){}
+      }
+    }
+
+    toast(endDate?'Treatment completed · Varroa retest is now due':'Current Treatment updated');
     go('actions');
   };
 
@@ -15853,5 +15896,5 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     try{v127RecommendationItems=window.v127RecommendationItems}catch(_){}
   }
 
-  window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a2-treatment-completion-retest-transition';
+  window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a3-current-treatment-enddate-persistence';
 })();

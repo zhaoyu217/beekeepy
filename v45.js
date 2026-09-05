@@ -3553,7 +3553,8 @@ function v63FilterMenu(){
 function hives(r){
   const s=v45s();
   window.__v63Filter=window.__v63Filter||'All';
-  const visible=v63VisibleHives();
+  const activeFilter=window.__v63Filter;
+  const visible=v63VisibleHives().filter(h=>activeFilter==='All'||h.status===activeFilter);
 
   r.innerHTML=`<style>
     /* V173 — Hives visual only. Existing click/route logic preserved. */
@@ -15461,3 +15462,13 @@ window.__HIVEDASH_V2_P0A__='v2-p0a-current-managed-hives';
 
   window.__HIVEDASH_V2_P0A1_VERSION__='v2-p0a1-hives-menu-lifecycle';
 })();
+
+
+/* ==============================================================
+   V2.0-P1A — HIVES FILTER STATE PERSISTENCE
+   Scope ONLY:
+   - Preserve the selected Hives status filter across background/full rerenders.
+   - Initial Hives DOM now renders from the already-selected __v63Filter.
+   No risk model, Hive data, Action data, routes, search behavior, or workflows changed.
+   ============================================================== */
+window.__HIVEDASH_V2_P1A_VERSION__='v2-p1a-hives-filter-persistence';

@@ -10065,6 +10065,12 @@ window.__HIVEDASH_V224B13_VERSION__='224b13';
    - Supabase/realtime data updates are NOT blocked; only destructive
      repaint of the active unsaved route form is prevented.
    ============================================================== */
+/* V2P2B1 — Varroa Test realtime form-draft persistence.
+   The dedicated Varroa Test / Retest route is now covered by the existing
+   V224B14 same-route dirty-form guard, so Supabase realtime rerenders cannot
+   erase unsaved sample size, mite count, method, date, test type, or notes. */
+window.__HIVEDASH_V2P2B1_VARROA_DRAFT_GUARD__='PASS';
+
 (function v224b14RouteFormDraftIntegrity(){
   if(window.__HIVEDASH_V224B14__) return;
   window.__HIVEDASH_V224B14__=true;
@@ -10072,6 +10078,7 @@ window.__HIVEDASH_V224B13_VERSION__='224b13';
   const guarded = route => {
     route=String(route||'');
     return /^(?:feeding-record|treatment-record|harvest-record)\/[^/]+$/.test(route) ||
+      /^varroa-test\/[^/]+\/(?:test|retest|recheck)$/.test(route) ||
       ['account','apiary','seasonal-settings','units-region','support','faq','help'].includes(route);
   };
   const routeNow = () => String(location.hash||'#home').replace(/^#/,'');

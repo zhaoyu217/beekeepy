@@ -590,20 +590,37 @@ function recordPage(r,type,id){
             <option selected>Oxalic Acid (Dribble)</option><option>Oxalic Acid (Vapor)</option><option>Formic Acid</option><option>Thymol</option><option>Other</option>
           </select></label>
           <label><span>Product</span><input name="Product" value="Oxalic Acid Solution"></label>
+          <label><span>Active Ingredient</span><input name="Active_Ingredient" value="Oxalic Acid"></label>
+          <label><span>Application Method</span><select name="Application_Method">
+            <option selected>Dribble</option><option>Vaporization</option><option>Strip</option><option>Drench</option><option>Spray</option><option>Other</option>
+          </select></label>
+          <label><span>Concentration / Strength</span><input name="Concentration" placeholder="e.g. 3.2%"></label>
           <label><span>Dose</span><input name="Dose" value="5 ml / seam"></label>
         </section>
         <section class="treatment-section-v102">
           <h3><i>▦</i> SCHEDULE</h3>
           <label><span>Start Date</span><input name="Start_Date" type="date" lang="en-US" value="${today}"></label>
           <label><span>End Date</span><input name="End_Date" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
-          <label><span>Follow-up</span><input name="Follow_up" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
+          <label><span>Follow-up / Retest Due</span><input name="Follow_up" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
+          <label><span>Treatment Status</span><select name="Treatment_Status">
+            <option>Planned</option><option selected>Active</option><option>Completed</option><option>Stopped</option>
+          </select></label>
         </section>
         <section class="treatment-section-v102">
           <h3><i>!</i> SAFETY</h3>
           <label><span>Withdrawal</span><select name="Withdrawal">
             <option selected>None</option><option>1 day</option><option>3 days</option><option>7 days</option><option>14 days</option><option>Custom</option>
           </select></label>
-          <div class="treatment-safety-note">Record the withdrawal period you intend to follow for the product and label you are using.</div>
+          <label><span>Honey Supers Status</span><select name="Honey_Supers_Status">
+            <option selected>Not recorded</option><option>Not present</option><option>Present</option><option>Removed before treatment</option><option>Honey harvest complete</option>
+          </select></label>
+          <div class="treatment-safety-note">Record the withdrawal period and honey-super context you intend to follow for the product label you are using.</div>
+        </section>
+        <section class="treatment-section-v102 v2p2c-traceability">
+          <h3><i>#</i> TRACEABILITY</h3>
+          <label><span>Lot / Batch Number</span><input name="Lot_Number" placeholder="Optional"></label>
+          <label><span>Linked Retest</span><input name="Linked_Retest_Display" value="Not recorded" readonly aria-readonly="true"></label>
+          <div class="treatment-safety-note">Retest evidence is linked from the Varroa Test record. It is not duplicated inside Treatment.</div>
         </section>
         <section class="treatment-section-v102 treatment-notes-v102">
           <h3><i>✎</i> NOTES</h3>
@@ -707,7 +724,16 @@ function saveRec(type){
   }else if(type==='treatment'){
     const treatmentId='t'+Date.now();
     const followUp=fd.get('Follow_up')||'';
-    s.logs.treatments.push({id:treatmentId,hiveId,date:fd.get('Start_Date')||today,problem:fd.get('Problem'),type:fd.get('Treatment'),product:fd.get('Product'),dose:fd.get('Dose'),endDate:fd.get('End_Date')||'',followUp,withdrawal:fd.get('Withdrawal')||'',notes});
+    let treatmentStatus=String(fd.get('Treatment_Status')||'Active').trim()||'Active';
+    const endDate=fd.get('End_Date')||'';
+    if(endDate&&treatmentStatus==='Active')treatmentStatus='Completed';
+    if((treatmentStatus==='Completed'||treatmentStatus==='Stopped')&&!endDate)return toast('End date is required for a completed or stopped Treatment');
+    s.logs.treatments.push({
+      id:treatmentId,hiveId,date:fd.get('Start_Date')||today,problem:fd.get('Problem'),type:fd.get('Treatment'),product:fd.get('Product'),
+      activeIngredient:fd.get('Active_Ingredient')||'',applicationMethod:fd.get('Application_Method')||'',concentration:fd.get('Concentration')||'',
+      dose:fd.get('Dose'),endDate,followUp,withdrawal:fd.get('Withdrawal')||'',honeySupersStatus:String(fd.get('Honey_Supers_Status')||'').trim()==='Not recorded'?'':(fd.get('Honey_Supers_Status')||''),
+      lotNumber:fd.get('Lot_Number')||'',status:treatmentStatus,notes,updatedAt:new Date().toISOString()
+    });
     if(followUp){
       s.actions=s.actions||[];
       if(!s.actions.some(a=>a.hiveId===hiveId&&a.type==='Treatment'&&a.sourceId===treatmentId)){
@@ -15546,7 +15572,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   // rerenders. This is an in-memory UI draft only; Treatment remains the sole
   // persisted management fact and is written only by Update Current Treatment.
   const currentDrafts=window.__V2P2A_CURRENT_TREATMENT_DRAFTS__ ||= new Map();
-  const treatmentFields=['Problem','Treatment','Product','Dose','Start_Date','End_Date','Follow_up','Withdrawal','Notes'];
+  const treatmentFields=['Problem','Treatment','Product','Active_Ingredient','Application_Method','Concentration','Dose','Start_Date','End_Date','Follow_up','Treatment_Status','Withdrawal','Honey_Supers_Status','Lot_Number','Notes'];
   function treatmentDraft(txId){return currentDrafts.get(String(txId))||null}
   function captureTreatmentDraft(txId,form){
     if(!form)return;
@@ -15604,6 +15630,53 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       })[0]||null;
   }
 
+  function linkedRetestForTreatment(s,tx){
+    if(!tx)return null;
+    return (Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[])
+      .filter(x=>x&&String(x.linkedTreatmentId||'')===String(tx.id||''))
+      .slice()
+      .sort((a,b)=>{
+        const ad=dateMs(a.date),bd=dateMs(b.date);if(ad!==bd)return bd-ad;
+        return (Date.parse(txt(b.recordedAt))||0)-(Date.parse(txt(a.recordedAt))||0);
+      })[0]||null;
+  }
+  function linkedRetestDisplay(s,tx){
+    const rt=linkedRetestForTreatment(s,tx);
+    if(!rt)return 'Not recorded';
+    const result=Number(rt.mitesPer100);
+    const resultText=Number.isFinite(result)?`${Number(result.toFixed(2))}/100 bees`:'Result recorded';
+    return `${txt(rt.date)||'Date not recorded'} · ${resultText}`;
+  }
+
+  const prevOpenTimelineEventV2P2C=window.openTimelineEventV49||openTimelineEventV49;
+  window.openTimelineEventV49=function(key){
+    const e=(typeof V49_TIMELINE_CACHE!=='undefined'?V49_TIMELINE_CACHE:window.V49_TIMELINE_CACHE||[]).find(x=>x&&x.key===key);
+    if(!e||e.type!=='Treatment')return prevOpenTimelineEventV2P2C(key);
+    const s=S(),h=hive(s,e.hiveId),tx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).find(x=>x&&String(x.id)===String(e.sourceId||String(key).split(':').slice(1).join(':')));
+    if(!tx)return prevOpenTimelineEventV2P2C(key);
+    const status=txt(tx.status)||(tx.endDate?'Completed':'Active');
+    const val=v=>txt(v)||'Not recorded';
+    const rows=[
+      ['Problem',englishTreatmentProblem(tx.problem||'')],
+      ['Treatment',englishTreatmentName(tx.type||'')],
+      ['Product',val(tx.product)],
+      ['Active Ingredient',val(tx.activeIngredient)],
+      ['Application Method',val(tx.applicationMethod)],
+      ['Concentration / Strength',val(tx.concentration)],
+      ['Dose',val(tx.dose)],
+      ['Status',status],
+      ['Start Date',tx.date?fmtDate(tx.date):'Not recorded'],
+      ['End Date',tx.endDate?fmtDate(tx.endDate):'Not recorded'],
+      ['Follow-up / Retest Due',tx.followUp?fmtDate(tx.followUp):'Not recorded'],
+      ['Withdrawal',val(tx.withdrawal)],
+      ['Honey Supers Status',val(tx.honeySupersStatus)],
+      ['Lot / Batch Number',val(tx.lotNumber)],
+      ['Linked Retest',linkedRetestDisplay(s,tx)]
+    ];
+    modal(`<div class="modalhead"><b>Treatment · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="v2p2c-treatment-detail">${rows.map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}${tx.notes?`<div class="v2p2c-notes"><span>Notes</span><b>${esc(tx.notes)}</b></div>`:''}</div><button class="primary" onclick="closeModal(this);v224b11OpenHiveFromTimeline('${e.hiveId}')">Open Hive</button>`);
+  };
+  try{openTimelineEventV49=window.openTimelineEventV49}catch(_){}
+
   function varroaDecision(s,h){
     try{return window.v224bEvaluateAll?.(s)?.get?.(h.id)||null}catch(_){return null}
   }
@@ -15640,7 +15713,10 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const risk=assessment==='Danger'?'High':assessment==='Caution'?'Medium':assessment==='Acceptable'?'Low':'Unknown';
     const testDate=txt(latestVarroaTest?.date||i.varroaTestDate||h.varroaTestDate||'');
     const txEnd=txt(tx?.endDate||'');
-    const txActive=Boolean(tx&&!txEnd);
+    const txStatus=low(tx?.status||(txEnd?'Completed':'Active'));
+    const txPlanned=Boolean(tx&&txStatus==='planned'&&!txEnd);
+    const txStopped=Boolean(tx&&txStatus==='stopped');
+    const txActive=Boolean(tx&&!txEnd&&!txPlanned&&!txStopped&&txStatus!=='completed');
     // A formal Treatment record is the management source of truth. Legacy
     // Inspection treatmentStatus is only a fallback when no Treatment record
     // exists at all; it must never reopen a Treatment that already has End Date.
@@ -15658,6 +15734,10 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     // create another treatment merely because the pre-treatment risk is High.
     if(txActive){
       stage='treatment-active';label='Treatment in progress';next='Continue current Varroa treatment';
+    }else if(txPlanned){
+      stage='treatment-planned';label='Treatment planned';next='Review planned Varroa treatment';
+    }else if(txStopped&&!testedAfterCompletedTreatment){
+      stage='awaiting-retest';label='Treatment stopped · reassessment needed';next='Perform a Varroa retest';
     }else if(inspectionTxActive){
       stage='treatment-active-unlinked';label='Treatment marked active';next='Review current treatment';
     }else if(tx&&txEnd&&!testedAfterCompletedTreatment){
@@ -15678,7 +15758,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       stage='low';label='Varroa low';next='Continue routine monitoring';
     }
 
-    return {stage,label,next,risk,count,testDate,assessment,phase,tx,txActive,txName,txEnd,testedAfterCompletedTreatment,latestVarroaTest};
+    return {stage,label,next,risk,count,testDate,assessment,phase,tx,txActive,txPlanned,txStopped,txStatus,txName,txEnd,testedAfterCompletedTreatment,latestVarroaTest};
   }
   window.v2p2aVarroaStage=stageFor;
 
@@ -15756,6 +15836,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const copy=actionCopy(a,s);
     let label='Open',click=out.click;
     if(st.stage==='treatment-active'&&st.tx){label='Continue';click=`go('treatment-record/${h.id}/current')`;}
+    else if(st.stage==='treatment-planned'&&st.tx){label='Review';click=`go('treatment-record/${h.id}/current')`;}
     else if(st.stage==='awaiting-retest'){label='Retest';click=`go('varroa-test/${h.id}/retest')`;}
     else if(st.stage==='treatment-active-unlinked'||st.stage==='retest-still-high'){label='Review';click=`go('hive/${h.id}')`;}
     else if(st.stage==='monitoring'){label='Recheck';click=`go('varroa-test/${h.id}/recheck')`;}
@@ -15789,7 +15870,9 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
   function activeTreatmentFor(s,hid){
     const tx=latestTreatment(s,hid);
-    return tx&&!txt(tx.endDate)?tx:null;
+    if(!tx||txt(tx.endDate))return null;
+    const status=low(tx.status||'Active');
+    return status==='completed'||status==='stopped'?null:tx;
   }
 
   function setFormValue(form,name,value){
@@ -15808,12 +15891,19 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     setFormValue(form,'Problem',pick('Problem',englishTreatmentProblem(tx.problem||'Varroa Mites')));
     setFormValue(form,'Treatment',pick('Treatment',englishTreatmentName(tx.type||'')));
     setFormValue(form,'Product',pick('Product',tx.product||''));
+    setFormValue(form,'Active_Ingredient',pick('Active_Ingredient',tx.activeIngredient||'Not recorded'));
+    setFormValue(form,'Application_Method',pick('Application_Method',tx.applicationMethod||'Not recorded'));
+    setFormValue(form,'Concentration',pick('Concentration',tx.concentration||'Not recorded'));
     setFormValue(form,'Dose',pick('Dose',tx.dose||''));
     setFormValue(form,'Start_Date',pick('Start_Date',tx.date||''));
     setFormValue(form,'End_Date',pick('End_Date',tx.endDate||''));
     setFormValue(form,'Follow_up',pick('Follow_up',tx.followUp||''));
+    setFormValue(form,'Treatment_Status',pick('Treatment_Status',tx.status||(tx.endDate?'Completed':'Active')));
     setFormValue(form,'Withdrawal',pick('Withdrawal',tx.withdrawal||'None'));
+    setFormValue(form,'Honey_Supers_Status',pick('Honey_Supers_Status',tx.honeySupersStatus||'Not recorded'));
+    setFormValue(form,'Lot_Number',pick('Lot_Number',tx.lotNumber||'Not recorded'));
     setFormValue(form,'Notes',pick('Notes',tx.notes||''));
+    setFormValue(form,'Linked_Retest_Display',linkedRetestDisplay(s,tx));
 
     // V2P2A3: optional date inputs begin life as text and switch to native
     // date controls on focus. Preserve the user's selected ISO value at the
@@ -15840,7 +15930,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     if(hiveCard&&!r.querySelector('.v2p2a-current-treatment')){
       const banner=document.createElement('section');
       banner.className='v2p2a-current-treatment';
-      banner.innerHTML=`<b>CURRENT TREATMENT</b><span>Treatment in progress · editing this record will not create a duplicate treatment.</span>`;
+      banner.innerHTML=`<b>CURRENT TREATMENT</b><span>Editing this Treatment updates the same record and will not create a duplicate treatment.</span>`;
       hiveCard.insertAdjacentElement('afterend',banner);
     }
     const sel=r.querySelector('.treatment-hive-card select');
@@ -15890,20 +15980,28 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const startDate=valueOf('Start_Date')||tx.date||v2p1bDateInHiveTimezone(s,hive(s,hiveId));
     const endDate=valueOf('End_Date');
     const followUp=valueOf('Follow_up');
+    let treatmentStatus=valueOf('Treatment_Status')||tx.status||(endDate?'Completed':'Active');
+    if(endDate&&treatmentStatus==='Active')treatmentStatus='Completed';
     if(endDate&&dateMs(endDate)<dateMs(startDate))return toast('End date cannot be before start date');
     if(followUp&&dateMs(followUp)<dateMs(startDate))return toast('Follow-up cannot be before start date');
+    if((treatmentStatus==='Completed'||treatmentStatus==='Stopped')&&!endDate)return toast('End date is required for a completed or stopped Treatment');
 
     tx.problem=valueOf('Problem')||tx.problem||'';
     tx.type=valueOf('Treatment')||tx.type||'';
     tx.product=valueOf('Product')||tx.product||'';
+    tx.activeIngredient=valueOf('Active_Ingredient')==='Not recorded'?'':valueOf('Active_Ingredient');
+    tx.applicationMethod=valueOf('Application_Method')==='Not recorded'?'':valueOf('Application_Method');
+    tx.concentration=valueOf('Concentration')==='Not recorded'?'':valueOf('Concentration');
     tx.dose=valueOf('Dose')||tx.dose||'';
     tx.date=startDate;
     tx.endDate=endDate;
     tx.followUp=followUp;
+    tx.status=treatmentStatus;
     tx.withdrawal=valueOf('Withdrawal')||'None';
+    tx.honeySupersStatus=valueOf('Honey_Supers_Status')==='Not recorded'?'':valueOf('Honey_Supers_Status');
+    tx.lotNumber=valueOf('Lot_Number')==='Not recorded'?'':valueOf('Lot_Number');
     tx.notes=valueOf('Notes');
-    tx.status=endDate?'Completed':'Active';
-    tx.completedAt=endDate||'';
+    tx.completedAt=(treatmentStatus==='Completed'||treatmentStatus==='Stopped')?(endDate||tx.completedAt||''):'';
     tx.updatedAt=new Date().toISOString();
 
     // Keep the old Inspection summary from contradicting the formal Treatment
@@ -15913,7 +16011,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     if(currentHive){
       currentHive.insp=currentHive.insp||{};
       currentHive.insp.treatment=tx.type||currentHive.insp.treatment||'';
-      currentHive.insp.treatmentStatus=endDate?'Completed':'Active';
+      currentHive.insp.treatmentStatus=treatmentStatus;
       currentHive.insp.treatmentFollowUp=followUp;
       currentHive.insp.treatmentWithdrawal=tx.withdrawal||'None';
     }
@@ -15934,15 +16032,17 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       const persisted=state();
       const ptx=(persisted.logs?.treatments||[]).find(x=>x&&String(x.id)===String(treatmentId)&&String(x.hiveId)===String(hiveId));
       if(ptx&&txt(ptx.endDate)!==endDate){
-        ptx.endDate=endDate;ptx.status='Completed';ptx.completedAt=endDate;ptx.updatedAt=tx.updatedAt;
-        const ph=hive(persisted,hiveId);if(ph){ph.insp=ph.insp||{};ph.insp.treatmentStatus='Completed'}
+        ptx.endDate=endDate;ptx.status=treatmentStatus;ptx.completedAt=(treatmentStatus==='Completed'||treatmentStatus==='Stopped')?endDate:'';ptx.updatedAt=tx.updatedAt;
+        ptx.activeIngredient=tx.activeIngredient||'';ptx.applicationMethod=tx.applicationMethod||'';ptx.concentration=tx.concentration||'';
+        ptx.honeySupersStatus=tx.honeySupersStatus||'';ptx.lotNumber=tx.lotNumber||'';
+        const ph=hive(persisted,hiveId);if(ph){ph.insp=ph.insp||{};ph.insp.treatmentStatus=treatmentStatus}
         if(typeof writeLocalV50==='function')writeLocalV50(persisted);else save(persisted);
         try{if(typeof scheduleCloudSave==='function')scheduleCloudSave(persisted)}catch(_){}
       }
     }
 
     clearTreatmentDraft(treatmentId);
-    toast(endDate?'Treatment completed · Varroa retest is now due':'Current Treatment updated');
+    toast((treatmentStatus==='Completed'||treatmentStatus==='Stopped')?'Treatment closed · Varroa reassessment is now due':'Current Treatment updated');
     go('actions');
   };
 
@@ -16247,3 +16347,26 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
    - All other Timeline filters keep exact-type behavior.
    ============================================================== */
 window.__HIVEDASH_V2_P2B3_VERSION__='v2-p2b3-varroa-filter-group';
+
+
+/* ==========================================================
+   V2P2C — PROFESSIONAL TREATMENT RECORD v1
+   - Adds professional treatment traceability fields.
+   - Historical missing fields stay Not recorded; no invented backfill.
+   - Linked Retest is derived from varroaTests via linkedTreatmentId.
+   ========================================================== */
+(function(){
+  if(window.__HIVEDASH_V2_P2C_PRO_TREATMENT__)return;
+  window.__HIVEDASH_V2_P2C_PRO_TREATMENT__=true;
+  if(!document.getElementById('v2p2c-treatment-style')){
+    const st=document.createElement('style');st.id='v2p2c-treatment-style';st.textContent=`
+      .v2p2c-traceability input[readonly]{background:#F5F3EC;color:#596257;cursor:default}
+      .v2p2c-traceability .treatment-safety-note{margin-top:8px}
+      .v2p2c-treatment-detail{display:grid;gap:0;margin:4px 0 14px;border:1px solid #E4E0D5;border-radius:12px;overflow:hidden;background:#fff}
+      .v2p2c-treatment-detail>div{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.25fr);gap:12px;padding:10px 12px;border-bottom:1px solid #EEEAE0;align-items:start}
+      .v2p2c-treatment-detail>div:last-child{border-bottom:0}.v2p2c-treatment-detail span{font-size:11px;color:#667067}.v2p2c-treatment-detail b{font-size:11px;color:#2F3B33;text-align:right;overflow-wrap:anywhere}
+      .v2p2c-treatment-detail .v2p2c-notes{grid-template-columns:1fr}.v2p2c-treatment-detail .v2p2c-notes b{text-align:left;font-weight:500}
+    `;document.head.appendChild(st);
+  }
+  window.__HIVEDASH_V2_P2C_VERSION__='v2-p2c-professional-treatment-record-v1';
+})();

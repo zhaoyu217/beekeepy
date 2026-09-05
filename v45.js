@@ -600,8 +600,8 @@ function recordPage(r,type,id){
         <section class="treatment-section-v102">
           <h3><i>▦</i> SCHEDULE</h3>
           <label><span>Start Date</span><input name="Start_Date" type="date" lang="en-US" value="${today}"></label>
-          <label><span>End Date</span><input name="End_Date" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
-          <label><span>Follow-up / Retest Due</span><input name="Follow_up" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
+          <label><span>End Date</span><input name="End_Date" type="date" lang="en-US"></label>
+          <label><span>Follow-up / Retest Due</span><input name="Follow_up" type="date" lang="en-US"></label>
           <label><span>Treatment Status</span><select name="Treatment_Status">
             <option>Planned</option><option selected>Active</option><option>Completed</option><option>Stopped</option>
           </select></label>
@@ -16409,3 +16409,12 @@ window.__HIVEDASH_V2_P2B3_VERSION__='v2-p2b3-varroa-filter-group';
   }
   window.__HIVEDASH_V2_P2C_VERSION__='v2-p2c-professional-treatment-record-v1';
 })();
+
+
+/* ==========================================================
+   V2P2C2 — TREATMENT US DATE DISPLAY CONSISTENCY
+   - Treatment Start / End / Follow-up use permanent native date inputs.
+   - Existing V224B17 English date overlay renders visible MM/DD/YYYY.
+   - Stored values remain ISO YYYY-MM-DD; save/validation semantics unchanged.
+   ========================================================== */
+window.__HIVEDASH_V2_P2C2_VERSION__='v2-p2c2-treatment-us-date-display';

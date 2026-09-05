@@ -456,6 +456,39 @@ function archiveHiveV214(id){const s=v45s(),h=hive(s,id);if(!h)return;h.archived
 
 function allActions(r,mode){actions(r); if(mode){const want=String(mode).toLowerCase().startsWith('complete')?'Completed':String(mode).toLowerCase().startsWith('all')?'All':'Pending';const btn=[...document.querySelectorAll('.filters button')].find(b=>b.textContent.trim()===want);if(btn)filterActions(want,btn)}}
 
+/* V2.0-P1B — per-Hive business location/time context for frequent record pages. */
+function v2p1bEffectiveHiveLocation(s,h){
+  const cur=(h&&h.currentLocation&&typeof h.currentLocation==='object')?h.currentLocation:null;
+  if(cur && (String(cur.stateCode||cur.state||cur.city||'').trim() || String(cur.timezone||'').trim())) return cur;
+  const api=(s&&s.settings&&s.settings.apiaryLocation&&typeof s.settings.apiaryLocation==='object')?s.settings.apiaryLocation:null;
+  if(api && (String(api.stateCode||api.state||api.city||'').trim() || String(api.timezone||'').trim())) return api;
+  return null;
+}
+function v2p1bHiveLocationText(s,h){
+  const loc=v2p1bEffectiveHiveLocation(s,h);
+  if(loc){
+    try{const x=v224aLocationDisplay(loc);if(String(x||'').trim())return String(x).trim()}catch(_){}
+    const parts=[loc.city,loc.state,(String(loc.country||'').trim()==='United States'?'USA':loc.country)].map(x=>String(x||'').trim()).filter(Boolean);
+    if(parts.length)return parts.join(', ');
+  }
+  return String(s?.settings?.location||'').trim()||'Location not set';
+}
+function v2p1bHiveTimezone(s,h){
+  const loc=v2p1bEffectiveHiveLocation(s,h);
+  return String(loc?.timezone||s?.settings?.apiaryLocation?.timezone||s?.settings?.region?.timezone||s?.settings?.timezone||'America/Denver').trim()||'America/Denver';
+}
+function v2p1bDateInHiveTimezone(s,h,when){
+  const d=when instanceof Date?when:new Date();
+  const tz=v2p1bHiveTimezone(s,h);
+  try{
+    const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    const get=t=>p.find(x=>x.type===t)?.value||'';
+    const y=get('year'),m=get('month'),day=get('day');
+    if(y&&m&&day)return `${y}-${m}-${day}`;
+  }catch(_){}
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+
 function recordPage(r,type,id){
   const s=v45s(),h=vh(id),cfg={feeding:['Feeding Record',V45.feeding],treatment:['Treatment Record',V45.treatment],harvest:['Harvest Record',V45.harvest]}[type];
   const today=new Date().toISOString().slice(0,10);
@@ -464,6 +497,7 @@ function recordPage(r,type,id){
     const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
+    const today=v2p1bDateInHiveTimezone(s,active);
     const qtyUnit=metric?'L':'qt';
     const qtyValue=metric?'2.0':'2.1';
     const hivePhoto=v101HivePrimaryPhoto(active);
@@ -473,7 +507,7 @@ function recordPage(r,type,id){
         <img src="${hivePhoto}" alt="${esc(active.name)}">
         <div class="feeding-hive-copy">
           <b>${esc(active.name)}</b>
-          <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
+          <span>⌖ ${esc(v2p1bHiveLocationText(s,active))}</span>
           <em>✓ Healthy</em>
         </div>
         <select name="hiveId" form="rform" aria-label="Change Hive" onchange="go('feeding-record/'+this.value)">
@@ -503,7 +537,7 @@ function recordPage(r,type,id){
         </section>
       </form>
 
-      <div class="feeding-time-note">● <span>All times and dates are saved in your local time zone.</span></div>
+      <div class="feeding-time-note">● <span>Dates use this hive's local time zone.</span></div>
       <button class="primary feeding-save-v98" onclick="saveRec('feeding')">▣&nbsp;&nbsp; Save Record</button>
     </div>`;
     return;
@@ -514,6 +548,7 @@ function recordPage(r,type,id){
     const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const hivePhoto=v101HivePrimaryPhoto(active);
+    const today=v2p1bDateInHiveTimezone(s,active);
 
     r.innerHTML=`
 <style>
@@ -537,7 +572,7 @@ function recordPage(r,type,id){
         <img src="${hivePhoto}" alt="${esc(active.name)}">
         <div class="treatment-hive-copy">
           <b>${esc(active.name)}</b>
-          <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
+          <span>⌖ ${esc(v2p1bHiveLocationText(s,active))}</span>
           <em>✓ ${esc(v219NormalizeHiveStatus(active.status))}</em>
         </div>
         <select aria-label="Change Hive" onchange="go('treatment-record/'+this.value)">
@@ -575,7 +610,7 @@ function recordPage(r,type,id){
           <label><span>Notes</span><div class="treatment-note-wrap"><textarea name="Notes" maxlength="200" placeholder="Add notes about this treatment..." oninput="this.nextElementSibling.textContent=this.value.length+' / 200'"></textarea><small>0 / 200</small></div></label>
         </section>
       </form>
-      <div class="treatment-time-note">● <span>All times and dates are saved in your local time zone.</span></div>
+      <div class="treatment-time-note">● <span>Dates use this hive's local time zone.</span></div>
       <button class="primary treatment-save-v102" onclick="saveRec('treatment')">▣&nbsp;&nbsp; Save Record</button>
     </div>`;
     return;
@@ -586,6 +621,7 @@ function recordPage(r,type,id){
     const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const hivePhoto=v101HivePrimaryPhoto(active);
+    const today=v2p1bDateInHiveTimezone(s,active);
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
     const weightUnit=metric?'kg':'lb';
     const defaultWeight=metric?'12.7':'28';
@@ -596,7 +632,7 @@ function recordPage(r,type,id){
         <img src="${hivePhoto}" alt="${esc(active.name)}">
         <div class="harvest-hive-copy">
           <b>${esc(active.name)}</b>
-          <span>⌖ ${esc(s.settings.location||'Location not set')}</span>
+          <span>⌖ ${esc(v2p1bHiveLocationText(s,active))}</span>
           <em>✓ ${esc(v219NormalizeHiveStatus(active.status))}</em>
         </div>
         <select aria-label="Change Hive" onchange="go('harvest-record/'+this.value)">
@@ -626,7 +662,7 @@ function recordPage(r,type,id){
         </section>
       </form>
 
-      <div class="harvest-time-note">● <span>All times and dates are saved in your local time zone.</span></div>
+      <div class="harvest-time-note">● <span>Dates use this hive's local time zone.</span></div>
       <button class="primary harvest-save-v103" onclick="saveRec('harvest')">▣&nbsp;&nbsp; Save Record</button>
     </div>`;
     return;
@@ -665,7 +701,7 @@ function syncHarvestBatchV107(input){
   if(batch)batch.value=nextHarvestBatchV107(input.value,v45s());
 }
 function saveRec(type){
-  const s=v45s(),fd=new FormData(idq('rform')),hiveId=fd.get('hiveId'),today=new Date().toISOString().slice(0,10),notes=fd.get('Notes')||'';
+  const s=v45s(),fd=new FormData(idq('rform')),hiveId=fd.get('hiveId'),recordHive=hive(s,hiveId),today=v2p1bDateInHiveTimezone(s,recordHive),notes=fd.get('Notes')||'';
   if(type==='feeding'){
     s.logs.feedings.push({id:'f'+Date.now(),hiveId,date:fd.get('Date')||today,type:fd.get('Feed_Type'),ratio:fd.get('Syrup_Ratio'),amount:(fd.get('Quantity_Value')||'0')+' '+(fd.get('Quantity_Unit')||''),notes,nextFeeding:fd.get('Next_Feeding')||''});
   }else if(type==='treatment'){
@@ -15472,3 +15508,7 @@ window.__HIVEDASH_V2_P0A__='v2-p0a-current-managed-hives';
    No risk model, Hive data, Action data, routes, search behavior, or workflows changed.
    ============================================================== */
 window.__HIVEDASH_V2_P1A_VERSION__='v2-p1a-hives-filter-persistence';
+
+
+/* V2.0-P1B — Frequent Record currentLocation + per-Hive business-date context. */
+window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';

@@ -15428,3 +15428,36 @@ function detailHTML(a){
 
 /* V2.0-P0A — Current Managed Hives consistency. Current-state consumers exclude archived/Combined hives; historical facts remain stored. */
 window.__HIVEDASH_V2_P0A__='v2-p0a-current-managed-hives';
+
+
+/* ==============================================================
+   V2.0-P0A1 — HIVES TRANSIENT MENU LIFECYCLE HOTFIX
+   Scope ONLY:
+   - Close Hives overflow/filter popups when route changes.
+   - Close them when the user clicks outside the popup/trigger.
+   - Prevent a Hives popup appended to <body> from surviving into
+     Actions/other routes and falling back to browser-right CSS.
+   No data, Action, Hive, navigation target, or workflow logic changes.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V2_P0A1_HIVES_MENU_LIFECYCLE__) return;
+  window.__HIVEDASH_V2_P0A1_HIVES_MENU_LIFECYCLE__=true;
+
+  function v2p0a1CloseHivesTransientMenus(){
+    document.querySelectorAll('.v63-menu,.v63-filter-pop').forEach(el=>el.remove());
+  }
+  window.v2p0a1CloseHivesTransientMenus=v2p0a1CloseHivesTransientMenus;
+
+  window.addEventListener('hashchange',v2p0a1CloseHivesTransientMenus);
+
+  document.addEventListener('click',function(e){
+    const target=e.target;
+    const menu=document.querySelector('.v63-menu');
+    if(menu && !target.closest?.('.v63-menu,.v173-more')) menu.remove();
+
+    const filter=document.querySelector('.v63-filter-pop');
+    if(filter && !target.closest?.('.v63-filter-pop,.v63-filter-btn')) filter.remove();
+  });
+
+  window.__HIVEDASH_V2_P0A1_VERSION__='v2-p0a1-hives-menu-lifecycle';
+})();

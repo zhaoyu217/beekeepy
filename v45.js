@@ -51,8 +51,8 @@ function v219NormalizeHiveStatus(v){const x=String(v||'').trim();return ({'注�
 function Vstatus(h){const st=v219NormalizeHiveStatus(h?.status);return st==='Healthy'?'Good':st==='Attention'?'Needs Attention':'Critical'}
 function Vclass(h){const st=v219NormalizeHiveStatus(h?.status);return st==='Healthy'?'good':st==='Attention'?'attention':'critical'}
 
-function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||v224ActiveTrackedHives(s)[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
-const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
+function chrome(page){const s=v45s(),top=idq('topbar'),bottom=idq('bottomnav'),raw=(location.hash||'#home').slice(1).split('/'),id=raw[1]||v224ActiveTrackedHives(s)[0]?.id||'h1';top.className='topbar vtop';if(page==='home')top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="brand"><img class="hd-header-logo" src="assets/hivedash-logo-header.png" alt="HiveDash"></div><button class="iconbtn" onclick="go('notifications')">${icon('bell')}${activeNotificationsV135(s).filter(n=>!n.read).length?`<span class="badge">${activeNotificationsV135(s).filter(n=>!n.read).length}</span>`:''}</button>`;else if(['hives','actions','insights'].includes(page))top.innerHTML=`<button class="iconbtn" onclick="go('settings')">${icon('settings')}</button><div class="pagebar-title">${page[0].toUpperCase()+page.slice(1)}</div><button class="iconbtn plusbtn" onclick="${page==='hives'?'addHive()':page==='actions'?`go('inspection/${id}')`:`go('analysis')`}">+</button>`;else{const t={'hive':'Hive Detail','inspection':'Inspection','timeline':'Timeline','honey':'Harvest','map':'Map','all-hives':'All Hives','all-actions':'All Actions','feeding-record':'Feeding Record','treatment-record':'Treatment Record','varroa-test':'Varroa Test','harvest-record':'Harvest Record','analysis':'AI Health Analysis','trend':'Health Trends','risk':'Risk Assessment','season':'Season Intelligence','honey-analytics':'Honey Analytics','recommendations':'Professional Recommendations','settings':'Settings','account':'Account','subscription':'HiveDash Pro','apiary':'Apiary & Hive','seasonal-settings':'Seasonal Settings','notification-preferences':'Notification Preferences','units-region':'Units & Region','smart-features':'Smart Features','data-backup':'Data & Backup','security':'Privacy & Security','store':'Store','notifications':'Notifications','help':'Help Center','faq':'FAQ / Report Problem','support':'Contact Support','about':'About HiveDash','version':'Version','privacy':'Privacy Policy','terms':'Terms of Service'}[page]||'HiveDash';let right='';if(page==='hive')right=`<button class="iconbtn" onclick="openHiveDetailMenu('${id}')">•••</button>`;if(page==='inspection')right=`<button class="csave" onclick="vSaveInspection('${id}')">Save</button>`;if(page==='honey')right=`<button class="iconbtn plusbtn" onclick="go('harvest-record/${id}')">+</button>`;top.innerHTML=Vback(t,right)}
+const hide=['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','varroa-test','harvest-record'];bottom.classList.toggle('hidden',hide.includes(page));const active=page==='home'?'home':['hives','hive','map','all-hives'].includes(page)?'hives':['actions','inspection','all-actions','feeding-record','treatment-record','varroa-test','harvest-record','honey'].includes(page)?'actions':'insights';bottom.innerHTML=[['home','Home','navHome'],['hives','Hives','navHive'],['actions','Actions','navActions'],['insights','Insights','navInsights']].map(x=>`<button class="navitem ${active===x[0]?'active':''}" onclick="go('${x[0]}')">${icon(x[2])}<span>${x[1]}</span></button>`).join('')}
 
 
 let V128_HONEY_RANGE='year';
@@ -258,7 +258,7 @@ function markAllRead(){
   render();
 }
 
-function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]||'home',id=p[1],r=idq('view');r.className='view vview '+(['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','harvest-record'].includes(page)?'secondary':'main');const m={home:()=>home(r),hives:()=>hives(r),hive:()=>hiveDetail(r,id),inspection:()=>inspectionPage(r,id),timeline:()=>timelinePage(r),honey:()=>honeyPage(r),map:()=>mapPage(r),insights:()=>insights(r),actions:()=>actions(r),'all-hives':()=>allHives(r),'all-actions':()=>allActions(r,id),'feeding-record':()=>recordPage(r,'feeding',id),'treatment-record':()=>recordPage(r,'treatment',id),'harvest-record':()=>recordPage(r,'harvest',id),analysis:()=>healthAnalysis(r),trend:()=>trendPage(r),risk:()=>riskPage(r),season:()=>seasonPage(r),'honey-analytics':()=>honeyAnalytics(r),recommendations:()=>recommendations(r),settings:()=>settings(r),account:()=>accountPage(r),subscription:()=>subscriptionPage(r),apiary:()=>apiaryPage(r),'seasonal-settings':()=>seasonalSettings(r),'notification-preferences':()=>notificationPrefs(r),'units-region':()=>unitsRegion(r),'smart-features':()=>smartFeatures(r),'data-backup':()=>dataBackup(r),security:()=>securityPage(r),store:()=>storePage(r),notifications:()=>notifications(r),help:()=>helpPage(r),faq:()=>faqPage(r),support:()=>supportPage(r),about:()=>aboutPage(r),version:()=>versionPageV139(r),privacy:()=>infoPage(r,'Privacy Policy'),terms:()=>infoPage(r,'Terms of Service')};(m[page]||m.home)();chrome(page)}
+function render(){const p=(location.hash||'#home').slice(1).split('/'),page=p[0]||'home',id=p[1],r=idq('view');r.className='view vview '+(['settings','account','subscription','apiary','seasonal-settings','notification-preferences','units-region','smart-features','data-backup','security','store','notifications','help','faq','support','about','version','privacy','terms','feeding-record','treatment-record','varroa-test','harvest-record'].includes(page)?'secondary':'main');const m={home:()=>home(r),hives:()=>hives(r),hive:()=>hiveDetail(r,id),inspection:()=>inspectionPage(r,id),timeline:()=>timelinePage(r),honey:()=>honeyPage(r),map:()=>mapPage(r),insights:()=>insights(r),actions:()=>actions(r),'all-hives':()=>allHives(r),'all-actions':()=>allActions(r,id),'feeding-record':()=>recordPage(r,'feeding',id),'treatment-record':()=>recordPage(r,'treatment',id),'varroa-test':()=>varroaTestPage(r,id,p[2]||'test'),'harvest-record':()=>recordPage(r,'harvest',id),analysis:()=>healthAnalysis(r),trend:()=>trendPage(r),risk:()=>riskPage(r),season:()=>seasonPage(r),'honey-analytics':()=>honeyAnalytics(r),recommendations:()=>recommendations(r),settings:()=>settings(r),account:()=>accountPage(r),subscription:()=>subscriptionPage(r),apiary:()=>apiaryPage(r),'seasonal-settings':()=>seasonalSettings(r),'notification-preferences':()=>notificationPrefs(r),'units-region':()=>unitsRegion(r),'smart-features':()=>smartFeatures(r),'data-backup':()=>dataBackup(r),security:()=>securityPage(r),store:()=>storePage(r),notifications:()=>notifications(r),help:()=>helpPage(r),faq:()=>faqPage(r),support:()=>supportPage(r),about:()=>aboutPage(r),version:()=>versionPageV139(r),privacy:()=>infoPage(r,'Privacy Policy'),terms:()=>infoPage(r,'Terms of Service')};(m[page]||m.home)();chrome(page)}
 
 
 function selectTab(btn){btn.parentElement.querySelectorAll('button').forEach(b=>b.classList.remove('active'));btn.classList.add('active')}
@@ -2960,7 +2960,7 @@ function safeBackV51(fallback='home'){
 }
 Vback=function(title,right=''){
   const raw=(location.hash||'#home').slice(1).split('/'),page=raw[0],id=raw[1]||'';
-  const fallback={hive:'hives',inspection:id?'hive/'+id:'hives',timeline:id?'hive/'+id:'home',honey:'home',map:'home','all-hives':'hives','all-actions':'actions','feeding-record':'actions','treatment-record':'actions','harvest-record':'honey',analysis:'insights',trend:'insights',risk:'insights',season:'insights','honey-analytics':'insights',recommendations:'insights',settings:'home',account:'settings',subscription:(id&&String(id).startsWith('split-action-')?'split-action/'+id:'settings'),apiary:'settings','seasonal-settings':'apiary','notification-preferences':'settings','units-region':'settings','smart-features':'settings','data-backup':'settings',security:'settings',store:'settings',notifications:'home',help:'settings',faq:'help',support:'help',about:'settings',version:'about',privacy:'security',terms:'security'}[page]||'home';
+  const fallback={hive:'hives',inspection:id?'hive/'+id:'hives',timeline:id?'hive/'+id:'home',honey:'home',map:'home','all-hives':'hives','all-actions':'actions','feeding-record':'actions','treatment-record':'actions','varroa-test':'home','harvest-record':'honey',analysis:'insights',trend:'insights',risk:'insights',season:'insights','honey-analytics':'insights',recommendations:'insights',settings:'home',account:'settings',subscription:(id&&String(id).startsWith('split-action-')?'split-action/'+id:'settings'),apiary:'settings','seasonal-settings':'apiary','notification-preferences':'settings','units-region':'settings','smart-features':'settings','data-backup':'settings',security:'settings',store:'settings',notifications:'home',help:'settings',faq:'help',support:'help',about:'settings',version:'about',privacy:'security',terms:'security'}[page]||'home';
   return `<button class="iconbtn" onclick="safeBackV51('${fallback}')">‹</button><div class="pagebar-title">${title}</div>${right||'<span></span>'}`
 };
 function noHiveStateV51(r,title='No hives yet'){
@@ -4761,7 +4761,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   const knownRoutes=new Set([
     'home','hives','hive','inspection','timeline','honey','map',
     'insights','actions','all-hives','all-actions',
-    'feeding-record','treatment-record','harvest-record',
+    'feeding-record','treatment-record','varroa-test','harvest-record',
     'analysis','trend','risk','season','honey-analytics',
     'recommendations','settings','account','subscription','apiary',
     'seasonal-settings','notification-preferences','units-region',
@@ -15608,10 +15608,29 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   function stageFor(s,h){
     if(!h)return null;
     const d=varroaDecision(s,h), i=h.insp||{}, tx=latestTreatment(s,h.id);
-    const count=Number(d?.varroa?.count ?? i.varroa ?? h.varroa ?? 0)||0;
-    const assessment=txt(d?.varroa?.assessment)||'Unknown';
+    const latestVarroaTest=(Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[])
+      .filter(x=>x&&String(x.hiveId)===String(h.id))
+      .slice()
+      .sort((a,b)=>{
+        const byDate=dateMs(b.date)-dateMs(a.date);
+        if(byDate)return byDate;
+        const ar=Date.parse(txt(a.recordedAt))||0,br=Date.parse(txt(b.recordedAt))||0;
+        return br-ar;
+      })[0]||null;
+    const count=Number(latestVarroaTest?.mitesPer100 ?? d?.varroa?.count ?? i.varroa ?? h.varroa ?? 0)||0;
+    const phase=txt(d?.phase);
+    let assessment=txt(d?.varroa?.assessment)||'Unknown';
+    // The dedicated test writes the current Hive evidence summary too, so the
+    // frozen Health Model remains the sole risk calculator. The explicit raw
+    // test record is used here only to resolve evidence chronology/linkage.
+    try{
+      if(latestVarroaTest&&window.V224B_MODEL?.varroaThresholds){
+        const cfg=window.V224B_MODEL.varroaThresholds[phase]||window.V224B_MODEL.varroaThresholds.Uncertain;
+        assessment=count<cfg.acceptableBelow?'Acceptable':count<=cfg.dangerAbove?'Caution':'Danger';
+      }
+    }catch(_){}
     const risk=assessment==='Danger'?'High':assessment==='Caution'?'Medium':assessment==='Acceptable'?'Low':'Unknown';
-    const testDate=txt(i.varroaTestDate||h.varroaTestDate||'');
+    const testDate=txt(latestVarroaTest?.date||i.varroaTestDate||h.varroaTestDate||'');
     const txEnd=txt(tx?.endDate||'');
     const txActive=Boolean(tx&&!txEnd);
     // A formal Treatment record is the management source of truth. Legacy
@@ -15619,7 +15638,10 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     // exists at all; it must never reopen a Treatment that already has End Date.
     const inspectionTxActive=!tx && low(i.treatmentStatus)==='active';
     const txName=englishTreatmentName(tx?.type||i.treatment||'Varroa treatment');
-    const testedAfterCompletedTreatment=Boolean(tx&&txEnd&&testDate&&dateMs(testDate)>dateMs(txEnd));
+    const linkedPostTreatmentRetest=Boolean(tx&&latestVarroaTest&&
+      String(latestVarroaTest.linkedTreatmentId||'')===String(tx.id||'')&&
+      low(latestVarroaTest.testType).includes('post-treatment'));
+    const testedAfterCompletedTreatment=Boolean(tx&&txEnd&&testDate&&(linkedPostTreatmentRetest||dateMs(testDate)>dateMs(txEnd)));
 
     let stage='untested', label='Varroa test needed', next='Test for Varroa';
 
@@ -15648,7 +15670,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       stage='low';label='Varroa low';next='Continue routine monitoring';
     }
 
-    return {stage,label,next,risk,count,testDate,assessment,phase:txt(d?.phase),tx,txActive,txName,txEnd,testedAfterCompletedTreatment};
+    return {stage,label,next,risk,count,testDate,assessment,phase,tx,txActive,txName,txEnd,testedAfterCompletedTreatment,latestVarroaTest};
   }
   window.v2p2aVarroaStage=stageFor;
 
@@ -15663,13 +15685,13 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     }else if(st.stage==='treatment-active-unlinked'){
       type='Treatment';title='Review current Varroa treatment';due='Now';route=`hive/${h.id}`;
     }else if(st.stage==='awaiting-retest'){
-      type='Inspection';title='Varroa retest needed';due='Now';route=`inspection/${h.id}`;
+      type='Inspection';title='Varroa retest needed';due='Now';route=`varroa-test/${h.id}/retest`;
     }else if(st.stage==='retest-still-high'){
       type='Treatment';title='Varroa still high after treatment';due='Now';route=`hive/${h.id}`;
     }else if(st.stage==='monitoring'){
-      type='Inspection';title='Recheck Varroa level';due='Soon';route=`inspection/${h.id}`;
+      type='Inspection';title='Recheck Varroa level';due='Soon';route=`varroa-test/${h.id}/recheck`;
     }else if(st.stage==='untested'){
-      type='Inspection';title='Varroa test needed';due='Now';route=`inspection/${h.id}`;
+      type='Inspection';title='Varroa test needed';due='Now';route=`varroa-test/${h.id}/test`;
     }else if(st.stage==='low'||st.stage==='retest-low'){
       type='Inspection';title='Continue Varroa monitoring';due='Next check';route=`inspection/${h.id}`;
     }else{
@@ -15706,7 +15728,9 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       const st=stageFor(s,h);
       if(st?.stage==='treatment-active'&&st.tx)return go(`treatment-record/${h.id}/current`);
       if(st?.stage==='treatment-active-unlinked')return go(`hive/${h.id}`);
-      if(st?.stage==='awaiting-retest'||st?.stage==='monitoring'||st?.stage==='untested')return go(`inspection/${h.id}`);
+      if(st?.stage==='awaiting-retest')return go(`varroa-test/${h.id}/retest`);
+      if(st?.stage==='monitoring')return go(`varroa-test/${h.id}/recheck`);
+      if(st?.stage==='untested')return go(`varroa-test/${h.id}/test`);
       if(st?.stage==='retest-still-high')return go(`hive/${h.id}`);
     }
     return typeof prevOpen==='function'?prevOpen.apply(this,arguments):go(`hive/${hiveId}`);
@@ -15724,9 +15748,10 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const copy=actionCopy(a,s);
     let label='Open',click=out.click;
     if(st.stage==='treatment-active'&&st.tx){label='Continue';click=`go('treatment-record/${h.id}/current')`;}
-    else if(st.stage==='awaiting-retest'){label='Retest';click=`go('inspection/${h.id}')`;}
+    else if(st.stage==='awaiting-retest'){label='Retest';click=`go('varroa-test/${h.id}/retest')`;}
     else if(st.stage==='treatment-active-unlinked'||st.stage==='retest-still-high'){label='Review';click=`go('hive/${h.id}')`;}
-    else if(st.stage==='monitoring'||st.stage==='untested'){label='Check';click=`go('inspection/${h.id}')`;}
+    else if(st.stage==='monitoring'){label='Recheck';click=`go('varroa-test/${h.id}/recheck')`;}
+    else if(st.stage==='untested'){label='Test';click=`go('varroa-test/${h.id}/test')`;}
     return {...out,a:copy,label,click};
   };
   try{v56HomeAction=window.v56HomeAction}catch(_){}
@@ -15922,7 +15947,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
         if(!item||low(item.key).indexOf(':varroa:')<0)return item;
         const h=hive(s,item.hiveId),st=h?stageFor(s,h):null;if(!st)return item;
         if(st.stage==='treatment-active'&&st.tx)return {...item,title:'Varroa elevated',action:`Continue the active ${st.txName} treatment, then perform a post-treatment mite recheck.`,cta:'Continue Treatment',route:`treatment-record/${h.id}/current`,when:'Now'};
-        if(st.stage==='awaiting-retest')return {...item,title:'Varroa retest needed',action:'Treatment is complete. Record new mite evidence before deciding whether further management is required.',cta:'Start Inspection',route:`inspection/${h.id}`,when:'Now'};
+        if(st.stage==='awaiting-retest')return {...item,title:'Varroa retest needed',action:'Treatment is complete. Record new mite evidence before deciding whether further management is required.',cta:'Retest Varroa',route:`varroa-test/${h.id}/retest`,when:'Now'};
         return item;
       });
     };
@@ -15930,4 +15955,204 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   }
 
   window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a4-treatment-realtime-rollback-guard';
+})();
+
+
+/* ==========================================================
+   V2P2B — VARROA TEST / RETEST
+   BASE: V2P2A4
+
+   Scope:
+   - Dedicated raw-evidence record; DOES NOT create an Inspection.
+   - Routine test / follow-up recheck / post-treatment retest.
+   - Records method, sample size, mite count, mites per 100 bees.
+   - Links post-treatment retest to the completed Treatment entity.
+   - Updates only the Hive's current Varroa evidence summary so the frozen
+     Health & Decision Model remains the single risk calculator.
+   - No new treatment recommendation thresholds are introduced here.
+   ========================================================== */
+(function(){
+  if(window.__V2P2B_VARROA_TEST_RETEST__)return;
+  window.__V2P2B_VARROA_TEST_RETEST__=true;
+
+  const text=v=>String(v==null?'':v).trim();
+  const lower=v=>text(v).toLowerCase();
+
+  function englishTreatmentNameV2P2B(v){
+    const x=text(v);
+    const k=lower(x);
+    if(k.includes('oxalic')&&k.includes('dribble'))return 'Oxalic Acid (Dribble)';
+    if(k.includes('oxalic')&&(k.includes('vapor')||k.includes('vapour')))return 'Oxalic Acid (Vapor)';
+    if(k.includes('formic'))return 'Formic Acid';
+    if(k.includes('thymol'))return 'Thymol';
+    if(/草酸/.test(x)&&/滴/.test(x))return 'Oxalic Acid (Dribble)';
+    if(/草酸/.test(x))return 'Oxalic Acid';
+    if(/甲酸/.test(x))return 'Formic Acid';
+    if(/百里香|麝香草/.test(x))return 'Thymol';
+    if(/[\\u3400-\\u9fff]/.test(x))return 'Recorded Treatment';
+    return x||'Recorded Treatment';
+  }
+
+  function txOrder(x){
+    const u=Date.parse(text(x?.updatedAt))||0;
+    const d=Date.parse(text(x?.endDate||x?.date)+'T00:00:00')||0;
+    return Math.max(u,d);
+  }
+
+  function latestCompletedTreatmentV2P2B(s,hid){
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&String(x.hiveId)===String(hid)&&text(x.endDate))
+      .slice().sort((a,b)=>txOrder(b)-txOrder(a))[0]||null;
+  }
+
+  function latestTestsV2P2B(s,hid){
+    return (Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[])
+      .filter(x=>x&&String(x.hiveId)===String(hid))
+      .slice().sort((a,b)=>{const bd=Date.parse(text(b.date)+'T00:00:00')||0,ad=Date.parse(text(a.date)+'T00:00:00')||0;if(bd!==ad)return bd-ad;return (Date.parse(text(b.recordedAt))||0)-(Date.parse(text(a.recordedAt))||0);});
+  }
+
+  function modeLabelV2P2B(mode){
+    return mode==='retest'?'Post-treatment Retest':mode==='recheck'?'Follow-up Recheck':'Routine Test';
+  }
+
+  function fmtRateV2P2B(v){
+    const n=Number(v);return Number.isFinite(n)?n.toFixed(1):'—';
+  }
+
+  window.v2p2bUpdateVarroaPreview=function(){
+    const form=document.getElementById('v2p2b-varroa-form');if(!form)return;
+    const sampleRaw=text(form.elements?.Sample_Size?.value),mitesRaw=text(form.elements?.Mite_Count?.value);
+    const sample=Number(sampleRaw),mites=Number(mitesRaw);
+    const valid=sampleRaw!==''&&mitesRaw!==''&&Number.isFinite(sample)&&sample>0&&Number.isFinite(mites)&&mites>=0;
+    const rate=valid?Math.round((mites/sample*100)*10)/10:null;
+    const out=document.getElementById('v2p2b-rate');
+    const hidden=form.elements?.Mites_Per_100;
+    if(out)out.textContent=valid?`${rate.toFixed(1)} / 100 bees`:'Enter sample and mite count';
+    if(hidden)hidden.value=valid?String(rate):'';
+  };
+
+  window.varroaTestPage=function(r,id,mode='test'){
+    const s=v45s(),activeHives=v224ActiveTrackedHives(s);
+    const allowed=isPro(s)?activeHives:activeHives.slice(0,3);
+    const h=allowed.find(x=>String(x.id)===String(id))||allowed[0];
+    if(!h){return noHiveStateV51(r,'No active hive available for Varroa testing');}
+    const today=v2p1bDateInHiveTimezone(s,h);
+    const completedTx=latestCompletedTreatmentV2P2B(s,h.id);
+    const tx=mode==='retest'?completedTx:null;
+    const testType=modeLabelV2P2B(mode);
+    const tests=latestTestsV2P2B(s,h.id).slice(0,3);
+    const photo=v101HivePrimaryPhoto(h);
+    const txBlock=tx?`
+      <section class="v2p2b-section">
+        <h3><i>✚</i> LINKED MANAGEMENT</h3>
+        <div class="v2p2b-readrow"><span>Treatment</span><b>${esc(englishTreatmentNameV2P2B(tx.type))}</b></div>
+        <div class="v2p2b-readrow"><span>Completed</span><b>${esc(fmtDate(tx.endDate))}</b></div>
+        <div class="v2p2b-hint">This retest is linked to the completed Treatment. Treatment completion does not clear Varroa risk; this new test provides the evidence for reassessment.</div>
+      </section>`:`
+      <section class="v2p2b-section">
+        <h3><i>✚</i> LINKED MANAGEMENT</h3>
+        <div class="v2p2b-hint">No completed Treatment is linked. Use Routine Test or Follow-up Recheck unless a completed Treatment record exists.</div>
+      </section>`;
+    const history=tests.length?`<section class="v2p2b-section"><h3><i>↺</i> RECENT VARROA TESTS</h3>${tests.map(x=>`<div class="v2p2b-history"><span>${esc(fmtDate(x.date))}<small>${esc(x.testType||'Varroa Test')} · ${esc(x.method||'Method not recorded')}</small></span><b>${esc(fmtRateV2P2B(x.mitesPer100))}/100</b></div>`).join('')}</section>`:'';
+
+    r.innerHTML=`<div class="vs treatment-v102 v2p2b-page">
+      <section class="treatment-hive-card">
+        <img src="${photo}" alt="${esc(h.name)}">
+        <div class="treatment-hive-copy"><b>${esc(h.name)}</b><span>⌖ ${esc(v2p1bHiveLocationText(s,h))}</span><em>✓ ${esc(v219NormalizeHiveStatus(h.status))}</em></div>
+        <select aria-label="Change Hive" onchange="go('varroa-test/'+this.value+'/${mode}')">${allowed.map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+      </section>
+
+      <form id="v2p2b-varroa-form">
+        <input type="hidden" name="hiveId" value="${esc(h.id)}">
+        <input type="hidden" name="Linked_Treatment_Id" value="${esc(tx?.id||'')}">
+        <input type="hidden" name="Mites_Per_100" value="">
+
+        <section class="v2p2b-section">
+          <h3><i>◎</i> TEST CONTEXT</h3>
+          <label><span>Test Type</span><select name="Test_Type">${['Routine Test','Follow-up Recheck','Post-treatment Retest'].map(x=>`<option ${x===testType?'selected':''}>${x}</option>`).join('')}</select></label>
+          <label><span>Test Date</span><input name="Test_Date" type="date" lang="en-US" value="${today}"></label>
+        </section>
+
+        <section class="v2p2b-section">
+          <h3><i>#</i> SAMPLING & METHOD</h3>
+          <label><span>Method</span><select name="Method"><option>Alcohol Wash</option><option>Sugar Roll</option><option>Soapy Water Wash</option><option>Other</option></select></label>
+          <label><span>Sample Size</span><div class="v2p2b-inline"><input name="Sample_Size" type="number" min="1" step="1" value="300" oninput="v2p2bUpdateVarroaPreview()"><em>bees</em></div></label>
+          <label><span>Mites Counted</span><input name="Mite_Count" type="number" min="0" step="1" placeholder="0" oninput="v2p2bUpdateVarroaPreview()"></label>
+        </section>
+
+        <section class="v2p2b-section v2p2b-result">
+          <h3><i>=</i> RAW RESULT</h3>
+          <strong id="v2p2b-rate">Enter sample and mite count</strong>
+          <div class="v2p2b-hint">Mites per 100 bees = mites counted ÷ sample size × 100. HiveDash recalculates risk after save using the current colony phase and the frozen Health & Decision Model; this page does not invent a second threshold system.</div>
+        </section>
+
+        ${txBlock}
+
+        <section class="v2p2b-section">
+          <h3><i>✎</i> NOTES</h3>
+          <label><span>Notes</span><textarea name="Notes" maxlength="300" rows="3" placeholder="Optional notes about sampling, colony context, or retest conditions..."></textarea></label>
+        </section>
+      </form>
+      ${history}
+      <div class="treatment-time-note">● <span>Test date uses this hive's local time zone. Follow the applicable product label and management plan for post-treatment retest timing.</span></div>
+      <button class="primary treatment-save-v102" onclick="v2p2bSaveVarroaTest()">▣&nbsp;&nbsp; Save Varroa Test</button>
+    </div>`;
+
+    if(!document.getElementById('v2p2b-style')){
+      const st=document.createElement('style');st.id='v2p2b-style';st.textContent=`
+      .v2p2b-page{padding-bottom:24px}.v2p2b-section{background:#fff;border:1px solid #e3ded2;border-radius:14px;padding:13px 12px;margin:10px 0}.v2p2b-section h3{margin:0 0 8px;font-size:12px;letter-spacing:.02em;color:#53664b;display:flex;align-items:center;gap:7px}.v2p2b-section h3 i{width:24px;height:24px;border-radius:50%;display:inline-grid;place-items:center;background:#5E7350;color:#fff;font-style:normal}.v2p2b-section label{display:grid;grid-template-columns:108px 1fr;align-items:center;gap:9px;padding:7px 0;border-top:1px solid #eee9df}.v2p2b-section label:first-of-type{border-top:0}.v2p2b-section label>span,.v2p2b-readrow span{font-size:12px;color:#364236}.v2p2b-section input,.v2p2b-section select,.v2p2b-section textarea{width:100%;box-sizing:border-box;border:1px solid #d8d2c5;border-radius:10px;padding:10px;background:#fff;color:#263126;font:inherit}.v2p2b-section textarea{resize:vertical}.v2p2b-inline{display:grid;grid-template-columns:1fr auto;align-items:center;gap:7px}.v2p2b-inline em{font-size:11px;color:#6c746c;font-style:normal}.v2p2b-result strong{display:block;font-size:25px;color:#405638;padding:6px 0}.v2p2b-hint{font-size:11px;line-height:1.45;color:#666e66;background:#faf7ef;border-radius:9px;padding:9px;margin-top:8px}.v2p2b-readrow,.v2p2b-history{display:flex;justify-content:space-between;gap:12px;align-items:center;padding:8px 0;border-top:1px solid #eee9df}.v2p2b-readrow:first-of-type,.v2p2b-history:first-of-type{border-top:0}.v2p2b-readrow b,.v2p2b-history b{font-size:12px;color:#354a31}.v2p2b-history span{font-size:12px;color:#364236}.v2p2b-history small{display:block;color:#7a817a;margin-top:2px}.v2p2b-page .treatment-save-v102{margin-top:10px}
+      `;document.head.appendChild(st);
+    }
+    setTimeout(()=>window.v2p2bUpdateVarroaPreview(),0);
+  };
+
+  window.v2p2bSaveVarroaTest=function(){
+    const form=document.getElementById('v2p2b-varroa-form');if(!form)return toast('Varroa Test form is unavailable');
+    const s=v45s(),fd=new FormData(form);
+    const hiveId=text(fd.get('hiveId')),h=hive(s,hiveId);if(!h)return toast('Hive not found');
+    const testType=text(fd.get('Test_Type')),testDate=text(fd.get('Test_Date')),method=text(fd.get('Method'));
+    const sampleRaw=text(fd.get('Sample_Size')),mitesRaw=text(fd.get('Mite_Count'));
+    const sample=Number(sampleRaw),mites=Number(mitesRaw);
+    const today=v2p1bDateInHiveTimezone(s,h);
+    if(!testDate)return toast('Test date is required');
+    if(Date.parse(testDate+'T00:00:00')>Date.parse(today+'T00:00:00'))return toast('Test date cannot be in the future');
+    if(!method)return toast('Test method is required');
+    if(sampleRaw===''||!Number.isInteger(sample)||sample<1)return toast('Sample size must be at least 1 bee');
+    if(mitesRaw===''||!Number.isInteger(mites)||mites<0)return toast('Mites counted is required and must be 0 or greater');
+    const rate=Math.round((mites/sample*100)*10)/10;
+    const rawLinkedTreatmentId=text(fd.get('Linked_Treatment_Id'));
+    const linkedTreatmentId=testType==='Post-treatment Retest'?rawLinkedTreatmentId:'';
+    if(testType==='Post-treatment Retest'&&!linkedTreatmentId)return toast('No completed Treatment record is available to link to this retest');
+    const linkedTx=linkedTreatmentId?(s.logs?.treatments||[]).find(x=>String(x?.id||'')===String(linkedTreatmentId)):null;
+    if(linkedTx?.endDate&&Date.parse(testDate+'T00:00:00')<Date.parse(text(linkedTx.endDate)+'T00:00:00'))return toast('Retest date cannot be before the linked Treatment end date');
+
+    s.logs=s.logs||{};s.logs.varroaTests=Array.isArray(s.logs.varroaTests)?s.logs.varroaTests:[];
+    const nowIso=new Date().toISOString();
+    const row={
+      id:`vt-${Date.now()}-${hiveId}`,hiveId,date:testDate,testType,method,
+      sampleSize:sample,miteCount:mites,mitesPer100:rate,
+      linkedTreatmentId:linkedTreatmentId||'',notes:text(fd.get('Notes')),
+      recordedAt:nowIso,updatedAt:nowIso,source:'Varroa Test'
+    };
+    s.logs.varroaTests.push(row);
+
+    // Current Hive evidence summary points to the newest TEST DATE, not merely
+    // the most recently entered row. A historical backfill must not overwrite
+    // newer biological evidence. This still does not create an Inspection or
+    // modify lastInspection.
+    const latest=latestTestsV2P2B(s,hiveId)[0]||row;
+    if(String(latest.id)===String(row.id)){
+      h.insp=h.insp||{};
+      h.insp.varroa=rate;h.insp.varroaTestDate=testDate;h.insp.varroaTestMethod=method;
+      h.insp.varroaSampleSize=sample;h.insp.varroaMiteCount=mites;h.insp.varroaTestType=testType;h.insp.varroaTestId=row.id;
+      h.varroa=rate;h.varroaTestDate=testDate;
+    }
+
+    try{if(typeof window.v223SyncHiveHealth==='function')window.v223SyncHiveHealth(s,false)}catch(err){console.error('V2P2B health sync failed',err)}
+    if(save(s)===false)return toast('Varroa Test could not be saved');
+    toast('Varroa Test saved · risk recalculated from new evidence');
+    go('home');
+  };
+
+  window.__HIVEDASH_V2_P2B_VERSION__='v2-p2b-varroa-test-retest';
 })();

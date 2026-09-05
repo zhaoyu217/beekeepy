@@ -15558,11 +15558,21 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     return x;
   }
 
+  function treatmentOrderMs(x){
+    const updated=Date.parse(txt(x?.updatedAt));
+    if(Number.isFinite(updated))return updated;
+    const digits=txt(x?.id).match(/(\d{10,})/);
+    return digits?Number(digits[1])||0:0;
+  }
+
   function latestTreatment(s,hid){
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
       .filter(x=>x&&String(x.hiveId)===String(hid))
       .slice()
-      .sort((a,b)=>dateMs(b.date)-dateMs(a.date))[0]||null;
+      .sort((a,b)=>{
+        const byStart=dateMs(b.date)-dateMs(a.date);
+        return byStart||treatmentOrderMs(b)-treatmentOrderMs(a);
+      })[0]||null;
   }
 
   function varroaDecision(s,h){
@@ -15581,10 +15591,13 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const assessment=txt(d?.varroa?.assessment)||'Unknown';
     const risk=assessment==='Danger'?'High':assessment==='Caution'?'Medium':assessment==='Acceptable'?'Low':'Unknown';
     const testDate=txt(i.varroaTestDate||h.varroaTestDate||'');
-    const txActive=Boolean(tx&&!txt(tx.endDate));
-    const inspectionTxActive=!txActive && low(i.treatmentStatus)==='active';
-    const txName=englishTreatmentName(tx?.type||i.treatment||'Varroa treatment');
     const txEnd=txt(tx?.endDate||'');
+    const txActive=Boolean(tx&&!txEnd);
+    // A formal Treatment record is the management source of truth. Legacy
+    // Inspection treatmentStatus is only a fallback when no Treatment record
+    // exists at all; it must never reopen a Treatment that already has End Date.
+    const inspectionTxActive=!tx && low(i.treatmentStatus)==='active';
+    const txName=englishTreatmentName(tx?.type||i.treatment||'Varroa treatment');
     const testedAfterCompletedTreatment=Boolean(tx&&txEnd&&testDate&&dateMs(testDate)>dateMs(txEnd));
 
     let stage='untested', label='Varroa test needed', next='Test for Varroa';
@@ -15795,11 +15808,23 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     tx.product=fd.get('Product')||tx.product||'';
     tx.dose=fd.get('Dose')||tx.dose||'';
     tx.date=fd.get('Start_Date')||tx.date||v2p1bDateInHiveTimezone(s,hive(s,hiveId));
-    tx.endDate=fd.get('End_Date')||'';
+    tx.endDate=txt(fd.get('End_Date'));
     tx.followUp=fd.get('Follow_up')||'';
     tx.withdrawal=fd.get('Withdrawal')||'None';
     tx.notes=fd.get('Notes')||'';
     tx.updatedAt=new Date().toISOString();
+
+    // Keep the old Inspection summary from contradicting the formal Treatment
+    // record. This mirrors management status only; it does not change Varroa
+    // biological risk, which still requires new mite evidence.
+    const currentHive=hive(s,hiveId);
+    if(currentHive){
+      currentHive.insp=currentHive.insp||{};
+      currentHive.insp.treatment=tx.type||currentHive.insp.treatment||'';
+      currentHive.insp.treatmentStatus=tx.endDate?'Completed':'Active';
+      currentHive.insp.treatmentFollowUp=tx.followUp||'';
+      currentHive.insp.treatmentWithdrawal=tx.withdrawal||'None';
+    }
 
     if(tx.followUp){
       s.actions=Array.isArray(s.actions)?s.actions:[];
@@ -15828,5 +15853,5 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     try{v127RecommendationItems=window.v127RecommendationItems}catch(_){}
   }
 
-  window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a-varroa-management-stage';
+  window.__HIVEDASH_V2_P2A_VERSION__='v2-p2a2-treatment-completion-retest-transition';
 })();

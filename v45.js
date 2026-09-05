@@ -15791,20 +15791,59 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     return {...a,type,title,due,reason,varroaStage:st.stage,varroaRoute:route};
   }
 
-  // Preserve every existing generated/durable Action; only reinterpret the
-  // current Varroa Action's title/type/due from the shared stage model.
+  // V2P2C1 — management-state Actions must not disappear merely because the
+  // biological Varroa risk has already fallen.  An unfinished formal
+  // Treatment remains a Pending management fact until it is Completed/Stopped;
+  // likewise a completed/stopped Treatment without newer evidence still needs
+  // its retest.  Risk Actions and management-stage Actions are therefore
+  // intentionally separate.
+  function stageActionForHive(s,h){
+    const st=stageFor(s,h);
+    if(!st)return null;
+    if(!['treatment-active','treatment-planned','awaiting-retest','treatment-active-unlinked'].includes(st.stage))return null;
+    const priority=st.risk==='High'?'High':'Medium';
+    return actionCopy({
+      id:`v2p2c-stage-varroa-${st.stage}-${h.id}`,
+      hiveId:h.id,
+      type:st.stage==='awaiting-retest'?'Inspection':'Treatment',
+      priority,
+      title:'Varroa management stage',
+      reason:'Current Varroa management stage requires follow-through.',
+      due:'Now',
+      status:'Pending',
+      source:'varroa-management-stage',
+      modelVersion:'V2P2C1'
+    },s);
+  }
+  function mergeStageActions(rows,s){
+    const out=Array.isArray(rows)?rows.slice():[];
+    const hasVarroaHive=new Set(out.filter(isVarroaAction).map(a=>String(a.hiveId||'')));
+    v224ActiveTrackedHives(s).forEach(h=>{
+      const key=String(h.id||'');
+      if(hasVarroaHive.has(key))return;
+      const extra=stageActionForHive(s,h);
+      if(extra){out.push(extra);hasVarroaHive.add(key)}
+    });
+    return out;
+  }
+
+  // Preserve every existing generated/durable Action, reinterpret any current
+  // Varroa risk Action, then add a stage-only Action when no risk Action exists.
   const prevGenerate=window.generateActions||generateActions;
   window.generateActions=function(s){
-    return (prevGenerate(s)||[]).map(a=>actionCopy(a,s));
+    const mapped=(prevGenerate(s)||[]).map(a=>actionCopy(a,s));
+    return mergeStageActions(mapped,s);
   };
   try{generateActions=window.generateActions}catch(_){}
 
-  // Actions list consumes the same stage-aware row copy even before the next
-  // persistence cycle regenerates s.actions.
+  // Actions list also merges the stage row at render time, so a deployment can
+  // surface an already-active Treatment immediately without requiring another
+  // save cycle first. Completed history remains untouched.
   const prevRows=window.v53ActionRows||v53ActionRows;
   window.v53ActionRows=function(mode='Pending'){
-    const s=S();
-    return (prevRows(mode)||[]).map(a=>actionCopy(a,s));
+    const s=S(),mapped=(prevRows(mode)||[]).map(a=>actionCopy(a,s));
+    const normalized=String(mode||'Pending').toLowerCase();
+    return normalized==='completed'?mapped:mergeStageActions(mapped,s);
   };
   try{v53ActionRows=window.v53ActionRows}catch(_){}
 

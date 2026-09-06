@@ -490,6 +490,28 @@ function v2p1bDateInHiveTimezone(s,h,when){
   return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
 }
 
+/* V2P2D7 — all business DATE decisions are date-only and use the Hive's
+   effective local time zone. UTC/device time remains valid for audit timestamps
+   (recordedAt/updatedAt), but must not decide a beekeeper-facing calendar day. */
+function v2p2d7DayNumber(v){
+  const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(v||'').slice(0,10));
+  if(!m)return null;
+  return Math.floor(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3]))/86400000);
+}
+function v2p2d7TodayForHive(s,h,when){ return v2p1bDateInHiveTimezone(s,h,when); }
+function v2p2d7AgeDaysInHiveTimezone(s,h,v,when){
+  const a=v2p2d7DayNumber(v),b=v2p2d7DayNumber(v2p2d7TodayForHive(s,h,when));
+  return a===null||b===null?9999:Math.max(0,b-a);
+}
+function v2p2d7IsPastForHive(s,h,v,when){
+  const a=v2p2d7DayNumber(v),b=v2p2d7DayNumber(v2p2d7TodayForHive(s,h,when));
+  return a!==null&&b!==null&&a<b;
+}
+function v2p2d7IsFutureForHive(s,h,v,when){
+  const a=v2p2d7DayNumber(v),b=v2p2d7DayNumber(v2p2d7TodayForHive(s,h,when));
+  return a!==null&&b!==null&&a>b;
+}
+
 function recordPage(r,type,id){
   const s=v45s(),h=vh(id),cfg={feeding:['Feeding Record',V45.feeding],treatment:['Treatment Record',V45.treatment],harvest:['Harvest Record',V45.harvest]}[type];
   const today=new Date().toISOString().slice(0,10);
@@ -2863,7 +2885,7 @@ const V50_OLD_SAVE_INSPECTION=vSaveInspection;let V50_INSPECTION_SAVING=false;
 vSaveInspection=function(id){
   if(V50_INSPECTION_SAVING)return;const d=V49_INSPECTION_DRAFT||loadInspectionDraftV50(id)||{};
   const strength=Number(d.strength),varroa=Number(d.varroa);if(!Number.isFinite(strength)||strength<0||strength>10)return toast('Colony strength must be between 0 and 10');if(!Number.isFinite(varroa)||varroa<0||varroa>100)return toast('Varroa value must be between 0 and 100');
-  if(d.nextInspection && d.nextInspection<new Date().toISOString().slice(0,10))return toast('Next inspection cannot be in the past');
+  {const s=v45s(),h=hive(s,id);if(d.nextInspection&&v2p2d7IsPastForHive(s,h,d.nextInspection))return toast('Next inspection cannot be in the past');}
   V50_INSPECTION_SAVING=true;try{V50_OLD_SAVE_INSPECTION(id);localStorage.removeItem(v50DraftKey(id))}finally{setTimeout(()=>V50_INSPECTION_SAVING=false,500)}
 };
 
@@ -2873,7 +2895,7 @@ function validDateV50(v){return /^\d{4}-\d{2}-\d{2}$/.test(String(v||'')) && !Nu
 const V50_OLD_SAVE_REC=saveRec;
 saveRec=function(type){
   if(V50_RECORD_SAVING)return;const form=idq('rform');if(!form)return;const fd=new FormData(form),s=v45s(),hiveId=fd.get('hiveId');if(!hive(s,hiveId))return toast('Select a valid hive');
-  const today=new Date().toISOString().slice(0,10),notes=String(fd.get('Notes')||'');if(notes.length>2000)return toast('Notes are too long');
+  const recordHive=hive(s,hiveId),today=v2p2d7TodayForHive(s,recordHive),notes=String(fd.get('Notes')||'');if(notes.length>2000)return toast('Notes are too long');
   if(type==='feeding'){
     const date=fd.get('Date'),next=fd.get('Next_Feeding'),qty=String(fd.get('Quantity')||'').trim();if(!validDateV50(date)||date>today)return toast('Feeding date is invalid');if(!qty||qty.length>40)return toast('Enter a valid feeding quantity');if(next&&(!validDateV50(next)||next<date))return toast('Next feeding must be after the feeding date');
   }else if(type==='treatment'){
@@ -7579,10 +7601,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     status(hiveId){
       const value=this.get(hiveId);
       if(!value) return {date:'',days:null,due:false,upcoming:false};
-      const now=new Date(); now.setHours(0,0,0,0);
-      const d=new Date(value+'T00:00:00');
-      const days=Math.ceil((d-now)/86400000);
-      return {date:value,days,due:days<=0,upcoming:days>=0 && days<=3};
+      const hive=v204FindHive(st,hiveId);
+      const target=v2p2d7DayNumber(value),today=v2p2d7DayNumber(v2p2d7TodayForHive(st,hive));
+      const days=(target===null||today===null)?null:(target-today);
+      return {date:value,days,due:days!==null&&days<=0,upcoming:days!==null&&days>=0&&days<=3};
     }
   };
 
@@ -8341,7 +8363,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const assessment=v<Number(cfg.acceptableBelow)?'Acceptable':v<=Number(cfg.dangerAbove)?'Caution':'Danger';
     return assessment==='Danger'?'High':assessment==='Caution'?'Medium':'Low';
   }
-  function v211Today(){ return new Date().toISOString().slice(0,10); }
+  function v211Today(){ const s=v45s(),id=V49_INSPECTION_DRAFT?.hiveId,h=id?hive(s,id):null; return v2p2d7TodayForHive(s,h); }
   const V212_ENGLISH_MAP={
     '未见':'Not Seen','未看到':'Not Seen','没看见':'Not Seen','不确定':'Not confirmed','已见':'Seen','看见':'Seen','看到':'Seen',
     '现状':'Present','存在':'Present','无':'None','没有':'None',
@@ -8902,7 +8924,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     return String(v).trim();
   }
   function dateMs(v){const t=Date.parse(String(v||''));return Number.isFinite(t)?t:0}
-  function ageDays(v){const t=dateMs(v);return t?Math.max(0,Math.floor((Date.now()-t)/86400000)):9999}
+  function ageDays(v,s,h){return v2p2d7AgeDaysInHiveTimezone(s,h,v)}
   function monthOf(v){const d=v?new Date(String(v).slice(0,10)+'T12:00:00'):new Date();return Number.isFinite(d.getTime())?d.getMonth()+1:new Date().getMonth()+1}
 
   function currentInspection(s,h){
@@ -9050,7 +9072,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   function dataConfidence(s,h,phaseInfo,i){
     const critical=[i.queenStatus,i.eggs,i.larvae,i.brood,i.colonySize,i.honey,i.pollen,i.varroaTestDate];
     const unknown=critical.filter(isUnknown).length;
-    const inspAge=ageDays(h.lastInspection),varroaAge=ageDays(i.varroaTestDate);
+    const inspAge=ageDays(h.lastInspection,s,h),varroaAge=ageDays(i.varroaTestDate,s,h);
     const locReady=Boolean(s?.settings?.apiaryLocation?.contextReady&&s?.settings?.apiaryLocation?.stateCode);
     let level='LOW';
     if(locReady&&inspAge<=14&&varroaAge<=30&&unknown===0&&phaseInfo.phase!=='Uncertain'&&phaseInfo.historyCount>=2)level='HIGH';
@@ -9152,7 +9174,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     if(actionable){
       if(!relevantTx){managementScore=4;managementState='Critical/High risk with no current management record';}
       else if(tx.followUp){
-        const overdue=dateMs(tx.followUp)&&dateMs(tx.followUp)<Date.now();
+        const overdue=v2p2d7IsPastForHive(s,h,tx.followUp);
         if(overdue){managementScore=2;managementState='Management recorded; follow-up overdue';}
         else {managementScore=10;managementState=txActive?'Active management; follow-up planned':'Management recorded; follow-up planned';}
       }else{managementScore=8;managementState=txActive?'Active management; follow-up missing':'Management recorded; follow-up missing';}
@@ -9190,8 +9212,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const criticalOverride=varroa.assessment==='Danger'||(i.diseaseExplicit===true&&hasExplicitDiseaseEvidence(i.disease))||(!dormant&&strongQueenUncertainty&&trendDecline)||risks.filter(r=>r.severity==='Critical').length>=2;
 
     const confidence=dataConfidence(s,h,phaseInfo,i);
-    if(ageDays(h.lastInspection)>Math.max(14,Number(s?.settings?.inspectionCycle||7)*2)){
-      risks.push({type:'Data',severity:'Medium',label:'Inspection overdue',evidence:`Last inspection ${ageDays(h.lastInspection)} days ago`,recommendedAction:'Update the inspection record before relying on the health estimate.',route:`inspection/${h.id}`,rank:50});
+    if(ageDays(h.lastInspection,s,h)>Math.max(14,Number(s?.settings?.inspectionCycle||7)*2)){
+      risks.push({type:'Data',severity:'Medium',label:'Inspection overdue',evidence:`Last inspection ${ageDays(h.lastInspection,s,h)} days ago`,recommendedAction:'Update the inspection record before relying on the health estimate.',route:`inspection/${h.id}`,rank:50});
     }
     // V224B2 invariant: if current Inspection has no explicit disease evidence,
     // Disease concern must not survive into any consumer (Home, Risk Alerts, Actions, AI analysis).
@@ -17156,3 +17178,6 @@ window.__HIVEDASH_V2P2D5_VERSION__='v2p2d5-durable-treatment-follow-up';
 
 /* V2P2D6 — ONE TREATMENT : ONE FORMAL POST-TREATMENT RETEST */
 window.__HIVEDASH_V2P2D6_VERSION__='v2p2d6-one-treatment-one-post-treatment-retest';
+
+/* V2P2D7 — HIVE LOCAL DATE / TIMEZONE CONSISTENCY */
+window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';

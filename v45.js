@@ -17263,3 +17263,242 @@ window.__HIVEDASH_V2P2D6_VERSION__='v2p2d6-one-treatment-one-post-treatment-rete
 
 /* V2P2D7 — HIVE LOCAL DATE / TIMEZONE CONSISTENCY */
 window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
+
+/* ==============================================================
+   V2P2E4 — NEW HIVE / FIRST-INSPECTION DATA INTEGRITY
+   Global final-audit P1-1.
+   Rules:
+   - Creating a Hive creates identity/start metadata only; it MUST NOT create
+     an Inspection date or biological observations.
+   - Until the first saved Inspection, Health is "Not assessed" and the Hive
+     is excluded from aggregate health scoring/status counts.
+   - A single "Initial inspection needed" Action is generated from the real
+     absence of Inspection evidence.
+   - Existing Hives and every saved Inspection remain untouched.
+   ============================================================== */
+(function v2p2e4NewHiveIntegrity(){
+  if(window.__HIVEDASH_V2P2E4_NEW_HIVE_INTEGRITY__)return;
+  window.__HIVEDASH_V2P2E4_NEW_HIVE_INTEGRITY__=true;
+
+  const baseActiveTracked=window.v224ActiveTrackedHives||v224ActiveTrackedHives;
+  const txt=v=>String(v==null?'':v).trim();
+  const hasInspection=(s,h)=>{
+    if(!h)return false;
+    if(/^\d{4}-\d{2}-\d{2}$/.test(txt(h.lastInspection).slice(0,10)))return true;
+    return (Array.isArray(s?.logs?.inspections)?s.logs.inspections:[])
+      .some(x=>x&&String(x.hiveId)===String(h.id)&&/^\d{4}-\d{2}-\d{2}$/.test(txt(x.date).slice(0,10)));
+  };
+  window.v2p2e4HasRecordedInspection=hasInspection;
+
+  /* Rebuild the active Add Hive save path without manufacturing health facts. */
+  window.v185SaveHive=function(){
+    const s=v45s();
+    if(!isPro(s) && baseActiveTracked(s).length>=3){
+      document.querySelector('.v185-add-hive-modal')?.remove();
+      if(typeof subscriptionModal==='function')subscriptionModal('more than 3 hives');
+      else toast('Free plan supports up to 3 hives');
+      return;
+    }
+    const name=txt(document.getElementById('v185-hive-name')?.value);
+    const startDate=document.getElementById('v185-hive-date')?.value || v2p1bDateInHiveTimezone(s,null);
+    if(!name){document.getElementById('v185-hive-name')?.focus();toast('Enter a hive name');return;}
+    const used=new Set((s.hives||[]).map(h=>String(h.id||'')));
+    let n=1;while(used.has('h'+n))n++;
+    const id='h'+n;
+    const hiveRow={
+      id,name,
+      startDate,
+      createdDate:startDate,
+      createdAt:new Date().toISOString(),
+      lastInspection:'',
+      inspectionRecorded:false,
+      status:'Unassessed',
+      notes:'',
+      photos:[]
+    };
+    s.hives=s.hives||[];s.hives.push(hiveRow);
+    if(save(s)===false){s.hives=s.hives.filter(x=>x.id!==id);toast('Hive could not be saved');return;}
+    document.querySelector('.v185-add-hive-modal')?.remove();
+    toast('Hive added');
+    if(location.hash!=='#hives')location.hash='hives';
+    setTimeout(()=>{try{if(typeof render==='function')render()}catch(err){console.error('V2P2E4 render after Add Hive failed',err)}},0);
+  };
+
+  window.addHive=function(){
+    const s=v45s();
+    if(!isPro(s) && baseActiveTracked(s).length>=3){
+      if(typeof subscriptionModal==='function')subscriptionModal('more than 3 hives');
+      else toast('Free plan supports up to 3 hives');
+      return;
+    }
+    document.querySelector('.v185-add-hive-modal')?.remove();
+    const today=v2p1bDateInHiveTimezone(s,null);
+    const wrap=document.createElement('div');wrap.className='v185-add-hive-modal';
+    wrap.innerHTML=`
+      <style>
+        .v185-add-hive-modal{position:fixed;inset:0;z-index:5000;display:flex;align-items:flex-end;justify-content:center;background:rgba(35,45,35,.28);padding:16px}
+        .v185-add-hive-sheet{width:min(100%,430px);background:#FFFDF9;border-radius:18px;border:1px solid rgba(47,59,51,.10);box-shadow:0 14px 40px rgba(47,59,51,.18);padding:18px}
+        .v185-add-hive-head{display:flex;align-items:center;justify-content:space-between;margin-bottom:14px}.v185-add-hive-head b{color:#4F6744;font-size:17px}.v185-add-hive-close{width:34px;height:34px;border:0;background:transparent;font-size:20px;text-align:center}
+        .v185-add-hive-sheet label{display:block;margin:12px 0 0;color:#5C665D;font-size:12px;font-weight:700}.v185-add-hive-sheet input{width:100%;height:44px;margin-top:6px;border:1px solid #E4DDD1;border-radius:12px;background:#fff;padding:0 12px;color:#2F3B33;font:inherit;outline:none;box-sizing:border-box}
+        .v185-add-hive-note{margin:12px 0 0;padding:10px 12px;border-radius:11px;background:#F4F0E5;color:#667067;font-size:11px;line-height:1.45}.v185-add-hive-actions{display:grid;grid-template-columns:1fr 1.4fr;gap:10px;margin-top:18px}.v185-add-hive-actions button{height:44px;border-radius:12px;border:1px solid #E4DDD1;text-align:center;font-weight:800}.v185-add-hive-cancel{background:#fff;color:#4F6744}.v185-add-hive-save{background:#5E7350!important;color:#fff!important;border-color:#5E7350!important}
+      </style>
+      <div class="v185-add-hive-sheet" role="dialog" aria-modal="true" aria-label="Add Hive">
+        <div class="v185-add-hive-head"><b>Add Hive</b><button class="v185-add-hive-close" type="button" aria-label="Close">×</button></div>
+        <label>Hive Name<input id="v185-hive-name" maxlength="60" placeholder="e.g. Hive #4" autocomplete="off"></label>
+        <label>Start Date<input id="v185-hive-date" type="date" value="${today}"></label>
+        <div class="v185-add-hive-note">Health and colony observations remain unassessed until you save the first Inspection.</div>
+        <div class="v185-add-hive-actions"><button class="v185-add-hive-cancel" type="button">Cancel</button><button class="v185-add-hive-save" type="button">Add Hive</button></div>
+      </div>`;
+    document.body.appendChild(wrap);
+    const close=()=>wrap.remove();
+    wrap.querySelector('.v185-add-hive-close').onclick=close;
+    wrap.querySelector('.v185-add-hive-cancel').onclick=close;
+    wrap.querySelector('.v185-add-hive-save').onclick=window.v185SaveHive;
+    wrap.addEventListener('click',e=>{if(e.target===wrap)close()});
+    setTimeout(()=>document.getElementById('v185-hive-name')?.focus(),0);
+  };
+
+  /* No-Inspection Hives get an explicit non-biological decision state. */
+  const prevEvaluateAll=window.v224bEvaluateAll;
+  if(typeof prevEvaluateAll==='function'){
+    window.v224bEvaluateAll=function(s){
+      const map=prevEvaluateAll(s);
+      baseActiveTracked(s).forEach(h=>{
+        if(hasInspection(s,h))return;
+        const old=map.get(h.id)||{};
+        const explicitRisks=(Array.isArray(old.risks)?old.risks:[]).filter(r=>r&&(r.type==='Varroa'||r.type==='Follow-up'));
+        const critical=explicitRisks.some(r=>r.severity==='Critical');
+        const high=explicitRisks.some(r=>r.severity==='High');
+        const medium=explicitRisks.some(r=>r.severity==='Medium');
+        const overallRisk=critical?'Critical':high?'High':medium?'Medium':'Low';
+        const confidence={...(old.confidence||{}),level:'LOW',reasons:[...new Set(['No inspection has been recorded',...((old.confidence?.reasons)||[])])],inspectionAgeDays:null,unknownCriticalFields:8};
+        map.set(h.id,{...old,score:0,baseHealthState:'Unassessed',displayStatus:'Unassessed',overallRisk,criticalOverride:critical,confidence,risks:explicitRisks,reasons:explicitRisks.map(r=>r.label),positives:[],assessed:false});
+      });
+      window.V224B_DECISIONS=map;
+      return map;
+    };
+  }
+
+  /* Prevent the health sync from turning missing evidence into a numeric score. */
+  window.v223SyncHiveHealth=function(s,persist=true){
+    if(!s||!Array.isArray(s.hives))return false;
+    const decisions=typeof window.v224bEvaluateAll==='function'?window.v224bEvaluateAll(s):new Map();
+    let changed=false;
+    baseActiveTracked(s).forEach(h=>{
+      if(!hasInspection(s,h)){
+        if(Object.prototype.hasOwnProperty.call(h,'score')){delete h.score;changed=true;}
+        if(String(h.status||'')!=='Unassessed'){h.status='Unassessed';changed=true;}
+        h.inspectionRecorded=false;
+        return;
+      }
+      const d=decisions.get(h.id);if(!d)return;
+      if(Number(h.score)!==Number(d.score)){h.score=Number(d.score);changed=true;}
+      if(v219NormalizeHiveStatus(h.status)!==d.displayStatus){h.status=d.displayStatus;changed=true;}
+      if(h.inspectionRecorded!==true){h.inspectionRecorded=true;changed=true;}
+    });
+    if(changed&&persist&&typeof save==='function')save(s);
+    return changed;
+  };
+
+  /* Initial inspection is a data-completeness Action, not a disease/queen claim. */
+  const prevGenerate=window.generateActions||generateActions;
+  window.generateActions=function(s){
+    let rows=(prevGenerate(s)||[]).slice();
+    const unassessed=new Set(baseActiveTracked(s).filter(h=>!hasInspection(s,h)).map(h=>String(h.id)));
+    rows=rows.filter(a=>{
+      if(!a||!unassessed.has(String(a.hiveId)))return true;
+      const id=String(a.id||''),src=String(a.source||''),title=String(a.title||'').toLowerCase();
+      if(src==='initial-inspection')return false;
+      if(id.startsWith('v224b-') && !id.includes('-varroa-') && !id.includes('-follow-up-'))return false;
+      if(id.startsWith('inspect-')||id.startsWith('queen-')||id.startsWith('food-'))return false;
+      if(title==='inspection overdue'||title==='confirm queen status'||title==='review food stores'||title==='pest concern'||title==='brood concern')return false;
+      return true;
+    });
+    baseActiveTracked(s).forEach(h=>{
+      if(hasInspection(s,h))return;
+      rows.push({id:`v2p2e4-initial-inspection-${h.id}`,hiveId:h.id,type:'Inspection',priority:'Medium',title:'Initial inspection needed',reason:'No inspection has been recorded for this hive.',due:'Now',status:'Pending',source:'initial-inspection',modelVersion:'V2P2E4'});
+    });
+    return rows;
+  };
+  try{generateActions=window.generateActions}catch(_){ }
+
+  /* Neutral status label everywhere the shared status helpers are used. */
+  const prevVstatus=Vstatus,prevVclass=Vclass;
+  Vstatus=function(h){const s=typeof v45s==='function'?v45s():null;return s&&!hasInspection(s,h)?'Not assessed':prevVstatus(h)};
+  Vclass=function(h){const s=typeof v45s==='function'?v45s():null;return s&&!hasInspection(s,h)?'unassessed':prevVclass(h)};
+  try{window.Vstatus=Vstatus;window.Vclass=Vclass}catch(_){ }
+
+  const statusStyle=document.createElement('style');statusStyle.id='v2p2e4-unassessed-style';statusStyle.textContent=`
+    .unassessed{color:#747B75!important;background:#F2F0EA!important;border-color:#DDD8CF!important}
+  `;document.head.appendChild(statusStyle);
+
+  /* Hives card: never render "0%" or a fake last-inspection date. */
+  const prevV63Card=v63Card;
+  v63Card=function(h){
+    const s=v45s();if(hasInspection(s,h))return prevV63Card(h);
+    const rows=v63VisibleHives(),idx=Math.max(0,rows.findIndex(x=>x.id===h.id));
+    return `<button class="v63-card" onclick="go('hive/${h.id}')"><img class="v65-thumb v65-thumb-${(idx%3)+1}" src="${v63Thumb(h)}" alt="${esc(h.name)}"><span class="v63-copy"><b>${esc(h.name)}</b><small>Not assessed · No inspection yet</small></span><em class="unassessed">Not assessed</em></button>`;
+  };
+
+  /* Hive Detail: preserve the six-card layout but show absence of evidence. */
+  const prevHiveDetail=window.hiveDetail||hiveDetail;
+  window.hiveDetail=function(r,id){
+    const out=prevHiveDetail.apply(this,arguments);
+    const s=v45s(),h=hive(s,id);if(!h||hasInspection(s,h))return out;
+    const score=r.querySelector('.score');if(score){const b=score.querySelector('b'),sp=score.querySelector('span');if(b)b.textContent='—';if(sp)sp.textContent='Not assessed';}
+    const meta=[...r.querySelectorAll('.meta span')];if(meta[0])meta[0].textContent='No inspection recorded';
+    const created=txt(h.createdDate||h.startDate||h.createdAt).slice(0,10);if(meta[1]&&created)meta[1].textContent='Created '+fmtDate(created);
+    const groups=[...r.querySelectorAll('.hg')];
+    ['Queen','Brood','Colony','Food Stores'].forEach(title=>{
+      const g=groups.find(x=>txt(x.querySelector(':scope > b')?.textContent)===title);if(!g)return;
+      g.querySelectorAll(':scope > div strong').forEach(el=>el.textContent='Not recorded');
+    });
+    return out;
+  };
+  try{hiveDetail=window.hiveDetail}catch(_){ }
+
+  /* Home aggregate health uses assessed Hives only; total Hive count is unchanged. */
+  const prevHome=window.home||home;
+  window.home=function(r){
+    const out=prevHome.apply(this,arguments);
+    const s=v45s(),managed=baseActiveTracked(s),assessed=managed.filter(h=>hasInspection(s,h));
+    const avg=assessed.length?Math.round(assessed.reduce((n,h)=>n+Number(h.score||0),0)/assessed.length):null;
+    const ring=r.querySelector('.v56-health-ring');
+    if(ring){const strong=ring.querySelector('strong'),circle=ring.querySelector('.value');if(strong)strong.innerHTML=avg===null?'—':`${avg}<small>%</small>`;if(circle)circle.style.strokeDasharray=`${avg===null?0:Math.max(0,Math.min(100,avg))*2.89},289`;ring.setAttribute('aria-label',avg===null?'Overall hive health not assessed':`View overall hive health ${avg}%`);}
+    const stats=[...r.querySelectorAll('.v56-health-stats button b')];
+    if(stats[0])stats[0].textContent=String(managed.length);
+    if(stats[1])stats[1].textContent=String(assessed.filter(h=>h.status==='Healthy').length);
+    if(stats[2])stats[2].textContent=String(assessed.filter(h=>h.status==='Attention').length);
+    if(stats[3])stats[3].textContent=String(assessed.filter(h=>h.status==='Critical').length);
+    return out;
+  };
+  try{home=window.home}catch(_){ }
+
+  /* Insights health score follows the same assessed-only denominator. */
+  const prevInsights=window.insights||insights;
+  window.insights=function(r){
+    const out=prevInsights.apply(this,arguments);
+    const s=v45s(),managed=baseActiveTracked(s),assessed=managed.filter(h=>hasInspection(s,h));
+    const avg=assessed.length?Math.round(assessed.reduce((n,h)=>n+Number(h.score||0),0)/assessed.length):null;
+    const cards=[...r.querySelectorAll('.isum > button')];
+    if(cards[0]){const b=cards[0].querySelector('b'),small=cards[0].querySelector('small');if(b)b.textContent=avg===null?'—':String(avg);if(small)small.textContent=avg===null?'Not assessed':avg>=85?'Strong':avg>=70?'Attention':'Critical';}
+    return out;
+  };
+  try{insights=window.insights}catch(_){ }
+
+  /* AI Health never interprets a Hive with no Inspection as a 0/100 colony. */
+  const prevHealthAnalysis=window.healthAnalysis||healthAnalysis;
+  window.healthAnalysis=function(r){
+    const s=v45s(),assessed=baseActiveTracked(s).filter(h=>hasInspection(s,h));
+    if(!assessed.length){
+      r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>AI Health Analysis</b></div><p class="muted">No inspection data is available yet. Save the first Inspection before using the health estimate.</p><button class="primary" onclick="go('hives')">Open Hives</button></section></div>`;
+      return;
+    }
+    const original=v224ActiveTrackedHives;
+    try{v224ActiveTrackedHives=function(st){return baseActiveTracked(st).filter(h=>hasInspection(st,h))};return prevHealthAnalysis.apply(this,arguments)}
+    finally{v224ActiveTrackedHives=original;try{window.v224ActiveTrackedHives=original}catch(_){}}
+  };
+  try{healthAnalysis=window.healthAnalysis}catch(_){ }
+
+  window.__HIVEDASH_V2P2E4_VERSION__='v2p2e4-new-hive-first-inspection-integrity';
+})();

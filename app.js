@@ -124,7 +124,10 @@ async function loadCloudState(){
   try{if(rawLocal)local=normalizeStateV50(JSON.parse(rawLocal))}catch(_e){}
   const {data,error}=await supabaseClient.from('app_state').select('payload,updated_at').eq('user_id',currentSession.user.id).maybeSingle();
   if(error){console.error('HiveDash cloud load failed',error);setCloudStatus('Sync error');throw error}
-  const localOwned=local && (!local.meta?.userId || local.meta.userId===currentSession.user.id);
+  // V2P2E4A: an authenticated account may reuse local state only when it is
+  // explicitly owned by the exact same Supabase user id. Unowned legacy/demo
+  // state must never be silently attached to a different/new account.
+  const localOwned=local && local.meta?.userId===currentSession.user.id;
   if(data?.payload && Object.keys(data.payload).length){
     const remote=normalizeStateV50(clone(data.payload));remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
     const merged=enforceAuthoritativePlan(mergeStateV50(localOwned?local:null,remote));
@@ -136,7 +139,7 @@ async function loadCloudState(){
     if(JSON.stringify(merged)!==JSON.stringify(remote))await pushCloudState(merged);
     return true;
   }
-  let seed=enforceAuthoritativePlan(localOwned?local:normalizeStateV50(clone(DEFAULT_STATE)));
+  let seed=enforceAuthoritativePlan(localOwned?local:createEmptyAuthenticatedStateV2P2E4A(currentSession.user));
   seed.meta.userId=currentSession.user.id;seed.meta.updatedAt=seed.meta.updatedAt||new Date().toISOString();
   seed.user={...(seed.user||{}),email:currentSession.user.email||'',name:currentSession.user.user_metadata?.name||seed.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
   writeLocalV50(seed);await pushCloudState(seed);return false;
@@ -339,8 +342,8 @@ function recoverAuthenticatedLocalState(err){
     if(raw)local=normalizeStateV50(JSON.parse(raw));
   }catch(_e){}
 
-  const owned=local && (!local.meta?.userId || local.meta.userId===currentSession?.user?.id);
-  const fallback=owned?local:normalizeStateV50(clone(DEFAULT_STATE));
+  const owned=local && local.meta?.userId===currentSession?.user?.id;
+  const fallback=owned?local:createEmptyAuthenticatedStateV2P2E4A(currentSession?.user);
 
   if(currentSession?.user){
     fallback.meta.userId=currentSession.user.id;
@@ -597,12 +600,32 @@ const DEFAULT_STATE={
   logs:{inspections:[],feedings:[],treatments:[],harvests:[],varroaTests:[]}
 };
 
+/* V2P2E4A — authenticated accounts must never inherit demo/sample hives.
+   DEFAULT_STATE remains available only for unauthenticated/demo fallback.
+   A real signed-in user with no cloud row starts from an empty apiary. */
+function createEmptyAuthenticatedStateV2P2E4A(user=currentSession?.user){
+  const fresh=clone(DEFAULT_STATE);
+  fresh.hives=[];
+  fresh.actions=[];
+  fresh.notifications=[];
+  fresh.logs={inspections:[],feedings:[],treatments:[],harvests:[],varroaTests:[]};
+  fresh.user={
+    name:user?.user_metadata?.name||'Beekeeper',
+    email:user?.email||'',
+    plan:authoritativePlanFromSession()
+  };
+  fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:user?.id||''};
+  return normalizeStateV50(fresh);
+}
+
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function state(){
   const raw=localStorage.getItem(STORAGE_KEY);
   if(!raw){
-    const fresh=clone(DEFAULT_STATE);
-    fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:currentSession?.user?.id||''};
+    const fresh=currentSession?.user
+      ? createEmptyAuthenticatedStateV2P2E4A(currentSession.user)
+      : clone(DEFAULT_STATE);
+    if(!fresh.meta)fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:''};
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh))}catch(e){console.error('Initial local save failed',e)}
     return fresh;
   }
@@ -618,7 +641,10 @@ function state(){
   }catch(e){
     console.error('HiveDash local state was invalid; recovered defaults',e);
     try{localStorage.setItem('hivedash_corrupt_state_backup',raw.slice(0,200000))}catch(_e){}
-    const fresh=clone(DEFAULT_STATE);fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:currentSession?.user?.id||''};
+    const fresh=currentSession?.user
+      ? createEmptyAuthenticatedStateV2P2E4A(currentSession.user)
+      : clone(DEFAULT_STATE);
+    if(!fresh.meta)fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:''};
     try{localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh))}catch(_e){}
     return fresh;
   }
@@ -651,15 +677,9 @@ function save(s){
   return true;
 }
 function resetState(){
-  const fresh=clone(DEFAULT_STATE);
-  if(currentSession?.user){
-    fresh.user={
-      ...fresh.user,
-      email:currentSession.user.email||'',
-      name:currentSession.user.user_metadata?.name||'Beekeeper',
-      plan:authoritativePlanFromSession()
-    };
-  }
+  const fresh=currentSession?.user
+    ? createEmptyAuthenticatedStateV2P2E4A(currentSession.user)
+    : clone(DEFAULT_STATE);
   localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh));
   if(cloudReady)scheduleCloudSave(fresh);
   location.hash='home';

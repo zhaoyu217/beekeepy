@@ -16167,6 +16167,27 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     return mode==='retest'?'Post-treatment Retest':mode==='recheck'?'Follow-up Recheck':'Routine Test';
   }
 
+  // V2P2C6 — canonical English enum display/storage for Varroa tests.
+  // Historical rows may contain localized display text saved by an older browser-translated UI.
+  function canonicalVarroaTestTypeV2P2C6(v){
+    const x=text(v),k=lower(x);
+    if(k.includes('post-treatment')||k==='retest'||k.includes('retest')||/治疗后.*复测|复测/.test(x))return 'Post-treatment Retest';
+    if(k.includes('follow-up')||k.includes('recheck')||/后续.*复查|复查/.test(x))return 'Follow-up Recheck';
+    if(k.includes('routine')||/常规/.test(x))return 'Routine Test';
+    if(/[\u3400-\u9fff]/.test(x))return 'Varroa Test';
+    return x||'Varroa Test';
+  }
+
+  function canonicalVarroaMethodV2P2C6(v){
+    const x=text(v),k=lower(x);
+    if(k.includes('alcohol')||/酒精/.test(x))return 'Alcohol Wash';
+    if(k.includes('sugar')||/糖粉|糖滚|糖摇/.test(x))return 'Sugar Roll';
+    if(k.includes('soapy')||k.includes('soap')||/肥皂/.test(x))return 'Soapy Water Wash';
+    if(k==='other'||/其他/.test(x))return 'Other';
+    if(/[\u3400-\u9fff]/.test(x))return 'Method not recorded';
+    return x||'Method not recorded';
+  }
+
   function fmtRateV2P2B(v){
     const n=Number(v);return Number.isFinite(n)?n.toFixed(1):'—';
   }
@@ -16206,7 +16227,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
         <h3><i>✚</i> LINKED MANAGEMENT</h3>
         <div class="v2p2b-hint">No completed Treatment is linked. Use Routine Test or Follow-up Recheck unless a completed Treatment record exists.</div>
       </section>`;
-    const history=tests.length?`<section class="v2p2b-section"><h3><i>↺</i> RECENT VARROA TESTS</h3>${tests.map(x=>`<div class="v2p2b-history"><span>${esc(fmtDate(x.date))}<small>${esc(x.testType||'Varroa Test')} · ${esc(x.method||'Method not recorded')}</small></span><b>${esc(fmtRateV2P2B(x.mitesPer100))}/100</b></div>`).join('')}</section>`:'';
+    const history=tests.length?`<section class="v2p2b-section"><h3><i>↺</i> RECENT VARROA TESTS</h3>${tests.map(x=>`<div class="v2p2b-history"><span>${esc(fmtDate(x.date))}<small>${esc(canonicalVarroaTestTypeV2P2C6(x.testType))} · ${esc(canonicalVarroaMethodV2P2C6(x.method))}</small></span><b>${esc(fmtRateV2P2B(x.mitesPer100))}/100</b></div>`).join('')}</section>`:'';
 
     r.innerHTML=`<div class="vs treatment-v102 v2p2b-page">
       <section class="treatment-hive-card">
@@ -16222,13 +16243,13 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
         <section class="v2p2b-section">
           <h3><i>◎</i> TEST CONTEXT</h3>
-          <label><span>Test Type</span><select name="Test_Type">${['Routine Test','Follow-up Recheck','Post-treatment Retest'].map(x=>`<option ${x===testType?'selected':''}>${x}</option>`).join('')}</select></label>
+          <label><span>Test Type</span><select name="Test_Type">${['Routine Test','Follow-up Recheck','Post-treatment Retest'].map(x=>`<option value="${x}" ${x===testType?'selected':''}>${x}</option>`).join('')}</select></label>
           <label><span>Test Date</span><input name="Test_Date" type="date" lang="en-US" value="${today}"></label>
         </section>
 
         <section class="v2p2b-section">
           <h3><i>#</i> SAMPLING & METHOD</h3>
-          <label><span>Method</span><select name="Method"><option>Alcohol Wash</option><option>Sugar Roll</option><option>Soapy Water Wash</option><option>Other</option></select></label>
+          <label><span>Method</span><select name="Method"><option value="Alcohol Wash">Alcohol Wash</option><option value="Sugar Roll">Sugar Roll</option><option value="Soapy Water Wash">Soapy Water Wash</option><option value="Other">Other</option></select></label>
           <label><span>Sample Size</span><div class="v2p2b-inline"><input name="Sample_Size" type="number" min="1" step="1" value="300" oninput="v2p2bUpdateVarroaPreview()"><em>bees</em></div></label>
           <label><span>Mites Counted</span><input name="Mite_Count" type="number" min="0" step="1" placeholder="0" oninput="v2p2bUpdateVarroaPreview()"></label>
         </section>
@@ -16263,7 +16284,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const form=document.getElementById('v2p2b-varroa-form');if(!form)return toast('Varroa Test form is unavailable');
     const s=v45s(),fd=new FormData(form);
     const hiveId=text(fd.get('hiveId')),h=hive(s,hiveId);if(!h)return toast('Hive not found');
-    const testType=text(fd.get('Test_Type')),testDate=text(fd.get('Test_Date')),method=text(fd.get('Method'));
+    const testType=canonicalVarroaTestTypeV2P2C6(fd.get('Test_Type')),testDate=text(fd.get('Test_Date')),method=canonicalVarroaMethodV2P2C6(fd.get('Method'));
     const sampleRaw=text(fd.get('Sample_Size')),mitesRaw=text(fd.get('Mite_Count'));
     const sample=Number(sampleRaw),mites=Number(mitesRaw);
     const today=v2p1bDateInHiveTimezone(s,h);
@@ -16307,7 +16328,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     go('home');
   };
 
-  window.__HIVEDASH_V2_P2B_VERSION__='v2-p2c5-linked-treatment-traceability';
+  window.__HIVEDASH_V2_P2B_VERSION__='v2-p2c6-varroa-english-enum-normalization';
 })();
 
 
@@ -16330,6 +16351,8 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
   const txt=v=>String(v??'').trim();
   const num=v=>Number.isFinite(Number(v))?Number(v):0;
+  const canonicalTestType=v=>{const x=txt(v),k=x.toLowerCase();if(k.includes('post-treatment')||k.includes('retest')||/治疗后.*复测|复测/.test(x))return 'Post-treatment Retest';if(k.includes('follow-up')||k.includes('recheck')||/后续.*复查|复查/.test(x))return 'Follow-up Recheck';if(k.includes('routine')||/常规/.test(x))return 'Routine Test';if(/[\u3400-\u9fff]/.test(x))return 'Varroa Test';return x||'Varroa Test'};
+  const canonicalMethod=v=>{const x=txt(v),k=x.toLowerCase();if(k.includes('alcohol')||/酒精/.test(x))return 'Alcohol Wash';if(k.includes('sugar')||/糖粉|糖滚|糖摇/.test(x))return 'Sugar Roll';if(k.includes('soapy')||k.includes('soap')||/肥皂/.test(x))return 'Soapy Water Wash';if(k==='other'||/其他/.test(x))return 'Other';if(/[\u3400-\u9fff]/.test(x))return 'Method not recorded';return x||'Method not recorded'};
   const rateText=v=>{
     const n=Number(v);
     if(!Number.isFinite(n))return '—';
@@ -16348,11 +16371,12 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       const key='Varroa Test:'+sourceId;
       if(rows.some(r=>String(r.key||'')===key||String(r.sourceId||'')===sourceId))return;
 
-      const isRetest=txt(x.testType).toLowerCase().includes('retest');
+      const normalizedTestType=canonicalTestType(x.testType);
+      const isRetest=normalizedTestType==='Post-treatment Retest';
       const type=isRetest?'Varroa Retest':'Varroa Test';
       const sample=num(x.sampleSize),mites=num(x.miteCount);
-      const method=txt(x.method)||'Method not recorded';
-      const testType=txt(x.testType)||type;
+      const method=canonicalMethod(x.method);
+      const testType=normalizedTestType||type;
       const parts=[
         testType,
         method,

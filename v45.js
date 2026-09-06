@@ -2538,6 +2538,14 @@ function v120SyncInspectionHistory(s){
     const date=String(h.lastInspection||'').slice(0,10);
     if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return;
 
+    // V2P2E5G / P1-03: lastInspection is only a cache/derived field.
+    // Backfill a legacy trend snapshot only when a real historical Inspection
+    // snapshot object exists; old Add Hive defaults alone are never evidence.
+    const insp=(h&&h.insp&&typeof h.insp==='object')?h.insp:null;
+    const snapshotKeys=['queenStatus','eggs','larvae','queenCells','brood','broodStrength','colonySize','honey','pollen','pests','swarming'];
+    const hasSnapshotEvidence=Boolean(insp&&snapshotKeys.some(k=>Object.prototype.hasOwnProperty.call(insp,k)));
+    if(!hasSnapshotEvidence)return;
+
     const exists=s.logs.inspections.some(x=>x && x.hiveId===h.id && String(x.date||'').slice(0,10)===date);
     if(exists)return;
 
@@ -9112,12 +9120,12 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const ve=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h?.id):null;
     return {
       queenStatus:i.queenStatus??h?.queen??'',
-      eggs:i.eggs??(h?.eggs?'Seen':'Not Seen'),
-      larvae:i.larvae??(h?.larvae?'Seen':'Not Seen'),
-      queenCells:i.queenCells??(h?.queenCells?'Present':'None'),
+      eggs:i.eggs??(Object.prototype.hasOwnProperty.call(h||{},'eggs')?(h.eggs?'Seen':'Not Seen'):'Unknown'),
+      larvae:i.larvae??(Object.prototype.hasOwnProperty.call(h||{},'larvae')?(h.larvae?'Seen':'Not Seen'):'Unknown'),
+      queenCells:i.queenCells??(Object.prototype.hasOwnProperty.call(h||{},'queenCells')?(h.queenCells?'Present':'None'):'Unknown'),
       brood:i.brood??h?.brood??'Unknown',
       broodStrength:i.broodStrength??i.strength??'',
-      abnormalities:i.abnormalities??'None',
+      abnormalities:i.abnormalities??'Unknown',
       colonySize:i.colonySize??i.strength??h?.strength??'',
       populationFrames:i.populationFrames??'',
       temperament:i.temperament??'Unknown',
@@ -9126,13 +9134,12 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       feedingNeed:i.feedingNeed??'Unknown',
       varroa:ve?Number(ve.mitesPer100):null,
       varroaTestDate:ve?String(ve.date||''):'',
-      pests:i.pests??((h?.shb||h?.waxMoth)?'Present':'None'),
+      pests:i.pests??((Object.prototype.hasOwnProperty.call(h||{},'shb')||Object.prototype.hasOwnProperty.call(h||{},'waxMoth'))?((h?.shb||h?.waxMoth)?'Present':'None'):'Unknown'),
       // V224B2 FINAL: Disease risk requires explicit user-confirmed evidence from the current Inspection.
-      // Legacy/migrated h.insp.disease values are not trusted unless diseaseExplicit === true.
-      // This prevents historical/default 'Present' values from becoming a current Disease concern.
-      disease:i.diseaseExplicit===true?normalizeDiseaseEvidence(i.disease):'None',
+      // Missing/unproven disease data remains Unknown; it is never positive evidence.
+      disease:i.diseaseExplicit===true?normalizeDiseaseEvidence(i.disease):'Unknown',
       diseaseExplicit:i.diseaseExplicit===true,
-      swarming:i.swarming??(h?.swarm?'Signs':'None'),
+      swarming:i.swarming??(Object.prototype.hasOwnProperty.call(h||{},'swarm')?(h.swarm?'Signs':'None'):'Unknown'),
       superStatus:i.superStatus??h?.superStatus??'Unknown',
       date:h?.lastInspection||''
     };
@@ -9140,7 +9147,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function inspectionHistory(s,h){
     const all=(Array.isArray(s?.logs?.inspections)?s.logs.inspections:[])
-      .filter(x=>x&&x.hiveId===h.id&&x.date)
+      .filter(x=>x&&x.hiveId===h.id&&x.date&&x.legacySnapshot!==true)
       .slice();
     // Last write for a date wins; trend should use distinct inspection dates.
     const byDate=new Map();
@@ -9188,6 +9195,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 
   function inferPhase(s,h){
+    if(typeof window.v2p2e4HasRecordedInspection==='function'&&!window.v2p2e4HasRecordedInspection(s,h)){
+      return {phase:'Uncertain',basis:['No valid biological Inspection'],trend:{direction:'Unknown',count:0,broodDelta:null,popDelta:null},band:regionalBand(s),month:monthOf(''),historyCount:0};
+    }
     const i=currentInspection(s,h),rows=inspectionHistory(s,h),trend=trendFromHistory(rows);
     const band=regionalBand(s),month=monthOf(i.date),season=seasonalSupport(band,month);
     const brood=num(i.broodStrength,0),pop=num(i.populationFrames,0),colony=num(i.colonySize,0);
@@ -9232,7 +9242,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function broodAbnormalityPenalty(v){
     const x=norm(v);
-    if(!x||x==='none'||x==='no')return 0;
+    if(isUnknown(v)||x==='none'||x==='no')return 0;
     if(x.includes('spotty'))return 5;
     return 5;
   }
@@ -9274,14 +9284,15 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     // Queen & Brood /25 — correlated queen evidence is evaluated as one chain.
     let queenEvidencePenalty=0;
     const qSeen=isSeen(i.queenStatus),eSeen=isSeen(i.eggs),lSeen=isSeen(i.larvae);
-    const strongQueenUncertainty=!qSeen&&!eSeen&&!lSeen;
+    const qKnown=!isUnknown(i.queenStatus),eKnown=!isUnknown(i.eggs),lKnown=!isUnknown(i.larvae);
+    const strongQueenUncertainty=qKnown&&eKnown&&lKnown&&!qSeen&&!eSeen&&!lSeen;
     if(!dormant){
       if(qSeen)queenEvidencePenalty=0;
       else if(eSeen)queenEvidencePenalty=0;
       else if(lSeen)queenEvidencePenalty=4;
-      else queenEvidencePenalty=8;
+      else if(qKnown&&eKnown&&lKnown)queenEvidencePenalty=8;
     }
-    const queenCellPenalty=(!dormant&&!qSeen&&!eSeen&&isPresent(i.queenCells))?2:0;
+    const queenCellPenalty=(!dormant&&qKnown&&eKnown&&!qSeen&&!eSeen&&isPresent(i.queenCells))?2:0;
     const broodPattern=norm(i.brood);
     const patternPenalty=broodPattern==='fair'?3:broodPattern==='poor'?6:0;
     const abnormalPenalty=broodAbnormalityPenalty(i.abnormalities);
@@ -9409,10 +9420,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     risks.sort((a,b)=>b.rank-a.rank||a.label.localeCompare(b.label));
     const reasons=risks.map(r=>r.label);
     const positives=[];
-    if(queenEvidencePenalty===0&&!dormant)positives.push('Queen-right evidence is acceptable');
+    if(queenEvidencePenalty===0&&!dormant&&(!isUnknown(i.queenStatus)||isSeen(i.eggs)||isSeen(i.larvae)))positives.push('Queen-right evidence is acceptable');
     if(broodQualityPenalty===0&&!isUnknown(i.brood))positives.push('Brood pattern has no recorded concern');
-    if(colonyPenalty===0)positives.push('Colony condition has no current score penalty');
-    if(foodPenalty===0)positives.push('Food stores are adequate from current records');
+    if(colonyPenalty===0&&(!isUnknown(i.colonySize)||!isUnknown(i.populationFrames)||!isUnknown(i.temperament)))positives.push('Colony condition has no current score penalty');
+    if(foodPenalty===0&&!isUnknown(i.honey)&&!isUnknown(i.pollen))positives.push('Food stores are adequate from current records');
     if(varroa.assessment==='Acceptable')positives.push('Varroa is acceptable for the current phase');
 
     return {
@@ -9460,14 +9471,19 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   // Replace legacy risk rules with the v1.0 risk engine while keeping High/Medium/Low compatibility.
   riskAssessment=function(h){
     const d=cachedDecision(h);
-    if(!d){return {level:'Low',overallRisk:'Low',reasons:[],severe:0,moderate:0,signalCount:0,risks:[]};}
+    const s=typeof v45s==='function'?v45s():null;
+    const validInspection=typeof window.v2p2e4HasRecordedInspection==='function'?window.v2p2e4HasRecordedInspection(s,h):d?.assessed!==false;
+    if(!d||!validInspection||d.assessed===false||d.overallRisk==='Unassessed'){
+      const risks=Array.isArray(d?.risks)?d.risks:[];
+      return {level:'Unassessed',overallRisk:'Unassessed',reasons:Array.isArray(d?.reasons)?d.reasons:[],severe:risks.filter(r=>r.severity==='Critical'||r.severity==='High').length,moderate:risks.filter(r=>r.severity==='Medium').length,signalCount:risks.length,risks,phase:'Uncertain',confidence:'LOW',criticalOverride:false,assessed:false,independentRiskLevel:d?.independentRiskLevel||null};
+    }
     const level=d.overallRisk==='Critical'||d.overallRisk==='High'?'High':d.overallRisk==='Medium'?'Medium':'Low';
     return {
       level,overallRisk:d.overallRisk,reasons:d.reasons,
       severe:d.risks.filter(r=>r.severity==='Critical'||r.severity==='High').length,
       moderate:d.risks.filter(r=>r.severity==='Medium').length,
       signalCount:d.risks.length,risks:d.risks,phase:d.phase,confidence:d.confidence.level,
-      criticalOverride:d.criticalOverride
+      criticalOverride:d.criticalOverride,assessed:true
     };
   };
 
@@ -17365,9 +17381,12 @@ window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
   const txt=v=>String(v==null?'':v).trim();
   const hasInspection=(s,h)=>{
     if(!h)return false;
-    if(/^\d{4}-\d{2}-\d{2}$/.test(txt(h.lastInspection).slice(0,10)))return true;
+    // V2P2E5G / P1-03 authoritative biological evidence gate.
+    // lastInspection and inspectionRecorded are derived/cache fields only.
+    // A V120 legacySnapshot is reconstructed history and is never sufficient
+    // to classify biological Health/Risk as assessed.
     return (Array.isArray(s?.logs?.inspections)?s.logs.inspections:[])
-      .some(x=>x&&String(x.hiveId)===String(h.id)&&/^\d{4}-\d{2}-\d{2}$/.test(txt(x.date).slice(0,10)));
+      .some(x=>x&&String(x.hiveId)===String(h.id)&&x.legacySnapshot!==true&&/^\d{4}-\d{2}-\d{2}$/.test(txt(x.date).slice(0,10)));
   };
   window.v2p2e4HasRecordedInspection=hasInspection;
 
@@ -17451,9 +17470,10 @@ window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
         const critical=explicitRisks.some(r=>r.severity==='Critical');
         const high=explicitRisks.some(r=>r.severity==='High');
         const medium=explicitRisks.some(r=>r.severity==='Medium');
-        const overallRisk=critical?'Critical':high?'High':medium?'Medium':'Low';
-        const confidence={...(old.confidence||{}),level:'LOW',reasons:[...new Set(['No inspection has been recorded',...((old.confidence?.reasons)||[])])],inspectionAgeDays:null,unknownCriticalFields:8};
-        map.set(h.id,{...old,score:0,baseHealthState:'Unassessed',displayStatus:'Unassessed',overallRisk,criticalOverride:critical,confidence,risks:explicitRisks,reasons:explicitRisks.map(r=>r.label),positives:[],assessed:false});
+        const independentRiskLevel=critical||high?'High':medium?'Medium':null;
+        const confidence={...(old.confidence||{}),level:'LOW',reasons:[...new Set(['No valid biological Inspection has been recorded',...((old.confidence?.reasons)||[])])],inspectionAgeDays:null,unknownCriticalFields:8};
+        const unknownCurrent={queenStatus:'Unknown',eggs:'Unknown',larvae:'Unknown',queenCells:'Unknown',brood:'Unknown',broodStrength:'',abnormalities:'Unknown',colonySize:'',populationFrames:'',temperament:'Unknown',honey:'Unknown',pollen:'Unknown',feedingNeed:'Unknown',varroa:old.varroa?.count??null,varroaTestDate:'',pests:'Unknown',disease:'Unknown',diseaseExplicit:false,swarming:'Unknown',superStatus:'Unknown',date:''};
+        map.set(h.id,{...old,score:0,baseHealthState:'Unassessed',displayStatus:'Unassessed',overallRisk:'Unassessed',biologicalRisk:'Unassessed',independentRiskLevel,criticalOverride:false,confidence,phase:'Uncertain',phaseInfo:{phase:'Uncertain',basis:['No valid biological Inspection'],trend:{direction:'Unknown',count:0,broodDelta:null,popDelta:null},band:old.phaseInfo?.band||'Unknown',month:old.phaseInfo?.month||null,historyCount:0},current:unknownCurrent,risks:explicitRisks,reasons:explicitRisks.map(r=>r.label),positives:[],assessed:false});
       });
       window.V224B_DECISIONS=map;
       return map;
@@ -17551,6 +17571,31 @@ window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
     if(stats[1])stats[1].textContent=String(assessed.filter(h=>h.status==='Healthy').length);
     if(stats[2])stats[2].textContent=String(assessed.filter(h=>h.status==='Attention').length);
     if(stats[3])stats[3].textContent=String(assessed.filter(h=>h.status==='Critical').length);
+
+    // P1-03: Risk Alerts must never turn missing biological evidence into Low risk.
+    const cards=[...r.querySelectorAll('.v56-row-card')];
+    const riskCard=cards.find(c=>txt(c.querySelector('.v56-row-copy > span')?.textContent)==='Risk Alerts');
+    if(riskCard){
+      const main=riskCard.querySelector('.v56-row-copy > b'),meta=riskCard.querySelector('.v56-row-copy > em'),btn=riskCard.querySelector('.v56-soft-btn');
+      const decisions=typeof window.v224bEvaluateAll==='function'?window.v224bEvaluateAll(s):new Map();
+      const assessedRows=assessed.map(h=>({h,res:riskAssessment(h)})).filter(x=>x.res&&x.res.level!=='Unassessed').sort((a,b)=>{const rank={High:3,Medium:2,Low:1};return (rank[b.res.level]||0)-(rank[a.res.level]||0)||(b.res.reasons?.length||0)-(a.res.reasons?.length||0)||String(a.h.id).localeCompare(String(b.h.id));});
+      const assessedTop=assessedRows.find(x=>x.res.level!=='Low')||assessedRows[0]||null;
+      const independent=managed.filter(h=>!hasInspection(s,h)).map(h=>({h,d:decisions.get?.(h.id)})).filter(x=>Array.isArray(x.d?.risks)&&x.d.risks.length).sort((a,b)=>{const rank={Critical:4,High:3,Medium:2,Low:1};const ar=Math.max(0,...a.d.risks.map(z=>rank[z.severity]||0)),br=Math.max(0,...b.d.risks.map(z=>rank[z.severity]||0));return br-ar;})[0]||null;
+      if(independent&&(!assessedTop||independent.d.independentRiskLevel==='High'&&assessedTop.res.level!=='High')){
+        if(main)main.textContent=`${independent.d.reasons?.[0]||'Independent risk evidence'} · biological risk not assessed`;
+        if(meta)meta.textContent=`${independent.h.name} · Initial inspection still needed`;
+        if(btn){btn.textContent='View';btn.setAttribute('onclick',`go('hive/${independent.h.id}')`);}
+      }else if(assessedTop){
+        if(main)main.textContent=assessedTop.res.reasons?.length?assessedTop.res.reasons.join(' · '):'No current rule-based risk signal';
+        if(meta)meta.textContent=`${assessedTop.h.name} · ${assessedTop.res.level} risk`;
+        if(btn){btn.textContent='View';btn.setAttribute('onclick',`go('hive/${assessedTop.h.id}')`);}
+      }else{
+        if(main)main.textContent='Biological risk not assessed';
+        if(meta)meta.textContent=managed.length?`${managed.length} ${managed.length===1?'hive needs':'hives need'} an initial inspection`:'No hive risk data';
+        const firstMissing=managed.find(h=>!hasInspection(s,h));
+        if(btn){btn.textContent='View';btn.setAttribute('onclick',firstMissing?`go('hive/${firstMissing.id}')`:`go('risk')`);}
+      }
+    }
     return out;
   };
   try{home=window.home}catch(_){ }
@@ -17563,6 +17608,15 @@ window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
     const avg=assessed.length?Math.round(assessed.reduce((n,h)=>n+Number(h.score||0),0)/assessed.length):null;
     const cards=[...r.querySelectorAll('.isum > button')];
     if(cards[0]){const b=cards[0].querySelector('b'),small=cards[0].querySelector('small');if(b)b.textContent=avg===null?'—':String(avg);if(small)small.textContent=avg===null?'Not assessed':avg>=85?'Strong':avg>=70?'Attention':'Critical';}
+    if(cards[1]){
+      const b=cards[1].querySelector('b'),small=cards[1].querySelector('small');
+      if(!assessed.length){if(b)b.textContent='—';if(small)small.textContent='Not assessed';}
+      else{
+        const decisions=typeof window.v224bEvaluateAll==='function'?window.v224bEvaluateAll(s):new Map(),rank={Low:1,Medium:2,High:3};let top='Low';
+        assessed.forEach(h=>{const d=decisions.get?.(h.id),x=d?.overallRisk==='Critical'||d?.overallRisk==='High'?'High':d?.overallRisk==='Medium'?'Medium':'Low';if((rank[x]||0)>(rank[top]||0))top=x;});
+        if(b)b.textContent=top;if(small)small.textContent='Overall Risk';
+      }
+    }
     return out;
   };
   try{insights=window.insights}catch(_){ }
@@ -17620,3 +17674,83 @@ window.__HIVEDASH_V2P2E5D_VERSION__='v2p2e5d-actions-header-plus-other-task';
    - Legacy all-hives routes remain untouched for backward compatibility.
    ============================================================== */
 window.__HIVEDASH_V2P2E5F_VERSION__='v2p2e5f-home-health-stat-route-fix';
+
+
+/* ==============================================================
+   V2P2E5G — P1-03 UNASSESSED / BIOLOGICAL RISK SEPARATION
+   Scope ONLY:
+   - Valid biological Inspection = real saved Inspection log row.
+   - lastInspection and V120 legacySnapshot never make a Hive assessed.
+   - No valid Inspection => Health/Risk Not assessed, phase Uncertain.
+   - Risk counts exclude Not assessed from High/Medium/Low denominators.
+   - Home + Insights never fall back from missing evidence to Low risk.
+   - Explicit independent Varroa / Treatment follow-up evidence is preserved
+     without pretending Queen/Brood/Food/Colony were biologically assessed.
+   ============================================================== */
+(function v2p2e5gP103RiskClosure(){
+  if(window.__HIVEDASH_V2P2E5G_P103__)return;
+  window.__HIVEDASH_V2P2E5G_P103__=true;
+
+  const neutralStyle=document.createElement('style');neutralStyle.id='v2p2e5g-risk-unassessed-style';neutralStyle.textContent=`
+    .v123-risk-card.unassessed{border-color:#DDD8CF!important;background:#FFFEFB!important}
+    .v123-risk-card.unassessed .v123-risk-card-marker{background:#9A9F98!important}
+    .v123-risk-badge.unassessed{background:#F2F0EA!important;color:#747B75!important;border:1px solid #DDD8CF!important}
+  `;document.head.appendChild(neutralStyle);
+
+  riskPage=function(r){
+    if(typeof v50GuardPro==='function'&&!v50GuardPro('Risk Prediction'))return;
+    const s=v45s();
+    if(typeof window.v224bEvaluateAll==='function')window.v224bEvaluateAll(s);
+    const currentHives=typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
+    const rows=currentHives.map(h=>({h,res:riskAssessment(h)}));
+    const assessedRows=rows.filter(x=>x.res?.assessed!==false&&x.res?.level!=='Unassessed');
+    const counts={High:assessedRows.filter(x=>x.res.level==='High').length,Medium:assessedRows.filter(x=>x.res.level==='Medium').length,Low:assessedRows.filter(x=>x.res.level==='Low').length};
+    const unassessedCount=rows.length-assessedRows.length;
+    const assessedCopy=rows.length===assessedRows.length
+      ? `${assessedRows.length} ${assessedRows.length===1?'hive':'hives'} assessed`
+      : `${assessedRows.length} of ${rows.length} ${rows.length===1?'hive':'hives'} assessed`;
+
+    r.innerHTML=`<div class="v123-risk-page">
+      <section class="v123-risk-overview">
+        <div class="v123-risk-overview-copy">
+          <small>CURRENT HIVE RISK</small>
+          <b>${assessedCopy}</b>
+          <span>${unassessedCount?`${unassessedCount} ${unassessedCount===1?'hive is':'hives are'} Not assessed until a valid Inspection is saved.`:'Transparent rule-based assessment from current hive records.'}</span>
+        </div>
+        <div class="v123-risk-counts">
+          <div class="high"><strong>${counts.High}</strong><span>High</span></div>
+          <div class="medium"><strong>${counts.Medium}</strong><span>Medium</span></div>
+          <div class="low"><strong>${counts.Low}</strong><span>Low</span></div>
+        </div>
+      </section>
+
+      <section class="v123-risk-cards">
+        ${rows.map(({h,res})=>{
+          const unassessed=res?.assessed===false||res?.level==='Unassessed';
+          const copy=unassessed
+            ? (res?.reasons?.length?`${res.reasons.join(' · ')} · Biological risk not assessed`:'No valid Inspection data · Initial inspection needed')
+            : (res?.reasons?.length?res.reasons.join(' · '):'No current rule-based risk signal');
+          const cls=unassessed?'unassessed':String(res.level||'Low').toLowerCase();
+          const badge=unassessed?'Not assessed':res.level;
+          return `<button type="button" class="v123-risk-card ${cls}" onclick="go('hive/${h.id}')">
+            <span class="v123-risk-card-marker" aria-hidden="true"></span>
+            <span class="v123-risk-card-copy"><b>${esc(h.name)}</b><small>${esc(copy)}</small></span>
+            <span class="v123-risk-card-end"><span class="v123-risk-badge ${cls}">${esc(badge)}</span><em>›</em></span>
+          </button>`;
+        }).join('')}
+      </section>
+
+      <section class="v123-risk-how">
+        <div class="v123-risk-how-head"><span class="v123-risk-how-icon">i</span><div><b>How risk is calculated</b><small>Current biological conditions only — not a future forecast.</small></div></div>
+        <div class="v123-risk-how-grid">
+          <div><span class="dot high"></span><b>High</b><small>Current severe biological risk evidence.</small></div>
+          <div><span class="dot medium"></span><b>Medium</b><small>Current moderate biological risk evidence.</small></div>
+          <div><span class="dot low"></span><b>Low</b><small>Valid Inspection data with no current rule-based signal.</small></div>
+        </div>
+      </section>
+    </div>`;
+  };
+  try{window.riskPage=riskPage}catch(_){}
+
+  window.__HIVEDASH_V2P2E5G_VERSION__='v2p2e5g-p1-03-unassessed-risk-closure';
+})();

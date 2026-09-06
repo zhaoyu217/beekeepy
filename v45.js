@@ -512,6 +512,52 @@ function v2p2d7IsFutureForHive(s,h,v,when){
   return a!==null&&b!==null&&a>b;
 }
 
+/* V2P2E5 — Global business-date resolver for remaining low-frequency Actions and Photos.
+   Beekeeper-facing calendar days follow the selected Hive's effective location.
+   Audit timestamps (createdAt/updatedAt/completedAt/recordedAt) remain UTC ISO timestamps. */
+function v2p2e5RouteActionHiveId(s){
+  try{
+    const raw=(location.hash||'').replace(/^#/,'');
+    const id=String(raw.split('/')[1]||'');
+    if(!id||id==='new')return '';
+    const rows=[...(s?.actions||[]),...(s?.meta?.completedActions||[])];
+    return String(rows.find(a=>a&&String(a.id)===id)?.hiveId||'');
+  }catch(_){return ''}
+}
+function v2p2e5StoredHiveId(key,fields=['hiveId']){
+  try{
+    const d=JSON.parse(localStorage.getItem(key)||'null');
+    if(!d||typeof d!=='object')return '';
+    for(const f of fields){const v=String(d?.[f]||'').trim();if(v)return v}
+  }catch(_){}
+  return '';
+}
+function v2p2e5ResolveHiveId(s,preferred=''){
+  const valid=id=>!!(s?.hives||[]).find(h=>h&&String(h.id)===String(id));
+  if(preferred&&valid(preferred))return String(preferred);
+  for(const id of ['b40-source','b37-hive','b38-hive','b39-hive','b41-hive','b42-hive','b43-hive','b44-hive','b45-hive','b46-hive']){
+    const v=String(document.getElementById(id)?.value||'');if(v&&valid(v))return v;
+  }
+  for(const v of [window.__b38Draft?.hiveId,window.__b39Draft?.hiveId,window.__b40Draft?.sourceHiveId,window.__b41Draft?.hiveId,window.__b37PrefillHiveId]){
+    if(v&&valid(v))return String(v);
+  }
+  for(const [key,fields] of [
+    ['hivedash_b39_split_create_draft',['hiveId']],['hivedash_b40_combine_create_draft',['sourceHiveId']],
+    ['hivedash_b41_swarm_create_draft',['hiveId']],['hivedash_b42_equipment_create_draft',['hiveId']],
+    ['hivedash_b43_move_create_draft',['hiveId']],['hivedash_b44_winter_create_draft',['hiveId']],
+    ['hivedash_b45_spring_create_draft',['hiveId']],['hivedash_b46_other_task_create_draft',['hiveId']]
+  ]){const v=v2p2e5StoredHiveId(key,fields);if(v&&valid(v))return v;}
+  const route=v2p2e5RouteActionHiveId(s);if(route&&valid(route))return route;
+  const h=(s?.hives||[]).find(x=>x&&!x.archived&&String(x.status||'').toLowerCase()!=='combined')||(s?.hives||[])[0];
+  return String(h?.id||'');
+}
+function v2p2e5Today(s,preferredHiveId='',when){
+  const id=v2p2e5ResolveHiveId(s,preferredHiveId);
+  const h=(s?.hives||[]).find(x=>x&&String(x.id)===String(id))||null;
+  return v2p1bDateInHiveTimezone(s,h,when);
+}
+window.__HIVEDASH_V2P2E5_VERSION__='v2p2e5-global-business-date';
+
 function recordPage(r,type,id){
   const s=v45s(),h=vh(id),cfg={feeding:['Feeding Record',V45.feeding],treatment:['Treatment Record',V45.treatment],harvest:['Harvest Record',V45.harvest]}[type];
   const today=new Date().toISOString().slice(0,10);
@@ -3003,7 +3049,7 @@ compressHivePhoto=function(file,maxSide=800,quality=.66){
 };
 addHivePhotos=async function(hiveId,input){
   const files=[...(input?.files||[])];if(!files.length)return;const galleryModal=input?.closest?.('.photo-gallery-modal-shell')||null;const s=v45s(),h=hive(s,hiveId);if(!h){input.value='';return toast('Hive not found')}h.photos=Array.isArray(h.photos)?h.photos:[];let room=Math.max(0,12-h.photos.length);if(!room){input.value='';return toast('Maximum 12 photos per hive')}if(files.length>room)toast(`Only ${room} more photo${room===1?'':'s'} can be added`);
-  const before=clone(h.photos);let added=0;try{for(const file of files.slice(0,room)){const data=await compressHivePhoto(file);h.photos.push({id:'p'+Date.now()+Math.random().toString(36).slice(2,7),data,date:new Date().toISOString().slice(0,10),name:String(file.name||'photo').slice(0,120)});added++;if(JSON.stringify(s).length>4300000)throw new Error('Photo storage limit reached')}if(!added)throw new Error('No supported photos selected');if(save(s)===false)throw new Error('Photo storage limit reached');toast(added===1?'Photo added':`${added} photos added`);render();if(galleryModal){galleryModal.remove();setTimeout(()=>openHivePhotoGallery(hiveId),0)}}catch(err){h.photos=before;console.error(err);toast(err.message||'Could not add photo')}finally{input.value=''}
+  const before=clone(h.photos);let added=0;try{for(const file of files.slice(0,room)){const data=await compressHivePhoto(file);h.photos.push({id:'p'+Date.now()+Math.random().toString(36).slice(2,7),data,date:v2p1bDateInHiveTimezone(s,h),name:String(file.name||'photo').slice(0,120)});added++;if(JSON.stringify(s).length>4300000)throw new Error('Photo storage limit reached')}if(!added)throw new Error('No supported photos selected');if(save(s)===false)throw new Error('Photo storage limit reached');toast(added===1?'Photo added':`${added} photos added`);render();if(galleryModal){galleryModal.remove();setTimeout(()=>openHivePhotoGallery(hiveId),0)}}catch(err){h.photos=before;console.error(err);toast(err.message||'Could not add photo')}finally{input.value=''}
 };
 
 
@@ -11208,7 +11254,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   window.__HIVEDASH_V224B37_INIT__=true;
 
   function b37ActiveHives(s){ return (s.hives||[]).filter(h=>!h.archived && h.status!=='Combined'); }
-  function b37Today(){ return new Date().toISOString().slice(0,10); }
+  function b37Today(hiveId=''){ return v2p2e5Today(v45s(),hiveId); }
   function b37Action(id){
     const s=v45s();
     return (s.actions||[]).find(a=>String(a.id)===String(id)) ||
@@ -11849,7 +11895,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   const BIO_FOLLOW=new Set(['Requeen','Introduce Queen']);
   const S=()=>v45s();
   const E=v=>esc(String(v??''));
-  const TODAY=()=>{const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`};
+  const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId||window.__b38Draft?.hiveId||'');
  const fmtDate=v=>{if(!v)return "";const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v);};
   function all(s){return [...(s.actions||[]),...(s.meta?.completedActions||[])]}
   function find(s,id){return all(s).find(a=>a&&a.id===id&&a.type===TYPE)||null}
@@ -11877,7 +11923,13 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   };
   window.b38HiveChanged=function(select){
     window.__b38Draft=window.__b38Draft||{};
+    const oldId=window.__b38Draft.hiveId||'',oldDue=window.__b38Draft.dueDate||'',wasAuto=!oldDue||oldDue===TODAY(oldId);
     window.__b38Draft.hiveId=select?.value||'';
+    if(wasAuto){
+      window.__b38Draft.dueDate=TODAY(window.__b38Draft.hiveId);
+      const input=idq('b38-due');if(input)input.value=window.__b38Draft.dueDate;
+      const display=idq('b38-date-display');if(display)display.textContent=fmtDate(window.__b38Draft.dueDate);
+    }
   };
   window.b38QueenSourceChanged=function(select){
     window.__b38Draft=window.__b38Draft||{};
@@ -12209,7 +12261,7 @@ function detailHTML(a){
    ============================================================== */
 (function(){
   const TYPE='split-hive';
-  const TODAY=()=>new Date().toISOString().slice(0,10);
+  const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId||window.__b39Draft?.hiveId||'');
   const S=()=>typeof v45s==='function'?v45s():state();
   const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const idq=id=>document.getElementById(id);
@@ -12267,8 +12319,9 @@ function detailHTML(a){
   }
 
   function setDraft(field,value){
-    const d=initDraft();
+    const d=initDraft(),oldId=d.hiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===TODAY(oldId);
     d[field]=value;
+    if(field==='hiveId'&&wasAuto){d.dueDate=TODAY(value);const input=idq('b39-due');if(input)input.value=d.dueDate;const display=idq('b39-due-display');if(display)display.textContent=fmtDate(d.dueDate);}
     b39PersistDraft(d);
   }
   window.b39SetDraft=function(field,value){ setDraft(field,value); };
@@ -12314,7 +12367,7 @@ function detailHTML(a){
     const input=idq('b39-due');
     if(!input||!shell)return;
     const selected=b39PlanDateParts(input.value);
-    const today=new Date();
+    const tp=b39PlanDateParts(TODAY());const today=tp?new Date(tp.y,tp.m,tp.d):new Date();
     const first=new Date(y,m,1);
     const leading=(first.getDay()+6)%7;
     const daysInMonth=new Date(y,m+1,0).getDate();
@@ -12713,7 +12766,7 @@ function detailHTML(a){
          Split Completed gates when the draft becomes a confirmed fact; it does not gate entry. */
       if(out.success==='yes'){
         if(!String(out.actualNewHiveName||'').trim()) out.actualNewHiveName=String(w.plannedNewHiveName||'');
-        if(!String(out.completedDate||'')) out.completedDate=new Date().toISOString().slice(0,10);
+        if(!String(out.completedDate||'')) out.completedDate=TODAY(a?.hiveId||'');
       }
       out.queenOutcome=b39QueenOutcomeEnglish(out.queenOutcome);
       return out;
@@ -12760,7 +12813,7 @@ function detailHTML(a){
         const planned=String(a?.workflowData?.plannedNewHiveName||'').trim();
         if(planned) nameInput.value=planned;
       }
-      if(dateInput && !dateInput.value) dateInput.value=new Date().toISOString().slice(0,10);
+      if(dateInput && !dateInput.value){const a=(S().actions||[]).find(x=>x&&String(x.id)===String(actionId));dateInput.value=TODAY(a?.hiveId||'');}
     }
 
     const d={
@@ -12832,7 +12885,7 @@ function detailHTML(a){
     if(!input||!shell)return;
 
     const selected=b39mDateParts(input.value);
-    const today=new Date();
+    const tp=b39PlanDateParts(TODAY());const today=tp?new Date(tp.y,tp.m,tp.d):new Date();
     const first=new Date(y,m,1);
     const daysInMonth=new Date(y,m+1,0).getDate();
     const leading=(first.getDay()+6)%7; // Monday-first
@@ -12992,7 +13045,7 @@ function detailHTML(a){
     const input=idq('b39v-due');
     if(!input||!shell)return;
     const selected=b39PlanDateParts(input.value);
-    const today=new Date();
+    const tp=b39PlanDateParts(TODAY());const today=tp?new Date(tp.y,tp.m,tp.d):new Date();
     const first=new Date(y,m,1);
     const leading=(first.getDay()+6)%7;
     const daysInMonth=new Date(y,m+1,0).getDate();
@@ -13902,18 +13955,7 @@ function detailHTML(a){
   window.__HIVEDASH_V224B40A__=true;
   const TYPE='combine-hive', DRAFT_KEY='hivedash_b40_combine_create_draft';
   const S=()=>typeof v45s==='function'?v45s():state();
-  const TODAY=()=>{
-    const s=S();
-    const tz=String(s?.settings?.apiaryLocation?.timezone||s?.settings?.region?.timezone||s?.settings?.timezone||'America/Denver').trim()||'America/Denver';
-    try{
-      const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-      const get=t=>parts.find(x=>x.type===t)?.value||'';
-      const y=get('year'),m=get('month'),d=get('day');
-      if(y&&m&&d)return `${y}-${m}-${d}`;
-    }catch(_){ }
-    const d=new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  };
+  const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId||window.__b40Draft?.sourceHiveId||'');
   const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const fmtDate=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'')};
   const activeHives=s=>(s.hives||[]).filter(h=>!h.archived&&String(h.status||'').toLowerCase()!=='combined');
@@ -13932,7 +13974,7 @@ function detailHTML(a){
     if(!window.__b40Draft){const p=load();window.__b40Draft=normalize({sourceHiveId:p.sourceHiveId||'',targetHiveId:p.targetHiveId||'',sourceCondition:p.sourceCondition||'Not checked',targetCapacity:p.targetCapacity||'Not checked',diseaseCheck:p.diseaseCheck||'Not checked',queenPlan:p.queenPlan||'Not decided',reason:p.reason||'Weak colony',method:p.method||'Newspaper method',dueDate:p.dueDate||TODAY(),priority:p.priority||'Medium',notes:p.notes||''},hs)}
     normalize(window.__b40Draft,hs);persist(window.__b40Draft);return window.__b40Draft;
   }
-  window.b40SetDraft=function(k,v){const d=draft();d[k]=v;normalize(d,activeHives(S()));persist(d);if(k==='sourceHiveId')window.render?.()};
+  window.b40SetDraft=function(k,v){const d=draft(),oldId=d.sourceHiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===TODAY(oldId);d[k]=v;normalize(d,activeHives(S()));if(k==='sourceHiveId'&&wasAuto)d.dueDate=TODAY(d.sourceHiveId);persist(d);if(k==='sourceHiveId')window.render?.()};
   window.b40SyncDate=function(el){const d=draft();d.dueDate=el.value||TODAY();persist(d);const x=document.getElementById('b40-due-display');if(x)x.textContent=fmtDate(d.dueDate)};
 
   function createHTML(){
@@ -13961,7 +14003,7 @@ function detailHTML(a){
     if(typeof upsert==='function')upsert(s,a);else{s.actions=Array.isArray(s.actions)?s.actions:[];s.actions.push(a)}
     if(save(s)===false)return toast('Combine plan could not be saved');clear();window.__b40Draft=null;go('actions');
   };
-  window.b40OpenCombineAction=function(hiveId=''){clear();window.__b40Draft=null;const d=draft(),hs=activeHives(S());if(hiveId&&hs.some(h=>String(h.id)===String(hiveId))){d.sourceHiveId=hiveId;normalize(d,hs);persist(d)}go('combine-action/new')};
+  window.b40OpenCombineAction=function(hiveId=''){clear();window.__b40Draft=null;const d=draft(),hs=activeHives(S());if(hiveId&&hs.some(h=>String(h.id)===String(hiveId))){d.sourceHiveId=hiveId;d.dueDate=TODAY(hiveId);normalize(d,hs);persist(d)}go('combine-action/new')};
 
   function findAction(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))}
   const B40_RESULT_PREFIX='hivedash_b40_combine_result_';
@@ -14080,18 +14122,7 @@ function detailHTML(a){
 
   const TYPE='swarm-control', DRAFT_KEY='hivedash_b41_swarm_create_draft';
   const S=()=>typeof v45s==='function'?v45s():state();
-  const TODAY=()=>{
-    const s=S();
-    const tz=String(s?.settings?.apiaryLocation?.timezone||s?.settings?.region?.timezone||s?.settings?.timezone||'America/Denver').trim()||'America/Denver';
-    try{
-      const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date());
-      const get=t=>parts.find(x=>x.type===t)?.value||'';
-      const y=get('year'),m=get('month'),d=get('day');
-      if(y&&m&&d)return `${y}-${m}-${d}`;
-    }catch(_){ }
-    const d=new Date();
-    return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
-  };
+  const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
   const fmtDate=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'')};
   const activeHives=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h.archived&&String(h.lifecycleStatus||h.status||'').toLowerCase()!=='combined');
@@ -14104,7 +14135,7 @@ function detailHTML(a){
   function clear(){try{localStorage.removeItem(DRAFT_KEY)}catch(_){ }}
   const opts=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
 
-  window.b41SetDraft=function(key,val){const d=readDraft();d[key]=val;normalize(d);persist(d)};
+  window.b41SetDraft=function(key,val){const d=readDraft(),oldId=d.hiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===TODAY(oldId);d[key]=val;normalize(d);if(key==='hiveId'&&wasAuto)d.dueDate=TODAY(d.hiveId);persist(d)};
   window.b41SyncDate=function(input){const d=readDraft();d.dueDate=input?.value||TODAY();persist(d);const out=document.getElementById('b41-due-display');if(out)out.textContent=fmtDate(d.dueDate)};
 
   function createHTML(){
@@ -14133,7 +14164,7 @@ function detailHTML(a){
     if(save(s)===false)return toast('Swarm control plan could not be saved');
     clear();go('actions');
   };
-  window.b41OpenSwarmAction=function(hiveId=''){clear();const d=readDraft(),hs=activeHives(S());if(hiveId&&hs.some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;persist(d)}go('swarm-action/new')};
+  window.b41OpenSwarmAction=function(hiveId=''){clear();const d=readDraft(),hs=activeHives(S());if(hiveId&&hs.some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;d.dueDate=TODAY(hiveId);persist(d)}go('swarm-action/new')};
 
   function findAction(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))}
   function pendingHTML(a){
@@ -14177,10 +14208,7 @@ function detailHTML(a){
   const TYPE='swarm-control', PREFIX='hivedash_b41_swarm_result_';
   const S=()=>typeof v45s==='function'?v45s():state();
   const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
-  const TODAY=()=>{
-    const s=S(),tz=String(s?.settings?.apiaryLocation?.timezone||s?.settings?.region?.timezone||s?.settings?.timezone||'America/Denver').trim()||'America/Denver';
-    try{const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),g=t=>p.find(x=>x.type===t)?.value||'';return `${g('year')}-${g('month')}-${g('day')}`}catch(_){const d=new Date();return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
-  };
+  const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=v=>{const m=String(v||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'')};
   const addDays=(iso,n)=>{const m=String(iso||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);if(!m)return iso;const d=new Date(Date.UTC(+m[1],+m[2]-1,+m[3]+Number(n||0)));return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`};
   const find=id=>{const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))};
@@ -14189,7 +14217,7 @@ function detailHTML(a){
   const HERO='assets/inspection_beekeeper.jpg';
 
   function draft(a){
-    let d={controlCompleted:'Not confirmed',actualMethod:'Not recorded',swarmOutcome:'Not recorded',queenCellOutcome:'Not recorded',completedDate:TODAY(),followUpRequired:'No',followUpDate:addDays(TODAY(),7),resultNotes:''};
+    let d={controlCompleted:'Not confirmed',actualMethod:'Not recorded',swarmOutcome:'Not recorded',queenCellOutcome:'Not recorded',completedDate:TODAY(a?.hiveId||''),followUpRequired:'No',followUpDate:addDays(TODAY(a?.hiveId||''),7),resultNotes:''};
     try{const x=JSON.parse(localStorage.getItem(PREFIX+a.id)||'null');if(x&&typeof x==='object')d={...d,...x}}catch(_){ }
     if(a.resultData)d={...d,...a.resultData,controlCompleted:a.resultData.controlCompleted?'Yes':'Not confirmed',followUpRequired:a.resultData.followUpRequired?'Yes':'No'};
     return d;
@@ -14308,16 +14336,16 @@ function detailHTML(a){
   const HERO='assets/hive_detail_hero.jpg';
   const S=()=>v45s(), esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
   const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
-  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=d=>{if(!d)return '—';try{const [y,m,day]=String(d).split('-');return `${m}/${day}/${y}`}catch(_){return String(d)}};
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
-  function defaultDraft(){const h=active(S())[0];return {hiveId:h?.id||'',component:'Hive body',issue:'Routine maintenance',plannedWork:'Inspect',dueDate:today(),priority:'Medium',notes:''}}
+  function defaultDraft(){const h=active(S())[0];return {hiveId:h?.id||'',component:'Hive body',issue:'Routine maintenance',plannedWork:'Inspect',dueDate:today(h?.id||''),priority:'Medium',notes:''}}
   function loadDraft(){try{return {...defaultDraft(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return defaultDraft()}}
   function saveDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}}
-  window.b42SetDraft=function(k,v){const d=loadDraft();d[k]=v;saveDraft(d)};
+  window.b42SetDraft=function(k,v){const d=loadDraft(),oldId=d.hiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===today(oldId);d[k]=v;if(k==='hiveId'&&wasAuto){d.dueDate=today(v);const input=document.getElementById('b42-date');if(input)input.value=d.dueDate;const display=document.getElementById('b42-date-display');if(display)display.textContent=fmt(d.dueDate);}saveDraft(d)};
   window.b42DateChanged=function(v){b42SetDraft('dueDate',v);const el=document.getElementById('b42-date-display');if(el)el.textContent=fmt(v)};
-  window.b42OpenEquipmentAction=function(hiveId){const d=defaultDraft();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId)))d.hiveId=hiveId;saveDraft(d);go('equipment-action/new')};
+  window.b42OpenEquipmentAction=function(hiveId){const d=defaultDraft();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;d.dueDate=today(hiveId);}saveDraft(d);go('equipment-action/new')};
   function createHTML(){
     const s=S(),hs=active(s),d=loadDraft();if(!hs.some(h=>String(h.id)===String(d.hiveId)))d.hiveId=hs[0]?.id||'';saveDraft(d);
     if(!hs.length)return `<div class="b37-page b39-page"><section class="b37-card b39-card"><div class="b37-label">Equipment Maintenance</div><div class="b39-info">No active hives are available.</div></section><div class="b37-footer b39-footer"><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
@@ -14363,14 +14391,14 @@ function detailHTML(a){
   const TYPE='equipment-maintenance', PREFIX='hivedash_b42_equipment_result_', HERO='assets/hive_detail_hero.jpg';
   const S=()=>v45s();
   const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]||m));
-  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const find=id=>{const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))};
 
   function defaults(a){
-    return {maintenanceCompleted:'Not confirmed',actualWork:'Not recorded',componentOutcome:'Not recorded',replacementInstalled:'Not recorded',completedDate:today(),followUpRequired:'No',followUpDate:'',resultNotes:''};
+    return {maintenanceCompleted:'Not confirmed',actualWork:'Not recorded',componentOutcome:'Not recorded',replacementInstalled:'Not recorded',completedDate:today(a?.hiveId||''),followUpRequired:'No',followUpDate:'',resultNotes:''};
   }
   function draft(a){
     let d=defaults(a);try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}
@@ -14524,7 +14552,7 @@ function detailHTML(a){
   window.b42dSetFollowDraft=function(id,key,value){const k=String(id||'');draft[k]=draft[k]||{};draft[k][key]=value;};
   function pending(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),component=a.workflowData?.component||p?.workflowData?.component||'Equipment',d=draft[String(a.id)]||{},status=d.status||'Not recorded',notes=d.notes||'';const opt=v=>`<option value="${E(v)}"${status===v?' selected':''}>${E(v)}</option>`;return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b42-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review equipment follow-up</b><small>Confirm the equipment condition after maintenance. This does not change hive biological data.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up</div><div class="b37-hint">Equipment evidence</div></div>${row('Hive',h?.name||a.hiveId)}${row('Component',component)}${row('Due',fmt(a.dueDate||a.due))}</section><section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Confirm condition</div></div><label class="b37-field"><span>Component Status</span><select id="b42d-status" onchange="b42dSetFollowDraft('${E(a.id)}','status',this.value)">${opt('Not recorded')}${opt('Serviceable')}${opt('Needs more work')}${opt('Out of service')}</select></label><label class="b37-field"><span>Notes</span><textarea id="b42d-notes" rows="3" placeholder="Optional follow-up notes..." oninput="b42dSetFollowDraft('${E(a.id)}','notes',this.value)">${E(notes)}</textarea></label><div class="b39-info">This follow-up records equipment condition only. It does not infer Queen, brood, food, pests, health score, supers, location, or hive lifecycle.</div></section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="b42dCompleteFollow('${E(a.id)}')">Complete Follow-up</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;}
   function completed(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),rd=a.resultData||{},component=a.workflowData?.component||p?.workflowData?.component||'Equipment';return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b42-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Equipment follow-up completed</b><small>Follow-up history is read-only and remains separate from hive biological evidence.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Completed</div></div>${row('Hive',h?.name||a.hiveId)}${row('Component',component)}${row('Component Status',rd.componentStatus)}${row('Completed Date',fmt(rd.completedDate))}${rd.notes?row('Notes',rd.notes):''}</section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;}
-  window.b42dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Equipment follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Equipment follow-up already completed');const status=document.getElementById('b42d-status')?.value||'Not recorded',notes=document.getElementById('b42d-notes')?.value||'';if(status==='Not recorded')return toast('Record the component status before completing');const now=new Date().toISOString(),date=now.slice(0,10);a.resultData={componentStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Equipment follow-up could not be saved');toast('Equipment follow-up completed');go('actions');};
+  window.b42dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Equipment follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Equipment follow-up already completed');const status=document.getElementById('b42d-status')?.value||'Not recorded',notes=document.getElementById('b42d-notes')?.value||'';if(status==='Not recorded')return toast('Record the component status before completing');const now=new Date().toISOString(),h=(s.hives||[]).find(x=>x&&String(x.id)===String(a.hiveId)),date=v2p1bDateInHiveTimezone(s,h);a.resultData={componentStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Equipment follow-up could not be saved');toast('Equipment follow-up completed');go('actions');};
 
   const prevRender=window.render||render;
   window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='equipment-follow')return prevRender();const r=document.getElementById('view');if(!r)return;const a=findFollow(id);r.className='view secondary';r.innerHTML=a?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Equipment follow-up not found.</section></div>';const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Equipment Follow-up</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');};try{render=window.render}catch(_){}
@@ -14557,18 +14585,18 @@ function detailHTML(a){
   const fmt=d=>{if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
   const opt=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
-  const TODAY=()=>{const s=S(),tz=String(s?.settings?.apiaryLocation?.timezone||s?.settings?.region?.timezone||s?.settings?.timezone||'America/Denver').trim()||'America/Denver';try{const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),g=t=>p.find(x=>x.type===t)?.value||'';return `${g('year')}-${g('month')}-${g('day')}`}catch(_){return new Date().toISOString().slice(0,10)}};
+  const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId);
   function cloneLoc(loc){const x=(loc&&typeof loc==='object')?loc:{};return {apiaryName:String(x.apiaryName||''),countryCode:String(x.countryCode||'US'),country:String(x.country||'United States'),stateCode:String(x.stateCode||''),state:String(x.state||''),city:String(x.city||''),postalCode:String(x.postalCode||''),latitude:(x.latitude!==null&&x.latitude!==undefined&&Number.isFinite(Number(x.latitude)))?Number(x.latitude):null,longitude:(x.longitude!==null&&x.longitude!==undefined&&Number.isFinite(Number(x.longitude)))?Number(x.longitude):null,timezone:String(x.timezone||'America/Denver'),precision:String(x.precision||((x.city)?'city':(x.stateCode?'state':'unset'))),contextReady:Boolean(x.contextReady||x.stateCode)};}
   function effectiveLoc(s,h){if(h?.currentLocation&&typeof h.currentLocation==='object'&&String(h.currentLocation.stateCode||h.currentLocation.state||'').trim())return cloneLoc(h.currentLocation);const a=cloneLoc(s?.settings?.apiaryLocation||{});a.apiaryName=String(s?.settings?.apiaryName||a.apiaryName||'');return a;}
   function locLabel(loc){if(!loc||typeof loc!=='object')return'Location not set';const parts=[];if(String(loc.city||'').trim())parts.push(String(loc.city).trim());if(String(loc.state||'').trim())parts.push(String(loc.state).trim());if(String(loc.country||'').trim())parts.push(String(loc.country).trim()==='United States'?'USA':String(loc.country).trim());const where=parts.join(', ')||'Location not set';return String(loc.apiaryName||'').trim()?`${String(loc.apiaryName).trim()} — ${where}`:where;}
   function states(val){return `<option value="">Select state</option>`+(typeof V224A_US_STATES!=='undefined'?V224A_US_STATES:[]).map(([c,n])=>`<option value="${E(c)}" ${String(c)===String(val)?'selected':''}>${E(n)}</option>`).join('');}
   function tzs(val){const arr=(typeof V224A_TZ!=='undefined'?V224A_TZ:['America/New_York','America/Chicago','America/Denver','America/Phoenix','America/Los_Angeles','America/Anchorage','Pacific/Honolulu']);return arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');}
-  function baseDraft(){const s=S(),h=active(s)[0],cur=effectiveLoc(s,h);return {hiveId:h?.id||'',toStateCode:'',toCity:'',toPostalCode:'',toTimezone:String(cur.timezone||s?.settings?.apiaryLocation?.timezone||'America/Denver'),moveReason:'Apiary reorganization',plannedMoveDate:TODAY(),priority:'Medium',notes:''};}
+  function baseDraft(){const s=S(),h=active(s)[0],cur=effectiveLoc(s,h);return {hiveId:h?.id||'',toStateCode:'',toCity:'',toPostalCode:'',toTimezone:String(cur.timezone||s?.settings?.apiaryLocation?.timezone||'America/Denver'),moveReason:'Apiary reorganization',plannedMoveDate:TODAY(h?.id||''),priority:'Medium',notes:''};}
   function readDraft(){try{return {...baseDraft(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return baseDraft()}}
   function writeDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}return d;}
-  window.b43SetDraft=function(k,v){const d=readDraft();d[k]=v;writeDraft(d);if(k==='hiveId')render();};
+  window.b43SetDraft=function(k,v){const d=readDraft(),oldId=d.hiveId||'',oldDate=d.plannedMoveDate||'',wasAuto=!oldDate||oldDate===TODAY(oldId);d[k]=v;if(k==='hiveId'&&wasAuto)d.plannedMoveDate=TODAY(v);writeDraft(d);if(k==='hiveId')render();};
   window.b43DateChanged=function(v){b43SetDraft('plannedMoveDate',v);const x=document.getElementById('b43-date-display');if(x)x.textContent=fmt(v)};
-  window.b43OpenMoveHive=function(hiveId){const d=baseDraft();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId)))d.hiveId=hiveId;writeDraft(d);go('move-hive-action/new')};
+  window.b43OpenMoveHive=function(hiveId){const d=baseDraft();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;d.plannedMoveDate=TODAY(hiveId);}writeDraft(d);go('move-hive-action/new')};
 
   /* Final runtime preservation guard, added from the first B43 build so the
      Create → save → generateActions → render chain cannot discard B43 rows. */
@@ -14619,7 +14647,7 @@ function detailHTML(a){
   const fmt=d=>{if(!d)return'—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
   const opts=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
-  const TODAY=()=>{const s=S(),tz=String(s?.settings?.apiaryLocation?.timezone||s?.settings?.region?.timezone||s?.settings?.timezone||'America/Denver').trim()||'America/Denver';try{const p=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(new Date()),g=t=>p.find(x=>x.type===t)?.value||'';return `${g('year')}-${g('month')}-${g('day')}`}catch(_){return new Date().toISOString().slice(0,10)}};
+  const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId);
   function cloneLoc(loc){const x=(loc&&typeof loc==='object')?loc:{};return {apiaryName:String(x.apiaryName||''),countryCode:String(x.countryCode||'US'),country:String(x.country||'United States'),stateCode:String(x.stateCode||''),state:String(x.state||''),city:String(x.city||''),postalCode:String(x.postalCode||''),latitude:(x.latitude!==null&&x.latitude!==undefined&&Number.isFinite(Number(x.latitude)))?Number(x.latitude):null,longitude:(x.longitude!==null&&x.longitude!==undefined&&Number.isFinite(Number(x.longitude)))?Number(x.longitude):null,timezone:String(x.timezone||'America/Denver'),precision:String(x.precision||((x.city)?'city':(x.stateCode?'state':'unset'))),contextReady:Boolean(x.contextReady||x.stateCode)};}
   function effectiveLoc(s,h){if(h?.currentLocation&&typeof h.currentLocation==='object'&&String(h.currentLocation.stateCode||h.currentLocation.state||'').trim())return cloneLoc(h.currentLocation);const a=cloneLoc(s?.settings?.apiaryLocation||{});a.apiaryName=String(s?.settings?.apiaryName||a.apiaryName||'');return a;}
   function locLabel(loc){if(!loc||typeof loc!=='object')return'Location not set';const parts=[];if(String(loc.city||'').trim())parts.push(String(loc.city).trim());if(String(loc.state||'').trim())parts.push(String(loc.state).trim());if(String(loc.country||'').trim())parts.push(String(loc.country).trim()==='United States'?'USA':String(loc.country).trim());const where=parts.join(', ')||'Location not set';return String(loc.apiaryName||'').trim()?`${String(loc.apiaryName).trim()} — ${where}`:where;}
@@ -14629,7 +14657,7 @@ function detailHTML(a){
   function makeLoc(stateCode,city,postal,timezone){stateCode=String(stateCode||'').trim();city=String(city||'').trim();postal=String(postal||'').trim();timezone=String(timezone||'').trim()||'America/Denver';return {apiaryName:'',countryCode:'US',country:'United States',stateCode,state:stateName(stateCode),city,postalCode:postal,latitude:null,longitude:null,timezone,precision:city?'city':(stateCode?'state':'unset'),contextReady:Boolean(stateCode)};}
   function sameLoc(a,b){const n=x=>String(x||'').trim().toLowerCase().replace(/\s+/g,' '),state=x=>{const raw=n(x);if(!raw)return'';const list=(typeof V224A_US_STATES!=='undefined'?V224A_US_STATES:[]);const hit=list.find(([c,name])=>n(c)===raw||n(name)===raw);return hit?n(hit[0]):raw},zip=x=>String(x||'').replace(/\D/g,'').slice(0,5);const ac=n(a?.countryCode||a?.country||'US'),bc=n(b?.countryCode||b?.country||'US');if(!(ac===bc||(ac==='us'&&bc==='united states')||(bc==='us'&&ac==='united states')))return false;if(state(a?.stateCode||a?.state)!==state(b?.stateCode||b?.state))return false;const bCity=n(b?.city),bZip=zip(b?.postalCode);if(bCity&&n(a?.city)!==bCity)return false;if(bZip&&zip(a?.postalCode)!==bZip)return false;return true;}
   function find(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id)&&a.type===TYPE)||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id)&&a.type===TYPE);}
-  function defaults(a){const to=cloneLoc(a?.workflowData?.plannedToLocation||{});return {moveCompleted:'Not confirmed',actualStateCode:to.stateCode||'',actualCity:to.city||'',actualPostalCode:to.postalCode||'',actualTimezone:to.timezone||'America/Denver',moveOutcome:'Not recorded',completedDate:TODAY(),followUpRequired:'No',followUpDate:'',resultNotes:''};}
+  function defaults(a){const to=cloneLoc(a?.workflowData?.plannedToLocation||{});return {moveCompleted:'Not confirmed',actualStateCode:to.stateCode||'',actualCity:to.city||'',actualPostalCode:to.postalCode||'',actualTimezone:to.timezone||'America/Denver',moveOutcome:'Not recorded',completedDate:TODAY(a?.hiveId||''),followUpRequired:'No',followUpDate:'',resultNotes:''};}
   function draft(a){let d=defaults(a);try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}if(d.moveOutcome==='Completed with issues')d.followUpRequired='Yes';if(d.followUpRequired!=='Yes')d.followUpDate='';return d;}
   function persist(a){const d=draft(a),ids={moveCompleted:'b43c-completed',actualStateCode:'b43c-state',actualCity:'b43c-city',actualPostalCode:'b43c-zip',actualTimezone:'b43c-tz',moveOutcome:'b43c-outcome',completedDate:'b43c-date',followUpRequired:'b43c-follow',followUpDate:'b43c-follow-date',resultNotes:'b43c-notes'};Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});const forced=d.moveOutcome==='Completed with issues';if(forced)d.followUpRequired='Yes';if(d.followUpRequired!=='Yes')d.followUpDate='';try{localStorage.setItem(PREFIX+a.id,JSON.stringify(d))}catch(_){}const f=document.getElementById('b43c-follow');if(f){f.value=d.followUpRequired;f.disabled=forced}const shell=document.getElementById('b43c-follow-shell');if(shell)shell.style.display=d.followUpRequired==='Yes'?'block':'none';const hint=document.getElementById('b43c-follow-rule');if(hint)hint.style.display=forced?'block':'none';const dd=document.getElementById('b43c-date-display');if(dd)dd.textContent=fmt(d.completedDate);const fd=document.getElementById('b43c-follow-date-display');if(fd)fd.textContent=fmt(d.followUpDate);return d;}
   window.b43cPersistResult=function(id){const a=find(id);if(a)persist(a)};
@@ -14683,7 +14711,7 @@ function detailHTML(a){
   window.b43dSetFollowDraft=function(id,key,value){const k=String(id||'');draft[k]=draft[k]||{};draft[k][key]=value;};
   function pending(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),w=a.workflowData||{},rd=p?.resultData||{},d=draft[String(a.id)]||{},status=d.status||'Not recorded',notes=d.notes||'';const from=w.fromLocation||rd.actualFromLocation||{},to=w.toLocation||rd.actualToLocation||{},moved=w.movedDate||rd.completedDate||'';const opt=v=>`<option value="${E(v)}"${status===v?' selected':''}>${E(v)}</option>`;return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b43-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review move follow-up</b><small>Confirm how the hive has settled after relocation. This does not change biological data.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up</div><div class="b37-hint">Post-move review</div></div>${row('Hive',h?.name||a.hiveId)}${row('From',locLabel(from))}${row('To',locLabel(to))}${row('Moved Date',fmt(moved))}${row('Due',fmt(a.dueDate||a.due))}</section><section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Confirm condition</div></div><label class="b37-field"><span>Post-move Status</span><select id="b43d-status" onchange="b43dSetFollowDraft('${E(a.id)}','status',this.value)">${opt('Not recorded')}${opt('Settled normally')}${opt('Needs attention')}${opt('Move issue persists')}</select></label><label class="b37-field"><span>Notes</span><textarea id="b43d-notes" rows="3" placeholder="Optional follow-up notes..." oninput="b43dSetFollowDraft('${E(a.id)}','notes',this.value)">${E(notes)}</textarea></label><div class="b39-info">This follow-up records post-move management evidence only. It does not infer Queen, brood, food, pests, health score, supers, treatment, or feeding status.</div></section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="b43dCompleteFollow('${E(a.id)}')">Complete Follow-up</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;}
   function completed(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),w=a.workflowData||{},rd=a.resultData||{},prd=p?.resultData||{},from=w.fromLocation||prd.actualFromLocation||{},to=w.toLocation||prd.actualToLocation||{};return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b43-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Move follow-up completed</b><small>Follow-up history is read-only and remains separate from biological evidence.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Completed</div></div>${row('Hive',h?.name||a.hiveId)}${row('From',locLabel(from))}${row('To',locLabel(to))}${row('Post-move Status',rd.postMoveStatus)}${row('Completed Date',fmt(rd.completedDate))}${rd.notes?row('Notes',rd.notes):''}</section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;}
-  window.b43dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Move follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Move follow-up already completed');const d=draft[String(a.id)]||{},status=document.getElementById('b43d-status')?.value||d.status||'Not recorded',notes=document.getElementById('b43d-notes')?.value||d.notes||'';if(status==='Not recorded')return toast('Record the post-move status before completing');const now=new Date().toISOString(),date=now.slice(0,10);a.resultData={postMoveStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Move follow-up could not be saved');toast('Move follow-up completed');go('actions');};
+  window.b43dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Move follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Move follow-up already completed');const d=draft[String(a.id)]||{},status=document.getElementById('b43d-status')?.value||d.status||'Not recorded',notes=document.getElementById('b43d-notes')?.value||d.notes||'';if(status==='Not recorded')return toast('Record the post-move status before completing');const now=new Date().toISOString(),h=(s.hives||[]).find(x=>x&&String(x.id)===String(a.hiveId)),date=v2p1bDateInHiveTimezone(s,h);a.resultData={postMoveStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Move follow-up could not be saved');toast('Move follow-up completed');go('actions');};
 
   const prevRender=window.render||render;
   window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='move-follow')return prevRender();const r=document.getElementById('view');if(!r)return;const a=findFollow(id);r.className='view secondary';r.innerHTML=a?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Move follow-up not found.</section></div>';const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Move Follow-up</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');};try{render=window.render}catch(_){}
@@ -14715,7 +14743,7 @@ function detailHTML(a){
   const S=()=>v45s();
   const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
   const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
-  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
@@ -14747,16 +14775,16 @@ function detailHTML(a){
       hiveSecured:'Not yet',
       pestGuardChecked:'Not yet',
       weatherProtectionChecked:'Not yet',
-      dueDate:today(),
+      dueDate:today(h?.id||''),
       priority:'Medium',
       notes:''
     };
   }
   function loadDraft(){try{return {...defaults(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return defaults()}}
   function writeDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}}
-  window.b44SetDraft=function(k,v){const d=loadDraft();d[k]=v;writeDraft(d)};
+  window.b44SetDraft=function(k,v){const d=loadDraft(),oldId=d.hiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===today(oldId);d[k]=v;if(k==='hiveId'&&wasAuto){d.dueDate=today(v);const input=document.getElementById('b44-date');if(input)input.value=d.dueDate;const display=document.getElementById('b44-date-display');if(display)display.textContent=fmt(d.dueDate);}writeDraft(d)};
   window.b44DateChanged=function(v){b44SetDraft('dueDate',v);const el=document.getElementById('b44-date-display');if(el)el.textContent=fmt(v)};
-  window.b44OpenWinterPreparation=function(hiveId){const d=defaults();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId)))d.hiveId=hiveId;writeDraft(d);go('winter-action/new')};
+  window.b44OpenWinterPreparation=function(hiveId){const d=defaults();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;d.dueDate=today(hiveId);}writeDraft(d);go('winter-action/new')};
 
   function createHTML(){
     const s=S(), hs=active(s), d=loadDraft();
@@ -14852,19 +14880,19 @@ function detailHTML(a){
   const TYPE='winter-preparation', PREFIX='hivedash_b44_winter_result_', HERO='assets/hive_detail_hero.jpg';
   const S=()=>v45s();
   const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]||m));
-  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const find=id=>{const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))};
   const unresolvedOptions=['Colony strength','Food stores','Feeding','Varroa','Entrance','Moisture / ventilation','Hive security','Pest guard','Weather protection','Other'];
 
-  function defaults(){
-    return {preparationCompleted:'Not confirmed',finalReadiness:'Not recorded',unresolvedItems:[],completedDate:today(),followUpRequired:'No',followUpDate:'',resultNotes:''};
+  function defaults(a){
+    return {preparationCompleted:'Not confirmed',finalReadiness:'Not recorded',unresolvedItems:[],completedDate:today(a?.hiveId||''),followUpRequired:'No',followUpDate:'',resultNotes:''};
   }
   function forced(readiness){return readiness==='Ready with follow-up needed'||readiness==='Not ready'}
   function draft(a){
-    let d=defaults();
+    let d=defaults(a);
     try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}
     d.unresolvedItems=Array.isArray(d.unresolvedItems)?d.unresolvedItems:[];
     if(d.finalReadiness==='Ready for winter')d.unresolvedItems=[];
@@ -14999,7 +15027,7 @@ function detailHTML(a){
   const S=()=>v45s(), E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])), HERO='assets/hive_detail_hero.jpg';
   const fmt=d=>{if(!d)return'—';try{return fmtUSDateInput(d)}catch(_){const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)}};
   const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
-  const completedDate=()=>{try{return typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const completedDate=(hiveId='')=>v2p2e5Today(S(),hiveId);
   function parentFor(s,a){const id=String(a?.parentActionId||a?.linkedActionId||'');return (s.meta?.completedActions||[]).find(x=>x&&String(x.id)===id&&x.type===PARENT_TYPE)||(s.actions||[]).find(x=>x&&String(x.id)===id&&x.type===PARENT_TYPE);}
   function findFollow(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id)&&String(a.source||'')===SOURCE)||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id)&&String(a.source||'')===SOURCE);}
   function followMatch(parentId){const followId='winter-follow-'+parentId;return x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(parentId)&&String(x.source||'')===SOURCE));}
@@ -15018,7 +15046,7 @@ function detailHTML(a){
   window.b44dSetFollowDraft=function(id,key,value){const k=String(id||'');draft[k]=draft[k]||{};draft[k][key]=value;};
   function pending(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),w=a.workflowData||{},prd=p?.resultData||{},d=draft[String(a.id)]||{},status=d.status||'Not recorded',notes=d.notes||'';const readiness=w.finalReadiness||prd.finalReadiness||'',items=Array.isArray(w.unresolvedItems)?w.unresolvedItems:(Array.isArray(prd.unresolvedItems)?prd.unresolvedItems:[]),prepared=w.preparedDate||prd.completedDate||'';const opt=v=>`<option value="${E(v)}"${status===v?' selected':''}>${E(v)}</option>`;return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b44-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review winter follow-up</b><small>Confirm winter-readiness management status after preparation. This does not create new biological evidence.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up</div><div class="b37-hint">Winter readiness review</div></div>${row('Hive',h?.name||a.hiveId)}${row('Previous Readiness',readiness)}${items.length?row('Unresolved Items',items.join(', ')):''}${row('Prepared Date',fmt(prepared))}${row('Due',fmt(a.dueDate||a.due))}</section><section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Confirm readiness</div></div><label class="b37-field"><span>Winter Readiness Status</span><select id="b44d-status" onchange="b44dSetFollowDraft('${E(a.id)}','status',this.value)">${opt('Not recorded')}${opt('Ready')}${opt('Still needs attention')}${opt('Not ready')}</select></label><label class="b37-field"><span>Notes</span><textarea id="b44d-notes" rows="3" placeholder="Optional follow-up notes..." oninput="b44dSetFollowDraft('${E(a.id)}','notes',this.value)">${E(notes)}</textarea></label><div class="b39-info">This follow-up records winter-readiness management status only. It does not change Queen, Brood, Food, Varroa, Health Score, Feeding, Treatment, Supers, Location, or hive lifecycle.</div></section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="b44dCompleteFollow('${E(a.id)}')">Complete Follow-up</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;}
   function completed(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),rd=a.resultData||{},w=a.workflowData||{},prd=p?.resultData||{},readiness=w.finalReadiness||prd.finalReadiness||'',items=Array.isArray(w.unresolvedItems)?w.unresolvedItems:(Array.isArray(prd.unresolvedItems)?prd.unresolvedItems:[]);return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b44-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Winter follow-up completed</b><small>Follow-up history is read-only and remains separate from biological evidence.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Completed</div></div>${row('Hive',h?.name||a.hiveId)}${row('Previous Readiness',readiness)}${items.length?row('Previous Unresolved Items',items.join(', ')):''}${row('Winter Readiness Status',rd.winterReadinessStatus)}${row('Completed Date',fmt(rd.completedDate))}${rd.notes?row('Notes',rd.notes):''}</section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;}
-  window.b44dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Winter follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Winter follow-up already completed');const d=draft[String(a.id)]||{},status=document.getElementById('b44d-status')?.value||d.status||'Not recorded',notes=document.getElementById('b44d-notes')?.value||d.notes||'';if(status==='Not recorded')return toast('Record the winter readiness status before completing');const now=new Date().toISOString(),date=completedDate();a.resultData={winterReadinessStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Winter follow-up could not be saved');toast('Winter follow-up completed');go('actions');};
+  window.b44dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Winter follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Winter follow-up already completed');const d=draft[String(a.id)]||{},status=document.getElementById('b44d-status')?.value||d.status||'Not recorded',notes=document.getElementById('b44d-notes')?.value||d.notes||'';if(status==='Not recorded')return toast('Record the winter readiness status before completing');const now=new Date().toISOString(),date=completedDate(a.hiveId);a.resultData={winterReadinessStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Winter follow-up could not be saved');toast('Winter follow-up completed');go('actions');};
 
   const prevRender=window.render||render;
   window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='winter-follow')return prevRender();const r=document.getElementById('view');if(!r)return;const a=findFollow(id);r.className='view secondary';r.innerHTML=a?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Winter follow-up not found.</section></div>';const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Winter Follow-up</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');};try{render=window.render}catch(_){}
@@ -15055,7 +15083,7 @@ function detailHTML(a){
   const S=()=>v45s();
   const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
   const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
-  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
@@ -15090,16 +15118,16 @@ function detailHTML(a){
       expansionNeeded:'Not sure',
       swarmRiskChecked:'Not yet',
       swarmActionNeeded:'Not sure',
-      dueDate:today(),
+      dueDate:today(h?.id||''),
       priority:'Medium',
       notes:''
     };
   }
   function loadDraft(){try{return {...defaults(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return defaults()}}
   function writeDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}}
-  window.b45SetDraft=function(k,v){const d=loadDraft();d[k]=v;writeDraft(d)};
+  window.b45SetDraft=function(k,v){const d=loadDraft(),oldId=d.hiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===today(oldId);d[k]=v;if(k==='hiveId'&&wasAuto){d.dueDate=today(v);const input=document.getElementById('b45-date');if(input)input.value=d.dueDate;const display=document.getElementById('b45-date-display');if(display)display.textContent=fmt(d.dueDate);}writeDraft(d)};
   window.b45DateChanged=function(v){b45SetDraft('dueDate',v);const el=document.getElementById('b45-date-display');if(el)el.textContent=fmt(v)};
-  window.b45OpenSpringPreparation=function(hiveId){const d=defaults();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId)))d.hiveId=hiveId;writeDraft(d);go('spring-action/new')};
+  window.b45OpenSpringPreparation=function(hiveId){const d=defaults();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;d.dueDate=today(hiveId);}writeDraft(d);go('spring-action/new')};
 
   function createHTML(){
     const s=S(),hs=active(s),d=loadDraft();
@@ -15268,19 +15296,19 @@ function detailHTML(a){
   const TYPE='spring-preparation', PREFIX='hivedash_b45_spring_result_', HERO='assets/hive_detail_hero.jpg';
   const S=()=>v45s();
   const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]||m));
-  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const find=id=>{const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))};
   const unresolvedOptions=['Winter survival','Food stores','Feeding','Queen','Brood','Colony strength','Equipment','Expansion','Swarm risk','Other'];
 
-  function defaults(){
-    return {preparationCompleted:'Not confirmed',finalReadiness:'Not recorded',unresolvedItems:[],completedDate:today(),followUpRequired:'No',followUpDate:'',resultNotes:''};
+  function defaults(a){
+    return {preparationCompleted:'Not confirmed',finalReadiness:'Not recorded',unresolvedItems:[],completedDate:today(a?.hiveId||''),followUpRequired:'No',followUpDate:'',resultNotes:''};
   }
   function forced(readiness){return readiness==='Ready with follow-up needed'||readiness==='Not ready'}
   function draft(a){
-    let d=defaults();
+    let d=defaults(a);
     try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}
     d.unresolvedItems=Array.isArray(d.unresolvedItems)?d.unresolvedItems:[];
     if(d.finalReadiness==='Ready for spring')d.unresolvedItems=[];
@@ -15420,7 +15448,7 @@ function detailHTML(a){
   const S=()=>v45s(), E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m])), HERO='assets/hive_detail_hero.jpg';
   const fmt=d=>{if(!d)return'—';try{return fmtUSDateInput(d)}catch(_){const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)}};
   const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
-  const completedDate=()=>{try{return typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const completedDate=(hiveId='')=>v2p2e5Today(S(),hiveId);
   function parentFor(s,a){const id=String(a?.parentActionId||a?.linkedActionId||'');return (s.meta?.completedActions||[]).find(x=>x&&String(x.id)===id&&x.type===PARENT_TYPE)||(s.actions||[]).find(x=>x&&String(x.id)===id&&x.type===PARENT_TYPE);}
   function findFollow(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id)&&String(a.source||'')===SOURCE)||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id)&&String(a.source||'')===SOURCE);}
   function followMatch(parentId){const followId='spring-follow-'+parentId;return x=>x&&(String(x.id)===followId||(String(x.parentActionId||'')===String(parentId)&&String(x.source||'')===SOURCE));}
@@ -15439,7 +15467,7 @@ function detailHTML(a){
   window.b45dSetFollowDraft=function(id,key,value){const k=String(id||'');draft[k]=draft[k]||{};draft[k][key]=value;};
   function pending(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),w=a.workflowData||{},prd=p?.resultData||{},d=draft[String(a.id)]||{},status=d.status||'Not recorded',notes=d.notes||'';const readiness=w.finalSpringReadiness||prd.finalSpringReadiness||prd.finalReadiness||'',items=Array.isArray(w.unresolvedItems)?w.unresolvedItems:(Array.isArray(prd.unresolvedItems)?prd.unresolvedItems:[]),prepared=w.preparedDate||prd.completedDate||'';const opt=v=>`<option value="${E(v)}"${status===v?' selected':''}>${E(v)}</option>`;return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b45-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Review spring follow-up</b><small>Confirm spring-readiness management status after preparation. This does not create new biological evidence.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up</div><div class="b37-hint">Spring readiness review</div></div>${row('Hive',h?.name||a.hiveId)}${row('Previous Readiness',readiness)}${items.length?row('Unresolved Items',items.join(', ')):''}${row('Prepared Date',fmt(prepared))}${row('Due',fmt(a.dueDate||a.due))}</section><section class="b37-card b39-card b40-result-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Confirm readiness</div></div><label class="b37-field"><span>Spring Readiness Status</span><select id="b45d-status" onchange="b45dSetFollowDraft('${E(a.id)}','status',this.value)">${opt('Not recorded')}${opt('Ready')}${opt('Still needs attention')}${opt('Not ready')}</select></label><label class="b37-field"><span>Notes</span><textarea id="b45d-notes" rows="3" placeholder="Optional follow-up notes..." oninput="b45dSetFollowDraft('${E(a.id)}','notes',this.value)">${E(notes)}</textarea></label><div class="b39-info">This follow-up records spring-readiness management status only. It does not change Queen, Brood, Food, Colony Strength, Swarm Risk, Health Score, Feeding, Equipment, Supers, Location, or hive lifecycle.</div></section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="b45dCompleteFollow('${E(a.id)}')">Complete Follow-up</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;}
   function completed(a){const s=S(),p=parentFor(s,a),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),rd=a.resultData||{},w=a.workflowData||{},prd=p?.resultData||{},readiness=w.finalSpringReadiness||prd.finalSpringReadiness||prd.finalReadiness||'',items=Array.isArray(w.unresolvedItems)?w.unresolvedItems:(Array.isArray(prd.unresolvedItems)?prd.unresolvedItems:[]);return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page b39-completed-detail-page b45-page"><section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Spring follow-up completed</b><small>Follow-up history is read-only and remains separate from biological evidence.</small></div></section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Follow-up Result</div><div class="b37-hint">Completed</div></div>${row('Hive',h?.name||a.hiveId)}${row('Previous Readiness',readiness)}${items.length?row('Previous Unresolved Items',items.join(', ')):''}${row('Spring Readiness Status',rd.springReadinessStatus)}${row('Completed Date',fmt(rd.completedDate))}${rd.notes?row('Notes',rd.notes):''}</section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;}
-  window.b45dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Spring follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Spring follow-up already completed');const d=draft[String(a.id)]||{},status=document.getElementById('b45d-status')?.value||d.status||'Not recorded',notes=document.getElementById('b45d-notes')?.value||d.notes||'';if(status==='Not recorded')return toast('Record the spring readiness status before completing');const now=new Date().toISOString(),date=completedDate();a.resultData={springReadinessStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Spring follow-up could not be saved');toast('Spring follow-up completed');go('actions');};
+  window.b45dCompleteFollow=function(id){const s=S(),a=(s.actions||[]).find(x=>x&&String(x.id)===String(id)&&String(x.source||'')===SOURCE);if(!a)return toast('Spring follow-up not found');if(a.status==='Completed'||a.resultAppliedAt)return toast('Spring follow-up already completed');const d=draft[String(a.id)]||{},status=document.getElementById('b45d-status')?.value||d.status||'Not recorded',notes=document.getElementById('b45d-notes')?.value||d.notes||'';if(status==='Not recorded')return toast('Record the spring readiness status before completing');const now=new Date().toISOString(),date=completedDate(a.hiveId);a.resultData={springReadinessStatus:status,completedDate:date,notes};delete draft[String(a.id)];a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));if(i>=0)s.meta.completedActions[i]=JSON.parse(JSON.stringify(a));else s.meta.completedActions.push(JSON.parse(JSON.stringify(a)));if(save(s)===false)return toast('Spring follow-up could not be saved');toast('Spring follow-up completed');go('actions');};
 
   const prevRender=window.render||render;
   window.render=function(){const raw=(location.hash||'#home').slice(1),p=raw.split('/'),page=p[0],id=p[1]||'';if(page!=='spring-follow')return prevRender();const r=document.getElementById('view');if(!r)return;const a=findFollow(id);r.className='view secondary';r.innerHTML=a?(a.status==='Completed'||a.priority==='Done'?completed(a):pending(a)):'<div class="b37-page"><section class="b37-card">Spring follow-up not found.</section></div>';const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="safeBackV51('actions')" aria-label="Back">‹</button><div class="pagebar-title">Spring Follow-up</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');};try{render=window.render}catch(_){}
@@ -15472,7 +15500,7 @@ function detailHTML(a){
   const S=()=>v45s();
   const esc=v=>typeof E==='function'?E(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
   const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');
-  const today=()=>typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10);
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const fmt=d=>{if(!d)return '—';const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)};
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
@@ -15490,13 +15518,13 @@ function detailHTML(a){
 
   function defaults(){
     const h=active(S())[0];
-    return {hiveId:h?.id||'',taskTitle:'',dueDate:today(),priority:'Medium',notes:''};
+    return {hiveId:h?.id||'',taskTitle:'',dueDate:today(h?.id||''),priority:'Medium',notes:''};
   }
   function loadDraft(){try{return {...defaults(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return defaults()}}
   function writeDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}}
-  window.b46SetDraft=function(k,v){const d=loadDraft();d[k]=v;writeDraft(d)};
+  window.b46SetDraft=function(k,v){const d=loadDraft(),oldId=d.hiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===today(oldId);d[k]=v;if(k==='hiveId'&&wasAuto){d.dueDate=today(v);const input=document.getElementById('b46-date');if(input)input.value=d.dueDate;const display=document.getElementById('b46-date-display');if(display)display.textContent=fmt(d.dueDate);}writeDraft(d)};
   window.b46DateChanged=function(v){b46SetDraft('dueDate',v);const el=document.getElementById('b46-date-display');if(el)el.textContent=fmt(v)};
-  window.b46OpenOtherTask=function(hiveId){const d=defaults();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId)))d.hiveId=hiveId;writeDraft(d);go('other-task/new')};
+  window.b46OpenOtherTask=function(hiveId){const d=defaults();if(hiveId&&active(S()).some(h=>String(h.id)===String(hiveId))){d.hiveId=hiveId;d.dueDate=today(hiveId);}writeDraft(d);go('other-task/new')};
 
   function createHTML(){
     const s=S(),hs=active(s),d=loadDraft();
@@ -15639,12 +15667,12 @@ function detailHTML(a){
   const S=()=>v45s();
   const E=x=>typeof esc==='function'?esc(String(x??'')):String(x??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;'}[m]));
   const fmt=d=>{if(!d)return'—';try{return fmtUSDateInput(d)}catch(_){const m=String(d).match(/^(\d{4})-(\d{2})-(\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(d)}};
-  const today=()=>{try{return typeof TODAY==='function'?TODAY():new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const today=(hiveId='')=>v2p2e5Today(S(),hiveId);
   const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
   const opts=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
   function find(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id));}
-  function defaults(){return{taskCompleted:'Not confirmed',completedDate:today(),resultNotes:''};}
-  function draft(a){let d=defaults();try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}return d;}
+  function defaults(a){return{taskCompleted:'Not confirmed',completedDate:today(a?.hiveId||''),resultNotes:''};}
+  function draft(a){let d=defaults(a);try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}return d;}
   function persist(a){
     const d=draft(a), ids={taskCompleted:'b46-result-completed',completedDate:'b46-result-date',resultNotes:'b46-result-notes'};
     Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});

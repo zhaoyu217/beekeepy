@@ -15309,7 +15309,12 @@ function detailHTML(a){
     box.innerHTML=rows.length?rows.map(a=>{
       const h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId))||s.hives?.[0];if(!h)return'';
       const done=a.priority==='Done'||a.status==='Completed',src=String(a.source||''),t=String(a.type||'').toLowerCase();
-      let click=t===TYPE&&a.id?`go('other-task/${a.id}')`:src==='spring-preparation-follow-up'&&a.id?`go('spring-follow/${a.id}')`:t==='spring-preparation'&&a.id?`go('spring-action/${a.id}')`:src==='winter-preparation-follow-up'&&a.id?`go('winter-follow/${a.id}')`:t==='winter-preparation'&&a.id?`go('winter-action/${a.id}')`:src==='move-hive-follow-up'&&a.id?`go('move-follow/${a.id}')`:t==='move-hive'&&a.id?`go('move-hive-action/${a.id}')`:src==='equipment-maintenance-follow-up'&&a.id?`go('equipment-follow/${a.id}')`:t==='equipment-maintenance'&&a.id?`go('equipment-action/${a.id}')`:t==='swarm-control'&&a.id?`go('swarm-action/${a.id}')`:t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);
+      // V2P2C4 — stage-aware Varroa actions carry an explicit row route.
+      // Use it before the legacy type router; otherwise an awaiting-retest row
+      // whose display type is "Inspection" is incorrectly sent to the full
+      // Inspection page instead of the dedicated Varroa Test / Retest page.
+      const varroaRoute=String(a.varroaRoute||'').replace(/'/g,"\\'");
+      let click=varroaRoute?`go('${varroaRoute}')`:t===TYPE&&a.id?`go('other-task/${a.id}')`:src==='spring-preparation-follow-up'&&a.id?`go('spring-follow/${a.id}')`:t==='spring-preparation'&&a.id?`go('spring-action/${a.id}')`:src==='winter-preparation-follow-up'&&a.id?`go('winter-follow/${a.id}')`:t==='winter-preparation'&&a.id?`go('winter-action/${a.id}')`:src==='move-hive-follow-up'&&a.id?`go('move-follow/${a.id}')`:t==='move-hive'&&a.id?`go('move-hive-action/${a.id}')`:src==='equipment-maintenance-follow-up'&&a.id?`go('equipment-follow/${a.id}')`:t==='equipment-maintenance'&&a.id?`go('equipment-action/${a.id}')`:t==='swarm-control'&&a.id?`go('swarm-action/${a.id}')`:t==='combine-hive'&&a.id?`go('combine-action/${a.id}')`:t==='split-hive'&&a.id?`go('split-action/${a.id}')`:t==='queen-management'?`go('queen-action/${a.id}')`:t==='super-management'?`go('super-action/${a.id}')`:(done?`go('hive/${h.id}')`:`openActionByType('${a.type||'inspection'}','${h.id}')`);
       return `<button onclick="${click}"><span>${esc(h.name)}</span><b>${esc(a.title||a.type||'Action')}</b><em class="${done?'good':a.priority==='High'?'critical':a.priority==='Medium'?'attention':'good'}">${esc(done?'Done':(a.priority||'Low'))}</em><small>${esc(a.due||a.dueDate||'')}</small></button>`;
     }).join(''):'<div class="v53-empty-inline">No matching actions.</div>';
   };
@@ -16418,3 +16423,7 @@ window.__HIVEDASH_V2_P2B3_VERSION__='v2-p2b3-varroa-filter-group';
    - Stored values remain ISO YYYY-MM-DD; save/validation semantics unchanged.
    ========================================================== */
 window.__HIVEDASH_V2_P2C2_VERSION__='v2-p2c2-treatment-us-date-display';
+
+
+/* V2P2C4 — ACTION ROW VARROA RETEST ROUTE FIX */
+window.__HIVEDASH_V2_P2C4_VERSION__='v2-p2c4-varroa-retest-action-route';

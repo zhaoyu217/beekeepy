@@ -41,7 +41,7 @@ function v121CleanupDemoHives(s){
   save(s);
   return s;
 }
-function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};if(s.settings.weightPolicyVersion!=='v2p2c10'){s.settings.region.weight='lb';s.settings.weightPolicyVersion='v2p2c10';}s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';const rawLocation=String(s.settings.location||'').trim();if(!s.settings.locationUserSet&&rawLocation==='Colorado, USA'){s.settings.location='';}else{s.settings.location=rawLocation;}const legacyLoc=String(s.settings.location||'').trim();const al=(s.settings.apiaryLocation&&typeof s.settings.apiaryLocation==='object')?s.settings.apiaryLocation:{};s.settings.apiaryLocation={countryCode:String(al.countryCode||'US'),country:String(al.country||'United States'),stateCode:String(al.stateCode||''),state:String(al.state||''),city:String(al.city||''),postalCode:String(al.postalCode||''),latitude:(al.latitude!==null&&al.latitude!==undefined&&String(al.latitude).trim()!==''&&Number.isFinite(Number(al.latitude)))?Number(al.latitude):null,longitude:(al.longitude!==null&&al.longitude!==undefined&&String(al.longitude).trim()!==''&&Number.isFinite(Number(al.longitude)))?Number(al.longitude):null,timezone:String(al.timezone||s.settings.region.timezone||s.settings.timezone||'America/Denver'),precision:String(al.precision||'unset'),contextReady:Boolean(al.contextReady),legacyText:String(al.legacyText||legacyLoc)};s.hives=s.hives||[];v121CleanupDemoHives(s);return s}
+function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};let v2p2c11WeightPolicyChanged=false;if(s.settings.weightPolicyVersion!=='v2p2c11'){if(s.settings.weightPolicyVersion!=='v2p2c10')s.settings.region.weight='lb';s.settings.weightPolicyVersion='v2p2c11';v2p2c11WeightPolicyChanged=true;}s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';const rawLocation=String(s.settings.location||'').trim();if(!s.settings.locationUserSet&&rawLocation==='Colorado, USA'){s.settings.location='';}else{s.settings.location=rawLocation;}const legacyLoc=String(s.settings.location||'').trim();const al=(s.settings.apiaryLocation&&typeof s.settings.apiaryLocation==='object')?s.settings.apiaryLocation:{};s.settings.apiaryLocation={countryCode:String(al.countryCode||'US'),country:String(al.country||'United States'),stateCode:String(al.stateCode||''),state:String(al.state||''),city:String(al.city||''),postalCode:String(al.postalCode||''),latitude:(al.latitude!==null&&al.latitude!==undefined&&String(al.latitude).trim()!==''&&Number.isFinite(Number(al.latitude)))?Number(al.latitude):null,longitude:(al.longitude!==null&&al.longitude!==undefined&&String(al.longitude).trim()!==''&&Number.isFinite(Number(al.longitude)))?Number(al.longitude):null,timezone:String(al.timezone||s.settings.region.timezone||s.settings.timezone||'America/Denver'),precision:String(al.precision||'unset'),contextReady:Boolean(al.contextReady),legacyText:String(al.legacyText||legacyLoc)};s.hives=s.hives||[];v121CleanupDemoHives(s);if(v2p2c11WeightPolicyChanged){try{save(s)}catch(e){console.warn('V2P2C11 weight preference persistence failed',e)}}return s}
 function vh(id){const s=v45s();return hive(s,id)||s.hives[0]}
 function vphoto(h,i=0){return v101HivePrimaryPhoto(h)}
 function Vcard(title,body,action=''){return `<section class="vc"><div class="vhead"><b>${title}</b>${action}</div>${body}</section>`}
@@ -891,7 +891,7 @@ function unitsRegion(r){
   r.innerHTML=`<div class="vs"><section class="formlist"><label><span>Measurement System</span><select id="measure" onchange="v2p2c10ApplyMeasurementDefaults(this.value)"><option ${x.measurement.startsWith('Imperial')?'selected':''}>Imperial (US)</option><option ${x.measurement==='Metric'?'selected':''}>Metric</option></select></label><label><span>Temperature</span><select id="v48temp"><option ${x.temperature==='°F'?'selected':''}>°F</option><option ${x.temperature==='°C'?'selected':''}>°C</option></select></label><label><span>Weight</span><select id="v48weight"><option ${x.weight==='lb'?'selected':''}>lb</option><option ${x.weight==='kg'?'selected':''}>kg</option></select></label><label><span>Date Format</span><select id="v48date"><option ${x.date==='MM/DD/YYYY'?'selected':''}>MM/DD/YYYY</option><option ${x.date==='DD/MM/YYYY'?'selected':''}>DD/MM/YYYY</option></select></label><label><span>Language</span><select id="v48lang"><option>English</option></select></label><label><span>Time Zone</span><input id="v48tz" value="${esc(x.timezone)}"></label></section><button class="primary" onclick="saveUnitsV48()">Save Settings</button></div>`
 }
 function v2p2c10ApplyMeasurementDefaults(value){const metric=String(value||'')==='Metric',t=idq('v48temp'),w=idq('v48weight');if(t)t.value=metric?'°C':'°F';if(w)w.value=metric?'kg':'lb'}
-function saveUnitsV48(){const s=v45s(),x=s.settings.region;x.measurement=idq('measure').value;x.temperature=idq('v48temp').value;x.weight=idq('v48weight').value;x.date=idq('v48date').value;x.language=idq('v48lang').value;x.timezone=idq('v48tz').value;s.settings.units=x.measurement==='Metric'?'metric':'imperial';s.settings.weightPolicyVersion='v2p2c10';s.settings.timezone=x.timezone;save(s);toast('Units & region saved');render()}
+function saveUnitsV48(){const s=v45s(),x=s.settings.region;x.measurement=idq('measure').value;x.temperature=idq('v48temp').value;x.weight=idq('v48weight').value;x.date=idq('v48date').value;x.language=idq('v48lang').value;x.timezone=idq('v48tz').value;s.settings.units=x.measurement==='Metric'?'metric':'imperial';s.settings.weightPolicyVersion='v2p2c11';s.settings.timezone=x.timezone;save(s);toast('Units & region saved');render()}
 
 function syncNowV48(){if(currentSession&&cloudReady){scheduleCloudSave(v45s());toast('Cloud sync queued')}else toast('Cloud sync requires a signed-in cloud session')}
 function showSyncStatusV48(){modal(`<div class="modalhead"><b>Sync Status</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${esc(cloudStatusText())}</div>`)}
@@ -16714,3 +16714,30 @@ window.__HIVEDASH_V2_P2C7_VERSION__='v2-p2c7-current-treatment-summary-source';
 
   window.__HIVEDASH_V2_P2C9_VERSION__='v2-p2c9-timeline-treatment-detail-english';
 })();
+
+
+/* ==============================================================
+   V2P2C11 — GLOBAL HARVEST WEIGHT UNIT SOURCE FIX
+   Root cause:
+   - V45 Harvest dashboard used v45s() and therefore saw the current Weight preference.
+   - Legacy Harvest History used state() directly and could still see the old kg value.
+   Fix:
+   - Persist the V2P2C11 weight policy once from v45s().
+   - Harvest History reads v45s() so it shares the exact same Weight preference
+     as Harvest dashboard, Timeline, detail and record pages.
+   - No harvest values are rewritten; weightLb remains the stored base value.
+   ============================================================== */
+(function v2p2c11GlobalHarvestWeightSource(){
+  if(window.__HIVEDASH_V2P2C11__) return;
+  window.__HIVEDASH_V2P2C11__=true;
+
+  window.openHarvestHistory=function(year=window.selectedHarvestYear){
+    const s=typeof v45s==='function'?v45s():state();
+    const y=Number(year||new Date().getFullYear());
+    const rows=[...(s.logs?.harvests||[])]
+      .filter(x=>Number(String(x.date||'').slice(0,4))===y)
+      .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
+    modal(`<div class="modalhead"><div class="h2">Harvest History · ${y}</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="history-list-master">${rows.length?rows.map(x=>`<button class="history-row-master" onclick="document.querySelector('.modal')?.remove();go('hive/${x.hiveId}')"><i>⌁</i><span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b><small>${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}%</small></span><em>›</em></button>`).join(''):'<div class="small muted">No harvest records for this year.</div>'}</div>`);
+  };
+})();
+window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';

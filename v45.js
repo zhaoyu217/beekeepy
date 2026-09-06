@@ -16198,6 +16198,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       <section class="v2p2b-section">
         <h3><i>✚</i> LINKED MANAGEMENT</h3>
         <div class="v2p2b-readrow"><span>Treatment</span><b>${esc(englishTreatmentNameV2P2B(tx.type))}</b></div>
+        <div class="v2p2b-readrow"><span>Lot / Batch Number</span><b>${esc(text(tx.lotNumber)||'Not recorded')}</b></div>
         <div class="v2p2b-readrow"><span>Completed</span><b>${esc(fmtDate(tx.endDate))}</b></div>
         <div class="v2p2b-hint">This retest is linked to the completed Treatment. Treatment completion does not clear Varroa risk; this new test provides the evidence for reassessment.</div>
       </section>`:`
@@ -16306,7 +16307,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     go('home');
   };
 
-  window.__HIVEDASH_V2_P2B_VERSION__='v2-p2b-varroa-test-retest';
+  window.__HIVEDASH_V2_P2B_VERSION__='v2-p2c5-linked-treatment-traceability';
 })();
 
 

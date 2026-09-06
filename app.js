@@ -41,6 +41,47 @@ function isAuthenticated(){return !!currentSession?.user}
 function currentCloudUser(){return currentSession?.user||null}
 function cloudStatusText(){return cloudStatus}
 
+
+/* =========================================================
+   V2P2E1 — SERVER-AUTHORITATIVE SUBSCRIPTION ENTITLEMENT
+   P0-1 security fix:
+   - The browser can no longer grant itself Pro access.
+   - Pro is trusted only when Supabase Auth app_metadata says:
+       hivedash_plan = "Pro"
+       hivedash_subscription_status = "active" or "trialing"
+   - user_metadata/localStorage/cloud app_state are NOT entitlement sources.
+   ========================================================= */
+function authoritativePlanFromSession(session=currentSession){
+  const meta=session?.user?.app_metadata||{};
+  const plan=String(meta.hivedash_plan||'Free').trim();
+  const status=String(meta.hivedash_subscription_status||'').trim().toLowerCase();
+  return plan==='Pro' && (status==='active'||status==='trialing') ? 'Pro' : 'Free';
+}
+function enforceAuthoritativePlan(s){
+  if(!s||typeof s!=='object')return s;
+  s.user=(s.user&&typeof s.user==='object')?s.user:{};
+  s.user.plan=authoritativePlanFromSession();
+  return s;
+}
+async function refreshAuthoritativeEntitlement(){
+  if(!supabaseClient||!isAuthenticated())return 'Free';
+  try{
+    const {data,error}=await supabaseClient.auth.refreshSession();
+    if(error)throw error;
+    if(data?.session)currentSession=data.session;
+    const s=state();
+    enforceAuthoritativePlan(s);
+    save(s);
+    return s.user.plan;
+  }catch(err){
+    console.error('HiveDash entitlement refresh failed',err);
+    throw err;
+  }
+}
+function clearLegacyDemoEntitlement(){
+  try{localStorage.removeItem('hivedash_demo_entitlement')}catch(_e){}
+}
+
 function setCloudStatus(value){
   cloudStatus=value;
   const el=document.getElementById('cloudStatusValue');
@@ -59,7 +100,7 @@ function scheduleCloudSave(nextState){
 async function pushCloudState(nextState){
   if(!supabaseClient || !isAuthenticated() || navigator.onLine===false)return;
   try{
-    const payload=clone(normalizeStateV50(nextState));
+    const payload=enforceAuthoritativePlan(clone(normalizeStateV50(nextState)));
     payload.meta.userId=currentSession.user.id;
     payload.user={...payload.user,email:currentSession.user.email||payload.user?.email||'',name:currentSession.user.user_metadata?.name||payload.user?.name||'Beekeeper'};
     const updatedAt=payload.meta.updatedAt||new Date().toISOString();
@@ -81,8 +122,8 @@ async function loadCloudState(){
   const localOwned=local && (!local.meta?.userId || local.meta.userId===currentSession.user.id);
   if(data?.payload && Object.keys(data.payload).length){
     const remote=normalizeStateV50(clone(data.payload));remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
-    const merged=mergeStateV50(localOwned?local:null,remote);
-    merged.user={...(merged.user||{}),email:currentSession.user.email||merged.user?.email||'',name:currentSession.user.user_metadata?.name||merged.user?.name||'Beekeeper'};
+    const merged=enforceAuthoritativePlan(mergeStateV50(localOwned?local:null,remote));
+    merged.user={...(merged.user||{}),email:currentSession.user.email||merged.user?.email||'',name:currentSession.user.user_metadata?.name||merged.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
     merged.meta.userId=currentSession.user.id;
     suppressCloudSave=true;
     if(!writeLocalV50(merged)){suppressCloudSave=false;throw new Error('Cloud data is too large for local storage')}
@@ -90,9 +131,9 @@ async function loadCloudState(){
     if(JSON.stringify(merged)!==JSON.stringify(remote))await pushCloudState(merged);
     return true;
   }
-  let seed=localOwned?local:normalizeStateV50(clone(DEFAULT_STATE));
+  let seed=enforceAuthoritativePlan(localOwned?local:normalizeStateV50(clone(DEFAULT_STATE)));
   seed.meta.userId=currentSession.user.id;seed.meta.updatedAt=seed.meta.updatedAt||new Date().toISOString();
-  seed.user={...(seed.user||{}),email:currentSession.user.email||'',name:currentSession.user.user_metadata?.name||seed.user?.name||'Beekeeper'};
+  seed.user={...(seed.user||{}),email:currentSession.user.email||'',name:currentSession.user.user_metadata?.name||seed.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
   writeLocalV50(seed);await pushCloudState(seed);return false;
 }
 
@@ -112,7 +153,7 @@ function startRealtimeSync(){
     const local=state(),remote=normalizeStateV50(clone(row.payload));remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||row.updated_at||'';
     const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||row.updated_at||0)||0;
     if(lt>rt){scheduleCloudSave(local);return}
-    const merged=mergeStateV50(local,remote);lastRemoteUpdatedAt=row.updated_at||'';suppressCloudSave=true;writeLocalV50(merged);suppressCloudSave=false;setCloudStatus('Synced');if(!document.querySelector('.modal'))render();
+    const merged=enforceAuthoritativePlan(mergeStateV50(local,remote));lastRemoteUpdatedAt=row.updated_at||'';suppressCloudSave=true;writeLocalV50(merged);suppressCloudSave=false;setCloudStatus('Synced');if(!document.querySelector('.modal'))render();
   }).subscribe(status=>{if(status==='SUBSCRIBED')setCloudStatus('Synced');if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setCloudStatus('Sync error')});
 }
 
@@ -301,7 +342,8 @@ function recoverAuthenticatedLocalState(err){
     fallback.user={
       ...(fallback.user||{}),
       email:currentSession.user.email||fallback.user?.email||'',
-      name:currentSession.user.user_metadata?.name||fallback.user?.name||'Beekeeper'
+      name:currentSession.user.user_metadata?.name||fallback.user?.name||'Beekeeper',
+      plan:authoritativePlanFromSession()
     };
   }
 
@@ -341,6 +383,7 @@ async function initializeCloudApp(){
     return;
   }
 
+  clearLegacyDemoEntitlement();
   const {data:{session}}=await supabaseClient.auth.getSession();
   currentSession=session;
 
@@ -412,7 +455,7 @@ function normalizeStateV50(input){
   return s;
 }
 function writeLocalV50(s){
-  try{const raw=JSON.stringify(normalizeStateV50(s));if(raw.length>4500000)return false;localStorage.setItem(STORAGE_KEY,raw);return true}catch(e){console.error('Local write failed',e);return false}
+  try{const raw=JSON.stringify(enforceAuthoritativePlan(normalizeStateV50(s)));if(raw.length>4500000)return false;localStorage.setItem(STORAGE_KEY,raw);return true}catch(e){console.error('Local write failed',e);return false}
 }
 function unionByIdV50(a=[],b=[]){const m=new Map();[...a,...b].forEach((x,i)=>{if(!x||typeof x!=='object')return;const id=String(x.id||`${x.hiveId||''}|${x.date||''}|${i}`);m.set(id,{...(m.get(id)||{}),...x})});return [...m.values()]}
 
@@ -563,8 +606,9 @@ function state(){
     s.actions=generateActions(s);
     if(currentSession?.user){
       s.meta.userId=s.meta.userId||currentSession.user.id;
-      s.user={...(s.user||{}),email:currentSession.user.email||s.user?.email||'',name:currentSession.user.user_metadata?.name||s.user?.name||'Beekeeper'};
+      s.user={...(s.user||{}),email:currentSession.user.email||s.user?.email||'',name:currentSession.user.user_metadata?.name||s.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
     }
+    enforceAuthoritativePlan(s);
     return s;
   }catch(e){
     console.error('HiveDash local state was invalid; recovered defaults',e);
@@ -575,7 +619,7 @@ function state(){
   }
 }
 function save(s){
-  s=normalizeStateV50(s);
+  s=enforceAuthoritativePlan(normalizeStateV50(s));
 
   /* V224B33: archive Completed/Done rows before generateActions() rebuilds
      current recommendations. This is scoped to completed Actions only. */
@@ -607,7 +651,8 @@ function resetState(){
     fresh.user={
       ...fresh.user,
       email:currentSession.user.email||'',
-      name:currentSession.user.user_metadata?.name||'Beekeeper'
+      name:currentSession.user.user_metadata?.name||'Beekeeper',
+      plan:authoritativePlanFromSession()
     };
   }
   localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh));
@@ -698,7 +743,7 @@ function unread(s){
 }
 
 function avgHealth(s){const hs=typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&String(h?.lifecycleStatus||h?.status||'').toLowerCase()!=='combined');return Math.round(hs.reduce((n,h)=>n+Number(h.score||0),0)/Math.max(1,hs.length))}
-function isPro(s){return s.user.plan==='Pro'}
+function isPro(_s){return authoritativePlanFromSession()==='Pro'}
 function statusPill(status){return `<span class="pill ${status==='Critical'?'danger':status==='Attention'?'warn':''}">${esc(status)}</span>`}
 function toast(msg){
   const t=idq('toast');
@@ -727,10 +772,14 @@ function requirePro(feature){
   return false;
 }
 function subscriptionModal(feature='this feature'){
-  const s=state(),m=modal(`<div class="modalhead"><div class="h2">Unlock HiveDash Pro</div><button type="button" class="iconbtn" onclick="closeModal(this)">✕</button></div>
-  <div class="setting"><div class="small muted">Upgrade to use ${esc(feature)}.</div><div class="h2" style="margin-top:10px">$59.99 / year</div><div class="small" style="margin-top:6px">Unlimited hives · Health Analysis · Risk Prediction · Season Intelligence · Reports · Cloud features</div><button type="button" class="btn primary block" id="upgradeBtn" style="margin-top:12px">Upgrade Demo</button></div>
-  <div class="notice">Prototype billing only. Production must validate entitlement from a billing provider.</div>`);
-  m.querySelector('#upgradeBtn').onclick=()=>{s.user.plan='Pro';save(s);m.remove();toast('Pro enabled in demo');render()}
+  const m=modal(`<div class="modalhead"><div class="h2">Unlock HiveDash Pro</div><button type="button" class="iconbtn" onclick="closeModal(this)">✕</button></div>
+  <div class="setting"><div class="small muted">Upgrade to use ${esc(feature)}.</div><div class="h2" style="margin-top:10px">$59.99 / year</div><div class="small" style="margin-top:6px">Unlimited hives · Health Analysis · Risk Prediction · Season Intelligence · Reports · Cloud features</div><button type="button" class="btn primary block" id="upgradeBtn" style="margin-top:12px">Upgrade to Pro</button></div>
+  <div class="notice">Pro access is verified by HiveDash servers. This browser cannot enable Pro on its own.</div>`);
+  m.querySelector('#upgradeBtn').onclick=()=>{
+    m.remove();
+    if(typeof startProCheckout==='function')startProCheckout();
+    else toast('Billing service is not available yet. No plan change was made.');
+  }
 }
 
 function icon(name){
@@ -1956,9 +2005,13 @@ function exportData(){
 }
 
 function subscriptionPage(r){
-  const s=state();
-  r.innerHTML=`<section><div class="h1" style="margin-top:12px">HiveDash Plans</div></section><section class="setting"><div class="row between"><div><div class="h2">Free</div><div class="small muted">Up to ${FREE_HIVE_LIMIT} hives · Basic records · Basic reminders</div></div>${s.user.plan==='Free'?'<span class="pill">Current</span>':''}</div><button type="button" class="btn secondarybtn block" data-plan="Free" style="margin-top:10px">Choose Free</button></section><section class="setting"><div class="row between"><div><div class="h2">HiveDash Pro</div><div class="small muted">Unlimited hives · Health Analysis · Risk Prediction · Season Intelligence · Advanced trends · Reports</div></div>${s.user.plan==='Pro'?'<span class="pill">Current</span>':'<span class="pill warn">Recommended</span>'}</div><div class="h2" style="margin-top:10px">$59.99 / year</div><button type="button" class="btn primary block" data-plan="Pro" style="margin-top:10px">Choose Pro</button></section><div class="notice">Prototype billing only. Production must validate paid entitlement from Stripe/Paddle/RevenueCat/App Store billing.</div>`;
-  document.querySelectorAll('[data-plan]').forEach(b=>b.onclick=()=>{s.user.plan=b.dataset.plan;save(s);toast('Plan changed in demo');render()})
+  const s=state(),pro=isPro(s);
+  r.innerHTML=`<section><div class="h1" style="margin-top:12px">HiveDash Plans</div></section><section class="setting"><div class="row between"><div><div class="h2">Free</div><div class="small muted">Up to ${FREE_HIVE_LIMIT} hives · Basic records · Basic reminders</div></div>${!pro?'<span class="pill">Current</span>':''}</div></section><section class="setting"><div class="row between"><div><div class="h2">HiveDash Pro</div><div class="small muted">Unlimited hives · Health Analysis · Risk Prediction · Season Intelligence · Advanced trends · Reports</div></div>${pro?'<span class="pill">Current</span>':'<span class="pill warn">Recommended</span>'}</div><div class="h2" style="margin-top:10px">$59.99 / year</div><button type="button" class="btn primary block" id="appUpgradeBtn" style="margin-top:10px">${pro?'Manage Subscription':'Upgrade to Pro'}</button></section><div class="notice">Plan access is server-verified. Local state cannot grant Pro.</div>`;
+  idq('appUpgradeBtn').onclick=()=>{
+    if(pro && typeof manageSubscription==='function')manageSubscription();
+    else if(typeof startProCheckout==='function')startProCheckout();
+    else toast('Billing service is not available yet. No plan change was made.');
+  };
 }
 
 function notifications(r){

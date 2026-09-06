@@ -855,13 +855,53 @@ async function requestAccountDeletion(){
   toast('Deletion request recorded. Server-side account deletion must be completed by the production backend.');
 }
 
+/* =========================================================
+   V2P2E1 — PRODUCTION BILLING GATE
+   Client-side demo entitlement removed. The browser never grants Pro.
+   Billing actions call authenticated Supabase Edge Functions; final access
+   is read only from server-controlled Auth app_metadata.
+   ========================================================= */
 function subscriptionPage(r){
-  const s=v45s(),isPro=s.user.plan==='Pro';
-  r.innerHTML=`<div class="vs"><section class="procard"><span>Current Plan</span><b>${s.user.plan} Plan</b><small>${isPro?'Pro features enabled':'Core hive management enabled'}</small><button onclick="${isPro?'manageSubscription()':"setPlan('Pro')"}">${isPro?'Manage Subscription':'Upgrade to Pro'}</button></section>${Vcard('Pro includes','<ul class="checks"><li>AI Health Analysis</li><li>Risk Prediction</li><li>Advanced Trends</li><li>Season Intelligence</li><li>Honey Analytics</li><li>Photo AI</li><li>Professional Recommendations</li><li>Reports & Export</li></ul>')}<button class="secondary" onclick="restorePurchase()">Restore Purchase</button></div>`
+  const s=v45s(),pro=isPro(s),plan=pro?'Pro':'Free';
+  r.innerHTML=`<div class="vs"><section class="procard"><span>Current Plan</span><b>${plan} Plan</b><small>${pro?'Pro access verified by your account':'Core hive management enabled'}</small><button onclick="${pro?'manageSubscription()':'startProCheckout()'}">${pro?'Manage Subscription':'Upgrade to Pro'}</button></section>${Vcard('Pro includes','<ul class="checks"><li>AI Health Analysis</li><li>Risk Prediction</li><li>Advanced Trends</li><li>Season Intelligence</li><li>Honey Analytics</li><li>Photo AI</li><li>Professional Recommendations</li><li>Reports & Export</li></ul>')}<button class="secondary" onclick="restorePurchase()">Restore Purchase</button><div class="notice">Pro access is verified by HiveDash servers. This browser cannot enable Pro by changing local data.</div></div>`
 }
-function manageSubscription(){modal(`<div class="modalhead"><b>Manage Subscription</b><button onclick="closeModal(this)">✕</button></div><div class="notice">Production billing portal connection is required here. Your current HiveDash UI route is correctly connected.</div><button class="secondary danger" onclick="closeModal(this);setPlan('Free')">Switch demo to Free</button>`)}
-function restorePurchase(){const s=v45s();const saved=localStorage.getItem('hivedash_demo_entitlement');if(saved==='Pro'){s.user.plan='Pro';save(s);toast('Pro purchase restored');render()}else toast('No previous purchase found in this prototype')}
-function setPlan(p){const s=v45s();s.user.plan=p;localStorage.setItem('hivedash_demo_entitlement',p);save(s);toast('Plan updated');render()}
+async function invokeBillingEdgeV2P2E1(functionName){
+  if(typeof supabaseClient==='undefined'||!supabaseClient||typeof currentSession==='undefined'||!currentSession?.user){
+    toast('Sign in to manage your subscription');
+    return null;
+  }
+  try{
+    const {data,error}=await supabaseClient.functions.invoke(functionName,{body:{returnUrl:location.origin+location.pathname+'#subscription'}});
+    if(error)throw error;
+    if(!data?.url)throw new Error('Billing service did not return a secure URL');
+    location.assign(String(data.url));
+    return data;
+  }catch(err){
+    console.error(`HiveDash billing function ${functionName} failed`,err);
+    toast('Billing service is not available yet. No plan change was made.');
+    return null;
+  }
+}
+async function startProCheckout(){
+  return invokeBillingEdgeV2P2E1('create-checkout-session');
+}
+async function manageSubscription(){
+  return invokeBillingEdgeV2P2E1('create-customer-portal-session');
+}
+async function restorePurchase(){
+  if(typeof refreshAuthoritativeEntitlement!=='function')return toast('Subscription verification is unavailable');
+  try{
+    const plan=await refreshAuthoritativeEntitlement();
+    toast(plan==='Pro'?'Pro access verified':'No active Pro subscription found');
+    render();
+  }catch(_err){
+    toast('Could not verify subscription. Try again when online.');
+  }
+}
+function setPlan(_p){
+  /* Security backstop for old cached markup/calls. Never mutate entitlement here. */
+  toast('Plan changes require verified billing.');
+}
 
 const V224A_US_STATES=[['AL','Alabama'],['AK','Alaska'],['AZ','Arizona'],['AR','Arkansas'],['CA','California'],['CO','Colorado'],['CT','Connecticut'],['DE','Delaware'],['DC','District of Columbia'],['FL','Florida'],['GA','Georgia'],['HI','Hawaii'],['ID','Idaho'],['IL','Illinois'],['IN','Indiana'],['IA','Iowa'],['KS','Kansas'],['KY','Kentucky'],['LA','Louisiana'],['ME','Maine'],['MD','Maryland'],['MA','Massachusetts'],['MI','Michigan'],['MN','Minnesota'],['MS','Mississippi'],['MO','Missouri'],['MT','Montana'],['NE','Nebraska'],['NV','Nevada'],['NH','New Hampshire'],['NJ','New Jersey'],['NM','New Mexico'],['NY','New York'],['NC','North Carolina'],['ND','North Dakota'],['OH','Ohio'],['OK','Oklahoma'],['OR','Oregon'],['PA','Pennsylvania'],['RI','Rhode Island'],['SC','South Carolina'],['SD','South Dakota'],['TN','Tennessee'],['TX','Texas'],['UT','Utah'],['VT','Vermont'],['VA','Virginia'],['WA','Washington'],['WV','West Virginia'],['WI','Wisconsin'],['WY','Wyoming']];
 const V224A_TZ=['America/New_York','America/Chicago','America/Denver','America/Phoenix','America/Los_Angeles','America/Anchorage','Pacific/Honolulu'];

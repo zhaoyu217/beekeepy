@@ -8725,8 +8725,105 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     return ev;
   };
 
+  /* V2P2D1A — legacy evidence migration bridge.
+     D1 intentionally makes logs.varroaTests the ONLY current numeric source,
+     but older HiveDash builds stored real mite counts only on the Hive /
+     Inspection snapshot.  Before clearing those mirrors, migrate one durable
+     legacy evidence row ONLY for hives that have no formal Varroa Test yet.
+     This is a one-way bridge; after migration every consumer still reads
+     logs.varroaTests and the old fields remain compatibility mirrors only. */
+  window.v2p2d1MigrateLegacyVarroaEvidence=function(s){
+    if(!s||typeof s!=='object')return false;
+    s.logs=(s.logs&&typeof s.logs==='object')?s.logs:{};
+    s.logs.varroaTests=Array.isArray(s.logs.varroaTests)?s.logs.varroaTests:[];
+    const rows=s.logs.varroaTests;
+    const inspections=Array.isArray(s.logs.inspections)?s.logs.inspections:[];
+    let changed=false;
+    const finiteRaw=v=>{
+      if(v===null||v===undefined||txt(v)==='')return null;
+      const n=Number(v);return Number.isFinite(n)&&n>=0?n:null;
+    };
+    const isoDay=v=>{
+      const x=txt(v).slice(0,10);
+      return /^\d{4}-\d{2}-\d{2}$/.test(x)?x:'';
+    };
+    const pickLegacy=(h)=>{
+      const i=(h?.insp&&typeof h.insp==='object')?h.insp:{};
+      const explicitDate=isoDay(i.varroaTestDate)||isoDay(h?.varroaTestDate);
+      let n=finiteRaw(i.varroa);
+      if(n!==null&&explicitDate)return {count:n,date:explicitDate,source:'legacy-current-inspection'};
+      n=finiteRaw(h?.varroa);
+      if(n!==null&&explicitDate)return {count:n,date:explicitDate,source:'legacy-current-hive'};
+
+      // Positive legacy counts are strong enough evidence to preserve even when
+      // old builds did not persist a dedicated test date.  Use the Inspection
+      // date that originally carried the value rather than inventing today.
+      const history=inspections
+        .filter(x=>x&&String(x.hiveId)===String(h?.id))
+        .map((row,index)=>({row,index}))
+        .filter(x=>finiteRaw(x.row.varroa)!==null)
+        .sort((a,b)=>{
+          const d=dayMs(b.row.varroaTestDate||b.row.date)-dayMs(a.row.varroaTestDate||a.row.date);if(d)return d;
+          return b.index-a.index;
+        });
+      for(const x of history){
+        const count=finiteRaw(x.row.varroa);
+        const date=isoDay(x.row.varroaTestDate)||isoDay(x.row.date);
+        if(date&&(count>0||isoDay(x.row.varroaTestDate)))
+          return {count,date,source:'legacy-inspection-history'};
+      }
+
+      // Last-resort preservation for a positive current legacy count.
+      n=finiteRaw(i.varroa);
+      if(n===null)n=finiteRaw(h?.varroa);
+      const fallbackDate=isoDay(h?.lastInspection);
+      if(n!==null&&n>0&&fallbackDate)return {count:n,date:fallbackDate,source:'legacy-current-positive'};
+      return null;
+    };
+
+    (Array.isArray(s.hives)?s.hives:[]).forEach(h=>{
+      if(!h)return;
+      const hasFormal=rows.some(r=>r&&String(r.hiveId)===String(h.id)&&isoDay(r.date)&&finiteRaw(r.mitesPer100)!==null);
+      if(hasFormal)return;
+      const legacy=pickLegacy(h);if(!legacy)return;
+      const safeCount=Number(legacy.count);
+      const id=`v2p2d1a-legacy-varroa-${String(h.id)}-${legacy.date}-${String(safeCount).replace(/\W+/g,'_')}`;
+      if(rows.some(r=>String(r?.id||'')===id))return;
+      rows.push({
+        id,
+        hiveId:h.id,
+        date:legacy.date,
+        testType:'Legacy migrated evidence',
+        method:'Not recorded',
+        sampleSize:null,
+        miteCount:null,
+        mitesPer100:safeCount,
+        notes:'Migrated from pre-D1 HiveDash Varroa evidence.',
+        source:'v2p2d1a-legacy-varroa-migration',
+        legacySource:legacy.source,
+        recordedAt:'',
+        updatedAt:''
+      });
+      changed=true;
+    });
+    if(changed){
+      s.meta=(s.meta&&typeof s.meta==='object')?s.meta:{};
+      s.meta.varroaEvidenceMigration='V2P2D1A';
+    }
+    return changed;
+  };
+
   window.v2p2d1SyncVarroaMirrors=function(s){
+    const migrated=window.v2p2d1MigrateLegacyVarroaEvidence(s);
     (Array.isArray(s?.hives)?s.hives:[]).forEach(h=>window.v2p2d1SyncVarroaMirror(s,h));
+    if(migrated){
+      try{
+        // Persist the bridge once so local/cloud state no longer depends on
+        // legacy Hive fields on the next render or device.
+        if(typeof save==='function')save(s);
+        else if(typeof writeLocalV50==='function')writeLocalV50(s);
+      }catch(e){console.warn('V2P2D1A legacy Varroa migration persistence failed',e)}
+    }
     return s;
   };
 })();

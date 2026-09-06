@@ -911,9 +911,19 @@ function calculateHealth(h){
   return {score,why,status:score>=85?'Healthy':score>=70?'Attention':'Critical'}
 }
 
+function preferredWeightUnit(s){
+  const explicit=String(s?.settings?.region?.weight||'').trim().toLowerCase();
+  if(explicit==='kg'||explicit==='lb')return explicit;
+  const metric=s?.settings?.region?.measurement==='Metric'||s?.settings?.units==='metric';
+  return metric?'kg':'lb';
+}
+function weightFromLb(lb,s){
+  const n=Number(lb)||0;
+  return preferredWeightUnit(s)==='kg'?n*0.45359237:n;
+}
 function formatWeight(lb,s){
-  if(s.settings.units==='metric')return `${(Number(lb)*0.453592).toFixed(1)} kg`;
-  return `${Number(lb).toFixed(1)} lb`
+  const unit=preferredWeightUnit(s);
+  return `${weightFromLb(lb,s).toFixed(1)} ${unit}`;
 }
 function formatTemp(f,s){return s.settings.units==='metric'?`${Math.round((f-32)*5/9)}°C`:`${Math.round(f)}°F`}
 
@@ -1260,7 +1270,7 @@ function actionForm(type,selectedHive){
     <div class="formgroup"><label>Notes</label><textarea id="notes" maxlength="1000" placeholder="Quick field note..."></textarea></div>`;
   if(type==='feeding')fields=`<div class="formgroup"><label>Feed Type</label><select id="feedType"><option>1:1 Syrup</option><option>2:1 Syrup</option><option>Pollen Patty</option></select></div><div class="formgroup"><label>Amount</label><input id="feedAmount" maxlength="40" placeholder="${s.settings.units==='metric'?'2 L':'2 gallons'}"></div>`;
   if(type==='treatment')fields=`<div class="formgroup"><label>Treatment Type</label><select id="treatmentType"><option>Oxalic Acid</option><option>Formic Acid</option><option>Apivar</option><option>Other</option></select></div><div class="notice">Follow the product label and applicable local rules. HiveDash does not replace label instructions.</div>`;
-  if(type==='harvest')fields=`<div class="formgroup"><label>Weight (${s.settings.units==='metric'?'kg':'lb'})</label><input id="harvestWeight" type="number" step=".1"></div><div class="formgroup"><label>Frames</label><input id="harvestFrames" type="number"></div><div class="formgroup"><label>Moisture %</label><input id="harvestMoisture" type="number" step=".1"></div>`;
+  if(type==='harvest'){const wu=preferredWeightUnit(s);fields=`<div class="formgroup"><label>Weight (${wu})</label><input id="harvestWeight" type="number" step=".1"></div><div class="formgroup"><label>Frames</label><input id="harvestFrames" type="number"></div><div class="formgroup"><label>Moisture %</label><input id="harvestMoisture" type="number" step=".1"></div>`;}
   const m=modal(`<div class="form-master ${type==='inspection'?'inspection-master':''}">
     <div class="form-header-master"><button type="button" onclick="closeModal(this)">‹</button><b>${type==='inspection'?'Inspection':`New ${type[0].toUpperCase()+type.slice(1)}`}</b><button type="button" id="saveActionTop">Save</button></div>
     <div class="form-hive-master"><i>${icon('hive')}</i><span><b>${esc(hive(s,selectedHive||s.hives[0]?.id)?.name||'Select hive')}</b><small>${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · 9:30 AM</small></span></div>
@@ -1295,7 +1305,7 @@ function actionForm(type,selectedHive){
     }else if(type==='treatment'){
       s.logs.treatments.push({id:'t'+Date.now(),hiveId,date,type:m.querySelector('#treatmentType').value})
     }else if(type==='harvest'){
-      let weight=Number(m.querySelector('#harvestWeight').value||0);if(s.settings.units==='metric')weight=weight/0.453592;
+      let weight=Number(m.querySelector('#harvestWeight').value||0);if(preferredWeightUnit(s)==='kg')weight=weight/0.45359237;
       s.logs.harvests.push({id:'hv'+Date.now(),hiveId,date,weightLb:weight,frames:Number(m.querySelector('#harvestFrames').value||0),moisture:Number(m.querySelector('#harvestMoisture').value||0)})
     }
     save(s);m.remove();toast('Saved');render()
@@ -1551,7 +1561,7 @@ function honeyPage(r){
   const logs=s.logs.harvests.filter(x=>Number(String(x.date||'').slice(0,4))===year);
   const total=logs.reduce((n,x)=>n+Number(x.weightLb||0),0),avg=logs.length?logs.reduce((n,x)=>n+Number(x.moisture||0),0)/logs.length:0;
   const monthly=Array(12).fill(0);logs.forEach(x=>{const m=Number(String(x.date||'').slice(5,7))-1;if(m>=0&&m<12)monthly[m]+=Number(x.weightLb||0)});const max=Math.max(1,...monthly);
-  r.innerHTML=`<div class="master-screen harvest-master"><div class="year-master"><button type="button" onclick="openHarvestYearPicker()">${year===new Date().getFullYear()?'This Year':year}⌄</button></div><div class="harvest-stats-master"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${logs.length}</b></div><div><small>Avg Moisture</small><b>${avg.toFixed(1)}%</b></div></div><section class="detail-section-master"><div class="master-section-title">Harvest Over Time (${s.settings.units==='metric'?'kg':'lb'})</div><div class="bar-master">${monthly.map((v,i)=>`<div><i style="height:${Math.max(2,v/max*100)}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section><section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button type="button" onclick="openHarvestHistory(${year})">View All</button></div><div class="batch-master">${logs.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches for this year.</small>'}</div></section></div>`
+  r.innerHTML=`<div class="master-screen harvest-master"><div class="year-master"><button type="button" onclick="openHarvestYearPicker()">${year===new Date().getFullYear()?'This Year':year}⌄</button></div><div class="harvest-stats-master"><div><small>Total Harvest</small><b>${formatWeight(total,s)}</b></div><div><small>Total Batches</small><b>${logs.length}</b></div><div><small>Avg Moisture</small><b>${avg.toFixed(1)}%</b></div></div><section class="detail-section-master"><div class="master-section-title">Harvest Over Time (${preferredWeightUnit(s)})</div><div class="bar-master">${monthly.map((v,i)=>`<div><i style="height:${Math.max(2,v/max*100)}%"></i><span>${['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'][i]}</span></div>`).join('')}</div></section><section class="detail-section-master"><div class="master-title-action"><div class="master-section-title">Recent Batches</div><button type="button" onclick="openHarvestHistory(${year})">View All</button></div><div class="batch-master">${logs.slice().reverse().slice(0,5).map(x=>`<button onclick="go('hive/${x.hiveId}')"><span>${fmtDate(x.date)}</span><span>${esc(hive(s,x.hiveId)?.name||'Hive')}</span><b>${formatWeight(x.weightLb,s)}</b><small>${x.moisture}%</small></button>`).join('')||'<small>No harvest batches for this year.</small>'}</div></section></div>`
 }
 function v124MonthIndex(name){
   const months={jan:0,feb:1,mar:2,apr:3,may:4,jun:5,jul:6,aug:7,sep:8,oct:9,nov:10,dec:11};

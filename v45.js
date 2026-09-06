@@ -3534,10 +3534,10 @@ function home(r){
       </button>
 
       <div class="v56-health-stats">
-        <button onclick="go('all-hives/All')"><b>${managed.length}</b><span>Total Hives</span></button>
-        <button onclick="go('all-hives/Healthy')"><b>${strong}</b><span>Strong</span></button>
-        <button onclick="go('all-hives/Attention')"><b>${attention}</b><span>Attention</span></button>
-        <button onclick="go('all-hives/Critical')"><b>${critical}</b><span>Critical</span></button>
+        <button onclick="window.__v63Filter='All';go('hives')"><b>${managed.length}</b><span>Total Hives</span></button>
+        <button onclick="window.__v63Filter='Healthy';go('hives')"><b>${strong}</b><span>Strong</span></button>
+        <button onclick="window.__v63Filter='Attention';go('hives')"><b>${attention}</b><span>Attention</span></button>
+        <button onclick="window.__v63Filter='Critical';go('hives')"><b>${critical}</b><span>Critical</span></button>
       </div>
     </section>
 
@@ -17610,3 +17610,13 @@ window.__HIVEDASH_V2P2E5C_VERSION__='v2p2e5c-move-destination-timezone';
    bypassing the Action architecture by launching Inspection directly. */
 window.__HIVEDASH_V2P2E5D_VERSION__='v2p2e5d-actions-header-plus-other-task';
 
+
+/* ==============================================================
+   V2P2E5F — HOME HEALTH STAT ROUTE FIX
+   Scope ONLY:
+   - Home hero stat tiles now open the canonical Hives page.
+   - Total Hives -> All, Strong -> Healthy, Attention -> Attention,
+     Critical -> Critical using the persistent Hives filter state.
+   - Legacy all-hives routes remain untouched for backward compatibility.
+   ============================================================== */
+window.__HIVEDASH_V2P2E5F_VERSION__='v2p2e5f-home-health-stat-route-fix';

@@ -16993,3 +16993,47 @@ window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
   };
   window.__HIVEDASH_V2P2D2_VERSION__='v2p2d2-treatment-selector-single-rule';
 })();
+
+/* ==============================================================
+   V2P2D2A — TIMELINE SAME-DAY TREATMENT ORDER CONSISTENCY
+   Scope ONLY:
+   - Timeline Treatment rows use the exact same same-day tie-break rule
+     as the canonical current Treatment selector introduced in V2P2D2.
+   - No Treatment records are mutated and no non-Treatment business logic changes.
+   ============================================================== */
+(function v2p2d2aTimelineTreatmentOrder(){
+  if(window.__HIVEDASH_V2P2D2A_TIMELINE_TREATMENT_ORDER__)return;
+  window.__HIVEDASH_V2P2D2A_TIMELINE_TREATMENT_ORDER__=true;
+  const prev=window.v49TimelineRows;
+  if(typeof prev!=='function')return;
+  const txt=v=>String(v==null?'':v).trim();
+  const rowSourceId=row=>txt(row?.sourceId||txt(row?.key).split(':').slice(1).join(':'));
+  window.v49TimelineRows=function(hiveId=''){
+    const rows=prev.apply(this,arguments);
+    const s=typeof v45s==='function'?v45s():{};
+    const treatments=Array.isArray(s?.logs?.treatments)?s.logs.treatments:[];
+    const byId=new Map(treatments.map(x=>[txt(x?.id),x]));
+    const txCmp=typeof window.v2p2d2TreatmentComparator==='function'
+      ? window.v2p2d2TreatmentComparator
+      : ((a,b)=>txt(b?.date).localeCompare(txt(a?.date))||txt(b?.updatedAt).localeCompare(txt(a?.updatedAt))||txt(b?.id).localeCompare(txt(a?.id)));
+
+    return rows.slice().sort((a,b)=>{
+      const byDate=txt(b?.date).localeCompare(txt(a?.date));
+      if(byDate)return byDate;
+      if(a?.type==='Treatment'&&b?.type==='Treatment'){
+        const ta=byId.get(rowSourceId(a));
+        const tb=byId.get(rowSourceId(b));
+        if(ta&&tb){
+          const c=txCmp(ta,tb);
+          if(c)return c;
+        }
+        const bySaved=txt(b?.savedAt).localeCompare(txt(a?.savedAt));
+        if(bySaved)return bySaved;
+        return rowSourceId(b).localeCompare(rowSourceId(a));
+      }
+      return 0;
+    });
+  };
+  try{v49TimelineRows=window.v49TimelineRows}catch(_){ }
+  window.__HIVEDASH_V2P2D2A_VERSION__='v2p2d2a-timeline-treatment-same-day-order';
+})();

@@ -850,9 +850,51 @@ function saveAcct(){
   }
 }
 async function requestAccountDeletion(){
-  if(!confirm('Delete this HiveDash account? This action requires server-side confirmation.'))return;
-  localStorage.setItem('hivedash_delete_requested','1');
-  toast('Deletion request recorded. Server-side account deletion must be completed by the production backend.');
+  if(typeof supabaseClient==='undefined'||!supabaseClient||typeof currentSession==='undefined'||!currentSession?.user){
+    toast('Sign in before deleting your account');
+    return;
+  }
+  if(!confirm('Permanently delete your HiveDash account and all cloud hive data? This cannot be undone.'))return;
+  const typed=prompt('Type DELETE to permanently delete your account.');
+  if(typed!=='DELETE'){
+    toast('Account deletion canceled');
+    return;
+  }
+
+  try{
+    suppressCloudSave=true;
+    clearTimeout(syncTimer);
+    setCloudStatus('Deleting account…');
+
+    const {data,error}=await supabaseClient.functions.invoke('delete-account',{
+      body:{confirmation:'DELETE'}
+    });
+    if(error)throw error;
+    if(!data?.deleted)throw new Error(data?.error||'Account deletion was not confirmed by the server');
+
+    stopRealtimeSync();
+    try{await supabaseClient.auth.signOut({scope:'local'})}catch(_e){}
+
+    currentSession=null;
+    cloudReady=false;
+    lastRemoteUpdatedAt='';
+    setCloudStatus('Offline');
+
+    try{
+      for(const key of Object.keys(localStorage)){
+        if(key===STORAGE_KEY||key.startsWith('hivedash_'))localStorage.removeItem(key);
+      }
+    }catch(_e){}
+
+    suppressCloudSave=false;
+    location.hash='signin';
+    renderAuth('signin','Account and cloud data deleted.');
+  }catch(err){
+    suppressCloudSave=false;
+    console.error('HiveDash account deletion failed',err);
+    setCloudStatus(currentSession?.user?'Synced':'Offline');
+    toast('Account could not be deleted. No data was removed.');
+  }
 }
 
 /* =========================================================

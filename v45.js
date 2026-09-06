@@ -41,7 +41,7 @@ function v121CleanupDemoHives(s){
   save(s);
   return s;
 }
-function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};let v2p2c11WeightPolicyChanged=false;if(s.settings.weightPolicyVersion!=='v2p2c11'){if(s.settings.weightPolicyVersion!=='v2p2c10')s.settings.region.weight='lb';s.settings.weightPolicyVersion='v2p2c11';v2p2c11WeightPolicyChanged=true;}s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';const rawLocation=String(s.settings.location||'').trim();if(!s.settings.locationUserSet&&rawLocation==='Colorado, USA'){s.settings.location='';}else{s.settings.location=rawLocation;}const legacyLoc=String(s.settings.location||'').trim();const al=(s.settings.apiaryLocation&&typeof s.settings.apiaryLocation==='object')?s.settings.apiaryLocation:{};s.settings.apiaryLocation={countryCode:String(al.countryCode||'US'),country:String(al.country||'United States'),stateCode:String(al.stateCode||''),state:String(al.state||''),city:String(al.city||''),postalCode:String(al.postalCode||''),latitude:(al.latitude!==null&&al.latitude!==undefined&&String(al.latitude).trim()!==''&&Number.isFinite(Number(al.latitude)))?Number(al.latitude):null,longitude:(al.longitude!==null&&al.longitude!==undefined&&String(al.longitude).trim()!==''&&Number.isFinite(Number(al.longitude)))?Number(al.longitude):null,timezone:String(al.timezone||s.settings.region.timezone||s.settings.timezone||'America/Denver'),precision:String(al.precision||'unset'),contextReady:Boolean(al.contextReady),legacyText:String(al.legacyText||legacyLoc)};s.hives=s.hives||[];v121CleanupDemoHives(s);if(v2p2c11WeightPolicyChanged){try{save(s)}catch(e){console.warn('V2P2C11 weight preference persistence failed',e)}}return s}
+function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};let v2p2c11WeightPolicyChanged=false;if(s.settings.weightPolicyVersion!=='v2p2c11'){if(s.settings.weightPolicyVersion!=='v2p2c10')s.settings.region.weight='lb';s.settings.weightPolicyVersion='v2p2c11';v2p2c11WeightPolicyChanged=true;}s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';const rawLocation=String(s.settings.location||'').trim();if(!s.settings.locationUserSet&&rawLocation==='Colorado, USA'){s.settings.location='';}else{s.settings.location=rawLocation;}const legacyLoc=String(s.settings.location||'').trim();const al=(s.settings.apiaryLocation&&typeof s.settings.apiaryLocation==='object')?s.settings.apiaryLocation:{};s.settings.apiaryLocation={countryCode:String(al.countryCode||'US'),country:String(al.country||'United States'),stateCode:String(al.stateCode||''),state:String(al.state||''),city:String(al.city||''),postalCode:String(al.postalCode||''),latitude:(al.latitude!==null&&al.latitude!==undefined&&String(al.latitude).trim()!==''&&Number.isFinite(Number(al.latitude)))?Number(al.latitude):null,longitude:(al.longitude!==null&&al.longitude!==undefined&&String(al.longitude).trim()!==''&&Number.isFinite(Number(al.longitude)))?Number(al.longitude):null,timezone:String(al.timezone||s.settings.region.timezone||s.settings.timezone||'America/Denver'),precision:String(al.precision||'unset'),contextReady:Boolean(al.contextReady),legacyText:String(al.legacyText||legacyLoc)};s.hives=s.hives||[];v121CleanupDemoHives(s);if(v2p2c11WeightPolicyChanged){try{save(s)}catch(e){console.warn('V2P2C11 weight preference persistence failed',e)}}try{if(typeof window.v2p2d1SyncVarroaMirrors==='function')window.v2p2d1SyncVarroaMirrors(s)}catch(e){console.warn('V2P2D1 Varroa mirror sync failed',e)}return s}
 function vh(id){const s=v45s();return hive(s,id)||s.hives[0]}
 function vphoto(h,i=0){return v101HivePrimaryPhoto(h)}
 function Vcard(title,body,action=''){return `<section class="vc"><div class="vhead"><b>${title}</b>${action}</div>${body}</section>`}
@@ -1988,6 +1988,7 @@ function hiveDetail(r,id){
       if(bu!==au)return bu-au;
       return String(b.id||'').localeCompare(String(a.id||''));
     })[0],
+    varroaEvidence=(typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h.id):null),
     timelineRows=(typeof v49TimelineRows==='function'
       ? v49TimelineRows(h.id)
       : [
@@ -1996,7 +1997,7 @@ function hiveDetail(r,id){
           ...(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Treatment'})),
           ...(Array.isArray(s.logs?.harvests)?s.logs.harvests:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Harvest'}))
         ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))));
-  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(b43HiveLocText)}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Queen marked',h.insp?.queenMarked||'Not confirmed'],['Queen age',h.insp?.queenAge!==''&&h.insp?.queenAge!==undefined?`${h.insp.queenAge} yr`:'—'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')],['Laying pattern',h.insp?.layingPattern||'Not assessed']])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.broodStrength??h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.colonySize??h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',`${Number(h.insp?.varroa??h.varroa??0)}/100`],['Risk',Number(h.insp?.varroa??h.varroa??0)>=3?'High':Number(h.insp?.varroa??h.varroa??0)>=2?'Medium':'Low'],['Test date',fmtDate(h.insp?.varroaTestDate||h.lastInspection)]])}${hg('Treatment',[
+  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(b43HiveLocText)}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Queen marked',h.insp?.queenMarked||'Not confirmed'],['Queen age',h.insp?.queenAge!==''&&h.insp?.queenAge!==undefined?`${h.insp.queenAge} yr`:'—'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')],['Laying pattern',h.insp?.layingPattern||'Not assessed']])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.broodStrength??h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.colonySize??h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',varroaEvidence?`${Number(varroaEvidence.mitesPer100)}/100`:'Not recorded'],['Risk',varroaEvidence?(Number(varroaEvidence.mitesPer100)>=3?'High':Number(varroaEvidence.mitesPer100)>=2?'Medium':'Low'):'Unknown'],['Test date',varroaEvidence?fmtDate(varroaEvidence.date):'Not recorded']])}${hg('Treatment',[
   ['Last treatment',lastTx?.type||h.insp?.treatment||'None'],
   ['Status',lastTx?(lastTx.endDate?((String(lastTx.status||'').trim()==='Stopped')?'Stopped':'Completed'):(lastTx.status||'Active')):(h.insp?.treatmentStatus||'None')],
   ['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):(h.insp?.treatmentFollowUp?fmtDate(h.insp.treatmentFollowUp):'—')],
@@ -8429,6 +8430,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   inspectionPage=function(r,id){
     const s=v45s(),h=vh(id);if(!h)return;
     const lastTx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+    const varroaEvidence=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h.id):null;
     if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id){
       const hi=h.insp||{};
       const lastInspectionLog=(Array.isArray(s.logs?.inspections)?s.logs.inspections:[])
@@ -8439,7 +8441,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         brood:hi.brood||h.brood||'Good',broodStrength:Number(hi.broodStrength??hi.strength??8),abnormalities:hi.abnormalities||'None',
         colonySize:Number(hi.colonySize??hi.strength??8),populationFrames:Number(hi.populationFrames||8),temperament:hi.temperament||'Calm',
         honey:hi.honey||h.honey||'Medium',pollen:hi.pollen||h.pollen||'Medium',feedingNeed:hi.feedingNeed||(h.honey==='Low'?'Yes':'No'),
-        varroa:Number(hi.varroa??h.varroa??0),varroaTestDate:hi.varroaTestDate||h.lastInspection||v211Today(),
+        varroa:varroaEvidence?Number(varroaEvidence.mitesPer100):null,varroaTestDate:varroaEvidence?String(varroaEvidence.date||''):'',varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',
         treatment:lastTx?.type||hi.treatment||'None',treatmentStatus:lastTx?(lastTx.endDate?((String(lastTx.status||'').trim()==='Stopped')?'Stopped':'Completed'):(lastTx.status||'Active')):(hi.treatmentStatus||'None'),treatmentFollowUp:lastTx?.followUp||hi.treatmentFollowUp||'',treatmentWithdrawal:lastTx?.withdrawal||hi.treatmentWithdrawal||'None',
         pests:hi.pests||(h.shb||h.waxMoth?'Present':'None'),disease:hi.disease||(h.disease?'Present':'None'),swarming:hi.swarming||(h.swarm?'Signs':'None'),super:hi.superStatus||h.superStatus||'Installed',
         voiceNotes:String(hi.voiceNotes??lastInspectionLog?.voiceNotes??''),nextInspection:h.nextInspection||'',notes:h.notes||''
@@ -8454,7 +8456,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         ${card('brood','Brood','✿',[['Pattern',d.brood],['Strength',String(d.broodStrength)],['Abnormalities',d.abnormalities]])}
         ${card('colony','Colony','♙',[['Size',String(d.colonySize)],['Population',`${d.populationFrames} frames`],['Temperament',d.temperament]])}
         ${card('stores','Food Stores','◉',[['Honey',d.honey],['Pollen',d.pollen],['Feeding need',d.feedingNeed]])}
-        ${card('varroa','Varroa','☼',[['Last count',`${d.varroa}/100`],['Risk',v211Risk(d.varroa)],['Test date',fmtDate(d.varroaTestDate)]])}
+        ${card('varroa','Varroa','☼',[['Last count',d.varroaTestDate?`${Number(d.varroa)}/100`:'Not recorded'],['Risk',d.varroaTestDate?v211Risk(d.varroa):'Unknown'],['Test date',d.varroaTestDate?fmtDate(d.varroaTestDate):'Not recorded']])}
         ${card('treatment','Treatment','＋',[['Last treatment',d.treatment],['Status',d.treatmentStatus],['Follow-up',d.treatmentFollowUp?fmtDate(d.treatmentFollowUp):'—'],['Withdrawal',d.treatmentWithdrawal||'None']])}
       </div>
       <section class="iform v211-secondary"><div class="sectionlabel">ADDITIONAL CHECKS</div>${v211Row('Pests',d.pests,'pests')}${v211Row('Disease',d.disease,'disease')}${v211Row('Swarming',d.swarming,'swarming')}${v211Row('Super',d.super,'super')}</section>
@@ -8472,9 +8474,12 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const s=v45s(),h=hive(s,id),d=v212NormalizeDraft(V49_INSPECTION_DRAFT||{});if(!h)return;
     d.notes=idq('inotes')?.value||d.notes||h.notes;
     const date=v211Today();
-    h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=Number(d.varroa)||0;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;
-    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
-    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:Number(d.varroa)||0,varroaTestDate:d.varroaTestDate||date,pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
+    const varroaEvidence=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,id):null;
+    const authoritativeVarroa=varroaEvidence?Number(varroaEvidence.mitesPer100):null;
+    const authoritativeVarroaDate=varroaEvidence?String(varroaEvidence.date||''):'';
+    h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=authoritativeVarroa;h.varroaTestDate=authoritativeVarroaDate;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;
+    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
+    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
     /* V224B21 semantic isolation:
        Treatment edited inside Inspection is an Inspection snapshot only.
        It must NOT create an independent Treatment Timeline event.
@@ -8671,6 +8676,61 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   };
 })();
 
+/* ==============================================================
+   V2P2D1 — VARROA SINGLE SOURCE OF TRUTH
+   Canonical numeric evidence source: s.logs.varroaTests ONLY.
+   h.varroa / h.insp.varroa are derived compatibility mirrors and must
+   never outrank or independently replace a formal Varroa Test record.
+   ============================================================== */
+(function v2p2d1VarroaEvidenceSelector(){
+  if(window.__HIVEDASH_V2P2D1_VARROA_SELECTOR__)return;
+  window.__HIVEDASH_V2P2D1_VARROA_SELECTOR__=true;
+  const txt=v=>String(v==null?'':v).trim();
+  const dayMs=v=>{const t=Date.parse(txt(v).slice(0,10)+'T12:00:00');return Number.isFinite(t)?t:0};
+  const stamp=v=>{const t=Date.parse(txt(v));return Number.isFinite(t)?t:0};
+  const idStamp=v=>{const m=txt(v).match(/(\d{10,})/);return m?(Number(m[1])||0):0};
+
+  window.v2p2d1LatestVarroaEvidence=function(s,hid){
+    const rows=Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[];
+    return rows.map((row,index)=>({row,index}))
+      .filter(x=>x.row&&String(x.row.hiveId)===String(hid)&&txt(x.row.date)&&Number.isFinite(Number(x.row.mitesPer100)))
+      .sort((a,b)=>{
+        const d=dayMs(b.row.date)-dayMs(a.row.date);if(d)return d;
+        const r=stamp(b.row.recordedAt)-stamp(a.row.recordedAt);if(r)return r;
+        const u=stamp(b.row.updatedAt)-stamp(a.row.updatedAt);if(u)return u;
+        const i=idStamp(b.row.id)-idStamp(a.row.id);if(i)return i;
+        return b.index-a.index;
+      })[0]?.row||null;
+  };
+
+  window.v2p2d1SyncVarroaMirror=function(s,h){
+    if(!h)return null;
+    const ev=window.v2p2d1LatestVarroaEvidence(s,h.id);
+    h.insp=(h.insp&&typeof h.insp==='object')?h.insp:{};
+    if(ev){
+      const n=Number(ev.mitesPer100);
+      h.varroa=n;h.varroaTestDate=txt(ev.date);
+      h.insp.varroa=n;h.insp.varroaTestDate=txt(ev.date);h.insp.varroaTestId=txt(ev.id);
+      h.insp.varroaTestMethod=txt(ev.method);h.insp.varroaSampleSize=Number(ev.sampleSize)||null;
+      h.insp.varroaMiteCount=Number.isFinite(Number(ev.miteCount))?Number(ev.miteCount):null;
+      h.insp.varroaTestType=txt(ev.testType);h.insp.varroaEvidenceSource='varroa-test-log';
+    }else{
+      // No formal test means no current numeric evidence. Keep historical
+      // Inspection rows untouched, but clear current compatibility mirrors.
+      h.varroa=null;h.varroaTestDate='';
+      h.insp.varroa=null;h.insp.varroaTestDate='';h.insp.varroaTestId='';
+      h.insp.varroaTestMethod='';h.insp.varroaSampleSize=null;h.insp.varroaMiteCount=null;
+      h.insp.varroaTestType='';h.insp.varroaEvidenceSource='none';
+    }
+    return ev;
+  };
+
+  window.v2p2d1SyncVarroaMirrors=function(s){
+    (Array.isArray(s?.hives)?s.hives:[]).forEach(h=>window.v2p2d1SyncVarroaMirror(s,h));
+    return s;
+  };
+})();
+
 /* =========================================================
    V224B1 — Health & Decision Model v1.0 evidence mapping fix
    Based on V224B. Disease evidence + active management only.
@@ -8735,8 +8795,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   function ageDays(v){const t=dateMs(v);return t?Math.max(0,Math.floor((Date.now()-t)/86400000)):9999}
   function monthOf(v){const d=v?new Date(String(v).slice(0,10)+'T12:00:00'):new Date();return Number.isFinite(d.getTime())?d.getMonth()+1:new Date().getMonth()+1}
 
-  function currentInspection(h){
+  function currentInspection(s,h){
     const i=(h&&h.insp&&typeof h.insp==='object')?h.insp:{};
+    const ve=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h?.id):null;
     return {
       queenStatus:i.queenStatus??h?.queen??'',
       eggs:i.eggs??(h?.eggs?'Seen':'Not Seen'),
@@ -8751,8 +8812,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       honey:i.honey??h?.honey??'Unknown',
       pollen:i.pollen??h?.pollen??'Unknown',
       feedingNeed:i.feedingNeed??'Unknown',
-      varroa:i.varroa??h?.varroa??0,
-      varroaTestDate:i.varroaTestDate??h?.lastInspection??'',
+      varroa:ve?Number(ve.mitesPer100):null,
+      varroaTestDate:ve?String(ve.date||''):'',
       pests:i.pests??((h?.shb||h?.waxMoth)?'Present':'None'),
       // V224B2 FINAL: Disease risk requires explicit user-confirmed evidence from the current Inspection.
       // Legacy/migrated h.insp.disease values are not trusted unless diseaseExplicit === true.
@@ -8815,7 +8876,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 
   function inferPhase(s,h){
-    const i=currentInspection(h),rows=inspectionHistory(s,h),trend=trendFromHistory(rows);
+    const i=currentInspection(s,h),rows=inspectionHistory(s,h),trend=trendFromHistory(rows);
     const band=regionalBand(s),month=monthOf(i.date),season=seasonalSupport(band,month);
     const brood=num(i.broodStrength,0),pop=num(i.populationFrames,0),colony=num(i.colonySize,0);
     const broodEvidence=isSeen(i.eggs)||isSeen(i.larvae)||brood>0;
@@ -8844,6 +8905,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function varroaAssessment(count,phase){
     const cfg=V224B_VARROA_THRESHOLDS[phase]||V224B_VARROA_THRESHOLDS.Uncertain;
+    if(count===null||count===undefined||count===''||!Number.isFinite(Number(count))){
+      return {count:null,assessment:'Unknown',farAbove:false,penalty:0,threshold:cfg,phase,knowledgeVersion:KNOWLEDGE_VERSION};
+    }
     const v=Math.max(0,num(count,0));
     let assessment='Acceptable';
     if(v<cfg.acceptableBelow)assessment='Acceptable';
@@ -8886,7 +8950,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 
   function evaluateHive(s,h){
-    const i=currentInspection(h),phaseInfo=inferPhase(s,h),phase=phaseInfo.phase;
+    const i=currentInspection(s,h),phaseInfo=inferPhase(s,h),phase=phaseInfo.phase;
     const dormant=phase==='Dormant without Brood'||phase==='Dormant with Brood';
 
     // Queen & Brood /25 — correlated queen evidence is evaluated as one chain.
@@ -9191,7 +9255,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     if(vg){
       [...vg.querySelectorAll(':scope > div')].forEach(row=>{
         if(String(row.querySelector('span')?.textContent||'').trim()==='Risk'){
-          const target=row.querySelector('strong');if(target)target.textContent=d.varroa.assessment==='Danger'?'High':d.varroa.assessment==='Caution'?'Medium':'Low';
+          const target=row.querySelector('strong');if(target)target.textContent=d.varroa.assessment==='Danger'?'High':d.varroa.assessment==='Caution'?'Medium':d.varroa.assessment==='Acceptable'?'Low':'Unknown';
         }
       });
     }
@@ -15702,16 +15766,8 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   function stageFor(s,h){
     if(!h)return null;
     const d=varroaDecision(s,h), i=h.insp||{}, tx=latestTreatment(s,h.id);
-    const latestVarroaTest=(Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[])
-      .filter(x=>x&&String(x.hiveId)===String(h.id))
-      .slice()
-      .sort((a,b)=>{
-        const byDate=dateMs(b.date)-dateMs(a.date);
-        if(byDate)return byDate;
-        const ar=Date.parse(txt(a.recordedAt))||0,br=Date.parse(txt(b.recordedAt))||0;
-        return br-ar;
-      })[0]||null;
-    const count=Number(latestVarroaTest?.mitesPer100 ?? d?.varroa?.count ?? i.varroa ?? h.varroa ?? 0)||0;
+    const latestVarroaTest=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h.id):null;
+    const count=latestVarroaTest?Number(latestVarroaTest.mitesPer100):null;
     const phase=txt(d?.phase);
     let assessment=txt(d?.varroa?.assessment)||'Unknown';
     // The dedicated test writes the current Hive evidence summary too, so the
@@ -15724,7 +15780,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       }
     }catch(_){}
     const risk=assessment==='Danger'?'High':assessment==='Caution'?'Medium':assessment==='Acceptable'?'Low':'Unknown';
-    const testDate=txt(latestVarroaTest?.date||i.varroaTestDate||h.varroaTestDate||'');
+    const testDate=txt(latestVarroaTest?.date||'');
     const txEnd=txt(tx?.endDate||'');
     const txStatus=low(tx?.status||(txEnd?'Completed':'Active'));
     const txPlanned=Boolean(tx&&txStatus==='planned'&&!txEnd);
@@ -16322,7 +16378,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     // the most recently entered row. A historical backfill must not overwrite
     // newer biological evidence. This still does not create an Inspection or
     // modify lastInspection.
-    const latest=latestTestsV2P2B(s,hiveId)[0]||row;
+    const latest=(typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,hiveId):latestTestsV2P2B(s,hiveId)[0])||row;
     if(String(latest.id)===String(row.id)){
       h.insp=h.insp||{};
       h.insp.varroa=rate;h.insp.varroaTestDate=testDate;h.insp.varroaTestMethod=method;
@@ -16741,3 +16797,36 @@ window.__HIVEDASH_V2_P2C7_VERSION__='v2-p2c7-current-treatment-summary-source';
   };
 })();
 window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
+
+
+/* ==============================================================
+   V2P2D1 — INSPECTION VARROA OWNERSHIP GUARD
+   The Inspection Varroa card is a read-only summary of the latest formal
+   Varroa Test. Clicking it opens the dedicated Varroa Test workflow.
+   ============================================================== */
+(function v2p2d1InspectionVarroaOwnership(){
+  if(window.__HIVEDASH_V2P2D1_INSPECTION_VARROA_OWNERSHIP__)return;
+  window.__HIVEDASH_V2P2D1_INSPECTION_VARROA_OWNERSHIP__=true;
+  const previousModule=window.v211OpenModule;
+  if(typeof previousModule==='function'){
+    window.v211OpenModule=function(name){
+      if(name==='varroa'){
+        const hid=window.V49_INSPECTION_DRAFT?.hiveId || (location.hash||'').split('/')[1];
+        if(hid)return go('varroa-test/'+hid+'/test');
+      }
+      return previousModule.apply(this,arguments);
+    };
+  }
+  const previousEdit=window.editInspectionV49;
+  if(typeof previousEdit==='function'){
+    window.editInspectionV49=function(field,type){
+      if(field==='varroa'){
+        const hid=window.V49_INSPECTION_DRAFT?.hiveId || (location.hash||'').split('/')[1];
+        if(hid)return go('varroa-test/'+hid+'/test');
+      }
+      return previousEdit.apply(this,arguments);
+    };
+    try{editInspectionV49=window.editInspectionV49}catch(_){ }
+  }
+  window.__HIVEDASH_V2P2D1_VERSION__='v2p2d1-varroa-single-source-of-truth';
+})();

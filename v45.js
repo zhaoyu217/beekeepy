@@ -16510,6 +16510,16 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     if(linkedTx?.endDate&&Date.parse(testDate+'T00:00:00')<Date.parse(text(linkedTx.endDate)+'T00:00:00'))return toast('Retest date cannot be before the linked Treatment end date');
 
     s.logs=s.logs||{};s.logs.varroaTests=Array.isArray(s.logs.varroaTests)?s.logs.varroaTests:[];
+    // V2P2D6 — one Treatment may close through exactly one formal
+    // Post-treatment Retest. Additional mite checks remain valid evidence,
+    // but must be recorded as Follow-up Recheck or Routine Test instead of
+    // creating a second closure record for the same Treatment.
+    if(testType==='Post-treatment Retest'&&linkedTreatmentId){
+      const existingLinkedRetest=s.logs.varroaTests.find(x=>x&&
+        String(x.linkedTreatmentId||'')===String(linkedTreatmentId)&&
+        canonicalVarroaTestTypeV2P2C6(x.testType)==='Post-treatment Retest');
+      if(existingLinkedRetest)return toast('This Treatment already has a post-treatment retest. Use Follow-up Recheck for another mite test');
+    }
     const nowIso=new Date().toISOString();
     const row={
       id:`vt-${Date.now()}-${hiveId}`,hiveId,date:testDate,testType,method,
@@ -17143,3 +17153,6 @@ window.__HIVEDASH_V2P2D4_VERSION__='v2p2d4-strict-linked-retest-closure';
 
 /* V2P2D5 — DURABLE TREATMENT FOLLOW-UP ACTION */
 window.__HIVEDASH_V2P2D5_VERSION__='v2p2d5-durable-treatment-follow-up';
+
+/* V2P2D6 — ONE TREATMENT : ONE FORMAL POST-TREATMENT RETEST */
+window.__HIVEDASH_V2P2D6_VERSION__='v2p2d6-one-treatment-one-post-treatment-retest';

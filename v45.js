@@ -9028,6 +9028,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 
   function latestTreatment(s,hid){
+    // V2P2D3: when Varroa itself is the actionable risk, only a Varroa-relevant
+    // Treatment may satisfy the management/follow-up leg. The caller below
+    // switches to the dedicated selector only for actionable Varroa risk, so
+    // unrelated Treatment behavior remains unchanged.
     if(typeof window.v2p2d2LatestTreatment==='function')return window.v2p2d2LatestTreatment(s,hid);
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
       .filter(x=>x&&String(x.hiveId)===String(hid))
@@ -9126,7 +9130,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     // v1.0 can only verify a management-closure record where the current data model has a compatible structured record (Varroa/Disease treatment).
     // Queen/swarm actions remain Risk/Action outputs and are not falsely penalized for lacking a Treatment record.
     const actionable=risks.some(r=>(r.type==='Varroa'||r.type==='Disease')&&(r.severity==='Critical'||r.severity==='High'));
-    const tx=latestTreatment(s,h.id);
+    const actionableVarroa=risks.some(r=>r.type==='Varroa'&&(r.severity==='Critical'||r.severity==='High'));
+    const tx=actionableVarroa&&typeof window.v2p2d3LatestVarroaTreatment==='function'
+      ? window.v2p2d3LatestVarroaTreatment(s,h.id)
+      : latestTreatment(s,h.id);
     const evidenceDate=dateMs(i.varroaTestDate||h.lastInspection);
     // V224B1: an ACTIVE treatment is current management evidence even when its start date
     // precedes the latest Varroa test. A completed treatment that predates newer evidence
@@ -15870,7 +15877,9 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
   function stageFor(s,h){
     if(!h)return null;
-    const d=varroaDecision(s,h), i=h.insp||{}, tx=latestTreatment(s,h.id);
+    const d=varroaDecision(s,h), i=h.insp||{}, tx=typeof window.v2p2d3LatestVarroaTreatment==='function'
+      ? window.v2p2d3LatestVarroaTreatment(s,h.id)
+      : latestTreatment(s,h.id);
     const latestVarroaTest=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h.id):null;
     const count=latestVarroaTest?Number(latestVarroaTest.mitesPer100):null;
     const phase=txt(d?.phase);
@@ -16082,7 +16091,9 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   try{home=window.home}catch(_){}
 
   function activeTreatmentFor(s,hid){
-    const tx=latestTreatment(s,hid);
+    const tx=typeof window.v2p2d3LatestVarroaTreatment==='function'
+      ? window.v2p2d3LatestVarroaTreatment(s,hid)
+      : latestTreatment(s,hid);
     if(!tx||txt(tx.endDate))return null;
     const status=low(tx.status||'Active');
     return status==='completed'||status==='stopped'?null:tx;
@@ -16321,6 +16332,9 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   }
 
   function latestCompletedTreatmentV2P2B(s,hid){
+    // V2P2D3: a post-treatment Varroa retest must link only to a completed
+    // Varroa-relevant Treatment, never to a newer Wax Moth / disease / other row.
+    if(typeof window.v2p2d3LatestCompletedVarroaTreatment==='function')return window.v2p2d3LatestCompletedVarroaTreatment(s,hid);
     if(typeof window.v2p2d2LatestCompletedTreatment==='function')return window.v2p2d2LatestCompletedTreatment(s,hid);
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
       .filter(x=>x&&String(x.hiveId)===String(hid)&&text(x.endDate))
@@ -16468,6 +16482,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const linkedTreatmentId=testType==='Post-treatment Retest'?rawLinkedTreatmentId:'';
     if(testType==='Post-treatment Retest'&&!linkedTreatmentId)return toast('No completed Treatment record is available to link to this retest');
     const linkedTx=linkedTreatmentId?(s.logs?.treatments||[]).find(x=>String(x?.id||'')===String(linkedTreatmentId)):null;
+    if(testType==='Post-treatment Retest'&&linkedTx&&typeof window.v2p2d3IsVarroaTreatment==='function'&&!window.v2p2d3IsVarroaTreatment(linkedTx))return toast('The linked Treatment is not a Varroa Treatment');
     if(linkedTx?.endDate&&Date.parse(testDate+'T00:00:00')<Date.parse(text(linkedTx.endDate)+'T00:00:00'))return toast('Retest date cannot be before the linked Treatment end date');
 
     s.logs=s.logs||{};s.logs.varroaTests=Array.isArray(s.logs.varroaTests)?s.logs.varroaTests:[];
@@ -17037,3 +17052,62 @@ window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
   try{v49TimelineRows=window.v49TimelineRows}catch(_){ }
   window.__HIVEDASH_V2P2D2A_VERSION__='v2p2d2a-timeline-treatment-same-day-order';
 })();
+
+/* ==============================================================
+   V2P2D3 — VARROA TREATMENT / OTHER TREATMENT ISOLATION
+   Audit finding:
+   - Varroa management previously used the hive's newest Treatment row even
+     when that newer row belonged to Wax Moth, disease, beetle or another issue.
+   Rule:
+   - Varroa workflows may only use Treatment rows that are explicitly Varroa,
+     or legacy rows whose treatment chemistry unambiguously matches the Varroa
+     treatments already supported by HiveDash.
+   - Other Treatment rows remain valid history but cannot open/close/retest the
+     Varroa management chain.
+   - No Treatment row is mutated by this selector.
+   ============================================================== */
+(function v2p2d3VarroaTreatmentIsolation(){
+  if(window.__HIVEDASH_V2P2D3_VARROA_TREATMENT_ISOLATION__)return;
+  window.__HIVEDASH_V2P2D3_VARROA_TREATMENT_ISOLATION__=true;
+  const txt=v=>String(v==null?'':v).trim();
+  const low=v=>txt(v).toLowerCase();
+  const explicitOtherProblem=x=>{
+    const p=low(x?.problem);
+    const raw=txt(x?.problem);
+    return p.includes('wax moth')||p.includes('small hive beetle')||p.includes('beetle')||p.includes('disease')||p==='other'||
+      /蜡螟|巢虫|小蜂甲|甲虫|疾病|其他/.test(raw);
+  };
+  const explicitVarroaProblem=x=>{
+    const p=low(x?.problem),raw=txt(x?.problem);
+    return p.includes('varroa')||p.includes('mite')||/瓦螨|蜂螨/.test(raw);
+  };
+  const legacyVarroaChemistry=x=>{
+    const hay=low([x?.type,x?.product,x?.activeIngredient].filter(Boolean).join(' '));
+    const raw=[x?.type,x?.product,x?.activeIngredient].filter(Boolean).join(' ');
+    return hay.includes('oxalic')||hay.includes('formic')||hay.includes('thymol')||
+      /草酸|甲酸|百里香|麝香草/.test(raw);
+  };
+  window.v2p2d3IsVarroaTreatment=function(tx){
+    if(!tx)return false;
+    if(explicitOtherProblem(tx))return false;
+    if(explicitVarroaProblem(tx))return true;
+    // Legacy compatibility only when Problem was absent/unknown. Never let
+    // chemistry override an explicitly non-Varroa Problem.
+    return !txt(tx.problem)&&legacyVarroaChemistry(tx);
+  };
+  const cmp=(a,b)=>typeof window.v2p2d2TreatmentComparator==='function'
+    ? window.v2p2d2TreatmentComparator(a,b)
+    : txt(b?.date).localeCompare(txt(a?.date))||txt(b?.updatedAt).localeCompare(txt(a?.updatedAt))||txt(b?.id).localeCompare(txt(a?.id));
+  window.v2p2d3LatestVarroaTreatment=function(s,hiveId){
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&String(x.hiveId)===String(hiveId)&&window.v2p2d3IsVarroaTreatment(x))
+      .slice().sort(cmp)[0]||null;
+  };
+  window.v2p2d3LatestCompletedVarroaTreatment=function(s,hiveId){
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&String(x.hiveId)===String(hiveId)&&txt(x.endDate)&&window.v2p2d3IsVarroaTreatment(x))
+      .slice().sort(cmp)[0]||null;
+  };
+  window.__HIVEDASH_V2P2D3_VERSION__='v2p2d3-varroa-treatment-isolation';
+})();
+

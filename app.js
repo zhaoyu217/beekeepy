@@ -49,13 +49,18 @@ function cloudStatusText(){return cloudStatus}
    - Pro is trusted only when Supabase Auth app_metadata says:
        hivedash_plan = "Pro"
        hivedash_subscription_status = "active" or "trialing"
+       hivedash_entitlement_source = "stripe"
+       stripe_subscription_id = a valid Stripe subscription id
    - user_metadata/localStorage/cloud app_state are NOT entitlement sources.
    ========================================================= */
 function authoritativePlanFromSession(session=currentSession){
   const meta=session?.user?.app_metadata||{};
   const plan=String(meta.hivedash_plan||'Free').trim();
   const status=String(meta.hivedash_subscription_status||'').trim().toLowerCase();
-  return plan==='Pro' && (status==='active'||status==='trialing') ? 'Pro' : 'Free';
+  const source=String(meta.hivedash_entitlement_source||'').trim().toLowerCase();
+  const subscriptionId=String(meta.stripe_subscription_id||'').trim();
+  const stripeVerified=source==='stripe' && /^sub_[A-Za-z0-9]+$/.test(subscriptionId);
+  return stripeVerified && plan==='Pro' && (status==='active'||status==='trialing') ? 'Pro' : 'Free';
 }
 function enforceAuthoritativePlan(s){
   if(!s||typeof s!=='object')return s;

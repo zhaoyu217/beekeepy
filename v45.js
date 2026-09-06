@@ -556,7 +556,18 @@ function v2p2e5Today(s,preferredHiveId='',when){
   const h=(s?.hives||[]).find(x=>x&&String(x.id)===String(id))||null;
   return v2p1bDateInHiveTimezone(s,h,when);
 }
-window.__HIVEDASH_V2P2E5_VERSION__='v2p2e5-global-business-date';
+function v2p2e5DateInTimezone(timezone,when){
+  const d=when instanceof Date?when:new Date();
+  const tz=String(timezone||'').trim()||'America/Denver';
+  try{
+    const parts=new Intl.DateTimeFormat('en-US',{timeZone:tz,year:'numeric',month:'2-digit',day:'2-digit'}).formatToParts(d);
+    const get=t=>parts.find(x=>x.type===t)?.value||'';
+    const y=get('year'),m=get('month'),day=get('day');
+    if(y&&m&&day)return `${y}-${m}-${day}`;
+  }catch(_){}
+  return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`;
+}
+window.__HIVEDASH_V2P2E5_VERSION__='v2p2e5b-global-business-date-closure';
 
 function recordPage(r,type,id){
   const s=v45s(),h=vh(id),cfg={feeding:['Feeding Record',V45.feeding],treatment:['Treatment Record',V45.treatment],harvest:['Harvest Record',V45.harvest]}[type];
@@ -6206,7 +6217,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     v198CloseRecordForm();
 
     const title=type==='feeding'?'New Feeding':'New Treatment';
-    const today=new Date().toISOString().slice(0,10);
+    const today=v2p1bDateInHiveTimezone(s,active);
+    const v198DateLabel=iso=>{const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||''));return m?`${m[2]}/${m[3]}/${m[1]}`:String(iso||'')};
+    const todayDisplay=v198DateLabel(today);
     const hiveOptions=v198HiveOptions(s,active.id);
 
     const fields=type==='feeding'
@@ -6279,7 +6292,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
           <img src="${v101HivePrimaryPhoto(active)}" alt="${esc(active.name)}">
           <div>
             <b>${esc(active.name)}</b>
-            <span>${new Date().toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})} · 9:30 AM</span>
+            <span data-v198-local-date>${esc(todayDisplay)}</span>
           </div>
         </div>
 
@@ -6306,6 +6319,21 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     overlay.querySelector('.v198-back').onclick=v198CloseRecordForm;
     overlay.addEventListener('click',e=>{
       if(e.target===overlay) v198CloseRecordForm();
+    });
+
+    /* V2P2E5B — if the user switches Hives, move an untouched auto date to
+       the newly selected Hive's local business day. Never overwrite a date
+       the beekeeper has manually chosen. */
+    const hiveSelect=overlay.querySelector('[name="v198Hive"]');
+    const dateInput=overlay.querySelector('[name="v198Date"]');
+    const localDateText=overlay.querySelector('[data-v198-local-date]');
+    let autoDate=today;
+    hiveSelect?.addEventListener('change',()=>{
+      const nextHive=hive(s,hiveSelect.value)||active;
+      const nextDate=v2p1bDateInHiveTimezone(s,nextHive);
+      if(dateInput && (!dateInput.value || dateInput.value===autoDate)) dateInput.value=nextDate;
+      autoDate=nextDate;
+      if(localDateText)localDateText.textContent=v198DateLabel(nextDate);
     });
 
     const doSave=()=>v198SaveRecord(type,overlay);
@@ -7409,10 +7437,18 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     }catch(_){}
   }
 
+  function v203AddDays(iso,days){
+    const m=/^(\d{4})-(\d{2})-(\d{2})$/.exec(String(iso||''));
+    if(!m)return String(iso||'');
+    const d=new Date(Date.UTC(Number(m[1]),Number(m[2])-1,Number(m[3])+Number(days||0)));
+    return `${d.getUTCFullYear()}-${String(d.getUTCMonth()+1).padStart(2,'0')}-${String(d.getUTCDate()).padStart(2,'0')}`;
+  }
+
   function v203OpenDatePicker(){
     if(!V49_INSPECTION_DRAFT) return;
 
-    const today=new Date().toISOString().slice(0,10);
+    const s=v45s();
+    const today=v2p2e5Today(s,String(V49_INSPECTION_DRAFT.hiveId||''));
     const current=String(V49_INSPECTION_DRAFT.nextInspection||'').trim();
 
     v203Close();
@@ -7461,9 +7497,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
     overlay.querySelectorAll('[data-days]').forEach(btn=>{
       btn.onclick=()=>{
-        const d=new Date();
-        d.setDate(d.getDate()+Number(btn.dataset.days||0));
-        input.value=d.toISOString().slice(0,10);
+        input.value=v203AddDays(today,Number(btn.dataset.days||0));
       };
     });
 
@@ -14648,6 +14682,7 @@ function detailHTML(a){
   const row=(k,v)=>`<div class="b40-row"><span>${E(k)}</span><b>${E(v||'—')}</b></div>`;
   const opts=(arr,val)=>arr.map(x=>`<option value="${E(x)}" ${String(x)===String(val)?'selected':''}>${E(x)}</option>`).join('');
   const TODAY=(hiveId='')=>v2p2e5Today(S(),hiveId);
+  const DATE_IN_TZ=(timezone,when)=>v2p2e5DateInTimezone(timezone,when);
   function cloneLoc(loc){const x=(loc&&typeof loc==='object')?loc:{};return {apiaryName:String(x.apiaryName||''),countryCode:String(x.countryCode||'US'),country:String(x.country||'United States'),stateCode:String(x.stateCode||''),state:String(x.state||''),city:String(x.city||''),postalCode:String(x.postalCode||''),latitude:(x.latitude!==null&&x.latitude!==undefined&&Number.isFinite(Number(x.latitude)))?Number(x.latitude):null,longitude:(x.longitude!==null&&x.longitude!==undefined&&Number.isFinite(Number(x.longitude)))?Number(x.longitude):null,timezone:String(x.timezone||'America/Denver'),precision:String(x.precision||((x.city)?'city':(x.stateCode?'state':'unset'))),contextReady:Boolean(x.contextReady||x.stateCode)};}
   function effectiveLoc(s,h){if(h?.currentLocation&&typeof h.currentLocation==='object'&&String(h.currentLocation.stateCode||h.currentLocation.state||'').trim())return cloneLoc(h.currentLocation);const a=cloneLoc(s?.settings?.apiaryLocation||{});a.apiaryName=String(s?.settings?.apiaryName||a.apiaryName||'');return a;}
   function locLabel(loc){if(!loc||typeof loc!=='object')return'Location not set';const parts=[];if(String(loc.city||'').trim())parts.push(String(loc.city).trim());if(String(loc.state||'').trim())parts.push(String(loc.state).trim());if(String(loc.country||'').trim())parts.push(String(loc.country).trim()==='United States'?'USA':String(loc.country).trim());const where=parts.join(', ')||'Location not set';return String(loc.apiaryName||'').trim()?`${String(loc.apiaryName).trim()} — ${where}`:where;}
@@ -14657,9 +14692,9 @@ function detailHTML(a){
   function makeLoc(stateCode,city,postal,timezone){stateCode=String(stateCode||'').trim();city=String(city||'').trim();postal=String(postal||'').trim();timezone=String(timezone||'').trim()||'America/Denver';return {apiaryName:'',countryCode:'US',country:'United States',stateCode,state:stateName(stateCode),city,postalCode:postal,latitude:null,longitude:null,timezone,precision:city?'city':(stateCode?'state':'unset'),contextReady:Boolean(stateCode)};}
   function sameLoc(a,b){const n=x=>String(x||'').trim().toLowerCase().replace(/\s+/g,' '),state=x=>{const raw=n(x);if(!raw)return'';const list=(typeof V224A_US_STATES!=='undefined'?V224A_US_STATES:[]);const hit=list.find(([c,name])=>n(c)===raw||n(name)===raw);return hit?n(hit[0]):raw},zip=x=>String(x||'').replace(/\D/g,'').slice(0,5);const ac=n(a?.countryCode||a?.country||'US'),bc=n(b?.countryCode||b?.country||'US');if(!(ac===bc||(ac==='us'&&bc==='united states')||(bc==='us'&&ac==='united states')))return false;if(state(a?.stateCode||a?.state)!==state(b?.stateCode||b?.state))return false;const bCity=n(b?.city),bZip=zip(b?.postalCode);if(bCity&&n(a?.city)!==bCity)return false;if(bZip&&zip(a?.postalCode)!==bZip)return false;return true;}
   function find(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id)&&a.type===TYPE)||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id)&&a.type===TYPE);}
-  function defaults(a){const to=cloneLoc(a?.workflowData?.plannedToLocation||{});return {moveCompleted:'Not confirmed',actualStateCode:to.stateCode||'',actualCity:to.city||'',actualPostalCode:to.postalCode||'',actualTimezone:to.timezone||'America/Denver',moveOutcome:'Not recorded',completedDate:TODAY(a?.hiveId||''),followUpRequired:'No',followUpDate:'',resultNotes:''};}
+  function defaults(a){const to=cloneLoc(a?.workflowData?.plannedToLocation||{}),tz=String(to.timezone||'').trim();return {moveCompleted:'Not confirmed',actualStateCode:to.stateCode||'',actualCity:to.city||'',actualPostalCode:to.postalCode||'',actualTimezone:tz||'America/Denver',moveOutcome:'Not recorded',completedDate:tz?DATE_IN_TZ(tz):TODAY(a?.hiveId||''),followUpRequired:'No',followUpDate:'',resultNotes:''};}
   function draft(a){let d=defaults(a);try{d={...d,...JSON.parse(localStorage.getItem(PREFIX+a.id)||'{}')}}catch(_){}if(d.moveOutcome==='Completed with issues')d.followUpRequired='Yes';if(d.followUpRequired!=='Yes')d.followUpDate='';return d;}
-  function persist(a){const d=draft(a),ids={moveCompleted:'b43c-completed',actualStateCode:'b43c-state',actualCity:'b43c-city',actualPostalCode:'b43c-zip',actualTimezone:'b43c-tz',moveOutcome:'b43c-outcome',completedDate:'b43c-date',followUpRequired:'b43c-follow',followUpDate:'b43c-follow-date',resultNotes:'b43c-notes'};Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});const forced=d.moveOutcome==='Completed with issues';if(forced)d.followUpRequired='Yes';if(d.followUpRequired!=='Yes')d.followUpDate='';try{localStorage.setItem(PREFIX+a.id,JSON.stringify(d))}catch(_){}const f=document.getElementById('b43c-follow');if(f){f.value=d.followUpRequired;f.disabled=forced}const shell=document.getElementById('b43c-follow-shell');if(shell)shell.style.display=d.followUpRequired==='Yes'?'block':'none';const hint=document.getElementById('b43c-follow-rule');if(hint)hint.style.display=forced?'block':'none';const dd=document.getElementById('b43c-date-display');if(dd)dd.textContent=fmt(d.completedDate);const fd=document.getElementById('b43c-follow-date-display');if(fd)fd.textContent=fmt(d.followUpDate);return d;}
+  function persist(a){const d=draft(a),priorTimezone=String(d.actualTimezone||''),priorCompletedDate=String(d.completedDate||''),ids={moveCompleted:'b43c-completed',actualStateCode:'b43c-state',actualCity:'b43c-city',actualPostalCode:'b43c-zip',actualTimezone:'b43c-tz',moveOutcome:'b43c-outcome',completedDate:'b43c-date',followUpRequired:'b43c-follow',followUpDate:'b43c-follow-date',resultNotes:'b43c-notes'};Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});if(String(d.actualTimezone||'')!==priorTimezone){const priorAuto=priorTimezone?DATE_IN_TZ(priorTimezone):TODAY(a?.hiveId||''),legacyAuto=TODAY(a?.hiveId||'');if(!priorCompletedDate||priorCompletedDate===priorAuto||priorCompletedDate===legacyAuto){d.completedDate=DATE_IN_TZ(d.actualTimezone);const dateEl=document.getElementById('b43c-date');if(dateEl)dateEl.value=d.completedDate;}}const forced=d.moveOutcome==='Completed with issues';if(forced)d.followUpRequired='Yes';if(d.followUpRequired!=='Yes')d.followUpDate='';try{localStorage.setItem(PREFIX+a.id,JSON.stringify(d))}catch(_){}const f=document.getElementById('b43c-follow');if(f){f.value=d.followUpRequired;f.disabled=forced}const shell=document.getElementById('b43c-follow-shell');if(shell)shell.style.display=d.followUpRequired==='Yes'?'block':'none';const hint=document.getElementById('b43c-follow-rule');if(hint)hint.style.display=forced?'block':'none';const dd=document.getElementById('b43c-date-display');if(dd)dd.textContent=fmt(d.completedDate);const fd=document.getElementById('b43c-follow-date-display');if(fd)fd.textContent=fmt(d.followUpDate);return d;}
   window.b43cPersistResult=function(id){const a=find(id);if(a)persist(a)};
 
   function planCards(a){const s=S(),h=(s.hives||[]).find(x=>String(x.id)===String(a.hiveId)),w=a.workflowData||{};return `<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Original plan</div></div>${row('Hive',h?.name||a.hiveId)}${row('From',locLabel(w.fromLocationSnapshot))}${row('Planned Destination',locLabel(w.plannedToLocation))}</section><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Move Plan</div><div class="b37-hint">Original plan</div></div>${row('Move Reason',w.moveReason)}${row('Planned Move Date',fmt(w.plannedMoveDate||a.dueDate||a.due))}${row('Priority',a.plannedPriority||a.priority)}</section>${a.notes?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Original plan</div></div><div class="b40-note">${E(a.notes)}</div></section>`:''}`;}
@@ -17543,3 +17578,7 @@ window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
    - Pro-only analytics/features remain gated by the authoritative entitlement.
    ============================================================== */
 window.__HIVEDASH_V2P2E5A_VERSION__='v2p2e5a-existing-hive-visibility';
+
+
+/* V2P2E5B — P1-2 timezone closure: legacy Feeding/Treatment popup, Next Inspection picker, Move Hive destination completion date. */
+window.__HIVEDASH_V2P2E5B_VERSION__='v2p2e5b-p1-2-timezone-closure';

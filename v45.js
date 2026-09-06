@@ -15905,10 +15905,16 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     // exists at all; it must never reopen a Treatment that already has End Date.
     const inspectionTxActive=!tx && low(i.treatmentStatus)==='active';
     const txName=englishTreatmentName(tx?.type||i.treatment||'Varroa treatment');
-    const linkedPostTreatmentRetest=Boolean(tx&&latestVarroaTest&&
-      String(latestVarroaTest.linkedTreatmentId||'')===String(tx.id||'')&&
-      low(latestVarroaTest.testType).includes('post-treatment'));
-    const testedAfterCompletedTreatment=Boolean(tx&&txEnd&&testDate&&(linkedPostTreatmentRetest||dateMs(testDate)>dateMs(txEnd)));
+    // V2P2D4: a completed Treatment is closed only by a formal Post-treatment
+    // Retest explicitly linked to THIS Treatment. A later routine/follow-up
+    // Varroa test may update current biological risk, but it must never satisfy
+    // the Treatment -> Retest workflow by date coincidence alone.
+    const linkedRetest=tx?linkedRetestForTreatment(s,tx):null;
+    const linkedPostTreatmentRetest=Boolean(tx&&txEnd&&linkedRetest&&
+      String(linkedRetest.linkedTreatmentId||'')===String(tx.id||'')&&
+      low(linkedRetest.testType).includes('post-treatment')&&
+      txt(linkedRetest.date)&&dateMs(linkedRetest.date)>=dateMs(txEnd));
+    const testedAfterCompletedTreatment=linkedPostTreatmentRetest;
 
     let stage='untested', label='Varroa test needed', next='Test for Varroa';
 
@@ -17111,3 +17117,8 @@ window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
   window.__HIVEDASH_V2P2D3_VERSION__='v2p2d3-varroa-treatment-isolation';
 })();
 
+/* V2P2D4 — STRICT TREATMENT -> RETEST CLOSURE
+   Only an explicit Post-treatment Retest linkedTreatmentId to the same completed
+   Treatment can close awaiting-retest. Later unlinked Varroa tests affect risk
+   evidence only; they do not satisfy the workflow. */
+window.__HIVEDASH_V2P2D4_VERSION__='v2p2d4-strict-linked-retest-closure';

@@ -1981,13 +1981,15 @@ function hiveDetail(r,id){
       ? hivePhotos(h)
       : (Array.isArray(h?.photos)?h.photos:[])),
     treatments=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]),
-    lastTx=treatments.filter(x=>x.hiveId===h.id).sort((a,b)=>{
-      const byDate=String(b.date||'').localeCompare(String(a.date||''));
-      if(byDate)return byDate;
-      const bu=Date.parse(String(b.updatedAt||''))||0,au=Date.parse(String(a.updatedAt||''))||0;
-      if(bu!==au)return bu-au;
-      return String(b.id||'').localeCompare(String(a.id||''));
-    })[0],
+    lastTx=(typeof window.v2p2d2LatestTreatment==='function'
+      ? window.v2p2d2LatestTreatment(s,h.id)
+      : treatments.filter(x=>String(x.hiveId)===String(h.id)).slice().sort((a,b)=>{
+          const byDate=String(b.date||'').localeCompare(String(a.date||''));
+          if(byDate)return byDate;
+          const bu=Date.parse(String(b.updatedAt||''))||0,au=Date.parse(String(a.updatedAt||''))||0;
+          if(bu!==au)return bu-au;
+          return String(b.id||'').localeCompare(String(a.id||''));
+        })[0]),
     varroaEvidence=(typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h.id):null),
     timelineRows=(typeof v49TimelineRows==='function'
       ? v49TimelineRows(h.id)
@@ -2026,9 +2028,12 @@ function editInspectionV49(field,type='text'){
 }
 function inspectionPage(r,id){
   const s=v45s(),h=vh(id);
-  const lastTx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[])
-    .filter(x=>x.hiveId===h.id)
-    .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+  const lastTx=(typeof window.v2p2d2LatestTreatment==='function'
+    ? window.v2p2d2LatestTreatment(s,h.id)
+    : (Array.isArray(s.logs?.treatments)?s.logs.treatments:[])
+        .filter(x=>String(x.hiveId)===String(h.id))
+        .slice()
+        .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]);
 
   if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id){
     const hi=h.insp||{};
@@ -8429,7 +8434,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   inspectionPage=function(r,id){
     const s=v45s(),h=vh(id);if(!h)return;
-    const lastTx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0];
+    const lastTx=(typeof window.v2p2d2LatestTreatment==='function'?window.v2p2d2LatestTreatment(s,h.id):(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>String(x.hiveId)===String(h.id)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]);
     const varroaEvidence=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h.id):null;
     if(!V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT.hiveId!==h.id){
       const hi=h.insp||{};
@@ -9023,8 +9028,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   }
 
   function latestTreatment(s,hid){
+    if(typeof window.v2p2d2LatestTreatment==='function')return window.v2p2d2LatestTreatment(s,hid);
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
-      .filter(x=>x&&x.hiveId===hid)
+      .filter(x=>x&&String(x.hiveId)===String(hid))
+      .slice()
       .sort((a,b)=>(dateMs(b.date)-dateMs(a.date)))[0]||null;
   }
 
@@ -15795,6 +15802,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   }
 
   function latestTreatment(s,hid){
+    if(typeof window.v2p2d2LatestTreatment==='function')return window.v2p2d2LatestTreatment(s,hid);
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
       .filter(x=>x&&String(x.hiveId)===String(hid))
       .slice()
@@ -16313,6 +16321,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   }
 
   function latestCompletedTreatmentV2P2B(s,hid){
+    if(typeof window.v2p2d2LatestCompletedTreatment==='function')return window.v2p2d2LatestCompletedTreatment(s,hid);
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
       .filter(x=>x&&String(x.hiveId)===String(hid)&&text(x.endDate))
       .slice().sort((a,b)=>txOrder(b)-txOrder(a))[0]||null;
@@ -16926,4 +16935,61 @@ window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
     try{editInspectionV49=window.editInspectionV49}catch(_){ }
   }
   window.__HIVEDASH_V2P2D1_VERSION__='v2p2d1-varroa-single-source-of-truth';
+})();
+
+
+/* ==============================================================
+   V2P2D2 — TREATMENT CURRENT-RECORD SELECTOR CONSOLIDATION
+   Audit finding:
+   - Health, Hive Detail, Inspection, Varroa management and Retest linkage
+     used different tie-break rules when a hive had multiple Treatment rows
+     on the same start date.
+   Rule:
+   - Start Date is the primary chronology key.
+   - For the same Start Date, the most recently updated row wins.
+   - If updatedAt is absent/equal, a timestamp embedded in the row id wins.
+   - Final tie-break is deterministic id ordering.
+   - Completed-treatment lookup uses the exact same ordering after filtering
+     to rows with End Date.
+   This changes selection only; it does not alter Treatment records.
+   ============================================================== */
+(function v2p2d2TreatmentSelector(){
+  if(window.__HIVEDASH_V2P2D2_TREATMENT_SELECTOR__)return;
+  window.__HIVEDASH_V2P2D2_TREATMENT_SELECTOR__=true;
+  const text=v=>String(v==null?'':v).trim();
+  const dayMs=v=>{
+    const x=text(v);if(!x)return 0;
+    const t=Date.parse(x.length<=10?x+'T12:00:00':x);
+    return Number.isFinite(t)?t:0;
+  };
+  const idMs=x=>{
+    const m=text(x?.id).match(/(\d{10,})/);
+    return m?(Number(m[1])||0):0;
+  };
+  const updatedMs=x=>{
+    const t=Date.parse(text(x?.updatedAt));
+    return Number.isFinite(t)?t:0;
+  };
+  window.v2p2d2TreatmentComparator=function(a,b){
+    const byDate=dayMs(b?.date)-dayMs(a?.date);
+    if(byDate)return byDate;
+    const byUpdated=updatedMs(b)-updatedMs(a);
+    if(byUpdated)return byUpdated;
+    const byIdTime=idMs(b)-idMs(a);
+    if(byIdTime)return byIdTime;
+    return text(b?.id).localeCompare(text(a?.id));
+  };
+  window.v2p2d2LatestTreatment=function(s,hiveId){
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&String(x.hiveId)===String(hiveId))
+      .slice()
+      .sort(window.v2p2d2TreatmentComparator)[0]||null;
+  };
+  window.v2p2d2LatestCompletedTreatment=function(s,hiveId){
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&String(x.hiveId)===String(hiveId)&&text(x.endDate))
+      .slice()
+      .sort(window.v2p2d2TreatmentComparator)[0]||null;
+  };
+  window.__HIVEDASH_V2P2D2_VERSION__='v2p2d2-treatment-selector-single-rule';
 })();

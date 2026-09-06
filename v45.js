@@ -563,7 +563,7 @@ function recordPage(r,type,id){
   const today=new Date().toISOString().slice(0,10);
 
   if(type==='feeding'){
-    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=activeHives;
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
     const today=v2p1bDateInHiveTimezone(s,active);
@@ -614,7 +614,7 @@ function recordPage(r,type,id){
 
 
   if(type==='treatment'){
-    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=activeHives;
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const hivePhoto=v101HivePrimaryPhoto(active);
     const today=v2p1bDateInHiveTimezone(s,active);
@@ -704,7 +704,7 @@ function recordPage(r,type,id){
 
 
   if(type==='harvest'){
-    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=activeHives;
     const active=allowedHives.find(x=>x.id===h.id)||allowedHives[0]||h;
     const hivePhoto=v101HivePrimaryPhoto(active);
     const today=v2p1bDateInHiveTimezone(s,active);
@@ -2226,7 +2226,7 @@ function inspectionPage(r,id){
     <section class="vc switchh">
       <img src="${v101HivePrimaryPhoto(h)}">
       <div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div>
-      <select id="ihsel">${(isPro(s)?v224ActiveTrackedHives(s):v224ActiveTrackedHives(s).slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
+      <select id="ihsel">${v224ActiveTrackedHives(s).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select>
     </section>
 
     <section class="iform">
@@ -2444,7 +2444,7 @@ function honeyPage(r){
 }
 
 let V49_MAP_MODE='Apiaries',V49_MAP_ZOOM=false;
-function v109MapHives(){const s=v45s(),hs=v224ActiveTrackedHives(s);return isPro(s)?hs:hs.slice(0,3)}
+function v109MapHives(){const s=v45s(),hs=v224ActiveTrackedHives(s);return hs}
 function setMapModeV49(mode,btn){V49_MAP_MODE=mode;selectTab(btn);drawMapListV49()}
 function zoomMapV49(){
   V49_MAP_ZOOM=!V49_MAP_ZOOM;
@@ -2462,7 +2462,7 @@ function drawMapListV49(){
     box.innerHTML=`<section class="v109-map-info"><div class="v109-map-info-icon">⌂</div><div><b>${esc(s.settings.apiaryName)}</b><small>${esc(s.settings.location||'Location not set')} · ${visible.length} ${visible.length===1?'hive':'hives'}${!isPro(s)?' on Free plan':''}</small></div><button onclick="go('all-hives')">View Hives <em>›</em></button></section>`;
     return;
   }
-  box.innerHTML=`<div class="v109-map-hive-list">${visible.map(h=>`<button onclick="go('hive/${h.id}')"><img src="${v101HivePrimaryPhoto(h)}" alt="${esc(h.name)}"><span><b>${esc(h.name)}</b><small>${esc(String(h.score||0))}% health · Last ${fmtDate(h.lastInspection)}</small></span><em>›</em></button>`).join('')}</div>${!isPro(s)?'<div class="v109-map-free">Free plan · Map shows Hive #1–#3 only</div>':''}`;
+  box.innerHTML=`<div class="v109-map-hive-list">${visible.map(h=>`<button onclick="go('hive/${h.id}')"><img src="${v101HivePrimaryPhoto(h)}" alt="${esc(h.name)}"><span><b>${esc(h.name)}</b><small>${esc(String(h.score||0))}% health · Last ${fmtDate(h.lastInspection)}</small></span><em>›</em></button>`).join('')}</div>${!isPro(s)?'<div class="v109-map-free">Free plan · Existing hives stay visible; new hives require Pro at the 3-hive limit</div>':''}`;
 }
 let V110_MAP_ZOOM=1;
 function mapZoomV110(direction){
@@ -2680,7 +2680,7 @@ function v119HealthChart(series){
 function trendPage(r){
   const s=v45s();
   v120SyncInspectionHistory(s);
-  const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
+  const activeHives=v224ActiveTrackedHives(s),allowedHives=activeHives;
   const allowedIds=new Set(allowedHives.map(h=>h.id));
   const {start,end}=v119TrendStart(V49_TREND_RANGE);
 
@@ -2754,7 +2754,7 @@ function trendPage(r){
     <section class="vc v119-source-note">
       <b>Data source</b>
       <span>Uses dated Inspection records shown in Timeline. Range filters never create synthetic history.</span>
-      <span>${isPro(s)?'Pro scope: all hives.':'Free scope: Hive #1–#3 only.'}</span>
+      <span>Scope: all active hives.</span>
     </section>
   </div>`;
 }
@@ -3205,7 +3205,7 @@ function v53HiveCard(h){
 
 function v53ActionRows(mode='Pending'){
   const s=v45s();
-  const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
+  const activeHives=v224ActiveTrackedHives(s),allowedHives=activeHives;
   const allowedIds=new Set(allowedHives.map(h=>h.id));
 
   /* V224B35 — Completed source fix only.
@@ -3704,8 +3704,8 @@ function v62FilterMenu(){
 /* ==============================================================
    V63 HIVES — 3 HIVE FREE PLAN EXACT RESTORE
    Visual source: user-approved Hives screenshot.
-   Free users: only 3 hives shown / max 3 hives.
-   Pro users: existing additional hives remain available.
+   All existing active hives remain visible on every plan.
+   Free users may create/track new hives only until the 3-active-hive limit; Pro is unlimited.
    ============================================================== */
 
 function v224ActiveTrackedHives(s){
@@ -3723,7 +3723,7 @@ function v101HivePrimaryPhoto(h){
 function v63VisibleHives(){
   const s=v45s();
   const active=v224ActiveTrackedHives(s);
-  return isPro(s) ? active : active.slice(0,3);
+  return active;
 }
 
 function v63Thumb(h){
@@ -8037,7 +8037,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function v206DerivedInspectionRows(){
     const s=v45s();
-    const activeHives=v224ActiveTrackedHives(s),allowedHives=isPro(s)?activeHives:activeHives.slice(0,3);
+    const activeHives=v224ActiveTrackedHives(s),allowedHives=activeHives;
 
     return allowedHives
       .filter(h=>String(h?.nextInspection||'').trim())
@@ -8275,7 +8275,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function v208NextInspectionRows(){
     const s=v45s();
-    const allowed=isPro(s)?(s.hives||[]):(s.hives||[]).slice(0,3);
+    const allowed=v224ActiveTrackedHives(s);
 
     return allowed
       .filter(h=>String(h?.nextInspection||'').trim())
@@ -8613,7 +8613,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const d=v212NormalizeDraft(V49_INSPECTION_DRAFT);
     const card=(key,title,icon,rows)=>`<button type="button" class="v211-card" onclick="v211OpenModule('${key}')"><div class="v211-card-head"><b>${title}</b><i>${icon}</i></div>${rows.map(x=>`<div class="v211-card-row"><span>${x[0]}</span><strong>${esc(v212English(x[1]))}</strong></div>`).join('')}</button>`;
     r.innerHTML=`<div class="vs v86-inspection v211-inspection">
-      <section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${(isPro(s)?v224ActiveTrackedHives(s):v224ActiveTrackedHives(s).slice(0,3)).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section>
+      <section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${v224ActiveTrackedHives(s).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section>
       <div class="v211-grid">
         ${card('queen','Queen','♛',[['Queen seen',d.queenStatus],['Queen marked',d.queenMarked||'Not confirmed'],['Queen age',d.queenAge!==''&&d.queenAge!==undefined?`${d.queenAge} yr`:'—'],['Eggs',d.eggs],['Larvae',d.larvae],['Queen cells',d.queenCells],['Laying pattern',d.layingPattern||'Not assessed']])}
         ${card('brood','Brood','✿',[['Pattern',d.brood],['Strength',String(d.broodStrength)],['Abnormalities',d.abnormalities]])}
@@ -16546,7 +16546,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
   window.varroaTestPage=function(r,id,mode='test'){
     const s=v45s(),activeHives=v224ActiveTrackedHives(s);
-    const allowed=isPro(s)?activeHives:activeHives.slice(0,3);
+    const allowed=activeHives;
     const h=allowed.find(x=>String(x.id)===String(id))||allowed[0];
     if(!h){return noHiveStateV51(r,'No active hive available for Varroa testing');}
     const today=v2p1bDateInHiveTimezone(s,h);
@@ -17530,3 +17530,16 @@ window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
 
   window.__HIVEDASH_V2P2E4_VERSION__='v2p2e4-new-hive-first-inspection-integrity';
 })();
+
+
+/* ==============================================================
+   V2P2E5A — EXISTING HIVE VISIBILITY CONSISTENCY / P1-7 HOTFIX
+   Rules:
+   - A Free account never loses visibility or access to hives it already owns.
+   - Home, Hives, Actions, Inspection/record selectors, Map and Varroa use the
+     same full active-hive scope.
+   - The Free 3-hive rule is a CREATION/CAPACITY gate only. Existing hives are
+     not sliced, hidden, archived, deleted, or removed from aggregate counts.
+   - Pro-only analytics/features remain gated by the authoritative entitlement.
+   ============================================================== */
+window.__HIVEDASH_V2P2E5A_VERSION__='v2p2e5a-existing-hive-visibility';

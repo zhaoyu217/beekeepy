@@ -735,11 +735,19 @@ function saveRec(type){
       dose:fd.get('Dose'),endDate,followUp,withdrawal:fd.get('Withdrawal')||'',honeySupersStatus:String(fd.get('Honey_Supers_Status')||'').trim()==='Not recorded'?'':(fd.get('Honey_Supers_Status')||''),
       lotNumber:fd.get('Lot_Number')||'',status:treatmentStatus,notes,updatedAt:new Date().toISOString()
     });
+    // V2P2D5 — Treatment follow-up is a durable workflow Action, not a
+    // generated recommendation. Keep one Action per Treatment and keep its due
+    // date synchronized when the Treatment record is edited later.
+    s.actions=Array.isArray(s.actions)?s.actions:[];
+    const existingFollow=s.actions.find(a=>a&&String(a.hiveId)===String(hiveId)&&a.type==='Treatment'&&String(a.sourceId||'')===String(treatmentId)&&(String(a.source||'')==='treatment-follow-up'||String(a.title||'')==='Treatment follow-up'));
     if(followUp){
-      s.actions=s.actions||[];
-      if(!s.actions.some(a=>a.hiveId===hiveId&&a.type==='Treatment'&&a.sourceId===treatmentId)){
-        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:followUp,status:'Pending',sourceId:treatmentId});
+      if(existingFollow){
+        existingFollow.title='Treatment follow-up';existingFollow.priority='Medium';existingFollow.due=followUp;existingFollow.dueDate=followUp;existingFollow.date=followUp;existingFollow.status='Pending';existingFollow.source='treatment-follow-up';existingFollow.updatedAt=new Date().toISOString();
+      }else{
+        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:followUp,dueDate:followUp,date:followUp,status:'Pending',source:'treatment-follow-up',sourceId:treatmentId,createdAt:new Date().toISOString()});
       }
+    }else if(existingFollow){
+      s.actions=s.actions.filter(a=>a!==existingFollow);
     }
   }else{
     const weight=Number(fd.get('Honey_Weight')||0);
@@ -9304,7 +9312,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         String(a.source||'')==='equipment-maintenance-follow-up'||
         String(a.source||'')==='move-hive-follow-up'||
         String(a.source||'')==='winter-preparation-follow-up'||
-        String(a.source||'')==='spring-preparation-follow-up'
+        String(a.source||'')==='spring-preparation-follow-up'||
+        String(a.source||'')==='treatment-follow-up'||
+        (a.type==='Treatment'&&String(a.title||'')==='Treatment follow-up'&&String(a.sourceId||''))
       )&&a.status!=='Completed'&&a.priority!=='Done')
       .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`durable-workflow-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
@@ -16246,11 +16256,19 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       currentHive.insp.treatmentWithdrawal=tx.withdrawal||'None';
     }
 
+    // V2P2D5 — synchronize exactly one durable follow-up Action with this
+    // formal Treatment entity. Clearing the date clears only that Treatment's
+    // pending follow-up; it never touches generated risk Actions.
+    s.actions=Array.isArray(s.actions)?s.actions:[];
+    const existingFollow=s.actions.find(a=>a&&String(a.hiveId)===String(hiveId)&&a.type==='Treatment'&&String(a.sourceId||'')===String(tx.id)&&(String(a.source||'')==='treatment-follow-up'||String(a.title||'')==='Treatment follow-up'));
     if(followUp){
-      s.actions=Array.isArray(s.actions)?s.actions:[];
-      if(!s.actions.some(a=>a&&String(a.hiveId)===String(hiveId)&&a.type==='Treatment'&&String(a.sourceId||'')===String(tx.id))){
-        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:followUp,status:'Pending',sourceId:tx.id});
+      if(existingFollow){
+        existingFollow.title='Treatment follow-up';existingFollow.priority='Medium';existingFollow.due=followUp;existingFollow.dueDate=followUp;existingFollow.date=followUp;existingFollow.status='Pending';existingFollow.source='treatment-follow-up';existingFollow.updatedAt=tx.updatedAt;
+      }else{
+        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:followUp,dueDate:followUp,date:followUp,status:'Pending',source:'treatment-follow-up',sourceId:tx.id,createdAt:tx.updatedAt});
       }
+    }else if(existingFollow){
+      s.actions=s.actions.filter(a=>a!==existingFollow);
     }
     if(save(s)===false)return toast('Current Treatment could not be updated');
 
@@ -17122,3 +17140,6 @@ window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
    Treatment can close awaiting-retest. Later unlinked Varroa tests affect risk
    evidence only; they do not satisfy the workflow. */
 window.__HIVEDASH_V2P2D4_VERSION__='v2p2d4-strict-linked-retest-closure';
+
+/* V2P2D5 — DURABLE TREATMENT FOLLOW-UP ACTION */
+window.__HIVEDASH_V2P2D5_VERSION__='v2p2d5-durable-treatment-follow-up';

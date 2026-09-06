@@ -584,15 +584,15 @@ function recordPage(r,type,id){
         <section class="treatment-section-v102">
           <h3><i>✚</i> TREATMENT DETAILS</h3>
           <label><span>Problem</span><select name="Problem">
-            <option selected>Varroa Mites</option><option>Small Hive Beetle</option><option>Wax Moth</option><option>Disease</option><option>Other</option>
+            <option value="Varroa Mites" selected>Varroa Mites</option><option value="Small Hive Beetle">Small Hive Beetle</option><option value="Wax Moth">Wax Moth</option><option value="Disease">Disease</option><option value="Other">Other</option>
           </select></label>
           <label><span>Treatment</span><select name="Treatment">
-            <option selected>Oxalic Acid (Dribble)</option><option>Oxalic Acid (Vapor)</option><option>Formic Acid</option><option>Thymol</option><option>Other</option>
+            <option value="Oxalic Acid (Dribble)" selected>Oxalic Acid (Dribble)</option><option value="Oxalic Acid (Vapor)">Oxalic Acid (Vapor)</option><option value="Formic Acid">Formic Acid</option><option value="Thymol">Thymol</option><option value="Other">Other</option>
           </select></label>
           <label><span>Product</span><input name="Product" value="Oxalic Acid Solution"></label>
           <label><span>Active Ingredient</span><input name="Active_Ingredient" value="Oxalic Acid"></label>
           <label><span>Application Method</span><select name="Application_Method">
-            <option selected>Dribble</option><option>Vaporization</option><option>Strip</option><option>Drench</option><option>Spray</option><option>Other</option>
+            <option value="Dribble" selected>Dribble</option><option value="Vaporization">Vaporization</option><option value="Strip">Strip</option><option value="Drench">Drench</option><option value="Spray">Spray</option><option value="Other">Other</option>
           </select></label>
           <label><span>Concentration / Strength</span><input name="Concentration" placeholder="e.g. 3.2%"></label>
           <label><span>Dose</span><input name="Dose" value="5 ml / seam"></label>
@@ -603,16 +603,16 @@ function recordPage(r,type,id){
           <label><span>End Date</span><input name="End_Date" type="date" lang="en-US"></label>
           <label><span>Follow-up / Retest Due</span><input name="Follow_up" type="date" lang="en-US"></label>
           <label><span>Treatment Status</span><select name="Treatment_Status">
-            <option>Planned</option><option selected>Active</option><option>Completed</option><option>Stopped</option>
+            <option value="Planned">Planned</option><option value="Active" selected>Active</option><option value="Completed">Completed</option><option value="Stopped">Stopped</option>
           </select></label>
         </section>
         <section class="treatment-section-v102">
           <h3><i>!</i> SAFETY</h3>
           <label><span>Withdrawal</span><select name="Withdrawal">
-            <option selected>None</option><option>1 day</option><option>3 days</option><option>7 days</option><option>14 days</option><option>Custom</option>
+            <option value="None" selected>None</option><option value="1 day">1 day</option><option value="3 days">3 days</option><option value="7 days">7 days</option><option value="14 days">14 days</option><option value="Custom">Custom</option>
           </select></label>
           <label><span>Honey Supers Status</span><select name="Honey_Supers_Status">
-            <option selected>Not recorded</option><option>Not present</option><option>Present</option><option>Removed before treatment</option><option>Honey harvest complete</option>
+            <option value="Not recorded" selected>Not recorded</option><option value="Not present">Not present</option><option value="Present">Present</option><option value="Removed before treatment">Removed before treatment</option><option value="Honey harvest complete">Honey harvest complete</option>
           </select></label>
           <div class="treatment-safety-note">Record the withdrawal period and honey-super context you intend to follow for the product label you are using.</div>
         </section>
@@ -726,7 +726,7 @@ function saveRec(type){
     const followUp=fd.get('Follow_up')||'';
     let treatmentStatus=String(fd.get('Treatment_Status')||'Active').trim()||'Active';
     const endDate=fd.get('End_Date')||'';
-    if(endDate&&treatmentStatus==='Active')treatmentStatus='Completed';
+    if(endDate&&['active','planned','活跃','进行中','计划中'].includes(String(treatmentStatus||'').trim().toLowerCase()))treatmentStatus='Completed';
     if((treatmentStatus==='Completed'||treatmentStatus==='Stopped')&&!endDate)return toast('End date is required for a completed or stopped Treatment');
     s.logs.treatments.push({
       id:treatmentId,hiveId,date:fd.get('Start_Date')||today,problem:fd.get('Problem'),type:fd.get('Treatment'),product:fd.get('Product'),
@@ -15654,7 +15654,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     if(!e||e.type!=='Treatment')return prevOpenTimelineEventV2P2C(key);
     const s=S(),h=hive(s,e.hiveId),tx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).find(x=>x&&String(x.id)===String(e.sourceId||String(key).split(':').slice(1).join(':')));
     if(!tx)return prevOpenTimelineEventV2P2C(key);
-    const status=txt(tx.status)||(tx.endDate?'Completed':'Active');
+    const rawStatus=txt(tx.status), status=tx.endDate&&!['stopped','已停止','停止'].includes(low(rawStatus))?'Completed':(rawStatus||(tx.endDate?'Completed':'Active'));
     const val=v=>txt(v)||'Not recorded';
     const rows=[
       ['Problem',englishTreatmentProblem(tx.problem||'')],
@@ -16020,7 +16020,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const endDate=valueOf('End_Date');
     const followUp=valueOf('Follow_up');
     let treatmentStatus=valueOf('Treatment_Status')||tx.status||(endDate?'Completed':'Active');
-    if(endDate&&treatmentStatus==='Active')treatmentStatus='Completed';
+    if(endDate&&['active','planned','活跃','进行中','计划中'].includes(String(treatmentStatus||'').trim().toLowerCase()))treatmentStatus='Completed';
     if(endDate&&dateMs(endDate)<dateMs(startDate))return toast('End date cannot be before start date');
     if(followUp&&dateMs(followUp)<dateMs(startDate))return toast('Follow-up cannot be before start date');
     if((treatmentStatus==='Completed'||treatmentStatus==='Stopped')&&!endDate)return toast('End date is required for a completed or stopped Treatment');

@@ -386,6 +386,21 @@ function normalizeStateV50(input){
   });
   s.logs=(s.logs&&typeof s.logs==='object')?s.logs:{};
   for(const k of ['inspections','feedings','treatments','harvests','varroaTests'])s.logs[k]=Array.isArray(s.logs[k])?s.logs[k].filter(x=>x&&typeof x==='object'):[];
+  /* V2P2C3 — canonical Treatment lifecycle repair.
+     End Date is the durable completion fact. If an older/browser-translated
+     form ever persisted End Date while leaving status as Active/Planned (or
+     their known translated labels), normalize that SAME Treatment to
+     Completed. Explicit Stopped remains untouched. */
+  s.logs.treatments.forEach(tx=>{
+    if(!tx||!String(tx.endDate||'').trim())return;
+    const raw=String(tx.status||'').trim();
+    const k=raw.toLowerCase();
+    const activeLike=!raw||k==='active'||k==='planned'||raw==='活跃'||raw==='进行中'||raw==='计划中';
+    if(activeLike){
+      tx.status='Completed';
+      tx.completedAt=String(tx.completedAt||tx.endDate||'');
+    }
+  });
   s.notifications=Array.isArray(s.notifications)?s.notifications:[];
   s.actions=Array.isArray(s.actions)?s.actions:[];
   s.meta=(s.meta&&typeof s.meta==='object')?s.meta:{};

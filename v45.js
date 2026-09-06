@@ -16464,3 +16464,123 @@ window.__HIVEDASH_V2_P2C4_VERSION__='v2-p2c4-varroa-retest-action-route';
    Current-status views read the canonical Treatment log before the last Inspection snapshot.
    Historical Inspection data is not modified. */
 window.__HIVEDASH_V2_P2C7_VERSION__='v2-p2c7-current-treatment-summary-source';
+
+/* ==============================================================
+   V2P2C8 — TIMELINE ENGLISH SUMMARY + DETAIL SHEET POSITION FIX
+   Scope ONLY:
+   1) Canonicalize legacy localized Treatment enum labels in Timeline list summaries.
+      Stored Treatment records are not mutated.
+   2) Move Timeline event detail modals upward and give them a larger visible area
+      across All / Inspection / Feeding / Treatment / Harvest / Varroa / Photos.
+      No business logic, persistence, routing, scoring, or record linkage changes.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V2_P2C8_TIMELINE_POLISH__)return;
+  window.__HIVEDASH_V2_P2C8_TIMELINE_POLISH__=true;
+
+  const txt=v=>String(v??'').trim();
+
+  function canonicalTreatmentNameV2P2C8(v){
+    const x=txt(v), compact=x.replace(/\s+/g,'');
+    if(!x)return 'Treatment';
+    if(/草酸/.test(compact)||/oxalic\s*acid/i.test(x)){
+      if(/滴|dribble/i.test(compact))return 'Oxalic Acid (Dribble)';
+      if(/蒸|熏|气化|vapor/i.test(compact))return 'Oxalic Acid (Vapor)';
+      return 'Oxalic Acid';
+    }
+    if(/甲酸/.test(compact)||/formic\s*acid/i.test(x))return 'Formic Acid';
+    if(/阿米特拉/.test(compact)||/\bapivar\b|\bamitraz\b/i.test(x))return 'Apivar';
+    if(/[\u3400-\u9fff]/.test(x))return 'Treatment';
+    return x;
+  }
+
+  function canonicalTreatmentProductV2P2C8(v){
+    const x=txt(v),compact=x.replace(/\s+/g,'');
+    if(!x)return '';
+    if(/草酸.*溶液/.test(compact)||/oxalic\s*acid\s*solution/i.test(x))return 'Oxalic Acid Solution';
+    if(/甲酸/.test(compact)&&/[片带垫剂]/.test(compact))return 'Formic Acid';
+    if(/阿米特拉/.test(compact)||/\bapivar\b/i.test(x))return 'Apivar';
+    return x;
+  }
+
+  const prevRowsV2P2C8=window.v49TimelineRows;
+  if(typeof prevRowsV2P2C8==='function'){
+    window.v49TimelineRows=function(hiveId=''){
+      const rows=prevRowsV2P2C8.apply(this,arguments);
+      const s=typeof v45s==='function'?v45s():{};
+      const treatments=Array.isArray(s?.logs?.treatments)?s.logs.treatments:[];
+      const byId=new Map(treatments.map(x=>[String(x?.id||''),x]));
+
+      rows.forEach(row=>{
+        if(!row||row.type!=='Treatment')return;
+        const tx=byId.get(String(row.sourceId||String(row.key||'').split(':').slice(1).join(':')));
+        if(tx){
+          row.detail=[
+            canonicalTreatmentNameV2P2C8(tx.type),
+            canonicalTreatmentProductV2P2C8(tx.product),
+            txt(tx.dose)
+          ].filter(Boolean).join(' · ');
+          return;
+        }
+        // Fallback for legacy projected rows without a resolvable source record.
+        const parts=txt(row.detail).split(' · ');
+        if(parts.length)parts[0]=canonicalTreatmentNameV2P2C8(parts[0]);
+        row.detail=parts.join(' · ');
+      });
+      return rows;
+    };
+    try{v49TimelineRows=window.v49TimelineRows}catch(_){ }
+  }
+
+  if(!document.getElementById('v2p2c8-timeline-modal-style')){
+    const st=document.createElement('style');
+    st.id='v2p2c8-timeline-modal-style';
+    st.textContent=`
+      #app>.modal.v2p2c8-timeline-detail-modal{
+        place-items:start center!important;
+        align-items:start!important;
+        justify-items:center!important;
+        padding-top:max(56px,calc(env(safe-area-inset-top,0px) + 44px))!important;
+        padding-bottom:max(12px,env(safe-area-inset-bottom,0px))!important;
+        box-sizing:border-box!important;
+        overflow:hidden!important;
+      }
+      #app>.modal.v2p2c8-timeline-detail-modal>.modalpanel{
+        width:min(393px,100%)!important;
+        max-height:calc(100dvh - max(80px,calc(env(safe-area-inset-top,0px) + 68px)))!important;
+        overflow:auto!important;
+        overscroll-behavior:contain!important;
+        -webkit-overflow-scrolling:touch!important;
+        border-radius:16px!important;
+        box-shadow:0 14px 40px rgba(47,59,51,.22)!important;
+      }
+      @media (max-height:720px){
+        #app>.modal.v2p2c8-timeline-detail-modal{
+          padding-top:max(38px,calc(env(safe-area-inset-top,0px) + 28px))!important;
+        }
+        #app>.modal.v2p2c8-timeline-detail-modal>.modalpanel{
+          max-height:calc(100dvh - 52px)!important;
+        }
+      }
+    `;
+    document.head.appendChild(st);
+  }
+
+  const prevOpenTimelineV2P2C8=window.openTimelineEventV49;
+  if(typeof prevOpenTimelineV2P2C8==='function'){
+    window.openTimelineEventV49=function(key){
+      const out=prevOpenTimelineV2P2C8.apply(this,arguments);
+      const mark=()=>{
+        const candidates=[...document.querySelectorAll('#app>.modal')];
+        const m=candidates[candidates.length-1];
+        if(m)m.classList.add('v2p2c8-timeline-detail-modal');
+      };
+      mark();
+      requestAnimationFrame(mark);
+      return out;
+    };
+    try{openTimelineEventV49=window.openTimelineEventV49}catch(_){ }
+  }
+
+  window.__HIVEDASH_V2_P2C8_VERSION__='v2-p2c8-timeline-english-summary-detail-sheet-position';
+})();

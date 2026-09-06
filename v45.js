@@ -16584,3 +16584,131 @@ window.__HIVEDASH_V2_P2C7_VERSION__='v2-p2c7-current-treatment-summary-source';
 
   window.__HIVEDASH_V2_P2C8_VERSION__='v2-p2c8-timeline-english-summary-detail-sheet-position';
 })();
+
+/* ==============================================================
+   V2P2C9 — TIMELINE TREATMENT DETAIL ENGLISH DISPLAY CANONICALIZATION
+   Scope ONLY:
+   - Canonicalize legacy/localized Treatment detail enum values in the Timeline modal.
+   - Do not mutate stored Treatment records.
+   - Do not alter Treatment/Varroa persistence, routing, risk, linkage, or modal position.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V2_P2C9_TIMELINE_TREATMENT_DETAIL_ENGLISH__)return;
+  window.__HIVEDASH_V2_P2C9_TIMELINE_TREATMENT_DETAIL_ENGLISH__=true;
+
+  const txt=v=>String(v??'').trim();
+  const noHan=v=>/[\u3400-\u9fff]/.test(txt(v));
+
+  function canonProblem(v){
+    const x=txt(v);
+    if(!x)return 'Not recorded';
+    if(/瓦螨|蜂螨/i.test(x))return 'Varroa Mites';
+    return noHan(x)?'Not recorded':x;
+  }
+  function canonTreatment(v){
+    const x=txt(v),k=x.toLowerCase(),c=x.replace(/\s+/g,'');
+    if(!x)return 'Not recorded';
+    if(/草酸/.test(c)||k.includes('oxalic acid')){
+      if(/滴|运球/.test(c)||k.includes('dribble'))return 'Oxalic Acid (Dribble)';
+      if(/蒸|熏|气化/.test(c)||k.includes('vapor'))return 'Oxalic Acid (Vapor)';
+      return 'Oxalic Acid';
+    }
+    if(/甲酸/.test(c)||k.includes('formic acid'))return 'Formic Acid';
+    if(/阿米特拉/.test(c)||k.includes('apivar')||k.includes('amitraz'))return 'Apivar';
+    return noHan(x)?'Treatment':x;
+  }
+  function canonProduct(v){
+    const x=txt(v),k=x.toLowerCase(),c=x.replace(/\s+/g,'');
+    if(!x)return 'Not recorded';
+    if(/草酸.*溶液/.test(c)||k.includes('oxalic acid solution'))return 'Oxalic Acid Solution';
+    if(/甲酸/.test(c)||k.includes('formic acid'))return 'Formic Acid';
+    if(/阿米特拉/.test(c)||k.includes('apivar'))return 'Apivar';
+    return noHan(x)?'Not recorded':x;
+  }
+  function canonIngredient(v){
+    const x=txt(v),k=x.toLowerCase();
+    if(!x)return 'Not recorded';
+    if(/草酸/.test(x)||k.includes('oxalic acid'))return 'Oxalic Acid';
+    if(/甲酸/.test(x)||k.includes('formic acid'))return 'Formic Acid';
+    if(/阿米特拉/.test(x)||k.includes('amitraz'))return 'Amitraz';
+    return noHan(x)?'Not recorded':x;
+  }
+  function canonApplication(v){
+    const x=txt(v),k=x.toLowerCase(),c=x.replace(/\s+/g,'');
+    if(!x)return 'Not recorded';
+    if(k.includes('dribble')||/滴注|滴灌|滴落|滴液|运球/.test(c))return 'Dribble';
+    if(k.includes('vapor')||/气化|汽化|蒸发|熏蒸/.test(c))return 'Vapor';
+    if(k.includes('strip')||/条带/.test(c))return 'Strip';
+    if(k.includes('pad')||/垫/.test(c))return 'Pad';
+    if(k.includes('spray')||/喷/.test(c))return 'Spray';
+    if(k==='other'||/其他/.test(c))return 'Other';
+    return noHan(x)?'Not recorded':x;
+  }
+  function canonStatus(v){
+    const x=txt(v),k=x.toLowerCase();
+    if(!x)return 'Not recorded';
+    if(k==='active'||/活跃|活动|进行中/.test(x))return 'Active';
+    if(k==='planned'||/计划/.test(x))return 'Planned';
+    if(k==='completed'||/完成|已完成|完工/.test(x))return 'Completed';
+    if(k==='stopped'||/停止|已停止/.test(x))return 'Stopped';
+    return noHan(x)?'Not recorded':x;
+  }
+  function canonWithdrawal(v){
+    const x=txt(v),k=x.toLowerCase();
+    if(!x)return 'Not recorded';
+    if(k==='none'||k==='no'||/无|没有/.test(x))return 'None';
+    if(k==='not recorded'||/未录制|未记录/.test(x))return 'Not recorded';
+    const days=x.match(/(\d+)\s*(?:天|day)/i);if(days)return `${days[1]} days`;
+    return noHan(x)?'Not recorded':x;
+  }
+  function canonSupers(v){
+    const x=txt(v),k=x.toLowerCase(),c=x.replace(/\s+/g,'');
+    if(!x)return 'Not recorded';
+    if(k==='not present'||k==='absent'||/不在|不存在|无|没有/.test(c))return 'Not present';
+    if(k==='present'||/存在|在场|现状/.test(c))return 'Present';
+    if(k.includes('removed before treatment')||/治疗前.*移除|处理前.*移除/.test(c))return 'Removed before treatment';
+    if(k.includes('honey harvest complete')||/蜂蜜.*采收.*完成|采蜜.*完成/.test(c))return 'Honey harvest complete';
+    if(k==='not recorded'||/未录制|未记录/.test(c))return 'Not recorded';
+    return noHan(x)?'Not recorded':x;
+  }
+
+  const canonByLabel={
+    'Problem':canonProblem,
+    'Treatment':canonTreatment,
+    'Product':canonProduct,
+    'Active Ingredient':canonIngredient,
+    'Application Method':canonApplication,
+    'Status':canonStatus,
+    'Withdrawal':canonWithdrawal,
+    'Honey Supers Status':canonSupers
+  };
+
+  function normalizeLatestTreatmentModal(){
+    const modals=[...document.querySelectorAll('#app>.modal')];
+    const m=modals[modals.length-1];
+    if(!m||!m.querySelector('.v2p2c-treatment-detail'))return;
+    m.querySelectorAll('.v2p2c-treatment-detail>div').forEach(row=>{
+      const label=txt(row.querySelector('span')?.textContent);
+      const valueEl=row.querySelector('b');
+      const fn=canonByLabel[label];
+      if(!valueEl||!fn)return;
+      valueEl.textContent=fn(valueEl.textContent);
+      valueEl.setAttribute('translate','no');
+      valueEl.classList.add('notranslate');
+    });
+  }
+
+  const prevOpen=window.openTimelineEventV49;
+  if(typeof prevOpen==='function'){
+    window.openTimelineEventV49=function(key){
+      const out=prevOpen.apply(this,arguments);
+      normalizeLatestTreatmentModal();
+      requestAnimationFrame(normalizeLatestTreatmentModal);
+      setTimeout(normalizeLatestTreatmentModal,0);
+      return out;
+    };
+    try{openTimelineEventV49=window.openTimelineEventV49}catch(_){ }
+  }
+
+  window.__HIVEDASH_V2_P2C9_VERSION__='v2-p2c9-timeline-treatment-detail-english';
+})();

@@ -1062,7 +1062,7 @@ function apiaryPage(r){
   const stateOptions=['<option value="">Select state</option>',...V224A_US_STATES.map(v=>`<option value="${v[0]}" ${shown.stateCode===v[0]?'selected':''}>${v[1]}</option>`)].join('');
   const tzOptions=V224A_TZ.map(v=>`<option ${shown.timezone===v?'selected':''}>${v}</option>`).join('');
   const existing=String(x.location||'').trim();
-  r.innerHTML=`<div class="vs">${Vcard('Apiaries & Hives','<div class="lines"><button onclick="go(&quot;all-hives&quot;)"><span>All Apiaries</span><b>'+s.hives.length+' hives</b><em>›</em></button></div>')}<section class="formlist"><label><span>Apiary Name</span><input id="v48apiary" value="${esc(shown.apiaryName)}"></label><label><span>Country</span><select id="v224country"><option value="US" selected>United States</option></select></label><label><span>State</span><select id="v224state">${stateOptions}</select></label><label><span>City <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224city" autocomplete="address-level2" value="${esc(shown.city)}" placeholder="e.g. State College"></label><label><span>ZIP Code <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224zip" inputmode="numeric" autocomplete="postal-code" value="${esc(shown.postalCode)}" placeholder="e.g. 16801"></label><label><span>Time Zone</span><select id="v224tz">${tzOptions}</select></label>${existing&&!l.stateCode&&!shown.stateCode?`<div class="notice">Existing location: ${esc(existing)}. Select a state once to convert it to structured location data.</div>`:''}<label><span>Default Inspection Interval</span><select id="v48cycle"><option value="7" ${shown.inspectionCycle==='7'?'selected':''}>7 days</option><option value="14" ${shown.inspectionCycle==='14'?'selected':''}>14 days</option><option value="21" ${shown.inspectionCycle==='21'?'selected':''}>21 days</option></select></label><label><span>Hive Type</span><select id="v48hivetype"><option ${shown.hiveType==='Langstroth'?'selected':''}>Langstroth</option><option ${shown.hiveType==='Flow Hive'?'selected':''}>Flow Hive</option><option ${shown.hiveType==='Top Bar'?'selected':''}>Top Bar</option></select></label></section><button class="primary" onclick="saveApiaryV48()">Save Apiary Settings</button><button class="secondary" onclick="go('seasonal-settings')">Seasonal Settings</button></div>`;
+  r.innerHTML=`<div class="vs">${Vcard('Apiaries & Hives','<div class="lines"><button onclick="go(&quot;all-hives&quot;)"><span>All Apiaries</span><b>'+s.hives.length+' hives</b><em>›</em></button></div>')}<section class="formlist"><label><span>Apiary Name</span><input id="v48apiary" value="${esc(shown.apiaryName)}"></label><label><span>Country</span><select id="v224country"><option value="US" selected>United States</option></select></label><label><span>State</span><select id="v224state">${stateOptions}</select></label><label><span>City <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224city" autocomplete="address-level2" value="${esc(shown.city)}" placeholder="e.g. State College"></label><label><span>ZIP Code <em style="font-style:normal;font-weight:400;color:#7B857E">(optional)</em></span><input id="v224zip" inputmode="numeric" autocomplete="postal-code" value="${esc(shown.postalCode)}" placeholder="e.g. 16801"></label><label><span>Time Zone</span><select id="v224tz">${tzOptions}</select></label>${existing&&!l.stateCode&&!shown.stateCode?`<div class="notice">Existing location: ${esc(existing)}. Select a state once to convert it to structured location data.</div>`:''}<label><span>Inspection Scheduling</span><div class="v2p2e5ad-adaptive-setting"><b>Adaptive scientific scheduling</b><small>Region, season, colony phase, risk and recent evidence are evaluated automatically.</small></div><input id="v48cycle" type="hidden" value="${shown.inspectionCycle||'14'}"></label><label><span>Hive Type</span><select id="v48hivetype"><option ${shown.hiveType==='Langstroth'?'selected':''}>Langstroth</option><option ${shown.hiveType==='Flow Hive'?'selected':''}>Flow Hive</option><option ${shown.hiveType==='Top Bar'?'selected':''}>Top Bar</option></select></label></section><button class="primary" onclick="saveApiaryV48()">Save Apiary Settings</button><button class="secondary" onclick="go('seasonal-settings')">Seasonal Settings</button></div>`;
   v224aBindApiaryDraft()
 }
 function saveApiaryV48(){const s=v45s();v224aCaptureApiaryDraft();const stateCode=String(idq('v224state')?.value||'').trim();const stateName=v224aStateName(stateCode);const city=String(idq('v224city')?.value||'').trim();const postal=String(idq('v224zip')?.value||'').trim();const timezone=String(idq('v224tz')?.value||'').trim();if(!stateCode)return toast('Select a state');if(city.length>80)return toast('City must be 80 characters or fewer');if(postal&&!/^\d{5}(?:-\d{4})?$/.test(postal))return toast('Enter a valid US ZIP Code');const loc={countryCode:'US',country:'United States',stateCode,state:stateName,city,postalCode:postal,latitude:null,longitude:null,timezone:timezone||'America/Denver',precision:city?'city':'state',contextReady:true,legacyText:String(s.settings.location||'')};s.settings.apiaryName=idq('v48apiary').value.trim();s.settings.apiaryLocation=loc;s.settings.location=v224aLocationDisplay(loc);s.settings.locationUserSet=true;s.settings.region=s.settings.region||{};s.settings.region.timezone=loc.timezone;s.settings.timezone=loc.timezone;s.settings.inspectionCycle=Number(idq('v48cycle').value);s.settings.hiveType=idq('v48hivetype').value;if(save(s)===false)return;window.V224A_APIARY_DRAFT=null;toast('Apiary settings saved');render()}
@@ -11219,10 +11219,30 @@ window.__HIVEDASH_V224B30_VERSION__='224b30';
       scheduledDate=String(h0?.nextInspection||'').trim();
     }catch(_){}
 
+    let periodicContext=null,businessToday='';
+    try{
+      const raw=sessionStorage.getItem('hivedash_v2p2e5ac_periodic_inspection');
+      periodicContext=raw?JSON.parse(raw):null;
+      const s0=typeof state==='function'?state():(typeof v45s==='function'?v45s():null);
+      businessToday=typeof v2p2e5Today==='function'?String(v2p2e5Today(s0,hiveId)||''):'';
+    }catch(_){}
+
     const result=baseSaveInspection.apply(this,arguments);
 
     /* No scheduled Inspection Action -> no completion side effect. */
     if(!scheduledDate) return result;
+
+    /* V2P2E5AC: an early ad-hoc Inspection must not silently consume a future
+       scheduled Inspection. The schedule is fulfilled when the beekeeper starts
+       from that exact task, or when the saved Inspection occurs on/after the due
+       date. Earlier independent inspections may supersede the schedule only when
+       they explicitly save a new nextInspection date. */
+    const ctxMatches=periodicContext&&
+      String(periodicContext.hiveId||'')===hiveId&&
+      String(periodicContext.scheduledDate||'')===scheduledDate&&
+      String(periodicContext.intentKey||'')==='inspection-scheduled';
+    const dueReached=/^\d{4}-\d{2}-\d{2}$/.test(scheduledDate)&&/^\d{4}-\d{2}-\d{2}$/.test(businessToday)&&scheduledDate<=businessToday;
+    if(!ctxMatches&&!dueReached) return result;
 
     try{
       const s=typeof state==='function'?state():(typeof v45s==='function'?v45s():null);
@@ -19281,4 +19301,489 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   `;document.head.appendChild(style);
 
   window.__HIVEDASH_V2P2E5AB_VERSION__='v2p2e5ab-scientific-task-engine-actions2-foundation';
+})();
+
+/* ==============================================================
+   V2P2E5AC — PERIODIC INSPECTION EVIDENCE CHAIN
+   Scope:
+   - Initial Inspection, scheduled routine Inspection, and missing-schedule confirmation.
+   - Never invent a nationwide fixed scientific inspection interval.
+   - Exact due dates come from a confirmed nextInspection date or a linked workflow.
+   - A missing due-date produces a confirmation task rather than a fabricated deadline.
+   - An early ad-hoc Inspection does not silently complete a future scheduled task.
+   ============================================================== */
+(function v2p2e5acPeriodicInspectionEvidence(){
+  if(window.__HIVEDASH_V2P2E5AC__)return;
+  window.__HIVEDASH_V2P2E5AC__=true;
+
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escC=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsC=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v))?txt(v):'';
+  const dayNo=v=>{const d=iso(v);return d?Math.floor(Date.parse(d+'T00:00:00Z')/86400000):null};
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)));
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const inspections=(s,hid)=>(Array.isArray(s?.logs?.inspections)?s.logs.inspections:[]).filter(x=>x&&txt(x.hiveId)===txt(hid));
+  const latestInspection=(s,hid)=>inspections(s,hid).slice().sort((a,b)=>txt(b.date||b.updatedAt||b.recordedAt).localeCompare(txt(a.date||a.updatedAt||a.recordedAt)))[0]||null;
+  const hasInspection=(s,h)=>{try{return typeof window.v2p2e4HasRecordedInspection==='function'?!!window.v2p2e4HasRecordedInspection(s,h):!!latestInspection(s,h?.id)}catch(_){return !!latestInspection(s,h?.id)}};
+  const todayFor=(s,h)=>{try{return typeof v2p2e5Today==='function'?txt(v2p2e5Today(s,h?.id||'')):new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const isDone=a=>a&&(a.status==='Completed'||a.priority==='Done');
+  const isManualInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&['manual','manual-plan'].includes(txt(a.source));
+  const isFullInspectionRoute=(a,hid)=>a&&!isDone(a)&&txt(a.hiveId)===txt(hid)&&txt(a.executionRoute)===`inspection/${hid}`;
+  const formatDate=v=>{const d=iso(v);if(!d)return txt(v)||'—';try{return typeof fmtDate==='function'?fmtDate(d):d}catch(_){return d}};
+
+  function evidenceTaskBase(h,intent,title){
+    return {hiveId:h.id,type:'Inspection',title,status:'Pending',source:'scientific-engine',systemGenerated:true,reasonCode:'data',intentKey:intent,workflowStage:'evidence'};
+  }
+
+  const prevGenerate=window.generateActions||generateActions;
+  window.generateActions=function(s){
+    let rows=(prevGenerate(s)||[]).slice();
+
+    /* Remove legacy generic periodic-Inspection recommendations. Their old
+       timing was based on a fixed/default cycle and must not masquerade as a
+       scientific nationwide rule. Specific Queen/Food/Varroa/Swarm follow-ups
+       are intentionally preserved because they carry their own evidence chain. */
+    rows=rows.filter(a=>{
+      if(!a)return false;
+      const intent=txt(a.intentKey),id=txt(a.id),title=low(a.title),src=txt(a.source);
+      if(['inspection-cycle','inspection-initial','inspection-confirm','inspection-scheduled'].includes(intent))return false;
+      if(id.startsWith('v2p2e4-initial-inspection-'))return false;
+      if(id.startsWith('v224b-data-')||title==='inspection overdue')return false;
+      if(src==='initial-inspection')return false;
+      /* V2P2E5AC activation gate: only the Periodic Inspection scientific
+         workflow is active in this candidate. The Varroa, Queen, Food, Swarm
+         and other E5AB prototype scientific tasks stay off until their own
+         evidence chains are reviewed and approved one by one. Existing manual
+         Actions and durable workflow follow-ups are not removed. */
+      if(src==='scientific-engine'&&!['inspection-initial','inspection-scheduled','inspection-confirm'].includes(intent))return false;
+      return true;
+    });
+
+    for(const h of active(s)){
+      const hid=txt(h.id),last=latestInspection(s,hid),next=iso(h.nextInspection),today=todayFor(s,h);
+      const manual=rows.filter(a=>txt(a.hiveId)===hid&&isManualInspection(a));
+
+      if(!hasInspection(s,h)){
+        /* No biological baseline exists. The need for a baseline Inspection is
+           evidence-complete, but the exact day is not invented. If the beekeeper
+           already chose a nextInspection date, use it; otherwise show scheduling
+           as needing confirmation while still allowing an immediate safe-weather
+           start. */
+        if(manual.length)continue;
+        const a=evidenceTaskBase(h,'inspection-initial','Initial inspection needed');
+        a.id=`scientific-inspection-initial-${hid}`;
+        a.priority='Medium';
+        a.dueDate=next;a.date=next;a.due=next||'Needs scheduling';
+        a.executionRoute=`inspection/${hid}`;
+        a.systemWhy='No valid Inspection record exists for this hive. A baseline Inspection is needed before HiveDash can rely on colony-condition evidence.';
+        a.evidenceChain={complete:true,basis:'no-valid-inspection-record',latestInspectionId:'',latestInspectionDate:'',confirmedNextInspection:next||'',timingEvidenceComplete:!!next};
+        rows.push(a);
+        continue;
+      }
+
+      if(next){
+        /* Exact duplicate manual plan wins. A different manual Inspection is kept
+           because the user may intentionally want an additional visit. */
+        const manualSame=manual.some(m=>iso(m.dueDate||m.date||m.due)===next);
+        if(manualSame)continue;
+
+        /* A more-specific full Inspection follow-up due on/before this same
+           routine date can satisfy the general need for a full Inspection, so
+           do not create a second routine card. Dedicated Varroa tests are not
+           full Inspections and therefore do not suppress it. */
+        const nextN=dayNo(next);
+        const specificFull=rows.some(a=>{
+          if(!isFullInspectionRoute(a,hid))return false;
+          const intent=txt(a.intentKey);
+          if(['inspection-initial','inspection-scheduled','inspection-confirm'].includes(intent))return false;
+          const d=dayNo(a.dueDate||a.date||a.due);
+          return d!==null&&nextN!==null&&d<=nextN;
+        });
+        if(specificFull)continue;
+
+        const a=evidenceTaskBase(h,'inspection-scheduled','Scheduled inspection');
+        a.id=`scientific-inspection-scheduled-${hid}-${next}`;
+        a.priority='Medium';a.dueDate=next;a.date=next;a.due=next;a.executionRoute=`inspection/${hid}`;
+        a.systemWhy=`The hive has a confirmed next-inspection date of ${formatDate(next)}. HiveDash is using that recorded date rather than inventing a nationwide inspection interval.`;
+        a.evidenceChain={complete:true,basis:'confirmed-next-inspection-date',sourceInspectionId:txt(last?.id),sourceInspectionDate:iso(last?.date),confirmedNextInspection:next,scheduleSource:txt(h.nextInspectionSource)||'existing-hive-schedule'};
+        rows.push(a);
+      }else{
+        /* No exact date + no user plan + no evidence-specific full Inspection
+           means the scientific chain is incomplete for timing. Ask the beekeeper
+           to confirm the next date instead of fabricating 7/14/21 days. */
+        const otherFull=rows.some(a=>isFullInspectionRoute(a,hid));
+        if(manual.length||otherFull)continue;
+        rows.push({
+          id:`scientific-inspection-confirm-${hid}`,hiveId:h.id,type:'Inspection',title:'Confirm next inspection date',status:'Pending',priority:'Low',
+          due:'Needs confirmation',dueDate:'',date:'',source:'scientific-engine',systemGenerated:true,reasonCode:'data',intentKey:'inspection-confirm',workflowStage:'confirmation',executionRoute:'',
+          systemWhy:'A valid Inspection exists, but there is no confirmed next-inspection date and no evidence-specific follow-up that determines one. HiveDash will not invent a universal interval.',
+          evidenceChain:{complete:false,basis:'timing-evidence-incomplete',sourceInspectionId:txt(last?.id),sourceInspectionDate:iso(last?.date),missing:['confirmed next-inspection date or evidence-specific follow-up timing']}
+        });
+      }
+    }
+
+    const seen=new Set(),out=[];
+    for(const a of rows){const k=txt(a.id)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`;if(seen.has(k))continue;seen.add(k);out.push(a)}
+    return out;
+  };
+  try{generateActions=window.generateActions}catch(_){ }
+
+  window.v2p2e5acSetInspectionDate=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId)),h=a?hiveBy(s,a.hiveId):null,el=document.getElementById('v2p2e5ac-next-date');
+    if(!a||!h||!el)return toast('This task is no longer active');
+    const d=iso(el.value);if(!d)return toast('Choose a next inspection date');
+    const today=todayFor(s,h);if(iso(today)&&d<today)return toast('Next inspection cannot be in the past');
+    h.nextInspection=d;h.nextInspectionSource='user-confirmed-scientific-task';h.nextInspectionConfirmedAt=new Date().toISOString();
+    if(save(s)===false)return;toast('Next inspection date confirmed');go('actions');
+  };
+
+  window.v2p2e5acStartPeriodicInspection=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId));if(!a)return toast('This task is no longer active');
+    const h=hiveBy(s,a.hiveId);if(!h)return toast('Hive unavailable');
+    try{sessionStorage.setItem('hivedash_v2p2e5ac_periodic_inspection',JSON.stringify({actionId:txt(a.id),hiveId:txt(h.id),intentKey:txt(a.intentKey),scheduledDate:iso(a.dueDate||a.date||h.nextInspection),startedAt:new Date().toISOString()}))}catch(_){}
+    go(`inspection/${h.id}`);
+  };
+
+  function detail(a){
+    const s=S(),h=hiveBy(s,a.hiveId),ev=a.evidenceChain||{},intent=txt(a.intentKey),last=formatDate(ev.sourceInspectionDate),next=iso(a.dueDate||a.date||h?.nextInspection),today=h?todayFor(s,h):'';
+    if(intent==='inspection-confirm'){
+      return `<div class="vs v2p2e5ac-detail"><section class="vc"><div class="vhead"><b>Confirm next inspection date</b><span class="v2p2e5ac-evidence-warn">Evidence incomplete</span></div><div class="v2p2e5ab-detail-grid"><span>Hive<b>${escC(h?.name||'Unavailable')}</b></span><span>Last Inspection<b>${escC(last)}</b></span></div></section><section class="vc"><div class="vhead"><b>Why confirmation is required</b></div><p>${escC(a.systemWhy)}</p><p class="muted">Inspection frequency changes with region, season, weather, colony condition and the specific management problem. No single nationwide 7/14/21-day interval is being assumed here.</p></section><section class="vc"><label><span>Next inspection date</span><input id="v2p2e5ac-next-date" type="date" min="${escC(today)}"></label></section><div class="v2p2e5ab-detail-actions"><button class="secondary" onclick="go('actions')">Back</button><button class="primary" onclick="v2p2e5acSetInspectionDate('${jsC(a.id)}')">Confirm date</button></div></div>`;
+    }
+    const initial=intent==='inspection-initial',timingComplete=!!next;
+    return `<div class="vs v2p2e5ac-detail"><section class="vc"><div class="vhead"><b>${escC(a.title)}</b><span class="v2p2e5ab-source-pill">System</span></div><div class="v2p2e5ab-detail-grid"><span>Hive<b>${escC(h?.name||'Unavailable')}</b></span><span>Evidence status<b>Complete</b></span><span>${initial?'Baseline':'Prior Inspection'}<b>${escC(initial?'Not recorded':last)}</b></span><span>Due<b>${escC(next?formatDate(next):'Needs scheduling')}</b></span></div></section><section class="vc"><div class="vhead"><b>Evidence chain</b></div><p>${escC(a.systemWhy)}</p>${!timingComplete?'<p class="muted">The need for an Inspection is clear, but the exact day is not. You may start now only if local conditions are suitable, or confirm a future date.</p>':''}</section><section class="vc"><div class="vhead"><b>Before opening the hive</b></div><p>Use suitable local conditions. Avoid opening the colony in cool, windy or rainy weather; mild weather with normal bee flight is preferred.</p>${!timingComplete?`<label><span>Or confirm a future date</span><input id="v2p2e5ac-next-date" type="date" min="${escC(today)}"></label>`:''}</section><div class="v2p2e5ab-detail-actions"><button class="secondary" onclick="go('actions')">Back</button>${!timingComplete?`<button class="secondary" onclick="v2p2e5acSetInspectionDate('${jsC(a.id)}')">Confirm date</button>`:''}<button class="primary" onclick="v2p2e5acStartPeriodicInspection('${jsC(a.id)}')">Start Inspection</button></div></div>`;
+  }
+
+  const prevRender=window.render;
+  window.render=function(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]!=='scientific-action')return prevRender.apply(this,arguments);
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(p[1]));
+    if(!a||!['inspection-initial','inspection-scheduled','inspection-confirm'].includes(txt(a.intentKey)))return prevRender.apply(this,arguments);
+    const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=detail(a);
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Inspection Task</div><span></span>`}
+    document.getElementById('bottomnav')?.classList.add('hidden');
+  };
+  try{render=window.render}catch(_){ }
+
+  /* Close/trace the exact evidence task after a real Inspection record is saved. */
+  const prevSaveInspection=window.vSaveInspection;
+  if(typeof prevSaveInspection==='function'){
+    window.vSaveInspection=function(id){
+      const before=S(),hid=txt(id||window.V49_INSPECTION_DRAFT?.hiveId),beforeRows=inspections(before,hid),beforeIds=new Set(beforeRows.map(x=>txt(x.id))),wasUnassessed=!hasInspection(before,hiveBy(before,hid));
+      let ctx=null;try{const raw=sessionStorage.getItem('hivedash_v2p2e5ac_periodic_inspection');ctx=raw?JSON.parse(raw):null}catch(_){}
+      const ret=prevSaveInspection.apply(this,arguments);
+      try{
+        const s=S(),created=inspections(s,hid).filter(x=>!beforeIds.has(txt(x.id))),row=created[created.length-1];
+        if(!row)return ret;
+        s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+
+        if(wasUnassessed){
+          const sourceId=`scientific-initial-inspection:${hid}:${txt(row.id)}`;
+          if(!s.meta.completedActions.some(x=>txt(x.sourceId)===sourceId))s.meta.completedActions.push({id:`completed-scientific-initial-${Date.now()}`,hiveId:hid,type:'Inspection',title:'Initial inspection',status:'Completed',priority:'Done',completedAt:new Date().toISOString(),source:'scientific-engine',sourceId,completionSource:'inspection-record',linkedRecordId:txt(row.id),evidenceChain:{complete:true,basis:'first-valid-inspection-record',inspectionId:txt(row.id),inspectionDate:iso(row.date)}});
+        }
+
+        if(ctx&&txt(ctx.hiveId)===hid&&txt(ctx.intentKey)==='inspection-scheduled'&&iso(ctx.scheduledDate)){
+          const sid=`scheduled-inspection:${hid}:${iso(ctx.scheduledDate)}`;
+          const ca=s.meta.completedActions.find(x=>txt(x.sourceId)===sid);
+          if(ca){ca.linkedRecordId=txt(row.id);ca.source='scientific-engine';ca.evidenceChain={complete:true,basis:'scheduled-inspection-fulfilled',scheduledDate:iso(ctx.scheduledDate),inspectionId:txt(row.id),inspectionDate:iso(row.date)}}
+        }
+        save(s);
+      }catch(err){console.error('V2P2E5AC Inspection evidence closure failed',err)}
+      finally{try{if(ctx&&txt(ctx.hiveId)===hid)sessionStorage.removeItem('hivedash_v2p2e5ac_periodic_inspection')}catch(_){}}
+      return ret;
+    };
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  const style=document.createElement('style');style.id='v2p2e5ac-periodic-inspection-style';style.textContent=`
+    .v2p2e5ac-evidence-warn{font-size:10px;padding:4px 7px;border-radius:999px;background:#F8F0DE;color:#8A6719}.v2p2e5ac-detail .vc label{display:grid;gap:6px;font-size:11px;color:#667068}.v2p2e5ac-detail .vc input[type=date]{min-height:44px;border:1px solid #D8D3C9;border-radius:10px;padding:0 10px;background:#fff;color:#2F4634;font:inherit}.v2p2e5ac-detail .v2p2e5ab-detail-actions{grid-template-columns:repeat(auto-fit,minmax(100px,1fr))}
+  `;document.head.appendChild(style);
+
+  window.__HIVEDASH_V2P2E5AC_VERSION__='v2p2e5ac-periodic-inspection-evidence-chain';
+})();
+
+
+/* ==============================================================
+   V2P2E5AD — ADAPTIVE PERIODIC INSPECTION ENGINE
+   Scientific contract:
+   - Region + season + colony phase + risk + latest evidence decide the
+     periodic Inspection schedule. Month alone never decides colony phase.
+   - Evidence priority, conflict detection, beekeeper correction, outcome
+     back-validation, task replacement and rule-version traceability are all
+     explicit parts of the engine.
+   - Exact timing is used only where the active rule set has a quantified
+     authoritative basis, or where the beekeeper recorded a specific next date.
+     Unsupported states/conditions fall back to confirmation instead of an
+     invented nationwide 7/14/21-day interval.
+   - Specific biological follow-ups may replace a generic routine Inspection;
+     dedicated Varroa tests never count as a full Inspection.
+
+   Quantified authority rules in inspection-us-adaptive-v1.0:
+   * Mississippi State University Extension: check colonies every week during
+     the April-May swarm season in Mississippi.
+   * Penn State Extension: in the northeastern United States, colonies are
+     typically checked at least every two weeks for swarm prevention during
+     late-spring/early-summer buildup.
+   * University of California ANR, Managing Bees: about every 10 days during
+     rapid spring population buildup until the beginning of honey flow.
+     UC Davis California calendar is used only as seasonal context; it also
+     says to limit inspections during nectar dearth / winter-cluster periods.
+   * Utah State University Extension: inspect every 10 days to 3 weeks; use
+     warm conditions for full inspections.
+   ============================================================== */
+(function v2p2e5adAdaptivePeriodicInspection(){
+  if(window.__HIVEDASH_V2P2E5AD__)return;
+  window.__HIVEDASH_V2P2E5AD__=true;
+
+  const RULE_VERSION='inspection-us-adaptive-v1.0-2026-09-07';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escD=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsD=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v))?txt(v):'';
+  const dayNo=v=>{const d=iso(v);return d?Math.floor(Date.parse(d+'T00:00:00Z')/86400000):null};
+  const addDays=(v,n)=>{const d=dayNo(v);if(d===null)return'';return new Date((d+Number(n||0))*86400000).toISOString().slice(0,10)};
+  const daysBetween=(a,b)=>{const A=dayNo(a),B=dayNo(b);return A===null||B===null?null:B-A};
+  const month=v=>Number(iso(v).slice(5,7)||0);
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)));
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const inspections=(s,hid)=>(Array.isArray(s?.logs?.inspections)?s.logs.inspections:[]).filter(x=>x&&txt(x.hiveId)===txt(hid)&&x.legacySnapshot!==true);
+  const latestInspection=(s,hid)=>inspections(s,hid).slice().sort((a,b)=>txt(b.date||b.updatedAt||b.recordedAt).localeCompare(txt(a.date||a.updatedAt||a.recordedAt)))[0]||null;
+  const todayFor=(s,h)=>{try{return typeof v2p2e5Today==='function'?txt(v2p2e5Today(s,h?.id||'')):v2p1bDateInHiveTimezone(s,h)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const effectiveLoc=(s,h)=>{try{return typeof v2p1bEffectiveHiveLocation==='function'?v2p1bEffectiveHiveLocation(s,h):(h?.currentLocation||s?.settings?.apiaryLocation||null)}catch(_){return h?.currentLocation||s?.settings?.apiaryLocation||null}};
+  const isDone=a=>a&&(a.status==='Completed'||a.priority==='Done');
+  const isManualInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&['manual','manual-plan'].includes(txt(a.source));
+  const isFullInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&/^inspection\//.test(txt(a.executionRoute||''));
+  const isAdaptiveIntent=a=>['inspection-adaptive','inspection-adaptive-confirm','inspection-adaptive-initial','inspection-adaptive-low-disturbance'].includes(txt(a?.intentKey));
+  const fmt=v=>{const d=iso(v);if(!d)return txt(v)||'—';try{return typeof fmtDate==='function'?fmtDate(d):d}catch(_){return d}};
+
+  const NORTHEAST=new Set(['CT','ME','MA','NH','RI','VT','NJ','NY','PA']);
+  const RULES={
+    MS_SWARM_WEEKLY:{id:'MS-SWARM-WEEKLY',authority:'Mississippi State University Extension',summary:'Mississippi colonies should be checked every week during the April-May swarm season.',url:'https://www.extension.msstate.edu/publications/colony-growth-and-seasonal-management-honey-bees'},
+    NE_SWARM_14:{id:'NE-SWARM-14',authority:'Penn State Extension',summary:'During northeastern swarm-prevention buildup, colonies are typically checked at least every two weeks.',url:'https://extension.psu.edu/honey-bee-management-throughout-the-seasons'},
+    CA_BUILDUP_10:{id:'CA-BUILDUP-10',authority:'University of California Agriculture and Natural Resources',summary:'During rapid spring population buildup, conscientious beekeepers examine colonies about every 10 days until honey flow begins.',url:'https://ucanr.edu/sites/default/files/2010-08/40642.pdf'},
+    CA_LIMITED:{id:'CA-LIMITED-DEARTH-WINTER',authority:'California Master Beekeeper Program, UC Davis',summary:'California guidance limits inspections during nectar dearth and winter-cluster periods.',url:'https://cambp.ucdavis.edu/sites/g/files/dgvnsk2526/files/inline-files/backyard-beekeeper-ca.pdf'},
+    UT_ACTIVE_10_21:{id:'UT-ACTIVE-10-21',authority:'Utah State University Extension',summary:'Inspect hives every 10 days to 3 weeks; full hive inspections should use suitable warm conditions.',url:'https://extension.usu.edu/beekeeping/research/setting-up-and-placing-a-hive'},
+    WEATHER_OPENING:{id:'OPENING-CONDITIONS',authority:'Oregon State University Extension',summary:'Full colony inspections are best in mild weather with good bee flight; cool, windy or rainy weather should be avoided.',url:'https://extension.oregonstate.edu/catalog/pnw-623-evaluating-honey-bee-colonies-pollination'}
+  };
+
+  function decisionFor(s,h){
+    try{return typeof window.v224bEvaluateHive==='function'?window.v224bEvaluateHive(s,h):null}catch(_){return null}
+  }
+  function seasonContext(state,today,phase){
+    const m=month(today);
+    if(state==='MS'&&[4,5].includes(m))return'Mississippi April-May swarm season';
+    if(NORTHEAST.has(state)&&[4,5,6].includes(m))return'Northeastern late-spring / early-summer buildup';
+    if(state==='CA'&&[3,4,5,6].includes(m))return'California spring buildup / swarm season';
+    if(state==='CA'&&[8,9,10].includes(m))return'California nectar-dearth / limited-inspection period';
+    if(state==='CA'&&[11,12,1].includes(m))return'California winter low-disturbance period';
+    if(state==='UT'&&![11,12,1,2].includes(m))return'Utah active beekeeping season';
+    return `${phase||'Uncertain'} seasonal context`;
+  }
+  function quantifiedRule(state,today,phase){
+    const m=month(today),activePhase=['Population Increase','Peak Population','Population Decrease'].includes(phase);
+    if(state==='MS'&&[4,5].includes(m))return {rule:RULES.MS_SWARM_WEEKLY,minDays:7,maxDays:7,mode:'full',season:'Mississippi April-May swarm season'};
+    if(NORTHEAST.has(state)&&[4,5,6].includes(m)&&['Population Increase','Peak Population'].includes(phase))return {rule:RULES.NE_SWARM_14,minDays:14,maxDays:14,mode:'full',season:'Northeastern late-spring / early-summer swarm-prevention period'};
+    if(state==='CA'&&[3,4,5,6].includes(m)&&['Population Increase','Peak Population'].includes(phase))return {rule:RULES.CA_BUILDUP_10,minDays:10,maxDays:10,mode:'full',season:'California rapid spring population buildup'};
+    if(state==='UT'&&activePhase)return {rule:RULES.UT_ACTIVE_10_21,minDays:10,maxDays:21,mode:'full',season:'Utah active beekeeping season'};
+    if(state==='CA'&&([8,9,10,11,12,1].includes(m)||String(phase).startsWith('Dormant')))return {rule:RULES.CA_LIMITED,minDays:null,maxDays:null,mode:'limited',season:seasonContext(state,today,phase)};
+    return null;
+  }
+  function riskPriority(d){const r=txt(d?.overallRisk);return ['Critical','High'].includes(r)?'High':r==='Medium'?'Medium':'Routine'}
+  function evidencePriority(d,last,rule,next){
+    const rows=[];
+    if(last)rows.push('Latest real Inspection record');
+    if(next)rows.push('Beekeeper-confirmed next Inspection date');
+    if(d?.phase&&d.phase!=='Uncertain')rows.push(`Colony phase: ${d.phase}`);
+    if(d?.overallRisk)rows.push(`Current risk: ${d.overallRisk}`);
+    if(rule?.rule)rows.push(`Regional/seasonal rule: ${rule.rule.id}`);
+    rows.push('Calendar date only as supporting context');
+    return rows;
+  }
+  function conflictsFor(s,h,d,last,rule,next,today){
+    const c=[],loc=effectiveLoc(s,h),state=txt(loc?.stateCode).toUpperCase();
+    if(!state)c.push('Structured hive/apiary state is missing.');
+    if(!last)c.push('No valid biological Inspection record exists.');
+    if(d?.phase==='Uncertain')c.push('Colony phase is uncertain from current evidence.');
+    if(low(d?.confidence?.level)==='low')c.push(...(d?.confidence?.reasons||[]).map(x=>txt(x)).filter(Boolean));
+    if(last&&iso(h?.lastInspection)&&iso(last.date)&&iso(h.lastInspection)!==iso(last.date))c.push('Hive summary and latest Inspection date do not match.');
+    if(next&&rule?.maxDays!=null&&last?.date){
+      const max=addDays(last.date,rule.maxDays);
+      if(max&&dayNo(next)>dayNo(max))c.push(`The recorded next Inspection (${next}) is later than the authority-supported window ending ${max}.`);
+    }
+    if(rule?.mode==='full'&&String(d?.phase).startsWith('Dormant'))c.push('Seasonal full-inspection timing conflicts with dormant colony evidence.');
+    return [...new Set(c)];
+  }
+  function fingerprint(hid,last,rule,intent){
+    return [RULE_VERSION,hid,intent,txt(last?.id||'none'),iso(last?.date)||'none',txt(rule?.rule?.id||'no-quantified-rule')].join('|');
+  }
+  function activeOverride(s,fp){
+    const rows=Array.isArray(s?.meta?.scientificTaskOverrides)?s.meta.scientificTaskOverrides:[];
+    return rows.slice().reverse().find(x=>x&&txt(x.taskFingerprint)===txt(fp)&&txt(x.ruleVersion)===RULE_VERSION)||null;
+  }
+  function applyOverride(task,s){
+    const o=activeOverride(s,task.taskFingerprint);if(!o)return task;
+    if(o.decision==='not-needed')return null;
+    const x={...task,userCorrection:{decision:o.decision,reason:txt(o.reason),recordedAt:txt(o.recordedAt)}};
+    if(o.decision==='adjust-date'&&iso(o.date)){
+      x.dueDate=iso(o.date);x.date=iso(o.date);x.due=iso(o.date);x.scheduleSource='beekeeper-correction';
+      x.systemWhy=`${task.systemWhy} The beekeeper adjusted the execution date to ${fmt(o.date)}; this correction is recorded separately from biological evidence.`;
+    }
+    return x;
+  }
+  function baseTask(h,intent,title){return {hiveId:h.id,type:'Inspection',title,status:'Pending',source:'scientific-engine',systemGenerated:true,reasonCode:'data',intentKey:intent,workflowStage:'evidence',ruleVersion:RULE_VERSION}}
+
+  function buildAdaptiveTask(s,h,rows){
+    const hid=txt(h.id),today=todayFor(s,h),last=latestInspection(s,hid),d=decisionFor(s,h),loc=effectiveLoc(s,h),state=txt(loc?.stateCode).toUpperCase(),phase=txt(d?.phase||'Uncertain'),next=iso(h.nextInspection),rule=quantifiedRule(state,today,phase),pri=riskPriority(d);
+    const seasonal=rule?.season||seasonContext(state,today,phase),conflicts=conflictsFor(s,h,d,last,rule,next,today),confidence=txt(d?.confidence?.level||'LOW').toUpperCase();
+
+    if(!last){
+      const intent='inspection-adaptive-initial',fp=fingerprint(hid,last,rule,intent),a=baseTask(h,intent,'Initial inspection needed');
+      a.id=`scientific-adaptive-initial-${hid}`;a.priority=pri==='Routine'?'Medium':pri;a.executionRoute=`inspection/${hid}`;a.taskFingerprint=fp;a.evidenceStatus=state?'PARTIAL':'INCOMPLETE';
+      a.dueDate='';a.date='';a.due=String(phase).startsWith('Dormant')?'When conditions permit':'As soon as suitable conditions permit';
+      a.systemWhy='No valid Inspection record exists. A baseline is needed before the adaptive engine can rely on colony phase, risk and trend evidence.';
+      a.evidenceChain={complete:false,ruleVersion:RULE_VERSION,stateCode:state,season:seasonal,colonyPhase:phase,risk:txt(d?.overallRisk||'Unassessed'),confidence,evidencePriority:evidencePriority(d,last,rule,next),conflicts,weatherOpeningRule:RULES.WEATHER_OPENING.id};
+      return applyOverride(a,s);
+    }
+
+    const fpBase=fingerprint(hid,last,rule,'inspection-adaptive');
+    let windowStart='',windowEnd='',scheduleSource='';
+    if(rule?.minDays!=null){windowStart=addDays(last.date,rule.minDays);windowEnd=addDays(last.date,rule.maxDays);scheduleSource='authority-rule'}
+
+    if(next){
+      if(!windowEnd||dayNo(next)<=dayNo(windowEnd)){windowStart=next;windowEnd=next;scheduleSource='beekeeper-confirmed-next-date'}
+    }
+
+    const manual=rows.filter(a=>txt(a.hiveId)===hid&&isManualInspection(a));
+    if(windowEnd){
+      const wEnd=dayNo(windowEnd),manualCover=manual.find(m=>{const md=dayNo(m.dueDate||m.date||m.due);return md!==null&&md<=wEnd});
+      if(manualCover)return null;
+      const specificIndex=rows.findIndex(a=>{
+        if(!isFullInspection(a)||txt(a.hiveId)!==hid||isAdaptiveIntent(a))return false;
+        const ad=dayNo(a.dueDate||a.date||a.due);return ad!==null&&ad<=wEnd;
+      });
+      if(specificIndex>=0){
+        rows[specificIndex]={...rows[specificIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fpBase,ruleVersion:rows[specificIndex].ruleVersion||RULE_VERSION};
+        return null;
+      }
+    }
+
+    const hardConflict=conflicts.some(x=>/missing|uncertain|do not match|later than|conflicts/i.test(x));
+    const lowConfidence=confidence==='LOW';
+    if(!windowEnd||rule?.mode==='limited'||hardConflict||lowConfidence){
+      const intent=rule?.mode==='limited'?'inspection-adaptive-low-disturbance':'inspection-adaptive-confirm',fp=fingerprint(hid,last,rule,intent),a=baseTask(h,intent,rule?.mode==='limited'?'Review inspection timing':'Confirm inspection timing');
+      a.id=`scientific-adaptive-confirm-${hid}-${iso(last.date)||'unknown'}`;a.priority=pri;a.workflowStage='confirmation';a.executionRoute='';a.taskFingerprint=fp;a.evidenceStatus='INCOMPLETE';
+      a.proposedWindowStart=windowStart;a.proposedWindowEnd=windowEnd;a.dueDate='';a.date='';a.due=windowStart&&windowEnd?`${windowStart} – ${windowEnd}`:'Needs confirmation';
+      a.systemWhy=rule?.mode==='limited'?`${seasonal}. Current authority guidance says routine opening should be limited; HiveDash will not invent a full-inspection date without suitable local conditions and current evidence.`:windowEnd?`A scientific window can be proposed, but the current evidence chain contains a conflict or low-confidence element that requires beekeeper confirmation.`:`The current rule version does not contain a quantified inspection interval for this exact state/season/phase combination. HiveDash will not substitute a nationwide default.`;
+      a.evidenceChain={complete:false,ruleVersion:RULE_VERSION,ruleId:txt(rule?.rule?.id),authority:txt(rule?.rule?.authority),authoritySummary:txt(rule?.rule?.summary),stateCode:state,season:seasonal,colonyPhase:phase,risk:txt(d?.overallRisk||'Unassessed'),confidence,evidencePriority:evidencePriority(d,last,rule,next),conflicts,latestInspectionId:txt(last.id),latestInspectionDate:iso(last.date),proposedWindowStart:windowStart,proposedWindowEnd:windowEnd,weatherOpeningRule:RULES.WEATHER_OPENING.id};
+      return applyOverride(a,s);
+    }
+
+    const intent='inspection-adaptive',fp=fpBase,a=baseTask(h,intent,rule.minDays===rule.maxDays?'Scheduled inspection':'Inspection window');
+    a.id=`scientific-adaptive-${hid}-${iso(last.date)}-${txt(rule.rule.id)}`;a.priority=pri;a.executionRoute=`inspection/${hid}`;a.taskFingerprint=fp;a.evidenceStatus=confidence==='HIGH'?'COMPLETE':'SUPPORTED';
+    a.dueWindowStart=windowStart;a.dueWindowEnd=windowEnd;a.dueDate=windowEnd;a.date=windowEnd;a.due=windowStart===windowEnd?windowEnd:`${windowStart} – ${windowEnd}`;a.scheduleSource=scheduleSource;
+    a.systemWhy=`${rule.rule.authority} supports this inspection interval for ${seasonal.toLowerCase()}. HiveDash then checks colony phase, current risk and the latest Inspection before creating the task.`;
+    a.evidenceChain={complete:true,ruleVersion:RULE_VERSION,ruleId:rule.rule.id,authority:rule.rule.authority,authoritySummary:rule.rule.summary,stateCode:state,season:seasonal,colonyPhase:phase,risk:txt(d?.overallRisk||'Unassessed'),confidence,evidencePriority:evidencePriority(d,last,rule,next),conflicts,latestInspectionId:txt(last.id),latestInspectionDate:iso(last.date),windowStart,windowEnd,scheduleSource,weatherOpeningRule:RULES.WEATHER_OPENING.id};
+    return applyOverride(a,s);
+  }
+
+  const prevGenerate=window.generateActions||generateActions;
+  window.generateActions=function(s){
+    let rows=(prevGenerate(s)||[]).filter(a=>!isAdaptiveIntent(a)&&!['inspection-initial','inspection-scheduled','inspection-confirm'].includes(txt(a?.intentKey))&&!txt(a?.id).startsWith('scientific-inspection-'));
+    for(const h of active(s)){
+      const a=buildAdaptiveTask(s,h,rows);if(a)rows.push(a);
+    }
+    const seen=new Set(),out=[];
+    for(const a of rows){if(!a)continue;const k=txt(a.id)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`;if(seen.has(k))continue;seen.add(k);out.push(a)}
+    return out;
+  };
+  try{generateActions=window.generateActions}catch(_){ }
+
+  function storeOverride(s,a,decision,date,reason){
+    s.meta=s.meta||{};s.meta.scientificTaskOverrides=Array.isArray(s.meta.scientificTaskOverrides)?s.meta.scientificTaskOverrides:[];
+    s.meta.scientificTaskOverrides.push({id:`sci-override-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,hiveId:txt(a.hiveId),taskId:txt(a.id),taskFingerprint:txt(a.taskFingerprint),ruleVersion:RULE_VERSION,decision,date:iso(date),reason:txt(reason),recordedAt:new Date().toISOString(),source:'beekeeper-correction'});
+    s.meta.scientificTaskOverrides=s.meta.scientificTaskOverrides.slice(-300);
+  }
+  window.v2p2e5adAdjustDate=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId)),el=document.getElementById('v2p2e5ad-date');if(!a||!el)return toast('Task is no longer active');
+    const h=hiveBy(s,a.hiveId),d=iso(el.value);if(!d)return toast('Choose a date');const today=todayFor(s,h);if(today&&d<today)return toast('Date cannot be in the past');
+    const reason=txt(window.prompt('Why are you changing the system date?','Local conditions / beekeeper judgment')||'');if(!reason)return toast('Add a reason so the correction remains traceable');
+    storeOverride(s,a,'adjust-date',d,reason);if(save(s)===false)return;toast('Inspection date adjusted');go('actions');
+  };
+  window.v2p2e5adNotNeeded=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId));if(!a)return toast('Task is no longer active');
+    const reason=txt(window.prompt('Why is this system task not needed?','')||'');if(!reason)return toast('Add a reason so the correction remains traceable');
+    storeOverride(s,a,'not-needed','',reason);if(save(s)===false)return;toast('Task suppressed until new evidence changes the decision');go('actions');
+  };
+  window.v2p2e5adStartInspection=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId)),h=a?hiveBy(s,a.hiveId):null;if(!a||!h)return toast('Task is no longer active');
+    const d=decisionFor(s,h);try{sessionStorage.setItem('hivedash_v2p2e5ad_adaptive_inspection',JSON.stringify({taskId:txt(a.id),taskFingerprint:txt(a.taskFingerprint),hiveId:txt(h.id),intentKey:txt(a.intentKey),ruleVersion:RULE_VERSION,dueWindowStart:iso(a.dueWindowStart||a.proposedWindowStart),dueWindowEnd:iso(a.dueWindowEnd||a.proposedWindowEnd||a.dueDate),prePhase:txt(d?.phase),preRisk:txt(d?.overallRisk),preConfidence:txt(d?.confidence?.level),startedAt:new Date().toISOString()}))}catch(_){ }
+    go(`inspection/${h.id}`);
+  };
+
+  function evidenceLines(a){
+    const e=a.evidenceChain||{},conf=Array.isArray(e.conflicts)?e.conflicts:[],priority=Array.isArray(e.evidencePriority)?e.evidencePriority:[];
+    return `<section class="vc"><div class="vhead"><b>Evidence chain</b><span class="v2p2e5ad-confidence ${low(e.confidence)}">${escD(e.confidence||'LOW')}</span></div><div class="v2p2e5ad-evidence-grid"><span>Region<b>${escD(e.stateCode||'Not confirmed')}</b></span><span>Season context<b>${escD(e.season||'Uncertain')}</b></span><span>Colony phase<b>${escD(e.colonyPhase||'Uncertain')}</b></span><span>Current risk<b>${escD(e.risk||'Unassessed')}</b></span><span>Latest Inspection<b>${escD(fmt(e.latestInspectionDate)||'Not recorded')}</b></span><span>Rule version<b>${escD(e.ruleVersion||RULE_VERSION)}</b></span></div>${e.authority?`<div class="v2p2e5ad-authority"><b>${escD(e.authority)}</b><span>${escD(e.authoritySummary||'')}</span><small>${escD(e.ruleId||'')}</small></div>`:''}${priority.length?`<div class="v2p2e5ad-priority"><b>Evidence priority</b><ol>${priority.map(x=>`<li>${escD(x)}</li>`).join('')}</ol></div>`:''}${conf.length?`<div class="v2p2e5ad-conflicts"><b>Needs attention</b>${conf.map(x=>`<span>${escD(x)}</span>`).join('')}</div>`:''}</section>`;
+  }
+  function detail(a){
+    const s=S(),h=hiveBy(s,a.hiveId),e=a.evidenceChain||{},needsConfirm=['inspection-adaptive-confirm','inspection-adaptive-low-disturbance'].includes(txt(a.intentKey)),initial=txt(a.intentKey)==='inspection-adaptive-initial',start=iso(a.dueWindowStart||a.proposedWindowStart),end=iso(a.dueWindowEnd||a.proposedWindowEnd||a.dueDate),today=h?todayFor(s,h):'',canStart=!needsConfirm||initial||a.userCorrection?.decision==='adjust-date';
+    return `<div class="vs v2p2e5ad-detail"><section class="vc"><div class="vhead"><b>${escD(a.title||'Inspection task')}</b><span class="v2p2e5ab-source-pill">System</span></div><div class="v2p2e5ab-detail-grid"><span>Hive<b>${escD(h?.name||'Unavailable')}</b></span><span>Priority<b>${escD(a.priority||'Medium')}</b></span><span>Inspection window<b>${escD(start&&end&&start!==end?`${fmt(start)} – ${fmt(end)}`:fmt(end||start||a.due))}</b></span><span>Evidence status<b>${escD(a.evidenceStatus||'INCOMPLETE')}</b></span></div></section><section class="vc"><div class="vhead"><b>Why this task exists</b></div><p>${escD(a.systemWhy||'')}</p></section>${evidenceLines(a)}<section class="vc"><div class="vhead"><b>Correction safeguards</b></div><p>New Inspection evidence automatically recalculates this schedule. A more specific full-Inspection follow-up can replace this routine task. Your correction is recorded separately and never becomes biological evidence.</p><p class="muted">Before a full opening, confirm that local conditions are suitable. HiveDash does not invent live weather data.</p>${needsConfirm||!end?`<label class="v2p2e5ad-date-row"><span>Confirm / adjust date</span><input id="v2p2e5ad-date" type="date" min="${escD(today)}" value="${escD(end||'')}"></label>`:`<label class="v2p2e5ad-date-row"><span>Adjust date if local conditions require it</span><input id="v2p2e5ad-date" type="date" min="${escD(today)}" value="${escD(end||'')}"></label>`}</section><div class="v2p2e5ad-actions"><button class="secondary" onclick="go('actions')">Back</button><button class="secondary" onclick="v2p2e5adAdjustDate('${jsD(a.id)}')">Adjust date</button>${!initial?`<button class="secondary" onclick="v2p2e5adNotNeeded('${jsD(a.id)}')">Not needed</button>`:''}${canStart?`<button class="primary" onclick="v2p2e5adStartInspection('${jsD(a.id)}')">Start Inspection</button>`:''}</div></div>`;
+  }
+
+  const prevRender=window.render;
+  window.render=function(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]!=='scientific-action')return prevRender.apply(this,arguments);
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(p[1]));
+    if(!a||!isAdaptiveIntent(a))return prevRender.apply(this,arguments);
+    const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=detail(a);
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Inspection Task</div><span></span>`}
+    document.getElementById('bottomnav')?.classList.add('hidden');
+  };
+  try{render=window.render}catch(_){ }
+
+  function rankRisk(v){return {Critical:4,High:3,Medium:2,Low:1,Unassessed:0}[txt(v)]??0}
+  const prevSaveInspection=window.vSaveInspection;
+  if(typeof prevSaveInspection==='function'){
+    window.vSaveInspection=function(id){
+      const before=S(),hid=txt(id||window.V49_INSPECTION_DRAFT?.hiveId),h0=hiveBy(before,hid),beforeDecision=h0?decisionFor(before,h0):null,beforeIds=new Set(inspections(before,hid).map(x=>txt(x.id))),beforeTask=(before.actions||[]).find(a=>a&&txt(a.hiveId)===hid&&isAdaptiveIntent(a));
+      let ctx=null;try{const raw=sessionStorage.getItem('hivedash_v2p2e5ad_adaptive_inspection');ctx=raw?JSON.parse(raw):null}catch(_){ }
+      const ret=prevSaveInspection.apply(this,arguments);
+      try{
+        const s=S(),h=hiveBy(s,hid),created=inspections(s,hid).filter(x=>!beforeIds.has(txt(x.id))),row=created[created.length-1];if(!row||!h)return ret;
+        const post=decisionFor(s,h),newTask=(s.actions||[]).find(a=>a&&txt(a.hiveId)===hid&&isAdaptiveIntent(a));
+        s.meta=s.meta||{};s.meta.scientificInspectionValidations=Array.isArray(s.meta.scientificInspectionValidations)?s.meta.scientificInspectionValidations:[];s.meta.scientificTaskReplacements=Array.isArray(s.meta.scientificTaskReplacements)?s.meta.scientificTaskReplacements:[];
+        const preRisk=txt(beforeDecision?.overallRisk||'Unassessed'),postRisk=txt(post?.overallRisk||'Unassessed');
+        const outcome=rankRisk(postRisk)<rankRisk(preRisk)?'risk-decreased':rankRisk(postRisk)>rankRisk(preRisk)?'risk-increased':'recalculated';
+        s.meta.scientificInspectionValidations.push({id:`sci-validation-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,hiveId:hid,taskId:txt(ctx?.taskId||beforeTask?.id),taskFingerprint:txt(ctx?.taskFingerprint||beforeTask?.taskFingerprint),ruleVersion:RULE_VERSION,inspectionId:txt(row.id),inspectionDate:iso(row.date),prePhase:txt(beforeDecision?.phase),postPhase:txt(post?.phase),preRisk,postRisk,preConfidence:txt(beforeDecision?.confidence?.level),postConfidence:txt(post?.confidence?.level),previousWindowEnd:iso(ctx?.dueWindowEnd||beforeTask?.dueWindowEnd||beforeTask?.dueDate),nextWindowEnd:iso(newTask?.dueWindowEnd||newTask?.dueDate),outcome,executionSource:ctx&&txt(ctx.hiveId)===hid?'system-task':'ad-hoc-new-evidence',recordedAt:new Date().toISOString()});
+        s.meta.scientificInspectionValidations=s.meta.scientificInspectionValidations.slice(-300);
+
+        const fromFp=txt(ctx?.taskFingerprint||beforeTask?.taskFingerprint),toFp=txt(newTask?.taskFingerprint);
+        if(fromFp&&fromFp!==toFp){s.meta.scientificTaskReplacements.push({id:`sci-replace-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,hiveId:hid,fromTaskFingerprint:fromFp,toTaskFingerprint:toFp||'',reason:'new-inspection-evidence',ruleVersion:RULE_VERSION,inspectionId:txt(row.id),recordedAt:new Date().toISOString()});s.meta.scientificTaskReplacements=s.meta.scientificTaskReplacements.slice(-300)}
+
+        if(ctx&&txt(ctx.hiveId)===hid&&txt(ctx.taskFingerprint)){
+          s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+          let completed=s.meta.completedActions.find(x=>txt(x.linkedRecordId)===txt(row.id)&&txt(x.hiveId)===hid&&low(x.type).includes('inspection'));
+          const src=beforeTask||{id:ctx.taskId,hiveId:hid,type:'Inspection',title:'Adaptive inspection',priority:'Done',taskFingerprint:ctx.taskFingerprint};
+          if(completed){completed.taskFingerprint=txt(ctx.taskFingerprint);completed.ruleVersion=RULE_VERSION;completed.completionSource='adaptive-inspection-record';completed.linkedRecordId=txt(row.id)}
+          else{s.meta.completedActions.push({...JSON.parse(JSON.stringify(src)),id:`completed-${txt(src.id)||'adaptive-inspection'}-${Date.now()}`,sourceId:`adaptive-inspection:${hid}:${txt(ctx.taskFingerprint)}`,status:'Completed',priority:'Done',completedAt:new Date().toISOString(),source:'scientific-engine',linkedRecordId:txt(row.id),completionSource:'adaptive-inspection-record',ruleVersion:RULE_VERSION})}
+        }
+        save(s);
+      }catch(err){console.error('V2P2E5AD adaptive Inspection validation failed',err)}
+      finally{try{if(ctx&&txt(ctx.hiveId)===hid)sessionStorage.removeItem('hivedash_v2p2e5ad_adaptive_inspection')}catch(_){ }}
+      return ret;
+    };
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  const style=document.createElement('style');style.id='v2p2e5ad-adaptive-inspection-style';style.textContent=`
+    .v2p2e5ad-adaptive-setting{display:grid;gap:3px;text-align:right}.v2p2e5ad-adaptive-setting b{font-size:12px;color:#36523B}.v2p2e5ad-adaptive-setting small{font-size:9px;line-height:1.35;color:#7A817B;max-width:220px}.v2p2e5ad-confidence{font-size:9px;padding:4px 7px;border-radius:999px;background:#EEF2EB;color:#52664D}.v2p2e5ad-confidence.low{background:#F8F0DE;color:#8A6719}.v2p2e5ad-evidence-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:8px}.v2p2e5ad-evidence-grid span{display:grid;gap:2px;font-size:9px;color:#7B827C}.v2p2e5ad-evidence-grid b{font-size:11px;color:#334B38;line-height:1.35}.v2p2e5ad-authority,.v2p2e5ad-priority,.v2p2e5ad-conflicts{display:grid;gap:4px;margin-top:12px;padding-top:10px;border-top:1px solid #ECE8DF}.v2p2e5ad-authority b,.v2p2e5ad-priority b,.v2p2e5ad-conflicts b{font-size:11px;color:#3D5741}.v2p2e5ad-authority span,.v2p2e5ad-authority small,.v2p2e5ad-priority li,.v2p2e5ad-conflicts span{font-size:10px;line-height:1.45;color:#697169}.v2p2e5ad-priority ol{margin:2px 0 0 18px;padding:0}.v2p2e5ad-conflicts span{padding:5px 7px;border-radius:8px;background:#FBF4E6;color:#7E651F}.v2p2e5ad-date-row{display:grid;gap:6px;margin-top:10px;font-size:10px;color:#687169}.v2p2e5ad-date-row input{min-height:44px;border:1px solid #D8D3C9;border-radius:10px;padding:0 10px;background:#fff;color:#2F4634;font:inherit}.v2p2e5ad-actions{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:8px}.v2p2e5ad-actions button{margin:0!important;min-height:42px}
+  `;document.head.appendChild(style);
+
+  window.V2P2E5AD_INSPECTION_RULES={version:RULE_VERSION,rules:RULES};
+  window.__HIVEDASH_V2P2E5AD_VERSION__='v2p2e5ad-adaptive-periodic-inspection-six-layer-correction';
 })();

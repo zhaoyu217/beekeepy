@@ -18417,3 +18417,407 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
   window.__HIVEDASH_V2P2E5Q_VERSION__='v2p2e5q-invalid-hive-interaction-closure';
   window.__HIVEDASH_V2P2E5R_VERSION__='v2p2e5r-invalid-inspection-save-hidden';
 })();
+
+/* ==============================================================
+   V2P2E5S — ACTIONS PLANNER / EXECUTION SEPARATION
+   Scope ONLY:
+   - Actions -> + Add Action frequent types (Inspection / Feeding /
+     Treatment / Harvest) create a Pending Action plan first.
+   - The existing formal record workflows remain the only execution / record
+     sources of truth.
+   - A planned frequent Action opens its plan detail; Start/Continue then opens
+     the existing formal workflow and carries the exact actionId.
+   - One successfully saved formal record completes that exact manual plan.
+   - No second Timeline event is created for the Action completion.
+   - Low-frequency Action planners, Home quick execution and Actions shortcuts
+     are intentionally left for their own audit items.
+   ============================================================== */
+(function v2p2e5sPlannedFrequentActions(){
+  if(window.__HIVEDASH_V2P2E5S__)return;
+  window.__HIVEDASH_V2P2E5S__=true;
+
+  const PREFILL_KEY='hivedash_v2p2e5s_frequent_plan_prefill';
+  const EXEC_KEY='hivedash_v2p2e5s_frequent_plan_exec';
+  const FREQ={
+    inspection:{canonical:'Inspection',label:'Inspection',verb:'Start Inspection',route:'inspection',help:'Plan a hive inspection. Biological evidence is created only after the Inspection is completed and saved.'},
+    feeding:{canonical:'Feeding',label:'Feeding',verb:'Record Feeding',route:'feeding-record',help:'Plan feeding work. A Feeding record is created only when the feeding is actually recorded.'},
+    treatment:{canonical:'Treatment',label:'Treatment',verb:'Start Treatment',route:'treatment-record',help:'Plan treatment work. Treatment choice and application remain in the formal Treatment record workflow.'},
+    harvest:{canonical:'Harvest',label:'Harvest',verb:'Record Harvest',route:'harvest-record',help:'Plan harvest work. Production data is created only when the Harvest record is saved.'}
+  };
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escS=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsS=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>v45s();
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&low(h?.lifecycleStatus)!=='combined');
+  const findHive=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const norm=v=>{const x=low(v);if(x.includes('inspect'))return'inspection';if(x.includes('feed'))return'feeding';if(x.includes('treat')||x==='varroa')return'treatment';if(x.includes('harvest'))return'harvest';return x};
+  const setSession=(k,v)=>{try{sessionStorage.setItem(k,JSON.stringify(v))}catch(_){}};
+  const getSession=k=>{try{return JSON.parse(sessionStorage.getItem(k)||'null')}catch(_){return null}};
+  const delSession=k=>{try{sessionStorage.removeItem(k)}catch(_){}};
+  const todayFor=(s,hiveId)=>{try{return typeof v2p2e5Today==='function'?v2p2e5Today(s,hiveId):new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const allActions=s=>[...(s.actions||[]),...(s.meta?.completedActions||[])];
+  const findAction=(s,id)=>allActions(s).find(a=>a&&txt(a.id)===txt(id))||null;
+  const isManualFrequent=a=>!!a&&a.source==='manual-plan'&&!!FREQ[norm(a.type||a.title)];
+
+  function noHivePlan(){
+    const r=document.getElementById('view');if(!r)return;
+    r.innerHTML=`<div class="b37-page"><section class="b37-card"><div class="b37-label">No active hives</div><div class="b39-info">Add or reactivate a hive before planning hive-specific work.</div></section><div class="b37-footer"><button class="b37-primary" onclick="go('hives')">Open Hives</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
+  }
+
+  window.v2p2e5sOpenFrequentPlan=function(kind,hiveId=''){
+    kind=norm(kind);if(!FREQ[kind])return;
+    const s=S(),hs=active(s),valid=hs.some(h=>txt(h.id)===txt(hiveId));
+    setSession(PREFILL_KEY,{kind,hiveId:valid?txt(hiveId):'',createdAt:Date.now()});
+    go(`frequent-action/new/${kind}`);
+  };
+
+  window.v2p2e5sPlannerHiveChanged=function(kind){
+    const s=S(),sel=document.getElementById('v2p2e5s-plan-hive'),date=document.getElementById('v2p2e5s-plan-date');
+    if(sel&&date&&sel.value)date.value=todayFor(s,sel.value);
+  };
+
+  window.v2p2e5sCreateFrequentAction=function(kind){
+    kind=norm(kind);const def=FREQ[kind];if(!def)return;
+    const s=S(),hiveId=txt(document.getElementById('v2p2e5s-plan-hive')?.value),h=findHive(s,hiveId);
+    if(!h)return toast('Select an active hive');
+    const due=txt(document.getElementById('v2p2e5s-plan-date')?.value);if(!/^\d{4}-\d{2}-\d{2}$/.test(due))return toast('Select a due date');
+    const priority=txt(document.getElementById('v2p2e5s-plan-priority')?.value)||'Medium';
+    const notes=txt(document.getElementById('v2p2e5s-plan-notes')?.value);
+    const duplicate=(s.actions||[]).find(a=>a&&a.status!=='Completed'&&a.priority!=='Done'&&a.source==='manual-plan'&&txt(a.hiveId)===txt(h.id)&&norm(a.type||a.title)===kind&&txt(a.dueDate||a.due)===due);
+    if(duplicate){toast('This planned action already exists');return go('frequent-action/'+duplicate.id)}
+    const now=new Date().toISOString(),a={
+      id:`${kind}-action-${Date.now()}`,hiveId:h.id,type:def.canonical,title:def.label,status:'Pending',priority,
+      due,dueDate:due,date:due,createdAt:now,startedAt:null,completedAt:null,followUpDate:null,
+      source:'manual-plan',reasonCode:'manual',workflowData:{plannedActionType:kind},resultData:null,
+      linkedRecordId:null,linkedActionId:null,parentActionId:null,notes
+    };
+    s.actions=Array.isArray(s.actions)?s.actions:[];s.actions.push(a);
+    if(save(s)===false)return toast('Action could not be saved');
+    delSession(PREFILL_KEY);toast('Action planned');go('frequent-action/'+a.id);
+  };
+
+  window.v2p2e5sStartPlannedAction=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId));
+    if(!isManualFrequent(a))return toast('Planned action not found');
+    const h=findHive(s,a.hiveId);if(!h)return toast('This action is linked to a hive that is no longer available');
+    const kind=norm(a.type||a.title),def=FREQ[kind];if(!def)return;
+    a.status='In Progress';a.startedAt=a.startedAt||new Date().toISOString();save(s);
+    setSession(EXEC_KEY,{actionId:a.id,hiveId:h.id,kind,startedAt:Date.now()});
+    go(`${def.route}/${h.id}`);
+  };
+
+  function createHTML(kind){
+    const def=FREQ[kind],s=S(),hs=active(s);if(!def)return '<div class="b37-page"><section class="b37-card">Action type not found.</section></div>';
+    if(!hs.length){setTimeout(noHivePlan,0);return ''}
+    const pf=getSession(PREFILL_KEY),pfHive=pf&&pf.kind===kind&&hs.some(h=>txt(h.id)===txt(pf.hiveId))?txt(pf.hiveId):'';
+    const selected=pfHive||(hs.length===1?txt(hs[0].id):'');
+    const due=selected?todayFor(s,selected):'';
+    return `<div class="b37-page b39-page b39-create-page v2p2e5s-frequent-plan">
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Plan ${escS(def.label)}</div><div class="b37-hint">Management task</div></div><div class="b39-info">${escS(def.help)} This page creates a Pending Action only; it does not create a biological or management record.</div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Required</div></div><label class="b37-field"><span>Hive</span><select id="v2p2e5s-plan-hive" onchange="v2p2e5sPlannerHiveChanged('${jsS(kind)}')"><option value="" ${selected?'':'selected'} disabled>Select a hive</option>${hs.map(h=>`<option value="${escS(h.id)}" ${txt(h.id)===selected?'selected':''}>${escS(h.name||h.id)}</option>`).join('')}</select></label></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><input id="v2p2e5s-plan-date" type="date" value="${escS(due)}"></label><label class="b37-field"><span>Priority</span><select id="v2p2e5s-plan-priority"><option>High</option><option selected>Medium</option><option>Low</option></select></label></div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="v2p2e5s-plan-notes" rows="4" placeholder="Add context for this planned task..."></textarea></label></section>
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="v2p2e5sCreateFrequentAction('${jsS(kind)}')">Create Action</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+
+  function detailHTML(a){
+    const s=S(),h=findHive(s,a.hiveId)||(s.hives||[]).find(x=>txt(x.id)===txt(a.hiveId)),kind=norm(a.type||a.title),def=FREQ[kind],done=a.status==='Completed'||a.priority==='Done';
+    const row=(k,v)=>`<div class="b37-meta"><span>${escS(k)}</span><b>${escS(v||'—')}</b></div>`;
+    return `<div class="b37-page b39-page b39-create-page b39-pending-detail-page v2p2e5s-frequent-plan">
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">${escS(def?.label||a.title||'Action')}</div><div class="b37-hint">${done?'Completed':'Planned work'}</div></div>
+        ${row('Hive',h?.name||a.hiveId)}${row('Status',done?'Completed':(a.status||'Pending'))}${row('Due',a.dueDate||a.due)}${row('Priority',done?'Done':a.priority)}${a.notes?row('Notes',a.notes):''}${done&&a.linkedRecordId?row('Linked Record',a.linkedRecordId):''}
+      </section>
+      <section class="b37-card b39-card"><div class="b39-info">${escS(def?.help||'')} The Action records the plan; the formal ${escS(def?.label||'')} workflow records what actually happened.</div></section>
+      <div class="b37-footer b39-footer">${done?'<button class="b37-primary" onclick="go(\'actions\')">Back to Actions</button>':`<button class="b37-primary" onclick="v2p2e5sStartPlannedAction('${jsS(a.id)}')">${a.status==='In Progress'?'Continue':'Start'} ${escS(def?.label||'Action')}</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button>`}</div>
+    </div>`;
+  }
+
+  const prevRender=window.render;
+  window.render=function(){
+    const parts=txt(location.hash||'#home').replace(/^#/,'').split('/'),page=parts[0],id=parts[1]||'',kind=norm(parts[2]||'');
+    if(page!=='frequent-action')return prevRender.apply(this,arguments);
+    const r=document.getElementById('view');if(!r)return;
+    r.className='view secondary';
+    if(id==='new')r.innerHTML=createHTML(kind);
+    else{const a=findAction(S(),id);r.innerHTML=isManualFrequent(a)?detailHTML(a):'<div class="b37-page"><section class="b37-card">Planned action not found.</section><div class="b37-footer"><button class="b37-primary" onclick="go(\'actions\')">Back to Actions</button></div></div>'}
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">${id==='new'?'Plan Action':'Action Detail'}</div><span></span>`}
+    document.getElementById('bottomnav')?.classList.add('hidden');
+  };
+  try{render=window.render}catch(_){ }
+
+  function patchPlannerPicker(picker,hiveId=''){
+    if(!picker)return;
+    const headSmall=picker.querySelector('.add-action-head small');if(headSmall)headSmall.textContent='Choose work to plan';
+    const map={'inspection':'inspection','feeding':'feeding','treatment':'treatment','harvest':'harvest'};
+    picker.querySelectorAll('.add-action-card').forEach(btn=>{
+      const name=low(btn.querySelector('b')?.textContent),kind=map[name];if(!kind)return;
+      const small=btn.querySelector('small');if(small)small.textContent=`Plan ${name}`;
+      btn.onclick=function(){closeModal(this);v2p2e5sOpenFrequentPlan(kind,hiveId)};
+    });
+  }
+
+  const prevPicker=window.openRecordPicker;
+  window.openRecordPicker=function(){const ret=prevPicker.apply(this,arguments);patchPlannerPicker(document.querySelector('.modal.v224-add-action-picker'),'');return ret};
+  try{openRecordPicker=window.openRecordPicker}catch(_){ }
+
+  const prevHivePicker=window.v2p2e5lOpenRecordPickerForHive;
+  if(typeof prevHivePicker==='function'){
+    window.v2p2e5lOpenRecordPickerForHive=function(hiveId){const ret=prevHivePicker.apply(this,arguments);patchPlannerPicker(document.querySelector('.modal.v224-add-action-picker'),txt(hiveId));return ret};
+  }
+
+  // Manual planned frequent Actions always open their own plan/detail first.
+  // Generated risk/follow-up rows keep their existing stage-aware routes.
+  const prevDraw=window.v53DrawActions||v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    const ret=prevDraw.apply(this,arguments);
+    try{
+      const rows=typeof v53ActionRows==='function'?v53ActionRows(mode):[],box=document.getElementById('alist'),buttons=box?[...box.querySelectorAll(':scope > button')]:[];
+      buttons.forEach((btn,i)=>{const a=rows[i];if(!isManualFrequent(a))return;btn.setAttribute('onclick',`go('frequent-action/${jsS(a.id)}')`);btn.dataset.v2p2e5sActionId=txt(a.id)});
+    }catch(err){console.error('V2P2E5S planned frequent row routing failed',err)}
+    return ret;
+  };
+  try{v53DrawActions=window.v53DrawActions}catch(_){ }
+
+  function execContext(kind,hiveId){
+    const c=getSession(EXEC_KEY);return c&&norm(c.kind)===kind&&txt(c.hiveId)===txt(hiveId)&&Date.now()-Number(c.startedAt||0)<1800000?c:null;
+  }
+  function completeExactAction(ctx,recordId){
+    try{
+      const s=S(),i=(s.actions||[]).findIndex(a=>a&&txt(a.id)===txt(ctx.actionId));if(i<0)return;
+      const a=s.actions[i];if(!isManualFrequent(a)||txt(a.hiveId)!==txt(ctx.hiveId)||norm(a.type||a.title)!==norm(ctx.kind))return;
+      const now=new Date().toISOString();a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;a.completionSource='planned-record';a.linkedRecordId=txt(recordId);
+      s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+      const ai=s.meta.completedActions.findIndex(x=>x&&txt(x.id)===txt(a.id)),copy=JSON.parse(JSON.stringify(a));if(ai>=0)s.meta.completedActions[ai]=copy;else s.meta.completedActions.push(copy);
+      s.actions.splice(i,1);save(s);delSession(EXEC_KEY);
+    }catch(err){console.error('V2P2E5S exact planned Action completion failed',err)}
+  }
+
+  const prevSaveRec=window.saveRec||saveRec;
+  window.saveRec=function(type){
+    const form=document.getElementById('rform'),hiveId=txt(form?.elements?.hiveId?.value),kind=norm(type),ctx=execContext(kind,hiveId),s0=S(),key=kind==='feeding'?'feedings':kind==='treatment'?'treatments':kind==='harvest'?'harvests':'';
+    const before=new Set(key?(s0?.logs?.[key]||[]).map(x=>txt(x?.id)):[]),ret=prevSaveRec.apply(this,arguments);
+    if(ctx&&key){try{const created=(S()?.logs?.[key]||[]).filter(x=>txt(x?.hiveId)===hiveId&&!before.has(txt(x?.id)));if(created.length){completeExactAction(ctx,created[created.length-1]?.id||'');setTimeout(()=>go('actions'),0)}}catch(err){console.error('V2P2E5S record completion linkage failed',err)}}
+    return ret;
+  };
+  try{saveRec=window.saveRec}catch(_){ }
+
+  const prevSaveInspection=window.vSaveInspection||vSaveInspection;
+  if(typeof prevSaveInspection==='function'){
+    window.vSaveInspection=function(id){
+      const hiveId=txt(id||window.V49_INSPECTION_DRAFT?.hiveId),ctx=execContext('inspection',hiveId),before=new Set((S()?.logs?.inspections||[]).map(x=>txt(x?.id))),ret=prevSaveInspection.apply(this,arguments);
+      if(ctx){try{const created=(S()?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===hiveId&&!before.has(txt(x?.id)));if(created.length){completeExactAction(ctx,created[created.length-1]?.id||'');setTimeout(()=>go('actions'),0)}}catch(err){console.error('V2P2E5S inspection completion linkage failed',err)}}
+      return ret;
+    };
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  const style=document.createElement('style');style.id='v2p2e5s-frequent-plan-style';style.textContent=`
+    .v2p2e5s-frequent-plan .b37-meta{display:grid;grid-template-columns:minmax(110px,.8fr) minmax(0,1.2fr);gap:10px;padding:10px 0;border-bottom:1px solid #EEE9E0}.v2p2e5s-frequent-plan .b37-meta:last-child{border-bottom:0}.v2p2e5s-frequent-plan .b37-meta span{color:#747B75;font-size:13px}.v2p2e5s-frequent-plan .b37-meta b{text-align:right;color:#2F4634;font-size:13px;overflow-wrap:anywhere}
+  `;document.head.appendChild(style);
+
+  window.__HIVEDASH_V2P2E5S_VERSION__='v2p2e5s-actions-planner-execution-separation';
+})();
+
+
+/* ==============================================================
+   V2P2E5T — ACTIONS DUAL-PATH UX
+   Frozen product meaning:
+   - Plan Action = schedule work for later. It creates an Action only.
+   - Record Now = execute a real Inspection / Feeding / Treatment / Harvest
+     immediately. It never forces a planning step first.
+   - Actions header + = Hive-first planning. + Plan Action = type-first planning.
+   - With 2+ active hives, every generic chooser requires an explicit Hive.
+   - Existing formal record workflows remain the only business record sources.
+   ============================================================== */
+(function v2p2e5tActionsDualPath(){
+  if(window.__HIVEDASH_V2P2E5T__)return;
+  window.__HIVEDASH_V2P2E5T__=true;
+
+  const QUICK_KEY='hivedash_v2p2e5t_actions_quick_exec';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escT=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsT=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>v45s();
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h?.archived&&!['combined','archived'].includes(low(h?.lifecycleStatus||h?.status)));
+  const normalize=v=>{const x=low(v);if(x.includes('inspect'))return'inspection';if(x.includes('feed'))return'feeding';if(x.includes('treat')||x==='varroa')return'treatment';if(x.includes('harvest'))return'harvest';return x};
+  const routes={inspection:'inspection',feeding:'feeding-record',treatment:'treatment-record',harvest:'harvest-record'};
+  const setQuick=v=>{try{sessionStorage.setItem(QUICK_KEY,JSON.stringify(v))}catch(_){}};
+  const getQuick=()=>{try{return JSON.parse(sessionStorage.getItem(QUICK_KEY)||'null')}catch(_){return null}};
+  const clearQuick=()=>{try{sessionStorage.removeItem(QUICK_KEY)}catch(_){}};
+
+  function noHive(){
+    if(typeof toast==='function')toast('Add an active hive first');
+    if(typeof go==='function')go('hives');
+  }
+  function selectorHTML(id,hs,copy){
+    return `<div class="modalhead"><b>Select Hive</b><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="vc v2p2e5t-hive-chooser"><p class="muted">${escT(copy)}</p><label><span>Hive</span><select id="${id}" onchange="v2p2e5tHiveChooserChanged('${id}')"><option value="" selected disabled>Select a hive</option>${hs.map(h=>`<option value="${escT(h.id)}">${escT(h.name||h.id)}</option>`).join('')}</select></label>`;
+  }
+  window.v2p2e5tHiveChooserChanged=function(id){
+    const sel=document.getElementById(id),btn=document.querySelector(`[data-v2p2e5t-for="${id}"]`);if(!btn)return;
+    btn.disabled=!sel?.value;btn.classList.toggle('v2p2e5t-disabled',!sel?.value);
+  };
+
+  const LOW_PLAN={
+    'add / remove super':id=>b37OpenSuperAction(id),
+    'queen management':id=>b38OpenQueenAction(id),
+    'split hive':id=>b39OpenSplitAction(id),
+    'combine hives':id=>b40OpenCombineAction(id),
+    'swarm control':id=>b41OpenSwarmAction(id),
+    'equipment maintenance':id=>b42OpenEquipmentAction(id),
+    'move hive':id=>b43OpenMoveHive(id),
+    'winter preparation':id=>b44OpenWinterPreparation(id),
+    'spring preparation':id=>b45OpenSpringPreparation(id),
+    'other task':id=>b46OpenOtherTask(id)
+  };
+  window.v2p2e5tOpenLowPlan=function(label,hiveId){
+    const fn=LOW_PLAN[low(label)],s=S(),h=active(s).find(x=>txt(x.id)===txt(hiveId));
+    if(!fn)return toast('Action type is unavailable');
+    if(!h)return toast('Select an active hive');
+    fn(h.id);
+  };
+  window.v2p2e5tConfirmLowPlan=function(label,id){
+    const hiveId=txt(document.getElementById(id)?.value);if(!hiveId)return;
+    document.querySelector('.modal.v215-more-modal')?.remove();
+    document.querySelector('.modal.open')?.remove();
+    v2p2e5tOpenLowPlan(label,hiveId);
+  };
+  window.v2p2e5tChooseHiveThenPlan=function(label){
+    const s=S(),hs=active(s);if(!hs.length)return noHive();
+    if(hs.length===1)return v2p2e5tOpenLowPlan(label,hs[0].id);
+    const id='v2p2e5t-plan-hive-'+Date.now();
+    const html=selectorHTML(id,hs,'Choose the hive for this planned action.')+`<button class="primary v2p2e5t-disabled" data-v2p2e5t-for="${id}" disabled onclick="v2p2e5tConfirmLowPlan('${jsT(label)}','${id}')">Continue</button></div>`;
+    if(typeof modalV215More==='function')modalV215More(html);else modal(html);
+  };
+
+  function patchPlanPicker(picker){
+    if(!picker)return;
+    const b=picker.querySelector('.add-action-head b');if(b)b.textContent='Plan Action';
+    const sm=picker.querySelector('.add-action-head small');if(sm)sm.textContent='Choose work to schedule for later';
+    picker.querySelectorAll('.add-action-card').forEach(btn=>{
+      const label=low(btn.querySelector('b')?.textContent);
+      if(!LOW_PLAN[label])return;
+      const small=btn.querySelector('small');if(small&&!low(small.textContent).startsWith('plan'))small.textContent='Plan '+label;
+      btn.onclick=function(){closeModal(this);v2p2e5tChooseHiveThenPlan(label)};
+    });
+  }
+  const prevPicker=window.openRecordPicker;
+  window.openRecordPicker=function(){const ret=prevPicker.apply(this,arguments);patchPlanPicker(document.querySelector('.modal.v224-add-action-picker'));return ret};
+  try{openRecordPicker=window.openRecordPicker}catch(_){ }
+
+  // Header +: choose Hive first, then reuse the same 14-type planner.
+  window.v2p2e5tOpenHiveScopedPlanner=function(hiveId){
+    const h=active(S()).find(x=>txt(x.id)===txt(hiveId));if(!h)return toast('Select an active hive');
+    if(typeof v2p2e5lOpenRecordPickerForHive==='function')return v2p2e5lOpenRecordPickerForHive(h.id);
+    openRecordPicker();
+  };
+  window.v2p2e5tConfirmPlanByHive=function(id){
+    const hiveId=txt(document.getElementById(id)?.value);if(!hiveId)return;
+    document.querySelector('.modal.v215-more-modal')?.remove();document.querySelector('.modal.open')?.remove();
+    v2p2e5tOpenHiveScopedPlanner(hiveId);
+  };
+  window.v2p2e5tPlanByHive=function(){
+    const hs=active(S());if(!hs.length)return noHive();
+    if(hs.length===1)return v2p2e5tOpenHiveScopedPlanner(hs[0].id);
+    const id='v2p2e5t-header-plan-hive-'+Date.now();
+    const html=selectorHTML(id,hs,'Choose a hive first, then choose the work to plan.')+`<button class="primary v2p2e5t-disabled" data-v2p2e5t-for="${id}" disabled onclick="v2p2e5tConfirmPlanByHive('${id}')">Continue</button></div>`;
+    if(typeof modalV215More==='function')modalV215More(html);else modal(html);
+  };
+
+  // Record Now: no Action planning step. With 2+ hives, explicit choice is required.
+  function startNow(kind,hiveId){
+    kind=normalize(kind);const root=routes[kind],h=active(S()).find(x=>txt(x.id)===txt(hiveId));if(!root||!h)return toast('Select an active hive');
+    setQuick({source:'actions-record-now',kind,hiveId:h.id,startedAt:Date.now()});
+    go(`${root}/${h.id}`);
+  }
+  window.v2p2e5tStartNow=startNow;
+  window.v2p2e5tConfirmRecordNow=function(kind,id){
+    const hiveId=txt(document.getElementById(id)?.value);if(!hiveId)return;
+    document.querySelector('.modal.v215-more-modal')?.remove();document.querySelector('.modal.open')?.remove();
+    startNow(kind,hiveId);
+  };
+  window.v2p2e5tRecordNow=function(kind){
+    kind=normalize(kind);const hs=active(S());if(!routes[kind])return;
+    if(!hs.length)return noHive();
+    if(hs.length===1)return startNow(kind,hs[0].id);
+    const id='v2p2e5t-now-hive-'+Date.now();
+    const html=selectorHTML(id,hs,'Choose the hive before recording work now.')+`<button class="primary v2p2e5t-disabled" data-v2p2e5t-for="${id}" disabled onclick="v2p2e5tConfirmRecordNow('${jsT(kind)}','${id}')">Continue</button></div>`;
+    if(typeof modalV215More==='function')modalV215More(html);else modal(html);
+  };
+  function quickCtx(kind,hiveId){const c=getQuick();return c&&c.source==='actions-record-now'&&normalize(c.kind)===kind&&txt(c.hiveId)===txt(hiveId)&&Date.now()-Number(c.startedAt||0)<3600000?c:null}
+  function linkOneExisting(kind,hiveId,recordId){
+    try{
+      const s=S(),candidates=(s.actions||[]).filter(a=>a&&a.status!=='Completed'&&a.priority!=='Done'&&txt(a.hiveId)===txt(hiveId)&&normalize(a.type||a.title)===kind&&!a.modelVersion&&!txt(a.id).startsWith('v224b-')&&!low(a.source).includes('follow-up'));
+      if(candidates.length!==1)return;
+      const a=candidates[0],now=new Date().toISOString();a.status='Completed';a.priority='Done';a.completedAt=now;a.resultAppliedAt=now;a.completionSource='actions-record-now';a.linkedRecordId=txt(recordId);
+      s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+      const i=s.meta.completedActions.findIndex(x=>x&&txt(x.id)===txt(a.id)),copy=JSON.parse(JSON.stringify(a));if(i>=0)s.meta.completedActions[i]=copy;else s.meta.completedActions.push(copy);
+      const ai=s.actions.findIndex(x=>x&&txt(x.id)===txt(a.id));if(ai>=0)s.actions.splice(ai,1);save(s);
+    }catch(err){console.error('V2P2E5T matching planned Action linkage failed',err)}
+  }
+  const prevSaveRec=window.saveRec||saveRec;
+  window.saveRec=function(type){
+    const form=document.getElementById('rform'),hiveId=txt(form?.elements?.hiveId?.value),kind=normalize(type),ctx=quickCtx(kind,hiveId),s0=S(),key=kind==='feeding'?'feedings':kind==='treatment'?'treatments':kind==='harvest'?'harvests':'';
+    const before=new Set(key?(s0?.logs?.[key]||[]).map(x=>txt(x?.id)):[]),ret=prevSaveRec.apply(this,arguments);
+    if(ctx&&key){try{const created=(S()?.logs?.[key]||[]).filter(x=>txt(x?.hiveId)===hiveId&&!before.has(txt(x?.id)));if(created.length){linkOneExisting(kind,hiveId,created[created.length-1]?.id||'');clearQuick();setTimeout(()=>go('actions'),0)}}catch(err){console.error('V2P2E5T Record Now completion failed',err)}}
+    return ret;
+  };
+  try{saveRec=window.saveRec}catch(_){ }
+  const prevSaveInspection=window.vSaveInspection||vSaveInspection;
+  if(typeof prevSaveInspection==='function'){
+    window.vSaveInspection=function(id){
+      const hiveId=txt(id||window.V49_INSPECTION_DRAFT?.hiveId),ctx=quickCtx('inspection',hiveId),before=new Set((S()?.logs?.inspections||[]).map(x=>txt(x?.id))),ret=prevSaveInspection.apply(this,arguments);
+      if(ctx){try{const created=(S()?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===hiveId&&!before.has(txt(x?.id)));if(created.length){linkOneExisting('inspection',hiveId,created[created.length-1]?.id||'');clearQuick();setTimeout(()=>go('actions'),0)}}catch(err){console.error('V2P2E5T Record Now Inspection completion failed',err)}}
+      return ret;
+    };
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  function decorateActions(){
+    const add=document.querySelector('.v53-actions .v53-add-action');
+    if(add){add.textContent='+ Plan Action';add.setAttribute('onclick','openRecordPicker()');
+      if(!document.querySelector('.v2p2e5t-plan-help')){const help=document.createElement('div');help.className='v2p2e5t-plan-help';help.textContent='Schedule work to do later';add.insertAdjacentElement('afterend',help)}
+    }
+    const shortcuts=document.querySelector('.v53-actions .v53-shortcuts');
+    if(shortcuts){
+      if(!document.querySelector('.v2p2e5t-now-head')){const head=document.createElement('div');head.className='v2p2e5t-now-head';head.innerHTML='<b>Record Now</b><small>Start a real record now</small>';shortcuts.insertAdjacentElement('beforebegin',head)}
+      const kinds=['inspection','feeding','treatment','harvest'];[...shortcuts.querySelectorAll('button')].forEach((btn,i)=>{if(kinds[i])btn.setAttribute('onclick',`v2p2e5tRecordNow('${kinds[i]}')`)})
+    }
+    const plus=document.querySelector('#topbar .plusbtn');if(plus){plus.setAttribute('onclick','v2p2e5tPlanByHive()');plus.setAttribute('aria-label','Plan by Hive');plus.title='Plan by Hive'}
+  }
+  // The Hive Detail More menu opens the same planning system, so use the same wording.
+  const prevMore=window.openHiveMoreV214;
+  if(typeof prevMore==='function'){
+    window.openHiveMoreV214=function(hiveId){const ret=prevMore.apply(this,arguments);try{const m=document.querySelector('.modal.v215-more-modal');[...m?.querySelectorAll('.add-action-card')||[]].forEach(btn=>{const b=btn.querySelector('b');if(low(b?.textContent)==='add action')b.textContent='Plan Action'})}catch(_){}return ret};
+    try{openHiveMoreV214=window.openHiveMoreV214}catch(_){ }
+  }
+
+  const prevActions=window.actions||actions;
+  window.actions=function(r){const ret=prevActions.apply(this,arguments);decorateActions();return ret};
+  try{actions=window.actions}catch(_){ }
+
+  // Frequent plan page wording: planning stays light and distinct from execution.
+  const prevRender=window.render;
+  window.render=function(){
+    const ret=prevRender.apply(this,arguments),raw=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(raw[0]==='frequent-action'&&raw[1]==='new'){
+      const primary=document.querySelector('.v2p2e5s-frequent-plan .b37-primary');if(primary)primary.textContent='Create Plan';
+    }
+    if(raw[0]==='actions')decorateActions();
+    return ret;
+  };
+  try{render=window.render}catch(_){ }
+
+  const style=document.createElement('style');style.id='v2p2e5t-actions-dual-path-style';style.textContent=`
+    .v2p2e5t-plan-help{font-size:12px;color:#7A8179;text-align:center;margin:-7px 0 10px}
+    .v2p2e5t-now-head{display:flex;align-items:flex-end;justify-content:space-between;margin:10px 2px 7px;color:#314936}
+    .v2p2e5t-now-head b{font-size:14px}.v2p2e5t-now-head small{font-size:11px;color:#858B84}
+    .v2p2e5t-hive-chooser label{display:grid;gap:7px;margin:10px 0 14px}.v2p2e5t-hive-chooser label span{font-size:12px;color:#506252;font-weight:700}
+    .v2p2e5t-hive-chooser select{width:100%;min-height:48px;border:1px solid #DED9D0;border-radius:12px;background:#fff;padding:0 14px;color:#2F4634;font:inherit}
+    .v2p2e5t-hive-chooser .primary:disabled,.v2p2e5t-hive-chooser .v2p2e5t-disabled{background:#E3E0D9!important;color:#9B9B95!important;cursor:not-allowed!important;box-shadow:none!important;opacity:1!important}
+  `;document.head.appendChild(style);
+
+  window.__HIVEDASH_V2P2E5T_VERSION__='v2p2e5t-actions-dual-path-ux';
+})();

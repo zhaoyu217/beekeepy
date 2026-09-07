@@ -19922,11 +19922,10 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     const h=scopedHiveId?hiveBy(S(),scopedHiveId):null;
     return `<div class="b37-page v2p2e5ai-planner-page">
       <section class="b37-card v2p2e5ai-intro-card">
-        <div class="b37-card-head"><div class="b37-label">Extra planning</div><div class="b37-hint">Supplement only</div></div>
         <div class="v2p2e5ai-intro-copy">Scientific recurring checks and follow-ups are scheduled automatically. Use this page only for extra work and explicit management decisions${h?` for <b>${escF(h.name||h.id)}</b>`:''}.</div>
       </section>
       <section class="b37-card v2p2e5ai-group-card">
-        <div class="b37-card-head"><div class="b37-label">Extra work</div><div class="b37-hint">User planned</div></div>
+        <div class="b37-card-head"><div class="b37-label">Extra work</div></div>
         <div class="v2p2e5ai-task-list">${['super','harvest','split','combine','move','equipment','other'].map(card).join('')}</div>
       </section>
       <section class="b37-card v2p2e5ai-group-card v2p2e5ai-decision-card">

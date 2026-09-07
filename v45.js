@@ -42,7 +42,7 @@ function v121CleanupDemoHives(s){
   return s;
 }
 function v45s(){const s=state();s.settings=s.settings||{};s.settings.notifications={inspection:true,varroa:true,treatment:true,feeding:true,weather:true,seasonal:true,push:true,...(s.settings.notifications||{})};s.settings.smart={voice:true,photo:true,varroaCount:true,aiHealth:true,recommendations:true,seasonWeather:true,qr:true,...(s.settings.smart||{})};s.settings.seasonal={mode:'Auto',nectar:true,swarm:'Apr – Jul',varroa:'Aug – Oct',feeding:'Aug – Oct',winter:'Oct – Feb',super:'Auto',focus:'Auto',...(s.settings.seasonal||{})};s.settings.region={measurement:s.settings.units==='metric'?'Metric':'Imperial (US)',temperature:s.settings.units==='metric'?'°C':'°F',weight:s.settings.units==='metric'?'kg':'lb',date:'MM/DD/YYYY',language:'English',timezone:s.settings.timezone||'America/Denver',...(s.settings.region||{})};let v2p2c11WeightPolicyChanged=false;if(s.settings.weightPolicyVersion!=='v2p2c11'){if(s.settings.weightPolicyVersion!=='v2p2c10')s.settings.region.weight='lb';s.settings.weightPolicyVersion='v2p2c11';v2p2c11WeightPolicyChanged=true;}s.settings.apiaryName=s.settings.apiaryName||'Oak Meadow Apiary';const rawLocation=String(s.settings.location||'').trim();if(!s.settings.locationUserSet&&rawLocation==='Colorado, USA'){s.settings.location='';}else{s.settings.location=rawLocation;}const legacyLoc=String(s.settings.location||'').trim();const al=(s.settings.apiaryLocation&&typeof s.settings.apiaryLocation==='object')?s.settings.apiaryLocation:{};s.settings.apiaryLocation={countryCode:String(al.countryCode||'US'),country:String(al.country||'United States'),stateCode:String(al.stateCode||''),state:String(al.state||''),city:String(al.city||''),postalCode:String(al.postalCode||''),latitude:(al.latitude!==null&&al.latitude!==undefined&&String(al.latitude).trim()!==''&&Number.isFinite(Number(al.latitude)))?Number(al.latitude):null,longitude:(al.longitude!==null&&al.longitude!==undefined&&String(al.longitude).trim()!==''&&Number.isFinite(Number(al.longitude)))?Number(al.longitude):null,timezone:String(al.timezone||s.settings.region.timezone||s.settings.timezone||'America/Denver'),precision:String(al.precision||'unset'),contextReady:Boolean(al.contextReady),legacyText:String(al.legacyText||legacyLoc)};s.hives=s.hives||[];v121CleanupDemoHives(s);if(v2p2c11WeightPolicyChanged){try{save(s)}catch(e){console.warn('V2P2C11 weight preference persistence failed',e)}}try{if(typeof window.v2p2d1SyncVarroaMirrors==='function')window.v2p2d1SyncVarroaMirrors(s)}catch(e){console.warn('V2P2D1 Varroa mirror sync failed',e)}return s}
-function vh(id){const s=v45s();return hive(s,id)||s.hives[0]}
+function vh(id){const s=v45s();return hive(s,id)||null}
 function vphoto(h,i=0){return v101HivePrimaryPhoto(h)}
 function Vcard(title,body,action=''){return `<section class="vc"><div class="vhead"><b>${title}</b>${action}</div>${body}</section>`}
 function Vhero(img,html,cls=''){return `<section class="vhero ${cls}" style="--hero:url('${img}')"><i></i>${html}</section>`}
@@ -3206,9 +3206,9 @@ hives=function(r){V51_OLD_HIVES(r);const s=v45s();if(!s.hives.length){const box=
 const V51_OLD_HIVE_DETAIL=hiveDetail;
 hiveDetail=function(r,id){if(!v45s().hives.length)return noHiveStateV51(r);if(!hive(v45s(),id))return noHiveStateV51(r,'Hive not found');V51_OLD_HIVE_DETAIL(r,id)};
 const V51_OLD_INSPECTION=inspectionPage;
-inspectionPage=function(r,id){if(!v45s().hives.length)return noHiveStateV51(r);if(!hive(v45s(),id))id=v45s().hives[0].id;V51_OLD_INSPECTION(r,id)};
+inspectionPage=function(r,id){if(!v45s().hives.length)return noHiveStateV51(r);if(!hive(v45s(),id))return noHiveStateV51(r,'Hive not found');V51_OLD_INSPECTION(r,id)};
 const V51_OLD_RECORD=recordPage;
-recordPage=function(r,type,id){if(!v45s().hives.length)return noHiveStateV51(r);if(!hive(v45s(),id))id=v45s().hives[0].id;V51_OLD_RECORD(r,type,id)};
+recordPage=function(r,type,id){if(!v45s().hives.length)return noHiveStateV51(r);if(!hive(v45s(),id))return noHiveStateV51(r,'Hive not found');V51_OLD_RECORD(r,type,id)};
 const V51_OLD_ACTIONS=actions;
 actions=function(r){if(!v45s().hives.length){r.innerHTML=`<div class="vs"><div class="split"><img src="${V45.actions}"><div><div class="filters"><button class="active">Pending</button><button>Completed</button><button>All</button></div><div class="alist"><div class="vc small muted">No actions yet. Add a hive first.</div></div></div></div><button class="primary" onclick="go('hives')">+ Add Hive</button></div>`;return}V51_OLD_ACTIONS(r)};
 allActions=function(r,mode){actions(r);if(!v45s().hives.length)return;if(mode){const want=String(mode).toLowerCase().startsWith('complete')?'Completed':String(mode).toLowerCase().startsWith('all')?'All':'Pending';const btn=[...document.querySelectorAll('.filters button')].find(b=>b.textContent.trim()===want);if(btn)filterActions(want,btn)}};
@@ -16622,7 +16622,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
   window.varroaTestPage=function(r,id,mode='test'){
     const s=v45s(),activeHives=v224ActiveTrackedHives(s);
     const allowed=activeHives;
-    const h=allowed.find(x=>String(x.id)===String(id))||allowed[0];
+    const h=allowed.find(x=>String(x.id)===String(id))||null;
     if(!h){return noHiveStateV51(r,'No active hive available for Varroa testing');}
     const today=v2p1bDateInHiveTimezone(s,h);
     const completedTx=latestCompletedTreatmentV2P2B(s,h.id);
@@ -18257,4 +18257,138 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
   try{isPro=qaIsPro}catch(_){ }
 
   window.__HIVEDASH_V2P2E5M_VERSION__='v2p2e5m-test-pro-unlock';
+})();
+
+
+/* =========================================================
+   V2P2E5N — P0-01 STRICT HIVE ROUTE GUARD
+   Scope:
+   - Close every confirmed path where a missing / stale / archived Hive id
+     could silently fall back to the first Hive for hive-specific work.
+   - Do not change Action planning semantics, AI/Season routing, Notifications,
+     Completed drill-down, or global return-stack behavior in this patch.
+   - V2P2E5M temporary Pro QA unlock remains unchanged.
+   ========================================================= */
+(function v2p2e5nStrictHiveRouteGuard(){
+  if(window.__HIVEDASH_V2P2E5N_STRICT_HIVE_ROUTE__)return;
+  window.__HIVEDASH_V2P2E5N_STRICT_HIVE_ROUTE__=true;
+
+  const txtN=v=>String(v??'').trim();
+  const escN=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>\"]/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','\"':'&quot;'}[m]||m));
+  const jsN=v=>txtN(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const managedN=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&txtN(h.status).toLowerCase()!=='combined');
+  const hiveN=(s,id)=>managedN(s).find(h=>txtN(h.id)===txtN(id))||null;
+
+  function routeLabelN(root){
+    return ({'inspection':'Inspection','feeding-record':'Feeding','treatment-record':'Treatment','harvest-record':'Harvest','varroa-test':'Varroa Test','hive':'Hive'})[root]||'Hive-specific work';
+  }
+  function sourceBackN(){
+    try{
+      if(typeof safeBackV51==='function')return safeBackV51('hives');
+    }catch(_){ }
+    try{history.back();return}catch(_){ }
+    go('hives');
+  }
+  window.v2p2e5nSourceBack=sourceBackN;
+
+  function invalidHiveStateN(r,root,id,suffix=''){
+    const s=v45s(),hs=managedN(s),label=routeLabelN(root);
+    if(!hs.length){
+      if(typeof noHiveStateV51==='function')return noHiveStateV51(r,'No active hive available');
+      r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>No active hive available</b></div><div class="empty-master">Add or reactivate a hive before starting ${escN(label)}.</div><button class="primary" onclick="go('hives')">Open Hives</button></section></div>`;
+      return;
+    }
+    const selectId='v2p2e5n-hive-select';
+    const suffixPart=txtN(suffix)?'/'+txtN(suffix).replace(/^\/+/, ''):'';
+    r.innerHTML=`<div class="vs"><section class="vc v2p2e5n-invalid-hive"><div class="vhead"><b>Hive unavailable</b></div><div class="empty-master">The hive linked to this ${escN(label)} is missing, archived, or no longer active. HiveDash did not substitute another hive.</div><label class="v2p2e5n-select"><span>Choose an active hive</span><select id="${selectId}">${hs.map(h=>`<option value="${escN(h.id)}">${escN(h.name||h.id)}</option>`).join('')}</select></label><div class="v2p2e5n-actions"><button class="secondary" onclick="v2p2e5nSourceBack()">Back</button><button class="primary" onclick="const v=document.getElementById('${selectId}')?.value||'';if(v)go('${jsN(root)}/'+v+'${jsN(suffixPart)}')">Continue</button></div></section></div>`;
+  }
+
+  // Route renderers: invalid or stale Hive ids must never reach legacy code that
+  // historically substituted hives[0] / allowed[0].
+  const prevInspection=window.inspectionPage||inspectionPage;
+  window.inspectionPage=function(r,id){
+    const s=v45s();if(!hiveN(s,id))return invalidHiveStateN(r,'inspection',id);
+    return prevInspection.apply(this,arguments);
+  };
+  try{inspectionPage=window.inspectionPage}catch(_){ }
+
+  const prevRecord=window.recordPage||recordPage;
+  window.recordPage=function(r,type,id){
+    const s=v45s(),root=type==='feeding'?'feeding-record':type==='treatment'?'treatment-record':type==='harvest'?'harvest-record':'';
+    if(root&&!hiveN(s,id)){
+      const parts=txtN(location.hash||'').replace(/^#/,'').split('/');
+      const suffix=parts.length>2?parts.slice(2).join('/'):'';
+      return invalidHiveStateN(r,root,id,suffix);
+    }
+    return prevRecord.apply(this,arguments);
+  };
+  try{recordPage=window.recordPage}catch(_){ }
+
+  const prevVarroa=window.varroaTestPage;
+  if(typeof prevVarroa==='function'){
+    window.varroaTestPage=function(r,id,mode='test'){
+      const s=v45s();if(!hiveN(s,id))return invalidHiveStateN(r,'varroa-test',id,mode||'test');
+      return prevVarroa.apply(this,arguments);
+    };
+    try{varroaTestPage=window.varroaTestPage}catch(_){ }
+  }
+
+  // Hive Detail already had a not-found guard in earlier builds; keep a final
+  // active-hive guard here so changing vh() to strict-null can never expose a
+  // stale route to legacy detail renderers.
+  const prevHiveDetail=window.hiveDetail||hiveDetail;
+  window.hiveDetail=function(r,id){
+    const s=v45s();if(!hiveN(s,id))return invalidHiveStateN(r,'hive',id);
+    return prevHiveDetail.apply(this,arguments);
+  };
+  try{hiveDetail=window.hiveDetail}catch(_){ }
+
+  // Any generic Action execution also validates the linked Hive before the
+  // type router is allowed to open a workflow.
+  const prevOpenAction=window.openActionByType;
+  if(typeof prevOpenAction==='function'){
+    window.openActionByType=function(type,hiveId,actionId){
+      const s=v45s();
+      if(!hiveN(s,hiveId)){
+        toast('This action is linked to a hive that is no longer available');
+        return go(actionId?`actions/${actionId}`:'actions');
+      }
+      return prevOpenAction.apply(this,arguments);
+    };
+    try{openActionByType=window.openActionByType}catch(_){ }
+  }
+
+  // The final Actions renderer historically relabeled stale Actions with the
+  // first Hive. Post-process those rows so they can never execute against a
+  // substitute Hive. Preserve the row for audit/history visibility.
+  const prevDraw=window.v53DrawActions||v53DrawActions;
+  if(typeof prevDraw==='function'){
+    window.v53DrawActions=function(mode='Pending'){
+      const ret=prevDraw.apply(this,arguments);
+      try{
+        const s=v45s(),rows=typeof v53ActionRows==='function'?v53ActionRows(mode):[],hs=managedN(s);
+        const valid=new Set(hs.map(h=>txtN(h.id)));
+        const box=document.getElementById('alist'),buttons=box?[...box.querySelectorAll(':scope > button')]:[];
+        buttons.forEach((btn,i)=>{
+          const a=rows[i];if(!a)return;
+          const hid=txtN(a.hiveId);if(hid&&valid.has(hid))return;
+          const span=btn.querySelector('span');if(span)span.textContent='Hive unavailable';
+          btn.classList.add('v2p2e5n-stale-action');
+          btn.setAttribute('onclick',`toast('This action is linked to a hive that is no longer available')`);
+          btn.setAttribute('aria-label','Action unavailable because its hive is no longer active');
+        });
+      }catch(err){console.error('V2P2E5N stale Action guard failed',err)}
+      return ret;
+    };
+    try{v53DrawActions=window.v53DrawActions}catch(_){ }
+  }
+
+  const style=document.createElement('style');style.id='v2p2e5n-strict-hive-route-style';style.textContent=`
+    .v2p2e5n-invalid-hive .empty-master{margin:10px 0 14px}
+    .v2p2e5n-select{display:grid;gap:7px;margin:10px 0 14px}.v2p2e5n-select span{font-size:12px;font-weight:800;color:#5E7350}.v2p2e5n-select select{min-height:44px;border:1px solid #DDD8CF;border-radius:10px;background:#fff;padding:0 12px;font:inherit}
+    .v2p2e5n-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.v2p2e5n-actions button{margin:0!important}
+    #alist>button.v2p2e5n-stale-action{opacity:.72}.v2p2e5n-stale-action>span{color:#9A4A3A!important}
+  `;document.head.appendChild(style);
+
+  window.__HIVEDASH_V2P2E5N_VERSION__='v2p2e5n-p0-01-strict-hive-route';
 })();

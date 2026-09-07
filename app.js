@@ -166,22 +166,28 @@ function startRealtimeSync(){
 }
 
 function authShell(inner){
-  return `<div class="auth-page">
-    <div class="auth-brand"><div class="auth-logo">⬡</div><div><div class="auth-title">HiveDash</div><div class="tiny muted">Your apiary, synced everywhere.</div></div></div>
-    <div class="auth-card">${inner}</div>
+  return `<div class="auth-page v2p2e5ae-auth">
+    <div class="v2p2e5ae-honeycomb" aria-hidden="true"><i></i><i></i><i></i></div>
+    <div class="v2p2e5ae-auth-inner">
+      <div class="auth-brand v2p2e5ae-auth-brand">
+        <img class="v2p2e5ae-login-logo" src="assets/hivedash-login-logo.png" alt="HiveDash">
+      </div>
+      ${inner}
+    </div>
+    <div class="v2p2e5ae-meadow" aria-hidden="true"><i></i><i></i><i></i></div>
   </div>`;
 }
 
 function renderCloudSetup(){
-  document.getElementById('topbar').innerHTML='<div></div><div class="brand">HiveDash</div><div></div>';
+  const top=document.getElementById('topbar');
+  top.innerHTML='';top.classList.add('hidden');
   document.getElementById('bottomnav').classList.add('hidden');
   const view=document.getElementById('view');
-  view.className='view secondary';
+  view.className='view secondary auth-view';
   view.innerHTML=authShell(`
-    <div class="h2">Connect Supabase</div>
-    <div class="small muted" style="margin-top:6px">Cloud login and sync are built into this version, but your Supabase project credentials have not been added yet.</div>
-    <div class="notice" style="margin-top:12px">
-      Open <b>config.js</b> and replace <b>SUPABASE_URL</b> and <b>SUPABASE_PUBLISHABLE_KEY</b>. Then run <b>supabase-schema.sql</b> in the Supabase SQL Editor.
+    <div class="v2p2e5ae-auth-copy"><div class="v2p2e5ae-auth-heading">Connect HiveDash</div><div class="v2p2e5ae-auth-subtitle">Cloud login is ready, but this deployment still needs its Supabase connection.</div></div>
+    <div class="notice v2p2e5ae-auth-notice" style="margin-top:18px">
+      Open <b>config.js</b> and add the Supabase project URL and publishable key, then run <b>supabase-schema.sql</b> in the Supabase SQL editor.
     </div>
   `);
 }
@@ -209,80 +215,85 @@ async function signInWithSocial(provider){
 
 function socialLoginSection(){
   return `
-    <button type="button" class="social-btn google" id="googleLogin">
+    <div class="auth-divider v2p2e5ae-auth-divider"><span>OR CONTINUE WITH</span></div>
+    <button type="button" class="social-btn google v2p2e5ae-google" id="googleLogin">
       <span class="google-mark" aria-hidden="true">
         <svg viewBox="0 0 24 24" width="22" height="22">
-          <path fill="#6B736D" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z"/>
-          <path fill="#5E7350" d="M12 22c2.7 0 4.97-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.07v2.59A10 10 0 0 0 12 22Z"/>
-          <path fill="#C5921A" d="M6.41 13.91A6.01 6.01 0 0 1 6.1 12c0-.66.11-1.3.31-1.91V7.5H3.07A10 10 0 0 0 2 12c0 1.61.39 3.13 1.07 4.5l3.34-2.59Z"/>
-          <path fill="#D64545" d="M12 5.96c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.96 2.96 14.7 2 12 2A10 10 0 0 0 3.07 7.5l3.34 2.59C7.2 7.72 9.4 5.96 12 5.96Z"/>
+          <path fill="#4285F4" d="M21.6 12.23c0-.71-.06-1.39-.18-2.05H12v3.88h5.38a4.6 4.6 0 0 1-2 3.02v2.51h3.24c1.9-1.75 2.98-4.33 2.98-7.36Z"/>
+          <path fill="#34A853" d="M12 22c2.7 0 4.97-.9 6.62-2.41l-3.24-2.51c-.9.6-2.05.96-3.38.96-2.6 0-4.8-1.76-5.59-4.13H3.07v2.59A10 10 0 0 0 12 22Z"/>
+          <path fill="#FBBC05" d="M6.41 13.91A6.01 6.01 0 0 1 6.1 12c0-.66.11-1.3.31-1.91V7.5H3.07A10 10 0 0 0 2 12c0 1.61.39 3.13 1.07 4.5l3.34-2.59Z"/>
+          <path fill="#EA4335" d="M12 5.96c1.47 0 2.79.5 3.83 1.49l2.87-2.87C16.96 2.96 14.7 2 12 2A10 10 0 0 0 3.07 7.5l3.34 2.59C7.2 7.72 9.4 5.96 12 5.96Z"/>
         </svg>
       </span>
       <span>Continue with Google</span>
-    </button>
+    </button>`;
+}
 
-    <button type="button" class="other-login-toggle" id="otherLoginToggle">
-      Other sign-in options
-      <span class="toggle-chevron">⌄</span>
-    </button>
-
-    <div class="other-login hidden" id="otherLogin">
-      <button type="button" class="social-btn apple" id="appleLogin">
-        <span class="social-icon"></span><span>Continue with Apple</span>
-      </button>
-      <button type="button" class="social-btn microsoft" id="microsoftLogin">
-        <span class="social-icon microsoft-mark"><i></i><i></i><i></i><i></i></span><span>Continue with Microsoft</span>
-      </button>
-    </div>
-
-    <div class="auth-divider"><span>or use email</span></div>
-  `;
+function v2p2e5aeField(kind,id,placeholder,autocomplete){
+  const isPassword=kind==='password';
+  const icon=isPassword
+    ? '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="5" y="10" width="14" height="11" rx="3"></rect><path d="M8 10V7a4 4 0 0 1 8 0v3"></path></svg>'
+    : kind==='name'
+      ? '<svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="4"></circle><path d="M4.5 21a7.5 7.5 0 0 1 15 0"></path></svg>'
+      : '<svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="3"></rect><path d="m4 7 8 6 8-6"></path></svg>';
+  return `<div class="v2p2e5ae-auth-field">
+    <span class="v2p2e5ae-field-icon">${icon}</span>
+    <input id="${id}" type="${isPassword?'password':kind==='email'?'email':'text'}" ${isPassword?'minlength="8"':''} maxlength="${kind==='name'?'60':'160'}" autocomplete="${autocomplete}" placeholder="${placeholder}" aria-label="${placeholder}">
+    ${isPassword?`<button type="button" class="v2p2e5ae-password-toggle" id="authPasswordToggle" aria-label="Show password"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M2.5 12s3.5-6 9.5-6 9.5 6 9.5 6-3.5 6-9.5 6-9.5-6-9.5-6Z"></path><circle cx="12" cy="12" r="2.7"></circle></svg></button>`:''}
+  </div>`;
 }
 
 function renderAuth(mode='signin',message=''){
-  document.getElementById('topbar').innerHTML='<div></div><div class="brand">HiveDash</div><div></div>';
+  const top=document.getElementById('topbar');
+  top.innerHTML='';top.classList.add('hidden');
   document.getElementById('bottomnav').classList.add('hidden');
   const view=document.getElementById('view');
-  view.className='view secondary';
+  view.className='view secondary auth-view';
 
   const isSignUp=mode==='signup';
+  const heading=isSignUp?'Create your account':'Welcome back';
+  const subtitle=isSignUp?'Create an account to start managing your hives.':'Sign in to manage your hives,<br>track progress, and keep your bees thriving.';
   view.innerHTML=authShell(`
-    <div class="auth-tabs">
-      <button type="button" class="auth-tab ${!isSignUp?'active':''}" id="authSignInTab">Sign In</button>
-      <button type="button" class="auth-tab ${isSignUp?'active':''}" id="authSignUpTab">Create Account</button>
+    <div class="v2p2e5ae-auth-copy">
+      <div class="v2p2e5ae-auth-heading">${heading}</div>
+      <div class="v2p2e5ae-auth-subtitle">${subtitle}</div>
     </div>
-    ${message?`<div class="notice" style="margin-bottom:12px">${esc(message)}</div>`:''}
+    ${message?`<div class="notice v2p2e5ae-auth-notice">${esc(message)}</div>`:''}
+    <div class="v2p2e5ae-auth-form">
+      ${isSignUp?v2p2e5aeField('name','authName','Name','name'):''}
+      ${v2p2e5aeField('email','authEmail','Email','email')}
+      ${v2p2e5aeField('password','authPassword','Password',isSignUp?'new-password':'current-password')}
+      ${!isSignUp?`<button type="button" class="auth-link v2p2e5ae-forgot" id="forgotPassword">Forgot password?</button>`:''}
+      <button type="button" class="btn primary block v2p2e5ae-auth-submit" id="authSubmit"><span>${isSignUp?'Create account':'Log in'}</span><b aria-hidden="true">→</b></button>
+    </div>
     ${socialLoginSection()}
-    ${isSignUp?`<div class="formgroup"><label>Name</label><input id="authName" maxlength="60" autocomplete="name" placeholder="Your name"></div>`:''}
-    <div class="formgroup"><label>Email</label><input id="authEmail" type="email" autocomplete="email" placeholder="you@example.com"></div>
-    <div class="formgroup"><label>Password</label><input id="authPassword" type="password" minlength="8" autocomplete="${isSignUp?'new-password':'current-password'}" placeholder="At least 8 characters"></div>
-    <button type="button" class="btn primary block" id="authSubmit">${isSignUp?'Create Account':'Sign In'}</button>
-    ${!isSignUp?`<button type="button" class="auth-link" id="forgotPassword">Forgot password?</button>`:''}
-    <div class="auth-security"><span>☁️</span><div><b>Cloud sync enabled</b><div class="tiny muted">Your account only has access to its own HiveDash data.</div></div></div>
-    <div class="auth-legal tiny muted">
-      By continuing, you agree to the
+    <div class="v2p2e5ae-auth-switch">${isSignUp?'Already have an account?':'Don’t have an account?'} <button type="button" id="authModeSwitch">${isSignUp?'Log in':'Sign up'}</button></div>
+    <div class="auth-legal v2p2e5ae-auth-legal">
+      By continuing, you agree to our
       <button type="button" class="legal-link" id="termsLink">Terms of Service</button>
       and
       <button type="button" class="legal-link" id="privacyLink">Privacy Policy</button>.
     </div>
   `);
 
-  document.getElementById('authSignInTab').onclick=()=>renderAuth('signin');
-  document.getElementById('authSignUpTab').onclick=()=>renderAuth('signup');
+  document.getElementById('authModeSwitch').onclick=()=>renderAuth(isSignUp?'signin':'signup');
   document.getElementById('authSubmit').onclick=()=>isSignUp?handleSignUp():handleSignIn();
   document.getElementById('googleLogin').onclick=()=>signInWithSocial('google');
-  document.getElementById('otherLoginToggle').onclick=()=>{
-    const box=document.getElementById('otherLogin');
-    const hidden=box.classList.toggle('hidden');
-    document.getElementById('otherLoginToggle').innerHTML=hidden
-      ? 'Other sign-in options <span class="toggle-chevron">⌄</span>'
-      : 'Hide other sign-in options <span class="toggle-chevron">⌃</span>';
-  };
-  document.getElementById('appleLogin').onclick=()=>signInWithSocial('apple');
-  document.getElementById('microsoftLogin').onclick=()=>signInWithSocial('azure');
   document.getElementById('termsLink').onclick=()=>{location.hash='terms'};
   document.getElementById('privacyLink').onclick=()=>{location.hash='privacy'};
   if(!isSignUp)document.getElementById('forgotPassword').onclick=handlePasswordReset;
+
+  const pass=document.getElementById('authPassword');
+  const toggle=document.getElementById('authPasswordToggle');
+  if(pass&&toggle)toggle.onclick=()=>{
+    const show=pass.type==='password';
+    pass.type=show?'text':'password';
+    toggle.setAttribute('aria-label',show?'Hide password':'Show password');
+    toggle.classList.toggle('active',show);
+  };
+  [document.getElementById('authName'),document.getElementById('authEmail'),pass].filter(Boolean).forEach(input=>{
+    input.addEventListener('keydown',event=>{if(event.key==='Enter')document.getElementById('authSubmit')?.click()});
+  });
 }
 
 async function handleSignIn(){
@@ -290,7 +301,7 @@ async function handleSignIn(){
   const password=document.getElementById('authPassword').value;
   if(!email||!password){renderAuth('signin','Enter your email and password.');return}
   const button=document.getElementById('authSubmit');
-  button.disabled=true;button.textContent='Signing in…';
+  button.disabled=true;button.innerHTML='<span>Signing in…</span>';
   const {error}=await supabaseClient.auth.signInWithPassword({email,password});
   if(error){renderAuth('signin',error.message);return}
 }
@@ -301,7 +312,7 @@ async function handleSignUp(){
   const password=document.getElementById('authPassword').value;
   if(!name||!email||password.length<8){renderAuth('signup','Enter your name, a valid email, and a password with at least 8 characters.');return}
   const button=document.getElementById('authSubmit');
-  button.disabled=true;button.textContent='Creating account…';
+  button.disabled=true;button.innerHTML='<span>Creating account…</span>';
   const {data,error}=await supabaseClient.auth.signUp({
     email,
     password,

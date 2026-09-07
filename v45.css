@@ -7999,3 +7999,49 @@ html body #app > .modal.v215-more-modal .add-action-card b{
   .b44-page .b44-check-list,
   .b45-page .b44-check-list{grid-template-columns:1fr!important;}
 }
+
+/* ==============================================================
+   V2P2E5AE — HIVEDASH LOGIN VISUAL REBUILD
+   Approved first-pattern login page. Auth mechanics remain Supabase-backed.
+   ============================================================== */
+.auth-view{padding:0!important;margin:0!important;max-width:none!important;background:#F7F5EF!important;overflow:auto!important}
+.v2p2e5ae-auth{position:relative;isolation:isolate;box-sizing:border-box;min-height:100dvh;width:100%;max-width:none!important;margin:0!important;padding:clamp(34px,7vh,72px) 20px 44px!important;display:flex!important;align-items:flex-start;justify-content:center;background:linear-gradient(180deg,#FFFDF8 0%,#F7F5EF 72%,#F2F0E7 100%)!important;background-image:none!important;overflow:hidden}
+.v2p2e5ae-auth-inner{position:relative;z-index:2;width:min(100%,430px);margin:0 auto;display:flex;flex-direction:column;align-items:stretch}
+.v2p2e5ae-auth-brand{margin:0 auto 26px!important;text-align:center;width:100%}
+.v2p2e5ae-login-logo{display:block;width:min(74%,310px);height:auto;object-fit:contain;margin:0 auto}
+.v2p2e5ae-auth-copy{text-align:center;margin:0 0 24px}
+.v2p2e5ae-auth-heading{font:800 clamp(28px,7vw,38px)/1.12 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#284B32;letter-spacing:-.02em}
+.v2p2e5ae-auth-subtitle{margin-top:10px;font:400 15px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif;color:#737A76}
+.v2p2e5ae-auth-notice{margin:0 0 14px!important;padding:11px 13px!important;border-radius:12px!important;font-size:12px!important;line-height:1.45!important}
+.v2p2e5ae-auth-form{display:grid;gap:12px}
+.v2p2e5ae-auth-field{position:relative;height:58px;border:1px solid #DDD9CF;border-radius:17px;background:rgba(255,255,255,.78);box-shadow:0 6px 18px rgba(58,63,51,.035);display:flex;align-items:center;transition:border-color .16s ease,box-shadow .16s ease,background .16s ease}
+.v2p2e5ae-auth-field:focus-within{border-color:#91A188;background:#fff;box-shadow:0 0 0 3px rgba(94,115,80,.09)}
+.v2p2e5ae-field-icon{width:54px;display:grid;place-items:center;color:#808783;flex:0 0 54px}
+.v2p2e5ae-field-icon svg,.v2p2e5ae-password-toggle svg{width:23px;height:23px;fill:none;stroke:currentColor;stroke-width:1.8;stroke-linecap:round;stroke-linejoin:round}
+.v2p2e5ae-auth-field input{width:100%;height:100%;border:0!important;outline:0!important;background:transparent!important;box-shadow:none!important;padding:0 48px 0 0!important;color:#26332A!important;font:500 16px/1 Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important}
+.v2p2e5ae-auth-field input::placeholder{color:#8B908D;opacity:1}
+.v2p2e5ae-password-toggle{position:absolute;right:10px;top:50%;transform:translateY(-50%);width:40px;height:40px;border:0;background:transparent;color:#808783;display:grid;place-items:center;border-radius:50%}
+.v2p2e5ae-password-toggle.active{color:#5E7350;background:#F0F3ED}
+.v2p2e5ae-forgot{justify-self:end!important;width:auto!important;margin:-2px 2px 2px!important;padding:5px 0!important;color:#42664A!important;font:700 13px/1 Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important;text-decoration:none!important}
+.v2p2e5ae-auth-submit{height:58px!important;margin:4px 0 0!important;border-radius:29px!important;border:0!important;background:#5E7350!important;color:#fff!important;box-shadow:0 10px 22px rgba(67,86,57,.16)!important;display:flex!important;align-items:center!important;justify-content:center!important;gap:14px!important;font:800 17px/1 Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important}
+.v2p2e5ae-auth-submit b{font-size:27px;font-weight:400;line-height:1;margin-top:-2px}
+.v2p2e5ae-auth-submit:disabled{opacity:.68;cursor:wait}
+.v2p2e5ae-auth-divider{margin:26px 0 16px!important;gap:13px!important;color:#7D837F!important;font:600 10px/1 Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important;letter-spacing:.17em}
+.v2p2e5ae-auth-divider:before,.v2p2e5ae-auth-divider:after{background:#D8D6CF!important}
+.v2p2e5ae-google{height:56px!important;border-radius:28px!important;border:1px solid #DDD9CF!important;background:rgba(255,255,255,.82)!important;box-shadow:0 6px 18px rgba(58,63,51,.025)!important;color:#26332A!important;font:750 15px/1 Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important;gap:12px!important}
+.v2p2e5ae-google .google-mark{width:24px!important;height:24px!important}
+.v2p2e5ae-auth-switch{text-align:center;margin:24px 0 0;color:#7B817E;font:500 14px/1.4 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+.v2p2e5ae-auth-switch button{border:0;background:transparent;padding:0 2px;color:#5E7350;font:800 14px/1.4 Inter,system-ui,-apple-system,"Segoe UI",sans-serif}
+.v2p2e5ae-auth-legal{position:relative;z-index:3;margin:24px auto 0!important;max-width:330px;color:#858A87!important;font:500 10.5px/1.55 Inter,system-ui,-apple-system,"Segoe UI",sans-serif!important}
+.v2p2e5ae-auth-legal .legal-link{color:#6D746F!important;font-size:inherit!important;text-decoration:underline!important;text-underline-offset:2px}
+.v2p2e5ae-honeycomb{position:absolute;z-index:0;top:64px;right:max(-22px,calc((100vw - 520px)/2 - 36px));width:118px;height:130px;opacity:.34;pointer-events:none}
+.v2p2e5ae-honeycomb i{position:absolute;width:56px;height:49px;background:#F5D88A;clip-path:polygon(25% 0,75% 0,100% 50%,75% 100%,25% 100%,0 50%)}
+.v2p2e5ae-honeycomb i:nth-child(1){right:0;top:0}.v2p2e5ae-honeycomb i:nth-child(2){right:42px;top:39px}.v2p2e5ae-honeycomb i:nth-child(3){right:-3px;top:74px}
+.v2p2e5ae-meadow{position:absolute;z-index:0;left:0;right:0;bottom:-22px;height:125px;pointer-events:none;opacity:.9}
+.v2p2e5ae-meadow:before,.v2p2e5ae-meadow:after{content:"";position:absolute;bottom:0;width:70%;height:95px;border-radius:50% 50% 0 0/60% 60% 0 0;background:#E8EBD8}
+.v2p2e5ae-meadow:before{left:-12%;transform:rotate(4deg)}.v2p2e5ae-meadow:after{right:-18%;height:82px;background:#DDE4C8;transform:rotate(-5deg)}
+.v2p2e5ae-meadow i{position:absolute;z-index:2;bottom:42px;width:18px;height:52px;border-left:3px solid #8BA17A;border-radius:60%}
+.v2p2e5ae-meadow i:before{content:"";position:absolute;top:-10px;left:-10px;width:24px;height:24px;border-radius:50%;background:radial-gradient(circle,#C5921A 0 24%,#F1C95D 25% 58%,transparent 59%)}
+.v2p2e5ae-meadow i:nth-child(1){left:8%;transform:rotate(-7deg)}.v2p2e5ae-meadow i:nth-child(2){left:15%;bottom:27px;transform:scale(.76) rotate(9deg)}.v2p2e5ae-meadow i:nth-child(3){right:10%;bottom:34px;transform:scale(.7) rotate(8deg)}
+@media (max-height:720px){.v2p2e5ae-auth{padding-top:24px!important;padding-bottom:28px!important}.v2p2e5ae-auth-brand{margin-bottom:16px!important}.v2p2e5ae-auth-copy{margin-bottom:16px}.v2p2e5ae-auth-divider{margin-top:18px!important}.v2p2e5ae-auth-switch{margin-top:18px}.v2p2e5ae-auth-legal{margin-top:16px!important}.v2p2e5ae-meadow{opacity:.45}}
+@media (min-width:720px){.v2p2e5ae-auth{padding-top:58px!important}.v2p2e5ae-auth-inner{padding:26px 34px 30px;border:1px solid rgba(221,217,207,.82);border-radius:30px;background:rgba(255,253,248,.72);box-shadow:0 24px 60px rgba(56,65,48,.09);backdrop-filter:blur(8px)}}

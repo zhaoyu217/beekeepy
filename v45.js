@@ -20330,3 +20330,91 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   `;document.head.appendChild(st);
   window.__HIVEDASH_V2P2E5AN_VERSION__='v2p2e5an-structured-scientific-correction';
 })();
+
+/* V2P2E5AO — durable scientific correction draft.
+   A correction is based on the task/evidence snapshot the beekeeper actually opened.
+   It no longer depends on the transient task still being present in regenerated s.actions.
+   If saved state changed after the task was opened, the stale correction is rejected. */
+(function v2p2e5aoDurableScientificCorrection(){
+  if(window.__HIVEDASH_V2P2E5AO__)return;
+  window.__HIVEDASH_V2P2E5AO__=true;
+  const q=v=>String(v??'').trim();
+  const esc=v=>q(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const KEY='hivedash:v2p2e5ao:scientific-correction-task';
+  const REASONS=[
+    ['checked-outside','Inspection was already completed outside HiveDash'],
+    ['professional-advice','Professional advice says this task is not needed now'],
+    ['covered-by-other-work','Another inspection or follow-up already covers this need'],
+    ['beekeeper-judgment','Field judgment: this inspection is not needed now'],
+    ['other','Other reason']
+  ];
+  function S(){try{return typeof v45s==='function'?v45s():state()}catch(_){return null}}
+  function clone(v){try{return JSON.parse(JSON.stringify(v))}catch(_){return null}}
+  function isAdaptive(a){const k=q(a?.intentKey);return k.startsWith('inspection-adaptive')||q(a?.id).startsWith('scientific-adaptive-')}
+  function currentGenerated(s){
+    try{return typeof generateActions==='function'?(generateActions(s)||[]):[]}catch(_){return []}
+  }
+  function findLive(s,id){
+    const direct=(s?.actions||[]).find(a=>a&&q(a.id)===q(id));if(direct)return direct;
+    return currentGenerated(s).find(a=>a&&q(a.id)===q(id))||null;
+  }
+  function readSnap(){try{return JSON.parse(sessionStorage.getItem(KEY)||'null')}catch(_){return null}}
+  function writeSnap(a,s){
+    if(!a)return null;
+    const snap={action:clone(a),actionId:q(a.id),hiveId:q(a.hiveId),taskFingerprint:q(a.taskFingerprint),ruleVersion:q(a.ruleVersion||a.evidenceChain?.ruleVersion),stateUpdatedAt:q(s?.meta?.updatedAt),openedAt:new Date().toISOString()};
+    try{sessionStorage.setItem(KEY,JSON.stringify(snap))}catch(_){ }
+    return snap;
+  }
+  function clearSnap(){try{sessionStorage.removeItem(KEY)}catch(_){ }}
+  function close(){document.getElementById('v2p2e5an-correction')?.remove()}
+  function label(code){return REASONS.find(x=>x[0]===code)?.[1]||''}
+  function snapshotEvidence(a){const e=a?.evidenceChain||{};return {evidenceStatus:q(a?.evidenceStatus),region:q(e.stateCode),seasonContext:q(e.season),colonyPhase:q(e.colonyPhase),currentRisk:q(e.risk),confidence:q(e.confidence),latestInspectionId:q(e.latestInspectionId),latestInspectionDate:q(e.latestInspectionDate),ruleId:q(e.ruleId),ruleVersion:q(e.ruleVersion||a?.ruleVersion),proposedWindowStart:q(e.proposedWindowStart||e.windowStart||a?.proposedWindowStart||a?.dueWindowStart),proposedWindowEnd:q(e.proposedWindowEnd||e.windowEnd||a?.proposedWindowEnd||a?.dueWindowEnd||a?.dueDate),conflicts:Array.isArray(e.conflicts)?e.conflicts.map(q).filter(Boolean):[]}}
+  function openSheet(a,s){
+    close();writeSnap(a,s);
+    const host=document.createElement('div');host.id='v2p2e5an-correction';host.className='v2p2e5an-backdrop';
+    host.innerHTML=`<section class="v2p2e5an-sheet" role="dialog" aria-modal="true" aria-labelledby="v2p2e5an-title">
+      <div class="v2p2e5an-head"><div><b id="v2p2e5an-title">Why is this task not needed?</b><span>This is a beekeeper correction, not biological evidence.</span></div><button type="button" class="iconbtn" onclick="v2p2e5aoCloseCorrection()" aria-label="Close">✕</button></div>
+      <label class="v2p2e5an-field"><span>Reason</span><select id="v2p2e5an-reason"><option value="">Choose a reason</option>${REASONS.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select></label>
+      <label class="v2p2e5an-field"><span>Notes <em>optional unless field judgment / other</em></span><textarea id="v2p2e5an-note" rows="3" maxlength="500" placeholder="Add context for the audit trail"></textarea></label>
+      <div class="v2p2e5an-note"><b>What this changes</b><span>The current task is suppressed for this evidence state only. It does not create an Inspection record, change colony health, or prove the issue is resolved. New evidence can make the task appear again.</span></div>
+      <div class="v2p2e5an-actions"><button type="button" class="secondary" onclick="v2p2e5aoCloseCorrection()">Cancel</button><button type="button" class="primary" onclick="v2p2e5aoConfirmCorrection()">Confirm correction</button></div>
+    </section>`;
+    host.addEventListener('click',e=>{if(e.target===host)close()});document.body.appendChild(host);setTimeout(()=>document.getElementById('v2p2e5an-reason')?.focus(),0);
+  }
+  window.v2p2e5aoCloseCorrection=function(){close()};
+  window.v2p2e5aoConfirmCorrection=function(){
+    const s=S(),snap=readSnap();if(!s||!snap?.action)return close();
+    const code=q(document.getElementById('v2p2e5an-reason')?.value),note=q(document.getElementById('v2p2e5an-note')?.value);
+    if(!code)return typeof toast==='function'?toast('Choose a reason'):null;
+    if(['beekeeper-judgment','other'].includes(code)&&!note)return typeof toast==='function'?toast('Add a short note for this reason'):null;
+    const live=findLive(s,snap.actionId),sameFp=live&&q(live.taskFingerprint)===q(snap.taskFingerprint);
+    const unchanged=q(s?.meta?.updatedAt)===q(snap.stateUpdatedAt);
+    if(!sameFp&&!unchanged){close();clearSnap();return typeof toast==='function'?toast('New evidence changed this task. Reopen it from Actions before correcting it.'):null}
+    const a=sameFp?live:snap.action;
+    if(!isAdaptive(a)){close();clearSnap();return typeof toast==='function'?toast('This correction is no longer valid for the current task.'):null}
+    const reasonLabel=label(code),ruleVersion=q(a.ruleVersion||a.evidenceChain?.ruleVersion||snap.ruleVersion||'inspection-us-adaptive-v1.1-2026-09-07');
+    s.meta=s.meta||{};s.meta.scientificTaskOverrides=Array.isArray(s.meta.scientificTaskOverrides)?s.meta.scientificTaskOverrides:[];
+    s.meta.scientificTaskOverrides.push({id:`sci-override-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,hiveId:q(a.hiveId),taskId:q(a.id),taskFingerprint:q(a.taskFingerprint),ruleVersion,decision:'not-needed',date:'',reason:reasonLabel,reasonCode:code,reasonLabel,note,evidenceSnapshot:snapshotEvidence(a),recordedAt:new Date().toISOString(),source:'beekeeper-correction',biologicalEvidence:false,correctionContext:'opened-task-snapshot'});
+    s.meta.scientificTaskOverrides=s.meta.scientificTaskOverrides.slice(-300);
+    if(typeof save==='function'&&save(s)===false)return;
+    close();clearSnap();if(typeof toast==='function')toast('Correction saved. It does not change colony health or create Inspection evidence.');if(typeof go==='function')go('actions');
+  };
+  window.v2p2e5adNotNeeded=function(actionId){
+    const s=S();if(!s)return;
+    let a=findLive(s,actionId);
+    if(!a){const snap=readSnap();if(snap&&q(snap.actionId)===q(actionId)&&q(s?.meta?.updatedAt)===q(snap.stateUpdatedAt))a=snap.action}
+    if(!a)return typeof toast==='function'?toast('This task changed. Return to Actions and reopen the current task.'):null;
+    if(!isAdaptive(a))return typeof toast==='function'?toast('This correction is only available for scientific inspection tasks.'):null;
+    openSheet(a,s);
+  };
+  try{v2p2e5adNotNeeded=window.v2p2e5adNotNeeded}catch(_){ }
+
+  // Capture the exact scientific task before navigation so the correction UI
+  // remains stable even if Actions are regenerated while the detail page is open.
+  const prevOpen=window.v2p2e5amOpenTask;
+  if(typeof prevOpen==='function')window.v2p2e5amOpenTask=function(actionId){const s=S(),a=findLive(s,actionId);if(a&&isAdaptive(a))writeSnap(a,s);return prevOpen.apply(this,arguments)};
+  const prevUnified=window.v2p2e5abOpenUnifiedAction;
+  if(typeof prevUnified==='function')window.v2p2e5abOpenUnifiedAction=function(actionId){const s=S(),a=findLive(s,actionId);if(a&&isAdaptive(a))writeSnap(a,s);return prevUnified.apply(this,arguments)};
+
+  window.__HIVEDASH_V2P2E5AO_VERSION__='v2p2e5ao-durable-scientific-correction-snapshot';
+})();

@@ -11803,7 +11803,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     if(!['add','remove'].includes(op))return toast('Choose Add or Remove');
     if(!Number.isInteger(count)||count<1||count>10)return toast('Choose a valid number of supers');
     if(op==='remove'&&count>stateNow.current)return toast(`Only ${stateNow.current} super${stateNow.current===1?' is':'s are'} currently recorded on this hive.`);
-    const oldOp=a.workflowData?.operation||'add',oldCount=Math.max(1,Number(a.workflowData?.numberOfSupers)||1),oldWorkflow=JSON.parse(JSON.stringify(a.workflowData||{})),oldTitle=a.title,stamp=new Date().toISOString();
+    const oldOp=a.workflowData?.operation||'add',oldCount=Math.max(1,Number(a.workflowData?.numberOfSupers)||1),oldWorkflow=JSON.parse(JSON.stringify(a.workflowData||{})),oldTitle=a.title,oldUpdatedAt=a.updatedAt,stamp=new Date().toISOString();
     a.workflowData=a.workflowData||{};
     const history=Array.isArray(a.workflowData.revalidationHistory)?a.workflowData.revalidationHistory:[];
     history.push({at:stamp,reason:'hive-state-changed',previousBaseline:stateNow.baseline,currentSuperCount:stateNow.current,previousOperation:oldOp,previousNumberOfSupers:oldCount,confirmedOperation:op,confirmedNumberOfSupers:count});
@@ -11813,8 +11813,10 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     a.workflowData.numberOfSupers=count;
     a.workflowData.revalidatedAt=stamp;
     a.workflowData.planRevision=Math.max(1,Number(a.workflowData.planRevision)||1)+1;
+    /* V2P2E5AT — action-level freshness clock used by cloud/local merge. */
+    a.updatedAt=stamp;
     a.title=op==='add'?'Add Super':'Remove Super';
-    if(save(s)===false){a.workflowData=oldWorkflow;a.title=oldTitle;return toast('Reviewed plan was not saved')}
+    if(save(s)===false){a.workflowData=oldWorkflow;a.title=oldTitle;a.updatedAt=oldUpdatedAt;return toast('Reviewed plan was not saved')}
     if(window.__b37CompletionErrors)delete window.__b37CompletionErrors[String(a.id)];
     if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[String(a.id)];
     b37CloseReviewModal();
@@ -20977,3 +20979,6 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
 
 /* V2P2E5AS — stale manual-plan revalidation gate */
 window.__HIVEDASH_V2P2E5AS_VERSION__='v2p2e5as-stale-plan-revalidation';
+
+/* V2P2E5AT — reviewed Pending Action freshness across cloud/local merge */
+window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';

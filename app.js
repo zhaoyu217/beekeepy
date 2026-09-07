@@ -588,11 +588,33 @@ function mergeStateV50(local,remote){
     String(a.source||'')==='spring-preparation-follow-up'||
     String(a.source||'')==='treatment-follow-up'
   )&&a.status!=='Completed'&&a.priority!=='Done';
+  /* V2P2E5AT — durable Pending Action freshness.
+     The older state must never overwrite a freshly reviewed/edited copy of the
+     SAME Pending Action during realtime cloud reconciliation. Prefer an
+     action-level freshness clock when one exists; otherwise the already-newer
+     state-level `primary` copy wins. */
+  const pendingActionFreshnessV2P2E5AT=(a)=>{
+    const vals=[
+      a?.updatedAt,
+      a?.workflowData?.revalidatedAt,
+      a?.workflowData?.updatedAt,
+      a?.startedAt,
+      a?.createdAt
+    ].map(v=>Date.parse(v||0)||0);
+    return Math.max(0,...vals);
+  };
   const manualSuperMerged=new Map();
-  [
-    ...((primary.actions||[]).filter(isDurablePendingAction)),
-    ...((other.actions||[]).filter(isDurablePendingAction))
-  ].forEach((a,i)=>manualSuperMerged.set(String(a.id||`durable-pending-${i}`),a));
+  ((other.actions||[]).filter(isDurablePendingAction)).forEach((a,i)=>{
+    manualSuperMerged.set(String(a.id||`durable-pending-other-${i}`),clone(a));
+  });
+  ((primary.actions||[]).filter(isDurablePendingAction)).forEach((a,i)=>{
+    const key=String(a.id||`durable-pending-primary-${i}`),prev=manualSuperMerged.get(key);
+    if(!prev){manualSuperMerged.set(key,clone(a));return}
+    const pt=pendingActionFreshnessV2P2E5AT(a),ot=pendingActionFreshnessV2P2E5AT(prev);
+    if(pt||ot){manualSuperMerged.set(key,clone(pt>=ot?a:prev));return}
+    // No action-level clock: `primary` is the newer whole state.
+    manualSuperMerged.set(key,clone(a));
+  });
   primary.actions=[...(primary.actions||[]).filter(a=>!isDurablePendingAction(a)),...manualSuperMerged.values()];
 
   /* V224B37J — Hive Merge Freshness Fix.

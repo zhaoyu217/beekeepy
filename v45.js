@@ -19921,7 +19921,12 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     window.__v2p2e5afScopedHive=scopedHiveId||'';
     document.querySelector('.modal.v224-add-action-picker')?.remove();
     document.querySelector('.modal.v2p2e5af-plan-picker')?.remove();
-    const m=modal(pickerHTML(scopedHiveId));m.classList.add('v224-add-action-picker','v2p2e5af-plan-picker');
+    const m=modal(pickerHTML(scopedHiveId));
+    m.classList.add('v224-add-action-picker','v2p2e5af-plan-picker','v2p2e5ag-plan-picker');
+    // V2P2E5AG: mount this long planner at the document level so its backdrop
+    // always covers the full viewport. This prevents the underlying Actions
+    // page from showing through below the app shell while the picker scrolls.
+    document.body.appendChild(m);
     requestAnimationFrame(()=>m.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}));return m;
   }
 
@@ -19984,5 +19989,5 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   window.render=function(){const ret=prevRender.apply(this,arguments);queueMicrotask(lockDecisionHive);setTimeout(lockDecisionHive,0);return ret};
   try{render=window.render}catch(_){ }
 
-  window.__HIVEDASH_V2P2E5AF_VERSION__='v2p2e5af-lightweight-manual-planning';
+  window.__HIVEDASH_V2P2E5AF_VERSION__='v2p2e5ag-lightweight-manual-planning-visual-fix';
 })();

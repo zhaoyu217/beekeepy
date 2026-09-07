@@ -18235,3 +18235,26 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
 
   window.__HIVEDASH_V2P2E5L_VERSION__='v2p2e5l-home-navigation-contract-v1';
 })();
+
+
+/* =========================================================
+   V2P2E5M TEST BUILD — TEMPORARY PRO FEATURE UNLOCK
+   QA scope only:
+   - Temporarily treats all sessions as Pro for feature-access checks.
+   - Does NOT change Supabase app_metadata, Stripe data, cloud entitlement,
+     subscription status, billing records, or authoritativePlanFromSession().
+   - This exists only so Home / Actions / Insights navigation can be tested
+     end-to-end before the production membership gate is restored.
+   - Do NOT freeze or ship this entitlement behavior as production logic.
+   ========================================================= */
+(function v2p2e5mTemporaryProUnlock(){
+  if(window.__HIVEDASH_V2P2E5M_TEST_UNLOCK__)return;
+  window.__HIVEDASH_V2P2E5M_TEST_UNLOCK__=true;
+  window.__HIVEDASH_TEST_ENTITLEMENT_MODE__='QA_PRO_UNLOCK';
+
+  const qaIsPro=function(){return true;};
+  try{window.isPro=qaIsPro}catch(_){ }
+  try{isPro=qaIsPro}catch(_){ }
+
+  window.__HIVEDASH_V2P2E5M_VERSION__='v2p2e5m-test-pro-unlock';
+})();

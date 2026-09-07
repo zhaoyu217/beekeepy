@@ -18300,7 +18300,15 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
     }
     const selectId='v2p2e5o-hive-select',continueId='v2p2e5o-hive-continue';
     const suffixPart=txtN(suffix)?'/'+txtN(suffix).replace(/^\/+/, ''):'';
-    r.innerHTML=`<div class="vs"><section class="vc v2p2e5n-invalid-hive"><div class="vhead"><b>Hive unavailable</b></div><div class="empty-master">The hive linked to this ${escN(label)} is missing, archived, or no longer active. HiveDash did not substitute another hive.</div><label class="v2p2e5n-select"><span>Choose an active hive</span><select id="${selectId}" onchange="const b=document.getElementById('${continueId}');if(b)b.disabled=!this.value"><option value="" selected disabled>Select a hive</option>${hs.map(h=>`<option value="${escN(h.id)}">${escN(h.name||h.id)}</option>`).join('')}</select></label><div class="v2p2e5n-actions"><button class="secondary" onclick="v2p2e5nSourceBack()">Back</button><button id="${continueId}" class="primary" disabled onclick="const v=document.getElementById('${selectId}')?.value||'';if(!v)return toast('Select an active hive');go('${jsN(root)}/'+v+'${jsN(suffixPart)}')">Continue</button></div></section></div>`;
+    r.innerHTML=`<div class="vs"><section class="vc v2p2e5n-invalid-hive"><div class="vhead"><b>Hive unavailable</b></div><div class="empty-master">The hive linked to this ${escN(label)} is missing, archived, or no longer active. HiveDash did not substitute another hive.</div><label class="v2p2e5n-select"><span>Choose an active hive</span><select id="${selectId}" onchange="const b=document.getElementById('${continueId}');if(b){b.disabled=!this.value;b.setAttribute('aria-disabled',b.disabled?'true':'false')}"><option value="" selected disabled>Select a hive</option>${hs.map(h=>`<option value="${escN(h.id)}">${escN(h.name||h.id)}</option>`).join('')}</select></label><div class="v2p2e5n-actions"><button class="secondary" onclick="v2p2e5nSourceBack()">Back</button><button id="${continueId}" class="primary" disabled aria-disabled="true" onclick="const v=document.getElementById('${selectId}')?.value||'';if(!v)return toast('Select an active hive');go('${jsN(root)}/'+v+'${jsN(suffixPart)}')">Continue</button></div></section></div>`;
+    if(root==='inspection'){
+      const saveBtn=document.querySelector('#topbar .csave');
+      if(saveBtn){
+        saveBtn.disabled=true;
+        saveBtn.style.display='none';
+        saveBtn.setAttribute('aria-hidden','true');
+      }
+    }
   }
 
   // Route renderers: invalid or stale Hive ids must never reach legacy code that
@@ -18387,10 +18395,12 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
     .v2p2e5n-invalid-hive .empty-master{margin:10px 0 14px;font-size:14px!important;line-height:1.6;font-weight:600;color:#4F5A52}
     .v2p2e5n-select{display:grid;gap:7px;margin:10px 0 14px}.v2p2e5n-select span{font-size:12px;font-weight:800;color:#5E7350}.v2p2e5n-select select{min-height:44px;border:1px solid #DDD8CF;border-radius:10px;background:#fff;padding:0 12px;font:inherit}
     .v2p2e5n-actions{display:grid;grid-template-columns:1fr 1fr;gap:9px}.v2p2e5n-actions button{margin:0!important}
+    #v2p2e5o-hive-continue:disabled{background:#E7E4DD!important;color:#8F918C!important;border-color:#E7E4DD!important;box-shadow:none!important;opacity:1!important;cursor:not-allowed!important}
     #alist>button.v2p2e5n-stale-action{opacity:.72}.v2p2e5n-stale-action>span{color:#9A4A3A!important}
   `;document.head.appendChild(style);
 
   window.__HIVEDASH_V2P2E5N_VERSION__='v2p2e5n-p0-01-strict-hive-route';
   window.__HIVEDASH_V2P2E5O_VERSION__='v2p2e5o-p0-01b-explicit-hive-recovery-selection';
   window.__HIVEDASH_V2P2E5P_VERSION__='v2p2e5p-invalid-hive-message-readability';
+  window.__HIVEDASH_V2P2E5Q_VERSION__='v2p2e5q-invalid-hive-interaction-closure';
 })();

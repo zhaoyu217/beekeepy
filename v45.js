@@ -18907,3 +18907,80 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
   document.head.appendChild(style);
   window.__HIVEDASH_V2P2E5V_VERSION__='v2p2e5v-plan-date-display-draft-guard';
 })();
+
+
+/* ==============================================================
+   V2P2E5W — FREQUENT PLAN DATE CONTROL READABILITY
+   Scope ONLY:
+   - Replace the browser/native visible date text on the frequent Action
+     planning page with a controlled 16px display, while retaining the
+     native date picker and the existing ISO date value / draft listeners.
+   - No planner schema, Action workflow, Health/Risk, Timeline, or Pro logic.
+   ============================================================== */
+(function v2p2e5wPlanDateControl(){
+  if(window.__HIVEDASH_V2P2E5W__)return;
+  window.__HIVEDASH_V2P2E5W__=true;
+  const txt=v=>String(v??'').trim();
+  function isPlanRoute(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    return p[0]==='frequent-action'&&p[1]==='new';
+  }
+  function formatDate(v){
+    const m=txt(v).match(/^(\d{4})-(\d{2})-(\d{2})$/);
+    let fmt='MM/DD/YYYY';
+    try{const s=v45s();fmt=String(s?.settings?.dateFormat||s?.settings?.region?.date||s?.settings?.region?.dateFormat||fmt).toUpperCase()}catch(_){}
+    if(!m)return fmt==='DD/MM/YYYY'?'dd/mm/yyyy':'mm/dd/yyyy';
+    const y=m[1],mo=m[2],d=m[3];
+    return fmt==='DD/MM/YYYY'?`${d}/${mo}/${y}`:`${mo}/${d}/${y}`;
+  }
+  function sync(input){
+    const shell=input?.closest('.v2p2e5w-plan-date-shell');
+    const display=shell?.querySelector('.v2p2e5w-plan-date-text');
+    if(display){display.textContent=formatDate(input.value);display.classList.toggle('is-placeholder',!input.value)}
+  }
+  window.v2p2e5wOpenPlanDate=function(){
+    const input=document.getElementById('v2p2e5s-plan-date');if(!input)return;
+    try{input.showPicker?.()}catch(_){try{input.focus();input.click()}catch(__){}}
+  };
+  function enhance(){
+    if(!isPlanRoute())return;
+    const input=document.getElementById('v2p2e5s-plan-date');if(!input||input.dataset.v2p2e5w==='1')return;
+    // Remove the generic V224B17 overlay for this one field. This planner now
+    // owns its visible date text so browser-specific native rendering cannot
+    // shrink it again.
+    try{const oid=input.dataset.v224b17Overlay;if(oid)document.getElementById(oid)?.remove()}catch(_){}
+    try{delete input.dataset.v224b17Overlay}catch(_){}
+    input.dataset.v224b17Decorated='1';
+    input.classList.remove('v224b17-date-native');
+    input.dataset.v2p2e5w='1';
+
+    const shell=document.createElement('div');shell.className='v2p2e5w-plan-date-shell';
+    const btn=document.createElement('button');btn.type='button';btn.className='v2p2e5w-plan-date-button';btn.setAttribute('aria-label','Choose due date');btn.onclick=window.v2p2e5wOpenPlanDate;
+    const span=document.createElement('span');span.className='v2p2e5w-plan-date-text';span.textContent=formatDate(input.value);span.classList.toggle('is-placeholder',!input.value);
+    const icon=document.createElement('span');icon.className='v2p2e5w-plan-date-icon';icon.setAttribute('aria-hidden','true');icon.innerHTML='<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10h17"></path></svg>';
+    btn.append(span,icon);
+    const parent=input.parentNode;parent.insertBefore(shell,input);shell.append(btn,input);
+    input.classList.add('v2p2e5w-plan-date-native');
+    input.addEventListener('input',()=>sync(input));
+    input.addEventListener('change',()=>sync(input));
+    sync(input);
+  }
+  const prevRender=window.render;
+  if(typeof prevRender==='function'){
+    window.render=function(){const r=prevRender.apply(this,arguments);queueMicrotask(enhance);setTimeout(enhance,0);return r};
+    try{render=window.render}catch(_){}
+  }
+  document.addEventListener('click',()=>{if(isPlanRoute())queueMicrotask(enhance)},true);
+  queueMicrotask(enhance);
+
+  const style=document.createElement('style');style.id='v2p2e5w-plan-date-control-style';style.textContent=`
+    .v2p2e5w-plan-date-shell{position:relative;width:100%;height:48px;min-height:48px;border:1px solid #DED9D0;border-radius:12px;background:#fff;box-sizing:border-box;overflow:hidden}
+    .v2p2e5w-plan-date-shell:focus-within{border-color:rgba(94,115,80,.58);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
+    .v2p2e5w-plan-date-button{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;display:flex;align-items:center;justify-content:space-between;padding:0 13px 0 14px;color:#2F4634;font-family:Inter,Arial,sans-serif;font-size:16px;font-weight:650;line-height:1.2;text-align:left;cursor:pointer;box-sizing:border-box}
+    .v2p2e5w-plan-date-text{display:flex;align-items:center;min-height:100%;font-size:16px!important;font-weight:650!important;line-height:1.2!important;letter-spacing:0!important;color:#2F4634!important}
+    .v2p2e5w-plan-date-text.is-placeholder{color:#6B736D!important;font-weight:550!important}
+    .v2p2e5w-plan-date-icon{width:19px;height:19px;display:flex;align-items:center;justify-content:center;color:#2F4634;flex:0 0 auto}.v2p2e5w-plan-date-icon svg{width:18px;height:18px;display:block}
+    .v2p2e5w-plan-date-native{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;left:0!important;bottom:0!important;padding:0!important;border:0!important}
+  `;document.head.appendChild(style);
+  window.__HIVEDASH_V2P2E5W_VERSION__='v2p2e5w-plan-date-controlled-display';
+})();

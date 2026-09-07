@@ -8158,3 +8158,34 @@ html body > .modal.v2p2e5ag-plan-picker .v2p2e5af-decision-note{
   html body > .modal.v2p2e5ag-plan-picker{align-items:flex-start!important;padding:54px 12px 16px!important}
   html body > .modal.v2p2e5ag-plan-picker > .modalpanel{max-height:calc(100dvh - 70px)!important}
 }
+
+/* ==============================================================
+   V2P2E5AH — MANUAL PLANNER BOTTOM NAV RESTORE
+   Scope: lightweight manual planner picker only.
+   - Keep the full-viewport backdrop so underlying Actions content never leaks.
+   - Keep the persistent main Bottom Nav visible/clickable above this picker.
+   - Reserve Bottom Nav height inside the picker so the scrolling panel never
+     extends beneath the navigation bar.
+   - No task content, routes, workflow or persistence changes.
+   ============================================================== */
+html body > .modal.v2p2e5ag-plan-picker{
+  z-index:2800!important;
+  padding:18px 12px calc(var(--nav) + var(--safe) + 14px)!important;
+}
+html body > .modal.v2p2e5ag-plan-picker > .modalpanel{
+  max-height:calc(100dvh - var(--nav) - var(--safe) - 32px)!important;
+}
+html body #bottomnav.bottomnav:not(.hidden){
+  z-index:3000!important;
+  visibility:visible!important;
+  pointer-events:auto!important;
+}
+@media(max-width:430px){
+  html body > .modal.v2p2e5ag-plan-picker{
+    align-items:flex-start!important;
+    padding:54px 12px calc(var(--nav) + var(--safe) + 12px)!important;
+  }
+  html body > .modal.v2p2e5ag-plan-picker > .modalpanel{
+    max-height:calc(100dvh - var(--nav) - var(--safe) - 66px)!important;
+  }
+}

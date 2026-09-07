@@ -20678,3 +20678,155 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   `;document.head.appendChild(style);
   window.__HIVEDASH_V2P2E5AP_VERSION__=VERSION;
 })();
+
+/* ==============================================================
+   V2P2E5AQ — FORMAL VARROA / TREATMENT REFERENCES IN INSPECTION
+   Evidence boundary:
+   - Varroa Test and Treatment are formal independent records.
+   - Inspection may display their latest formal record as read-only context.
+   - Inspection must not edit, create, or reinterpret those records.
+   - Restored drafts cannot override newer formal Varroa/Treatment evidence.
+   ============================================================== */
+(function v2p2e5aqFormalEvidenceReferences(){
+  if(window.__HIVEDASH_V2P2E5AQ__)return;
+  window.__HIVEDASH_V2P2E5AQ__=true;
+  const VERSION='v2p2e5aq-formal-evidence-reference';
+  const txt=v=>String(v??'').trim();
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const hiveBy=(s,id)=>typeof hive==='function'?hive(s,id):(s?.hives||[]).find(h=>txt(h?.id)===txt(id));
+  const escQ=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]||m));
+  function latestVarroa(s,id){
+    return typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,id):null;
+  }
+  function latestTreatment(s,id){
+    if(typeof window.v2p2d2LatestTreatment==='function')return window.v2p2d2LatestTreatment(s,id);
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
+      .filter(x=>x&&txt(x.hiveId)===txt(id))
+      .slice().sort((a,b)=>String(b.date||b.startDate||'').localeCompare(String(a.date||a.startDate||''))||String(b.id||'').localeCompare(String(a.id||'')))[0]||null;
+  }
+  function txStatus(tx){
+    if(!tx)return 'None';
+    if(tx.endDate)return txt(tx.status)==='Stopped'?'Stopped':'Completed';
+    return tx.status||'Active';
+  }
+  function syncFormalDraft(id){
+    const s=S(),d=window.V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT;
+    if(!d||txt(d.hiveId)!==txt(id))return {s,ve:null,tx:null};
+    const ve=latestVarroa(s,id),tx=latestTreatment(s,id);
+    d.varroa=ve?Number(ve.mitesPer100):null;
+    d.varroaTestDate=ve?txt(ve.date):'';
+    d.varroaTestId=ve?txt(ve.id):'';
+    d.varroaEvidenceSource=ve?'varroa-test-log':'none';
+    d.treatment=tx?.type||'None';
+    d.treatmentStatus=txStatus(tx);
+    d.treatmentFollowUp=tx?.followUp||'';
+    d.treatmentWithdrawal=tx?.withdrawal||'None';
+    d.treatmentRecordId=tx?txt(tx.id):'';
+    d.treatmentEvidenceSource=tx?'treatment-log-reference':'none';
+    return {s,ve,tx};
+  }
+  function replaceWithReferenceCard(card,kind,hasRecord){
+    if(!card||card.classList.contains('v2p2e5aq-reference-card'))return card;
+    const section=document.createElement('section');
+    section.className=card.className+' v2p2e5aq-reference-card';
+    section.setAttribute('data-formal-reference',kind);
+    section.innerHTML=card.innerHTML;
+    const head=section.querySelector('.v211-card-head');
+    if(head&&!head.querySelector('.v2p2e5aq-source-pill'))head.insertAdjacentHTML('beforeend','<span class="v2p2e5aq-source-pill">Formal record</span>');
+    const note=kind==='varroa'
+      ?(hasRecord?'Latest formal Varroa Test. Read-only here; it is not a new observation from this Inspection.':'No formal Varroa Test recorded. New mite evidence must be entered through the dedicated Varroa Test workflow.')
+      :(hasRecord?'Latest formal Treatment record. Read-only here; it is not treatment performed during this Inspection.':'No formal Treatment recorded. New treatment must be entered through the dedicated Treatment Record workflow.');
+    section.insertAdjacentHTML('beforeend',`<small class="v2p2e5aq-reference-note">${escQ(note)}</small>`);
+    card.replaceWith(section);return section;
+  }
+  function applyReadOnlyCards(r,id){
+    if(!r)return;
+    const {ve,tx}=syncFormalDraft(id);
+    const cards=[...r.querySelectorAll('.v211-card')];
+    const varroa=cards.find(x=>String(x.getAttribute('onclick')||'').includes("v211OpenModule('varroa')"));
+    const treatment=cards.find(x=>String(x.getAttribute('onclick')||'').includes("v211OpenModule('treatment')"));
+    replaceWithReferenceCard(varroa,'varroa',!!ve);
+    replaceWithReferenceCard(treatment,'treatment',!!tx);
+  }
+
+  // Defensive guard: even if an old DOM or external call attempts to open these
+  // Inspection modules, formal records stay read-only here.
+  const prevModule=window.v211OpenModule;
+  if(typeof prevModule==='function'){
+    window.v211OpenModule=function(name){
+      if((name==='varroa'||name==='treatment')&&/^#inspection\//.test(String(location.hash||''))){
+        toast(name==='varroa'?'Varroa evidence is read-only here. Use the dedicated Varroa Test workflow for a new result.':'Treatment history is read-only here. Use the dedicated Treatment Record workflow for new treatment.');
+        return;
+      }
+      return prevModule.apply(this,arguments);
+    };
+    try{v211OpenModule=window.v211OpenModule}catch(_){ }
+  }
+
+  const prevInspection=window.inspectionPage||inspectionPage;
+  window.inspectionPage=function(r,id){
+    const ret=prevInspection.apply(this,arguments);
+    syncFormalDraft(id);
+    applyReadOnlyCards(r,id);
+    return ret;
+  };
+  try{inspectionPage=window.inspectionPage}catch(_){ }
+
+  // A deliberately restored draft may contain an old snapshot. Refresh formal
+  // evidence immediately after the user chooses Continue Draft.
+  const prevContinue=window.v2p2e5apContinueDraft;
+  if(typeof prevContinue==='function'){
+    window.v2p2e5apContinueDraft=function(id){
+      const ret=prevContinue.apply(this,arguments);
+      syncFormalDraft(id);
+      const r=document.getElementById('view');
+      if(r){prevInspection(r,id);applyReadOnlyCards(r,id);try{chrome('inspection')}catch(_){}}
+      return ret;
+    };
+  }
+
+  const prevSave=window.vSaveInspection||vSaveInspection;
+  if(typeof prevSave==='function'){
+    window.vSaveInspection=function(id){
+      // Formal evidence wins over any Inspection draft snapshot before save.
+      const before=S(),beforeIds=new Set((before?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===txt(id)).map(x=>txt(x.id)));
+      const formal=syncFormalDraft(id),ve=formal.ve,tx=formal.tx;
+      const ret=prevSave.apply(this,arguments);
+      try{
+        const s=S();
+        const created=(s?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===txt(id)&&!beforeIds.has(txt(x.id)));
+        if(created.length){
+          const row=created[created.length-1];
+          row.varroaTestId=ve?txt(ve.id):'';
+          row.varroaEvidenceSource=ve?'varroa-test-log-reference':'none';
+          row.treatmentRecordId=tx?txt(tx.id):'';
+          row.treatmentEvidenceSource=tx?'treatment-log-reference':'none';
+          row.formalEvidenceReferenceOnly=true;
+          const h=hiveBy(s,id);
+          if(h&&h.insp){
+            h.insp.varroaTestId=ve?txt(ve.id):'';
+            h.insp.varroaEvidenceSource=ve?'varroa-test-log-reference':'none';
+            h.insp.treatmentRecordId=tx?txt(tx.id):'';
+            h.insp.treatmentEvidenceSource=tx?'treatment-log-reference':'none';
+            h.insp.formalEvidenceReferenceOnly=true;
+          }
+          if(typeof save==='function')save(s);
+        }
+      }catch(err){console.error('V2P2E5AQ provenance stamp failed',err)}
+      return ret;
+    };
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  const style=document.createElement('style');
+  style.id='v2p2e5aq-formal-reference-style';
+  style.textContent=`
+    .v2p2e5aq-reference-card{position:relative!important;cursor:default!important;outline:none!important}
+    .v2p2e5aq-reference-card .v211-card-head{gap:6px!important;flex-wrap:wrap!important}
+    .v2p2e5aq-reference-card .v211-card-head i{margin-left:auto!important}
+    .v2p2e5aq-source-pill{order:3!important;width:max-content!important;margin-left:0!important;padding:3px 7px!important;border-radius:999px!important;background:#EEF3E9!important;color:#5E7350!important;font-size:8px!important;font-weight:700!important;line-height:1.1!important;letter-spacing:.01em!important}
+    .v2p2e5aq-reference-note{display:block!important;margin-top:9px!important;padding-top:8px!important;border-top:1px solid #EEE8DD!important;color:#747B73!important;font-size:9px!important;line-height:1.4!important;font-weight:500!important}
+  `;
+  document.head.appendChild(style);
+  window.__HIVEDASH_V2P2E5AQ_VERSION__=VERSION;
+})();

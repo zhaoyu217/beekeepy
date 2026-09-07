@@ -19007,3 +19007,278 @@ window.__HIVEDASH_V2P2E5X_VERSION__='v2p2e5x-plan-date-balanced-scale';
 
 /* V2P2E5AA — preserve manual frequent planned Actions in active V224B generateActions override. */
 window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
+
+/* ==============================================================
+   V2P2E5AB — SCIENTIFIC TASK ENGINE / ACTIONS 2.0 FOUNDATION
+   Product contract:
+   - System scientific tasks are the primary work queue.
+   - Manual planning is supplemental; Record Now remains direct execution.
+   - All current work still lives in the single Actions source of truth.
+   - Derived scientific tasks are deterministic projections from evidence;
+     when new evidence makes them unnecessary they disappear instead of being
+     falsely marked Completed.
+   - Actual Inspection / Varroa Test / Feeding / Treatment / Harvest records
+     remain the only biological / management facts.
+   Phase 1 automated loops:
+   - Initial / overdue Inspection
+   - Varroa monitoring due -> management review -> post-treatment retest
+   - Queen evidence recheck
+   - Food review -> Feeding -> food-store recheck
+   Seasonal Spring/Winter automation is intentionally deferred until its
+   location/phase rules are frozen; month alone is never used as a biological
+   phase decision.
+   ============================================================== */
+(function v2p2e5abScientificTaskEngine(){
+  if(window.__HIVEDASH_V2P2E5AB__)return;
+  window.__HIVEDASH_V2P2E5AB__=true;
+
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escA=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsA=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>v45s();
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)));
+  const findHive=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v))?txt(v):'';
+  const dayNo=v=>{const d=iso(v);return d?Math.floor(Date.parse(d+'T00:00:00Z')/86400000):null};
+  const daysBetween=(a,b)=>{const A=dayNo(a),B=dayNo(b);return A===null||B===null?null:B-A};
+  const todayFor=(s,h)=>{try{return typeof v2p2e5Today==='function'?v2p2e5Today(s,h?.id||''):v2p1bDateInHiveTimezone(s,h)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const logRows=(s,key,hid)=>(Array.isArray(s?.logs?.[key])?s.logs[key]:[]).filter(x=>x&&txt(x.hiveId)===txt(hid));
+  const newestByDate=rows=>rows.slice().sort((a,b)=>txt(b.date||b.updatedAt||b.recordedAt).localeCompare(txt(a.date||a.updatedAt||a.recordedAt)))[0]||null;
+  const latestInspection=(s,hid)=>newestByDate(logRows(s,'inspections',hid));
+  const latestFeeding=(s,hid)=>newestByDate(logRows(s,'feedings',hid));
+  const latestTreatment=(s,hid)=>newestByDate(logRows(s,'treatments',hid));
+  const latestVarroa=(s,hid)=>newestByDate(logRows(s,'varroaTests',hid).filter(x=>Number.isFinite(Number(x.mitesPer100))));
+  const isVarroaTx=tx=>{try{if(typeof window.v2p2d3IsVarroaTreatment==='function')return !!window.v2p2d3IsVarroaTreatment(tx)}catch(_){}const t=low([tx?.problem,tx?.type,tx?.product,tx?.activeIngredient,tx?.notes].join(' '));return /varroa|mite/.test(t)};
+  const isManual=a=>a&&(txt(a.source)==='manual-plan'||txt(a.source)==='manual'||['split-hive-follow-up','combine-hive-follow-up','swarm-control-follow-up','equipment-maintenance-follow-up','move-hive-follow-up','winter-preparation-follow-up','spring-preparation-follow-up'].includes(txt(a.source))||['super-management','queen-management','split-hive','combine-hive','swarm-control','equipment-maintenance','move-hive','winter-preparation','spring-preparation','other-task'].includes(low(a.type)));
+  const isSystem=a=>a&&!isManual(a)&&(txt(a.source)==='scientific-engine'||txt(a.source)==='initial-inspection'||txt(a.source)==='treatment-follow-up'||txt(a.id).startsWith('v224b-')||!!a.modelVersion);
+
+  function varroaWindow(today){
+    const m=Number(txt(today).slice(5,7));
+    if(m>=9&&m<=11)return {days:21,label:'fall monitoring window'};
+    if(m>=3&&m<=8)return {days:30,label:'monthly monitoring window'};
+    return {days:null,label:'winter low-disturbance period'};
+  }
+
+  function enrichSystemAction(a,s){
+    if(!a)return a;
+    const x={...a},hid=txt(x.hiveId),id=txt(x.id),title=low(x.title),src=txt(x.source);
+    if(isManual(x))return x;
+    x.source=src||'scientific-engine';
+    x.systemGenerated=true;
+    if(src==='initial-inspection'||id.startsWith('v2p2e4-initial-inspection-')){
+      x.source='scientific-engine';x.reasonCode='data';x.intentKey='inspection-initial';x.workflowStage='evidence';x.executionRoute=`inspection/${hid}`;x.systemWhy=x.reason||'No valid Inspection has been recorded for this hive.';
+      return x;
+    }
+    if(id.startsWith('v224b-data-')||title==='inspection overdue'){
+      x.source='scientific-engine';x.reasonCode='data';x.intentKey='inspection-cycle';x.workflowStage='evidence';x.executionRoute=`inspection/${hid}`;x.systemWhy=x.reason||'The inspection record is older than the current review window.';
+    }else if(id.startsWith('v224b-queen-')||title.includes('queen')){
+      x.source='scientific-engine';x.reasonCode='queen';x.intentKey='queen-recheck';x.workflowStage='evidence';x.executionRoute=`inspection/${hid}`;x.title='Recheck queen status';x.systemWhy=x.reason||'Current queen-right evidence is incomplete or concerning.';
+    }else if(id.startsWith('v224b-food-')||title.includes('food stores')){
+      x.source='scientific-engine';x.reasonCode='food';x.intentKey='food-review';x.workflowStage='management-review';x.executionRoute=`feeding-record/${hid}`;x.systemWhy=x.reason||'Food-store evidence needs review before deciding whether feeding is needed.';
+    }else if(id.startsWith('v224b-varroa-')||title.includes('varroa')){
+      x.source='scientific-engine';x.reasonCode='varroa';
+      if(low(x.priority)==='high'||title.includes('required')||title.includes('elevated')){
+        x.intentKey='varroa-management';x.workflowStage='management-review';x.type='Treatment';x.title='Review Varroa management';x.executionRoute=`treatment-record/${hid}`;x.systemWhy=x.reason||'Current Varroa evidence is above the phase-aware management threshold.';
+      }else{
+        x.intentKey='varroa-recheck';x.workflowStage='evidence';x.type='Inspection';x.title='Recheck Varroa level';x.executionRoute=`varroa-test/${hid}/recheck`;x.systemWhy=x.reason||'Current Varroa evidence warrants another measured mite check.';
+      }
+    }else if(id.startsWith('v224b-follow-up-')||low(src).includes('treatment-follow-up')||title.includes('follow-up')){
+      const tx=(src==='treatment-follow-up'&&x.sourceId)?(s?.logs?.treatments||[]).find(t=>txt(t.id)===txt(x.sourceId)):latestTreatment(s,hid);
+      x.source=src||'scientific-engine';x.workflowStage='follow-up';x.intentKey=isVarroaTx(tx)?'varroa-post-treatment-retest':'management-follow-up';
+      if(isVarroaTx(tx)){
+        x.reasonCode='varroa';x.type='Inspection';x.title='Post-treatment Varroa recheck';x.executionRoute=`varroa-test/${hid}/retest`;x.systemWhy='Treatment was recorded; new mite-count evidence is needed to verify effectiveness.';
+      }else{
+        x.reasonCode=x.reasonCode||'management';x.executionRoute=x.executionRoute||`treatment-record/${hid}`;x.systemWhy=x.reason||'A recorded management action requires follow-up verification.';
+      }
+    }else{
+      x.source=src||'scientific-engine';x.intentKey=x.intentKey||`system-${low(x.type||x.title).replace(/[^a-z0-9]+/g,'-')}`;x.workflowStage=x.workflowStage||'management-review';x.executionRoute=x.executionRoute||'';x.systemWhy=x.reason||'';
+    }
+    return x;
+  }
+
+  function addVarroaMonitoring(rows,s,h){
+    const insp=latestInspection(s,h.id);if(!insp)return;
+    const today=todayFor(s,h),win=varroaWindow(today);if(!win.days)return;
+    const test=latestVarroa(s,h.id),age=test?daysBetween(test.date,today):null;
+    const due=!test||age===null||age>=win.days;if(!due)return;
+    if(rows.some(a=>txt(a.hiveId)===txt(h.id)&&['varroa-management','varroa-recheck','varroa-post-treatment-retest','varroa-monitor'].includes(txt(a.intentKey))))return;
+    const overdue=!test||age>=win.days*2,priority=overdue?'High':'Medium';
+    rows.push({
+      id:`scientific-varroa-monitor-${h.id}`,hiveId:h.id,type:'Inspection',title:test?'Varroa test due':'Baseline Varroa test needed',
+      status:'Pending',priority,due:today,dueDate:today,date:today,source:'scientific-engine',systemGenerated:true,
+      reasonCode:'varroa',intentKey:'varroa-monitor',workflowStage:'evidence',executionRoute:`varroa-test/${h.id}/test`,
+      reason:test?`Last Varroa test was ${age} days ago; current default is a ${win.label}.`:`No formal Varroa test is recorded; establish a measured baseline.`,
+      systemWhy:test?`Measured Varroa evidence is due for renewal (${win.label}).`:'A formal mite count is needed before treatment decisions can be evidence-based.'
+    });
+  }
+
+  function foodFollowupState(s,h){
+    const insp=latestInspection(s,h.id),feed=latestFeeding(s,h.id);if(!insp||!feed)return null;
+    if(!iso(insp.date)||!iso(feed.date)||dayNo(feed.date)<=dayNo(insp.date))return null;
+    const honey=low(insp.honey??insp.foodHoney??h?.insp?.honey),pollen=low(insp.pollen??insp.foodPollen??h?.insp?.pollen);
+    if(!['low','none'].includes(honey)&&!['low','none'].includes(pollen))return null;
+    const newer=logRows(s,'inspections',h.id).some(x=>iso(x.date)&&dayNo(x.date)>dayNo(feed.date));if(newer)return null;
+    return {insp,feed};
+  }
+
+  const prevGenerate=window.generateActions||generateActions;
+  window.generateActions=function(s){
+    let rows=(prevGenerate(s)||[]).map(a=>enrichSystemAction(a,s));
+    const followupFood=new Set();
+    active(s).forEach(h=>{if(foodFollowupState(s,h))followupFood.add(txt(h.id))});
+    // Once feeding occurred after the low-store evidence, do not keep telling the
+    // beekeeper to feed again. Ask for new evidence instead.
+    rows=rows.filter(a=>!(followupFood.has(txt(a.hiveId))&&txt(a.intentKey)==='food-review'));
+    active(s).forEach(h=>{
+      addVarroaMonitoring(rows,s,h);
+      const ff=foodFollowupState(s,h);if(ff&&!rows.some(a=>txt(a.hiveId)===txt(h.id)&&txt(a.intentKey)==='food-recheck')){
+        const due=iso(h.nextInspection)||'Next check';
+        rows.push({id:`scientific-food-recheck-${h.id}`,hiveId:h.id,type:'Inspection',title:'Recheck food stores',status:'Pending',priority:'Medium',due,dueDate:iso(due)||'',date:iso(due)||'',source:'scientific-engine',systemGenerated:true,reasonCode:'food',intentKey:'food-recheck',workflowStage:'follow-up',executionRoute:`inspection/${h.id}`,reason:'Feeding was recorded after low food-store evidence; confirm the current stores at the next inspection.',systemWhy:'A feeding record proves management occurred, not that food stores are now adequate.'});
+      }
+    });
+
+    // Compatible manual plans suppress only the same broad system job. A full
+    // Inspection does NOT suppress a dedicated Varroa test, and no manual task
+    // is silently deleted or rewritten.
+    const manual=rows.filter(a=>isManual(a)&&a.status!=='Completed'&&a.priority!=='Done');
+    rows=rows.filter(a=>{
+      if(!isSystem(a))return true;
+      const hid=txt(a.hiveId),intent=txt(a.intentKey);
+      if(intent==='inspection-cycle'||intent==='inspection-initial')return !manual.some(m=>txt(m.hiveId)===hid&&low(m.type).includes('inspection'));
+      if(intent==='food-review')return !manual.some(m=>txt(m.hiveId)===hid&&low(m.type).includes('feeding'));
+      if(intent==='varroa-management')return !manual.some(m=>txt(m.hiveId)===hid&&low(m.type).includes('treatment'));
+      return true;
+    });
+
+    // Deterministic dedupe. Manual entities always win; system duplicates are
+    // collapsed by hive + intent without mutating the user's plan.
+    const seen=new Set(),out=[];
+    rows.forEach(a=>{
+      const key=isSystem(a)?`${txt(a.hiveId)}|${txt(a.intentKey)||txt(a.id)}`:`manual|${txt(a.id)}`;
+      if(seen.has(key))return;seen.add(key);out.push(a);
+    });
+    return out;
+  };
+  try{generateActions=window.generateActions}catch(_){ }
+
+  function category(a,s){
+    if(txt(a.workflowStage)==='follow-up'||low(a.source).includes('follow-up')||low(a.status)==='follow-up')return 'Follow-up';
+    const h=findHive(s,a.hiveId),today=todayFor(s,h),d=iso(a.dueDate||a.due||a.date);
+    if(d){const diff=daysBetween(today,d);if(diff!==null&&diff<0)return 'Overdue';if(diff===0)return 'Today';return 'Upcoming'}
+    const due=low(a.due);if(due==='now'||due==='today')return 'Today';if(due.includes('overdue'))return 'Overdue';return 'Upcoming';
+  }
+  const catRank={'Overdue':0,'Today':1,'Follow-up':2,'Upcoming':3};
+  const priRank={high:0,medium:1,low:2,routine:3,done:4};
+  function activeRows(){return typeof v53ActionRows==='function'?v53ActionRows('Pending'):S().actions||[]}
+  function routeForManual(a){
+    const t=low(a.type),src=low(a.source),id=jsA(a.id),hid=jsA(a.hiveId);
+    if(src==='manual-plan'&&['inspection','feeding','treatment','harvest'].includes(t))return `frequent-action/${id}`;
+    if(t==='super-management')return `super-action/${id}`;
+    if(t==='queen-management')return `queen-action/${id}`;
+    if(t==='split-hive')return `split-action/${id}`;
+    if(t==='combine-hive')return `combine-action/${id}`;
+    if(t==='swarm-control')return `swarm-action/${id}`;
+    if(src==='equipment-maintenance-follow-up')return `equipment-follow/${id}`;
+    if(t==='equipment-maintenance')return `equipment-action/${id}`;
+    if(src==='move-hive-follow-up')return `move-follow/${id}`;
+    if(t==='move-hive')return `move-hive-action/${id}`;
+    if(src==='winter-preparation-follow-up')return `winter-follow/${id}`;
+    if(t==='winter-preparation')return `winter-action/${id}`;
+    if(src==='spring-preparation-follow-up')return `spring-follow/${id}`;
+    if(t==='spring-preparation')return `spring-action/${id}`;
+    if(t==='other-task')return `other-task/${id}`;
+    return '';
+  }
+  window.v2p2e5abOpenUnifiedAction=function(actionId){
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId));if(!a)return toast('This task is no longer active');
+    if(isSystem(a))return go(`scientific-action/${a.id}`);
+    const r=routeForManual(a);if(r)return go(r);
+    try{return openActionByType(a.type||'Inspection',a.hiveId,a.id)}catch(_){return go('actions')}
+  };
+  window.v2p2e5abSetFilter=function(name){window.__v2p2e5abFilter=name||'all';v53DrawActions('Pending')};
+
+  function renderActiveList(){
+    const box=document.getElementById('alist');if(!box)return;
+    const s=S(),all=activeRows().filter(a=>a&&a.status!=='Completed'&&a.priority!=='Done');
+    const counts={Today:0,Overdue:0,'Follow-up':0,Upcoming:0};all.forEach(a=>counts[category(a,s)]++);
+    const filter=txt(window.__v2p2e5abFilter||'all');
+    const rows=all.filter(a=>filter==='all'||category(a,s)===filter).sort((a,b)=>catRank[category(a,s)]-catRank[category(b,s)]||(priRank[low(a.priority)]??9)-(priRank[low(b.priority)]??9)||txt(a.hiveId).localeCompare(txt(b.hiveId)));
+    let sum=document.querySelector('.v2p2e5ab-summary');
+    if(!sum){sum=document.createElement('div');sum.className='v2p2e5ab-summary';box.insertAdjacentElement('beforebegin',sum)}
+    sum.innerHTML=['Today','Overdue','Follow-up','Upcoming'].map(k=>`<button class="${filter===k?'active':''}" onclick="v2p2e5abSetFilter('${k}')"><b>${counts[k]}</b><span>${k}</span></button>`).join('')+`<button class="v2p2e5ab-all ${filter==='all'?'active':''}" onclick="v2p2e5abSetFilter('all')">All active</button>`;
+    box.innerHTML=rows.length?rows.map(a=>{
+      const h=findHive(s,a.hiveId),sys=isSystem(a),cat=category(a,s),why=txt(a.systemWhy||a.reason),due=txt(a.dueDate||a.due||a.date||'');
+      return `<button class="v2p2e5ab-task ${sys?'system':'manual'}" onclick="v2p2e5abOpenUnifiedAction('${jsA(a.id)}')">
+        <span class="v2p2e5ab-task-top"><b>${escA(h?.name||'Hive unavailable')}</b><i class="${sys?'system':'manual'}">${sys?'System':'Manual'}</i><em>${escA(cat)}</em></span>
+        <strong>${escA(a.title||a.type||'Action')}</strong>
+        ${why?`<small>${escA(why)}</small>`:''}
+        <span class="v2p2e5ab-task-foot"><i class="${low(a.priority)==='high'?'high':''}">${escA(a.priority||'Medium')}</i><time>${escA(due||'—')}</time></span>
+      </button>`;
+    }).join(''):'<div class="v53-empty-inline">No active tasks in this group.</div>';
+  }
+
+  const prevDraw=window.v53DrawActions||v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    if(low(mode)==='pending'){renderActiveList();return}
+    document.querySelector('.v2p2e5ab-summary')?.remove();return prevDraw.apply(this,arguments);
+  };
+  try{v53DrawActions=window.v53DrawActions}catch(_){ }
+
+  function decorateActions(){
+    const tabs=document.querySelector('.v53-action-tabs');if(tabs){const p=tabs.querySelector('[data-v53-action="Pending"]');if(p)p.textContent='Active'}
+    const add=document.querySelector('.v53-actions .v53-add-action');if(add){add.classList.add('v2p2e5ab-plan-secondary');add.textContent='+ Plan something extra'}
+    const help=document.querySelector('.v2p2e5t-plan-help');if(help)help.textContent='For work the system cannot know about';
+    const head=document.querySelector('.v2p2e5t-now-head');if(head){const b=head.querySelector('b'),sm=head.querySelector('small');if(b)b.textContent='Record Now';if(sm)sm.textContent='Real work happening now'}
+    if((window.__hivedashActionsMode||'Pending')==='Pending')renderActiveList();
+  }
+  const prevActions=window.actions||actions;
+  window.actions=function(r){const ret=prevActions.apply(this,arguments);queueMicrotask(decorateActions);setTimeout(decorateActions,0);return ret};
+  try{actions=window.actions}catch(_){ }
+
+  function actionDetailHTML(a){
+    const s=S(),h=findHive(s,a.hiveId),stage=txt(a.workflowStage||'management-review'),stageLabel=stage==='evidence'?'Gather evidence':stage==='follow-up'?'Verify result':'Review management';
+    const due=txt(a.dueDate||a.due||a.date||'—'),why=txt(a.systemWhy||a.reason||'Scientific workflow rule requires this task.'),route=txt(a.executionRoute),cta=stage==='evidence'?(low(a.reasonCode)==='varroa'?'Start Varroa Test':'Start Check'):stage==='follow-up'?(low(a.reasonCode)==='varroa'?'Start Recheck':'Start Follow-up'):'Review / Execute';
+    return `<div class="vs v2p2e5ab-detail"><section class="vc"><div class="vhead"><b>${escA(a.title||'Scientific task')}</b><span class="v2p2e5ab-source-pill">System</span></div><div class="v2p2e5ab-detail-grid"><span>Hive<b>${escA(h?.name||'Unavailable')}</b></span><span>Stage<b>${escA(stageLabel)}</b></span><span>Priority<b>${escA(a.priority||'Medium')}</b></span><span>Due<b>${escA(due)}</b></span></div></section><section class="vc"><div class="vhead"><b>Why this task exists</b></div><p>${escA(why)}</p></section><section class="vc"><div class="vhead"><b>What happens next</b></div><p>${stage==='follow-up'?'Record new evidence. A management action is not considered biologically successful until the follow-up evidence supports it.':stage==='evidence'?'Collect the requested evidence. HiveDash will recalculate the task queue from the new record.':'Review the evidence and choose the appropriate management step. HiveDash will not select a drug, dose, or irreversible action without your confirmation.'}</p></section><div class="v2p2e5ab-detail-actions"><button class="secondary" onclick="go('actions')">Back</button>${route?`<button class="primary" onclick="go('${jsA(route)}')">${escA(cta)}</button>`:''}</div></div>`;
+  }
+
+  const prevRender=window.render;
+  window.render=function(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]!=='scientific-action')return prevRender.apply(this,arguments);
+    const r=document.getElementById('view');if(!r)return;r.className='view secondary';
+    const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(p[1]));
+    if(a&&isSystem(a))r.innerHTML=actionDetailHTML(a);else r.innerHTML=`<div class="vs"><section class="vc"><div class="vhead"><b>Task no longer required</b></div><p class="muted">New evidence or a changed workflow state means this system task is no longer active.</p><button class="primary" onclick="go('actions')">Back to Actions</button></section></div>`;
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Task Detail</div><span></span>`}
+    document.getElementById('bottomnav')?.classList.add('hidden');
+  };
+  try{render=window.render}catch(_){ }
+
+  // A formal post-treatment Varroa retest satisfies the durable follow-up Action.
+  // It does not by itself force the biological risk to Low; the newly saved mite
+  // count remains the evidence used by the Health/Risk model.
+  const prevSaveVarroa=window.v2p2bSaveVarroaTest;
+  if(typeof prevSaveVarroa==='function'){
+    window.v2p2bSaveVarroaTest=function(){
+      const before=S(),beforeIds=new Set((before?.logs?.varroaTests||[]).map(x=>txt(x.id))),ret=prevSaveVarroa.apply(this,arguments);
+      try{
+        const s=S(),created=(s?.logs?.varroaTests||[]).filter(x=>!beforeIds.has(txt(x.id)));const row=created[created.length-1];
+        if(row&&txt(row.linkedTreatmentId)){
+          const idx=(s.actions||[]).findIndex(a=>a&&txt(a.sourceId)===txt(row.linkedTreatmentId)&&low(a.source).includes('treatment-follow-up'));
+          if(idx>=0){const a=s.actions[idx],now=new Date().toISOString();a.status='Completed';a.priority='Done';a.completedAt=now;a.linkedRecordId=txt(row.id);a.completionSource='post-treatment-varroa-retest';s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];const cp=JSON.parse(JSON.stringify(a)),mi=s.meta.completedActions.findIndex(x=>txt(x.id)===txt(a.id));if(mi>=0)s.meta.completedActions[mi]=cp;else s.meta.completedActions.push(cp);s.actions.splice(idx,1);save(s)}
+        }
+      }catch(err){console.error('V2P2E5AB Varroa follow-up closure failed',err)}
+      return ret;
+    };
+    try{v2p2bSaveVarroaTest=window.v2p2bSaveVarroaTest}catch(_){ }
+  }
+
+  const style=document.createElement('style');style.id='v2p2e5ab-scientific-task-style';style.textContent=`
+    .v2p2e5ab-summary{display:grid;grid-template-columns:repeat(4,1fr);gap:6px;margin:8px 0 10px}.v2p2e5ab-summary>button{min-width:0;border:1px solid #E1DDD3;background:#fff;border-radius:11px;padding:8px 3px;color:#566159}.v2p2e5ab-summary>button b{display:block;font-size:15px;color:#314936}.v2p2e5ab-summary>button span{font-size:10px;white-space:nowrap}.v2p2e5ab-summary>button.active{border-color:#92A487;background:#F2F5EF}.v2p2e5ab-summary .v2p2e5ab-all{grid-column:1/-1;padding:6px;font-size:11px;background:#F7F5EF}
+    #alist .v2p2e5ab-task{display:block;width:100%;text-align:left;padding:11px 12px;margin:0 0 8px;border:1px solid #E5E0D6;border-radius:13px;background:#fff;color:#2F4634}.v2p2e5ab-task.system{border-left:3px solid #5E7350}.v2p2e5ab-task.manual{border-left:3px solid #C5921A}.v2p2e5ab-task-top,.v2p2e5ab-task-foot{display:flex;align-items:center;gap:7px}.v2p2e5ab-task-top>b{font-size:11px;margin-right:auto}.v2p2e5ab-task-top i,.v2p2e5ab-task-top em{font-style:normal;font-size:9px;padding:3px 6px;border-radius:999px;background:#F2F0EA;color:#6B736D}.v2p2e5ab-task-top i.system{background:#EDF2EA;color:#50654A}.v2p2e5ab-task-top i.manual{background:#F8F0DE;color:#8A6719}.v2p2e5ab-task>strong{display:block;font-size:14px;margin:7px 0 4px}.v2p2e5ab-task>small{display:block;font-size:11px;line-height:1.4;color:#6D756F}.v2p2e5ab-task-foot{margin-top:8px}.v2p2e5ab-task-foot i{font-style:normal;font-size:10px;color:#788078}.v2p2e5ab-task-foot i.high{color:#A64A3F;font-weight:800}.v2p2e5ab-task-foot time{margin-left:auto;font-size:10px;color:#737B74}
+    .v53-actions .v2p2e5ab-plan-secondary{background:#fff!important;color:#5E7350!important;border:1px solid #AEB9A8!important;box-shadow:none!important;min-height:40px!important;font-size:13px!important;font-weight:700!important}.v53-actions .v2p2e5t-plan-help{margin-top:-5px!important;color:#858B84!important}
+    .v2p2e5ab-detail{padding-bottom:20px}.v2p2e5ab-source-pill{font-size:10px;padding:4px 7px;border-radius:999px;background:#EDF2EA;color:#50654A}.v2p2e5ab-detail-grid{display:grid;grid-template-columns:1fr 1fr;gap:9px;margin-top:8px}.v2p2e5ab-detail-grid span{display:grid;gap:3px;font-size:10px;color:#7A817B}.v2p2e5ab-detail-grid b{font-size:12px;color:#334C38}.v2p2e5ab-detail .vc p{font-size:12px;line-height:1.55;color:#59635B}.v2p2e5ab-detail-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:8px}.v2p2e5ab-detail-actions button{margin:0!important}
+  `;document.head.appendChild(style);
+
+  window.__HIVEDASH_V2P2E5AB_VERSION__='v2p2e5ab-scientific-task-engine-actions2-foundation';
+})();

@@ -529,7 +529,8 @@ function mergeStateV50(local,remote){
     String(a.source||'')==='equipment-maintenance-follow-up'||
     String(a.source||'')==='move-hive-follow-up'||
     String(a.source||'')==='winter-preparation-follow-up'||
-    String(a.source||'')==='spring-preparation-follow-up'
+    String(a.source||'')==='spring-preparation-follow-up'||
+    String(a.source||'')==='treatment-follow-up'
   )&&a.status!=='Completed'&&a.priority!=='Done';
   const manualSuperMerged=new Map();
   [
@@ -943,7 +944,8 @@ function generateActions(s){
     String(a.source||'')==='equipment-maintenance-follow-up'||
     String(a.source||'')==='move-hive-follow-up'||
     String(a.source||'')==='winter-preparation-follow-up'||
-    String(a.source||'')==='spring-preparation-follow-up'
+    String(a.source||'')==='spring-preparation-follow-up'||
+    String(a.source||'')==='treatment-follow-up'
     )&&a.status!=='Completed'&&a.priority!=='Done');
 
   /* V224B32 — preserve only explicitly completed Action entities.
@@ -2089,3 +2091,6 @@ window.addEventListener('DOMContentLoaded',initializeCloudApp);
 
 /* V2P2E5Z — preserve manual planned frequent Actions across regeneration/cloud merge. */
 window.__HIVEDASH_V2P2E5Z_VERSION__='v2p2e5z-action-plan-persistence';
+
+/* V2P2E5AB — treatment follow-up durability for Scientific Task Engine. */
+window.__HIVEDASH_V2P2E5AB_APP__='scientific-task-followup-durability';

@@ -8714,7 +8714,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
        It must NOT create an independent Treatment Timeline event.
        Independent Treatment events are created only by the dedicated
        Treatment Record / Hive Actions -> Treatment save flow. */
-    save(s);V49_INSPECTION_DRAFT=null;toast('Inspection saved');go('hive/'+id);
+    const committed=save(s);if(committed===false){toast('Inspection was not saved. Local storage may be full. Your entries are still on this page.');return false;}V49_INSPECTION_DRAFT=null;toast('Inspection saved');go('hive/'+id);return true;
   };
 
   const style=document.createElement('style');style.id='v211-modular-inspection-style';style.textContent=`
@@ -20829,4 +20829,60 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   `;
   document.head.appendChild(style);
   window.__HIVEDASH_V2P2E5AQ_VERSION__=VERSION;
+})();
+
+
+/* ==============================================================
+   V2P2E5AR — INSPECTION SAVE COMMIT VERIFICATION
+   Integrity contract:
+   - A UI success/navigation must follow a durable Inspection row commit.
+   - If local save rejects (size/quota), keep the current draft on screen.
+   - After the entire legacy wrapper chain returns, verify that either a new
+     Inspection row exists or the exact session token is already committed.
+   - Never synthesize a fallback Inspection record. Failed persistence remains
+     a visible failure so biological evidence cannot be fabricated.
+   ============================================================== */
+(function v2p2e5arInspectionSaveCommitVerification(){
+  if(window.__HIVEDASH_V2P2E5AR__)return;
+  window.__HIVEDASH_V2P2E5AR__=true;
+  const txt=v=>String(v??'').trim();
+  const S=()=>typeof state==='function'?state():(typeof v45s==='function'?v45s():null);
+  const cloneSafe=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
+  const prev=window.vSaveInspection||vSaveInspection;
+  if(typeof prev!=='function')return;
+  window.vSaveInspection=function(id){
+    const hid=txt(id||window.V49_INSPECTION_DRAFT?.hiveId);
+    const draftSnapshot=cloneSafe(window.V49_INSPECTION_DRAFT||null);
+    const token=txt(draftSnapshot?.__v224b6SaveToken);
+    const before=S();
+    const beforeIds=new Set((before?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===hid).map(x=>txt(x?.id)));
+    const ret=prev.apply(this,arguments);
+    if(ret===false)return false;
+    try{
+      const after=S();
+      const rows=(after?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===hid);
+      const created=rows.filter(x=>!beforeIds.has(txt(x?.id)));
+      const tokenRow=token?rows.find(x=>txt(x?.saveToken)===token):null;
+      if(created.length||tokenRow)return ret===undefined?true:ret;
+
+      // The old save stack used to navigate and show success even when save()
+      // rejected the payload. Restore the user's observation draft instead of
+      // pretending evidence exists.
+      if(draftSnapshot){
+        window.V49_INSPECTION_DRAFT=draftSnapshot;
+        try{V49_INSPECTION_DRAFT=window.V49_INSPECTION_DRAFT}catch(_){}
+      }
+      if(typeof go==='function'&&hid)go('inspection/'+hid);
+      if(typeof toast==='function')toast('Inspection was not saved. No new Inspection record was created. Please keep this page open and resolve storage/sync before trying again.');
+      return false;
+    }catch(err){
+      console.error('V2P2E5AR Inspection commit verification failed',err);
+      if(draftSnapshot){window.V49_INSPECTION_DRAFT=draftSnapshot;try{V49_INSPECTION_DRAFT=window.V49_INSPECTION_DRAFT}catch(_){}}
+      if(typeof go==='function'&&hid)go('inspection/'+hid);
+      if(typeof toast==='function')toast('Inspection save could not be verified. Your entries were kept on this page.');
+      return false;
+    }
+  };
+  try{vSaveInspection=window.vSaveInspection}catch(_){}
+  window.__HIVEDASH_V2P2E5AR_VERSION__='v2p2e5ar-inspection-save-commit-verification';
 })();

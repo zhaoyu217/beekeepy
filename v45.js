@@ -9538,7 +9538,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         String(a.source||'')==='winter-preparation-follow-up'||
         String(a.source||'')==='spring-preparation-follow-up'||
         String(a.source||'')==='treatment-follow-up'||
-        (a.type==='Treatment'&&String(a.title||'')==='Treatment follow-up'&&String(a.sourceId||''))
+        (a.type==='Treatment'&&String(a.title||'')==='Treatment follow-up'&&String(a.sourceId||''))||
+        (String(a.source||'')==='manual-plan'&&['Inspection','Feeding','Treatment','Harvest'].includes(String(a.type||'')))
       )&&a.status!=='Completed'&&a.priority!=='Done')
       .forEach((a,i)=>pendingLowFreqMap.set(String(a.id||`durable-workflow-${i}`),a));
     const pendingLowFreqActions=[...pendingLowFreqMap.values()];
@@ -19003,3 +19004,6 @@ window.__HIVEDASH_V2P2E5X_VERSION__='v2p2e5x-plan-date-balanced-scale';
   window.__HIVEDASH_V2P2E5Y_VERSION__='v2p2e5y-planned-action-type-context';
 })();
 
+
+/* V2P2E5AA — preserve manual frequent planned Actions in active V224B generateActions override. */
+window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';

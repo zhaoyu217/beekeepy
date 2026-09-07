@@ -19538,7 +19538,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   if(window.__HIVEDASH_V2P2E5AD__)return;
   window.__HIVEDASH_V2P2E5AD__=true;
 
-  const RULE_VERSION='inspection-us-adaptive-v1.0-2026-09-07';
+  const RULE_VERSION='inspection-us-adaptive-v1.1-2026-09-07';
   const txt=v=>String(v??'').trim();
   const low=v=>txt(v).toLowerCase();
   const escD=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -19618,8 +19618,20 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     if(rule?.mode==='full'&&String(d?.phase).startsWith('Dormant'))c.push('Seasonal full-inspection timing conflicts with dormant colony evidence.');
     return [...new Set(c)];
   }
-  function fingerprint(hid,last,rule,intent){
-    return [RULE_VERSION,hid,intent,txt(last?.id||'none'),iso(last?.date)||'none',txt(rule?.rule?.id||'no-quantified-rule')].join('|');
+  function fingerprint(hid,last,rule,intent,s,h,d,loc,next){
+    // V2P2E5AM — a beekeeper correction is valid only for the evidence state
+    // that existed when it was made. If risk, colony phase, confidence,
+    // location, next-date evidence, Varroa evidence or treatment evidence
+    // materially changes, the fingerprint changes and the old correction no
+    // longer suppresses the newly recalculated scientific task.
+    const newest=(rows=[])=>rows.filter(Boolean).slice().sort((a,b)=>txt(b.date||b.updatedAt||b.recordedAt||b.createdAt).localeCompare(txt(a.date||a.updatedAt||a.recordedAt||a.createdAt)))[0]||null;
+    const varroa=newest((Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[]).filter(x=>txt(x.hiveId)===txt(hid)));
+    const treatment=newest((Array.isArray(s?.logs?.treatments)?s.logs.treatments:[]).filter(x=>txt(x.hiveId)===txt(hid)));
+    const locSig=[txt(loc?.stateCode).toUpperCase(),txt(loc?.city),txt(loc?.postalCode),txt(loc?.timezone)].join('~');
+    const decisionSig=[txt(d?.phase||'Uncertain'),txt(d?.overallRisk||'Unassessed'),txt(d?.confidence?.level||'LOW')].join('~');
+    const varroaSig=varroa?[txt(varroa.id),iso(varroa.date),txt(varroa.mitesPer100??varroa.count??varroa.mites)].join('~'):'none';
+    const txSig=treatment?[txt(treatment.id),iso(treatment.date||treatment.startDate||treatment.endDate),txt(treatment.status),txt(treatment.problem||treatment.type)].join('~'):'none';
+    return [RULE_VERSION,hid,intent,txt(last?.id||'none'),iso(last?.date)||'none',txt(rule?.rule?.id||'no-quantified-rule'),locSig,decisionSig,iso(next)||'none',varroaSig,txSig].join('|');
   }
   function activeOverride(s,fp){
     const rows=Array.isArray(s?.meta?.scientificTaskOverrides)?s.meta.scientificTaskOverrides:[];
@@ -19642,7 +19654,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     const seasonal=rule?.season||seasonContext(state,today,phase),conflicts=conflictsFor(s,h,d,last,rule,next,today),confidence=txt(d?.confidence?.level||'LOW').toUpperCase();
 
     if(!last){
-      const intent='inspection-adaptive-initial',fp=fingerprint(hid,last,rule,intent),a=baseTask(h,intent,'Initial inspection needed');
+      const intent='inspection-adaptive-initial',fp=fingerprint(hid,last,rule,intent,s,h,d,loc,next),a=baseTask(h,intent,'Initial inspection needed');
       a.id=`scientific-adaptive-initial-${hid}`;a.priority=pri==='Routine'?'Medium':pri;a.executionRoute=`inspection/${hid}`;a.taskFingerprint=fp;a.evidenceStatus=state?'PARTIAL':'INCOMPLETE';
       a.dueDate='';a.date='';a.due=String(phase).startsWith('Dormant')?'When conditions permit':'As soon as suitable conditions permit';
       a.systemWhy='No valid Inspection record exists. A baseline is needed before the adaptive engine can rely on colony phase, risk and trend evidence.';
@@ -19650,7 +19662,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
       return applyOverride(a,s);
     }
 
-    const fpBase=fingerprint(hid,last,rule,'inspection-adaptive');
+    const fpBase=fingerprint(hid,last,rule,'inspection-adaptive',s,h,d,loc,next);
     let windowStart='',windowEnd='',scheduleSource='';
     if(rule?.minDays!=null){windowStart=addDays(last.date,rule.minDays);windowEnd=addDays(last.date,rule.maxDays);scheduleSource='authority-rule'}
 
@@ -19675,7 +19687,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     const hardConflict=conflicts.some(x=>/missing|uncertain|do not match|later than|conflicts/i.test(x));
     const lowConfidence=confidence==='LOW';
     if(!windowEnd||rule?.mode==='limited'||hardConflict||lowConfidence){
-      const intent=rule?.mode==='limited'?'inspection-adaptive-low-disturbance':'inspection-adaptive-confirm',fp=fingerprint(hid,last,rule,intent),a=baseTask(h,intent,rule?.mode==='limited'?'Review inspection timing':'Confirm inspection timing');
+      const intent=rule?.mode==='limited'?'inspection-adaptive-low-disturbance':'inspection-adaptive-confirm',fp=fingerprint(hid,last,rule,intent,s,h,d,loc,next),a=baseTask(h,intent,rule?.mode==='limited'?'Review inspection timing':'Confirm inspection timing');
       a.id=`scientific-adaptive-confirm-${hid}-${iso(last.date)||'unknown'}`;a.priority=pri;a.workflowStage='confirmation';a.executionRoute='';a.taskFingerprint=fp;a.evidenceStatus='INCOMPLETE';
       a.proposedWindowStart=windowStart;a.proposedWindowEnd=windowEnd;a.dueDate='';a.date='';a.due=windowStart&&windowEnd?`${windowStart} – ${windowEnd}`:'Needs confirmation';
       a.systemWhy=rule?.mode==='limited'?`${seasonal}. Current authority guidance says routine opening should be limited; HiveDash will not invent a full-inspection date without suitable local conditions and current evidence.`:windowEnd?`A scientific window can be proposed, but the current evidence chain contains a conflict or low-confidence element that requires beekeeper confirmation.`:`The current rule version does not contain a quantified inspection interval for this exact state/season/phase combination. HiveDash will not substitute a nationwide default.`;
@@ -20033,4 +20045,206 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   try{render=window.render}catch(_){ }
 
   window.__HIVEDASH_V2P2E5AF_VERSION__='v2p2e5ai-lightweight-manual-planning-standard-page';
+})();
+
+
+/* ==============================================================
+   V2P2E5AM — ACTIONS CORE FOUNDATION CLOSURE
+   Scope:
+   - One task opener for Active / Completed / All list modes.
+   - Restore Home -> Actions actionId focus/highlight after Actions 2.0 redraw.
+   - One duplicate gate for every planned task family. Other Task dedupes by
+     Hive + normalized title at creation time.
+   - Scientific Inspection beekeeper corrections are evidence-scoped by E5AD
+     rule v1.1 fingerprinting above and therefore expire on material new evidence.
+   - Automatic workflow follow-ups are labelled as such; they are not shown as
+     manual plans.
+   - An overdue follow-up is urgent first (Overdue) while retaining its follow-up
+     source/stage identity on the task card.
+   No biological fact, low-frequency workflow result, Timeline record, or
+   Health/Risk calculation is created here.
+   ============================================================== */
+(function v2p2e5amActionsCoreFoundation(){
+  if(window.__HIVEDASH_V2P2E5AM__)return;
+  window.__HIVEDASH_V2P2E5AM__=true;
+
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escM=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsM=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const isDone=a=>!!a&&(a.status==='Completed'||a.priority==='Done');
+  const allTasks=s=>[...(Array.isArray(s?.actions)?s.actions:[]),...(Array.isArray(s?.meta?.completedActions)?s.meta.completedActions:[])];
+  const findTask=(s,id)=>allTasks(s).find(a=>a&&txt(a.id)===txt(id))||allTasks(s).find(a=>a&&txt(a.sourceId)===txt(id))||null;
+  const findHive=(s,id)=>(s?.hives||[]).find(h=>h&&txt(h.id)===txt(id))||null;
+  const activeTasks=s=>(s?.actions||[]).filter(a=>a&&!isDone(a));
+  const normTitle=v=>low(v).replace(/[^a-z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+  const isAutoFollow=a=>!!a&&(low(a.source).includes('follow-up')||low(a.workflowStage)==='follow-up'||['split-hive-follow-up','combine-hive-follow-up','swarm-control-follow-up','equipment-maintenance-follow-up','move-hive-follow-up','winter-preparation-follow-up','spring-preparation-follow-up','treatment-follow-up'].includes(txt(a.source)));
+  const isSystem=a=>!!a&&(txt(a.source)==='scientific-engine'||txt(a.source)==='health-model'||txt(a.source)==='system'||txt(a.source)==='initial-inspection'||txt(a.id).startsWith('scientific-')||txt(a.id).startsWith('v224b-')||!!a.systemGenerated||!!a.modelVersion);
+  function sourceLabel(a){return isAutoFollow(a)?'Automatic follow-up':isSystem(a)?'System':'Manual'}
+
+  // ---------- unified identity + routing ----------
+  function manualRoute(a){
+    const t=low(a.type),src=low(a.source),id=encodeURIComponent(txt(a.id));
+    if(src==='manual-plan'&&['inspection','feeding','treatment','harvest'].includes(t))return `frequent-action/${id}`;
+    if(t==='super-management')return `super-action/${id}`;
+    if(t==='queen-management')return `queen-action/${id}`;
+    if(t==='split-hive')return `split-action/${id}`;
+    if(t==='combine-hive')return `combine-action/${id}`;
+    if(t==='swarm-control')return `swarm-action/${id}`;
+    if(src==='equipment-maintenance-follow-up')return `equipment-follow/${id}`;
+    if(t==='equipment-maintenance')return `equipment-action/${id}`;
+    if(src==='move-hive-follow-up')return `move-follow/${id}`;
+    if(t==='move-hive')return `move-hive-action/${id}`;
+    if(src==='winter-preparation-follow-up')return `winter-follow/${id}`;
+    if(t==='winter-preparation')return `winter-action/${id}`;
+    if(src==='spring-preparation-follow-up')return `spring-follow/${id}`;
+    if(t==='spring-preparation')return `spring-action/${id}`;
+    if(t==='other-task')return `other-task/${id}`;
+    return '';
+  }
+  window.v2p2e5amOpenTask=function(actionId){
+    const s=S(),a=findTask(s,actionId);if(!a)return toast('This task is no longer available');
+    if(typeof v2p2e5lRememberActionFocus==='function')v2p2e5lRememberActionFocus(a.id);
+    if(isDone(a))return go(`action-history/${encodeURIComponent(txt(a.id))}`);
+    // Active system tasks always pass through the scientific task detail first.
+    if(isSystem(a)&&typeof v2p2e5abOpenUnifiedAction==='function')return v2p2e5abOpenUnifiedAction(a.id);
+    const r=manualRoute(a);if(r)return go(r);
+    if(typeof v2p2e5abOpenUnifiedAction==='function')return v2p2e5abOpenUnifiedAction(a.id);
+    try{return openActionByType(a.type||'Inspection',a.hiveId,a.id)}catch(_){return go('actions')}
+  };
+
+  function historyHTML(a){
+    const s=S(),h=findHive(s,a.hiveId),label=sourceLabel(a),reason=txt(a.systemWhy||a.reason||a.notes),when=txt(a.completedAt||a.date||a.dueDate||a.due||'—');
+    const row=(k,v)=>`<div class="b37-meta"><span>${escM(k)}</span><b>${escM(v||'—')}</b></div>`;
+    return `<div class="b37-page b39-page b39-pending-detail-page v2p2e5am-history">
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">${escM(a.title||a.type||'Completed task')}</div><div class="b37-hint">${escM(label)}</div></div>
+        ${row('Hive',h?.name||a.hiveId)}${row('Status','Completed')}${row('Completed',when)}${row('Task type',a.type||'Action')}${a.linkedRecordId?row('Linked record',a.linkedRecordId):''}
+      </section>
+      ${reason?`<section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Context</div></div><div class="b39-info">${escM(reason)}</div></section>`:''}
+      <div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('timeline/${jsM(a.hiveId)}')">View Hive History</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div>
+    </div>`;
+  }
+  const prevRender=window.render;
+  window.render=function(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]!=='action-history')return prevRender.apply(this,arguments);
+    let id='';try{id=decodeURIComponent(p[1]||'')}catch(_){id=p[1]||''}
+    const r=document.getElementById('view');if(!r)return;
+    const a=findTask(S(),id);r.className='view secondary';
+    r.innerHTML=a&&isDone(a)?historyHTML(a):`<div class="b37-page"><section class="b37-card"><div class="b37-label">Completed task unavailable</div><div class="b39-info">This completed task could not be found in the durable Action history.</div></section><div class="b37-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;
+    const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Action History</div><span></span>`}
+    document.getElementById('bottomnav')?.classList.add('hidden');
+  };
+  try{render=window.render}catch(_){ }
+
+  // ---------- restore focus/highlight after Actions 2.0 redraw ----------
+  const FOCUS_KEY='hivedash:v2p2e5l:action-focus';
+  function storedFocus(){try{const x=JSON.parse(sessionStorage.getItem(FOCUS_KEY)||'null');return x&&Date.now()-Number(x.createdAt||0)<1800000?txt(x.actionId):''}catch(_){return''}}
+  function actionIdFromButton(btn){const raw=btn?.getAttribute('onclick')||'';const m=raw.match(/v2p2e5abOpenUnifiedAction\('([^']+)'\)/)||raw.match(/v2p2e5amOpenTask\('([^']+)'\)/);return m?m[1]:''}
+  const prevDraw=window.v53DrawActions||v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    const normalized=txt(mode||'Pending');
+    const focus=storedFocus();
+    if(low(normalized)==='pending'&&focus)window.__v2p2e5abFilter='all';
+    const ret=prevDraw.apply(this,arguments);
+    try{
+      const box=document.getElementById('alist');if(!box)return ret;
+      const buttons=[...box.querySelectorAll(':scope > button')],rows=typeof v53ActionRows==='function'?v53ActionRows(normalized):[];
+      buttons.forEach((btn,i)=>{
+        let id=actionIdFromButton(btn);
+        if(!id&&rows[i])id=txt(rows[i].id);
+        if(!id)return;
+        const a=findTask(S(),id)||rows[i];btn.dataset.actionId=id;btn.dataset.hiveId=txt(a?.hiveId);
+        btn.setAttribute('onclick',`v2p2e5amOpenTask('${jsM(id)}')`);
+        // Correct source semantics on Actions 2.0 cards without changing task data.
+        const badge=btn.querySelector('.v2p2e5ab-task-top i');if(badge&&a){const label=sourceLabel(a);badge.textContent=label;badge.className=(isSystem(a)||isAutoFollow(a))?'system':'manual'}
+        if(a&&isAutoFollow(a)){const stage=btn.querySelector('.v2p2e5ab-task-top em');if(stage&&!/follow/i.test(stage.textContent||''))stage.setAttribute('data-stage','follow-up')}
+      });
+      if(focus){const target=buttons.find(b=>txt(b.dataset.actionId)===focus);if(target){target.classList.add('v2p2e5l-action-focus');requestAnimationFrame(()=>target.scrollIntoView?.({block:'center',behavior:'smooth'}))}}
+    }catch(err){console.error('V2P2E5AM Actions routing/focus closure failed',err)}
+    return ret;
+  };
+  try{v53DrawActions=window.v53DrawActions}catch(_){ }
+
+  // ---------- one duplicate gate for planned work ----------
+  function semanticMatch(a,key){
+    if(!a||isDone(a))return false;
+    const t=low(a.type||a.title),src=low(a.source),reason=low(a.reasonCode),intent=low(a.intentKey),route=low(a.executionRoute),title=low(a.title);
+    if(key==='super')return t==='super-management'||title.includes('add super')||title.includes('remove super');
+    if(key==='harvest')return t==='harvest'&&(src==='manual-plan'||src==='manual');
+    if(key==='split')return t==='split-hive';
+    if(key==='combine')return t==='combine-hive';
+    if(key==='move')return t==='move-hive';
+    if(key==='equipment')return t==='equipment-maintenance';
+    if(key==='feeding')return t.includes('feed')||route.includes('feeding-record')||intent==='food-review'||(reason==='food'&&low(a.workflowStage)==='management-review');
+    if(key==='treatment')return t.includes('treat')||route.includes('treatment-record')||intent==='varroa-management'||(reason==='varroa'&&low(a.workflowStage)==='management-review');
+    if(key==='queen')return t.includes('queen-management')||intent==='queen-management'||(reason==='queen'&&low(a.workflowStage)==='management-review');
+    if(key==='swarm')return t.includes('swarm-control')||intent==='swarm-control'||(reason==='swarm'&&low(a.workflowStage)==='management-review');
+    return false;
+  }
+  function existingFor(hiveId,key){
+    const rows=activeTasks(S()).filter(a=>txt(a.hiveId)===txt(hiveId)&&semanticMatch(a,key));
+    return rows.find(isSystem)||rows.find(isAutoFollow)||rows[0]||null;
+  }
+  function duplicateModal(a){
+    const h=findHive(S(),a.hiveId),m=modal(`<div class="modalhead"><b>Existing task found</b><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="vc v2p2e5af-check-card"><p><b>${escM(h?.name||a.hiveId)}</b> already has an active ${escM(a.title||a.type||'task')} task. Open the existing task instead of creating another one.</p><div class="v2p2e5af-check-actions"><button class="secondary" onclick="closeModal(this)">Cancel</button><button class="primary" onclick="closeModal(this);v2p2e5amOpenTask('${jsM(a.id)}')">Open existing task</button></div></div>`);m?.classList.add('v215-more-modal','v2p2e5af-choice-modal');
+  }
+  const prevChoose=window.v2p2e5afChoose;
+  if(typeof prevChoose==='function'){
+    window.v2p2e5afChoose=function(key,hiveId=''){
+      let checkHive=txt(hiveId);
+      if(!checkHive){
+        const s=S(),hs=typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)));
+        if(hs.length===1)checkHive=txt(hs[0].id);
+      }
+      if(checkHive&&key!=='other'){const a=existingFor(checkHive,key);if(a)return duplicateModal(a)}
+      return prevChoose.apply(this,arguments);
+    };
+  }
+  const prevContinue=window.v2p2e5afContinueHive;
+  if(typeof prevContinue==='function'){
+    window.v2p2e5afContinueHive=function(key,selectId){
+      const hid=txt(document.getElementById(selectId)?.value);
+      if(hid&&key!=='other'){const a=existingFor(hid,key);if(a){document.querySelector('.modal.v2p2e5af-choice-modal')?.remove();return duplicateModal(a)}}
+      return prevContinue.apply(this,arguments);
+    };
+  }
+  try{v2p2e5afChoose=window.v2p2e5afChoose;v2p2e5afContinueHive=window.v2p2e5afContinueHive}catch(_){ }
+
+  // Other Task is intentionally allowed to coexist when titles differ. Exact
+  // same-Hive + same-title duplicates are blocked at the final creation gate.
+  const prevOtherCreate=window.b46CreateAction;
+  if(typeof prevOtherCreate==='function'){
+    window.b46CreateAction=function(){
+      const s=S(),hid=txt(document.getElementById('b46-hive')?.value),title=normTitle(document.getElementById('b46-title')?.value);
+      if(hid&&title){const dup=activeTasks(s).find(a=>txt(a.hiveId)===hid&&low(a.type)==='other-task'&&normTitle(a.workflowData?.taskTitle||a.title)===title);if(dup){toast('This task already exists');return v2p2e5amOpenTask(dup.id)}}
+      return prevOtherCreate.apply(this,arguments);
+    };
+    try{b46CreateAction=window.b46CreateAction}catch(_){ }
+  }
+
+  // Keep follow-up urgency correct in the visible summary: overdue date wins
+  // over the stage category, while the source badge still says follow-up.
+  function patchOverdueFollowups(){
+    try{
+      const s=S(),box=document.getElementById('alist');if(!box||!document.querySelector('.v2p2e5ab-summary'))return;
+      const todayForHive=h=>{try{return typeof v2p2e5Today==='function'?txt(v2p2e5Today(s,h?.id||'')):new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+      [...box.querySelectorAll(':scope > button')].forEach(btn=>{
+        const a=findTask(s,btn.dataset.actionId);if(!a||!isAutoFollow(a))return;
+        const d=txt(a.dueDate||a.date);if(!/^\d{4}-\d{2}-\d{2}$/.test(d))return;const h=findHive(s,a.hiveId),today=todayForHive(h);
+        if(today&&d<today){const stage=btn.querySelector('.v2p2e5ab-task-top em');if(stage)stage.textContent='Overdue'}
+      });
+    }catch(_){ }
+  }
+  const prevActions=window.actions;
+  if(typeof prevActions==='function'){
+    window.actions=function(r){const ret=prevActions.apply(this,arguments);queueMicrotask(patchOverdueFollowups);setTimeout(patchOverdueFollowups,0);return ret};
+    try{actions=window.actions}catch(_){ }
+  }
+
+  const st=document.createElement('style');st.id='v2p2e5am-actions-core-style';st.textContent=`
+    .v2p2e5am-history .b39-info{line-height:1.55}.v2p2e5ab-task-top i{max-width:112px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+  `;document.head.appendChild(st);
+  window.__HIVEDASH_V2P2E5AM_VERSION__='v2p2e5am-actions-core-foundation';
 })();

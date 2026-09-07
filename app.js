@@ -522,6 +522,7 @@ function mergeStateV50(local,remote){
     a.type==='winter-preparation'||
     a.type==='spring-preparation'||
     a.type==='other-task'||
+    (String(a.source||'')==='manual-plan'&&['Inspection','Feeding','Treatment','Harvest'].includes(String(a.type||'')))||
     String(a.source||'')==='split-hive-follow-up'||
     String(a.source||'')==='combine-hive-follow-up'||
     String(a.source||'')==='swarm-control-follow-up'||
@@ -935,6 +936,7 @@ function generateActions(s){
     a.type==='winter-preparation'||
     a.type==='spring-preparation'||
     a.type==='other-task'||
+      (String(a.source||'')==='manual-plan'&&['Inspection','Feeding','Treatment','Harvest'].includes(String(a.type||'')))||
       String(a.source||'')==='split-hive-follow-up'||
       String(a.source||'')==='combine-hive-follow-up'||
     String(a.source||'')==='swarm-control-follow-up'||
@@ -2084,3 +2086,6 @@ window.addEventListener('hashchange',()=>{
   if(!CLOUD_CONFIGURED || isAuthenticated() || CLOUD_CONFIG.REQUIRE_AUTH===false)render();
 });
 window.addEventListener('DOMContentLoaded',initializeCloudApp);
+
+/* V2P2E5Z — preserve manual planned frequent Actions across regeneration/cloud merge. */
+window.__HIVEDASH_V2P2E5Z_VERSION__='v2p2e5z-action-plan-persistence';

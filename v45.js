@@ -11759,6 +11759,88 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     window.__hivedashActionsMode='Pending';window.__b37PrefillHiveId='';window.__b37PrefillSource='';window.__b37PrefillReason='';window.__b37CreateDraft=null;toast('Action created');go('actions');
   };
 
+  function b37PlanState(a,h){
+    const current=Math.max(0,Number(h?.superCount)||0);
+    const baselineRaw=a?.workflowData?.recordedSuperCount;
+    const baseline=Number.isFinite(Number(baselineRaw))?Math.max(0,Number(baselineRaw)):null;
+    return {baseline,current,stale:baseline!==null&&baseline!==current};
+  }
+  function b37CloseReviewModal(){
+    try{document.querySelector('.v2p2e5as-revalidation')?.remove()}catch(_){}
+  }
+  window.b37OpenPlanReview=function(id){
+    const s=v45s(),a=(s.actions||[]).find(x=>String(x.id)===String(id));
+    if(!a||a.type!=='super-management'||a.status==='Completed')return toast('Pending Action not found');
+    const h=b37ActiveHives(s).find(x=>String(x.id)===String(a.hiveId));
+    if(!h)return toast('This hive is no longer active. The task cannot be completed.');
+    const st=b37PlanState(a,h),op=a.workflowData?.operation||'add',count=Math.max(1,Number(a.workflowData?.numberOfSupers)||1);
+    if(!st.stale){
+      if(window.__b37CompletionErrors)delete window.__b37CompletionErrors[String(a.id)];
+      try{b37RenderPage(idq('view'),String(a.id))}catch(_){}
+      return toast('The plan already matches the current hive state.');
+    }
+    const m=modal(`<div class="modalhead"><div><b>Review changed plan</b><small>The hive changed after this task was planned.</small></div><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div>
+      <div class="vc v2p2e5af-check-card">
+        <div class="b37-warn"><b>State changed</b><div style="margin-top:6px">Supers when planned: ${st.baseline??'—'} · Supers now: ${st.current}</div></div>
+        <p class="muted" style="margin-top:10px">Reconfirm or adjust the plan against the current hive state. Saving this review does not change the hive and does not create a completed record.</p>
+        <label class="b37-field"><span>Action</span><select id="b37-revalidate-op"><option value="add" ${op==='add'?'selected':''}>Add</option><option value="remove" ${op==='remove'?'selected':''}>Remove</option></select></label>
+        <label class="b37-field"><span>Number of supers</span><input id="b37-revalidate-count" type="number" min="1" max="10" step="1" value="${count}"></label>
+        <input id="b37-revalidate-current" type="hidden" value="${st.current}"><input id="b37-revalidate-baseline" type="hidden" value="${st.baseline??''}">
+        <div class="v2p2e5af-check-actions" style="margin-top:14px;display:grid;grid-template-columns:1fr 1fr;gap:8px">
+          <button class="secondary" onclick="b37OpenCancelReview('${esc(a.id)}')">Cancel task</button>
+          <button class="primary" onclick="b37SaveReviewedPlan('${esc(a.id)}')">Save reviewed plan</button>
+        </div>
+      </div>`);
+    m?.classList.add('v2p2e5as-revalidation','v215-more-modal','v2p2e5af-choice-modal');
+  };
+  window.b37SaveReviewedPlan=function(id){
+    const s=v45s(),a=(s.actions||[]).find(x=>String(x.id)===String(id));
+    if(!a||a.type!=='super-management'||a.status==='Completed')return toast('Pending Action not found');
+    const h=b37ActiveHives(s).find(x=>String(x.id)===String(a.hiveId));
+    if(!h)return toast('This hive is no longer active. The task cannot be updated.');
+    const op=idq('b37-revalidate-op')?.value||'',count=Number(idq('b37-revalidate-count')?.value||0),stateNow=b37PlanState(a,h),expectedCurrent=Number(idq('b37-revalidate-current')?.value),expectedBaselineRaw=idq('b37-revalidate-baseline')?.value,expectedBaseline=expectedBaselineRaw===''?null:Number(expectedBaselineRaw);
+    if(stateNow.current!==expectedCurrent||stateNow.baseline!==expectedBaseline){b37CloseReviewModal();toast('The hive changed again. Review the current state before confirming.');return setTimeout(()=>b37OpenPlanReview(id),0)}
+    if(!['add','remove'].includes(op))return toast('Choose Add or Remove');
+    if(!Number.isInteger(count)||count<1||count>10)return toast('Choose a valid number of supers');
+    if(op==='remove'&&count>stateNow.current)return toast(`Only ${stateNow.current} super${stateNow.current===1?' is':'s are'} currently recorded on this hive.`);
+    const oldOp=a.workflowData?.operation||'add',oldCount=Math.max(1,Number(a.workflowData?.numberOfSupers)||1),oldWorkflow=JSON.parse(JSON.stringify(a.workflowData||{})),oldTitle=a.title,stamp=new Date().toISOString();
+    a.workflowData=a.workflowData||{};
+    const history=Array.isArray(a.workflowData.revalidationHistory)?a.workflowData.revalidationHistory:[];
+    history.push({at:stamp,reason:'hive-state-changed',previousBaseline:stateNow.baseline,currentSuperCount:stateNow.current,previousOperation:oldOp,previousNumberOfSupers:oldCount,confirmedOperation:op,confirmedNumberOfSupers:count});
+    a.workflowData.revalidationHistory=history.slice(-20);
+    a.workflowData.recordedSuperCount=stateNow.current;
+    a.workflowData.operation=op;
+    a.workflowData.numberOfSupers=count;
+    a.workflowData.revalidatedAt=stamp;
+    a.workflowData.planRevision=Math.max(1,Number(a.workflowData.planRevision)||1)+1;
+    a.title=op==='add'?'Add Super':'Remove Super';
+    if(save(s)===false){a.workflowData=oldWorkflow;a.title=oldTitle;return toast('Reviewed plan was not saved')}
+    if(window.__b37CompletionErrors)delete window.__b37CompletionErrors[String(a.id)];
+    if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[String(a.id)];
+    b37CloseReviewModal();
+    toast(oldOp===op&&oldCount===count?'Plan reconfirmed':'Plan updated');
+    try{b37RenderPage(idq('view'),String(a.id))}catch(_){go('super-action/'+encodeURIComponent(String(a.id)))}
+  };
+  window.b37OpenCancelReview=function(id){
+    b37CloseReviewModal();
+    const m=modal(`<div class="modalhead"><div><b>Cancel this task?</b><small>The hive has changed since the task was planned.</small></div><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="vc v2p2e5af-check-card"><p>Canceling removes this Pending task from the active queue. It does not change the hive and does not count as completed work.</p><div class="v2p2e5af-check-actions"><button class="secondary" onclick="closeModal(this)">Keep task</button><button class="primary" onclick="b37CancelStalePlan('${esc(id)}')">Cancel task</button></div></div>`);
+    m?.classList.add('v2p2e5as-revalidation','v215-more-modal','v2p2e5af-choice-modal');
+  };
+  window.b37CancelStalePlan=function(id){
+    const s=v45s(),idx=(s.actions||[]).findIndex(x=>String(x.id)===String(id));
+    if(idx<0)return toast('Pending Action not found');
+    const a=s.actions[idx];if(a.type!=='super-management'||a.status==='Completed')return toast('This task cannot be cancelled');
+    const h=b37ActiveHives(s).find(x=>String(x.id)===String(a.hiveId)),st=b37PlanState(a,h||{}),stamp=new Date().toISOString();
+    const archived={...a,status:'Cancelled',cancelledAt:stamp,cancellationReason:'Hive state changed before execution',cancelledState:{plannedSuperCount:st.baseline,currentSuperCount:st.current}};
+    s.meta=s.meta||{};s.meta.cancelledActions=Array.isArray(s.meta.cancelledActions)?s.meta.cancelledActions:[];
+    s.meta.cancelledActions.push(archived);
+    s.actions.splice(idx,1);
+    if(save(s)===false){s.actions.splice(idx,0,a);s.meta.cancelledActions.pop();return toast('Task was not cancelled')}
+    if(window.__b37CompletionErrors)delete window.__b37CompletionErrors[String(id)];
+    if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[String(id)];
+    b37CloseReviewModal();toast('Task cancelled');go('actions');
+  };
+
   window.b37CompleteAction=function(id){
     const s=v45s(),a=(s.actions||[]).find(x=>String(x.id)===String(id))||(s.meta?.completedActions||[]).find(x=>String(x.id)===String(id));
     if(!a||a.type!=='super-management')return toast('Action not found');
@@ -11822,8 +11904,13 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     const s=v45s(),hs=b37ActiveHives(s);if(!hs.length)return noHiveStateV51(r);
     const isNew=!id||id==='new',a=isNew?null:b37Action(id);if(!isNew&&(!a||a.type!=='super-management')){r.innerHTML='<div class="b37-page"><section class="b37-card"><b>Action not found.</b></section></div>';return;}
     const draft=isNew?(window.__b37CreateDraft=window.__b37CreateDraft||{}):null;
-    const selectedId=a?.hiveId||draft?.hiveId||window.__b37PrefillHiveId||hs[0].id,h=hive(s,selectedId)||hs[0],
-      op=a?.workflowData?.operation||draft?.operation||'add',
+    const selectedId=a?.hiveId||draft?.hiveId||window.__b37PrefillHiveId||hs[0].id,
+      h=isNew?(hive(s,selectedId)||hs[0]):hs.find(x=>String(x.id)===String(selectedId));
+    if(!isNew&&!h){
+      r.innerHTML=`<div class="b37-page"><section class="b37-card"><div class="b37-label">Hive unavailable</div><div class="b39-info">The hive linked to this Pending task is archived, combined, or missing. HiveDash did not substitute another hive. This task cannot be completed.</div></section><div class="b37-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;
+      return;
+    }
+    const op=a?.workflowData?.operation||draft?.operation||'add',
       count=Number(a?.workflowData?.numberOfSupers||draft?.count||1),
       status=a?.status||'Create',done=status==='Completed';
     const resultDraft=(!isNew&&!done)?(window.__b37ResultDrafts?.[String(a?.id||'')]||null):null;
@@ -11850,8 +11937,8 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b37-notes" placeholder="Add a note for your next apiary visit...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><div class="b37-footer"><button class="b37-primary" onclick="b37CreateAction()">Create Action</button></div>`:
       `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
       ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><div class="b37-completed-date-shell"><span id="b37-completed-date-display" class="b37-completed-date-display">${esc(b37DisplayDate(completedDate))}</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''} onchange="b37SyncCompletedDateDisplay(this.value)"></div></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
-      ${completionError?`<div class="b37-warn" role="alert">${esc(completionError)}</div>`:''}
-      <div class="b37-actions">${status==='Pending'?`<button class="b37-primary" ${completionError?'disabled aria-disabled="true"':''} onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`:`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
+      ${baselineConflict?`<section class="b37-card"><div class="b37-card-head"><div class="b37-label">Plan needs confirmation</div><div class="b37-hint">State changed</div></div><div class="b37-warn" role="alert">The hive had ${baseline} super${baseline===1?'':'s'} when this task was planned and has ${liveSuperCount} now. Review the plan before completing it. Reconfirming the plan does not change the hive.</div></section>`:(completionError?`<div class="b37-warn" role="alert">${esc(completionError)}</div>`:'')}
+      <div class="b37-actions">${status==='Pending'?(baselineConflict?`<button class="b37-primary" onclick="b37OpenPlanReview('${esc(a.id)}')">Review Current Plan</button><button class="b37-secondary" disabled aria-disabled="true">Complete Action</button>`:`<button class="b37-primary" ${completionError?'disabled aria-disabled="true"':''} onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`):`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
     </div>`;
     if(isNew){
       const d=window.__b37CreateDraft=window.__b37CreateDraft||{};
@@ -20886,3 +20973,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   try{vSaveInspection=window.vSaveInspection}catch(_){}
   window.__HIVEDASH_V2P2E5AR_VERSION__='v2p2e5ar-inspection-save-commit-verification';
 })();
+
+
+/* V2P2E5AS — stale manual-plan revalidation gate */
+window.__HIVEDASH_V2P2E5AS_VERSION__='v2p2e5as-stale-plan-revalidation';

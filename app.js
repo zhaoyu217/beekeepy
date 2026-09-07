@@ -470,6 +470,11 @@ function normalizeStateV50(input){
   s.meta.completedActions=Array.isArray(s.meta.completedActions)
     ? s.meta.completedActions.filter(a=>a&&typeof a==='object'&&(a.status==='Completed'||a.priority==='Done'))
     : [];
+  /* V2P2E5AS — durable archive for manually cancelled stale plans.
+     Cancelled work is not Completed and is never treated as biological evidence. */
+  s.meta.cancelledActions=Array.isArray(s.meta.cancelledActions)
+    ? s.meta.cancelledActions.filter(a=>a&&typeof a==='object'&&a.status==='Cancelled').slice(-500)
+    : [];
   /* V2P2E5AD — durable scientific-task correction/audit state.
      These are decision-support audit records, never biological evidence. */
   s.meta.scientificTaskOverrides=Array.isArray(s.meta.scientificTaskOverrides)
@@ -530,6 +535,19 @@ function mergeStateV50(local,remote){
     completedMerged.set(key,a);
   });
   primary.meta.completedActions=[...completedMerged.values()];
+
+  /* V2P2E5AS — cancelled plan audit survives local/cloud reconciliation but
+     remains separate from Completed work and from the active Action queue. */
+  const cancelledMerged=new Map();
+  [
+    ...(other.meta?.cancelledActions||[]),
+    ...(primary.meta?.cancelledActions||[])
+  ].forEach((a,i)=>{
+    if(!a||typeof a!=='object'||a.status!=='Cancelled')return;
+    const key=String(a.id||`${a.hiveId||''}|${a.type||''}|${a.cancelledAt||''}|${i}`);
+    cancelledMerged.set(key,a);
+  });
+  primary.meta.cancelledActions=[...cancelledMerged.values()].slice(-500);
 
   /* V2P2E5AD — scientific correction, validation and replacement audit trails
      must survive local/cloud reconciliation. They are keyed records, not task

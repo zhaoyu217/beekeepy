@@ -8215,12 +8215,14 @@ html body #bottomnav.bottomnav:not(.hidden){
 }
 .v2p2e5ai-intro-card{
   margin-bottom:10px!important;
+  padding:13px 14px!important;
   background:#F7F5EF!important;
 }
 .v2p2e5ai-intro-copy{
+  margin:0!important;
   color:#687169!important;
   font-size:11px!important;
-  line-height:1.55!important;
+  line-height:1.6!important;
 }
 .v2p2e5ai-intro-copy b{color:#314936!important}
 .v2p2e5ai-group-card{margin-bottom:10px!important}

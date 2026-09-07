@@ -18974,13 +18974,16 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
   queueMicrotask(enhance);
 
   const style=document.createElement('style');style.id='v2p2e5w-plan-date-control-style';style.textContent=`
-    .v2p2e5w-plan-date-shell{position:relative;width:100%;height:48px;min-height:48px;border:1px solid #DED9D0;border-radius:12px;background:#fff;box-sizing:border-box;overflow:hidden}
+    .v2p2e5w-plan-date-shell{position:relative;width:100%;height:46px;min-height:46px;border:1px solid #DED9D0;border-radius:12px;background:#fff;box-sizing:border-box;overflow:hidden}
     .v2p2e5w-plan-date-shell:focus-within{border-color:rgba(94,115,80,.58);box-shadow:0 0 0 3px rgba(94,115,80,.08)}
-    .v2p2e5w-plan-date-button{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;display:flex;align-items:center;justify-content:space-between;padding:0 13px 0 14px;color:#2F4634;font-family:Inter,Arial,sans-serif;font-size:16px;font-weight:650;line-height:1.2;text-align:left;cursor:pointer;box-sizing:border-box}
-    .v2p2e5w-plan-date-text{display:flex;align-items:center;min-height:100%;font-size:16px!important;font-weight:650!important;line-height:1.2!important;letter-spacing:0!important;color:#2F4634!important}
+    .v2p2e5w-plan-date-button{position:absolute;inset:0;width:100%;height:100%;border:0;background:transparent;display:flex;align-items:center;justify-content:space-between;padding:0 13px 0 14px;color:#2F4634;font-family:Inter,Arial,sans-serif;font-size:13px;font-weight:650;line-height:1.25;text-align:left;cursor:pointer;box-sizing:border-box}
+    .v2p2e5w-plan-date-text{display:flex;align-items:center;min-height:100%;font-size:13px!important;font-weight:650!important;line-height:1.25!important;letter-spacing:0!important;color:#2F4634!important}
     .v2p2e5w-plan-date-text.is-placeholder{color:#6B736D!important;font-weight:550!important}
-    .v2p2e5w-plan-date-icon{width:19px;height:19px;display:flex;align-items:center;justify-content:center;color:#2F4634;flex:0 0 auto}.v2p2e5w-plan-date-icon svg{width:18px;height:18px;display:block}
+    .v2p2e5w-plan-date-icon{width:17px;height:17px;display:flex;align-items:center;justify-content:center;color:#2F4634;flex:0 0 auto}.v2p2e5w-plan-date-icon svg{width:16px;height:16px;display:block}
     .v2p2e5w-plan-date-native{position:absolute!important;width:1px!important;height:1px!important;opacity:0!important;pointer-events:none!important;left:0!important;bottom:0!important;padding:0!important;border:0!important}
   `;document.head.appendChild(style);
   window.__HIVEDASH_V2P2E5W_VERSION__='v2p2e5w-plan-date-controlled-display';
 })();
+
+/* V2P2E5X — Plan Due Date visual scale only: match standard field value hierarchy. */
+window.__HIVEDASH_V2P2E5X_VERSION__='v2p2e5x-plan-date-balanced-scale';

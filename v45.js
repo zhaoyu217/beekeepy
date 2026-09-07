@@ -20248,3 +20248,85 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   `;document.head.appendChild(st);
   window.__HIVEDASH_V2P2E5AM_VERSION__='v2p2e5am-actions-core-foundation';
 })();
+
+/* V2P2E5AN — structured beekeeper correction for scientific tasks.
+   Free-form text is notes only; it never acts as a command or biological evidence. */
+(function v2p2e5anStructuredScientificCorrection(){
+  const q=v=>String(v??'').trim();
+  const esc=v=>q(v).replace(/[&<>'"]/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;',"'":'&#39;','"':'&quot;'}[c]));
+  const REASONS=[
+    ['checked-outside','Inspection was already completed outside HiveDash'],
+    ['professional-advice','Professional advice says this task is not needed now'],
+    ['covered-by-other-work','Another inspection or follow-up already covers this need'],
+    ['beekeeper-judgment','Field judgment: this inspection is not needed now'],
+    ['other','Other reason']
+  ];
+  function state(){try{return typeof S==='function'?S():window.state}catch(_){return null}}
+  function close(){document.getElementById('v2p2e5an-correction')?.remove()}
+  function reasonLabel(code){return REASONS.find(x=>x[0]===code)?.[1]||''}
+  function evidenceSnapshot(a){
+    const e=a?.evidenceChain||{};
+    return {
+      evidenceStatus:q(a?.evidenceStatus),
+      region:q(e.stateCode),seasonContext:q(e.season),colonyPhase:q(e.colonyPhase),
+      currentRisk:q(e.risk),confidence:q(e.confidence),latestInspectionId:q(e.latestInspectionId),
+      latestInspectionDate:q(e.latestInspectionDate),ruleId:q(e.ruleId),ruleVersion:q(e.ruleVersion||a?.ruleVersion),
+      proposedWindowStart:q(e.proposedWindowStart||e.windowStart||a?.proposedWindowStart||a?.dueWindowStart),
+      proposedWindowEnd:q(e.proposedWindowEnd||e.windowEnd||a?.proposedWindowEnd||a?.dueWindowEnd||a?.dueDate),
+      conflicts:Array.isArray(e.conflicts)?e.conflicts.map(q).filter(Boolean):[]
+    };
+  }
+  function confirmCorrection(actionId){
+    const s=state(),a=(s?.actions||[]).find(x=>x&&q(x.id)===q(actionId));
+    if(!a){close();return typeof toast==='function'?toast('Task is no longer active'):null}
+    const code=q(document.getElementById('v2p2e5an-reason')?.value),note=q(document.getElementById('v2p2e5an-note')?.value);
+    if(!code)return typeof toast==='function'?toast('Choose a reason'):null;
+    if(['beekeeper-judgment','other'].includes(code)&&!note)return typeof toast==='function'?toast('Add a short note for this reason'):null;
+    const label=reasonLabel(code),ruleVersion=q(a.ruleVersion||a.evidenceChain?.ruleVersion||'inspection-us-adaptive-v1.1-2026-09-07');
+    s.meta=s.meta||{};
+    s.meta.scientificTaskOverrides=Array.isArray(s.meta.scientificTaskOverrides)?s.meta.scientificTaskOverrides:[];
+    s.meta.scientificTaskOverrides.push({
+      id:`sci-override-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,
+      hiveId:q(a.hiveId),taskId:q(a.id),taskFingerprint:q(a.taskFingerprint),ruleVersion,
+      decision:'not-needed',date:'',reason:label,reasonCode:code,reasonLabel:label,note,
+      evidenceSnapshot:evidenceSnapshot(a),recordedAt:new Date().toISOString(),source:'beekeeper-correction',
+      biologicalEvidence:false
+    });
+    s.meta.scientificTaskOverrides=s.meta.scientificTaskOverrides.slice(-300);
+    if(typeof save==='function'&&save(s)===false)return;
+    close();
+    if(typeof toast==='function')toast('Correction saved. It does not change colony health or create Inspection evidence.');
+    if(typeof go==='function')go('actions');
+  }
+  window.v2p2e5anCloseCorrection=close;
+  window.v2p2e5anConfirmCorrection=confirmCorrection;
+  window.v2p2e5adNotNeeded=function(actionId){
+    const s=state(),a=(s?.actions||[]).find(x=>x&&q(x.id)===q(actionId));
+    if(!a)return typeof toast==='function'?toast('Task is no longer active'):null;
+    close();
+    const host=document.createElement('div');host.id='v2p2e5an-correction';host.className='v2p2e5an-backdrop';
+    host.innerHTML=`<section class="v2p2e5an-sheet" role="dialog" aria-modal="true" aria-labelledby="v2p2e5an-title">
+      <div class="v2p2e5an-head"><div><b id="v2p2e5an-title">Why is this task not needed?</b><span>This is a beekeeper correction, not biological evidence.</span></div><button type="button" class="iconbtn" onclick="v2p2e5anCloseCorrection()" aria-label="Close">✕</button></div>
+      <label class="v2p2e5an-field"><span>Reason</span><select id="v2p2e5an-reason"><option value="">Choose a reason</option>${REASONS.map(([v,l])=>`<option value="${esc(v)}">${esc(l)}</option>`).join('')}</select></label>
+      <label class="v2p2e5an-field"><span>Notes <em>optional unless field judgment / other</em></span><textarea id="v2p2e5an-note" rows="3" maxlength="500" placeholder="Add context for the audit trail"></textarea></label>
+      <div class="v2p2e5an-note"><b>What this changes</b><span>The current task is suppressed for this evidence state only. It does not create an Inspection record, change colony health, or prove the issue is resolved. New evidence can make the task appear again.</span></div>
+      <div class="v2p2e5an-actions"><button type="button" class="secondary" onclick="v2p2e5anCloseCorrection()">Cancel</button><button type="button" class="primary" onclick="v2p2e5anConfirmCorrection('${esc(q(actionId))}')">Confirm correction</button></div>
+    </section>`;
+    host.addEventListener('click',e=>{if(e.target===host)close()});
+    document.body.appendChild(host);
+    setTimeout(()=>document.getElementById('v2p2e5an-reason')?.focus(),0);
+  };
+  try{v2p2e5adNotNeeded=window.v2p2e5adNotNeeded}catch(_){ }
+
+  const st=document.createElement('style');st.id='v2p2e5an-correction-style';st.textContent=`
+    .v2p2e5an-backdrop{position:fixed;inset:0;z-index:99999;background:rgba(40,48,41,.28);display:flex;align-items:flex-end;justify-content:center;padding:18px}
+    .v2p2e5an-sheet{width:min(430px,100%);background:#F7F5EF;border:1px solid #DDD8CD;border-radius:18px;padding:16px;box-shadow:0 16px 40px rgba(30,38,31,.18);display:grid;gap:14px;max-height:86vh;overflow:auto}
+    .v2p2e5an-head{display:flex;align-items:flex-start;justify-content:space-between;gap:12px}.v2p2e5an-head>div{display:grid;gap:4px}.v2p2e5an-head b{font-size:16px;color:#36523B}.v2p2e5an-head span{font-size:11px;line-height:1.45;color:#6F786F}
+    .v2p2e5an-field{display:grid;gap:6px}.v2p2e5an-field>span{font-size:11px;font-weight:700;color:#425946}.v2p2e5an-field em{font-style:normal;font-weight:400;color:#7B827C}
+    .v2p2e5an-field select,.v2p2e5an-field textarea{width:100%;box-sizing:border-box;border:1px solid #D8D3C9;border-radius:11px;background:#fff;color:#2F4634;font:inherit;font-size:12px}.v2p2e5an-field select{min-height:44px;padding:0 11px}.v2p2e5an-field textarea{padding:10px 11px;resize:vertical;line-height:1.45}
+    .v2p2e5an-note{display:grid;gap:4px;padding:11px 12px;border-radius:12px;background:#F0EFE8;border:1px solid #E2DED3}.v2p2e5an-note b{font-size:11px;color:#4B604C}.v2p2e5an-note span{font-size:10px;line-height:1.5;color:#6D756D}
+    .v2p2e5an-actions{display:grid;grid-template-columns:1fr 1.25fr;gap:8px}.v2p2e5an-actions button{margin:0!important;min-height:44px}
+    @media(min-width:700px){.v2p2e5an-backdrop{align-items:center}.v2p2e5an-sheet{border-radius:16px}}
+  `;document.head.appendChild(st);
+  window.__HIVEDASH_V2P2E5AN_VERSION__='v2p2e5an-structured-scientific-correction';
+})();

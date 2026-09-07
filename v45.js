@@ -18843,3 +18843,67 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
   window.__HIVEDASH_V2P2E5T_VERSION__='v2p2e5t-actions-dual-path-ux';
   window.__HIVEDASH_V2P2E5U_VERSION__='v2p2e5u-plan-draft-date-readability';
 })();
+
+/* ==============================================================
+   V2P2E5V — FREQUENT PLAN DATE DISPLAY + RERENDER DRAFT GUARD
+   Scope ONLY:
+   - Make the user-visible controlled date overlay readable on the frequent
+     Action planning page. V224B17 hides the native date text, so styling the
+     input alone is not sufficient.
+   - Snapshot current planner fields immediately before a route/realtime
+     rerender so in-progress Hive / date / priority / notes cannot roll back.
+   - No Action schema, workflow execution, Health/Risk, Timeline, or Pro logic.
+   ============================================================== */
+(function v2p2e5vPlanDateAndDraftGuard(){
+  if(window.__HIVEDASH_V2P2E5V__)return;
+  window.__HIVEDASH_V2P2E5V__=true;
+  const KEY='hivedash_v2p2e5u_frequent_plan_draft';
+  const txt=v=>String(v??'').trim();
+  function routeKind(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    return p[0]==='frequent-action'&&p[1]==='new'?txt(p[2]).toLowerCase():'';
+  }
+  function currentDraft(){try{return JSON.parse(sessionStorage.getItem(KEY)||'null')}catch(_){return null}}
+  function saveDraft(v){try{sessionStorage.setItem(KEY,JSON.stringify(v))}catch(_){}}
+  function snapshot(){
+    const kind=routeKind();if(!kind)return;
+    const hive=document.getElementById('v2p2e5s-plan-hive');
+    const date=document.getElementById('v2p2e5s-plan-date');
+    const priority=document.getElementById('v2p2e5s-plan-priority');
+    const notes=document.getElementById('v2p2e5s-plan-notes');
+    if(!hive&&!date&&!priority&&!notes)return;
+    const old=currentDraft();
+    const next=(old&&txt(old.kind).toLowerCase()===kind)?{...old}:{kind,createdAt:Date.now()};
+    if(hive)next.hiveId=hive.value||'';
+    if(date)next.dueDate=date.value||'';
+    if(priority)next.priority=priority.value||'Medium';
+    if(notes)next.notes=notes.value||'';
+    next.kind=kind;next.updatedAt=Date.now();saveDraft(next);
+  }
+  const prevRender=window.render;
+  if(typeof prevRender==='function'){
+    window.render=function(){snapshot();const r=prevRender.apply(this,arguments);return r};
+    try{render=window.render}catch(_){ }
+  }
+  const style=document.createElement('style');
+  style.id='v2p2e5v-plan-date-visible-style';
+  style.textContent=`
+    .v2p2e5s-frequent-plan .v224b17-date-display{
+      color:#2F4634!important;
+      font-family:Inter,Arial,sans-serif!important;
+      font-size:16px!important;
+      font-weight:650!important;
+      line-height:1.25!important;
+      padding-left:14px!important;
+      padding-right:46px!important;
+      letter-spacing:0!important;
+    }
+    .v2p2e5s-frequent-plan .v224b17-date-display.is-placeholder{
+      color:#6B736D!important;
+      font-size:16px!important;
+      font-weight:550!important;
+    }
+  `;
+  document.head.appendChild(style);
+  window.__HIVEDASH_V2P2E5V_VERSION__='v2p2e5v-plan-date-display-draft-guard';
+})();

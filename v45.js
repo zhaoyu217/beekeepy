@@ -19787,3 +19787,202 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   window.V2P2E5AD_INSPECTION_RULES={version:RULE_VERSION,rules:RULES};
   window.__HIVEDASH_V2P2E5AD_VERSION__='v2p2e5ad-adaptive-periodic-inspection-six-layer-correction';
 })();
+
+/* ==============================================================
+   V2P2E5AF — LIGHTWEIGHT MANUAL PLANNING
+   Product contract:
+   - Scientific recurring / follow-up work is system-managed and is not
+     offered in the ordinary manual planner.
+   - Manual planning is reserved for work HiveDash cannot reliably infer,
+     plus explicitly confirmed management decisions.
+   - A matching active system task is always reused instead of duplicated.
+   - Manual decisions never become biological evidence.
+   - Record Now remains a separate execution path.
+   ============================================================== */
+(function v2p2e5afLightweightManualPlanning(){
+  if(window.__HIVEDASH_V2P2E5AF__)return;
+  window.__HIVEDASH_V2P2E5AF__=true;
+
+  const DECISION_KEY='hivedash_v2p2e5af_manual_decision';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escF=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsF=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)));
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const isDone=a=>a&&(a.status==='Completed'||a.priority==='Done');
+  const isSystem=a=>a&&!isDone(a)&&(a.systemGenerated===true||['scientific-engine','health-model','system'].includes(low(a.source)));
+  const closePlanModal=()=>{document.querySelector('.modal.v2p2e5af-plan-picker')?.remove();document.querySelector('.modal.v2p2e5af-choice-modal')?.remove();};
+  const setDecision=v=>{try{sessionStorage.setItem(DECISION_KEY,JSON.stringify(v))}catch(_){}};
+  const getDecision=()=>{try{const v=JSON.parse(sessionStorage.getItem(DECISION_KEY)||'null');return v&&Date.now()-Number(v.createdAt||0)<1800000?v:null}catch(_){return null}};
+  const clearDecision=()=>{try{sessionStorage.removeItem(DECISION_KEY)}catch(_){}};
+
+  const DEFINITIONS={
+    super:{label:'Add / Remove Super',group:'extra',icon:'▤',help:'Plan a hive configuration change.'},
+    harvest:{label:'Harvest',group:'extra',icon:'◇',help:'Plan a harvest for a later visit.'},
+    split:{label:'Split Hive',group:'extra',icon:'↗',help:'Plan a new colony from a source hive.'},
+    combine:{label:'Combine Hives',group:'extra',icon:'⇉',help:'Plan a deliberate colony combination.'},
+    move:{label:'Move Hive',group:'extra',icon:'↔',help:'Plan a location change.'},
+    equipment:{label:'Equipment Maintenance',group:'extra',icon:'□',help:'Plan repair, replacement, or cleaning.'},
+    other:{label:'Other Task',group:'extra',icon:'＋',help:'Plan hive-specific work not covered elsewhere.'},
+    feeding:{label:'Feeding',group:'decision',icon:'▣',help:'Plan feeding only when you have a management reason the system does not know.'},
+    treatment:{label:'Treatment',group:'decision',icon:'＋',help:'Plan treatment only from your own field or professional evidence.'},
+    queen:{label:'Queen Management',group:'decision',icon:'Q',help:'Plan a queen intervention only after your own management decision.'},
+    swarm:{label:'Swarm Control',group:'decision',icon:'↗',help:'Plan an intervention only when you have field evidence not captured here.'}
+  };
+
+  function semanticMatch(a,key){
+    if(!a||isDone(a))return false;
+    const t=low(a.type||a.title),reason=low(a.reasonCode),route=low(a.executionRoute),title=low(a.title);
+    if(key==='feeding')return t.includes('feed')||route.includes('feeding-record')||(reason==='food'&&low(a.workflowStage)==='management-review');
+    if(key==='treatment')return t.includes('treat')||route.includes('treatment-record')||(reason==='varroa'&&low(a.workflowStage)==='management-review');
+    if(key==='queen')return t.includes('queen-management')||t==='queen management'||(reason==='queen'&&low(a.workflowStage)==='management-review');
+    if(key==='swarm')return t.includes('swarm-control')||title.includes('swarm control')||(reason==='swarm'&&low(a.workflowStage)==='management-review');
+    return false;
+  }
+  function matchingActiveTask(s,hiveId,key){
+    const rows=(s.actions||[]).filter(a=>a&&txt(a.hiveId)===txt(hiveId)&&semanticMatch(a,key));
+    return rows.find(isSystem)||rows.find(a=>!isDone(a))||null;
+  }
+
+  function openExisting(a){
+    document.querySelector('.modal.v2p2e5af-choice-modal')?.remove();
+    if(typeof v2p2e5abOpenUnifiedAction==='function')return v2p2e5abOpenUnifiedAction(a.id);
+    try{return openActionByType(a.type||a.title,a.hiveId,a.id)}catch(_){return go('actions')}
+  }
+
+  function openRegular(key,hiveId){
+    const h=hiveBy(S(),hiveId);if(!h)return toast('Select an active hive');
+    if(key==='super')return b37OpenSuperAction(h.id,'manual','management');
+    if(key==='harvest')return v2p2e5sOpenFrequentPlan('harvest',h.id);
+    if(key==='split')return b39OpenSplitAction(h.id);
+    if(key==='combine')return b40OpenCombineAction(h.id);
+    if(key==='move')return b43OpenMoveHive(h.id);
+    if(key==='equipment')return b42OpenEquipmentAction(h.id);
+    if(key==='other')return b46OpenOtherTask(h.id);
+  }
+
+  function startManualDecision(key,hiveId){
+    const h=hiveBy(S(),hiveId);if(!h)return toast('Select an active hive');
+    setDecision({key,hiveId:h.id,createdAt:Date.now(),confirmed:true});
+    if(key==='feeding')return v2p2e5sOpenFrequentPlan('feeding',h.id);
+    if(key==='treatment')return v2p2e5sOpenFrequentPlan('treatment',h.id);
+    if(key==='queen')return b38OpenQueenAction(h.id,'manual','queen');
+    if(key==='swarm')return b41OpenSwarmAction(h.id);
+  }
+  window.v2p2e5afConfirmManualDecision=function(key,hiveId){
+    document.querySelector('.modal.v2p2e5af-choice-modal')?.remove();
+    startManualDecision(key,hiveId);
+  };
+
+  function showDecisionCheck(key,hiveId){
+    const s=S(),h=hiveBy(s,hiveId),def=DEFINITIONS[key];if(!h||!def)return;
+    const existing=matchingActiveTask(s,h.id,key);
+    if(existing){
+      const m=modal(`<div class="modalhead"><b>Existing task found</b><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="vc v2p2e5af-check-card"><p>HiveDash already has an active task for this work on <b>${escF(h.name||h.id)}</b>. Open the existing task instead of creating a duplicate.</p><div class="v2p2e5af-check-actions"><button class="secondary" onclick="closeModal(this)">Cancel</button><button class="primary" onclick="v2p2e5afOpenExisting('${jsF(existing.id)}')">Open existing task</button></div></div>`);
+      m.classList.add('v215-more-modal','v2p2e5af-choice-modal');return;
+    }
+    const m=modal(`<div class="modalhead"><b>Manual management decision</b><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="vc v2p2e5af-check-card"><div class="v2p2e5af-warning"><b>${escF(def.label)}</b><p>No matching system-generated task is active for this hive. Create this plan only if you have field knowledge, external evidence, or a professional recommendation that HiveDash does not currently contain.</p><small>This confirmation records your management decision only. It will not be treated as biological evidence.</small></div><div class="v2p2e5af-check-actions"><button class="secondary" onclick="closeModal(this)">Cancel</button><button class="primary" onclick="v2p2e5afConfirmManualDecision('${jsF(key)}','${jsF(h.id)}')">Continue</button></div></div>`);
+    m.classList.add('v215-more-modal','v2p2e5af-choice-modal');
+  }
+  window.v2p2e5afOpenExisting=function(id){const a=(S().actions||[]).find(x=>x&&txt(x.id)===txt(id));if(a)return openExisting(a);toast('This task is no longer active')};
+
+  function chooseHive(key){
+    const s=S(),hs=active(s);if(!hs.length){toast('Add an active hive first');return go('hives')}
+    if(hs.length===1)return chooseForHive(key,hs[0].id);
+    closePlanModal();
+    const sel='v2p2e5af-hive-'+Date.now();
+    const m=modal(`<div class="modalhead"><b>Select Hive</b><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="vc v2p2e5af-hive-select"><p class="muted">Choose the hive for this extra plan.</p><label><span>Hive</span><select id="${sel}" onchange="v2p2e5afHiveChanged('${sel}')"><option value="" selected disabled>Select a hive</option>${hs.map(h=>`<option value="${escF(h.id)}">${escF(h.name||h.id)}</option>`).join('')}</select></label><button class="primary v2p2e5af-disabled" data-v2p2e5af-for="${sel}" disabled onclick="v2p2e5afContinueHive('${jsF(key)}','${sel}')">Continue</button></div>`);
+    m.classList.add('v215-more-modal','v2p2e5af-choice-modal');
+  }
+  window.v2p2e5afHiveChanged=function(id){const sel=document.getElementById(id),btn=document.querySelector(`[data-v2p2e5af-for="${id}"]`);if(btn){btn.disabled=!sel?.value;btn.classList.toggle('v2p2e5af-disabled',!sel?.value)}};
+  window.v2p2e5afContinueHive=function(key,id){const hiveId=txt(document.getElementById(id)?.value);if(!hiveId)return;document.querySelector('.modal.v2p2e5af-choice-modal')?.remove();chooseForHive(key,hiveId)};
+
+  function chooseForHive(key,hiveId){
+    const def=DEFINITIONS[key];if(!def)return;
+    if(def.group==='decision')return showDecisionCheck(key,hiveId);
+    openRegular(key,hiveId);
+  }
+  window.v2p2e5afChoose=function(key,hiveId=''){
+    closePlanModal();
+    if(hiveId)return chooseForHive(key,hiveId);
+    chooseHive(key);
+  };
+
+  function card(key){
+    const d=DEFINITIONS[key];return `<button class="qbtn add-action-card add-action-card-wide v2p2e5af-card ${d.group==='decision'?'manual-decision':''}" onclick="v2p2e5afChoose('${jsF(key)}','${jsF(window.__v2p2e5afScopedHive||'')}')"><span class="add-action-icon">${d.icon}</span><span class="add-action-copy"><b>${escF(d.label)}</b><small>${escF(d.help)}</small></span><span class="add-action-arrow">›</span></button>`;
+  }
+  function pickerHTML(scopedHiveId=''){
+    const h=scopedHiveId?hiveBy(S(),scopedHiveId):null;
+    return `<div class="modalhead add-action-head v2p2e5af-head"><div><b>Plan extra work</b><small>${h?`For ${escF(h.name||h.id)}`:'Use this only for work the scientific task system cannot schedule for you.'}</small></div><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="v2p2e5af-intro">Scientific recurring checks and follow-ups are scheduled automatically. This planner is for extra work and explicit management decisions.</div><div class="quick core-menu-actions add-action-grid v2p2e5af-grid"><div class="b37-picker-group">Extra work</div>${['super','harvest','split','combine','move','equipment','other'].map(card).join('')}<div class="b37-picker-group v2p2e5af-decision-title">Manual management decision</div><div class="v2p2e5af-decision-note">Use these only when you have field or professional information that is not yet recorded in HiveDash. A manual decision does not become biological evidence.</div>${['feeding','treatment','queen','swarm'].map(card).join('')}</div>`;
+  }
+  function showPicker(scopedHiveId=''){
+    window.__v2p2e5afScopedHive=scopedHiveId||'';
+    document.querySelector('.modal.v224-add-action-picker')?.remove();
+    document.querySelector('.modal.v2p2e5af-plan-picker')?.remove();
+    const m=modal(pickerHTML(scopedHiveId));m.classList.add('v224-add-action-picker','v2p2e5af-plan-picker');
+    requestAnimationFrame(()=>m.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}));return m;
+  }
+
+  // Replace both type-first and Hive-first manual planning menus with the same
+  // lightweight content. The Actions page and Hive More menu still call these
+  // public functions, so no navigation architecture is duplicated.
+  window.openRecordPicker=function(){return showPicker('')};
+  window.v2p2e5lOpenRecordPickerForHive=function(hiveId){const h=hiveBy(S(),hiveId);if(!h)return toast('Select an active hive');document.querySelector('.modal.v215-more-modal')?.remove();return showPicker(h.id)};
+  try{openRecordPicker=window.openRecordPicker;v2p2e5lOpenRecordPickerForHive=window.v2p2e5lOpenRecordPickerForHive}catch(_){ }
+
+  // Mark confirmed manual Feeding/Treatment plans without allowing that flag
+  // to masquerade as biological evidence.
+  const prevCreateFrequent=window.v2p2e5sCreateFrequentAction;
+  if(typeof prevCreateFrequent==='function'){
+    window.v2p2e5sCreateFrequentAction=function(kind){
+      const ctx=getDecision(),k=low(kind),before=new Set((S().actions||[]).map(a=>txt(a.id))),ret=prevCreateFrequent.apply(this,arguments);
+      try{
+        if(ctx&&['feeding','treatment'].includes(ctx.key)&&ctx.key===k){
+          const s=S(),created=(s.actions||[]).filter(a=>a&&!before.has(txt(a.id))&&low(a.type||a.title).includes(k));
+          const a=created[created.length-1];if(a){a.manualDecision=true;a.evidenceStatus='USER_CONFIRMED';a.systemEvidence=false;a.workflowData={...(a.workflowData||{}),manualDecision:true,manualDecisionConfirmedAt:new Date().toISOString()};save(s)}
+          clearDecision();
+        }
+      }catch(err){console.error('V2P2E5AF frequent manual-decision marking failed',err)}
+      return ret;
+    };
+    try{v2p2e5sCreateFrequentAction=window.v2p2e5sCreateFrequentAction}catch(_){ }
+  }
+
+  const prevQueenCreate=window.b38CreateAction;
+  if(typeof prevQueenCreate==='function'){
+    window.b38CreateAction=function(){
+      const ctx=getDecision(),before=new Set((S().actions||[]).map(a=>txt(a.id))),ret=prevQueenCreate.apply(this,arguments);
+      try{if(ctx&&ctx.key==='queen'){const s=S(),a=(s.actions||[]).filter(x=>x&&!before.has(txt(x.id))&&low(x.type).includes('queen'))[0];if(a){a.manualDecision=true;a.evidenceStatus='USER_CONFIRMED';a.systemEvidence=false;a.workflowData={...(a.workflowData||{}),manualDecision:true,manualDecisionConfirmedAt:new Date().toISOString()};save(s)}clearDecision()}}catch(err){console.error('V2P2E5AF queen manual-decision marking failed',err)}
+      return ret;
+    };try{b38CreateAction=window.b38CreateAction}catch(_){ }
+  }
+
+  const prevSwarmCreate=window.b41CreateAction;
+  if(typeof prevSwarmCreate==='function'){
+    window.b41CreateAction=function(){
+      const ctx=getDecision(),before=new Set((S().actions||[]).map(a=>txt(a.id))),ret=prevSwarmCreate.apply(this,arguments);
+      try{if(ctx&&ctx.key==='swarm'){const s=S(),a=(s.actions||[]).filter(x=>x&&!before.has(txt(x.id))&&low(x.type).includes('swarm'))[0];if(a){a.manualDecision=true;a.evidenceStatus='USER_CONFIRMED';a.systemEvidence=false;a.workflowData={...(a.workflowData||{}),manualDecision:true,manualDecisionConfirmedAt:new Date().toISOString()};save(s)}clearDecision()}}catch(err){console.error('V2P2E5AF swarm manual-decision marking failed',err)}
+      return ret;
+    };try{b41CreateAction=window.b41CreateAction}catch(_){ }
+  }
+
+  // Keep the Hive fixed after the user has passed the duplicate/evidence gate.
+  // This prevents switching to a different hive after confirmation and bypassing
+  // the duplicate check.
+  function lockDecisionHive(){
+    const ctx=getDecision();if(!ctx)return;
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    let sel=null;
+    if(p[0]==='frequent-action'&&p[1]==='new'&&['feeding','treatment'].includes(ctx.key))sel=document.getElementById('v2p2e5s-plan-hive');
+    if(p[0]==='queen-action'&&p[1]==='new'&&ctx.key==='queen')sel=document.getElementById('b38-hive');
+    if(p[0]==='swarm-action'&&p[1]==='new'&&ctx.key==='swarm')sel=document.getElementById('b41-hive');
+    if(sel){sel.value=ctx.hiveId;sel.disabled=true;const host=sel.closest('.b37-card')||sel.parentElement;if(host&&!host.querySelector('.v2p2e5af-manual-note')){const n=document.createElement('div');n.className='v2p2e5af-manual-note';n.textContent='Manual decision confirmed for this hive. This plan will not be used as biological evidence.';host.appendChild(n)}}
+  }
+  const prevRender=window.render;
+  window.render=function(){const ret=prevRender.apply(this,arguments);queueMicrotask(lockDecisionHive);setTimeout(lockDecisionHive,0);return ret};
+  try{render=window.render}catch(_){ }
+
+  window.__HIVEDASH_V2P2E5AF_VERSION__='v2p2e5af-lightweight-manual-planning';
+})();

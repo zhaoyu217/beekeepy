@@ -8045,3 +8045,36 @@ html body #app > .modal.v215-more-modal .add-action-card b{
 .v2p2e5ae-meadow i:nth-child(1){left:8%;transform:rotate(-7deg)}.v2p2e5ae-meadow i:nth-child(2){left:15%;bottom:27px;transform:scale(.76) rotate(9deg)}.v2p2e5ae-meadow i:nth-child(3){right:10%;bottom:34px;transform:scale(.7) rotate(8deg)}
 @media (max-height:720px){.v2p2e5ae-auth{padding-top:24px!important;padding-bottom:28px!important}.v2p2e5ae-auth-brand{margin-bottom:16px!important}.v2p2e5ae-auth-copy{margin-bottom:16px}.v2p2e5ae-auth-divider{margin-top:18px!important}.v2p2e5ae-auth-switch{margin-top:18px}.v2p2e5ae-auth-legal{margin-top:16px!important}.v2p2e5ae-meadow{opacity:.45}}
 @media (min-width:720px){.v2p2e5ae-auth{padding-top:58px!important}.v2p2e5ae-auth-inner{padding:26px 34px 30px;border:1px solid rgba(221,217,207,.82);border-radius:30px;background:rgba(255,253,248,.72);box-shadow:0 24px 60px rgba(56,65,48,.09);backdrop-filter:blur(8px)}}
+
+/* V2P2E5AF — lightweight manual planner; reuses the locked HiveDash Action visual language. */
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-intro{
+  margin:0 2px 10px;padding:10px 12px;border:1px solid #E5E0D6;border-radius:12px;
+  background:#F7F5EF;color:#667066;font-size:11px;line-height:1.5;
+}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-grid{grid-template-columns:1fr!important;gap:8px!important}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-grid .b37-picker-group{margin-top:4px!important}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-card{
+  width:100%!important;min-height:58px!important;border-radius:13px!important;background:#fff!important;
+  border:1px solid #E3DED4!important;box-shadow:none!important;padding:10px 12px!important;
+}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-card.manual-decision{border-left:3px solid #C5921A!important}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-card .add-action-copy b{color:#314936!important;font-size:13px!important}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-card .add-action-copy small{color:#747C75!important;font-size:10px!important;line-height:1.4!important}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-decision-title{margin-top:10px!important}
+html body #app > .modal.v2p2e5af-plan-picker .v2p2e5af-decision-note{
+  margin:-1px 2px 2px;padding:9px 11px;border-radius:10px;background:#FBF4E6;color:#7A672F;
+  font-size:10px;line-height:1.45;border:1px solid #EEE0BC;
+}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-check-card{margin-bottom:0!important}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-check-card>p{font-size:12px;line-height:1.55;color:#59635B}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-warning{padding:11px;border:1px solid #EEE0BC;border-radius:12px;background:#FBF4E6}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-warning>b{display:block;color:#6E591C;font-size:13px;margin-bottom:5px}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-warning p{margin:0 0 6px;color:#665B3D;font-size:11px;line-height:1.5}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-warning small{display:block;color:#7D7357;font-size:10px;line-height:1.45}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-check-actions{display:grid;grid-template-columns:1fr 1.3fr;gap:8px;margin-top:12px}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-check-actions button{margin:0!important;min-height:42px!important}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-hive-select{display:grid;gap:10px}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-hive-select label{display:grid;gap:6px;font-size:11px;color:#5E7350;font-weight:700}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-hive-select select{min-height:44px;border:1px solid #DDD8CF;border-radius:10px;background:#fff;padding:0 10px;font:inherit;color:#2F4634}
+html body #app > .modal.v2p2e5af-choice-modal .v2p2e5af-disabled:disabled{background:#E7E4DD!important;color:#8F918C!important;border-color:#E7E4DD!important;opacity:1!important}
+.v2p2e5af-manual-note{margin-top:9px;padding:8px 10px;border-radius:9px;background:#FBF4E6;color:#76622C;font-size:10px;line-height:1.45}

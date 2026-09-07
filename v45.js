@@ -3488,6 +3488,8 @@ function v56HomeAction(){
   if(txt.includes('treat')||txt.includes('varroa')) return {a,hid,label:'Open',click:`go('treatment-record/${hid}')`};
   if(txt.includes('harvest')) return {a,hid,label:'Open',click:`go('harvest-record/${hid}')`};
   if(txt.includes('inspect')) return {a,hid,label:'Open',click:`go('inspection/${hid}')`};
+  // V2P2E5I — generic Other Task must open its own pending detail, not Hive Detail.
+  if(String(a.type||'').toLowerCase()==='other-task'&&a.id) return {a,hid,label:'Open',click:`go('other-task/${a.id}')`};
   return {a,hid,label:'Open',click:`go('hive/${hid}')`};
 }
 
@@ -17761,3 +17763,475 @@ window.__HIVEDASH_V2P2E5F_VERSION__='v2p2e5f-home-health-stat-route-fix';
 
 /* V2P2E5H — Home Action Center empty-state hardcoded sample removal. */
 window.__HIVEDASH_V2P2E5H_VERSION__='v2p2e5h-home-action-empty-state';
+
+/* V2P2E5I — Home Action Center Other Task detail route fix. */
+window.__HIVEDASH_V2P2E5I_VERSION__='v2p2e5i-home-action-other-task-route';
+
+
+/* ==============================================================
+   V2P2E5J — HOME THREE-CARD ROUTE ALIGNMENT
+   User-explicit route architecture update after multi-hive review:
+   - Action Center: a concrete Action opens that Action's existing workflow/detail.
+     Unknown Action types fall back to the Actions list, never a random Hive Detail.
+   - Risk Alerts: this is an apiary-level risk summary; View opens the Risk module
+     (with the existing Pro entitlement guard), not one Hive Detail.
+   - Season Intelligence: Learn More opens the Season module
+     (with the existing Pro entitlement guard).
+   Presentation, data, Health/Risk calculations, Action ranking, and permissions
+   are unchanged. This wrapper runs last so older Home repaint patches cannot
+   silently restore Hive Detail routes.
+   ============================================================== */
+(function v2p2e5jHomeRouteAlignment(){
+  if(window.__HIVEDASH_V2P2E5J__)return;
+  window.__HIVEDASH_V2P2E5J__=true;
+
+  const q=(x)=>String(x??'').trim();
+  const low=(x)=>q(x).toLowerCase();
+  const jsRoute=(route)=>`go('${q(route).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')`;
+
+  function specificActionClick(out){
+    const a=out?.a;
+    if(!a)return `go('actions')`;
+    const hid=q(out?.hid||a.hiveId), id=q(a.id), t=low(a.type), src=q(a.source);
+    const vr=q(a.varroaRoute);
+    if(vr)return jsRoute(vr);
+
+    // Follow-up entities first: they are distinct existing workflows.
+    if(src==='spring-preparation-follow-up'&&id)return `go('spring-follow/${id}')`;
+    if(src==='winter-preparation-follow-up'&&id)return `go('winter-follow/${id}')`;
+    if(src==='move-hive-follow-up'&&id)return `go('move-follow/${id}')`;
+    if(src==='equipment-maintenance-follow-up'&&id)return `go('equipment-follow/${id}')`;
+
+    // Existing low-frequency Action detail/workflow routes.
+    if(t==='other-task'&&id)return `go('other-task/${id}')`;
+    if(t==='spring-preparation'&&id)return `go('spring-action/${id}')`;
+    if(t==='winter-preparation'&&id)return `go('winter-action/${id}')`;
+    if(t==='move-hive'&&id)return `go('move-hive-action/${id}')`;
+    if(t==='equipment-maintenance'&&id)return `go('equipment-action/${id}')`;
+    if(t==='swarm-control'&&id)return `go('swarm-action/${id}')`;
+    if(t==='combine-hive'&&id)return `go('combine-action/${id}')`;
+    if(t==='split-hive'&&id)return `go('split-action/${id}')`;
+    if(t==='queen-management'&&id)return `go('queen-action/${id}')`;
+    if(t==='super-management'&&id)return `go('super-action/${id}')`;
+
+    // Frequent Actions already have stage-aware/current workflow routing in
+    // v56HomeAction and later wrappers; preserve that resolved click exactly.
+    if(t.includes('feed')||t.includes('treat')||t.includes('varroa')||t.includes('harvest')||t.includes('inspect')){
+      return q(out?.click)||`go('actions')`;
+    }
+
+    // A Home task must never lose its task context by falling through to Hive Detail.
+    return `go('actions')`;
+  }
+
+  const prevHome=window.home||home;
+  window.home=function(r){
+    const ret=prevHome.apply(this,arguments);
+    const s=typeof v45s==='function'?v45s():null;
+    const cards=[...r.querySelectorAll('.v56-row-card')];
+    const byTitle=(title)=>cards.find(c=>q(c.querySelector('.v56-row-copy > span')?.textContent)===title);
+
+    const actionCard=byTitle('Action Center');
+    if(actionCard){
+      const btn=actionCard.querySelector('.v56-soft-btn');
+      const out=typeof window.v56HomeAction==='function'?window.v56HomeAction():null;
+      if(btn)btn.setAttribute('onclick',specificActionClick(out));
+    }
+
+    const riskCard=byTitle('Risk Alerts');
+    if(riskCard){
+      const btn=riskCard.querySelector('.v56-soft-btn');
+      if(btn)btn.setAttribute('onclick',s&&typeof isPro==='function'&&isPro(s)?`go('risk')`:`requirePro('Risk Prediction')`);
+    }
+
+    const seasonCard=byTitle('Season Intelligence');
+    if(seasonCard){
+      const btn=seasonCard.querySelector('.v56-soft-btn');
+      if(btn)btn.setAttribute('onclick',s&&typeof isPro==='function'&&isPro(s)?`go('season')`:`requirePro('Season Intelligence')`);
+    }
+    return ret;
+  };
+  try{home=window.home}catch(_){ }
+})();
+
+window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
+
+
+/* ==============================================================
+   V2P2E5L — HOME NAVIGATION CONTRACT v1.0 (FROZEN)
+   Base: deployed/tested V2P2E5J. V2P2E5K is intentionally not used.
+
+   Global contract:
+   - Home = apiary-level summary + immediate high-frequency execution.
+   - Hives = current Hive facts.
+   - Actions = the sole management-task workspace.
+   - Insights = health/risk/season explanation.
+   - Timeline = what actually happened.
+   - Home/Insights/Notifications never create a second task or biological truth.
+
+   Home routes:
+   - Overall Health -> AI Health Analysis (existing Pro gate).
+   - Total/Strong/Attention/Critical -> persistent Hives filters.
+   - Action Center -> Actions and focus the existing actionId; never start a new
+     Inspection/Feeding/Treatment/Harvest directly from the task summary.
+   - Risk Alerts -> Risk module, preserving the related Hive focus when possible.
+   - Season Intelligence -> Season module.
+   - Inspection/Feeding/Treatment/Harvest are explicit "execute now" shortcuts:
+       0 active Hives -> prompt to add/open Hives;
+       1 active Hive  -> open that existing workflow;
+       2+ active Hives -> require explicit Hive selection first.
+   - More is Hive-specific: 2+ Hives require selection. Manual health-status
+     editing is removed because Health/Attention/Critical are model outputs.
+   - More provides the existing unified Add Action planner, pre-scoped to the
+     selected Hive without creating a second planner.
+   - Back navigation preserves Home/Risk/Action source context where applicable.
+   ============================================================== */
+(function v2p2e5lHomeNavigationContract(){
+  if(window.__HIVEDASH_V2P2E5L__)return;
+  window.__HIVEDASH_V2P2E5L__=true;
+
+  const NAV_KEY='hivedash:v2p2e5l:nav';
+  const DETAIL_KEY='hivedash:v2p2e5l:detail-return';
+  const ACTION_FOCUS_KEY='hivedash:v2p2e5l:action-focus';
+  const EXEC_KEY='hivedash:v2p2e5l:home-exec';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escJs=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'");
+  const routeParts=()=>String(location.hash||'#home').replace(/^#/,'').split('/');
+  const routeRoot=()=>routeParts()[0]||'home';
+  const S=()=>typeof v45s==='function'?v45s():null;
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&low(h.lifecycleStatus||h.status)!=='combined');
+  const setSession=(k,v)=>{try{sessionStorage.setItem(k,JSON.stringify(v))}catch(_){}};
+  const getSession=k=>{try{return JSON.parse(sessionStorage.getItem(k)||'null')}catch(_){return null}};
+  const delSession=k=>{try{sessionStorage.removeItem(k)}catch(_){}};
+
+  function setNavContext(destRoute,returnTo='home',extra={}){
+    setSession(NAV_KEY,{destRoot:txt(destRoute).split('/')[0],destRoute:txt(destRoute),returnTo,createdAt:Date.now(),...extra});
+  }
+  window.v2p2e5lGoFromHome=function(destRoute,kind='',extra={}){
+    setNavContext(destRoute,'home',{source:'home',kind,...extra});
+    go(destRoute);
+  };
+
+  // Preserve source context on the existing back button without changing the
+  // destination pages themselves.
+  const prevSafeBack=window.safeBackV51||safeBackV51;
+  window.safeBackV51=function(fallback='home'){
+    try{
+      const cur=routeRoot();
+      const detail=getSession(DETAIL_KEY);
+      if(cur==='hive'&&detail?.route&&Date.now()-Number(detail.createdAt||0)<1800000){
+        delSession(DETAIL_KEY);
+        return go(detail.route);
+      }
+      const focus=getSession(ACTION_FOCUS_KEY);
+      if(txt(fallback).split('/')[0]==='actions'&&focus?.actionId&&Date.now()-Number(focus.createdAt||0)<1800000){
+        return go('actions/'+focus.actionId);
+      }
+      const nav=getSession(NAV_KEY);
+      if(nav?.destRoot===cur&&nav?.returnTo&&Date.now()-Number(nav.createdAt||0)<1800000){
+        delSession(NAV_KEY);
+        return go(nav.returnTo);
+      }
+    }catch(_){ }
+    return prevSafeBack.apply(this,arguments);
+  };
+  try{safeBackV51=window.safeBackV51}catch(_){ }
+
+  window.v2p2e5lRememberActionFocus=function(actionId){
+    if(!actionId)return;
+    setSession(ACTION_FOCUS_KEY,{actionId:String(actionId),createdAt:Date.now()});
+  };
+
+  window.addEventListener('hashchange',()=>{
+    const root=routeRoot();
+    if(root==='home'||root==='hives'||root==='insights')delSession(ACTION_FOCUS_KEY);
+  });
+
+  // Decorate the already-frozen Actions renderer rather than rebuilding it.
+  // Existing click logic/workflow routes remain untouched.
+  const prevDrawActions=window.v53DrawActions||v53DrawActions;
+  window.v53DrawActions=function(mode='Pending'){
+    const ret=prevDrawActions.apply(this,arguments);
+    try{
+      const box=document.getElementById('alist');
+      const rows=typeof v53ActionRows==='function'?v53ActionRows(mode):[];
+      const buttons=box?[...box.querySelectorAll(':scope > button')]:[];
+      buttons.forEach((btn,i)=>{
+        const a=rows[i];if(!a)return;
+        const id=String(a.id||'');
+        btn.dataset.actionId=id;
+        btn.dataset.hiveId=String(a.hiveId||'');
+        const original=btn.getAttribute('onclick')||'';
+        if(id&&original&&!original.includes('v2p2e5lRememberActionFocus')){
+          btn.setAttribute('onclick',`v2p2e5lRememberActionFocus('${escJs(id)}');${original}`);
+        }
+      });
+      const p=routeParts(),storedFocus=getSession(ACTION_FOCUS_KEY),focusId=p[0]==='actions'?(txt(p[1])||txt(storedFocus?.actionId)):'';
+      if(focusId){
+        const target=buttons.find(b=>String(b.dataset.actionId||'')===focusId);
+        if(target){
+          target.classList.add('v2p2e5l-action-focus');
+          requestAnimationFrame(()=>target.scrollIntoView?.({block:'center',behavior:'smooth'}));
+        }
+      }
+    }catch(err){console.error('V2P2E5L Actions focus decoration failed',err)}
+    return ret;
+  };
+  try{v53DrawActions=window.v53DrawActions}catch(_){ }
+
+  function noHivePrompt(){
+    if(typeof modalV215More==='function'){
+      modalV215More(`<div class="modalhead"><b>No active hives</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><p class="muted">Add or reactivate a hive before recording hive-specific work.</p><button class="primary" onclick="closeModal(this);go('hives')">Open Hives</button></div>`);
+    }else{
+      toast('Add an active hive first');go('hives');
+    }
+  }
+
+  const quickRoute={inspection:'inspection',feeding:'feeding-record',treatment:'treatment-record',harvest:'harvest-record'};
+  function startHomeQuick(kind,hiveId){
+    const root=quickRoute[kind];if(!root||!hiveId)return;
+    const dest=`${root}/${hiveId}`;
+    setSession(EXEC_KEY,{source:'home-quick',kind,hiveId:String(hiveId),startedAt:Date.now()});
+    setNavContext(dest,'home',{source:'home-quick',kind,hiveId:String(hiveId)});
+    document.querySelector('.modal.v215-more-modal')?.remove();
+    go(dest);
+  }
+  window.v2p2e5lStartHomeQuick=startHomeQuick;
+
+  window.v2p2e5lHomeQuick=function(kind){
+    const s=S(),hs=active(s);
+    if(!hs.length)return noHivePrompt();
+    if(hs.length===1)return startHomeQuick(kind,hs[0].id);
+    const selectId='v2p2e5l-quick-hive';
+    modalV215More(`<div class="modalhead"><b>Select Hive</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><p class="muted">Choose the hive before starting this record.</p>${v216HiveSelect(s,'',selectId)}<button class="primary" onclick="v2p2e5lStartHomeQuick('${escJs(kind)}',document.getElementById('${selectId}')?.value||'')">Continue</button></div>`);
+  };
+
+  // When a Home quick record is successfully saved, return to the Home source.
+  // Existing record persistence, Timeline creation, treatment follow-up and
+  // Health/Risk recalculation remain owned by their existing workflows.
+  function execContext(kind,hiveId){
+    const c=getSession(EXEC_KEY);
+    return c&&c.source==='home-quick'&&c.kind===kind&&String(c.hiveId||'')===String(hiveId||'')&&Date.now()-Number(c.startedAt||0)<1800000?c:null;
+  }
+  function clearExec(){delSession(EXEC_KEY);delSession(NAV_KEY)}
+
+  // Future-safe linkage: if a durable, non-generated, non-follow-up frequent
+  // Action exists for this Hive, one real saved record may complete that exact
+  // management task. Generated biological recommendations are deliberately not
+  // auto-completed; their risk remains until new evidence changes the model.
+  function normalizeFrequentType(v){
+    const x=low(v);if(x.includes('inspect'))return'inspection';if(x.includes('feed'))return'feeding';if(x.includes('treat')||x.includes('varroa'))return'treatment';if(x.includes('harvest'))return'harvest';return x;
+  }
+  function linkDurableFrequentAction(kind,hiveId,recordId){
+    try{
+      const s=S();if(!s)return;
+      const candidates=(s.actions||[]).filter(a=>a&&a.status!=='Completed'&&a.priority!=='Done'&&String(a.hiveId||'')===String(hiveId||'')&&normalizeFrequentType(a.type||a.title)===kind&&!a.modelVersion&&!String(a.id||'').startsWith('v224b-')&&!low(a.source).includes('follow-up'));
+      if(candidates.length!==1)return;
+      const a=candidates[0],now=new Date().toISOString();
+      a.status='Completed';a.priority='Done';a.completedAt=now;a.completionSource='home-quick-record';a.linkedRecordId=String(recordId||'');
+      s.meta=s.meta||{};s.meta.completedActions=Array.isArray(s.meta.completedActions)?s.meta.completedActions:[];
+      const i=s.meta.completedActions.findIndex(x=>x&&String(x.id)===String(a.id));
+      const copy=JSON.parse(JSON.stringify(a));if(i>=0)s.meta.completedActions[i]=copy;else s.meta.completedActions.push(copy);
+      save(s);
+    }catch(err){console.error('V2P2E5L durable frequent Action linkage failed',err)}
+  }
+
+  const prevSaveRec=window.saveRec||saveRec;
+  window.saveRec=function(type){
+    const form=document.getElementById('rform');
+    const hiveId=String(form?.elements?.hiveId?.value||'');
+    const kind=normalizeFrequentType(type);
+    const s0=S();
+    const key=kind==='feeding'?'feedings':kind==='treatment'?'treatments':kind==='harvest'?'harvests':'';
+    const beforeIds=new Set(key?(s0?.logs?.[key]||[]).map(x=>String(x?.id||'')):[]);
+    const ctx=execContext(kind,hiveId);
+    const ret=prevSaveRec.apply(this,arguments);
+    if(ctx&&key){
+      try{
+        const s1=S();const created=(s1?.logs?.[key]||[]).filter(x=>String(x?.hiveId||'')===hiveId&&!beforeIds.has(String(x?.id||'')));
+        if(created.length){
+          linkDurableFrequentAction(kind,hiveId,created[created.length-1]?.id||'');
+          clearExec();setTimeout(()=>go('home'),0);
+        }
+      }catch(err){console.error('V2P2E5L Home quick save return failed',err)}
+    }
+    return ret;
+  };
+  try{saveRec=window.saveRec}catch(_){ }
+
+  const prevSaveInspection=window.vSaveInspection||vSaveInspection;
+  if(typeof prevSaveInspection==='function'){
+    window.vSaveInspection=function(id){
+      const hiveId=String(id||window.V49_INSPECTION_DRAFT?.hiveId||'');
+      const ctx=execContext('inspection',hiveId);
+      const before=new Set((S()?.logs?.inspections||[]).map(x=>String(x?.id||'')));
+      const ret=prevSaveInspection.apply(this,arguments);
+      if(ctx){
+        try{
+          const created=(S()?.logs?.inspections||[]).filter(x=>String(x?.hiveId||'')===hiveId&&!before.has(String(x?.id||'')));
+          if(created.length){
+            linkDurableFrequentAction('inspection',hiveId,created[created.length-1]?.id||'');
+            clearExec();setTimeout(()=>go('home'),0);
+          }
+        }catch(err){console.error('V2P2E5L Inspection quick return failed',err)}
+      }
+      return ret;
+    };
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  // More menu: health status is a calculated result and is no longer a manual
+  // management fact. Keep only genuine Hive operations and the unified planner.
+  window.v2p2e5lOpenRecordPickerForHive=function(hiveId){
+    const s=S(),hs=active(s),h=hs.find(x=>String(x.id)===String(hiveId));
+    if(!h)return noHivePrompt();
+    document.querySelector('.modal.v215-more-modal')?.remove();
+    openRecordPicker();
+    const picker=document.querySelector('.modal.v224-add-action-picker');
+    if(!picker)return;
+    const handlers={
+      'inspection':()=>go('inspection/'+h.id),
+      'feeding':()=>go('feeding-record/'+h.id),
+      'treatment':()=>go('treatment-record/'+h.id),
+      'harvest':()=>go('harvest-record/'+h.id),
+      'add / remove super':()=>b37OpenSuperAction(h.id),
+      'queen management':()=>b38OpenQueenAction(h.id),
+      'split hive':()=>b39OpenSplitAction(h.id),
+      'combine hives':()=>b40OpenCombineAction(h.id),
+      'swarm control':()=>b41OpenSwarmAction(h.id),
+      'equipment maintenance':()=>b42OpenEquipmentAction(h.id),
+      'move hive':()=>b43OpenMoveHive(h.id),
+      'winter preparation':()=>b44OpenWinterPreparation(h.id),
+      'spring preparation':()=>b45OpenSpringPreparation(h.id),
+      'other task':()=>b46OpenOtherTask(h.id)
+    };
+    picker.querySelectorAll('.add-action-card').forEach(btn=>{
+      const name=low(btn.querySelector('b')?.textContent);const fn=handlers[name];if(!fn)return;
+      btn.onclick=function(){closeModal(this);fn()};
+    });
+  };
+
+  window.openHiveMoreV214=function(hiveId){
+    const s=S(),hs=active(s);if(!hs.length)return noHivePrompt();
+    const h=hs.find(x=>String(x.id)===String(hiveId));if(!h)return noHivePrompt();
+    modalV215More(`<div class="modalhead add-action-head"><b>More Hive Actions</b><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="quick core-menu-actions add-action-grid">
+      <button class="qbtn add-action-card" onclick="closeModal(this);openMorePhotoV216('${escJs(h.id)}')"><span class="add-action-icon">▧</span><b>Add Photo</b></button>
+      <button class="qbtn add-action-card" onclick="closeModal(this);openHiveNoteV214('${escJs(h.id)}')"><span class="add-action-icon">≡</span><b>Add Note</b></button>
+      <button class="qbtn add-action-card" onclick="closeModal(this);openHiveReminderV214('${escJs(h.id)}')"><span class="add-action-icon">◷</span><b>Add Reminder</b></button>
+      <button class="qbtn add-action-card" onclick="v2p2e5lOpenRecordPickerForHive('${escJs(h.id)}')"><span class="add-action-icon">＋</span><b>Add Action</b></button>
+      <button class="qbtn add-action-card" onclick="closeModal(this);openHiveEditV214('${escJs(h.id)}')"><span class="add-action-icon">✎</span><b>Edit Hive</b></button>
+      <button class="qbtn add-action-card" onclick="closeModal(this);confirmArchiveHiveV214('${escJs(h.id)}')"><span class="add-action-icon">□</span><b>Archive Hive</b></button>
+    </div>`);
+  };
+  try{openHiveMoreV214=window.openHiveMoreV214}catch(_){ }
+
+  window.openHiveStatusV214=function(){
+    modalV215More(`<div class="modalhead"><b>Hive Status</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><p class="muted">Health status is calculated from recorded inspection and risk evidence. It cannot be edited manually.</p><button class="primary" onclick="closeModal(this)">OK</button></div>`);
+  };
+  window.saveHiveStatusV216=function(){toast('Hive health status is calculated from recorded evidence')};
+  try{openHiveStatusV214=window.openHiveStatusV214;saveHiveStatusV216=window.saveHiveStatusV216}catch(_){ }
+
+  window.v2p2e5lHomeMore=function(){
+    const s=S(),hs=active(s);if(!hs.length)return noHivePrompt();
+    if(hs.length===1)return openHiveMoreV214(hs[0].id);
+    const selectId='v2p2e5l-more-hive';
+    modalV215More(`<div class="modalhead"><b>Select Hive</b><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="vc"><p class="muted">Choose the hive before opening hive-specific actions.</p>${v216HiveSelect(s,'',selectId)}<button class="primary" onclick="const id=document.getElementById('${selectId}')?.value||'';closeModal(this);openHiveMoreV214(id)">Continue</button></div>`);
+  };
+
+  function homeRiskFocus(s){
+    try{
+      const managed=active(s),has=window.v2p2e4HasRecordedInspection||(()=>true);
+      const decisions=typeof window.v224bEvaluateAll==='function'?window.v224bEvaluateAll(s):new Map();
+      const assessed=managed.filter(h=>has(s,h));
+      const rows=assessed.map(h=>({h,res:riskAssessment(h)})).filter(x=>x.res&&x.res.level!=='Unassessed').sort((a,b)=>{const rank={High:3,Medium:2,Low:1};return (rank[b.res.level]||0)-(rank[a.res.level]||0)||(b.res.reasons?.length||0)-(a.res.reasons?.length||0)||String(a.h.id).localeCompare(String(b.h.id))});
+      const assessedTop=rows.find(x=>x.res.level!=='Low')||rows[0]||null;
+      const independent=managed.filter(h=>!has(s,h)).map(h=>({h,d:decisions.get?.(h.id)})).filter(x=>Array.isArray(x.d?.risks)&&x.d.risks.length).sort((a,b)=>{const rank={Critical:4,High:3,Medium:2,Low:1};const ar=Math.max(0,...a.d.risks.map(z=>rank[z.severity]||0)),br=Math.max(0,...b.d.risks.map(z=>rank[z.severity]||0));return br-ar})[0]||null;
+      if(independent&&(!assessedTop||(independent.d.independentRiskLevel==='High'&&assessedTop.res.level!=='High')))return independent.h;
+      return assessedTop?.h||managed.find(h=>!has(s,h))||managed[0]||null;
+    }catch(_){return active(s)[0]||null}
+  }
+
+  window.v2p2e5lOpenHiveFromRisk=function(hiveId){
+    const raw=String(location.hash||'#risk').replace(/^#/,'');
+    const returnRoute=raw.startsWith('risk')?(raw.includes('/')?raw:`risk/${hiveId}`):`risk/${hiveId}`;
+    setSession(DETAIL_KEY,{route:returnRoute,createdAt:Date.now(),source:'risk'});
+    go('hive/'+hiveId);
+  };
+
+  // Risk detail keeps the apiary module as the first destination but preserves
+  // the related Hive as a focus/highlight. Opening a Hive from Risk returns to
+  // the same Risk context instead of dropping the user into Hives.
+  const prevRiskPage=window.riskPage||riskPage;
+  window.riskPage=function(r){
+    const ret=prevRiskPage.apply(this,arguments);
+    try{
+      const s=S(),hs=active(s),cards=[...r.querySelectorAll('.v123-risk-card')];
+      cards.forEach((card,i)=>{
+        const h=hs[i];if(!h)return;
+        card.dataset.hiveId=String(h.id);
+        card.setAttribute('onclick',`v2p2e5lOpenHiveFromRisk('${escJs(h.id)}')`);
+      });
+      const p=routeParts(),focus=p[0]==='risk'?txt(p[1]):'';
+      if(focus){const target=cards.find(c=>String(c.dataset.hiveId||'')===focus);if(target){target.classList.add('v2p2e5l-risk-focus');requestAnimationFrame(()=>target.scrollIntoView?.({block:'center',behavior:'smooth'}));}}
+    }catch(err){console.error('V2P2E5L Risk focus decoration failed',err)}
+    return ret;
+  };
+  try{riskPage=window.riskPage}catch(_){ }
+
+  // Final Home repaint guard. This runs after E5G/E5J so no older wrapper can
+  // restore Hive Detail or direct-record routes on the three summary cards.
+  const prevHome=window.home||home;
+  window.home=function(r){
+    const ret=prevHome.apply(this,arguments);
+    try{
+      const s=S(),hs=active(s),cards=[...r.querySelectorAll('.v56-row-card')];
+      const byTitle=t=>cards.find(c=>txt(c.querySelector('.v56-row-copy > span')?.textContent)===t);
+
+      const ring=r.querySelector('.v56-health-ring');
+      if(ring)ring.setAttribute('onclick',s&&typeof isPro==='function'&&isPro(s)?`v2p2e5lGoFromHome('analysis','health')`:`requirePro('AI Health Analysis')`);
+
+      const actionCard=byTitle('Action Center');
+      if(actionCard){
+        const btn=actionCard.querySelector('.v56-soft-btn'),out=typeof v56HomeAction==='function'?v56HomeAction():null,a=out?.a;
+        if(btn){
+          if(a?.id)btn.setAttribute('onclick',`window.__hivedashActionsMode='Pending';v2p2e5lRememberActionFocus('${escJs(a.id)}');v2p2e5lGoFromHome('actions','actions',{actionId:'${escJs(a.id)}',hiveId:'${escJs(a.hiveId||'')}'})`);
+          else btn.setAttribute('onclick',`window.__hivedashActionsMode='Pending';go('actions')`);
+        }
+      }
+
+      const riskCard=byTitle('Risk Alerts');
+      if(riskCard){
+        const btn=riskCard.querySelector('.v56-soft-btn'),focus=homeRiskFocus(s);
+        if(btn)btn.setAttribute('onclick',s&&typeof isPro==='function'&&isPro(s)?`v2p2e5lGoFromHome('risk${focus?.id?'/'+escJs(focus.id):''}','risk',{hiveId:'${escJs(focus?.id||'')}'})`:`requirePro('Risk Prediction')`);
+      }
+
+      const seasonCard=byTitle('Season Intelligence');
+      if(seasonCard){
+        const btn=seasonCard.querySelector('.v56-soft-btn');
+        if(btn)btn.setAttribute('onclick',s&&typeof isPro==='function'&&isPro(s)?`v2p2e5lGoFromHome('season','season')`:`requirePro('Season Intelligence')`);
+      }
+
+      const qbar=r.querySelector('.v56-quickbar');
+      if(qbar){
+        [...qbar.querySelectorAll('button')].forEach(btn=>{
+          const label=low(btn.querySelector('span')?.textContent);
+          if(label==='inspection')btn.setAttribute('onclick',`v2p2e5lHomeQuick('inspection')`);
+          else if(label==='feeding')btn.setAttribute('onclick',`v2p2e5lHomeQuick('feeding')`);
+          else if(label==='treatment')btn.setAttribute('onclick',`v2p2e5lHomeQuick('treatment')`);
+          else if(label==='harvest')btn.setAttribute('onclick',`v2p2e5lHomeQuick('harvest')`);
+          else if(label==='more')btn.setAttribute('onclick',`v2p2e5lHomeMore()`);
+        });
+      }
+    }catch(err){console.error('V2P2E5L Home contract repaint failed',err)}
+    return ret;
+  };
+  try{home=window.home}catch(_){ }
+
+  const style=document.createElement('style');style.id='v2p2e5l-navigation-contract-style';style.textContent=`
+    #alist>button.v2p2e5l-action-focus{outline:2px solid var(--honey,#C5921A);outline-offset:2px;box-shadow:0 0 0 4px rgba(197,146,26,.12)}
+    .v123-risk-card.v2p2e5l-risk-focus{outline:2px solid var(--honey,#C5921A);outline-offset:2px}
+  `;document.head.appendChild(style);
+
+  window.__HIVEDASH_V2P2E5L_VERSION__='v2p2e5l-home-navigation-contract-v1';
+})();

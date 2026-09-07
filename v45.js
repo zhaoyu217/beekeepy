@@ -18302,12 +18302,24 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
     const suffixPart=txtN(suffix)?'/'+txtN(suffix).replace(/^\/+/, ''):'';
     r.innerHTML=`<div class="vs"><section class="vc v2p2e5n-invalid-hive"><div class="vhead"><b>Hive unavailable</b></div><div class="empty-master">The hive linked to this ${escN(label)} is missing, archived, or no longer active. HiveDash did not substitute another hive.</div><label class="v2p2e5n-select"><span>Choose an active hive</span><select id="${selectId}" onchange="const b=document.getElementById('${continueId}');if(b){b.disabled=!this.value;b.setAttribute('aria-disabled',b.disabled?'true':'false')}"><option value="" selected disabled>Select a hive</option>${hs.map(h=>`<option value="${escN(h.id)}">${escN(h.name||h.id)}</option>`).join('')}</select></label><div class="v2p2e5n-actions"><button class="secondary" onclick="v2p2e5nSourceBack()">Back</button><button id="${continueId}" class="primary" disabled aria-disabled="true" onclick="const v=document.getElementById('${selectId}')?.value||'';if(!v)return toast('Select an active hive');go('${jsN(root)}/'+v+'${jsN(suffixPart)}')">Continue</button></div></section></div>`;
     if(root==='inspection'){
-      const saveBtn=document.querySelector('#topbar .csave');
-      if(saveBtn){
-        saveBtn.disabled=true;
-        saveBtn.style.display='none';
-        saveBtn.setAttribute('aria-hidden','true');
-      }
+      // render() paints page content before chrome('inspection') paints the top bar.
+      // Hide Save after the current render turn so an invalid Hive can never present
+      // a usable-looking save action.
+      setTimeout(()=>{
+        try{
+          const parts=txtN(location.hash||'').replace(/^#/,'').split('/');
+          if(parts[0]!=='inspection')return;
+          const currentId=txtN(parts[1]);
+          const currentState=v45s();
+          if(hiveN(currentState,currentId))return;
+          const saveBtn=document.querySelector('#topbar .csave');
+          if(saveBtn){
+            saveBtn.disabled=true;
+            saveBtn.style.display='none';
+            saveBtn.setAttribute('aria-hidden','true');
+          }
+        }catch(_){ }
+      },0);
     }
   }
 
@@ -18403,4 +18415,5 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
   window.__HIVEDASH_V2P2E5O_VERSION__='v2p2e5o-p0-01b-explicit-hive-recovery-selection';
   window.__HIVEDASH_V2P2E5P_VERSION__='v2p2e5p-invalid-hive-message-readability';
   window.__HIVEDASH_V2P2E5Q_VERSION__='v2p2e5q-invalid-hive-interaction-closure';
+  window.__HIVEDASH_V2P2E5R_VERSION__='v2p2e5r-invalid-inspection-save-hidden';
 })();

@@ -3479,7 +3479,11 @@ function v56HomeAction(){
     (freshness(b)-freshness(a)) ||
     String(a.hiveId).localeCompare(String(b.hiveId))
   );
-  const a=rows[0]||null, hid=a?.hiveId||first, txt=String(a?.type||a?.title||'inspection').toLowerCase();
+  const a=rows[0]||null;
+  // V2P2E5H — Home Action Center empty state must never fabricate a hive/action.
+  // Keep the locked card structure, but route the empty state to the real Actions list.
+  if(!a) return {a:null,hid:'',label:'View',click:`go('actions')`,empty:true};
+  const hid=a.hiveId||first, txt=String(a.type||a.title||'inspection').toLowerCase();
   if(txt.includes('feed')) return {a,hid,label:'Open',click:`go('feeding-record/${hid}')`};
   if(txt.includes('treat')||txt.includes('varroa')) return {a,hid,label:'Open',click:`go('treatment-record/${hid}')`};
   if(txt.includes('harvest')) return {a,hid,label:'Open',click:`go('harvest-record/${hid}')`};
@@ -3552,9 +3556,9 @@ function home(r){
     <section class="v56-row-card">
       <div class="v56-row-copy">
         <span>Action Center</span>
-        <small>High Priority</small>
-        <b>${esc(action.a?.title||'Inspect Hive #2')}</b>
-        <em>${esc(action.a?.reason||action.a?.due||'Due Today')}</em>
+        <small>${action.a?'High Priority':'Up to date'}</small>
+        <b>${esc(action.a?.title||'No pending actions')}</b>
+        <em>${esc(action.a?(action.a.reason||action.a.due||'Pending action'):'No action is required right now.')}</em>
       </div>
       <button class="v56-soft-btn" onclick="${action.click}">${action.label}</button>
     </section>
@@ -17754,3 +17758,6 @@ window.__HIVEDASH_V2P2E5F_VERSION__='v2p2e5f-home-health-stat-route-fix';
 
   window.__HIVEDASH_V2P2E5G_VERSION__='v2p2e5g-p1-03-unassessed-risk-closure';
 })();
+
+/* V2P2E5H — Home Action Center empty-state hardcoded sample removal. */
+window.__HIVEDASH_V2P2E5H_VERSION__='v2p2e5h-home-action-empty-state';

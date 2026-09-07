@@ -18533,7 +18533,7 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
     const priority=['High','Medium','Low'].includes(txt(draft?.priority))?txt(draft.priority):'Medium';
     const notes=txt(draft?.notes);
     return `<div class="b37-page b39-page b39-create-page v2p2e5s-frequent-plan">
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Plan ${escS(def.label)}</div><div class="b37-hint">Management task</div></div><div class="b39-info">${escS(def.help)} This page creates a Pending Action only; it does not create a biological or management record.</div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Plan ${escS(def.label)}</div><div class="b37-hint">Management task</div></div><div class="v2p2e5y-action-type-row"><span>Action Type</span><b>${escS(def.label)}</b></div><div class="b39-info">${escS(def.help)} This page creates a Pending Action only; it does not create a biological or management record.</div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Required</div></div><label class="b37-field"><span>Hive</span><select id="v2p2e5s-plan-hive" onchange="v2p2e5sPlannerHiveChanged('${jsS(kind)}')"><option value="" ${selected?'':'selected'} disabled>Select a hive</option>${hs.map(h=>`<option value="${escS(h.id)}" ${txt(h.id)===selected?'selected':''}>${escS(h.name||h.id)}</option>`).join('')}</select></label></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><input id="v2p2e5s-plan-date" type="date" value="${escS(due)}" oninput="v2p2e5uPlanFieldChanged('${jsS(kind)}','dueDate',this.value)" onchange="v2p2e5uPlanFieldChanged('${jsS(kind)}','dueDate',this.value)"></label><label class="b37-field"><span>Priority</span><select id="v2p2e5s-plan-priority" onchange="v2p2e5uPlanFieldChanged('${jsS(kind)}','priority',this.value)"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="v2p2e5s-plan-notes" rows="4" placeholder="Add context for this planned task..." oninput="v2p2e5uPlanFieldChanged('${jsS(kind)}','notes',this.value)">${escS(notes)}</textarea></label></section>
@@ -18987,3 +18987,19 @@ window.__HIVEDASH_V2P2E5J_VERSION__='v2p2e5j-home-three-card-route-alignment';
 
 /* V2P2E5X — Plan Due Date visual scale only: match standard field value hierarchy. */
 window.__HIVEDASH_V2P2E5X_VERSION__='v2p2e5x-plan-date-balanced-scale';
+
+/* V2P2E5Y — Planned Action type context: read-only, no workflow change. */
+(function v2p2e5yPlannedActionTypeContext(){
+  if(window.__HIVEDASH_V2P2E5Y__)return;
+  window.__HIVEDASH_V2P2E5Y__=true;
+  const style=document.createElement('style');
+  style.id='v2p2e5y-planned-action-type-style';
+  style.textContent=`
+    .v2p2e5y-action-type-row{display:flex;align-items:center;justify-content:space-between;gap:14px;margin:4px 0 12px;padding:12px 14px;border:1px solid #E6E0D6;border-radius:12px;background:#FBFAF6;color:#344B38}
+    .v2p2e5y-action-type-row span{font-size:12px;color:#6E776F;font-weight:600}
+    .v2p2e5y-action-type-row b{font-size:14px;line-height:1.35;color:#2E4B34;font-weight:750;text-align:right}
+  `;
+  document.head.appendChild(style);
+  window.__HIVEDASH_V2P2E5Y_VERSION__='v2p2e5y-planned-action-type-context';
+})();
+

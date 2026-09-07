@@ -8278,3 +8278,21 @@ html body #bottomnav.bottomnav:not(.hidden){
   font-size:10px!important;
   line-height:1.5!important;
 }
+
+/* ==============================================================
+   V2P2E5AL — MANUAL DECISION CARD SPACING CLOSURE
+   - Match the manual-decision explanation block to the intro card's breathing room.
+   - No task, routing, or scientific-engine changes.
+   ============================================================== */
+.v2p2e5ai-planner-page .v2p2e5ai-decision-card{
+  padding:13px 14px 14px!important;
+}
+.v2p2e5ai-planner-page .v2p2e5ai-decision-card .b37-card-head{
+  margin:0 0 6px!important;
+}
+.v2p2e5ai-planner-page .v2p2e5ai-decision-note{
+  margin:0 0 10px!important;
+  color:#747C75!important;
+  font-size:10px!important;
+  line-height:1.6!important;
+}

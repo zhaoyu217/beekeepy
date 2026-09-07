@@ -459,6 +459,17 @@ function normalizeStateV50(input){
   s.meta.completedActions=Array.isArray(s.meta.completedActions)
     ? s.meta.completedActions.filter(a=>a&&typeof a==='object'&&(a.status==='Completed'||a.priority==='Done'))
     : [];
+  /* V2P2E5AD — durable scientific-task correction/audit state.
+     These are decision-support audit records, never biological evidence. */
+  s.meta.scientificTaskOverrides=Array.isArray(s.meta.scientificTaskOverrides)
+    ? s.meta.scientificTaskOverrides.filter(x=>x&&typeof x==='object').slice(-300)
+    : [];
+  s.meta.scientificInspectionValidations=Array.isArray(s.meta.scientificInspectionValidations)
+    ? s.meta.scientificInspectionValidations.filter(x=>x&&typeof x==='object').slice(-300)
+    : [];
+  s.meta.scientificTaskReplacements=Array.isArray(s.meta.scientificTaskReplacements)
+    ? s.meta.scientificTaskReplacements.filter(x=>x&&typeof x==='object').slice(-300)
+    : [];
   s.meta.schema=50;s.meta.updatedAt=s.meta.updatedAt||'';s.meta.userId=s.meta.userId||'';
   return s;
 }
@@ -508,6 +519,22 @@ function mergeStateV50(local,remote){
     completedMerged.set(key,a);
   });
   primary.meta.completedActions=[...completedMerged.values()];
+
+  /* V2P2E5AD — scientific correction, validation and replacement audit trails
+     must survive local/cloud reconciliation. They are keyed records, not task
+     facts, and therefore are merged separately from Pending Actions. */
+  const mergeScientificMeta=(key)=>{
+    const m=new Map();
+    [...(other.meta?.[key]||[]),...(primary.meta?.[key]||[])].forEach((x,i)=>{
+      if(!x||typeof x!=='object')return;
+      const k=String(x.id||`${x.hiveId||''}|${x.taskFingerprint||''}|${x.createdAt||x.recordedAt||''}|${i}`);
+      m.set(k,x);
+    });
+    return [...m.values()].slice(-300);
+  };
+  primary.meta.scientificTaskOverrides=mergeScientificMeta('scientificTaskOverrides');
+  primary.meta.scientificInspectionValidations=mergeScientificMeta('scientificInspectionValidations');
+  primary.meta.scientificTaskReplacements=mergeScientificMeta('scientificTaskReplacements');
 
   /* V224B39AM — preserve approved manual/workflow Pending Actions across
      local/cloud merge. Split follow-up must not disappear during cloud hydration. */
@@ -2004,7 +2031,7 @@ function settings(r){
   r.innerHTML=`<section><div class="h1">Settings</div><div class="tiny muted">Account, apiary, alerts and preferences</div></section>
   <div class="sectionlabel">Account</div><section class="setting"><div class="srow"><div class="scopy"><b>${esc(s.user.name)}</b><div class="tiny muted">${esc(s.user.email)}</div></div><span class="pill">${esc(s.user.plan)}</span></div><div class="srow card-button" onclick="go('subscription')"><div class="scopy"><b>Subscription</b><div class="tiny muted">Free / Pro plans</div></div><span class="chev">›</span></div></section>
 
-  <div class="sectionlabel">Apiary Settings</div><section class="setting"><div class="formgroup"><label>Apiary Name</label><input id="apiaryName" maxlength="60" value="${esc(x.apiaryName)}"></div><div class="formgroup"><label>Location</label><input id="location" maxlength="80" value="${esc(x.location)}"></div><div class="formgroup"><label>Time Zone</label><input id="timezone" maxlength="60" value="${esc(x.timezone)}"></div><div class="formgroup"><label>Default Hive Type</label><select id="hiveType"><option ${x.hiveType==='Langstroth'?'selected':''}>Langstroth</option><option ${x.hiveType==='Flow Hive'?'selected':''}>Flow Hive</option><option ${x.hiveType==='Top Bar'?'selected':''}>Top Bar</option></select></div><div class="formgroup"><label>Default Inspection Cycle</label><select id="inspectionCycle"><option value="7" ${x.inspectionCycle==7?'selected':''}>7 days</option><option value="14" ${x.inspectionCycle==14?'selected':''}>14 days</option><option value="21" ${x.inspectionCycle==21?'selected':''}>21 days</option></select></div></section>
+  <div class="sectionlabel">Apiary Settings</div><section class="setting"><div class="formgroup"><label>Apiary Name</label><input id="apiaryName" maxlength="60" value="${esc(x.apiaryName)}"></div><div class="formgroup"><label>Location</label><input id="location" maxlength="80" value="${esc(x.location)}"></div><div class="formgroup"><label>Time Zone</label><input id="timezone" maxlength="60" value="${esc(x.timezone)}"></div><div class="formgroup"><label>Default Hive Type</label><select id="hiveType"><option ${x.hiveType==='Langstroth'?'selected':''}>Langstroth</option><option ${x.hiveType==='Flow Hive'?'selected':''}>Flow Hive</option><option ${x.hiveType==='Top Bar'?'selected':''}>Top Bar</option></select></div><div class="formgroup"><label>Inspection Scheduling</label><div class="muted">Adaptive scientific scheduling</div><input id="inspectionCycle" type="hidden" value="${Number(x.inspectionCycle||14)}"></div></section>
 
   <div class="sectionlabel">Notifications</div><section class="setting">${Object.entries({inspection:'Inspection Reminders',treatment:'Treatment Follow-up',queen:'Queen Alerts',swarm:'Swarm Risk Alerts',weather:'Weather Alerts'}).map(([k,v])=>`<div class="srow"><b>${v}</b><label class="switch"><input data-notif="${k}" type="checkbox" ${x.notifications[k]?'checked':''}><span class="slider"></span></label></div>`).join('')}</section>
 

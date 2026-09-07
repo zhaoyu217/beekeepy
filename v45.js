@@ -2304,7 +2304,7 @@ function vSaveInspection(id){
   const s=v45s(),h=hive(s,id),d=V49_INSPECTION_DRAFT||{};
   if(!h)return;
 
-  d.notes=idq('inotes')?.value||d.notes||h.notes;
+  d.notes=idq('inotes')?.value ?? d.notes ?? '';
   const date=new Date().toISOString().slice(0,10);
 
   h.lastInspection=date;
@@ -8701,12 +8701,12 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   const v211PreviousSave=vSaveInspection;
   vSaveInspection=function(id){
     const s=v45s(),h=hive(s,id),d=v212NormalizeDraft(V49_INSPECTION_DRAFT||{});if(!h)return;
-    d.notes=idq('inotes')?.value||d.notes||h.notes;
+    d.notes=idq('inotes')?.value ?? d.notes ?? '';
     const date=v211Today();
     const varroaEvidence=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,id):null;
     const authoritativeVarroa=varroaEvidence?Number(varroaEvidence.mitesPer100):null;
     const authoritativeVarroaDate=varroaEvidence?String(varroaEvidence.date||''):'';
-    h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=authoritativeVarroa;h.varroaTestDate=authoritativeVarroaDate;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||h.nextInspection;
+    h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=authoritativeVarroa;h.varroaTestDate=authoritativeVarroaDate;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||'';
     h.insp={...(h.insp||{}),queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
     s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
     /* V224B21 semantic isolation:
@@ -9097,7 +9097,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
   function norm(v){return String(v==null?'':v).trim().toLowerCase()}
   function num(v,fallback=0){const x=Number(v);return Number.isFinite(x)?x:fallback}
   function clamp(v,a,b){return Math.max(a,Math.min(b,v))}
-  function isUnknown(v){const x=norm(v);return !x||x==='unknown'||x==='not recorded'||x==='—'||x==='n/a'}
+  function isUnknown(v){const x=norm(v);return !x||x==='unknown'||x==='not recorded'||x==='not assessed'||x==='not confirmed'||x==='—'||x==='n/a'}
   function isNone(v){const x=norm(v);return !x||x==='none'||x==='no'||x==='absent'||x==='not present'}
   function isSeen(v){const x=norm(v);return x==='seen'||x==='confirmed'||x==='present'||x==='yes'}
   function isPresent(v){return !isUnknown(v)&&!isNone(v)}
@@ -9109,7 +9109,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     if(v===true)return true;
     if(v===false||v==null)return false;
     const x=norm(v);
-    if(!x||x==='false'||x==='0'||x==='none'||x==='no'||x==='absent'||x==='not present'||x==='unknown'||x==='not recorded'||x==='—'||x==='n/a')return false;
+    if(!x||x==='false'||x==='0'||x==='none'||x==='no'||x==='absent'||x==='not present'||x==='unknown'||x==='not recorded'||x==='not assessed'||x==='not confirmed'||x==='—'||x==='n/a')return false;
     return true; // "Present", "Yes", or an explicit disease name/type.
   }
   function normalizeDiseaseEvidence(v){
@@ -20417,4 +20417,264 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   if(typeof prevUnified==='function')window.v2p2e5abOpenUnifiedAction=function(actionId){const s=S(),a=findLive(s,actionId);if(a&&isAdaptive(a))writeSnap(a,s);return prevUnified.apply(this,arguments)};
 
   window.__HIVEDASH_V2P2E5AO_VERSION__='v2p2e5ao-durable-scientific-correction-snapshot';
+})();
+
+
+/* ==============================================================
+   V2P2E5AP — NEW INSPECTION EVIDENCE INTEGRITY
+   Scientific evidence rule:
+   - Opening #inspection/<hiveId> starts a NEW observation session.
+   - Previous Inspection values are reference defaults only; they do not
+     become current evidence until the beekeeper explicitly confirms them.
+   - Notes and next-inspection date start blank for a new session.
+   - A draft is restored only when the beekeeper explicitly saved it, and
+     the user chooses Continue Draft. Legacy/silent draft carry-over is ignored.
+   - A full Inspection cannot be saved until the core evidence groups have
+     been explicitly confirmed for the current visit.
+   - Formal Varroa Test and Treatment records remain separate evidence sources.
+   ============================================================== */
+(function v2p2e5apNewInspectionEvidenceIntegrity(){
+  if(window.__HIVEDASH_V2P2E5AP__)return;
+  window.__HIVEDASH_V2P2E5AP__=true;
+
+  const VERSION='v2p2e5ap-new-inspection-evidence-integrity';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escP=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]||m));
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const hiveBy=(s,id)=>typeof hive==='function'?hive(s,id):(s?.hives||[]).find(h=>txt(h?.id)===txt(id));
+  const todayFor=(s,h)=>typeof v2p2d7TodayForHive==='function'?v2p2d7TodayForHive(s,h):new Date().toISOString().slice(0,10);
+  const fmtP=v=>{try{return typeof fmtDate==='function'?fmtDate(v):txt(v)}catch(_){return txt(v)}};
+  const draftKey=id=>'hivedash_inspection_draft_'+txt(id);
+  const isUnknown=v=>{const x=low(v);return !x||['unknown','not recorded','not assessed','not confirmed','—','n/a'].includes(x)};
+  const coreSections=['queen','brood','colony','stores'];
+  const requiredFields={
+    queen:['queenStatus','eggs','larvae','queenCells'],
+    brood:['brood','broodStrength'],
+    colony:['colonySize','populationFrames'],
+    stores:['honey','pollen'],
+    additional:['pests','disease','swarming']
+  };
+  let activeHiveId='';
+  let routeBefore=String(location.hash||'#home').replace(/^#/,'');
+  let draftChoiceShown=false;
+  let pendingAdditionalField='';
+
+  function latestInspection(s,hid){
+    return (Array.isArray(s?.logs?.inspections)?s.logs.inspections:[])
+      .filter(x=>x&&txt(x.hiveId)===txt(hid)&&txt(x.date)&&x.legacySnapshot!==true)
+      .slice()
+      .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))||String(b.id||'').localeCompare(String(a.id||'')))[0]||null;
+  }
+  function latestTreatment(s,hid){
+    if(typeof window.v2p2d2LatestTreatment==='function')return window.v2p2d2LatestTreatment(s,hid);
+    return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[]).filter(x=>txt(x?.hiveId)===txt(hid)).slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
+  }
+  function latestVarroa(s,hid){
+    return typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,hid):null;
+  }
+  function freshDraft(s,h){
+    const prev=latestInspection(s,h.id),tx=latestTreatment(s,h.id),ve=latestVarroa(s,h.id);
+    const hasPrev=!!prev;
+    const v=(key,fallback='Not assessed')=>hasPrev&&prev[key]!==undefined&&prev[key]!==null&&txt(prev[key])!==''?prev[key]:fallback;
+    return {
+      hiveId:h.id,
+      queenStatus:v('queenStatus'),queenMarked:v('queenMarked'),queenAge:hasPrev?(prev.queenAge??''):'',layingPattern:v('layingPattern'),
+      eggs:v('eggs'),larvae:v('larvae'),queenCells:v('queenCells'),
+      brood:v('brood'),broodStrength:hasPrev&&prev.broodStrength!==undefined&&prev.broodStrength!==null?prev.broodStrength:'',abnormalities:v('abnormalities'),
+      colonySize:hasPrev&&prev.colonySize!==undefined&&prev.colonySize!==null?prev.colonySize:'',populationFrames:hasPrev&&prev.populationFrames!==undefined&&prev.populationFrames!==null?prev.populationFrames:'',temperament:v('temperament'),
+      honey:v('honey'),pollen:v('pollen'),feedingNeed:v('feedingNeed'),
+      varroa:ve?Number(ve.mitesPer100):null,varroaTestDate:ve?txt(ve.date):'',varroaTestId:ve?txt(ve.id):'',
+      treatment:tx?.type||'None',treatmentStatus:tx?(tx.endDate?(txt(tx.status)==='Stopped'?'Stopped':'Completed'):(tx.status||'Active')):'None',treatmentFollowUp:tx?.followUp||'',treatmentWithdrawal:tx?.withdrawal||'None',
+      pests:v('pests'),disease:v('disease'),diseaseExplicit:false,swarming:v('swarming'),super:v('superStatus'),
+      voiceNotes:'',nextInspection:'',notes:'',
+      __v2p2e5apNewEvidence:true,__v2p2e5apVersion:VERSION,__previousInspectionId:txt(prev?.id),__previousInspectionDate:txt(prev?.date),
+      __confirmedSections:{},__confirmedFields:{},__createdAt:new Date().toISOString()
+    };
+  }
+  function explicitSavedDraft(id){
+    try{
+      const raw=localStorage.getItem(draftKey(id));if(!raw)return null;
+      const d=JSON.parse(raw);
+      if(!d||d.__v2p2e5apSavedDraft!==true||txt(d.hiveId)!==txt(id))return null;
+      return d;
+    }catch(_){return null}
+  }
+  function removeSavedDraft(id){try{localStorage.removeItem(draftKey(id))}catch(_){}}
+  function saveDraft(id){
+    if(!V49_INSPECTION_DRAFT||txt(V49_INSPECTION_DRAFT.hiveId)!==txt(id))return;
+    V49_INSPECTION_DRAFT.notes=document.getElementById('inotes')?.value??V49_INSPECTION_DRAFT.notes??'';
+    const s=S();
+    const payload={...V49_INSPECTION_DRAFT,__v2p2e5apSavedDraft:true,__v2p2e5apVersion:VERSION,__savedAt:new Date().toISOString(),__stateUpdatedAt:txt(s?.meta?.updatedAt)};
+    try{localStorage.setItem(draftKey(id),JSON.stringify(payload));toast('Inspection draft saved')}catch(_){toast('Draft could not be saved')}
+  }
+  window.v2p2e5apSaveDraft=saveDraft;
+
+  function closeDraftChoice(){document.getElementById('v2p2e5ap-draft-choice')?.remove()}
+  function showDraftChoice(saved,h){
+    if(!saved||draftChoiceShown||document.getElementById('v2p2e5ap-draft-choice'))return;
+    draftChoiceShown=true;
+    const host=document.createElement('div');host.id='v2p2e5ap-draft-choice';host.className='v2p2e5ap-backdrop';
+    host.innerHTML=`<section class="v2p2e5ap-sheet" role="dialog" aria-modal="true" aria-labelledby="v2p2e5ap-draft-title"><div class="v2p2e5ap-head"><div><b id="v2p2e5ap-draft-title">Saved inspection draft found</b><span>${escP(h?.name||'Hive')} · saved ${escP(fmtP(String(saved.__savedAt||'').slice(0,10)))}</span></div></div><div class="v2p2e5ap-info">A saved draft contains observations you entered earlier. Continue it only if it belongs to the same field visit. Starting new will discard the saved draft.</div><div class="v2p2e5ap-actions"><button type="button" class="secondary" onclick="v2p2e5apStartNewDraft('${escP(h.id)}')">Start New</button><button type="button" class="primary" onclick="v2p2e5apContinueDraft('${escP(h.id)}')">Continue Draft</button></div></section>`;
+    document.body.appendChild(host);
+  }
+  window.v2p2e5apContinueDraft=function(id){
+    const saved=explicitSavedDraft(id);if(!saved)return closeDraftChoice();
+    V49_INSPECTION_DRAFT={...saved,__v2p2e5apNewEvidence:true,__v2p2e5apVersion:VERSION};
+    closeDraftChoice();
+    const r=document.getElementById('view');if(r){inspectionPage(r,id);try{chrome('inspection')}catch(_){}}
+  };
+  window.v2p2e5apStartNewDraft=function(id){
+    removeSavedDraft(id);const s=S(),h=hiveBy(s,id);if(h)V49_INSPECTION_DRAFT=freshDraft(s,h);
+    closeDraftChoice();
+    const r=document.getElementById('view');if(r){inspectionPage(r,id);try{chrome('inspection')}catch(_){}}
+  };
+
+  function markField(field){
+    if(!V49_INSPECTION_DRAFT)return;
+    V49_INSPECTION_DRAFT.__confirmedFields=V49_INSPECTION_DRAFT.__confirmedFields||{};
+    V49_INSPECTION_DRAFT.__confirmedFields[field]=true;
+  }
+  function markModuleFromDom(name,overlay){
+    if(!V49_INSPECTION_DRAFT||!overlay)return;
+    V49_INSPECTION_DRAFT.__confirmedSections=V49_INSPECTION_DRAFT.__confirmedSections||{};
+    V49_INSPECTION_DRAFT.__confirmedSections[name]=true;
+    overlay.querySelectorAll('[data-field]').forEach(el=>{
+      const f=txt(el.dataset.field);
+      if(f)markField(f); // reviewed explicitly; the value may still be unknown/unassessed
+    });
+  }
+
+  const prevModule=window.v211OpenModule;
+  if(typeof prevModule==='function'){
+    window.v211OpenModule=function(name){
+      const ret=prevModule.apply(this,arguments);
+      if(!coreSections.includes(name))return ret;
+      const overlay=document.querySelector('.v211-module-overlay');if(!overlay)return ret;
+      const body=overlay.querySelector('.v211-module-body');
+      if(body&&!body.querySelector('.v2p2e5ap-reference-note'))body.insertAdjacentHTML('afterbegin',`<div class="v2p2e5ap-reference-note">Previous values are shown only as reference. Review today’s hive and tap Done to confirm current observations.</div>`);
+      overlay.querySelectorAll('select[data-field]').forEach(sel=>{
+        const f=txt(sel.dataset.field),cur=txt(V49_INSPECTION_DRAFT?.[f]);
+        if(isUnknown(cur)&&![...sel.options].some(o=>o.value==='Not assessed')){
+          const opt=document.createElement('option');opt.value='Not assessed';opt.textContent='Not assessed';sel.insertBefore(opt,sel.firstChild);sel.value='Not assessed';
+        }
+      });
+      const done=overlay.querySelector('[data-done]');
+      if(done)done.addEventListener('click',()=>markModuleFromDom(name,overlay),true);
+      return ret;
+    };
+  }
+
+  const prevEdit=window.editInspectionV49||editInspectionV49;
+  if(typeof prevEdit==='function'){
+    window.editInspectionV49=function(field,type){
+      if(['pests','disease','swarming','super'].includes(txt(field)))pendingAdditionalField=txt(field);
+      return prevEdit.apply(this,arguments);
+    };
+    try{editInspectionV49=window.editInspectionV49}catch(_){ }
+  }
+  document.addEventListener('click',function(e){
+    const btn=e.target?.closest?.('.v202-option');if(!btn||!pendingAdditionalField)return;
+    const field=pendingAdditionalField;pendingAdditionalField='';
+    if(['pests','disease','swarming','super'].includes(field))markField(field);
+  },true);
+
+  function sectionConfirmed(name){return V49_INSPECTION_DRAFT?.__confirmedSections?.[name]===true}
+  function fieldConfirmed(name){return V49_INSPECTION_DRAFT?.__confirmedFields?.[name]===true}
+  function maskCard(r,name){
+    if(sectionConfirmed(name))return;
+    const b=[...r.querySelectorAll('.v211-card')].find(x=>String(x.getAttribute('onclick')||'').includes(`v211OpenModule('${name}')`));if(!b)return;
+    b.classList.add('v2p2e5ap-unconfirmed');b.querySelectorAll('.v211-card-row strong').forEach(x=>x.textContent='Needs confirmation');
+    if(!b.querySelector('.v2p2e5ap-card-note'))b.insertAdjacentHTML('beforeend','<small class="v2p2e5ap-card-note">Open and review today’s observations</small>');
+  }
+  function maskAdditional(r,field){
+    if(fieldConfirmed(field))return;
+    const b=[...r.querySelectorAll('.v211-edit-row')].find(x=>String(x.getAttribute('onclick')||'').includes(`v211EditField('${field}'`));if(!b)return;
+    const val=b.querySelector('b');if(val)val.textContent='Needs confirmation';b.classList.add('v2p2e5ap-unconfirmed-row');
+  }
+  function postProcess(r,s,h){
+    const d=V49_INSPECTION_DRAFT;if(!d||txt(d.hiveId)!==txt(h.id))return;
+    const sw=r.querySelector('.switchh');
+    const sub=sw?.querySelector('div span');if(sub)sub.textContent=`${fmtP(todayFor(s,h))} · New Inspection`;
+    if(sw&&!r.querySelector('.v2p2e5ap-current-visit')){
+      const prevDate=txt(d.__previousInspectionDate);
+      sw.insertAdjacentHTML('afterend',`<section class="vc v2p2e5ap-current-visit"><b>Current visit evidence</b><span>${prevDate?`Previous inspection: ${escP(fmtP(prevDate))}. Previous values are reference only until you confirm today’s observations.`:'No previous Inspection evidence. Enter today’s observations before saving.'}</span></section>`);
+    }
+    coreSections.forEach(n=>maskCard(r,n));
+    ['pests','disease','swarming','super'].forEach(f=>maskAdditional(r,f));
+    const draftBtn=[...r.querySelectorAll('.dual button')].find(b=>/save draft/i.test(b.textContent||''));if(draftBtn)draftBtn.onclick=()=>saveDraft(h.id);
+  }
+
+  const prevInspection=window.inspectionPage||inspectionPage;
+  window.inspectionPage=function(r,id){
+    const s=S(),h=hiveBy(s,id);if(!h)return prevInspection.apply(this,arguments);
+    if(activeHiveId!==txt(id)){
+      activeHiveId=txt(id);draftChoiceShown=false;V49_INSPECTION_DRAFT=freshDraft(s,h);
+    }
+    const ret=prevInspection.apply(this,arguments);
+    postProcess(r,s,h);
+    const saved=explicitSavedDraft(id);if(saved&&!draftChoiceShown)setTimeout(()=>showDraftChoice(saved,h),0);
+    return ret;
+  };
+  try{inspectionPage=window.inspectionPage}catch(_){ }
+
+  window.addEventListener('hashchange',function(){
+    const next=String(location.hash||'#home').replace(/^#/,'');
+    const wasInspection=/^inspection\//.test(routeBefore),isInspection=/^inspection\//.test(next);
+    if(wasInspection&&!isInspection){V49_INSPECTION_DRAFT=null;activeHiveId='';draftChoiceShown=false;closeDraftChoice()}
+    else if(isInspection&&next!==routeBefore){V49_INSPECTION_DRAFT=null;activeHiveId='';draftChoiceShown=false;closeDraftChoice()}
+    routeBefore=next;
+  });
+
+  function missingGroups(d){
+    const fields=d?.__confirmedFields||{},sections=d?.__confirmedSections||{},missing=[];
+    const known=f=>!isUnknown(d?.[f])&&txt(d?.[f])!=='';
+    const reviewed=f=>fields[f]===true;
+    const numericKnown=f=>reviewed(f)&&txt(d?.[f])!==''&&Number.isFinite(Number(d?.[f]));
+    const queenKnown=['queenStatus','eggs','larvae'].filter(f=>reviewed(f)&&known(f)).length;
+    if(sections.queen!==true||queenKnown<2)missing.push('Queen');
+    if(sections.brood!==true||!(reviewed('brood')&&known('brood'))&&!numericKnown('broodStrength'))missing.push('Brood');
+    if(sections.colony!==true&&!numericKnown('colonySize')&&!numericKnown('populationFrames'))missing.push('Colony');
+    if(sections.stores!==true||!(['honey','pollen'].some(f=>reviewed(f)&&known(f))))missing.push('Food Stores');
+    if(!['pests','disease','swarming'].every(f=>reviewed(f)&&known(f)))missing.push('Additional Checks');
+    return missing;
+  }
+  const prevSaveInspection=window.vSaveInspection||vSaveInspection;
+  if(typeof prevSaveInspection==='function'){
+    window.vSaveInspection=function(id){
+      const d=V49_INSPECTION_DRAFT;
+      if(d?.__v2p2e5apNewEvidence===true&&txt(d.hiveId)===txt(id)){
+        d.notes=document.getElementById('inotes')?.value??d.notes??'';
+        const missing=missingGroups(d);
+        if(missing.length)return toast(`Confirm today’s ${missing.join(', ')} before saving the Inspection.`);
+      }
+      const s0=S(),h0=hiveBy(s0,id),mirror=h0?{queen:h0.queen,eggs:h0.eggs,larvae:h0.larvae,queenCells:h0.queenCells,brood:h0.brood,honey:h0.honey,pollen:h0.pollen,shb:h0.shb,disease:h0.disease,swarm:h0.swarm,superStatus:h0.superStatus,strength:h0.strength,notes:h0.notes,nextInspection:h0.nextInspection}:null;
+      const beforeIds=new Set((s0?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===txt(id)).map(x=>txt(x.id)));
+      const ret=prevSaveInspection.apply(this,arguments);
+      try{
+        const s=S(),h=hiveBy(s,id),created=(s?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===txt(id)&&!beforeIds.has(txt(x.id)));
+        if(created.length&&h&&mirror&&d?.__v2p2e5apNewEvidence===true){
+          // Unknown optional fields must never overwrite a previously known Hive mirror.
+          const keep=(field,value)=>{if(isUnknown(value))h[field]=mirror[field]};
+          keep('queen',d.queenStatus);keep('brood',d.brood);keep('honey',d.honey);keep('pollen',d.pollen);keep('superStatus',d.super);
+          if(isUnknown(d.eggs))h.eggs=mirror.eggs;if(isUnknown(d.larvae))h.larvae=mirror.larvae;if(isUnknown(d.queenCells))h.queenCells=mirror.queenCells;
+          if(isUnknown(d.pests))h.shb=mirror.shb;if(isUnknown(d.disease))h.disease=mirror.disease;if(isUnknown(d.swarming))h.swarm=mirror.swarm;
+          if(isUnknown(d.colonySize))h.strength=mirror.strength;
+          // Notes are current-visit notes only; blank is a valid value. A blank next date clears the stale manual schedule so the adaptive engine can recalculate.
+          h.notes=txt(d.notes);h.nextInspection=txt(d.nextInspection);
+          if(typeof save==='function')save(s);
+          removeSavedDraft(id);
+        }
+      }catch(err){console.error('V2P2E5AP post-save evidence mirror guard failed',err)}
+      return ret;
+    };
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  const style=document.createElement('style');style.id='v2p2e5ap-inspection-evidence-style';style.textContent=`
+    .v2p2e5ap-current-visit{display:grid!important;gap:4px!important;margin-top:10px!important;padding:11px 12px!important;border:1px solid #E4DED2!important;border-radius:13px!important;background:#FBF8F0!important}.v2p2e5ap-current-visit b{font-size:12px!important;color:#4E6849!important}.v2p2e5ap-current-visit span{font-size:10px!important;line-height:1.45!important;color:#6E756F!important}
+    .v2p2e5ap-unconfirmed{border-color:#E7D7A9!important;background:#FFFDF7!important}.v2p2e5ap-unconfirmed .v211-card-row strong,.v2p2e5ap-unconfirmed-row b{color:#9A7419!important}.v2p2e5ap-card-note{display:block!important;margin-top:8px!important;padding-top:7px!important;border-top:1px solid #EEE7D6!important;font-size:9px!important;line-height:1.35!important;color:#8A7A52!important}.v2p2e5ap-reference-note{padding:10px 11px!important;border:1px solid #E8DFC9!important;border-radius:11px!important;background:#FBF7EC!important;font-size:10px!important;line-height:1.45!important;color:#6B715F!important}
+    .v2p2e5ap-backdrop{position:fixed!important;inset:0!important;z-index:16650!important;display:flex!important;align-items:center!important;justify-content:center!important;padding:18px!important;background:rgba(47,59,51,.34)!important;box-sizing:border-box!important}.v2p2e5ap-sheet{width:min(360px,100%)!important;padding:16px!important;border:1px solid #E1DDD4!important;border-radius:18px!important;background:#FFFEFB!important;box-shadow:0 18px 48px rgba(47,59,51,.18)!important}.v2p2e5ap-head{display:grid!important;gap:3px!important;margin-bottom:12px!important}.v2p2e5ap-head b{font-size:17px!important;color:#2F4634!important}.v2p2e5ap-head span{font-size:10px!important;color:#747B75!important}.v2p2e5ap-info{padding:11px!important;border-radius:11px!important;background:#F7F5EF!important;font-size:10px!important;line-height:1.5!important;color:#626B64!important}.v2p2e5ap-actions{display:grid!important;grid-template-columns:1fr 1fr!important;gap:8px!important;margin-top:14px!important}.v2p2e5ap-actions button{margin:0!important;min-height:44px!important}
+  `;document.head.appendChild(style);
+  window.__HIVEDASH_V2P2E5AP_VERSION__=VERSION;
 })();

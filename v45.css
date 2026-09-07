@@ -8189,3 +8189,90 @@ html body #bottomnav.bottomnav:not(.hidden){
     max-height:calc(100dvh - var(--nav) - var(--safe) - 66px)!important;
   }
 }
+
+
+/* ==============================================================
+   V2P2E5AI — MANUAL PLANNER STANDARD SECONDARY PAGE
+   - Replaces the long modal/overlay with a normal HiveDash secondary page.
+   - Top back control follows the same page chrome as the rest of the app.
+   - Bottom navigation remains persistent and clickable.
+   - No grey backdrop, floating panel, or hidden close control.
+   ============================================================== */
+.v2p2e5ai-planner-view{
+  padding-bottom:calc(var(--nav) + var(--safe) + 14px)!important;
+  background:#FFFEFB!important;
+}
+.v2p2e5ai-planner-page{
+  max-width:390px!important;
+  padding:10px 8px 26px!important;
+  margin:0 auto!important;
+}
+.v2p2e5ai-planner-page .b37-card{
+  border:1px solid #E6E3DA!important;
+  border-radius:14px!important;
+  background:#FFFEFB!important;
+  box-shadow:none!important;
+}
+.v2p2e5ai-intro-card{
+  margin-bottom:10px!important;
+  background:#F7F5EF!important;
+}
+.v2p2e5ai-intro-copy{
+  color:#687169!important;
+  font-size:11px!important;
+  line-height:1.55!important;
+}
+.v2p2e5ai-intro-copy b{color:#314936!important}
+.v2p2e5ai-group-card{margin-bottom:10px!important}
+.v2p2e5ai-task-list{
+  display:grid!important;
+  grid-template-columns:1fr!important;
+  gap:7px!important;
+  margin-top:8px!important;
+}
+.v2p2e5ai-planner-page .v2p2e5af-card{
+  width:100%!important;
+  min-height:56px!important;
+  margin:0!important;
+  padding:9px 10px!important;
+  border:1px solid #E6E3DA!important;
+  border-radius:12px!important;
+  background:#fff!important;
+  box-shadow:none!important;
+  display:flex!important;
+  flex-direction:row!important;
+  align-items:center!important;
+  justify-content:flex-start!important;
+  gap:9px!important;
+  text-align:left!important;
+}
+.v2p2e5ai-planner-page .v2p2e5af-card:active{
+  background:#FFF9EA!important;
+  border-color:rgba(197,146,26,.55)!important;
+}
+.v2p2e5ai-planner-page .v2p2e5af-card.manual-decision{
+  border-left:3px solid #C5921A!important;
+}
+.v2p2e5ai-planner-page .add-action-icon{
+  width:32px!important;height:32px!important;flex:0 0 32px!important;
+  border-radius:10px!important;display:grid!important;place-items:center!important;
+  background:#FBF4DF!important;color:#C5921A!important;font-size:16px!important;font-weight:800!important;
+}
+.v2p2e5ai-planner-page .add-action-copy{
+  min-width:0!important;display:flex!important;flex:1!important;flex-direction:column!important;gap:2px!important;
+}
+.v2p2e5ai-planner-page .add-action-copy b{
+  color:#314936!important;font-size:13px!important;line-height:1.25!important;font-weight:800!important;
+}
+.v2p2e5ai-planner-page .add-action-copy small{
+  color:#747C75!important;font-size:10px!important;line-height:1.4!important;font-weight:600!important;
+}
+.v2p2e5ai-planner-page .add-action-arrow{
+  margin-left:auto!important;color:#6C776D!important;font-size:19px!important;line-height:1!important;
+}
+.v2p2e5ai-decision-note{
+  margin:2px 0 8px!important;
+  color:#747C75!important;
+  font-size:10px!important;
+  line-height:1.5!important;
+}

@@ -19804,6 +19804,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   window.__HIVEDASH_V2P2E5AF__=true;
 
   const DECISION_KEY='hivedash_v2p2e5af_manual_decision';
+  const PLAN_RETURN_KEY='hivedash_v2p2e5ai_plan_return';
   const txt=v=>String(v??'').trim();
   const low=v=>txt(v).toLowerCase();
   const escF=v=>typeof esc==='function'?esc(v):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
@@ -19917,17 +19918,44 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     const h=scopedHiveId?hiveBy(S(),scopedHiveId):null;
     return `<div class="modalhead add-action-head v2p2e5af-head"><div><b>Plan extra work</b><small>${h?`For ${escF(h.name||h.id)}`:'Use this only for work the scientific task system cannot schedule for you.'}</small></div><button class="iconbtn add-action-close" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="v2p2e5af-intro">Scientific recurring checks and follow-ups are scheduled automatically. This planner is for extra work and explicit management decisions.</div><div class="quick core-menu-actions add-action-grid v2p2e5af-grid"><div class="b37-picker-group">Extra work</div>${['super','harvest','split','combine','move','equipment','other'].map(card).join('')}<div class="b37-picker-group v2p2e5af-decision-title">Manual management decision</div><div class="v2p2e5af-decision-note">Use these only when you have field or professional information that is not yet recorded in HiveDash. A manual decision does not become biological evidence.</div>${['feeding','treatment','queen','swarm'].map(card).join('')}</div>`;
   }
+  function plannerPageHTML(scopedHiveId=''){
+    const h=scopedHiveId?hiveBy(S(),scopedHiveId):null;
+    return `<div class="b37-page v2p2e5ai-planner-page">
+      <section class="b37-card v2p2e5ai-intro-card">
+        <div class="b37-card-head"><div class="b37-label">Extra planning</div><div class="b37-hint">Supplement only</div></div>
+        <div class="v2p2e5ai-intro-copy">Scientific recurring checks and follow-ups are scheduled automatically. Use this page only for extra work and explicit management decisions${h?` for <b>${escF(h.name||h.id)}</b>`:''}.</div>
+      </section>
+      <section class="b37-card v2p2e5ai-group-card">
+        <div class="b37-card-head"><div class="b37-label">Extra work</div><div class="b37-hint">User planned</div></div>
+        <div class="v2p2e5ai-task-list">${['super','harvest','split','combine','move','equipment','other'].map(card).join('')}</div>
+      </section>
+      <section class="b37-card v2p2e5ai-group-card v2p2e5ai-decision-card">
+        <div class="b37-card-head"><div class="b37-label">Manual management decision</div><div class="b37-hint">Explicit confirmation</div></div>
+        <p class="v2p2e5ai-decision-note">Use these only when you have field or professional information that is not yet recorded in HiveDash. A manual decision does not become biological evidence.</p>
+        <div class="v2p2e5ai-task-list">${['feeding','treatment','queen','swarm'].map(card).join('')}</div>
+      </section>
+    </div>`;
+  }
+  function planReturnRoute(){try{return sessionStorage.getItem(PLAN_RETURN_KEY)||'actions'}catch(_){return 'actions'}}
+  function rememberPlanReturn(){
+    const current=txt(location.hash||'#actions').replace(/^#/,'');
+    if(!current||current.startsWith('plan-extra-work'))return;
+    try{sessionStorage.setItem(PLAN_RETURN_KEY,current)}catch(_){}
+  }
+  window.v2p2e5aiClosePlanner=function(){
+    const target=planReturnRoute();
+    try{sessionStorage.removeItem(PLAN_RETURN_KEY)}catch(_){}
+    go(target||'actions');
+  };
   function showPicker(scopedHiveId=''){
     window.__v2p2e5afScopedHive=scopedHiveId||'';
     document.querySelector('.modal.v224-add-action-picker')?.remove();
     document.querySelector('.modal.v2p2e5af-plan-picker')?.remove();
-    const m=modal(pickerHTML(scopedHiveId));
-    m.classList.add('v224-add-action-picker','v2p2e5af-plan-picker','v2p2e5ag-plan-picker');
-    // V2P2E5AG: mount this long planner at the document level so its backdrop
-    // always covers the full viewport. This prevents the underlying Actions
-    // page from showing through below the app shell while the picker scrolls.
-    document.body.appendChild(m);
-    requestAnimationFrame(()=>m.querySelector('.modalpanel')?.scrollTo({top:0,left:0,behavior:'instant'}));return m;
+    document.querySelector('.modal.v2p2e5af-choice-modal')?.remove();
+    rememberPlanReturn();
+    const route='plan-extra-work'+(scopedHiveId?'/'+encodeURIComponent(scopedHiveId):'');
+    go(route);
+    return null;
   }
 
   // Replace both type-first and Hive-first manual planning menus with the same
@@ -19986,8 +20014,24 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     if(sel){sel.value=ctx.hiveId;sel.disabled=true;const host=sel.closest('.b37-card')||sel.parentElement;if(host&&!host.querySelector('.v2p2e5af-manual-note')){const n=document.createElement('div');n.className='v2p2e5af-manual-note';n.textContent='Manual decision confirmed for this hive. This plan will not be used as biological evidence.';host.appendChild(n)}}
   }
   const prevRender=window.render;
-  window.render=function(){const ret=prevRender.apply(this,arguments);queueMicrotask(lockDecisionHive);setTimeout(lockDecisionHive,0);return ret};
+  window.render=function(){
+    const parts=txt(location.hash||'#home').replace(/^#/,'').split('/'),page=parts[0],rawHive=parts[1]||'';
+    if(page==='plan-extra-work'){
+      let scopedHiveId='';try{scopedHiveId=decodeURIComponent(rawHive)}catch(_){scopedHiveId=rawHive}
+      if(scopedHiveId&&!hiveBy(S(),scopedHiveId))scopedHiveId='';
+      window.__v2p2e5afScopedHive=scopedHiveId;
+      if(typeof chrome==='function')chrome('actions');
+      const r=document.getElementById('view');if(!r)return;
+      r.className='view v2p2e5ai-planner-view';
+      r.innerHTML=plannerPageHTML(scopedHiveId);
+      const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="v2p2e5aiClosePlanner()" aria-label="Back">‹</button><div class="pagebar-title">Plan Extra Work</div><span></span>`}
+      const bottom=document.getElementById('bottomnav');if(bottom)bottom.classList.remove('hidden');
+      window.scrollTo?.(0,0);
+      queueMicrotask(lockDecisionHive);setTimeout(lockDecisionHive,0);return;
+    }
+    const ret=prevRender.apply(this,arguments);queueMicrotask(lockDecisionHive);setTimeout(lockDecisionHive,0);return ret
+  };
   try{render=window.render}catch(_){ }
 
-  window.__HIVEDASH_V2P2E5AF_VERSION__='v2p2e5ag-lightweight-manual-planning-visual-fix';
+  window.__HIVEDASH_V2P2E5AF_VERSION__='v2p2e5ai-lightweight-manual-planning-standard-page';
 })();

@@ -22041,3 +22041,268 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
    Awaiting-retest tasks inherit the formal Treatment followUp date when present.
    No scientific thresholds, R01/R02 rules, Treatment persistence, or routes changed. */
 window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inheritance';
+
+/* ==============================================================
+   V2P2E5AX — HD-R03 VARROA MANAGEMENT DECISION CORE RULE
+   Scientific authority migration:
+   - R02 owns evidence sufficiency / monitoring freshness.
+   - R03 owns interpretation of CURRENT formal Varroa evidence into a
+     typed management decision.
+   - R03 never selects a drug, product, dose or application method.
+   - Treatment lifecycle / post-treatment verification outranks R03 and
+     remains owned by the existing lifecycle until HD-R04 migrates it.
+   - New standardized tests use HBHC Tools for Varroa Management, 9th Ed.
+     (June 11, 2026) conservative phase thresholds.
+   - Legacy numeric-only evidence remains backward-compatible until a new
+     explicit standardized test supersedes it; legacy rows are not silently
+     reinterpreted as if their sampling method were known.
+   ============================================================== */
+(function v2p2e5axVarroaManagementDecisionCoreRule(){
+  if(window.__HIVEDASH_V2P2E5AX__)return;
+  window.__HIVEDASH_V2P2E5AX__=true;
+  const VERSION='V2P2E5AX';
+  const CORE_RULE_ID='HD-R03-VARROA-MANAGEMENT-DECISION';
+  const RULE_VERSION='HD-R03-v1.0-2026-09-08';
+  const MIGRATION_VERSION='v2p2e5ax-r03-core-migration';
+  const base=window.HiveDashTaskEngineCoreV1;
+  if(!base||typeof base.buildContextSnapshot!=='function'||typeof base.normalizeTaskProjection!=='function'||typeof base.buildVarroaEvidence!=='function'){
+    console.error('V2P2E5AX requires Task Engine Core + R02');return;
+  }
+
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v))?txt(v):'';
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
+  const active=s=>{try{return typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)))}catch(_){return (s?.hives||[]).filter(Boolean)}};
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const todayFor=(s,h)=>{try{return typeof v2p2e5Today==='function'?txt(v2p2e5Today(s,h?.id||'')):typeof v2p1bDateInHiveTimezone==='function'?txt(v2p1bDateInHiveTimezone(s,h)):new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const oldEval=(s,h)=>{try{return typeof window.v224bEvaluateHive==='function'?window.v224bEvaluateHive(s,h):null}catch(_){return null}};
+  const phaseOf=ctx=>txt(ctx?.colonyPhase||'Uncertain');
+  const rateOf=ev=>Number.isFinite(Number(ev?.mitesPer100))?Number(ev.mitesPer100):null;
+
+  const SOURCES=Object.freeze({
+    HBHC_9E:Object.freeze({
+      id:'HBHC-VARROA-9E-THRESHOLDS-2026',authority:'Honey Bee Health Coalition',
+      title:'Tools for Varroa Management, Ninth Edition',published:'2026-06-11',
+      url:'https://honeybeehealthcoalition.org/tools-for-varroa-management-guide-9th-edition/',
+      summary:'For recommended adult-bee sampling methods, immediate control is not needed below 1% in Dormant/Population Increase and below 2% in Peak Population/Population Decrease; promptly control at or above those thresholds. Thresholds may vary regionally.'
+    }),
+    PSU_IPM:Object.freeze({
+      id:'PSU-VARROA-IPM-2025',authority:'Penn State Extension',
+      title:'Methods to Control Varroa Mites: An Integrated Pest Management Approach',published:'2025',
+      url:'https://extension.psu.edu/methods-to-control-varroa-mites-an-integrated-pest-management-approach',
+      summary:'Action thresholds vary; IPM aims to keep adult-bee mite abundance below or around 2 mites per 100 bees and uses monitoring to determine management need.'
+    })
+  });
+
+  // HBHC 9th Edition Table 1. These are conservative U.S./Canada guide values;
+  // the guide explicitly states that thresholds can be regionally specific.
+  // AX does not invent state overrides that have not been separately validated.
+  const THRESHOLD_BY_PHASE=Object.freeze({
+    'Dormant':1,
+    'Dormant with Brood':1,
+    'Dormant without Brood':1,
+    'Population Increase':1,
+    'Peak Population':2,
+    'Population Decrease':2
+  });
+  const MAX_HBHC_THRESHOLD=2;
+  const MIN_HBHC_THRESHOLD=1;
+
+  function treatmentLifecycleState(s,h){
+    try{return typeof window.v2p2aVarroaStage==='function'?window.v2p2aVarroaStage(s,h):null}catch(_){return null}
+  }
+  function isLifecycleStage(stage){return ['treatment-active','treatment-planned','awaiting-retest','treatment-active-unlinked'].includes(txt(stage))}
+  function isPostTreatmentEvidence(ev){
+    const t=low(ev?.testType||ev?.row?.testType),linked=txt(ev?.linkedTreatmentId||ev?.row?.linkedTreatmentId);
+    return Boolean(linked&&t.includes('post-treatment'));
+  }
+  function isR02Task(a,hid){
+    if(!a||txt(a.hiveId)!==txt(hid))return false;
+    return txt(a.coreRuleId)==='HD-R02-VARROA-MONITORING'||['varroa-monitor','varroa-monitor-confirm'].includes(txt(a.intentKey));
+  }
+  function isR01ContextTask(a,hid){
+    if(!a||txt(a.hiveId)!==txt(hid))return false;
+    return txt(a.coreRuleId)==='HD-R01-PERIODIC-INSPECTION'||['inspection-adaptive','inspection-adaptive-confirm','inspection-adaptive-initial','inspection-adaptive-low-disturbance','inspection-initial'].includes(txt(a.intentKey));
+  }
+  function isManualTreatment(a,hid){
+    if(!a||txt(a.hiveId)!==txt(hid)||['Completed','Done','Cancelled'].includes(txt(a.status||a.priority)))return false;
+    const src=low(a.source),type=low(a.type),route=low(a.executionRoute),intent=low(a.intentKey);
+    return (src==='manual'||src==='manual-plan'||a.manualDecision===true)&&(type.includes('treat')||route.includes('treatment-record')||intent==='varroa-management');
+  }
+  function isSpecificLifecycleTask(a,hid){
+    if(!a||txt(a.hiveId)!==txt(hid))return false;
+    const src=low(a.source),intent=low(a.intentKey),title=low(a.title),stage=low(a.varroaStage||a.workflowStage);
+    if(src==='varroa-management-stage')return true;
+    if(intent==='varroa-post-treatment-retest')return true;
+    if(['treatment-active','treatment-planned','awaiting-retest','treatment-active-unlinked'].includes(stage))return true;
+    return title.includes('varroa retest needed')||title.includes('continue varroa treatment')||title.includes('review current varroa treatment');
+  }
+  function isLegacyGenericR03(a){
+    if(!a||txt(a.coreRuleId)===CORE_RULE_ID)return false;
+    const src=low(a.source),intent=low(a.intentKey),id=low(a.id),reason=low(a.reasonCode);
+    if(src==='varroa-management-stage'||intent==='varroa-post-treatment-retest')return false;
+    return src==='scientific-engine'&&reason==='varroa'&&(
+      ['varroa-management','varroa-recheck'].includes(intent)||id.startsWith('v224b-varroa-')
+    );
+  }
+
+  function standardizedThreshold(phase){
+    if(Object.prototype.hasOwnProperty.call(THRESHOLD_BY_PHASE,phase))return THRESHOLD_BY_PHASE[phase];
+    if(phase.startsWith('Dormant'))return 1;
+    return null;
+  }
+  function evidenceChain(ev,ctx,decision){
+    return {
+      complete:true,ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,
+      authority:SOURCES.HBHC_9E.authority,authoritySummary:SOURCES.HBHC_9E.summary,
+      authorityIds:[SOURCES.HBHC_9E.id,SOURCES.PSU_IPM.id],
+      stateCode:txt(ctx?.location?.stateCode).toUpperCase(),colonyPhase:phaseOf(ctx),
+      seasonalPhase:txt(ctx?.seasonalPhase||'UNRESOLVED'),risk:txt(ctx?.risk||'Unassessed'),confidence:txt(ctx?.confidence||'Uncertain'),
+      latestVarroaTestId:txt(ev?.id),latestVarroaTestDate:iso(ev?.date),method:txt(ev?.method),sampleSize:ev?.sampleSize,miteCount:ev?.miteCount,mitesPer100:ev?.mitesPer100,
+      evidenceStatus:txt(ev?.status),standardized:Boolean(ev?.standardized),legacyGrandfathered:Boolean(ev?.legacyGrandfathered),
+      threshold:decision?.threshold??null,thresholdMode:txt(decision?.thresholdMode),regionalOverrideStatus:'NO_VALIDATED_STATE_OVERRIDE_LOADED',
+      note:'HBHC 9th-edition thresholds are conservative guide values; local extension guidance may differ.'
+    };
+  }
+  function baseTask(h,title){
+    return {hiveId:h.id,type:'Treatment',title,status:'Pending',priority:'High',source:'scientific-engine',systemGenerated:true,reasonCode:'varroa',intentKey:'varroa-management',workflowStage:'management-review',executionRoute:`treatment-record/${h.id}`,coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION};
+  }
+  function managementTask(h,ev,ctx,decision,today){
+    const a=baseTask(h,'Review Varroa management');
+    a.id=`scientific-varroa-management-r03-${h.id}-${ev.id||ev.date||'evidence'}`;
+    a.due=today;a.dueDate=today;a.date=today;
+    const thresholdText=decision.threshold!=null?`${decision.threshold}/100 bees`:'the current conservative threshold';
+    a.systemWhy=`The measured Varroa level is ${decision.rate}/100 bees and meets or exceeds ${thresholdText} for ${decision.phase}. Review a prompt, seasonally appropriate control option. HiveDash will not preselect a drug, product, dose, or application method.`;
+    a.reason=a.systemWhy;a.evidenceChain=evidenceChain(ev,ctx,decision);
+    return a;
+  }
+  function confirmContextTask(h,ev,ctx,decision){
+    const a={hiveId:h.id,type:'Inspection',title:'Confirm Varroa management context',status:'Pending',priority:'High',source:'scientific-engine',systemGenerated:true,reasonCode:'varroa',intentKey:'varroa-management-context',workflowStage:'confirmation',executionRoute:`inspection/${h.id}`,coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,due:'Needs confirmation',dueDate:'',date:''};
+    a.id=`scientific-varroa-context-r03-${h.id}-${ev.id||ev.date||'evidence'}`;
+    a.systemWhy=`The standardized Varroa result is ${decision.rate}/100 bees. HBHC 9th-edition phase thresholds are 1% in Dormant/Population Increase and 2% in Peak/Population Decrease, but the current colony phase is uncertain. Confirm current colony context before making a management decision.`;
+    a.reason=a.systemWhy;a.evidenceChain=evidenceChain(ev,ctx,decision);
+    return a;
+  }
+  function legacyRecheckTask(h,ev,ctx,decision,today){
+    const a={hiveId:h.id,type:'Inspection',title:'Recheck Varroa level',status:'Pending',priority:'Medium',source:'scientific-engine',systemGenerated:true,reasonCode:'varroa',intentKey:'varroa-recheck',workflowStage:'evidence',executionRoute:`varroa-test/${h.id}/recheck`,coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,due:'Soon',dueDate:'',date:''};
+    a.id=`scientific-varroa-legacy-recheck-r03-${h.id}-${ev.id||ev.date||'legacy'}`;
+    a.systemWhy=`Legacy Varroa evidence is ${decision.rate}/100 bees and the prior frozen model classified it as caution. Because the original sampling method/sample size are not recorded, obtain a standardized test before making a new treatment decision.`;
+    a.reason=a.systemWhy;a.evidenceChain=evidenceChain(ev,ctx,decision);
+    return a;
+  }
+
+  function classifyStandardized(ev,ctx){
+    const phase=phaseOf(ctx),rate=rateOf(ev),threshold=standardizedThreshold(phase);
+    if(rate===null)return {status:'DEFER_R02',rate:null,phase,threshold:null,thresholdMode:'NO_RATE'};
+    if(threshold!=null){
+      return rate>=threshold
+        ?{status:'PROMPT_MANAGEMENT',rate,phase,threshold,thresholdMode:'HBHC_9E_PHASE'}
+        :{status:'BELOW_THRESHOLD',rate,phase,threshold,thresholdMode:'HBHC_9E_PHASE'};
+    }
+    // Phase uncertainty: >=2 is at/above every HBHC 9E phase threshold;
+    // <1 is below every threshold; 1-<2 depends on the actual colony phase.
+    if(rate>=MAX_HBHC_THRESHOLD)return {status:'PROMPT_MANAGEMENT',rate,phase:'Uncertain',threshold:MAX_HBHC_THRESHOLD,thresholdMode:'HBHC_9E_ALL_PHASES_CONSERVATIVE'};
+    if(rate<MIN_HBHC_THRESHOLD)return {status:'BELOW_THRESHOLD',rate,phase:'Uncertain',threshold:MIN_HBHC_THRESHOLD,thresholdMode:'HBHC_9E_ALL_PHASES_CONSERVATIVE'};
+    return {status:'CONFIRM_PHASE_CONTEXT',rate,phase:'Uncertain',threshold:null,thresholdMode:'HBHC_9E_PHASE_DEPENDENT'};
+  }
+  function classifyLegacy(s,h,ev,ctx){
+    const d=oldEval(s,h),assessment=txt(d?.varroa?.assessment||'Unknown'),rate=rateOf(ev),phase=phaseOf(ctx);
+    if(assessment==='Danger')return {status:'PROMPT_MANAGEMENT_LEGACY',rate,phase,threshold:null,thresholdMode:'LEGACY_FROZEN_COMPATIBILITY',legacyAssessment:assessment};
+    if(assessment==='Caution')return {status:'RECHECK_LEGACY',rate,phase,threshold:null,thresholdMode:'LEGACY_FROZEN_COMPATIBILITY',legacyAssessment:assessment};
+    if(assessment==='Acceptable')return {status:'BELOW_THRESHOLD_LEGACY',rate,phase,threshold:null,thresholdMode:'LEGACY_FROZEN_COMPATIBILITY',legacyAssessment:assessment};
+    return {status:'NO_DECISION_LEGACY',rate,phase,threshold:null,thresholdMode:'LEGACY_FROZEN_COMPATIBILITY',legacyAssessment:assessment};
+  }
+
+  function evaluateR03(s,h,existingRows=[]){
+    const hid=txt(h.id),today=todayFor(s,h),ctx=base.buildContextSnapshot(s,hid),ev=base.buildVarroaEvidence(s,hid);
+    const result={ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,hiveId:hid,evidence:ev,context:ctx,assessment:null,decision:null,task:null};
+
+    // R02 is the quality/freshness gate. R03 never makes management decisions
+    // from missing, incomplete, or currently-due-for-renewal evidence.
+    if(!ev||!ev.valid){result.assessment={type:'VARROA_MANAGEMENT_DECISION',status:'DEFER_TO_R02',evidenceStatus:txt(ev?.status)};result.decision={type:'NO_TASK',reason:'varroa-evidence-not-r03-ready'};return result}
+    const r02Cover=existingRows.find(a=>isR02Task(a,hid));
+    if(r02Cover){result.assessment={type:'VARROA_MANAGEMENT_DECISION',status:'DEFER_TO_R02',evidenceStatus:txt(ev.status)};result.decision={type:'SUPERSEDED',reason:'r02-evidence-renewal-task-active',coveringTaskId:txt(r02Cover.id)};return result}
+
+    const lifecycle=treatmentLifecycleState(s,h);
+    const lifecycleTask=existingRows.find(a=>isSpecificLifecycleTask(a,hid));
+    if(isLifecycleStage(lifecycle?.stage)||lifecycleTask){result.assessment={type:'VARROA_MANAGEMENT_DECISION',status:'DEFER_TO_TREATMENT_LIFECYCLE',stage:txt(lifecycle?.stage)};result.decision={type:'SUPERSEDED',reason:'specific-treatment-lifecycle-owns-next-step',coveringTaskId:txt(lifecycleTask?.id)};return result}
+    if(isPostTreatmentEvidence(ev)){result.assessment={type:'VARROA_MANAGEMENT_DECISION',status:'DEFER_TO_R04',evidenceStatus:txt(ev.status)};result.decision={type:'NO_TASK',reason:'post-treatment-verification-owned-by-r04'};return result}
+    const manual=existingRows.find(a=>isManualTreatment(a,hid));
+    if(manual){result.assessment={type:'VARROA_MANAGEMENT_DECISION',status:'SUPERSEDED_BY_USER_MANAGEMENT_PLAN'};result.decision={type:'SUPERSEDED',reason:'user-confirmed-treatment-plan-covers-management-review',coveringTaskId:txt(manual.id)};return result}
+
+    const decision=ev.legacyGrandfathered?classifyLegacy(s,h,ev,ctx):classifyStandardized(ev,ctx);
+    result.assessment={type:'VARROA_MANAGEMENT_DECISION',...decision,evidenceStatus:txt(ev.status),standardized:Boolean(ev.standardized),legacyGrandfathered:Boolean(ev.legacyGrandfathered),authorityRuleId:SOURCES.HBHC_9E.id};
+
+    if(decision.status==='PROMPT_MANAGEMENT'||decision.status==='PROMPT_MANAGEMENT_LEGACY'){
+      const task=managementTask(h,ev,ctx,decision,today);result.task=task;
+      result.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:decision.status==='PROMPT_MANAGEMENT'?'hbhc-9e-threshold-met-or-exceeded':'legacy-danger-compatibility-management-review'};
+      return result;
+    }
+    if(decision.status==='RECHECK_LEGACY'){
+      const task=legacyRecheckTask(h,ev,ctx,decision,today);result.task=task;
+      result.decision={type:'AUTO_CREATE',automationLevel:'A_AUTO_TASK',reason:'legacy-caution-needs-standardized-recheck'};return result;
+    }
+    if(decision.status==='CONFIRM_PHASE_CONTEXT'){
+      const cover=existingRows.find(a=>isR01ContextTask(a,hid));
+      if(cover){result.decision={type:'SUPERSEDED',reason:'existing-inspection-context-task-will-resolve-phase',coveringTaskId:txt(cover.id)};return result}
+      const task=confirmContextTask(h,ev,ctx,decision);result.task=task;
+      result.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:'phase-dependent-threshold-needs-context'};return result;
+    }
+    result.decision={type:'NO_TASK',automationLevel:'A_AUTO_TASK',reason:'varroa-below-current-management-threshold'};
+    return result;
+  }
+
+  const ruleDefinition=Object.freeze({
+    id:CORE_RULE_ID,version:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,
+    category:'VARROA_MANAGEMENT',assessmentType:'VARROA_MANAGEMENT_DECISION',
+    evidenceInputs:Object.freeze(['HD-R02 formal Varroa evidence','logs.varroaTests.mitesPer100','logs.varroaTests.method','logs.varroaTests.sampleSize','logs.varroaTests.miteCount']),
+    contextInputs:Object.freeze(['Context.colonyPhase','Context.location.stateCode','Treatment lifecycle']),
+    authorityRules:SOURCES,
+    thresholds:THRESHOLD_BY_PHASE,
+    policy:Object.freeze({
+      standardizedEvidenceUses:'HBHC_9E_2026',legacyNumericOnlyUses:'FROZEN_COMPATIBILITY_UNTIL_SUPERSEDED',
+      promptControlAtOrAboveThreshold:true,regionalThresholdsMayDiffer:true,stateOverrideRegistryVersion:'none-v1.0',
+      r02OwnsEvidenceFreshness:true,r04OwnsPostTreatmentVerification:true,treatmentChoiceRequiresUserConfirmation:true,
+      noDrugProductDoseOrApplicationPreselection:true
+    }),
+    evaluate:(s,h,existingRows)=>evaluateR03(s,h,existingRows)
+  });
+  try{if(typeof base.registerRule==='function')base.registerRule(ruleDefinition)}catch(err){console.error('V2P2E5AX rule registration failed',err)}
+
+  function projectTask(evaluation,s){
+    if(!evaluation?.task)return null;
+    let task=base.normalizeTaskProjection(evaluation.task,s,{evidence:new Map(),context:new Map()});
+    task.coreRuleId=CORE_RULE_ID;task.ruleVersion=RULE_VERSION;task.ruleEngineOwner='HiveDashTaskEngineCoreV1';task.ruleMigrationVersion=MIGRATION_VERSION;
+    task.assessmentType='VARROA_MANAGEMENT_DECISION';
+    if(evaluation?.decision?.automationLevel)task.automationLevel=evaluation.decision.automationLevel;
+    if(evaluation?.decision?.type==='RECOMMEND_CONFIRM'){task.decisionType='RECOMMEND_CONFIRM';task.taskLifecycleState='RECOMMENDED'}
+    else if(evaluation?.decision?.type==='AUTO_CREATE')task.decisionType='AUTO_CREATE';
+    task.ruleRef={...(task.ruleRef||{}),ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,authority:'Honey Bee Health Coalition',authorityRuleIds:[SOURCES.HBHC_9E.id,SOURCES.PSU_IPM.id]};
+    task.ruleEvaluation={assessment:evaluation.assessment,decision:evaluation.decision,thresholdPolicy:'HBHC_9E_PHASE_AWARE_WITH_LEGACY_COMPATIBILITY'};
+    task.varroaManagementDecision=evaluation.assessment;
+    return task;
+  }
+
+  const extended=Object.freeze({...base,varroaManagementRule:ruleDefinition,evaluateVarroaManagement:(s,hid,existingRows=[])=>{const h=hiveBy(s,hid);return h?evaluateR03(s,h,existingRows):null}});
+  window.HiveDashTaskEngineCoreV1=extended;
+  window.V2P2E5AX_VARROA_MANAGEMENT_RULE=ruleDefinition;
+  window.v2p2e5axEvaluateVarroaManagement=(hiveId)=>{const s=S(),h=hiveBy(s,hiveId);return h?evaluateR03(s,h,typeof generateActions==='function'?generateActions(s):[]):null};
+
+  const prevGenerate=window.generateActions||generateActions;
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      let out=(prevGenerate(s)||[]).filter(a=>!isLegacyGenericR03(a));
+      const seen=new Set(out.map(a=>txt(a.id)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`));
+      for(const h of active(s)){
+        const evaluation=evaluateR03(s,h,out),task=projectTask(evaluation,s);if(!task)continue;
+        const k=txt(task.id)||`${txt(task.hiveId)}|${txt(task.intentKey)}|${txt(task.title)}`;if(seen.has(k))continue;
+        seen.add(k);out.push(task);
+      }
+      return out;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  window.__HIVEDASH_V2P2E5AX_VERSION__='v2p2e5ax-hd-r03-varroa-management-decision';
+})();

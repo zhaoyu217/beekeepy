@@ -19207,6 +19207,10 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   }
 
   function addVarroaMonitoring(rows,s,h){
+    // V2P2E5AW: routine Varroa monitoring task generation has migrated to
+    // HiveDashTaskEngineCoreV1 / HD-R02-VARROA-MONITORING. Keep E5AB's
+    // historical task/UI compatibility, but it no longer owns this task.
+    if(window.__HIVEDASH_V2P2E5AW_CORE_VARROA_MONITORING__)return;
     const insp=latestInspection(s,h.id);if(!insp)return;
     const today=todayFor(s,h),win=varroaWindow(today);if(!win.days)return;
     const test=latestVarroa(s,h.id),age=test?daysBetween(test.date,today):null;
@@ -21576,3 +21580,263 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
 window.__HIVEDASH_V2P2E5AV1_VERSION__='v2p2e5av1-periodic-inspection-date-draft-fix';
 /* V2P2E5AV2: R01 full-Inspection task coverage / duplicate suppression fix. */
 window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-coverage-fix';
+
+
+/* ==============================================================
+   V2P2E5AW — SECOND SCIENTIFIC RULE MIGRATION
+   Core rule: HD-R02-VARROA-MONITORING
+
+   Scope ONLY:
+   - Move routine Varroa monitoring / evidence-freshness task authority out of
+     the historical E5AB month-window prototype and into HiveDashTaskEngineCoreV1.
+   - Define what counts as standardized measured Varroa evidence for R02.
+   - Use colony seasonal phase first; calendar month is NOT the primary trigger.
+   - Preserve existing V224B Varroa risk thresholds, management Actions,
+     Treatment workflow, and post-treatment retest workflow for R03/R04.
+   - A full Inspection does NOT substitute for a dedicated Varroa test.
+
+   Scientific basis frozen for this candidate:
+   - Honey Bee Health Coalition, Tools for Varroa Management, 9th ed. (2026):
+     monthly monitoring beginning Population Increase; at least four checks from
+     Population Peak through Decline; more frequent checks in Population Decrease;
+     Dormant sampling is less important and may wait for milder conditions;
+     alcohol/soap wash and powdered-sugar shake are recommended adult-bee methods;
+     alcohol/soap wash is more reliable; approximately 300 adult bees are required.
+   - USDA ARS Varroa sampling guidance: monitor regularly; monthly in summer;
+     every three weeks in fall where weather permits; minimize winter disturbance.
+   ============================================================== */
+(function v2p2e5awVarroaMonitoringCoreRule(){
+  if(window.__HIVEDASH_V2P2E5AW__)return;
+  window.__HIVEDASH_V2P2E5AW__=true;
+  window.__HIVEDASH_V2P2E5AW_CORE_VARROA_MONITORING__=true;
+
+  const base=window.HiveDashTaskEngineCoreV1;
+  if(!base){console.error('V2P2E5AW requires HiveDashTaskEngineCoreV1');return}
+
+  const CORE_RULE_ID='HD-R02-VARROA-MONITORING';
+  const RULE_VERSION='HD-R02-v1.0-2026-09-08';
+  const MIGRATION_VERSION='V2P2E5AW';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v).slice(0,10))?txt(v).slice(0,10):'';
+  const dayNo=v=>{const d=iso(v);return d?Math.floor(Date.parse(d+'T00:00:00Z')/86400000):null};
+  const ageDays=(from,to)=>{const a=dayNo(from),b=dayNo(to);return a===null||b===null?null:Math.max(0,b-a)};
+  const addDays=(d,n)=>{const x=iso(d);if(!x||!Number.isFinite(Number(n)))return '';const z=new Date(x+'T00:00:00Z');z.setUTCDate(z.getUTCDate()+Number(n));return z.toISOString().slice(0,10)};
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
+  const active=s=>{try{return typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)))}catch(_){return (s?.hives||[]).filter(Boolean)}};
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const todayFor=(s,h)=>{try{return typeof v2p2e5Today==='function'?txt(v2p2e5Today(s,h?.id||'')):typeof v2p1bDateInHiveTimezone==='function'?txt(v2p1bDateInHiveTimezone(s,h)):new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const rows=(s,key,hid)=>(Array.isArray(s?.logs?.[key])?s.logs[key]:[]).filter(x=>x&&(!hid||txt(x.hiveId)===txt(hid)));
+  const latestByDate=list=>list.slice().sort((a,b)=>{
+    const d=txt(b?.date).localeCompare(txt(a?.date));if(d)return d;
+    const r=(Date.parse(txt(b?.recordedAt))||0)-(Date.parse(txt(a?.recordedAt))||0);if(r)return r;
+    return (Date.parse(txt(b?.updatedAt))||0)-(Date.parse(txt(a?.updatedAt))||0);
+  })[0]||null;
+
+  const SOURCES=Object.freeze({
+    HBHC_9E:Object.freeze({id:'HBHC-VARROA-9E-2026',authority:'Honey Bee Health Coalition',title:'Tools for Varroa Management, Ninth Edition',url:'https://honeybeehealthcoalition.org/tools-for-varroa-management-guide-9th-edition/',summary:'Monitor monthly beginning with Population Increase; monitor more frequently during Population Decrease; Dormant sampling may wait for milder conditions; standardized adult-bee sampling uses approximately 300 bees.'}),
+    USDA_ARS:Object.freeze({id:'USDA-ARS-VARROA-WHEN-TO-SAMPLE',authority:'USDA Agricultural Research Service',title:'When to Sample for Varroa Mites',url:'https://www.ars.usda.gov/pacific-west-area/tucson-az/carl-hayden-bee-research-center/research/varroa/how-to-monitor-sample-and-treat-for-varroa/when-to-sample/',summary:'Monitor regularly; monthly during summer; about every three weeks in fall where weather permits; minimize winter disturbance.'})
+  });
+  const ACCEPTED_METHODS=Object.freeze(['Alcohol Wash','Soapy Water Wash','Sugar Roll']);
+
+  function canonicalMethod(v){
+    const x=txt(v),k=low(x);
+    if(k.includes('alcohol')||/酒精/.test(x))return 'Alcohol Wash';
+    if(k.includes('soapy')||k.includes('soap')||/肥皂/.test(x))return 'Soapy Water Wash';
+    if(k.includes('sugar')||k.includes('powdered')||/糖粉|糖滚|糖摇/.test(x))return 'Sugar Roll';
+    if(k==='other'||/其他/.test(x))return 'Other';
+    return x||'Method not recorded';
+  }
+
+  function latestFormalVarroa(s,hid){
+    try{if(typeof window.v2p2d1LatestVarroaEvidence==='function')return window.v2p2d1LatestVarroaEvidence(s,hid)}catch(_){}
+    return latestByDate(rows(s,'varroaTests',hid).filter(x=>iso(x?.date)&&Number.isFinite(Number(x?.mitesPer100))));
+  }
+
+  function varroaEvidence(s,hid,today){
+    const row=latestFormalVarroa(s,hid);
+    if(!row)return {status:'MISSING',valid:false,row:null,id:'',date:'',ageDays:null,method:'',sampleSize:null,miteCount:null,mitesPer100:null,reasons:['No formal Varroa Test record exists.']};
+    const numeric=v=>v===null||v===undefined||txt(v)===''?NaN:Number(v);
+    const date=iso(row.date),method=canonicalMethod(row.method),sample=numeric(row.sampleSize),mites=numeric(row.miteCount),rate=numeric(row.mitesPer100),reasons=[];
+    if(!date)reasons.push('Test date is missing.');
+    if(!ACCEPTED_METHODS.includes(method))reasons.push('Sampling method is not a supported standardized adult-bee method.');
+    if(!Number.isInteger(sample)||sample<300)reasons.push('Sample size is below the 300-adult-bee standard used by this rule.');
+    if(!Number.isInteger(mites)||mites<0)reasons.push('Raw mite count is missing.');
+    if(!Number.isFinite(rate)||rate<0)reasons.push('Mites per 100 bees is missing or invalid.');
+    const valid=reasons.length===0;
+    return {status:valid?'VALID':'INCOMPLETE',valid,row,id:txt(row.id),date,ageDays:date?ageDays(date,today):null,method,sampleSize:Number.isFinite(sample)?sample:null,miteCount:Number.isFinite(mites)?mites:null,mitesPer100:Number.isFinite(rate)?rate:null,testType:txt(row.testType),source:txt(row.source),linkedTreatmentId:txt(row.linkedTreatmentId),reasons};
+  }
+
+  function phasePolicy(phase){
+    const p=txt(phase);
+    if(p==='Population Increase')return {mode:'ACTIVE',intervalDays:30,label:'monthly monitoring during Population Increase',authorityIds:[SOURCES.HBHC_9E.id]};
+    if(p==='Peak Population')return {mode:'ACTIVE',intervalDays:30,label:'monthly monitoring during Peak Population',authorityIds:[SOURCES.HBHC_9E.id]};
+    if(p==='Population Decrease')return {mode:'ACTIVE_DECLINE',intervalDays:21,label:'more-frequent monitoring during Population Decrease',authorityIds:[SOURCES.HBHC_9E.id,SOURCES.USDA_ARS.id]};
+    if(p.startsWith('Dormant'))return {mode:'DORMANT',intervalDays:null,label:'dormant / low-disturbance monitoring',authorityIds:[SOURCES.HBHC_9E.id,SOURCES.USDA_ARS.id]};
+    return {mode:'UNCERTAIN',intervalDays:null,label:'seasonal phase not sufficiently resolved',authorityIds:[SOURCES.HBHC_9E.id]};
+  }
+
+  function isDone(a){return !a||low(a.status)==='completed'||low(a.priority)==='done'||['resolved','cancelled','superseded'].includes(low(a.taskLifecycleState))}
+  function isLegacyR02(a){
+    if(!a)return false;
+    const id=txt(a.id),intent=txt(a.intentKey),title=low(a.title),src=txt(a.source);
+    return id.startsWith('scientific-varroa-monitor-')||intent==='varroa-monitor'&&(src==='scientific-engine'||id.startsWith('scientific-'))||title==='baseline varroa test needed'&&src==='scientific-engine'||title==='varroa test due'&&src==='scientific-engine';
+  }
+  function isSpecificVarroaWork(a,hid){
+    if(!a||isDone(a)||txt(a.hiveId)!==txt(hid)||isLegacyR02(a))return false;
+    const intent=low(a.intentKey),route=low(a.executionRoute),title=low(a.title),source=low(a.source),stage=low(a.varroaStage);
+    if(['varroa-management','varroa-recheck','varroa-post-treatment-retest'].includes(intent))return true;
+    if(route.startsWith(`varroa-test/${low(hid)}/retest`)||route.startsWith(`varroa-test/${low(hid)}/recheck`))return true;
+    if(source.includes('treatment-follow-up')&&(title.includes('varroa')||intent.includes('varroa')))return true;
+    if(['treatment-active','treatment-planned','awaiting-retest','treatment-active-unlinked','retest-still-high','retest-caution'].includes(stage))return true;
+    if(title.includes('varroa management')||title.includes('varroa retest')||title.includes('recheck varroa')||title.includes('post-treatment varroa'))return true;
+    return false;
+  }
+
+  function baseTask(h,title){
+    return {hiveId:h.id,type:'Inspection',title,status:'Pending',priority:'Medium',source:'scientific-engine',systemGenerated:true,reasonCode:'varroa',intentKey:'varroa-monitor-core',workflowStage:'evidence',executionRoute:`varroa-test/${h.id}/test`,coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,ruleEngineOwner:'HiveDashTaskEngineCoreV1',ruleMigrationVersion:MIGRATION_VERSION};
+  }
+
+  function assessment(status,ev,ctx,policy){
+    return {type:'VARROA_EVIDENCE_SUFFICIENCY',status,evidenceStatus:ev.status,latestTestId:ev.id,latestTestDate:ev.date,evidenceAgeDays:ev.ageDays,method:ev.method,sampleSize:ev.sampleSize,miteCount:ev.miteCount,mitesPer100:ev.mitesPer100,colonyPhase:txt(ctx?.colonyPhase),monitoringPolicy:policy.label};
+  }
+
+  function makeEvidenceChain(ev,ctx,policy){
+    const ids=policy.authorityIds||[];
+    return {complete:ev.valid,ruleVersion:RULE_VERSION,ruleId:CORE_RULE_ID,authority:'Honey Bee Health Coalition + USDA ARS',authoritySummary:policy.label,authorityIds:ids,sourceRefs:ids.map(id=>id===SOURCES.HBHC_9E.id?SOURCES.HBHC_9E:SOURCES.USDA_ARS),stateCode:txt(ctx?.location?.stateCode).toUpperCase(),season:txt(ctx?.seasonalPhase||'UNRESOLVED'),colonyPhase:txt(ctx?.colonyPhase),risk:txt(ctx?.risk||'Unassessed'),confidence:txt(ctx?.confidence||'Uncertain'),latestVarroaTestId:ev.id,latestVarroaTestDate:ev.date,evidenceAgeDays:ev.ageDays,method:ev.method,sampleSize:ev.sampleSize,miteCount:ev.miteCount,mitesPer100:ev.mitesPer100,evidenceQualityReasons:ev.reasons||[],policy:{sampleSizeMinimum:300,acceptedMethods:ACCEPTED_METHODS.slice(),monthIsSupportingContextOnly:true,fullInspectionDoesNotReplaceVarroaTest:true,postTreatmentRetestOwnedBy:'HD-R04'}};
+  }
+
+  function buildVarroaMonitoringTask(s,h,existingRows=[]){
+    const hid=txt(h.id),today=todayFor(s,h),coreEvidence=base.buildEvidenceSnapshot(s,hid),ctx=base.buildContextSnapshot(s,hid),ev=varroaEvidence(s,hid,today),policy=phasePolicy(ctx?.colonyPhase);
+    const evaluation={ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,evidence:{core:coreEvidence,varroa:ev},context:ctx,assessment:null,decision:null,task:null};
+
+    // R02 is intentionally deferred until the colony has at least one real
+    // Inspection baseline. This preserves the already-PASS new-hive workflow:
+    // first establish colony context, then ask for dedicated mite evidence.
+    if(!txt(coreEvidence?.inspection?.id)){
+      evaluation.assessment=assessment('DEFERRED_NO_INSPECTION_BASELINE',ev,ctx,policy);
+      evaluation.decision={type:'DEFER',automationLevel:'A_AUTO_TASK',reason:'inspection-baseline-required-before-routine-varroa-monitoring'};
+      return evaluation;
+    }
+
+    // A specific Varroa management/recheck/retest workflow outranks generic
+    // routine monitoring. A full Inspection never counts as Varroa evidence.
+    const covering=existingRows.find(a=>isSpecificVarroaWork(a,hid));
+    if(covering){
+      evaluation.assessment=assessment('SUPERSEDED_BY_SPECIFIC_VARROA_WORK',ev,ctx,policy);
+      evaluation.decision={type:'SUPERSEDED',automationLevel:txt(covering.automationLevel)||'A_AUTO_TASK',reason:'specific-varroa-work-covers-routine-monitoring',coveringTaskId:txt(covering.id)};
+      return evaluation;
+    }
+
+    // Dormant phase: do not invent a destructive sampling deadline. Missing or
+    // incomplete evidence remains visible as a B-level timing confirmation.
+    if(policy.mode==='DORMANT'){
+      if(ev.valid){
+        evaluation.assessment=assessment('CURRENT_DORMANT_EVIDENCE_ACCEPTED',ev,ctx,policy);
+        evaluation.decision={type:'NO_TASK',automationLevel:'A_AUTO_TASK',reason:'routine-dormant-sampling-not-forced'};
+        return evaluation;
+      }
+      const a=baseTask(h,'Review Varroa monitoring timing');
+      a.id=`scientific-varroa-monitor-confirm-${hid}-${ev.id||'missing'}`;a.intentKey='varroa-monitor-confirm';a.workflowStage='confirmation';a.priority='Medium';a.due='Needs confirmation';a.dueDate='';a.date='';
+      a.systemWhy='Varroa evidence is missing or incomplete, but the colony is in a dormant / low-disturbance phase. Confirm local opening conditions before collecting an adult-bee sample; HiveDash will not invent live weather.';
+      a.reason=a.systemWhy;a.evidenceChain=makeEvidenceChain(ev,ctx,policy);
+      evaluation.assessment=assessment(ev.valid?'CURRENT':'EVIDENCE_NEEDS_CONFIRMATION',ev,ctx,policy);
+      evaluation.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:'dormant-low-disturbance-sampling'};
+      evaluation.task=a;return evaluation;
+    }
+
+    // Unknown seasonal phase: only use the HBHC monthly interval as a reason to
+    // ask for confirmation, never as an automatic nationwide schedule.
+    if(policy.mode==='UNCERTAIN'){
+      const dueForReview=!ev.valid||ev.ageDays===null||ev.ageDays>=30;
+      if(!dueForReview){
+        evaluation.assessment=assessment('RECENT_EVIDENCE_PHASE_UNCERTAIN',ev,ctx,policy);
+        evaluation.decision={type:'NO_TASK',automationLevel:'B_RECOMMEND_CONFIRM',reason:'recent-measured-evidence-no-forced-interval-with-uncertain-phase'};
+        return evaluation;
+      }
+      const a=baseTask(h,'Confirm Varroa monitoring timing');
+      a.id=`scientific-varroa-monitor-confirm-${hid}-${ev.id||'missing'}`;a.intentKey='varroa-monitor-confirm';a.workflowStage='confirmation';a.priority='Medium';a.due='Needs confirmation';a.dueDate='';a.date='';
+      a.systemWhy=ev.valid?`The last standardized Varroa test is ${ev.ageDays} days old, but the current colony seasonal phase is uncertain. Confirm local conditions before scheduling the next mite sample.`:'No current standardized Varroa evidence is available and colony seasonal phase is uncertain. Confirm local conditions before scheduling the sample.';
+      a.reason=a.systemWhy;a.evidenceChain=makeEvidenceChain(ev,ctx,policy);
+      evaluation.assessment=assessment('TIMING_CONFIRMATION_REQUIRED',ev,ctx,policy);
+      evaluation.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:'seasonal-phase-uncertain'};
+      evaluation.task=a;return evaluation;
+    }
+
+    // Active phases: a missing or non-standardized result means the biological
+    // evidence requirement itself is due now. R02 does NOT infer Treatment.
+    if(!ev.valid){
+      const missing=ev.status==='MISSING',a=baseTask(h,missing?'Baseline Varroa test needed':'Repeat standardized Varroa test');
+      a.id=`scientific-varroa-monitor-${hid}-${missing?'baseline':ev.id||'incomplete'}`;a.priority='High';a.due=today;a.dueDate=today;a.date=today;
+      a.systemWhy=missing?'No formal standardized Varroa test is recorded. A measured mite count is needed before Varroa management decisions can be evidence-based.':`The latest Varroa record does not meet the R02 standardized evidence requirements: ${(ev.reasons||[]).join(' ')}`;
+      a.reason=a.systemWhy;a.evidenceChain=makeEvidenceChain(ev,ctx,policy);
+      evaluation.assessment=assessment(missing?'EVIDENCE_MISSING':'EVIDENCE_INCOMPLETE',ev,ctx,policy);
+      evaluation.decision={type:'AUTO_CREATE',automationLevel:'A_AUTO_TASK',reason:missing?'baseline-varroa-evidence-missing':'latest-varroa-evidence-not-standardized'};
+      evaluation.task=a;return evaluation;
+    }
+
+    const interval=Number(policy.intervalDays),age=Number(ev.ageDays);
+    if(!Number.isFinite(interval)||!Number.isFinite(age)||age<interval){
+      evaluation.assessment=assessment('EVIDENCE_CURRENT',ev,ctx,policy);
+      evaluation.decision={type:'NO_TASK',automationLevel:'A_AUTO_TASK',reason:'measured-varroa-evidence-within-monitoring-window'};
+      return evaluation;
+    }
+
+    const dueDate=addDays(ev.date,interval),a=baseTask(h,'Varroa test due');
+    a.id=`scientific-varroa-monitor-${hid}-${ev.id||ev.date}`;a.priority=age>=interval*2?'High':'Medium';a.due=dueDate||today;a.dueDate=dueDate||today;a.date=dueDate||today;
+    a.systemWhy=`The last standardized Varroa test was ${age} days ago. ${policy.label} is due for renewal; R02 requests new mite evidence but does not choose a treatment.`;
+    a.reason=a.systemWhy;a.evidenceChain=makeEvidenceChain(ev,ctx,policy);a.monitoringIntervalDays=interval;
+    if(policy.mode==='ACTIVE_DECLINE'){a.dueEarliest=dueDate;a.dueLatest=addDays(ev.date,30)}
+    evaluation.assessment=assessment('EVIDENCE_STALE',ev,ctx,policy);
+    evaluation.decision={type:'AUTO_CREATE',automationLevel:'A_AUTO_TASK',reason:'varroa-evidence-monitoring-window-elapsed'};
+    evaluation.task=a;return evaluation;
+  }
+
+  const ruleDefinition=Object.freeze({
+    id:CORE_RULE_ID,version:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,
+    category:'VARROA_EVIDENCE',assessmentType:'VARROA_EVIDENCE_SUFFICIENCY',
+    evidenceInputs:Object.freeze(['Evidence.inspection','logs.varroaTests.date','logs.varroaTests.method','logs.varroaTests.sampleSize','logs.varroaTests.miteCount','logs.varroaTests.mitesPer100']),
+    contextInputs:Object.freeze(['Context.colonyPhase','Context.location.stateCode','Context.localDate']),
+    authorityRules:SOURCES,
+    policy:Object.freeze({monitorFromColonyPhase:true,monthIsSupportingContextOnly:true,activeMonthlyDays:30,populationDecreaseDays:21,dormantNoForcedDestructiveSampling:true,minimumAdultBeeSample:300,acceptedMethods:ACCEPTED_METHODS,fullInspectionDoesNotReplaceVarroaTest:true,treatmentDecisionOwnedBy:'HD-R03',postTreatmentVerificationOwnedBy:'HD-R04'}),
+    evaluate:(s,h,existingRows)=>buildVarroaMonitoringTask(s,h,existingRows)
+  });
+
+  try{if(typeof base.registerRule==='function')base.registerRule(ruleDefinition)}catch(err){console.error('V2P2E5AW rule registration failed',err)}
+
+  function projectTask(evaluation,s){
+    if(!evaluation?.task)return null;
+    let task=base.normalizeTaskProjection(evaluation.task,s,{evidence:new Map(),context:new Map()});
+    task.coreRuleId=CORE_RULE_ID;task.ruleVersion=RULE_VERSION;task.ruleEngineOwner='HiveDashTaskEngineCoreV1';task.ruleMigrationVersion=MIGRATION_VERSION;
+    task.assessmentType='VARROA_EVIDENCE_SUFFICIENCY';
+    if(evaluation?.decision?.automationLevel)task.automationLevel=evaluation.decision.automationLevel;
+    if(evaluation?.decision?.type==='RECOMMEND_CONFIRM'){task.decisionType='RECOMMEND_CONFIRM';task.taskLifecycleState='RECOMMENDED'}
+    else if(evaluation?.decision?.type==='AUTO_CREATE')task.decisionType='AUTO_CREATE';
+    task.ruleRef={...(task.ruleRef||{}),ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,authority:'Honey Bee Health Coalition + USDA ARS',authorityRuleIds:evaluation.task?.evidenceChain?.authorityIds||[]};
+    task.ruleEvaluation={assessment:evaluation.assessment,decision:evaluation.decision,contextPolicy:'COLONY_PHASE_FIRST_MONTH_SUPPORTING_ONLY'};
+    task.varroaEvidence=evaluation.evidence?.varroa||null;
+    return task;
+  }
+
+  const extended=Object.freeze({...base,varroaMonitoringRule:ruleDefinition,buildVarroaEvidence:(s,hid)=>varroaEvidence(s,hid,todayFor(s,hiveBy(s,hid))),evaluateVarroaMonitoring:(s,hid,existingRows=[])=>{const h=hiveBy(s,hid);return h?buildVarroaMonitoringTask(s,h,existingRows):null}});
+  window.HiveDashTaskEngineCoreV1=extended;
+  window.V2P2E5AW_VARROA_MONITORING_RULE=ruleDefinition;
+
+  const prevGenerate=window.generateActions||generateActions;
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      let out=(prevGenerate(s)||[]).filter(a=>!isLegacyR02(a));
+      const seen=new Set(out.map(a=>txt(a.id)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`));
+      for(const h of active(s)){
+        const evaluation=buildVarroaMonitoringTask(s,h,out),task=projectTask(evaluation,s);if(!task)continue;
+        const k=txt(task.id)||`${txt(task.hiveId)}|${txt(task.intentKey)}|${txt(task.title)}`;if(seen.has(k))continue;
+        seen.add(k);out.push(task);
+      }
+      return out;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  window.v2p2e5awEvaluateVarroaMonitoring=function(hiveId){const s=S();return s?extended.evaluateVarroaMonitoring(s,hiveId,(typeof prevGenerate==='function'?prevGenerate(s):[]).filter(a=>!isLegacyR02(a))):null};
+  window.__HIVEDASH_V2P2E5AW_VERSION__='v2p2e5aw-varroa-monitoring-core-rule-migration';
+})();

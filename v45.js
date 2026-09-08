@@ -21292,7 +21292,10 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
   const effectiveLoc=(s,h)=>{try{return typeof v2p1bEffectiveHiveLocation==='function'?v2p1bEffectiveHiveLocation(s,h):(h?.currentLocation||s?.settings?.apiaryLocation||null)}catch(_){return h?.currentLocation||s?.settings?.apiaryLocation||null}};
   const isDone=a=>a&&(a.status==='Completed'||a.priority==='Done');
   const isManualInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&['manual','manual-plan'].includes(txt(a.source));
-  const isFullInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&/^inspection\//.test(txt(a.executionRoute||''));
+  const SPECIFIC_FULL_INSPECTION_SOURCES=new Set(['split-hive-follow-up','combine-hive-follow-up','swarm-control-follow-up']);
+  const isFullInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&(
+    /^inspection\//.test(txt(a.executionRoute||''))||SPECIFIC_FULL_INSPECTION_SOURCES.has(txt(a.source))
+  );
   const isPeriodicIntent=a=>['inspection-adaptive','inspection-adaptive-confirm','inspection-adaptive-initial','inspection-adaptive-low-disturbance','inspection-initial','inspection-scheduled','inspection-confirm'].includes(txt(a?.intentKey));
   const isMigratedPeriodic=a=>!!a&&(isPeriodicIntent(a)||txt(a?.id).startsWith('scientific-adaptive-')||txt(a?.id).startsWith('scientific-inspection-'));
   const fmt=v=>{const d=iso(v);if(!d)return txt(v)||'—';try{return typeof fmtDate==='function'?fmtDate(d):d}catch(_){return d}};
@@ -21410,7 +21413,25 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
     };
 
     if(!evidence?.inspection?.id){
-      const intent='inspection-adaptive-initial',fp=fingerprint(s,h,ctx,evidence,rule,intent),a=baseTask(h,intent,'Initial inspection needed');
+      const intent='inspection-adaptive-initial',fp=fingerprint(s,h,ctx,evidence,rule,intent);
+      // V2P2E5AV2: task coverage is evaluated before creating the baseline task.
+      // A beekeeper-planned full Inspection or a more-specific full-Inspection
+      // follow-up is already the work item that will produce the missing evidence.
+      // Suppress only the duplicate R01 task; biological evidence remains missing
+      // until that Inspection is actually saved.
+      const manualIndex=existingRows.findIndex(a=>txt(a?.hiveId)===hid&&isManualInspection(a));
+      if(manualIndex>=0){
+        existingRows[manualIndex]={...existingRows[manualIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fp,satisfiesCoreRuleId:CORE_RULE_ID,routineCoverageKind:'USER_PLANNED_FULL_INSPECTION'};
+        evaluation.decision={type:'SUPPRESSED_BY_USER_PLAN',automationLevel:'MANUAL',reason:'active-manual-inspection-covers-missing-baseline-evidence'};
+        evaluation.task=null;return evaluation;
+      }
+      const specificIndex=existingRows.findIndex(a=>txt(a?.hiveId)===hid&&isFullInspection(a)&&!isPeriodicIntent(a));
+      if(specificIndex>=0){
+        existingRows[specificIndex]={...existingRows[specificIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fp,ruleVersion:existingRows[specificIndex].ruleVersion||RULE_VERSION,satisfiesCoreRuleId:CORE_RULE_ID,routineCoverageKind:'SPECIFIC_FULL_INSPECTION'};
+        evaluation.decision={type:'SUPERSEDED_BY_SPECIFIC_FULL_INSPECTION',automationLevel:'A_AUTO_TASK',reason:'specific-full-inspection-covers-missing-baseline-evidence'};
+        evaluation.task=null;return evaluation;
+      }
+      const a=baseTask(h,intent,'Initial inspection needed');
       a.id=`scientific-adaptive-initial-${hid}`;a.priority=priority==='Routine'?'Medium':priority;a.executionRoute=`inspection/${hid}`;a.taskFingerprint=fp;a.evidenceStatus=txt(ctx?.location?.stateCode)?'PARTIAL':'INCOMPLETE';
       a.dueDate='';a.date='';a.due=txt(ctx?.colonyPhase).startsWith('Dormant')?'When conditions permit':'As soon as suitable conditions permit';
       a.systemWhy='No valid Inspection record exists. A baseline is needed before the adaptive engine can rely on colony phase, risk and trend evidence.';
@@ -21433,8 +21454,22 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
         const ad=dayNo(a.dueDate||a.date||a.due);return ad!==null&&ad<=wEnd;
       });
       if(specificIndex>=0){
-        existingRows[specificIndex]={...existingRows[specificIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fpBase,ruleVersion:existingRows[specificIndex].ruleVersion||RULE_VERSION,satisfiesCoreRuleId:CORE_RULE_ID};
+        existingRows[specificIndex]={...existingRows[specificIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fpBase,ruleVersion:existingRows[specificIndex].ruleVersion||RULE_VERSION,satisfiesCoreRuleId:CORE_RULE_ID,routineCoverageKind:'SPECIFIC_FULL_INSPECTION'};
         evaluation.decision={type:'SUPERSEDED_BY_SPECIFIC_FULL_INSPECTION',automationLevel:'A_AUTO_TASK'};evaluation.task=null;return evaluation;
+      }
+    }else{
+      // Where no quantified authority window exists, an explicit active full
+      // Inspection plan is the user's chosen execution date. R01 must not add a
+      // second generic confirmation task merely because it cannot quantify its own window.
+      const manualIndex=existingRows.findIndex(a=>txt(a?.hiveId)===hid&&isManualInspection(a));
+      if(manualIndex>=0){
+        existingRows[manualIndex]={...existingRows[manualIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fpBase,satisfiesCoreRuleId:CORE_RULE_ID,routineCoverageKind:'USER_PLANNED_FULL_INSPECTION'};
+        evaluation.decision={type:'SUPPRESSED_BY_USER_PLAN',automationLevel:'MANUAL',reason:'manual-full-inspection-covers-unquantified-periodic-task'};evaluation.task=null;return evaluation;
+      }
+      const specificIndex=existingRows.findIndex(a=>txt(a?.hiveId)===hid&&isFullInspection(a)&&!isPeriodicIntent(a));
+      if(specificIndex>=0){
+        existingRows[specificIndex]={...existingRows[specificIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fpBase,ruleVersion:existingRows[specificIndex].ruleVersion||RULE_VERSION,satisfiesCoreRuleId:CORE_RULE_ID,routineCoverageKind:'SPECIFIC_FULL_INSPECTION'};
+        evaluation.decision={type:'SUPERSEDED_BY_SPECIFIC_FULL_INSPECTION',automationLevel:'A_AUTO_TASK',reason:'specific-full-inspection-covers-unquantified-periodic-task'};evaluation.task=null;return evaluation;
       }
     }
 
@@ -21539,3 +21574,5 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
 
 /* V2P2E5AV1: Periodic Inspection date draft survives realtime re-render. */
 window.__HIVEDASH_V2P2E5AV1_VERSION__='v2p2e5av1-periodic-inspection-date-draft-fix';
+/* V2P2E5AV2: R01 full-Inspection task coverage / duplicate suppression fix. */
+window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-coverage-fix';

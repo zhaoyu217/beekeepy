@@ -22670,3 +22670,50 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
 
   window.__HIVEDASH_V2P2E5AX5_VERSION__='v2p2e5ax5-transient-planned-treatment-open-route-fix';
 })();
+
+/* ==============================================================
+   V2P2E5AX6 — TRANSIENT VARROA LIFECYCLE OPEN ROUTE FIX
+   Scope: Actions open/routing only.
+   - Extends AX5 from Planned-only to all transient Varroa lifecycle rows.
+   - These rows are projections of the current Treatment lifecycle and do not
+     need a persisted state.actions entity in order to be opened.
+   - Opens the SAME existing Treatment/retest target; never creates a duplicate.
+   - No R01/R02/R03 evaluation, evidence, thresholds, Health/Risk, or Treatment
+     persistence is changed.
+   ============================================================== */
+(function v2p2e5ax6TransientVarroaLifecycleOpenFix(){
+  if(window.__HIVEDASH_V2P2E5AX6__)return;
+  window.__HIVEDASH_V2P2E5AX6__=true;
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const prev=window.v2p2e5abOpenUnifiedAction;
+
+  function projectedRow(id){
+    try{
+      const rows=typeof window.v53ActionRows==='function'?window.v53ActionRows('Pending'):[];
+      return (rows||[]).find(a=>a&&txt(a.id)===txt(id))||null;
+    }catch(_){return null}
+  }
+  function lifecycleRoute(a){
+    if(!a)return '';
+    const stage=low(a.workflowStage||a.varroaStage);
+    const hid=txt(a.hiveId);
+    if(!hid)return '';
+    if(!['treatment-active','treatment-planned','awaiting-retest','treatment-active-unlinked'].includes(stage))return '';
+    const explicit=txt(a.executionRoute||a.varroaRoute);
+    if(explicit)return explicit;
+    if(stage==='treatment-active'||stage==='treatment-planned')return `treatment-record/${hid}/current`;
+    if(stage==='awaiting-retest')return `varroa-test/${hid}/retest`;
+    if(stage==='treatment-active-unlinked')return `hive/${hid}`;
+    return '';
+  }
+
+  window.v2p2e5abOpenUnifiedAction=function(actionId){
+    const a=projectedRow(actionId);
+    const route=lifecycleRoute(a);
+    if(route)return go(route);
+    return typeof prev==='function'?prev.apply(this,arguments):(typeof toast==='function'?toast('This task is no longer active'):null);
+  };
+
+  window.__HIVEDASH_V2P2E5AX6_VERSION__='v2p2e5ax6-transient-varroa-lifecycle-open-route-fix';
+})();

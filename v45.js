@@ -21942,3 +21942,93 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
   window.__HIVEDASH_V2P2E5AW1_VERSION__='v2p2e5aw2-varroa-evidence-quality-gate-legacy-compatibility';
   window.__HIVEDASH_V2P2E5AW2_VERSION__='v2p2e5aw2-varroa-legacy-evidence-compatibility-fix';
 })();
+
+
+/* ==============================================================
+   V2P2E5AW3 — SCIENTIFIC VARROA MANAGEMENT CONFIRMATION GATE
+   Scope:
+   - A scientific Varroa management task may identify the problem, but it must
+     not preselect a drug, dose, product, or application method.
+   - Applies ONLY when Treatment is entered from a system Varroa
+     management-review task. Manual Treatment / Record Now flows are unchanged.
+   - R02 monitoring logic, R01, Health/Risk thresholds, persistence, and
+     Treatment follow-up behavior are unchanged.
+   ============================================================== */
+(function v2p2e5aw3ScientificVarroaManagementConfirmationGate(){
+  if(window.__HIVEDASH_V2P2E5AW3_MANAGEMENT_CONFIRMATION_GATE__)return;
+  window.__HIVEDASH_V2P2E5AW3_MANAGEMENT_CONFIRMATION_GATE__=true;
+
+  const KEY='hivedash_v2p2e5aw3_scientific_management_context';
+  const txt=v=>String(v==null?'':v).trim();
+  const low=v=>txt(v).toLowerCase();
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const now=()=>Date.now();
+  const readCtx=()=>{try{const x=JSON.parse(sessionStorage.getItem(KEY)||'null');if(!x||now()-Number(x.startedAt||0)>600000){sessionStorage.removeItem(KEY);return null}return x}catch(_){return null}};
+  const clearCtx=()=>{try{sessionStorage.removeItem(KEY)}catch(_){}};
+  const isVarroaManagement=a=>!!(a&&low(a.reasonCode)==='varroa'&&txt(a.workflowStage)==='management-review'&&low(a.intentKey).includes('varroa-management'));
+
+  window.v2p2e5aw3ReviewExecute=function(actionId){
+    const s=S(),a=(s?.actions||[]).find(x=>x&&txt(x.id)===txt(actionId));
+    if(!a||!isVarroaManagement(a))return a?.executionRoute?go(a.executionRoute):go('actions');
+    try{sessionStorage.setItem(KEY,JSON.stringify({actionId:txt(a.id),hiveId:txt(a.hiveId),route:txt(a.executionRoute),startedAt:now()}))}catch(_){}
+    go(txt(a.executionRoute)||`treatment-record/${txt(a.hiveId)}`);
+  };
+
+  function decorateScientificTask(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]!=='scientific-action')return;
+    const s=S(),a=(s?.actions||[]).find(x=>x&&txt(x.id)===txt(p[1]));
+    if(!isVarroaManagement(a))return;
+    const btn=document.querySelector('.v2p2e5ab-detail-actions .primary');
+    if(btn){btn.textContent='Review options';btn.setAttribute('onclick',`v2p2e5aw3ReviewExecute('${txt(a.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')`)}
+    const next=document.querySelector('.v2p2e5ab-detail .vc:nth-of-type(3) p');
+    if(next)next.textContent='Review the evidence and choose the appropriate management step. HiveDash will not preselect a drug, dose, product, or application method; confirm the product label and current hive conditions before recording treatment.';
+  }
+
+  function ensureBlankOption(select,label){
+    if(!select)return;
+    let opt=[...select.options].find(o=>o.value==='');
+    if(!opt){opt=document.createElement('option');opt.value='';opt.textContent=label;select.insertBefore(opt,select.firstChild)}
+    select.value='';
+  }
+
+  function applyTreatmentConfirmationGate(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]!=='treatment-record')return;
+    const ctx=readCtx();if(!ctx||txt(ctx.hiveId)!==txt(p[1]))return;
+    const form=document.getElementById('rform');if(!form||form.dataset.v2p2e5aw3Gate==='1')return;
+    form.dataset.v2p2e5aw3Gate='1';
+
+    // Problem identification comes from the scientific task. Treatment choice does not.
+    const problem=form.elements?.Problem;if(problem)problem.value='Varroa Mites';
+    ensureBlankOption(form.elements?.Treatment,'Select treatment');
+    if(form.elements?.Product)form.elements.Product.value='';
+    if(form.elements?.Active_Ingredient)form.elements.Active_Ingredient.value='';
+    ensureBlankOption(form.elements?.Application_Method,'Select application method');
+    if(form.elements?.Concentration)form.elements.Concentration.value='';
+    if(form.elements?.Dose)form.elements.Dose.value='';
+    if(form.elements?.Treatment_Status)form.elements.Treatment_Status.value='Planned';
+
+    const first=form.querySelector('.treatment-section-v102');
+    if(first&&!form.querySelector('.v2p2e5aw3-scientific-gate-note')){
+      const note=document.createElement('div');note.className='treatment-safety-note v2p2e5aw3-scientific-gate-note';
+      note.textContent='Scientific management review: no treatment, product, application method, or dose has been preselected. Choose only after confirming the applicable product label and current hive conditions.';
+      first.insertBefore(note,first.children[1]||null);
+    }
+  }
+
+  const prevRender=window.render||render;
+  window.render=function(){
+    const ret=prevRender.apply(this,arguments);
+    try{
+      const page=txt(location.hash||'#home').replace(/^#/,'').split('/')[0];
+      if(page==='scientific-action')decorateScientificTask();
+      else if(page==='treatment-record')applyTreatmentConfirmationGate();
+      else clearCtx();
+    }catch(err){console.error('V2P2E5AW3 confirmation gate render failed',err)}
+    return ret;
+  };
+  try{render=window.render}catch(_){}
+
+  window.__HIVEDASH_V2P2E5AW3_VERSION__='v2p2e5aw3-scientific-varroa-management-confirmation-gate';
+})();

@@ -22553,3 +22553,75 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
   }
   window.__HIVEDASH_V2P2E5AX3_VERSION__='v2p2e5ax3-r03-evidence-chain-detail';
 })();
+
+/* ==============================================================
+   V2P2E5AX4 — PLANNED VARROA TREATMENT STAGE PROJECTION FIX
+   Scope: presentation/routing only.
+   - When a formal Varroa Treatment exists with status Planned, R03 is already
+     superseded by the Treatment lifecycle. Legacy stage projection must show
+     "Treatment planned" instead of falling through to "Varroa management required".
+   - Opening that row edits the SAME planned Treatment via /current.
+   - No R01/R02/R03 evaluation, thresholds, evidence, or Treatment persistence
+     is changed.
+   ============================================================== */
+(function v2p2e5ax4PlannedVarroaTreatmentProjectionFix(){
+  if(window.__HIVEDASH_V2P2E5AX4__)return;
+  window.__HIVEDASH_V2P2E5AX4__=true;
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const isVarroaRow=a=>{
+    const hay=low([a?.id,a?.type,a?.title,a?.reason,a?.reasonCode,a?.intentKey].filter(Boolean).join(' '));
+    return hay.includes('varroa')||hay.includes('mite');
+  };
+  const stageFor=(s,h)=>{try{return typeof window.v2p2aVarroaStage==='function'?window.v2p2aVarroaStage(s,h):null}catch(_){return null}};
+  const hiveOf=(s,id)=>{try{return typeof hive==='function'?hive(s,id):(Array.isArray(s?.hives)?s.hives.find(x=>String(x?.id)===String(id)):null)}catch(_){return null}};
+
+  function projectPlanned(a,s){
+    if(!a||!isVarroaRow(a))return a;
+    const h=hiveOf(s,a.hiveId);if(!h)return a;
+    const st=stageFor(s,h);
+    if(st?.stage!=='treatment-planned'||!st?.tx)return a;
+    return {
+      ...a,
+      type:'Treatment',
+      title:'Treatment planned',
+      priority:a.priority==='Done'?'Done':(a.priority||'Medium'),
+      due:txt(st.tx?.date||a.dueDate||a.date||a.due)||'Planned',
+      reason:'A Varroa Treatment has been planned. Review or update the existing plan before starting treatment.',
+      intentKey:'varroa-treatment-planned',
+      workflowStage:'treatment-planned',
+      varroaStage:'treatment-planned',
+      executionRoute:`treatment-record/${h.id}/current`,
+      varroaRoute:`treatment-record/${h.id}/current`,
+      taskLifecycleState:a.taskLifecycleState||'PENDING'
+    };
+  }
+
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){return (prevGenerate(s)||[]).map(a=>projectPlanned(a,s))};
+    try{generateActions=window.generateActions}catch(_){}
+  }
+
+  const prevRows=window.v53ActionRows||((typeof v53ActionRows==='function')?v53ActionRows:null);
+  if(typeof prevRows==='function'){
+    window.v53ActionRows=function(mode='Pending'){
+      const s=typeof v45s==='function'?v45s():{};
+      return (prevRows(mode)||[]).map(a=>projectPlanned(a,s));
+    };
+    try{v53ActionRows=window.v53ActionRows}catch(_){}
+  }
+
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){
+    const s=typeof v45s==='function'?v45s():{},h=hiveOf(s,hiveId),st=h?stageFor(s,h):null;
+    const t=low(type);
+    if(h&&st?.stage==='treatment-planned'&&(t.includes('treat')||t.includes('varroa')||t.includes('mite'))){
+      return go(`treatment-record/${h.id}/current`);
+    }
+    return typeof prevOpen==='function'?prevOpen.apply(this,arguments):go(`hive/${hiveId}`);
+  };
+  try{openActionByType=window.openActionByType}catch(_){}
+
+  window.__HIVEDASH_V2P2E5AX4_VERSION__='v2p2e5ax4-planned-varroa-treatment-stage-projection';
+})();

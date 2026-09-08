@@ -22467,3 +22467,89 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
 
   window.__HIVEDASH_V2P2E5AX2_VERSION__='v2p2e5ax2-r03-core-decision-projection-authority';
 })();
+
+/* ==============================================================
+   V2P2E5AX3 — R03 EVIDENCE CHAIN DETAIL
+   Scope: presentation / auditability only.
+   - Adds an explicit Evidence chain to HD-R03 scientific task detail.
+   - Does not modify R01/R02/R03 evaluation, thresholds, task generation,
+     Treatment persistence, routes, or decision authority.
+   ============================================================== */
+(function v2p2e5ax3R03EvidenceChainDetail(){
+  if(window.__HIVEDASH_V2P2E5AX3__)return;
+  window.__HIVEDASH_V2P2E5AX3__=true;
+  const RULE_ID='HD-R03-VARROA-MANAGEMENT-DECISION';
+  const txt=v=>String(v??'').trim();
+  const escX=v=>typeof esc==='function'?esc(txt(v)):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
+  const num=v=>Number.isFinite(Number(v))?Number(v):null;
+  const fmtRate=v=>{const n=num(v);return n===null?'—':`${Number.isInteger(n)?n:n.toFixed(1)} / 100 bees`};
+  const fmtThreshold=v=>{const n=num(v);return n===null?'Context dependent':`≥ ${Number.isInteger(n)?n:n.toFixed(1)} / 100 bees`};
+  const fmtDate=v=>{const s=txt(v);if(!/^\d{4}-\d{2}-\d{2}$/.test(s))return s||'—';try{return new Date(`${s}T12:00:00`).toLocaleDateString('en-US',{month:'short',day:'numeric',year:'numeric'})}catch(_){return s}};
+
+  function currentAction(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]!=='scientific-action'||!p[1])return null;
+    const id=p[1],s=S();
+    let a=(s?.actions||[]).find(x=>x&&txt(x.id)===id)||null;
+    if(!a){try{const rows=typeof window.v53ActionRows==='function'?window.v53ActionRows('Pending'):[];a=(rows||[]).find(x=>x&&txt(x.id)===id)||null}catch(_){}}
+    return a;
+  }
+  function detailHTML(a){
+    const ec=a?.evidenceChain||{};
+    const ass=a?.varroaManagementDecision||a?.ruleEvaluation?.assessment||{};
+    const dec=a?.ruleEvaluation?.decision||{};
+    const standardized=ec.standardized===true||ass.standardized===true;
+    const legacy=ec.legacyGrandfathered===true||ass.legacyGrandfathered===true;
+    const evidenceLabel=standardized?'STANDARDIZED':legacy?'LEGACY COMPATIBLE':txt(ec.evidenceStatus||ass.evidenceStatus||'CURRENT');
+    const threshold=ec.threshold??ass.threshold;
+    const decision=txt(dec.type)==='RECOMMEND_CONFIRM'?'Review management — beekeeper confirmation required':txt(dec.type||a.decisionType||'Review management');
+    const method=txt(ec.method)||'Not recorded';
+    const sample=num(ec.sampleSize);
+    const miteCount=num(ec.miteCount);
+    const phase=txt(ec.colonyPhase||ass.phase)||'Uncertain';
+    const result=ec.mitesPer100??ass.rate;
+    const testDate=txt(ec.latestVarroaTestDate)||'—';
+    const ruleVersion=txt(ec.ruleVersion||a.ruleVersion)||'HD-R03';
+    const authority=txt(ec.authority)||'Honey Bee Health Coalition';
+    const regional=txt(ec.regionalOverrideStatus)==='NO_VALIDATED_STATE_OVERRIDE_LOADED'?'No validated state override loaded':'See current rule context';
+    return `<section class="vc v2p2e5ax3-evidence"><div class="vhead"><b>Evidence chain</b><span class="v2p2e5ax3-quality">${escX(evidenceLabel)}</span></div>
+      <div class="v2p2e5ax3-grid">
+        <span>Varroa test date<b>${escX(fmtDate(testDate))}</b></span>
+        <span>Method<b>${escX(method)}</b></span>
+        <span>Sample size<b>${sample===null?'—':escX(`${sample} bees`)}</b></span>
+        <span>Mites counted<b>${miteCount===null?'—':escX(miteCount)}</b></span>
+        <span>Measured result<b>${escX(fmtRate(result))}</b></span>
+        <span>Colony phase<b>${escX(phase)}</b></span>
+        <span>Management threshold<b>${escX(fmtThreshold(threshold))}</b></span>
+        <span>Decision<b>${escX(decision)}</b></span>
+      </div>
+      <div class="v2p2e5ax3-rule"><b>${escX(authority)}</b><span>Tools for Varroa Management, Ninth Edition · ${escX(ruleVersion)}</span><small>${escX(regional)}. Local Extension guidance may differ and should take priority when a validated local rule is available.</small></div>
+    </section>`;
+  }
+  function decorate(){
+    const a=currentAction();
+    if(!a||txt(a.coreRuleId)!==RULE_ID)return;
+    const root=document.querySelector('.v2p2e5ab-detail');
+    if(!root||root.querySelector('.v2p2e5ax3-evidence'))return;
+    const sections=root.querySelectorAll(':scope > section.vc');
+    const why=sections[1]||sections[0];
+    if(!why)return;
+    why.insertAdjacentHTML('afterend',detailHTML(a));
+    const cta=root.querySelector('.v2p2e5ab-detail-actions .primary');
+    if(cta&&txt(a.workflowStage)==='management-review')cta.textContent='Review options';
+    if(!document.getElementById('v2p2e5ax3-style')){
+      const st=document.createElement('style');st.id='v2p2e5ax3-style';st.textContent=`
+        .v2p2e5ax3-evidence .vhead{align-items:center}.v2p2e5ax3-quality{margin-left:auto;font-size:9px;font-weight:800;padding:4px 7px;border-radius:999px;background:#EEF2EA;color:#52694C}
+        .v2p2e5ax3-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:10px}.v2p2e5ax3-grid span{display:grid;gap:3px;font-size:10px;color:#7A817B}.v2p2e5ax3-grid b{font-size:12px;color:#334C38;overflow-wrap:anywhere}
+        .v2p2e5ax3-rule{display:grid;gap:4px;border-top:1px solid #E8E3D9;margin-top:12px;padding-top:10px}.v2p2e5ax3-rule b{font-size:11px;color:#334C38}.v2p2e5ax3-rule span,.v2p2e5ax3-rule small{font-size:10px;line-height:1.45;color:#6E776F}
+      `;document.head.appendChild(st);
+    }
+  }
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){const ret=prevRender.apply(this,arguments);try{decorate()}catch(err){console.error('V2P2E5AX3 R03 evidence detail failed',err)}queueMicrotask(()=>{try{decorate()}catch(_){}});return ret};
+    try{render=window.render}catch(_){ }
+  }
+  window.__HIVEDASH_V2P2E5AX3_VERSION__='v2p2e5ax3-r03-evidence-chain-detail';
+})();

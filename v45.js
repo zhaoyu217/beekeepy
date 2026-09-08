@@ -22375,3 +22375,95 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
 
   window.__HIVEDASH_V2P2E5AX1_VERSION__='v2p2e5ax1-varroa-test-back-cancel';
 })();
+
+/* ==============================================================
+   V2P2E5AX2 — R03 CORE DECISION PROJECTION AUTHORITY FIX
+   Once HD-R03 has produced a Core management-review decision, legacy
+   Varroa stage/UI projection must not reinterpret that task back into a
+   generic recheck merely because the older frozen Health model still calls
+   the same numeric result Medium/Caution.
+   Scope: projection/routing only. No R01/R02/R03 thresholds, Evidence,
+   Treatment persistence, or scientific source logic is changed.
+   ============================================================== */
+(function v2p2e5ax2R03ProjectionAuthorityFix(){
+  if(window.__HIVEDASH_V2P2E5AX2__)return;
+  window.__HIVEDASH_V2P2E5AX2__=true;
+  const RULE_ID='HD-R03-VARROA-MANAGEMENT-DECISION';
+  const txt=v=>String(v??'').trim();
+
+  function isR03Management(a){
+    if(!a||txt(a.coreRuleId)!==RULE_ID)return false;
+    const st=txt(a?.varroaManagementDecision?.status||a?.ruleEvaluation?.assessment?.status);
+    return st==='PROMPT_MANAGEMENT'||st==='PROMPT_MANAGEMENT_LEGACY';
+  }
+  function restoreR03Management(a){
+    if(!isR03Management(a))return a;
+    const hid=txt(a.hiveId);
+    const dueDate=txt(a.dueDate||a.date);
+    const why=txt(a.systemWhy||a.reason);
+    return {
+      ...a,
+      type:'Treatment',
+      title:'Review Varroa management',
+      priority:'High',
+      intentKey:'varroa-management',
+      workflowStage:'management-review',
+      executionRoute:`treatment-record/${hid}`,
+      varroaRoute:`treatment-record/${hid}`,
+      due:dueDate||txt(a.due)||'Now',
+      reason:why||a.reason,
+      decisionType:'RECOMMEND_CONFIRM',
+      automationLevel:'B_RECOMMEND_CONFIRM',
+      taskLifecycleState:a.taskLifecycleState||'RECOMMENDED'
+    };
+  }
+
+  // Protect generated rows before any consumer sees them.
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){return (prevGenerate(s)||[]).map(restoreR03Management)};
+    try{generateActions=window.generateActions}catch(_){}
+  }
+
+  // V2P2A's legacy Actions row projector runs at render time and can otherwise
+  // rewrite a valid R03 management task to "Recheck Varroa level". Reassert
+  // Core ownership after that legacy projection has completed.
+  const prevRows=window.v53ActionRows||((typeof v53ActionRows==='function')?v53ActionRows:null);
+  if(typeof prevRows==='function'){
+    window.v53ActionRows=function(mode='Pending'){return (prevRows(mode)||[]).map(restoreR03Management)};
+    try{v53ActionRows=window.v53ActionRows}catch(_){}
+  }
+
+  // Generic Action opening must also respect the Core decision. The older
+  // stage router would otherwise send a 2/100 Population-Decrease R03 task
+  // back into varroa-test/recheck because the frozen legacy model says Medium.
+  const prevOpen=window.openActionByType;
+  window.openActionByType=function(type,hiveId,actionId){
+    const aid=txt(actionId),hid=txt(hiveId);
+    if(aid.startsWith('scientific-varroa-management-r03-'))return go(`treatment-record/${hid}`);
+    try{
+      const rows=typeof window.v53ActionRows==='function'?window.v53ActionRows('Pending'):[];
+      const row=(rows||[]).find(x=>txt(x.id)===aid);
+      if(isR03Management(row))return go(`treatment-record/${txt(row.hiveId||hid)}`);
+    }catch(_){}
+    return typeof prevOpen==='function'?prevOpen.apply(this,arguments):go(`hive/${hid}`);
+  };
+  try{openActionByType=window.openActionByType}catch(_){}
+
+  // Home Action Center is another legacy projection surface. Preserve the
+  // R03 decision/title/route there as well.
+  const prevHomeAction=window.v56HomeAction||((typeof v56HomeAction==='function')?v56HomeAction:null);
+  if(typeof prevHomeAction==='function'){
+    window.v56HomeAction=function(){
+      const out=prevHomeAction();
+      if(!out?.a)return out;
+      const a=restoreR03Management(out.a);
+      if(!isR03Management(a))return out;
+      const hid=txt(a.hiveId||out.hid);
+      return {...out,a,hid,label:'Review',click:`go('treatment-record/${hid}')`};
+    };
+    try{v56HomeAction=window.v56HomeAction}catch(_){}
+  }
+
+  window.__HIVEDASH_V2P2E5AX2_VERSION__='v2p2e5ax2-r03-core-decision-projection-authority';
+})();

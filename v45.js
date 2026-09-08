@@ -19817,21 +19817,36 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     s.meta.scientificTaskOverrides.push({id:`sci-override-${Date.now()}-${Math.random().toString(36).slice(2,7)}`,hiveId:txt(a.hiveId),taskId:txt(a.id),taskFingerprint:txt(a.taskFingerprint),ruleVersion:RULE_VERSION,decision,date:iso(date),reason:txt(reason),recordedAt:new Date().toISOString(),source:'beekeeper-correction'});
     s.meta.scientificTaskOverrides=s.meta.scientificTaskOverrides.slice(-300);
   }
+  // V2P2E5AV1: preserve an unsubmitted inspection-date edit across unrelated
+  // realtime/cloud re-renders. This is UI draft state only; it never becomes
+  // biological evidence and is cleared on Back, Adjust, Not needed or Start.
+  const DATE_DRAFT_KEY='hivedash_v2p2e5ad_date_draft_v1';
+  function readDateDraft(actionId){
+    try{const raw=sessionStorage.getItem(DATE_DRAFT_KEY);if(!raw)return null;const d=JSON.parse(raw);return d&&txt(d.actionId)===txt(actionId)?txt(d.value):null}catch(_){return null}
+  }
+  function writeDateDraft(actionId,value){
+    try{sessionStorage.setItem(DATE_DRAFT_KEY,JSON.stringify({actionId:txt(actionId),value:txt(value),updatedAt:new Date().toISOString()}))}catch(_){ }
+  }
+  function clearDateDraft(actionId){
+    try{const raw=sessionStorage.getItem(DATE_DRAFT_KEY);if(!raw)return;const d=JSON.parse(raw);if(!actionId||txt(d?.actionId)===txt(actionId))sessionStorage.removeItem(DATE_DRAFT_KEY)}catch(_){try{sessionStorage.removeItem(DATE_DRAFT_KEY)}catch(__){ }}
+  }
+  window.v2p2e5adCaptureDateDraft=function(actionId,value){writeDateDraft(actionId,value)};
+  window.v2p2e5adBack=function(actionId){clearDateDraft(actionId);go('actions')};
   window.v2p2e5adAdjustDate=function(actionId){
     const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId)),el=document.getElementById('v2p2e5ad-date');if(!a||!el)return toast('Task is no longer active');
     const h=hiveBy(s,a.hiveId),d=iso(el.value);if(!d)return toast('Choose a date');const today=todayFor(s,h);if(today&&d<today)return toast('Date cannot be in the past');
     const reason=txt(window.prompt('Why are you changing the system date?','Local conditions / beekeeper judgment')||'');if(!reason)return toast('Add a reason so the correction remains traceable');
-    storeOverride(s,a,'adjust-date',d,reason);if(save(s)===false)return;toast('Inspection date adjusted');go('actions');
+    storeOverride(s,a,'adjust-date',d,reason);if(save(s)===false)return;clearDateDraft(actionId);toast('Inspection date adjusted');go('actions');
   };
   window.v2p2e5adNotNeeded=function(actionId){
     const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId));if(!a)return toast('Task is no longer active');
     const reason=txt(window.prompt('Why is this system task not needed?','')||'');if(!reason)return toast('Add a reason so the correction remains traceable');
-    storeOverride(s,a,'not-needed','',reason);if(save(s)===false)return;toast('Task suppressed until new evidence changes the decision');go('actions');
+    storeOverride(s,a,'not-needed','',reason);if(save(s)===false)return;clearDateDraft(actionId);toast('Task suppressed until new evidence changes the decision');go('actions');
   };
   window.v2p2e5adStartInspection=function(actionId){
     const s=S(),a=(s.actions||[]).find(x=>x&&txt(x.id)===txt(actionId)),h=a?hiveBy(s,a.hiveId):null;if(!a||!h)return toast('Task is no longer active');
     const d=decisionFor(s,h);try{sessionStorage.setItem('hivedash_v2p2e5ad_adaptive_inspection',JSON.stringify({taskId:txt(a.id),taskFingerprint:txt(a.taskFingerprint),hiveId:txt(h.id),intentKey:txt(a.intentKey),ruleVersion:RULE_VERSION,dueWindowStart:iso(a.dueWindowStart||a.proposedWindowStart),dueWindowEnd:iso(a.dueWindowEnd||a.proposedWindowEnd||a.dueDate),prePhase:txt(d?.phase),preRisk:txt(d?.overallRisk),preConfidence:txt(d?.confidence?.level),startedAt:new Date().toISOString()}))}catch(_){ }
-    go(`inspection/${h.id}`);
+    clearDateDraft(actionId);go(`inspection/${h.id}`);
   };
 
   function evidenceLines(a){
@@ -19839,8 +19854,8 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     return `<section class="vc"><div class="vhead"><b>Evidence chain</b><span class="v2p2e5ad-confidence ${low(e.confidence)}">${escD(e.confidence||'LOW')}</span></div><div class="v2p2e5ad-evidence-grid"><span>Region<b>${escD(e.stateCode||'Not confirmed')}</b></span><span>Season context<b>${escD(e.season||'Uncertain')}</b></span><span>Colony phase<b>${escD(e.colonyPhase||'Uncertain')}</b></span><span>Current risk<b>${escD(e.risk||'Unassessed')}</b></span><span>Latest Inspection<b>${escD(fmt(e.latestInspectionDate)||'Not recorded')}</b></span><span>Rule version<b>${escD(e.ruleVersion||RULE_VERSION)}</b></span></div>${e.authority?`<div class="v2p2e5ad-authority"><b>${escD(e.authority)}</b><span>${escD(e.authoritySummary||'')}</span><small>${escD(e.ruleId||'')}</small></div>`:''}${priority.length?`<div class="v2p2e5ad-priority"><b>Evidence priority</b><ol>${priority.map(x=>`<li>${escD(x)}</li>`).join('')}</ol></div>`:''}${conf.length?`<div class="v2p2e5ad-conflicts"><b>Needs attention</b>${conf.map(x=>`<span>${escD(x)}</span>`).join('')}</div>`:''}</section>`;
   }
   function detail(a){
-    const s=S(),h=hiveBy(s,a.hiveId),e=a.evidenceChain||{},needsConfirm=['inspection-adaptive-confirm','inspection-adaptive-low-disturbance'].includes(txt(a.intentKey)),initial=txt(a.intentKey)==='inspection-adaptive-initial',start=iso(a.dueWindowStart||a.proposedWindowStart),end=iso(a.dueWindowEnd||a.proposedWindowEnd||a.dueDate),today=h?todayFor(s,h):'',canStart=!needsConfirm||initial||a.userCorrection?.decision==='adjust-date';
-    return `<div class="vs v2p2e5ad-detail"><section class="vc"><div class="vhead"><b>${escD(a.title||'Inspection task')}</b><span class="v2p2e5ab-source-pill">System</span></div><div class="v2p2e5ab-detail-grid"><span>Hive<b>${escD(h?.name||'Unavailable')}</b></span><span>Priority<b>${escD(a.priority||'Medium')}</b></span><span>Inspection window<b>${escD(start&&end&&start!==end?`${fmt(start)} – ${fmt(end)}`:fmt(end||start||a.due))}</b></span><span>Evidence status<b>${escD(a.evidenceStatus||'INCOMPLETE')}</b></span></div></section><section class="vc"><div class="vhead"><b>Why this task exists</b></div><p>${escD(a.systemWhy||'')}</p></section>${evidenceLines(a)}<section class="vc"><div class="vhead"><b>Correction safeguards</b></div><p>New Inspection evidence automatically recalculates this schedule. A more specific full-Inspection follow-up can replace this routine task. Your correction is recorded separately and never becomes biological evidence.</p><p class="muted">Before a full opening, confirm that local conditions are suitable. HiveDash does not invent live weather data.</p>${needsConfirm||!end?`<label class="v2p2e5ad-date-row"><span>Confirm / adjust date</span><input id="v2p2e5ad-date" type="date" min="${escD(today)}" value="${escD(end||'')}"></label>`:`<label class="v2p2e5ad-date-row"><span>Adjust date if local conditions require it</span><input id="v2p2e5ad-date" type="date" min="${escD(today)}" value="${escD(end||'')}"></label>`}</section><div class="v2p2e5ad-actions"><button class="secondary" onclick="go('actions')">Back</button><button class="secondary" onclick="v2p2e5adAdjustDate('${jsD(a.id)}')">Adjust date</button>${!initial?`<button class="secondary" onclick="v2p2e5adNotNeeded('${jsD(a.id)}')">Not needed</button>`:''}${canStart?`<button class="primary" onclick="v2p2e5adStartInspection('${jsD(a.id)}')">Start Inspection</button>`:''}</div></div>`;
+    const s=S(),h=hiveBy(s,a.hiveId),e=a.evidenceChain||{},needsConfirm=['inspection-adaptive-confirm','inspection-adaptive-low-disturbance'].includes(txt(a.intentKey)),initial=txt(a.intentKey)==='inspection-adaptive-initial',start=iso(a.dueWindowStart||a.proposedWindowStart),end=iso(a.dueWindowEnd||a.proposedWindowEnd||a.dueDate),today=h?todayFor(s,h):'',canStart=!needsConfirm||initial||a.userCorrection?.decision==='adjust-date',draftDate=readDateDraft(a.id),inputDate=draftDate!==null?draftDate:(end||'');
+    return `<div class="vs v2p2e5ad-detail"><section class="vc"><div class="vhead"><b>${escD(a.title||'Inspection task')}</b><span class="v2p2e5ab-source-pill">System</span></div><div class="v2p2e5ab-detail-grid"><span>Hive<b>${escD(h?.name||'Unavailable')}</b></span><span>Priority<b>${escD(a.priority||'Medium')}</b></span><span>Inspection window<b>${escD(start&&end&&start!==end?`${fmt(start)} – ${fmt(end)}`:fmt(end||start||a.due))}</b></span><span>Evidence status<b>${escD(a.evidenceStatus||'INCOMPLETE')}</b></span></div></section><section class="vc"><div class="vhead"><b>Why this task exists</b></div><p>${escD(a.systemWhy||'')}</p></section>${evidenceLines(a)}<section class="vc"><div class="vhead"><b>Correction safeguards</b></div><p>New Inspection evidence automatically recalculates this schedule. A more specific full-Inspection follow-up can replace this routine task. Your correction is recorded separately and never becomes biological evidence.</p><p class="muted">Before a full opening, confirm that local conditions are suitable. HiveDash does not invent live weather data.</p>${needsConfirm||!end?`<label class="v2p2e5ad-date-row"><span>Confirm / adjust date</span><input id="v2p2e5ad-date" type="date" min="${escD(today)}" value="${escD(inputDate)}" oninput="v2p2e5adCaptureDateDraft('${jsD(a.id)}',this.value)" onchange="v2p2e5adCaptureDateDraft('${jsD(a.id)}',this.value)"></label>`:`<label class="v2p2e5ad-date-row"><span>Adjust date if local conditions require it</span><input id="v2p2e5ad-date" type="date" min="${escD(today)}" value="${escD(inputDate)}" oninput="v2p2e5adCaptureDateDraft('${jsD(a.id)}',this.value)" onchange="v2p2e5adCaptureDateDraft('${jsD(a.id)}',this.value)"></label>`}</section><div class="v2p2e5ad-actions"><button class="secondary" onclick="v2p2e5adBack('${jsD(a.id)}')">Back</button><button class="secondary" onclick="v2p2e5adAdjustDate('${jsD(a.id)}')">Adjust date</button>${!initial?`<button class="secondary" onclick="v2p2e5adNotNeeded('${jsD(a.id)}')">Not needed</button>`:''}${canStart?`<button class="primary" onclick="v2p2e5adStartInspection('${jsD(a.id)}')">Start Inspection</button>`:''}</div></div>`;
   }
 
   const prevRender=window.render;
@@ -21521,3 +21536,6 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
   };
   window.__HIVEDASH_V2P2E5AV_VERSION__='v2p2e5av-periodic-inspection-core-rule-migration';
 })();
+
+/* V2P2E5AV1: Periodic Inspection date draft survives realtime re-render. */
+window.__HIVEDASH_V2P2E5AV1_VERSION__='v2p2e5av1-periodic-inspection-date-draft-fix';

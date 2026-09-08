@@ -20982,3 +20982,243 @@ window.__HIVEDASH_V2P2E5AS_VERSION__='v2p2e5as-stale-plan-revalidation';
 
 /* V2P2E5AT — reviewed Pending Action freshness across cloud/local merge */
 window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
+
+
+/* ==============================================================
+   V2P2E5AU — TASK ENGINE CORE ARCHITECTURE v1.0 FOUNDATION
+   Architecture contract:
+   - Existing HiveDash records remain the biological / management facts.
+   - Evidence + Context are normalized before future scientific rules consume them.
+   - Rule evaluation, Assessment, Decision and Task are separate concepts.
+   - Existing Actions remain the single user work queue during migration.
+   - Existing B37-B43 workflows remain execution engines; this layer does not
+     rewrite their business logic, persistence, routes or frozen result models.
+   - Current generated/manual Actions are adapted into one canonical Task shape
+     without changing which tasks exist, when they appear, or where they route.
+   - Health score is context only; task intent is typed by Assessment.
+   - AI is not part of scientific rule evaluation in this foundation.
+   ============================================================== */
+(function v2p2e5auTaskEngineCoreArchitecture(){
+  if(window.__HIVEDASH_V2P2E5AU__)return;
+  window.__HIVEDASH_V2P2E5AU__=true;
+
+  const CORE_VERSION='task-engine-core-v1.0';
+  const TASK_SCHEMA_VERSION='task-schema-v1.0';
+  const EVIDENCE_SCHEMA_VERSION='evidence-schema-v1.0';
+  const CONTEXT_SCHEMA_VERSION='context-schema-v1.0';
+  const RULE_SCHEMA_VERSION='rule-schema-v1.0';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v))?txt(v):'';
+  const clone=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
+  const active=s=>{try{return typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)))}catch(_){return (s?.hives||[]).filter(Boolean)}};
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const rows=(s,key,hid)=>(Array.isArray(s?.logs?.[key])?s.logs[key]:[]).filter(x=>x&&(!hid||txt(x.hiveId)===txt(hid)));
+  const newest=list=>list.slice().sort((a,b)=>txt(b?.date||b?.updatedAt||b?.recordedAt||b?.createdAt).localeCompare(txt(a?.date||a?.updatedAt||a?.recordedAt||a?.createdAt)))[0]||null;
+  const dayNo=v=>{const d=iso(v);return d?Math.floor(Date.parse(d+'T00:00:00Z')/86400000):null};
+  const ageDays=(from,to)=>{const a=dayNo(from),b=dayNo(to);return a===null||b===null?null:Math.max(0,b-a)};
+  const todayFor=(s,h)=>{try{return typeof v2p2e5Today==='function'?txt(v2p2e5Today(s,h?.id||'')):typeof v2p1bDateInHiveTimezone==='function'?txt(v2p1bDateInHiveTimezone(s,h)):new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
+  const effectiveLoc=(s,h)=>{try{return typeof v2p1bEffectiveHiveLocation==='function'?v2p1bEffectiveHiveLocation(s,h):(h?.currentLocation||s?.settings?.apiaryLocation||null)}catch(_){return h?.currentLocation||s?.settings?.apiaryLocation||null}};
+  const evalHive=(s,h)=>{try{return typeof window.v224bEvaluateHive==='function'?window.v224bEvaluateHive(s,h):null}catch(_){return null}};
+
+  const LIFECYCLE=Object.freeze({
+    DETECTED:'DETECTED',RECOMMENDED:'RECOMMENDED',CONFIRMED:'CONFIRMED',SCHEDULED:'SCHEDULED',
+    DUE:'DUE',OVERDUE:'OVERDUE',IN_PROGRESS:'IN_PROGRESS',COMPLETED:'COMPLETED',
+    VERIFICATION_DUE:'VERIFICATION_DUE',RESOLVED:'RESOLVED',ESCALATED:'ESCALATED',
+    DISMISSED:'DISMISSED',SNOOZED:'SNOOZED',SUPERSEDED:'SUPERSEDED',CANCELLED:'CANCELLED'
+  });
+  const AUTOMATION=Object.freeze({
+    A:'A_AUTO_TASK',B:'B_RECOMMEND_CONFIRM',C:'C_WARN_ESCALATE',MANUAL:'MANUAL'
+  });
+  const DECISION=Object.freeze({AUTO_CREATE:'AUTO_CREATE',RECOMMEND_CONFIRM:'RECOMMEND_CONFIRM',WARN_ESCALATE:'WARN_ESCALATE',USER_CREATED:'USER_CREATED'});
+  const VERIFICATION=Object.freeze({NOT_REQUIRED:'NOT_REQUIRED',PENDING:'PENDING',PASS:'PASS',FAIL:'FAIL',INCONCLUSIVE:'INCONCLUSIVE'});
+
+  function latestInspection(s,hid){return newest(rows(s,'inspections',hid).filter(x=>x&&x.legacySnapshot!==true))}
+  function latestVarroa(s,hid){return newest(rows(s,'varroaTests',hid).filter(x=>Number.isFinite(Number(x?.mitesPer100))))}
+  function latestTreatment(s,hid){return newest(rows(s,'treatments',hid))}
+  function latestFeeding(s,hid){return newest(rows(s,'feedings',hid))}
+
+  function freshnessState(date,today,kind){
+    const d=iso(date),age=d?ageDays(d,today):null;
+    if(!d)return {date:'',ageDays:null,state:'MISSING'};
+    // This core layer does NOT invent biological expiry thresholds. It only
+    // exposes age for rule-specific freshness policies to evaluate later.
+    return {date:d,ageDays:age,state:'DATED',kind:kind||''};
+  }
+
+  function buildEvidenceSnapshot(s,hiveId){
+    const h=hiveBy(s,hiveId),today=todayFor(s,h),inspection=latestInspection(s,hiveId),varroa=latestVarroa(s,hiveId),treatment=latestTreatment(s,hiveId),feeding=latestFeeding(s,hiveId);
+    const inspectedDate=iso(inspection?.date||inspection?.recordedDate),varroaDate=iso(varroa?.date),treatmentDate=iso(treatment?.date||treatment?.startDate),feedingDate=iso(feeding?.date);
+    return {
+      schemaVersion:EVIDENCE_SCHEMA_VERSION,hiveId:txt(hiveId),capturedForDate:today,
+      priority:['FORMAL_MEASURED_EVIDENCE','LATEST_VALID_INSPECTION','MANAGEMENT_RECORD','HIVE_STATE','CALENDAR_CONTEXT'],
+      inspection:{id:txt(inspection?.id),...freshnessState(inspectedDate,today,'INSPECTION')},
+      varroa:{id:txt(varroa?.id),...freshnessState(varroaDate,today,'VARROA_TEST'),mitesPer100:Number.isFinite(Number(varroa?.mitesPer100))?Number(varroa.mitesPer100):null,testType:txt(varroa?.testType||varroa?.method)},
+      treatment:{id:txt(treatment?.id),...freshnessState(treatmentDate,today,'TREATMENT'),problem:txt(treatment?.problem),product:txt(treatment?.product),status:txt(treatment?.status),followUpDate:iso(treatment?.followUpDate)},
+      feeding:{id:txt(feeding?.id),...freshnessState(feedingDate,today,'FEEDING'),feedType:txt(feeding?.type||feeding?.feedType)},
+      nextInspection:iso(h?.nextInspection),
+      sourceIntegrity:{inspectionIsReal:!!inspection,varroaIsMeasured:!!varroa,syntheticBiologicalEvidence:false}
+    };
+  }
+
+  function buildContextSnapshot(s,hiveId){
+    const h=hiveBy(s,hiveId),d=h?evalHive(s,h):null,loc=h?effectiveLoc(s,h):null,today=todayFor(s,h);
+    return {
+      schemaVersion:CONTEXT_SCHEMA_VERSION,hiveId:txt(hiveId),localDate:today,
+      location:{stateCode:txt(loc?.stateCode).toUpperCase(),city:txt(loc?.city),postalCode:txt(loc?.postalCode),timezone:txt(loc?.timezone||h?.timezone||s?.settings?.timezone)},
+      calendar:{month:Number(iso(today).slice(5,7)||0)},
+      seasonalPhase:'UNRESOLVED',
+      colonyPhase:txt(d?.phase||'Uncertain'),
+      risk:txt(d?.overallRisk||'Unassessed'),
+      confidence:txt(d?.confidence?.level||d?.confidence||'Uncertain'),
+      contextPolicy:'MONTH_IS_SUPPORTING_CONTEXT_ONLY'
+    };
+  }
+
+  function originFor(a){
+    const src=low(a?.source),type=low(a?.type);
+    if(src==='scientific-engine'||a?.systemGenerated===true||txt(a?.id).startsWith('scientific-')||txt(a?.id).startsWith('v224b-'))return 'SYSTEM_SCIENTIFIC';
+    if(src.includes('follow-up'))return 'AUTOMATIC_FOLLOW_UP';
+    if(src==='manual-plan'||src==='manual'||a?.manualDecision===true)return 'USER_MANUAL';
+    if(['super-management','queen-management','split-hive','combine-hive','swarm-control','equipment-maintenance','move-hive','winter-preparation','spring-preparation','other-task'].includes(type))return 'USER_WORKFLOW';
+    return 'LEGACY_ACTION';
+  }
+
+  function assessmentTypeFor(a){
+    const reason=low(a?.reasonCode),intent=low(a?.intentKey),title=low(a?.title),type=low(a?.type);
+    if(reason.includes('varroa')||intent.includes('varroa')||title.includes('varroa'))return 'VARROA_STATE';
+    if(reason.includes('food')||intent.includes('food')||title.includes('food'))return 'FOOD_STORES_STATE';
+    if(reason.includes('queen')||intent.includes('queen')||title.includes('queen'))return 'QUEEN_STATUS_STATE';
+    if(reason.includes('swarm')||intent.includes('swarm')||title.includes('swarm'))return 'SWARM_RISK_STATE';
+    if(reason.includes('disease')||intent.includes('disease')||title.includes('disease'))return 'DISEASE_SUSPECTED';
+    if(intent.includes('inspection')||type==='inspection')return 'EVIDENCE_SUFFICIENCY';
+    if(type==='feeding')return 'FOOD_MANAGEMENT';
+    if(type==='treatment')return 'TREATMENT_MANAGEMENT';
+    if(type==='split-hive')return 'SPLIT_MANAGEMENT';
+    return 'GENERAL_MANAGEMENT';
+  }
+
+  function automationFor(a){
+    const origin=originFor(a),assessment=assessmentTypeFor(a),stage=low(a?.workflowStage);
+    if(origin==='USER_MANUAL'||origin==='USER_WORKFLOW'||origin==='LEGACY_ACTION')return AUTOMATION.MANUAL;
+    if(assessment==='DISEASE_SUSPECTED')return AUTOMATION.C;
+    if(stage==='management-review'||['treatment','feeding','queen-management','swarm-control','split-hive'].includes(low(a?.type)))return AUTOMATION.B;
+    if(stage==='follow-up'||stage==='evidence'||origin==='AUTOMATIC_FOLLOW_UP'||origin==='SYSTEM_SCIENTIFIC')return AUTOMATION.A;
+    return AUTOMATION.B;
+  }
+
+  function decisionFor(a){
+    const level=automationFor(a);
+    if(level===AUTOMATION.A)return DECISION.AUTO_CREATE;
+    if(level===AUTOMATION.B)return DECISION.RECOMMEND_CONFIRM;
+    if(level===AUTOMATION.C)return DECISION.WARN_ESCALATE;
+    return DECISION.USER_CREATED;
+  }
+
+  function dueWindowFor(a){
+    const e=a?.evidenceChain||{},start=iso(a?.dueEarliest||a?.dueWindowStart||a?.proposedWindowStart||e?.windowStart||e?.proposedWindowStart),end=iso(a?.dueLatest||a?.dueWindowEnd||a?.proposedWindowEnd||e?.windowEnd||e?.proposedWindowEnd||a?.dueDate||a?.date||a?.due);
+    return {earliest:start,latest:end||start};
+  }
+
+  function lifecycleFor(a,s){
+    if(!a)return LIFECYCLE.DETECTED;
+    const status=low(a.status),priority=low(a.priority),today=todayFor(s,hiveBy(s,a.hiveId)),due=dueWindowFor(a).latest;
+    if(status==='cancelled')return LIFECYCLE.CANCELLED;
+    if(status==='resolved')return LIFECYCLE.RESOLVED;
+    if(status==='escalated')return LIFECYCLE.ESCALATED;
+    if(status==='completed'||priority==='done')return LIFECYCLE.COMPLETED;
+    if(status==='in progress'||status==='in-progress'||a.startedAt)return LIFECYCLE.IN_PROGRESS;
+    if(low(a.workflowStage)==='follow-up'&&due&&dayNo(due)!==null&&dayNo(today)!==null&&dayNo(due)<=dayNo(today))return LIFECYCLE.VERIFICATION_DUE;
+    if(due&&dayNo(due)!==null&&dayNo(today)!==null){if(dayNo(due)<dayNo(today))return LIFECYCLE.OVERDUE;if(dayNo(due)===dayNo(today))return LIFECYCLE.DUE;return LIFECYCLE.SCHEDULED}
+    return decisionFor(a)===DECISION.RECOMMEND_CONFIRM?LIFECYCLE.RECOMMENDED:LIFECYCLE.CONFIRMED;
+  }
+
+  function verificationRequiredFor(a){
+    const stage=low(a?.workflowStage),intent=low(a?.intentKey),src=low(a?.source),type=low(a?.type);
+    if(stage==='follow-up'||intent.includes('retest')||intent.includes('recheck')||src.includes('follow-up'))return true;
+    if(['treatment','queen-management','swarm-control','split-hive','feeding'].includes(type))return true;
+    return false;
+  }
+
+  function biologicalEpisodeKeyFor(a){
+    const hid=txt(a?.hiveId)||'unknown-hive',assessment=assessmentTypeFor(a),sourceRef=txt(a?.sourceId||a?.parentActionId||a?.linkedActionId||a?.linkedTreatmentId),intent=txt(a?.intentKey)||low(a?.type||a?.title).replace(/[^a-z0-9]+/g,'-');
+    return `${hid}|${assessment}|${sourceRef||intent||'general'}`;
+  }
+
+  function compactEvidenceForTask(s,a,cache){
+    const hid=txt(a?.hiveId),memo=cache?.evidence,existing=memo?.get(hid),snap=existing||buildEvidenceSnapshot(s,hid),e=a?.evidenceChain||{};
+    if(memo&&!existing)memo.set(hid,snap);
+    return {
+      schemaVersion:snap.schemaVersion,hiveId:snap.hiveId,capturedForDate:snap.capturedForDate,
+      inspection:snap.inspection,varroa:snap.varroa,treatment:snap.treatment,feeding:snap.feeding,nextInspection:snap.nextInspection,
+      ruleEvidence:{latestInspectionId:txt(e.latestInspectionId),latestInspectionDate:iso(e.latestInspectionDate),confidence:txt(e.confidence),conflicts:Array.isArray(e.conflicts)?e.conflicts.map(txt).filter(Boolean):[]}
+    };
+  }
+
+  function contextForTask(s,a,cache){
+    const hid=txt(a?.hiveId),memo=cache?.context,existing=memo?.get(hid),base=clone(existing||buildContextSnapshot(s,hid))||buildContextSnapshot(s,hid),e=a?.evidenceChain||{};
+    if(memo&&!existing)memo.set(hid,clone(base));
+    if(txt(e.season))base.seasonalPhase=txt(e.season);
+    if(txt(e.colonyPhase))base.colonyPhase=txt(e.colonyPhase);
+    if(txt(e.risk))base.risk=txt(e.risk);
+    if(txt(e.confidence))base.confidence=txt(e.confidence);
+    if(txt(e.stateCode))base.location.stateCode=txt(e.stateCode).toUpperCase();
+    return base;
+  }
+
+  function ruleRefFor(a){
+    const e=a?.evidenceChain||{};
+    return {schemaVersion:RULE_SCHEMA_VERSION,ruleId:txt(a?.ruleId||e.ruleId),ruleVersion:txt(a?.ruleVersion||e.ruleVersion),authority:txt(e.authority),authoritySummary:txt(e.authoritySummary)};
+  }
+
+  function normalizeTaskProjection(a,s,cache){
+    if(!a||typeof a!=='object')return a;
+    const x={...a},windowRange=dueWindowFor(x),verificationRequired=verificationRequiredFor(x),origin=originFor(x);
+    x.taskEngineVersion=CORE_VERSION;
+    x.taskSchemaVersion=TASK_SCHEMA_VERSION;
+    x.taskId=txt(x.taskId||x.id);
+    x.taskOrigin=origin;
+    x.taskLifecycleState=lifecycleFor(x,s);
+    x.automationLevel=automationFor(x);
+    x.decisionType=decisionFor(x);
+    x.assessmentType=assessmentTypeFor(x);
+    x.biologicalEpisodeKey=txt(x.biologicalEpisodeKey)||biologicalEpisodeKeyFor(x);
+    x.dueEarliest=windowRange.earliest;
+    x.dueLatest=windowRange.latest;
+    x.verificationRequired=verificationRequired;
+    x.verificationStatus=txt(x.verificationStatus)|| (verificationRequired?VERIFICATION.PENDING:VERIFICATION.NOT_REQUIRED);
+    x.ruleRef=ruleRefFor(x);
+    x.evidenceSnapshot=compactEvidenceForTask(s,x,cache);
+    x.contextSnapshot=contextForTask(s,x,cache);
+    return x;
+  }
+
+  function snapshotForHive(hiveId){
+    const s=S();if(!s)return null;
+    return {coreVersion:CORE_VERSION,evidence:buildEvidenceSnapshot(s,hiveId),context:buildContextSnapshot(s,hiveId)};
+  }
+
+  const api={
+    coreVersion:CORE_VERSION,taskSchemaVersion:TASK_SCHEMA_VERSION,evidenceSchemaVersion:EVIDENCE_SCHEMA_VERSION,contextSchemaVersion:CONTEXT_SCHEMA_VERSION,ruleSchemaVersion:RULE_SCHEMA_VERSION,
+    lifecycle:LIFECYCLE,automation:AUTOMATION,decision:DECISION,verification:VERIFICATION,
+    buildEvidenceSnapshot,buildContextSnapshot,normalizeTaskProjection,assessmentTypeFor,automationFor,decisionFor,lifecycleFor,biologicalEpisodeKeyFor,snapshotForHive
+  };
+  window.HiveDashTaskEngineCoreV1=Object.freeze(api);
+  window.v2p2e5auTaskCoreSnapshot=snapshotForHive;
+
+  // Migration adapter: preserve the current Action queue exactly as generated,
+  // then attach the canonical Task Engine Core fields to each projected item.
+  // No task creation/removal, sorting, route, priority or due-date decision is
+  // introduced by this wrapper.
+  const prevGenerate=window.generateActions||generateActions;
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      const list=prevGenerate(s)||[],cache={evidence:new Map(),context:new Map()};
+      return list.map(a=>normalizeTaskProjection(a,s,cache));
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  window.__HIVEDASH_V2P2E5AU_VERSION__='v2p2e5au-task-engine-core-architecture-v1-foundation';
+})();

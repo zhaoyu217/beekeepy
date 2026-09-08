@@ -16289,7 +16289,10 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     }else if(st.stage==='treatment-active-unlinked'){
       type='Treatment';title='Review current Varroa treatment';due='Now';route=`hive/${h.id}`;
     }else if(st.stage==='awaiting-retest'){
-      type='Inspection';title='Varroa retest needed';due='Now';route=`varroa-test/${h.id}/retest`;
+      // AW4: honor the explicit Treatment Follow-up / Retest Due date when one
+      // exists. The management stage must not collapse a scheduled retest into
+      // an immediate "Now" task merely because the Treatment is completed.
+      type='Inspection';title='Varroa retest needed';due=txt(st.tx?.followUp)||'Now';route=`varroa-test/${h.id}/retest`;
     }else if(st.stage==='retest-still-high'){
       type='Treatment';title='Varroa still high after treatment';due='Now';route=`hive/${h.id}`;
     }else if(st.stage==='monitoring'){
@@ -16620,7 +16623,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
         if(!item||low(item.key).indexOf(':varroa:')<0)return item;
         const h=hive(s,item.hiveId),st=h?stageFor(s,h):null;if(!st)return item;
         if(st.stage==='treatment-active'&&st.tx)return {...item,title:'Varroa elevated',action:`Continue the active ${st.txName} treatment, then perform a post-treatment mite recheck.`,cta:'Continue Treatment',route:`treatment-record/${h.id}/current`,when:'Now'};
-        if(st.stage==='awaiting-retest')return {...item,title:'Varroa retest needed',action:'Treatment is complete. Record new mite evidence before deciding whether further management is required.',cta:'Retest Varroa',route:`varroa-test/${h.id}/retest`,when:'Now'};
+        if(st.stage==='awaiting-retest')return {...item,title:'Varroa retest needed',action:'Treatment is complete. Record new mite evidence before deciding whether further management is required.',cta:'Retest Varroa',route:`varroa-test/${h.id}/retest`,when:txt(st.tx?.followUp)||'Now'};
         return item;
       });
     };
@@ -22032,3 +22035,9 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
 
   window.__HIVEDASH_V2P2E5AW3_VERSION__='v2p2e5aw3-scientific-varroa-management-confirmation-gate';
 })();
+
+
+/* V2P2E5AW4 — VARROA RETEST DUE-DATE INHERITANCE FIX
+   Awaiting-retest tasks inherit the formal Treatment followUp date when present.
+   No scientific thresholds, R01/R02 rules, Treatment persistence, or routes changed. */
+window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inheritance';

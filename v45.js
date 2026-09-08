@@ -22625,3 +22625,48 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
 
   window.__HIVEDASH_V2P2E5AX4_VERSION__='v2p2e5ax4-planned-varroa-treatment-stage-projection';
 })();
+
+/* ==============================================================
+   V2P2E5AX5 — TRANSIENT PLANNED TREATMENT OPEN ROUTE FIX
+   Scope: Actions open/routing only.
+   - Planned Treatment rows are transient projections from the current
+     Treatment lifecycle and are not required to exist in persisted s.actions.
+   - Resolve the currently rendered action row before falling back to the
+     legacy persisted-action opener.
+   - Opens the SAME existing Treatment record via /current.
+   - Does not modify R01/R02/R03 evaluation, Treatment persistence, evidence,
+     thresholds, Health/Risk, or task generation.
+   ============================================================== */
+(function v2p2e5ax5TransientPlannedTreatmentOpenFix(){
+  if(window.__HIVEDASH_V2P2E5AX5__)return;
+  window.__HIVEDASH_V2P2E5AX5__=true;
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return {}}};
+  const prev=window.v2p2e5abOpenUnifiedAction;
+
+  function currentProjectedRow(id){
+    try{
+      const rows=typeof window.v53ActionRows==='function'?window.v53ActionRows('Pending'):[];
+      return (rows||[]).find(a=>a&&txt(a.id)===txt(id))||null;
+    }catch(_){return null}
+  }
+
+  window.v2p2e5abOpenUnifiedAction=function(actionId){
+    const id=txt(actionId),s=S();
+    const persisted=(s?.actions||[]).find(a=>a&&txt(a.id)===id)||null;
+    const projected=currentProjectedRow(id);
+    const a=projected||persisted;
+    if(a){
+      const stage=low(a.workflowStage||a.varroaStage);
+      const hid=txt(a.hiveId);
+      if(stage==='treatment-planned'&&hid){
+        const route=txt(a.executionRoute||a.varroaRoute)||`treatment-record/${hid}/current`;
+        return go(route);
+      }
+    }
+    return typeof prev==='function'?prev.apply(this,arguments):(typeof toast==='function'?toast('This task is no longer active'):null);
+  };
+
+  window.__HIVEDASH_V2P2E5AX5_VERSION__='v2p2e5ax5-transient-planned-treatment-open-route-fix';
+})();

@@ -21614,8 +21614,8 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
   if(!base){console.error('V2P2E5AW requires HiveDashTaskEngineCoreV1');return}
 
   const CORE_RULE_ID='HD-R02-VARROA-MONITORING';
-  const RULE_VERSION='HD-R02-v1.0-2026-09-08';
-  const MIGRATION_VERSION='V2P2E5AW';
+  const RULE_VERSION='HD-R02-v1.0.1-2026-09-08';
+  const MIGRATION_VERSION='V2P2E5AW1';
   const txt=v=>String(v??'').trim();
   const low=v=>txt(v).toLowerCase();
   const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v).slice(0,10))?txt(v).slice(0,10):'';
@@ -21649,7 +21649,10 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
   }
 
   function latestFormalVarroa(s,hid){
-    try{if(typeof window.v2p2d1LatestVarroaEvidence==='function')return window.v2p2d1LatestVarroaEvidence(s,hid)}catch(_){}
+    // V2P2E5AW1: R02 must evaluate the latest RAW Varroa test record, even
+    // when that record is not good enough to become canonical Health/Risk
+    // evidence. Otherwise a sub-standard sample could be silently hidden by
+    // an older valid test and R02 would fail to request a standardized repeat.
     return latestByDate(rows(s,'varroaTests',hid).filter(x=>iso(x?.date)&&Number.isFinite(Number(x?.mitesPer100))));
   }
 
@@ -21692,6 +21695,21 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
     if(title.includes('varroa management')||title.includes('varroa retest')||title.includes('recheck varroa')||title.includes('post-treatment varroa'))return true;
     return false;
   }
+  function isTreatmentLifecycleVarroaWork(a,hid){
+    if(!a||isDone(a)||txt(a.hiveId)!==txt(hid)||isLegacyR02(a))return false;
+    const intent=low(a.intentKey),route=low(a.executionRoute),title=low(a.title),source=low(a.source),stage=low(a.varroaStage);
+    if(intent==='varroa-post-treatment-retest')return true;
+    if(route.startsWith(`varroa-test/${low(hid)}/retest`))return true;
+    if(source.includes('treatment-follow-up')&&(title.includes('varroa')||intent.includes('varroa')))return true;
+    if(['treatment-active','treatment-planned','awaiting-retest','treatment-active-unlinked','retest-still-high','retest-caution'].includes(stage))return true;
+    if(title.includes('post-treatment varroa')||title.includes('treatment in progress')||title.includes('treatment complete'))return true;
+    return false;
+  }
+  function isGenericRiskVarroaWork(a,hid){
+    if(!a||isDone(a)||txt(a.hiveId)!==txt(hid)||isLegacyR02(a)||isTreatmentLifecycleVarroaWork(a,hid))return false;
+    const intent=low(a.intentKey),id=txt(a.id),source=low(a.source),title=low(a.title);
+    return (['varroa-management','varroa-recheck'].includes(intent)||id.startsWith('v224b-varroa-')||title==='recheck varroa level'||title.includes('varroa management'))&&source==='scientific-engine';
+  }
 
   function baseTask(h,title){
     return {hiveId:h.id,type:'Inspection',title,status:'Pending',priority:'Medium',source:'scientific-engine',systemGenerated:true,reasonCode:'varroa',intentKey:'varroa-monitor-core',workflowStage:'evidence',executionRoute:`varroa-test/${h.id}/test`,coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,ruleEngineOwner:'HiveDashTaskEngineCoreV1',ruleMigrationVersion:MIGRATION_VERSION};
@@ -21722,7 +21740,11 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
     // A specific Varroa management/recheck/retest workflow outranks generic
     // routine monitoring. A full Inspection never counts as Varroa evidence.
     const covering=existingRows.find(a=>isSpecificVarroaWork(a,hid));
-    if(covering){
+    // V2P2E5AW1 quality gate: a generic risk-derived management/recheck task
+    // must NOT suppress R02 when the latest raw Varroa test itself is
+    // non-standardized. Only an actual Treatment lifecycle / post-treatment
+    // retest may outrank the evidence-repair task.
+    if(covering&&(ev.valid||isTreatmentLifecycleVarroaWork(covering,hid))){
       evaluation.assessment=assessment('SUPERSEDED_BY_SPECIFIC_VARROA_WORK',ev,ctx,policy);
       evaluation.decision={type:'SUPERSEDED',automationLevel:txt(covering.automationLevel)||'A_AUTO_TASK',reason:'specific-varroa-work-covers-routine-monitoring',coveringTaskId:txt(covering.id)};
       return evaluation;
@@ -21829,6 +21851,11 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
       const seen=new Set(out.map(a=>txt(a.id)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`));
       for(const h of active(s)){
         const evaluation=buildVarroaMonitoringTask(s,h,out),task=projectTask(evaluation,s);if(!task)continue;
+        // When the newest raw test is incomplete, the R02 evidence-repair task
+        // outranks generic V224B risk projections derived from that same raw
+        // result. Keep true Treatment lifecycle / post-treatment tasks intact.
+        if(evaluation?.assessment?.status==='EVIDENCE_INCOMPLETE')
+          out=out.filter(a=>!isGenericRiskVarroaWork(a,h.id));
         const k=txt(task.id)||`${txt(task.hiveId)}|${txt(task.intentKey)}|${txt(task.title)}`;if(seen.has(k))continue;
         seen.add(k);out.push(task);
       }
@@ -21839,4 +21866,55 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
 
   window.v2p2e5awEvaluateVarroaMonitoring=function(hiveId){const s=S();return s?extended.evaluateVarroaMonitoring(s,hiveId,(typeof prevGenerate==='function'?prevGenerate(s):[]).filter(a=>!isLegacyR02(a))):null};
   window.__HIVEDASH_V2P2E5AW_VERSION__='v2p2e5aw-varroa-monitoring-core-rule-migration';
+})();
+
+
+/* ==============================================================
+   V2P2E5AW1 — VARROA CANONICAL EVIDENCE QUALITY GATE
+   Preserve legacy numeric-only Varroa records for backward compatibility,
+   but do not allow a NEW explicit non-standardized sample to replace the
+   canonical Health/Risk evidence used by the frozen model.
+   ============================================================== */
+(function v2p2e5aw1VarroaCanonicalQualityGate(){
+  if(window.__HIVEDASH_V2P2E5AW1_VARROA_QUALITY_GATE__)return;
+  window.__HIVEDASH_V2P2E5AW1_VARROA_QUALITY_GATE__=true;
+  const txt=v=>String(v==null?'':v).trim();
+  const low=v=>txt(v).toLowerCase();
+  const dayMs=v=>{const t=Date.parse(txt(v).slice(0,10)+'T12:00:00');return Number.isFinite(t)?t:0};
+  const stamp=v=>{const t=Date.parse(txt(v));return Number.isFinite(t)?t:0};
+  const idStamp=v=>{const m=txt(v).match(/(\d{10,})/);return m?(Number(m[1])||0):0};
+  function method(v){
+    const x=txt(v),k=low(x);
+    if(k.includes('alcohol')||/酒精/.test(x))return 'Alcohol Wash';
+    if(k.includes('soapy')||k.includes('soap')||/肥皂/.test(x))return 'Soapy Water Wash';
+    if(k.includes('sugar')||k.includes('powdered')||/糖粉|糖滚|糖摇/.test(x))return 'Sugar Roll';
+    return x;
+  }
+  const accepted=new Set(['Alcohol Wash','Soapy Water Wash','Sugar Roll']);
+  function explicitlyQualityScoped(row){
+    return txt(row?.method)!==''||txt(row?.sampleSize)!==''||txt(row?.miteCount)!==''||txt(row?.testType)!=='';
+  }
+  function canonicalUsable(row){
+    if(!row||!txt(row.date)||!Number.isFinite(Number(row.mitesPer100)))return false;
+    // Grandfather old numeric-only formal records so AW1 does not rewrite
+    // historical Health/Risk state merely because old versions lacked fields.
+    if(!explicitlyQualityScoped(row))return true;
+    const sample=row.sampleSize===null||row.sampleSize===undefined||txt(row.sampleSize)===''?NaN:Number(row.sampleSize);
+    const mites=row.miteCount===null||row.miteCount===undefined||txt(row.miteCount)===''?NaN:Number(row.miteCount);
+    return accepted.has(method(row.method))&&Number.isInteger(sample)&&sample>=300&&Number.isInteger(mites)&&mites>=0;
+  }
+  window.v2p2e5aw1IsCanonicalVarroaEvidence=canonicalUsable;
+  window.v2p2d1LatestVarroaEvidence=function(s,hid){
+    const rows=Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[];
+    return rows.map((row,index)=>({row,index}))
+      .filter(x=>x.row&&String(x.row.hiveId)===String(hid)&&canonicalUsable(x.row))
+      .sort((a,b)=>{
+        const d=dayMs(b.row.date)-dayMs(a.row.date);if(d)return d;
+        const r=stamp(b.row.recordedAt)-stamp(a.row.recordedAt);if(r)return r;
+        const u=stamp(b.row.updatedAt)-stamp(a.row.updatedAt);if(u)return u;
+        const i=idStamp(b.row.id)-idStamp(a.row.id);if(i)return i;
+        return b.index-a.index;
+      })[0]?.row||null;
+  };
+  window.__HIVEDASH_V2P2E5AW1_VERSION__='v2p2e5aw1-varroa-evidence-quality-gate';
 })();

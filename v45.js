@@ -21614,8 +21614,8 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
   if(!base){console.error('V2P2E5AW requires HiveDashTaskEngineCoreV1');return}
 
   const CORE_RULE_ID='HD-R02-VARROA-MONITORING';
-  const RULE_VERSION='HD-R02-v1.0.1-2026-09-08';
-  const MIGRATION_VERSION='V2P2E5AW1';
+  const RULE_VERSION='HD-R02-v1.0.2-2026-09-08';
+  const MIGRATION_VERSION='V2P2E5AW2';
   const txt=v=>String(v??'').trim();
   const low=v=>txt(v).toLowerCase();
   const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v).slice(0,10))?txt(v).slice(0,10):'';
@@ -21648,6 +21648,12 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
     return x||'Method not recorded';
   }
 
+  function isLegacyGrandfatheredVarroa(row){
+    if(!row)return false;
+    const source=low(row.source),type=low(row.testType),id=low(row.id);
+    return source==='v2p2d1a-legacy-varroa-migration'||type==='legacy migrated evidence'||id.startsWith('v2p2d1a-legacy-varroa-');
+  }
+
   function latestFormalVarroa(s,hid){
     // V2P2E5AW1: R02 must evaluate the latest RAW Varroa test record, even
     // when that record is not good enough to become canonical Health/Risk
@@ -21658,16 +21664,25 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
 
   function varroaEvidence(s,hid,today){
     const row=latestFormalVarroa(s,hid);
-    if(!row)return {status:'MISSING',valid:false,row:null,id:'',date:'',ageDays:null,method:'',sampleSize:null,miteCount:null,mitesPer100:null,reasons:['No formal Varroa Test record exists.']};
+    if(!row)return {status:'MISSING',valid:false,standardized:false,row:null,id:'',date:'',ageDays:null,method:'',sampleSize:null,miteCount:null,mitesPer100:null,reasons:['No formal Varroa Test record exists.']};
     const numeric=v=>v===null||v===undefined||txt(v)===''?NaN:Number(v);
     const date=iso(row.date),method=canonicalMethod(row.method),sample=numeric(row.sampleSize),mites=numeric(row.miteCount),rate=numeric(row.mitesPer100),reasons=[];
+    // AW2 compatibility contract: a D1A legacy-migrated numeric record is NOT
+    // retroactively relabeled as a new standardized sample, but it remains
+    // usable as grandfathered historical evidence so AW2 does not rewrite an
+    // already-established Health/Risk state or suppress a more specific
+    // Varroa-management task. Any NEW explicit test still has to pass the full
+    // R02 method + >=300 adult bees + raw mite-count quality gate.
+    if(isLegacyGrandfatheredVarroa(row)){
+      return {status:'LEGACY_COMPATIBLE',valid:true,standardized:false,legacyGrandfathered:true,row,id:txt(row.id),date,ageDays:date?ageDays(date,today):null,method:'Legacy / not recorded',sampleSize:null,miteCount:null,mitesPer100:Number.isFinite(rate)?rate:null,testType:txt(row.testType),source:txt(row.source),linkedTreatmentId:txt(row.linkedTreatmentId),reasons:['Legacy numeric-only Varroa evidence is grandfathered for backward compatibility until a new explicit Varroa Test supersedes it.']};
+    }
     if(!date)reasons.push('Test date is missing.');
     if(!ACCEPTED_METHODS.includes(method))reasons.push('Sampling method is not a supported standardized adult-bee method.');
     if(!Number.isInteger(sample)||sample<300)reasons.push('Sample size is below the 300-adult-bee standard used by this rule.');
     if(!Number.isInteger(mites)||mites<0)reasons.push('Raw mite count is missing.');
     if(!Number.isFinite(rate)||rate<0)reasons.push('Mites per 100 bees is missing or invalid.');
     const valid=reasons.length===0;
-    return {status:valid?'VALID':'INCOMPLETE',valid,row,id:txt(row.id),date,ageDays:date?ageDays(date,today):null,method,sampleSize:Number.isFinite(sample)?sample:null,miteCount:Number.isFinite(mites)?mites:null,mitesPer100:Number.isFinite(rate)?rate:null,testType:txt(row.testType),source:txt(row.source),linkedTreatmentId:txt(row.linkedTreatmentId),reasons};
+    return {status:valid?'VALID':'INCOMPLETE',valid,standardized:valid,legacyGrandfathered:false,row,id:txt(row.id),date,ageDays:date?ageDays(date,today):null,method,sampleSize:Number.isFinite(sample)?sample:null,miteCount:Number.isFinite(mites)?mites:null,mitesPer100:Number.isFinite(rate)?rate:null,testType:txt(row.testType),source:txt(row.source),linkedTreatmentId:txt(row.linkedTreatmentId),reasons};
   }
 
   function phasePolicy(phase){
@@ -21721,7 +21736,7 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
 
   function makeEvidenceChain(ev,ctx,policy){
     const ids=policy.authorityIds||[];
-    return {complete:ev.valid,ruleVersion:RULE_VERSION,ruleId:CORE_RULE_ID,authority:'Honey Bee Health Coalition + USDA ARS',authoritySummary:policy.label,authorityIds:ids,sourceRefs:ids.map(id=>id===SOURCES.HBHC_9E.id?SOURCES.HBHC_9E:SOURCES.USDA_ARS),stateCode:txt(ctx?.location?.stateCode).toUpperCase(),season:txt(ctx?.seasonalPhase||'UNRESOLVED'),colonyPhase:txt(ctx?.colonyPhase),risk:txt(ctx?.risk||'Unassessed'),confidence:txt(ctx?.confidence||'Uncertain'),latestVarroaTestId:ev.id,latestVarroaTestDate:ev.date,evidenceAgeDays:ev.ageDays,method:ev.method,sampleSize:ev.sampleSize,miteCount:ev.miteCount,mitesPer100:ev.mitesPer100,evidenceQualityReasons:ev.reasons||[],policy:{sampleSizeMinimum:300,acceptedMethods:ACCEPTED_METHODS.slice(),monthIsSupportingContextOnly:true,fullInspectionDoesNotReplaceVarroaTest:true,postTreatmentRetestOwnedBy:'HD-R04'}};
+    return {complete:ev.valid,standardized:ev.standardized!==false,legacyGrandfathered:Boolean(ev.legacyGrandfathered),ruleVersion:RULE_VERSION,ruleId:CORE_RULE_ID,authority:'Honey Bee Health Coalition + USDA ARS',authoritySummary:policy.label,authorityIds:ids,sourceRefs:ids.map(id=>id===SOURCES.HBHC_9E.id?SOURCES.HBHC_9E:SOURCES.USDA_ARS),stateCode:txt(ctx?.location?.stateCode).toUpperCase(),season:txt(ctx?.seasonalPhase||'UNRESOLVED'),colonyPhase:txt(ctx?.colonyPhase),risk:txt(ctx?.risk||'Unassessed'),confidence:txt(ctx?.confidence||'Uncertain'),latestVarroaTestId:ev.id,latestVarroaTestDate:ev.date,evidenceAgeDays:ev.ageDays,method:ev.method,sampleSize:ev.sampleSize,miteCount:ev.miteCount,mitesPer100:ev.mitesPer100,evidenceQualityReasons:ev.reasons||[],policy:{sampleSizeMinimum:300,acceptedMethods:ACCEPTED_METHODS.slice(),monthIsSupportingContextOnly:true,fullInspectionDoesNotReplaceVarroaTest:true,postTreatmentRetestOwnedBy:'HD-R04'}};
   }
 
   function buildVarroaMonitoringTask(s,h,existingRows=[]){
@@ -21865,7 +21880,7 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
   }
 
   window.v2p2e5awEvaluateVarroaMonitoring=function(hiveId){const s=S();return s?extended.evaluateVarroaMonitoring(s,hiveId,(typeof prevGenerate==='function'?prevGenerate(s):[]).filter(a=>!isLegacyR02(a))):null};
-  window.__HIVEDASH_V2P2E5AW_VERSION__='v2p2e5aw-varroa-monitoring-core-rule-migration';
+  window.__HIVEDASH_V2P2E5AW_VERSION__='v2p2e5aw2-varroa-monitoring-core-rule-legacy-compatibility';
 })();
 
 
@@ -21891,13 +21906,21 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
     return x;
   }
   const accepted=new Set(['Alcohol Wash','Soapy Water Wash','Sugar Roll']);
+  function legacyGrandfathered(row){
+    if(!row)return false;
+    const source=low(row.source),type=low(row.testType),id=low(row.id);
+    return source==='v2p2d1a-legacy-varroa-migration'||type==='legacy migrated evidence'||id.startsWith('v2p2d1a-legacy-varroa-');
+  }
   function explicitlyQualityScoped(row){
     return txt(row?.method)!==''||txt(row?.sampleSize)!==''||txt(row?.miteCount)!==''||txt(row?.testType)!=='';
   }
   function canonicalUsable(row){
     if(!row||!txt(row.date)||!Number.isFinite(Number(row.mitesPer100)))return false;
-    // Grandfather old numeric-only formal records so AW1 does not rewrite
-    // historical Health/Risk state merely because old versions lacked fields.
+    // AW2: D1A migration rows contain placeholder metadata such as
+    // method='Not recorded' and testType='Legacy migrated evidence'. They are
+    // still grandfathered historical numeric evidence, not NEW explicit tests.
+    if(legacyGrandfathered(row))return true;
+    // Grandfather truly numeric-only historical rows as well.
     if(!explicitlyQualityScoped(row))return true;
     const sample=row.sampleSize===null||row.sampleSize===undefined||txt(row.sampleSize)===''?NaN:Number(row.sampleSize);
     const mites=row.miteCount===null||row.miteCount===undefined||txt(row.miteCount)===''?NaN:Number(row.miteCount);
@@ -21916,5 +21939,6 @@ window.__HIVEDASH_V2P2E5AV2_VERSION__='v2p2e5av2-periodic-inspection-task-covera
         return b.index-a.index;
       })[0]?.row||null;
   };
-  window.__HIVEDASH_V2P2E5AW1_VERSION__='v2p2e5aw1-varroa-evidence-quality-gate';
+  window.__HIVEDASH_V2P2E5AW1_VERSION__='v2p2e5aw2-varroa-evidence-quality-gate-legacy-compatibility';
+  window.__HIVEDASH_V2P2E5AW2_VERSION__='v2p2e5aw2-varroa-legacy-evidence-compatibility-fix';
 })();

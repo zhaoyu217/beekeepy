@@ -22306,3 +22306,72 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
 
   window.__HIVEDASH_V2P2E5AX_VERSION__='v2p2e5ax-hd-r03-varroa-management-decision';
 })();
+
+/* V2P2E5AX1 — BUG-VA-01 VARROA TEST BACK / CANCEL
+   UI-only navigation safety fix for the dedicated Varroa Test workflow.
+   - Forces a visible secondary-page header with Back -> Actions.
+   - Adds a bottom Cancel button beside Save Varroa Test.
+   - If the guarded form is dirty, Back/Cancel asks before discarding.
+   - No Evidence, R01/R02/R03, Health/Risk, Treatment, or persistence logic changed. */
+(function v2p2e5ax1VarroaTestExitControls(){
+  if(window.__HIVEDASH_V2P2E5AX1__)return;
+  window.__HIVEDASH_V2P2E5AX1__=true;
+
+  function routeRoot(){return String(location.hash||'#home').replace(/^#/,'').split('/')[0]||'home'}
+  function isDirty(){
+    try{const st=window.v224b14DraftGuardStatus?.();return !!(st&&st.guarded&&st.dirty)}catch(_){return false}
+  }
+  window.v2p2e5ax1ExitVarroaTest=function(){
+    if(isDirty()&&!window.confirm('Discard unsaved Varroa Test changes?'))return;
+    if(typeof go==='function')return go('actions');
+    location.hash='#actions';
+  };
+
+  function decorate(){
+    if(routeRoot()!=='varroa-test')return;
+    const top=document.getElementById('topbar');
+    if(top){
+      top.className='topbar vtop';
+      top.style.display='grid';
+      top.innerHTML=`<button class="iconbtn" onclick="v2p2e5ax1ExitVarroaTest()" aria-label="Back">‹</button><div class="pagebar-title">Varroa Test</div><span></span>`;
+    }
+    document.getElementById('bottomnav')?.classList.add('hidden');
+
+    const saveBtn=document.querySelector('.v2p2b-page .treatment-save-v102');
+    if(saveBtn&&!document.getElementById('v2p2e5ax1-varroa-actions')){
+      const actions=document.createElement('div');
+      actions.id='v2p2e5ax1-varroa-actions';
+      actions.className='v2p2e5ax1-varroa-actions';
+      const cancel=document.createElement('button');
+      cancel.type='button';
+      cancel.className='secondary v2p2e5ax1-varroa-cancel';
+      cancel.textContent='Cancel';
+      cancel.setAttribute('aria-label','Cancel Varroa Test');
+      cancel.onclick=window.v2p2e5ax1ExitVarroaTest;
+      saveBtn.parentNode.insertBefore(actions,saveBtn);
+      actions.appendChild(cancel);
+      actions.appendChild(saveBtn);
+    }
+
+    if(!document.getElementById('v2p2e5ax1-style')){
+      const st=document.createElement('style');
+      st.id='v2p2e5ax1-style';
+      st.textContent=`
+        .v2p2e5ax1-varroa-actions{display:grid;grid-template-columns:minmax(0,.82fr) minmax(0,1.5fr);gap:10px;margin-top:10px}
+        .v2p2e5ax1-varroa-actions .treatment-save-v102{margin:0!important;width:100%}
+        .v2p2e5ax1-varroa-cancel{width:100%;margin:0!important;background:#FFFEFB!important}
+      `;
+      document.head.appendChild(st);
+    }
+  }
+
+  const prevRender=window.render||render;
+  window.render=function(){
+    const ret=prevRender.apply(this,arguments);
+    try{decorate()}catch(err){console.error('V2P2E5AX1 Varroa Test exit controls failed',err)}
+    return ret;
+  };
+  try{render=window.render}catch(_){}
+
+  window.__HIVEDASH_V2P2E5AX1_VERSION__='v2p2e5ax1-varroa-test-back-cancel';
+})();

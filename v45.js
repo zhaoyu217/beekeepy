@@ -19429,6 +19429,10 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
 
   const prevGenerate=window.generateActions||generateActions;
   window.generateActions=function(s){
+    // V2P2E5AV: Periodic Inspection task generation has migrated to
+    // HiveDashTaskEngineCoreV1. Keep this historical module only for
+    // its already-PASS detail/correction/verification UI behavior.
+    if(window.__HIVEDASH_V2P2E5AV_CORE_PERIODIC__)return prevGenerate(s)||[];
     let rows=(prevGenerate(s)||[]).slice();
 
     /* Remove legacy generic periodic-Inspection recommendations. Their old
@@ -19794,6 +19798,10 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
 
   const prevGenerate=window.generateActions||generateActions;
   window.generateActions=function(s){
+    // V2P2E5AV: Periodic Inspection task generation has migrated to
+    // HiveDashTaskEngineCoreV1. Keep this historical module only for
+    // its already-PASS detail/correction/verification UI behavior.
+    if(window.__HIVEDASH_V2P2E5AV_CORE_PERIODIC__)return prevGenerate(s)||[];
     let rows=(prevGenerate(s)||[]).filter(a=>!isAdaptiveIntent(a)&&!['inspection-initial','inspection-scheduled','inspection-confirm'].includes(txt(a?.intentKey))&&!txt(a?.id).startsWith('scientific-inspection-'));
     for(const h of active(s)){
       const a=buildAdaptiveTask(s,h,rows);if(a)rows.push(a);
@@ -21221,4 +21229,295 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
   }
 
   window.__HIVEDASH_V2P2E5AU_VERSION__='v2p2e5au-task-engine-core-architecture-v1-foundation';
+})();
+
+
+/* ==============================================================
+   V2P2E5AV — FIRST SCIENTIFIC RULE MIGRATION
+   Core rule: HD-R01-PERIODIC-INSPECTION
+
+   Architecture contract:
+   - Periodic Inspection / Inspection Evidence is the first scientific rule
+     whose task-generation authority lives in HiveDashTaskEngineCoreV1.
+   - E5AC/E5AD no longer create periodic Inspection tasks when this module is
+     active. Their proven task-detail, beekeeper-correction and post-Inspection
+     validation UI remains intact and consumes the Core-generated task shape.
+   - The scientific rule version and task IDs/fingerprints remain compatible
+     with E5AD so existing corrections are not silently discarded merely
+     because the engine implementation moved.
+   - Core Evidence + Context are the rule inputs. Calendar month remains only
+     supporting context; no nationwide default Inspection interval is invented.
+   - Manual compatible Inspection plans and more-specific full-Inspection
+     follow-ups retain the same suppression/replacement behavior.
+   - No other scientific rule is migrated or activated in V2P2E5AV.
+   ============================================================== */
+(function v2p2e5avPeriodicInspectionCoreMigration(){
+  if(window.__HIVEDASH_V2P2E5AV__)return;
+  window.__HIVEDASH_V2P2E5AV__=true;
+  window.__HIVEDASH_V2P2E5AV_CORE_PERIODIC__=true;
+
+  const base=window.HiveDashTaskEngineCoreV1;
+  if(!base||typeof base.buildEvidenceSnapshot!=='function'||typeof base.buildContextSnapshot!=='function'||typeof base.normalizeTaskProjection!=='function'){
+    console.error('V2P2E5AV requires HiveDashTaskEngineCoreV1 foundation');
+    return;
+  }
+
+  const CORE_RULE_ID='HD-R01-PERIODIC-INSPECTION';
+  const RULE_VERSION='inspection-us-adaptive-v1.1-2026-09-07';
+  const MIGRATION_VERSION='V2P2E5AV';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v))?txt(v):'';
+  const dayNo=v=>{const d=iso(v);return d?Math.floor(Date.parse(d+'T00:00:00Z')/86400000):null};
+  const addDays=(v,n)=>{const d=dayNo(v);if(d===null)return'';return new Date((d+Number(n||0))*86400000).toISOString().slice(0,10)};
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
+  const active=s=>{try{return typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)))}catch(_){return (s?.hives||[]).filter(Boolean)}};
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const evalHive=(s,h)=>{try{return typeof window.v224bEvaluateHive==='function'?window.v224bEvaluateHive(s,h):null}catch(_){return null}};
+  const effectiveLoc=(s,h)=>{try{return typeof v2p1bEffectiveHiveLocation==='function'?v2p1bEffectiveHiveLocation(s,h):(h?.currentLocation||s?.settings?.apiaryLocation||null)}catch(_){return h?.currentLocation||s?.settings?.apiaryLocation||null}};
+  const isDone=a=>a&&(a.status==='Completed'||a.priority==='Done');
+  const isManualInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&['manual','manual-plan'].includes(txt(a.source));
+  const isFullInspection=a=>a&&!isDone(a)&&low(a.type).includes('inspection')&&/^inspection\//.test(txt(a.executionRoute||''));
+  const isPeriodicIntent=a=>['inspection-adaptive','inspection-adaptive-confirm','inspection-adaptive-initial','inspection-adaptive-low-disturbance','inspection-initial','inspection-scheduled','inspection-confirm'].includes(txt(a?.intentKey));
+  const isMigratedPeriodic=a=>!!a&&(isPeriodicIntent(a)||txt(a?.id).startsWith('scientific-adaptive-')||txt(a?.id).startsWith('scientific-inspection-'));
+  const fmt=v=>{const d=iso(v);if(!d)return txt(v)||'—';try{return typeof fmtDate==='function'?fmtDate(d):d}catch(_){return d}};
+
+  const NORTHEAST=new Set(['CT','ME','MA','NH','RI','VT','NJ','NY','PA']);
+  const AUTHORITY_RULES=Object.freeze({
+    MS_SWARM_WEEKLY:Object.freeze({id:'MS-SWARM-WEEKLY',authority:'Mississippi State University Extension',summary:'Mississippi colonies should be checked every week during the April-May swarm season.',url:'https://www.extension.msstate.edu/publications/colony-growth-and-seasonal-management-honey-bees'}),
+    NE_SWARM_14:Object.freeze({id:'NE-SWARM-14',authority:'Penn State Extension',summary:'During northeastern swarm-prevention buildup, colonies are typically checked at least every two weeks.',url:'https://extension.psu.edu/honey-bee-management-throughout-the-seasons'}),
+    CA_BUILDUP_10:Object.freeze({id:'CA-BUILDUP-10',authority:'University of California Agriculture and Natural Resources',summary:'During rapid spring population buildup, conscientious beekeepers examine colonies about every 10 days until honey flow begins.',url:'https://ucanr.edu/sites/default/files/2010-08/40642.pdf'}),
+    CA_LIMITED:Object.freeze({id:'CA-LIMITED-DEARTH-WINTER',authority:'California Master Beekeeper Program, UC Davis',summary:'California guidance limits inspections during nectar dearth and winter-cluster periods.',url:'https://cambp.ucdavis.edu/sites/g/files/dgvnsk2526/files/inline-files/backyard-beekeeper-ca.pdf'}),
+    UT_ACTIVE_10_21:Object.freeze({id:'UT-ACTIVE-10-21',authority:'Utah State University Extension',summary:'Inspect hives every 10 days to 3 weeks; full hive inspections should use suitable warm conditions.',url:'https://extension.usu.edu/beekeeping/research/setting-up-and-placing-a-hive'}),
+    WEATHER_OPENING:Object.freeze({id:'OPENING-CONDITIONS',authority:'Oregon State University Extension',summary:'Full colony inspections are best in mild weather with good bee flight; cool, windy or rainy weather should be avoided.',url:'https://extension.oregonstate.edu/catalog/pnw-623-evaluating-honey-bee-colonies-pollination'})
+  });
+
+  function seasonContext(ctx){
+    const state=txt(ctx?.location?.stateCode).toUpperCase(),m=Number(ctx?.calendar?.month||0),phase=txt(ctx?.colonyPhase||'Uncertain');
+    if(state==='MS'&&[4,5].includes(m))return'Mississippi April-May swarm season';
+    if(NORTHEAST.has(state)&&[4,5,6].includes(m))return'Northeastern late-spring / early-summer buildup';
+    if(state==='CA'&&[3,4,5,6].includes(m))return'California spring buildup / swarm season';
+    if(state==='CA'&&[8,9,10].includes(m))return'California nectar-dearth / limited-inspection period';
+    if(state==='CA'&&[11,12,1].includes(m))return'California winter low-disturbance period';
+    if(state==='UT'&&![11,12,1,2].includes(m))return'Utah active beekeeping season';
+    return `${phase||'Uncertain'} seasonal context`;
+  }
+
+  function quantifiedAuthorityRule(ctx){
+    const state=txt(ctx?.location?.stateCode).toUpperCase(),m=Number(ctx?.calendar?.month||0),phase=txt(ctx?.colonyPhase||'Uncertain'),activePhase=['Population Increase','Peak Population','Population Decrease'].includes(phase);
+    if(state==='MS'&&[4,5].includes(m))return {rule:AUTHORITY_RULES.MS_SWARM_WEEKLY,minDays:7,maxDays:7,mode:'full',season:'Mississippi April-May swarm season'};
+    if(NORTHEAST.has(state)&&[4,5,6].includes(m)&&['Population Increase','Peak Population'].includes(phase))return {rule:AUTHORITY_RULES.NE_SWARM_14,minDays:14,maxDays:14,mode:'full',season:'Northeastern late-spring / early-summer swarm-prevention period'};
+    if(state==='CA'&&[3,4,5,6].includes(m)&&['Population Increase','Peak Population'].includes(phase))return {rule:AUTHORITY_RULES.CA_BUILDUP_10,minDays:10,maxDays:10,mode:'full',season:'California rapid spring population buildup'};
+    if(state==='UT'&&activePhase)return {rule:AUTHORITY_RULES.UT_ACTIVE_10_21,minDays:10,maxDays:21,mode:'full',season:'Utah active beekeeping season'};
+    if(state==='CA'&&([8,9,10,11,12,1].includes(m)||phase.startsWith('Dormant')))return {rule:AUTHORITY_RULES.CA_LIMITED,minDays:null,maxDays:null,mode:'limited',season:seasonContext(ctx)};
+    return null;
+  }
+
+  function riskPriority(ctx){const r=txt(ctx?.risk);return ['Critical','High'].includes(r)?'High':r==='Medium'?'Medium':'Routine'}
+  function evidencePriority(ctx,evidence,rule){
+    const out=[];
+    if(evidence?.inspection?.id)out.push('Latest real Inspection record');
+    if(evidence?.nextInspection)out.push('Beekeeper-confirmed next Inspection date');
+    if(ctx?.colonyPhase&&ctx.colonyPhase!=='Uncertain')out.push(`Colony phase: ${ctx.colonyPhase}`);
+    if(ctx?.risk)out.push(`Current risk: ${ctx.risk}`);
+    if(rule?.rule)out.push(`Regional/seasonal rule: ${rule.rule.id}`);
+    out.push('Calendar date only as supporting context');
+    return out;
+  }
+
+  function conflictsFor(s,h,ctx,evidence,rule,rawDecision){
+    const out=[],state=txt(ctx?.location?.stateCode).toUpperCase(),next=iso(evidence?.nextInspection),lastDate=iso(evidence?.inspection?.date);
+    if(!state)out.push('Structured hive/apiary state is missing.');
+    if(!evidence?.inspection?.id)out.push('No valid biological Inspection record exists.');
+    if(txt(ctx?.colonyPhase)==='Uncertain')out.push('Colony phase is uncertain from current evidence.');
+    if(low(ctx?.confidence)==='low')out.push(...(rawDecision?.confidence?.reasons||[]).map(x=>txt(x)).filter(Boolean));
+    if(lastDate&&iso(h?.lastInspection)&&iso(h.lastInspection)!==lastDate)out.push('Hive summary and latest Inspection date do not match.');
+    if(next&&rule?.maxDays!=null&&lastDate){
+      const max=addDays(lastDate,rule.maxDays);
+      if(max&&dayNo(next)>dayNo(max))out.push(`The recorded next Inspection (${next}) is later than the authority-supported window ending ${max}.`);
+    }
+    if(rule?.mode==='full'&&txt(ctx?.colonyPhase).startsWith('Dormant'))out.push('Seasonal full-inspection timing conflicts with dormant colony evidence.');
+    return [...new Set(out)];
+  }
+
+  // Compatibility-only signals preserve E5AD fingerprints so previously
+  // recorded beekeeper corrections remain attached to the same evidence state.
+  // They are NOT used to decide the scientific interval itself.
+  function compatibilityFingerprintSignals(s,hid){
+    const newest=rows=>rows.filter(Boolean).slice().sort((a,b)=>txt(b.date||b.updatedAt||b.recordedAt||b.createdAt).localeCompare(txt(a.date||a.updatedAt||a.recordedAt||a.createdAt)))[0]||null;
+    const varroa=newest((Array.isArray(s?.logs?.varroaTests)?s.logs.varroaTests:[]).filter(x=>txt(x.hiveId)===txt(hid)));
+    const treatment=newest((Array.isArray(s?.logs?.treatments)?s.logs.treatments:[]).filter(x=>txt(x.hiveId)===txt(hid)));
+    return {
+      varroa:varroa?[txt(varroa.id),iso(varroa.date),txt(varroa.mitesPer100??varroa.count??varroa.mites)].join('~'):'none',
+      treatment:treatment?[txt(treatment.id),iso(treatment.date||treatment.startDate||treatment.endDate),txt(treatment.status),txt(treatment.problem||treatment.type)].join('~'):'none'
+    };
+  }
+
+  function fingerprint(s,h,ctx,evidence,rule,intent){
+    const rawLoc=effectiveLoc(s,h)||{},compat=compatibilityFingerprintSignals(s,h.id),rawDecision=evalHive(s,h);
+    const locSig=[txt(rawLoc.stateCode).toUpperCase(),txt(rawLoc.city),txt(rawLoc.postalCode),txt(rawLoc.timezone)].join('~');
+    // Preserve the exact E5AD decision signature for correction compatibility.
+    const decisionSig=[txt(rawDecision?.phase||'Uncertain'),txt(rawDecision?.overallRisk||'Unassessed'),txt(rawDecision?.confidence?.level||'LOW')].join('~');
+    return [RULE_VERSION,txt(h.id),intent,txt(evidence?.inspection?.id||'none'),iso(evidence?.inspection?.date)||'none',txt(rule?.rule?.id||'no-quantified-rule'),locSig,decisionSig,iso(evidence?.nextInspection)||'none',compat.varroa,compat.treatment].join('|');
+  }
+
+  function activeOverride(s,fp){
+    const rows=Array.isArray(s?.meta?.scientificTaskOverrides)?s.meta.scientificTaskOverrides:[];
+    return rows.slice().reverse().find(x=>x&&txt(x.taskFingerprint)===txt(fp)&&txt(x.ruleVersion)===RULE_VERSION)||null;
+  }
+  function applyOverride(task,s){
+    const o=activeOverride(s,task.taskFingerprint);if(!o)return task;
+    if(o.decision==='not-needed')return null;
+    const x={...task,userCorrection:{decision:o.decision,reason:txt(o.reason),recordedAt:txt(o.recordedAt)}};
+    if(o.decision==='adjust-date'&&iso(o.date)){
+      x.dueDate=iso(o.date);x.date=iso(o.date);x.due=iso(o.date);x.scheduleSource='beekeeper-correction';
+      x.systemWhy=`${task.systemWhy} The beekeeper adjusted the execution date to ${fmt(o.date)}; this correction is recorded separately from biological evidence.`;
+    }
+    return x;
+  }
+
+  function baseTask(h,intent,title){
+    return {
+      hiveId:h.id,type:'Inspection',title,status:'Pending',source:'scientific-engine',systemGenerated:true,
+      reasonCode:'data',intentKey:intent,workflowStage:'evidence',ruleVersion:RULE_VERSION,
+      coreRuleId:CORE_RULE_ID,ruleEngineOwner:'HiveDashTaskEngineCoreV1',ruleMigrationVersion:MIGRATION_VERSION,
+      assessmentType:'EVIDENCE_SUFFICIENCY'
+    };
+  }
+
+  function buildPeriodicTask(s,h,existingRows){
+    const hid=txt(h.id),evidence=base.buildEvidenceSnapshot(s,hid),ctx=base.buildContextSnapshot(s,hid),rawDecision=evalHive(s,h),rule=quantifiedAuthorityRule(ctx),priority=riskPriority(ctx),seasonal=rule?.season||seasonContext(ctx),conflicts=conflictsFor(s,h,ctx,evidence,rule,rawDecision),confidence=txt(ctx?.confidence||'LOW').toUpperCase(),lastDate=iso(evidence?.inspection?.date),next=iso(evidence?.nextInspection);
+
+    const evaluation={
+      coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,evidence,context:{...ctx,seasonalPhase:seasonal},
+      assessment:{type:'EVIDENCE_SUFFICIENCY',status:evidence?.inspection?.id?'INSPECTION_EVIDENCE_PRESENT':'INSPECTION_EVIDENCE_MISSING',conflicts:conflicts.slice()},
+      authorityRule:rule?.rule||null
+    };
+
+    if(!evidence?.inspection?.id){
+      const intent='inspection-adaptive-initial',fp=fingerprint(s,h,ctx,evidence,rule,intent),a=baseTask(h,intent,'Initial inspection needed');
+      a.id=`scientific-adaptive-initial-${hid}`;a.priority=priority==='Routine'?'Medium':priority;a.executionRoute=`inspection/${hid}`;a.taskFingerprint=fp;a.evidenceStatus=txt(ctx?.location?.stateCode)?'PARTIAL':'INCOMPLETE';
+      a.dueDate='';a.date='';a.due=txt(ctx?.colonyPhase).startsWith('Dormant')?'When conditions permit':'As soon as suitable conditions permit';
+      a.systemWhy='No valid Inspection record exists. A baseline is needed before the adaptive engine can rely on colony phase, risk and trend evidence.';
+      a.evidenceChain={complete:false,ruleVersion:RULE_VERSION,stateCode:txt(ctx?.location?.stateCode).toUpperCase(),season:seasonal,colonyPhase:txt(ctx?.colonyPhase),risk:txt(ctx?.risk||'Unassessed'),confidence,evidencePriority:evidencePriority(ctx,evidence,rule),conflicts,weatherOpeningRule:AUTHORITY_RULES.WEATHER_OPENING.id};
+      evaluation.decision={type:'AUTO_CREATE',automationLevel:'A_AUTO_TASK',reason:'baseline-inspection-evidence-missing'};
+      evaluation.task=applyOverride(a,s);return evaluation;
+    }
+
+    const fpBase=fingerprint(s,h,ctx,evidence,rule,'inspection-adaptive');
+    let windowStart='',windowEnd='',scheduleSource='';
+    if(rule?.minDays!=null){windowStart=addDays(lastDate,rule.minDays);windowEnd=addDays(lastDate,rule.maxDays);scheduleSource='authority-rule'}
+    if(next&&(!windowEnd||dayNo(next)<=dayNo(windowEnd))){windowStart=next;windowEnd=next;scheduleSource='beekeeper-confirmed-next-date'}
+
+    const manual=existingRows.filter(a=>txt(a.hiveId)===hid&&isManualInspection(a));
+    if(windowEnd){
+      const wEnd=dayNo(windowEnd),manualCover=manual.find(m=>{const md=dayNo(m.dueDate||m.date||m.due);return md!==null&&md<=wEnd});
+      if(manualCover){evaluation.decision={type:'SUPPRESSED_BY_USER_PLAN',automationLevel:'MANUAL'};evaluation.task=null;return evaluation}
+      const specificIndex=existingRows.findIndex(a=>{
+        if(!isFullInspection(a)||txt(a.hiveId)!==hid||isPeriodicIntent(a))return false;
+        const ad=dayNo(a.dueDate||a.date||a.due);return ad!==null&&ad<=wEnd;
+      });
+      if(specificIndex>=0){
+        existingRows[specificIndex]={...existingRows[specificIndex],satisfiesRoutineInspection:true,replacesRoutineTaskFingerprint:fpBase,ruleVersion:existingRows[specificIndex].ruleVersion||RULE_VERSION,satisfiesCoreRuleId:CORE_RULE_ID};
+        evaluation.decision={type:'SUPERSEDED_BY_SPECIFIC_FULL_INSPECTION',automationLevel:'A_AUTO_TASK'};evaluation.task=null;return evaluation;
+      }
+    }
+
+    const hardConflict=conflicts.some(x=>/missing|uncertain|do not match|later than|conflicts/i.test(x));
+    const lowConfidence=confidence==='LOW';
+    if(!windowEnd||rule?.mode==='limited'||hardConflict||lowConfidence){
+      const intent=rule?.mode==='limited'?'inspection-adaptive-low-disturbance':'inspection-adaptive-confirm',fp=fingerprint(s,h,ctx,evidence,rule,intent),a=baseTask(h,intent,rule?.mode==='limited'?'Review inspection timing':'Confirm inspection timing');
+      a.id=`scientific-adaptive-confirm-${hid}-${lastDate||'unknown'}`;a.priority=priority;a.workflowStage='confirmation';a.executionRoute='';a.taskFingerprint=fp;a.evidenceStatus='INCOMPLETE';
+      a.proposedWindowStart=windowStart;a.proposedWindowEnd=windowEnd;a.dueDate='';a.date='';a.due=windowStart&&windowEnd?`${windowStart} – ${windowEnd}`:'Needs confirmation';
+      a.systemWhy=rule?.mode==='limited'?`${seasonal}. Current authority guidance says routine opening should be limited; HiveDash will not invent a full-inspection date without suitable local conditions and current evidence.`:windowEnd?'A scientific window can be proposed, but the current evidence chain contains a conflict or low-confidence element that requires beekeeper confirmation.':'The current rule version does not contain a quantified inspection interval for this exact state/season/phase combination. HiveDash will not substitute a nationwide default.';
+      a.evidenceChain={complete:false,ruleVersion:RULE_VERSION,ruleId:txt(rule?.rule?.id),authority:txt(rule?.rule?.authority),authoritySummary:txt(rule?.rule?.summary),stateCode:txt(ctx?.location?.stateCode).toUpperCase(),season:seasonal,colonyPhase:txt(ctx?.colonyPhase),risk:txt(ctx?.risk||'Unassessed'),confidence,evidencePriority:evidencePriority(ctx,evidence,rule),conflicts,latestInspectionId:txt(evidence.inspection.id),latestInspectionDate:lastDate,proposedWindowStart:windowStart,proposedWindowEnd:windowEnd,weatherOpeningRule:AUTHORITY_RULES.WEATHER_OPENING.id};
+      evaluation.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:rule?.mode==='limited'?'low-disturbance-or-local-conditions':'evidence-or-timing-incomplete'};
+      evaluation.task=applyOverride(a,s);return evaluation;
+    }
+
+    const intent='inspection-adaptive',a=baseTask(h,intent,rule.minDays===rule.maxDays?'Scheduled inspection':'Inspection window');
+    a.id=`scientific-adaptive-${hid}-${lastDate}-${txt(rule.rule.id)}`;a.priority=priority;a.executionRoute=`inspection/${hid}`;a.taskFingerprint=fpBase;a.evidenceStatus=confidence==='HIGH'?'COMPLETE':'SUPPORTED';
+    a.dueWindowStart=windowStart;a.dueWindowEnd=windowEnd;a.dueDate=windowEnd;a.date=windowEnd;a.due=windowStart===windowEnd?windowEnd:`${windowStart} – ${windowEnd}`;a.scheduleSource=scheduleSource;
+    a.systemWhy=`${rule.rule.authority} supports this inspection interval for ${seasonal.toLowerCase()}. HiveDash then checks colony phase, current risk and the latest Inspection before creating the task.`;
+    a.evidenceChain={complete:true,ruleVersion:RULE_VERSION,ruleId:rule.rule.id,authority:rule.rule.authority,authoritySummary:rule.rule.summary,stateCode:txt(ctx?.location?.stateCode).toUpperCase(),season:seasonal,colonyPhase:txt(ctx?.colonyPhase),risk:txt(ctx?.risk||'Unassessed'),confidence,evidencePriority:evidencePriority(ctx,evidence,rule),conflicts,latestInspectionId:txt(evidence.inspection.id),latestInspectionDate:lastDate,windowStart,windowEnd,scheduleSource,weatherOpeningRule:AUTHORITY_RULES.WEATHER_OPENING.id};
+    evaluation.decision={type:'AUTO_CREATE',automationLevel:'A_AUTO_TASK',reason:'authority-supported-periodic-window'};
+    evaluation.task=applyOverride(a,s);return evaluation;
+  }
+
+  const ruleDefinition=Object.freeze({
+    id:CORE_RULE_ID,
+    version:RULE_VERSION,
+    engineOwner:'HiveDashTaskEngineCoreV1',
+    migrationVersion:MIGRATION_VERSION,
+    category:'INSPECTION_EVIDENCE',
+    assessmentType:'EVIDENCE_SUFFICIENCY',
+    evidenceInputs:Object.freeze(['Evidence.inspection','Evidence.nextInspection']),
+    contextInputs:Object.freeze(['Context.location.stateCode','Context.calendar.month','Context.colonyPhase','Context.risk','Context.confidence']),
+    authorityRules:AUTHORITY_RULES,
+    policy:Object.freeze({monthIsSupportingContextOnly:true,noNationwideDefaultInterval:true,weatherIsOpeningSafetyContextNotInventedEvidence:true}),
+    evaluate:(s,h,existingRows)=>buildPeriodicTask(s,h,existingRows)
+  });
+
+  const registry=new Map();
+  // Carry forward any future registry exposed by a prior compatible core layer.
+  try{for(const r of (typeof base.listRegisteredRules==='function'?base.listRegisteredRules():[])){if(r?.id)registry.set(txt(r.id),r)}}catch(_){ }
+  registry.set(CORE_RULE_ID,ruleDefinition);
+
+  function registerRule(rule){
+    if(!rule||!txt(rule.id)||typeof rule.evaluate!=='function')throw new Error('Task Engine rule requires id + evaluate()');
+    registry.set(txt(rule.id),rule);return rule;
+  }
+  function getRegisteredRule(id){return registry.get(txt(id))||null}
+  function listRegisteredRules(){return [...registry.values()].map(r=>({id:txt(r.id),version:txt(r.version),category:txt(r.category),assessmentType:txt(r.assessmentType),engineOwner:txt(r.engineOwner),migrationVersion:txt(r.migrationVersion)}))}
+  function evaluateRule(ruleId,s,hiveId,existingRows=[]){
+    const rule=getRegisteredRule(ruleId),h=hiveBy(s,hiveId);if(!rule||!h)return null;
+    return rule.evaluate(s,h,existingRows);
+  }
+  function generateRegisteredRuleTasks(s,existingRows=[],ruleIds=[CORE_RULE_ID]){
+    const rows=existingRows.slice(),cache={evidence:new Map(),context:new Map()};
+    for(const h of active(s)){
+      for(const id of ruleIds){
+        const evaluation=evaluateRule(id,s,h.id,rows);if(!evaluation?.task)continue;
+        let task=base.normalizeTaskProjection(evaluation.task,s,cache);
+        // The canonical rule reference points at the HiveDash Core rule, while
+        // the authority sub-rule remains separately traceable in evidenceChain.
+        task.coreRuleId=CORE_RULE_ID;
+        // Migrated scientific rules own their explicit Decision. Do not let the
+        // AU compatibility projection infer AUTO_CREATE merely from source=scientific-engine.
+        if(evaluation?.decision?.automationLevel)task.automationLevel=evaluation.decision.automationLevel;
+        if(evaluation?.decision?.type==='RECOMMEND_CONFIRM'){
+          task.decisionType='RECOMMEND_CONFIRM';task.taskLifecycleState='RECOMMENDED';
+        }else if(evaluation?.decision?.type==='AUTO_CREATE'){
+          task.decisionType='AUTO_CREATE';
+        }
+        task.ruleRef={...(task.ruleRef||{}),ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,authorityRuleId:txt(task.evidenceChain?.ruleId),authority:txt(task.evidenceChain?.authority),authoritySummary:txt(task.evidenceChain?.authoritySummary),engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION};
+        task.ruleEvaluation={assessment:evaluation.assessment,decision:evaluation.decision,contextPolicy:'CORE_EVIDENCE_CONTEXT_FIRST'};
+        rows.push(task);
+      }
+    }
+    const seen=new Set(),out=[];
+    for(const a of rows){if(!a)continue;const k=txt(a.id)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`;if(seen.has(k))continue;seen.add(k);out.push(a)}
+    return out;
+  }
+
+  const extended=Object.freeze({...base,registerRule,getRegisteredRule,listRegisteredRules,evaluateRule,generateRegisteredRuleTasks,periodicInspectionRule:ruleDefinition});
+  window.HiveDashTaskEngineCoreV1=extended;
+  window.V2P2E5AV_PERIODIC_INSPECTION_RULE=ruleDefinition;
+
+  const prevGenerate=window.generateActions||generateActions;
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      // Defensive cleanup guarantees that even if a historical wrapper is
+      // invoked by an old call path, only the Core owns Periodic Inspection.
+      let rows=(prevGenerate(s)||[]).filter(a=>!isMigratedPeriodic(a));
+      rows=extended.generateRegisteredRuleTasks(s,rows,[CORE_RULE_ID]);
+      return rows;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  window.v2p2e5avEvaluatePeriodicInspection=function(hiveId){
+    const s=S();return s?evaluateRule(CORE_RULE_ID,s,hiveId,(typeof prevGenerate==='function'?prevGenerate(s):[]).filter(a=>!isMigratedPeriodic(a))):null;
+  };
+  window.__HIVEDASH_V2P2E5AV_VERSION__='v2p2e5av-periodic-inspection-core-rule-migration';
 })();

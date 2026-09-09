@@ -22717,3 +22717,80 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
 
   window.__HIVEDASH_V2P2E5AX6_VERSION__='v2p2e5ax6-transient-varroa-lifecycle-open-route-fix';
 })();
+
+/* ==============================================================
+   V2P2E5AX7 — INSPECTION EDITABLE CARD INTERACTION RECOVERY
+   Scope: Inspection interaction binding only.
+   - Restores deterministic click bindings for the editable Inspection cards
+     (Queen, Brood, Colony, Food Stores) and Additional Checks rows.
+   - Formal Varroa/Treatment reference cards remain read-only in Inspection.
+   - Does not modify R01/R02/R03 evaluation, evidence, thresholds,
+     Treatment/Varroa persistence, Inspection save semantics, or routes.
+   ============================================================== */
+(function v2p2e5ax7InspectionInteractionRecovery(){
+  if(window.__HIVEDASH_V2P2E5AX7__)return;
+  window.__HIVEDASH_V2P2E5AX7__=true;
+
+  const txt=v=>String(v??'').trim();
+  function inspectionRoute(){return /^#inspection\//.test(String(location.hash||''));}
+  function cardKey(el){
+    const raw=txt(el?.getAttribute?.('onclick'));
+    const m=raw.match(/v211OpenModule\(['"]([^'"]+)['"]\)/);
+    return m?m[1]:'';
+  }
+  function rowArgs(el){
+    const raw=txt(el?.getAttribute?.('onclick'));
+    const m=raw.match(/v211EditField\(['"]([^'"]+)['"](?:\s*,\s*['"]([^'"]+)['"])?\)/);
+    return m?[m[1],m[2]||'text']:null;
+  }
+  function bind(root){
+    if(!root||!inspectionRoute())return;
+
+    root.querySelectorAll('.v211-card').forEach(card=>{
+      // V2P2E5AQ deliberately converts formal Varroa/Treatment cards to
+      // read-only references. Do not make those editable again.
+      if(card.classList.contains('v2p2e5aq-reference-card')||card.hasAttribute('data-formal-reference'))return;
+      const key=cardKey(card);
+      if(!['queen','brood','colony','stores'].includes(key))return;
+      card.onclick=function(e){
+        e?.preventDefault?.();
+        if(typeof window.v211OpenModule==='function')return window.v211OpenModule(key);
+      };
+      card.dataset.ax7Bound='1';
+    });
+
+    root.querySelectorAll('.v211-edit-row').forEach(row=>{
+      const args=rowArgs(row);if(!args)return;
+      row.onclick=function(e){
+        e?.preventDefault?.();
+        if(typeof window.v211EditField==='function')return window.v211EditField(args[0],args[1]);
+        if(typeof window.editInspectionV49==='function')return window.editInspectionV49(args[0],args[1]);
+      };
+      row.dataset.ax7Bound='1';
+    });
+  }
+
+  const prevInspection=window.inspectionPage||((typeof inspectionPage==='function')?inspectionPage:null);
+  if(typeof prevInspection==='function'){
+    window.inspectionPage=function(r,id){
+      const ret=prevInspection.apply(this,arguments);
+      try{bind(r)}catch(err){console.error('V2P2E5AX7 Inspection bind failed',err)}
+      queueMicrotask(()=>{try{bind(r)}catch(_){}});
+      return ret;
+    };
+    try{inspectionPage=window.inspectionPage}catch(_){}
+  }
+
+  // Rebind after same-route realtime redraws or other render wrappers.
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){
+      const ret=prevRender.apply(this,arguments);
+      if(inspectionRoute())queueMicrotask(()=>{try{bind(document.getElementById('view'))}catch(_){}});
+      return ret;
+    };
+    try{render=window.render}catch(_){}
+  }
+
+  window.__HIVEDASH_V2P2E5AX7_VERSION__='v2p2e5ax7-inspection-editable-card-interaction-recovery';
+})();

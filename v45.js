@@ -12256,7 +12256,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
   window.b38DetailFieldChanged=function(field,value){
     const d=window.__b38ResultDraft;
     if(!d)return;
-    d[field]=value;
+    d[field]=b39PlanEnumEnglish(field,value);
   };
 
   window.b38DetailFollowChanged=function(input){
@@ -12484,6 +12484,47 @@ function detailHTML(a){
   };
   const activeHives=s=>(s.hives||[]).filter(h=>!h.archived && String(h.status||'').toLowerCase()!=='combined');
 
+  /* V2P2E5AX14E — B39 enum boundary repair.
+     Split Hive keeps fixed English business values even when old local/cloud
+     records contain translated labels. This is deliberately scoped to B39
+     enum fields; free-text notes and hive names are never rewritten. */
+  function b39PlanEnumEnglish(field,value){
+    const raw=String(value??'').trim();
+    const maps={
+      colonyStrength:{'强壮':'Strong','强':'Strong','中等':'Moderate','一般':'Moderate','较弱':'Weak','弱':'Weak','未检查':'Not checked'},
+      broodAvailability:{'还算可以':'Adequate','尚可':'Adequate','足够':'Adequate','有限':'Limited','无':'None','没有':'None','未检查':'Not checked'},
+      foodStores:{'还算可以':'Adequate','尚可':'Adequate','足够':'Adequate','低':'Low','较低':'Low','未检查':'Not checked'},
+      queenPlan:{
+        '女王在家':'Parent keeps queen','女王在房':'Parent keeps queen','蜂王在家':'Parent keeps queen','蜂王在房':'Parent keeps queen',
+        '父母保留蜂王':'Parent keeps queen','亲本保留蜂王':'Parent keeps queen','母群保留蜂王':'Parent keeps queen',
+        '女王留在母群':'Parent keeps queen','蜂王留在母群':'Parent keeps queen','女王留在亲本群':'Parent keeps queen','蜂王留在亲本群':'Parent keeps queen',
+        '新蜂群获得蜂王':'New hive gets queen','新蜂群接收蜂王':'New hive gets queen','王台':'Queen cell','稍后引入蜂王':'Introduce queen later','未决定':'Not decided'
+      },
+      priority:{'低':'Low','媒介':'Medium','中':'Medium','中等':'Medium','高':'High'}
+    };
+    let next=maps[field]?.[raw]||raw;
+    if(field==='queenPlan' && /^(?:女王|蜂王).*(?:在家|在房|留在.*(?:母群|亲本群)|保留)/.test(raw)) next='Parent keeps queen';
+    return next;
+  }
+
+  function b39CanonicalizePendingActionPlan(s,actionId){
+    const pools=[...(Array.isArray(s?.actions)?s.actions:[]),...(Array.isArray(s?.meta?.completedActions)?s.meta.completedActions:[])];
+    const a=pools.find(x=>x&&String(x.id)===String(actionId)&&x.type===TYPE);
+    if(!a)return null;
+    const w=a.workflowData=a.workflowData&&typeof a.workflowData==='object'?a.workflowData:{};
+    let changed=false;
+    for(const field of ['colonyStrength','broodAvailability','foodStores','queenPlan']){
+      const before=String(w[field]??'');
+      const after=b39PlanEnumEnglish(field,before);
+      if(after!==before){w[field]=after;changed=true;}
+    }
+    const pBefore=String(a.priority??'');
+    const pAfter=b39PlanEnumEnglish('priority',pBefore)||'Medium';
+    if(pAfter!==pBefore){a.priority=pAfter;changed=true;}
+    if(changed){try{save(s)}catch(_){}}
+    return a;
+  }
+
   const B39_DRAFT_KEY='hivedash_b39_split_create_draft';
 
   function b39LoadPersistedDraft(){
@@ -12513,15 +12554,15 @@ function detailHTML(a){
       const persisted=b39LoadPersistedDraft()||{};
       window.__b39Draft={
         hiveId:persisted.hiveId??hs[0]?.id??'',
-        colonyStrength:persisted.colonyStrength??'Not checked',
-        broodAvailability:persisted.broodAvailability??'Not checked',
-        foodStores:persisted.foodStores??'Not checked',
-        queenPlan:persisted.queenPlan??'Not decided',
+        colonyStrength:b39PlanEnumEnglish('colonyStrength',persisted.colonyStrength??'Not checked'),
+        broodAvailability:b39PlanEnumEnglish('broodAvailability',persisted.broodAvailability??'Not checked'),
+        foodStores:b39PlanEnumEnglish('foodStores',persisted.foodStores??'Not checked'),
+        queenPlan:b39PlanEnumEnglish('queenPlan',persisted.queenPlan??'Not decided'),
         plannedBroodFrames:Number.isFinite(Number(persisted.plannedBroodFrames))?Number(persisted.plannedBroodFrames):2,
         plannedFoodFrames:Number.isFinite(Number(persisted.plannedFoodFrames))?Number(persisted.plannedFoodFrames):1,
         newHiveName:persisted.newHiveName??'',
         dueDate:persisted.dueDate??TODAY(),
-        priority:persisted.priority??'Medium',
+        priority:b39PlanEnumEnglish('priority',persisted.priority??'Medium')||'Medium',
         notes:persisted.notes??''
       };
     }
@@ -12651,13 +12692,14 @@ function detailHTML(a){
     ];
     map.forEach(([id,key])=>{
       const el=idq(id);
-      if(el) d[key]=el.value;
+      if(el) d[key]=b39PlanEnumEnglish(key,el.value);
     });
     b39PersistDraft(d);
   }
 
   function options(items,selected){
-    return items.map(x=>`<option value="${E(x)}" ${String(x)===String(selected)?'selected':''}>${E(x)}</option>`).join('');
+    const normalized=b39PlanEnumEnglish('queenPlan',b39PlanEnumEnglish('foodStores',b39PlanEnumEnglish('broodAvailability',b39PlanEnumEnglish('colonyStrength',b39PlanEnumEnglish('priority',selected)))));
+    return items.map(x=>`<option value="${E(x)}" ${String(x)===String(normalized)?'selected':''}>${E(x)}</option>`).join('');
   }
 
   function createHTML(){
@@ -12814,7 +12856,7 @@ function detailHTML(a){
       type:TYPE,
       title:'Split Hive',
       status:'Pending',
-      priority:d.priority||'Medium',
+      priority:b39PlanEnumEnglish('priority',d.priority||'Medium')||'Medium',
       due:d.dueDate||TODAY(),
       dueDate:d.dueDate||TODAY(),
       date:d.dueDate||TODAY(),
@@ -12825,10 +12867,10 @@ function detailHTML(a){
       source:'manual',
       reasonCode:'management',
       workflowData:{
-        colonyStrength:d.colonyStrength||'Not checked',
-        broodAvailability:d.broodAvailability||'Not checked',
-        foodStores:d.foodStores||'Not checked',
-        queenPlan:d.queenPlan||'Not decided',
+        colonyStrength:b39PlanEnumEnglish('colonyStrength',d.colonyStrength||'Not checked'),
+        broodAvailability:b39PlanEnumEnglish('broodAvailability',d.broodAvailability||'Not checked'),
+        foodStores:b39PlanEnumEnglish('foodStores',d.foodStores||'Not checked'),
+        queenPlan:b39PlanEnumEnglish('queenPlan',d.queenPlan||'Not decided'),
         plannedBroodFrames:Number(d.plannedBroodFrames||0),
         plannedFoodFrames:Number(d.plannedFoodFrames||0),
         plannedNewHiveName:String(d.newHiveName||'').trim()
@@ -13332,7 +13374,9 @@ function detailHTML(a){
   };
 
   function pendingHTML(a){
-    const s=S(),h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
+    const s=S();
+    a=b39CanonicalizePendingActionPlan(s,a?.id)||a;
+    const h=(s.hives||[]).find(x=>x.id===a.hiveId),w=a.workflowData||{};
     const fmt=v=>{const m=String(v||'').match(/^(\\d{4})-(\\d{2})-(\\d{2})$/);return m?`${m[2]}/${m[3]}/${m[1]}`:String(v||'');};
     const rd=b39mLoadResultDraft(a);
     const editable=b39vPendingEditable(a);
@@ -13360,10 +13404,10 @@ function detailHTML(a){
           <div class="b37-label">Pre-check</div>
           <div class="b37-hint">Saved plan</div>
         </div>
-        <div class="b39-summary-row"><span>Colony Strength</span><b>${E(w.colonyStrength||'Not checked')}</b></div>
-        <div class="b39-summary-row"><span>Brood Availability</span><b>${E(w.broodAvailability||'Not checked')}</b></div>
-        <div class="b39-summary-row"><span>Food Stores</span><b>${E(w.foodStores||'Not checked')}</b></div>
-        <div class="b39-summary-row"><span>Queen Plan</span><b>${E(w.queenPlan||'Not decided')}</b></div>
+        <div class="b39-summary-row"><span>Colony Strength</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('colonyStrength',w.colonyStrength||'Not checked'))}</b></div>
+        <div class="b39-summary-row"><span>Brood Availability</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('broodAvailability',w.broodAvailability||'Not checked'))}</b></div>
+        <div class="b39-summary-row"><span>Food Stores</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('foodStores',w.foodStores||'Not checked'))}</b></div>
+        <div class="b39-summary-row"><span>Queen Plan</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('queenPlan',w.queenPlan||'Not decided'))}</b></div>
       </section>
 
       <section class="b37-card b39-card">
@@ -13427,9 +13471,9 @@ function detailHTML(a){
           <label class="b37-field">
             <span>Priority</span>
             <select id="b39v-priority" ${editable?'':'disabled'} onchange="b39vSavePendingPlan('${E(a.id)}','priority',this.value)">
-              <option ${String(a.priority||'Medium')==='Low'?'selected':''}>Low</option>
-              <option ${String(a.priority||'Medium')==='Medium'?'selected':''}>Medium</option>
-              <option ${String(a.priority||'Medium')==='High'?'selected':''}>High</option>
+              <option value="Low" ${b39PlanEnumEnglish('priority',a.priority||'Medium')==='Low'?'selected':''}>Low</option>
+              <option value="Medium" ${b39PlanEnumEnglish('priority',a.priority||'Medium')==='Medium'?'selected':''}>Medium</option>
+              <option value="High" ${b39PlanEnumEnglish('priority',a.priority||'Medium')==='High'?'selected':''}>High</option>
             </select>
           </label>
         </div>
@@ -14165,6 +14209,8 @@ function detailHTML(a){
   };
   try{v53DrawActions=window.v53DrawActions}catch(_){ }
 })();
+
+window.__HIVEDASH_V2P2E5AX14E_VERSION__='V2P2E5AX14E-split-enum-render-persistence-fix';
 
 /* ==============================================================
    V224B40A — Combine Hives

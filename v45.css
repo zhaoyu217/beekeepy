@@ -8296,3 +8296,89 @@ html body #bottomnav.bottomnav:not(.hidden){
   font-size:10px!important;
   line-height:1.6!important;
 }
+
+/* ==============================================================
+   V2P2E5AX9 — INSPECTION TWO-COLUMN HARD WIDTH CONTAINMENT
+   Scope locked: responsive layout only.
+   - Keeps the frozen two-column Inspection card architecture.
+   - Uses explicit flex-basis width calculation instead of intrinsic
+     CSS-grid sizing so the second column cannot escape the app shell.
+   - Does not alter fields, values, routes, evidence, save behavior,
+     R01/R02/R03, Varroa, Treatment, or task logic.
+   ============================================================== */
+body .v211-inspection{
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  box-sizing:border-box!important;
+  overflow-x:hidden!important;
+}
+body .v211-inspection .v211-grid{
+  display:flex!important;
+  flex-flow:row wrap!important;
+  align-items:stretch!important;
+  gap:8px!important;
+  width:100%!important;
+  max-width:100%!important;
+  min-width:0!important;
+  margin:12px 0!important;
+  padding:0!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+body .v211-inspection .v211-grid > .v211-card{
+  flex:0 0 calc((100% - 8px) / 2)!important;
+  width:calc((100% - 8px) / 2)!important;
+  max-width:calc((100% - 8px) / 2)!important;
+  min-width:0!important;
+  margin:0!important;
+  padding:12px!important;
+  box-sizing:border-box!important;
+  overflow:hidden!important;
+}
+body .v211-inspection .v211-card-head{
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+body .v211-inspection .v211-card-row{
+  display:grid!important;
+  grid-template-columns:minmax(0,42%) minmax(0,58%)!important;
+  align-items:start!important;
+  column-gap:6px!important;
+  width:100%!important;
+  min-width:0!important;
+  max-width:100%!important;
+  box-sizing:border-box!important;
+}
+body .v211-inspection .v211-card-row > span,
+body .v211-inspection .v211-card-row > strong{
+  display:block!important;
+  width:auto!important;
+  max-width:100%!important;
+  min-width:0!important;
+  overflow:visible!important;
+  white-space:normal!important;
+  overflow-wrap:anywhere!important;
+  word-break:normal!important;
+}
+body .v211-inspection .v211-card-row > strong{
+  text-align:right!important;
+}
+@media(max-width:393px){
+  body .v211-inspection .v211-grid > .v211-card{padding:10px!important;}
+  body .v211-inspection .v211-card-row{column-gap:5px!important;}
+}
+@media(max-width:350px){
+  body .v211-inspection .v211-grid{gap:6px!important;}
+  body .v211-inspection .v211-grid > .v211-card{
+    flex-basis:calc((100% - 6px) / 2)!important;
+    width:calc((100% - 6px) / 2)!important;
+    max-width:calc((100% - 6px) / 2)!important;
+    padding:8px!important;
+  }
+  body .v211-inspection .v211-card-head b{font-size:14px!important;}
+  body .v211-inspection .v211-card-row > span,
+  body .v211-inspection .v211-card-row > strong{font-size:10px!important;}
+}

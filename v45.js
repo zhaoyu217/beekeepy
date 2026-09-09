@@ -23041,3 +23041,68 @@ window.__HIVEDASH_V2P2E5AX14__='split-harvest-missing-not-zero-v1';
   window.v2p2e5ax14aPinOptionValues=pinOptionValues;
   window.__HIVEDASH_V2P2E5AX14A_VERSION__='V2P2E5AX14A-browser-translation-enum-integrity';
 })();
+
+
+/* ==============================================================
+   V2P2E5AX14B — App UI Browser Translation Immunity Guard
+   Scope:
+   - HiveDash is an English US-facing product. Browser auto-translation must
+     not rewrite visible business labels/enum values after render.
+   - Keep AX14A canonical enum repair for previously polluted stored values.
+   - No business logic, routing, persistence schema, Split/Harvest workflow,
+     Varroa/R03, Inspection, Treatment or Feeding behavior is changed here.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V2P2E5AX14B__)return;
+  window.__HIVEDASH_V2P2E5AX14B__=true;
+
+  function ensureMeta(){
+    try{
+      let meta=document.querySelector('meta[name="google"]');
+      if(!meta){
+        meta=document.createElement('meta');
+        meta.setAttribute('name','google');
+        document.head&&document.head.appendChild(meta);
+      }
+      meta.setAttribute('content','notranslate');
+    }catch(_){ }
+  }
+
+  function guard(el){
+    if(!el||!el.setAttribute)return;
+    try{el.setAttribute('translate','no');}catch(_){ }
+    try{el.classList&&el.classList.add('notranslate');}catch(_){ }
+  }
+
+  function apply(){
+    try{
+      const html=document.documentElement;
+      if(html){
+        html.setAttribute('lang','en-US');
+        guard(html);
+      }
+      guard(document.body);
+      ensureMeta();
+      ['app','topbar','view','bottomnav','toast'].forEach(id=>guard(document.getElementById(id)));
+    }catch(_){ }
+  }
+
+  // Run synchronously before browser auto-translation normally starts,
+  // then re-assert after DOM readiness and dynamic route/modal insertion.
+  apply();
+  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});
+  else setTimeout(apply,0);
+
+  try{
+    const mo=new MutationObserver(()=>apply());
+    const start=()=>{
+      const root=document.getElementById('app')||document.documentElement;
+      if(root)mo.observe(root,{childList:true,subtree:true});
+    };
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
+    else start();
+  }catch(_){ }
+
+  window.v2p2e5ax14bApplyNoTranslate=apply;
+  window.__HIVEDASH_V2P2E5AX14B_VERSION__='V2P2E5AX14B-app-ui-browser-translation-immunity';
+})();

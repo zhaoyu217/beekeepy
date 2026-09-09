@@ -13406,10 +13406,10 @@ function detailHTML(a){
           <div class="b37-label">Pre-check</div>
           <div class="b37-hint">Saved plan</div>
         </div>
-        <div class="b39-summary-row"><span>Colony Strength</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('colonyStrength',w.colonyStrength||'Not checked'))}</b></div>
-        <div class="b39-summary-row"><span>Brood Availability</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('broodAvailability',w.broodAvailability||'Not checked'))}</b></div>
-        <div class="b39-summary-row"><span>Food Stores</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('foodStores',w.foodStores||'Not checked'))}</b></div>
-        <div class="b39-summary-row"><span>Queen Plan</span><b class="notranslate" translate="no">${E(b39PlanEnumEnglish('queenPlan',w.queenPlan||'Not decided'))}</b></div>
+        <div class="b39-summary-row"><span>Colony Strength</span><b>${E(b39PlanEnumEnglish('colonyStrength',w.colonyStrength||'Not checked'))}</b></div>
+        <div class="b39-summary-row"><span>Brood Availability</span><b>${E(b39PlanEnumEnglish('broodAvailability',w.broodAvailability||'Not checked'))}</b></div>
+        <div class="b39-summary-row"><span>Food Stores</span><b>${E(b39PlanEnumEnglish('foodStores',w.foodStores||'Not checked'))}</b></div>
+        <div class="b39-summary-row"><span>Queen Plan</span><b>${E(b39PlanEnumEnglish('queenPlan',w.queenPlan||'Not decided'))}</b></div>
       </section>
 
       <section class="b37-card b39-card">
@@ -17313,8 +17313,6 @@ window.__HIVEDASH_V2_P2C7_VERSION__='v2-p2c7-current-treatment-summary-source';
       const fn=canonByLabel[label];
       if(!valueEl||!fn)return;
       valueEl.textContent=fn(valueEl.textContent);
-      valueEl.setAttribute('translate','no');
-      valueEl.classList.add('notranslate');
     });
   }
 
@@ -23093,65 +23091,13 @@ window.__HIVEDASH_V2P2E5AX14__='split-harvest-missing-not-zero-v1';
 
 
 /* ==============================================================
-   V2P2E5AX14B — App UI Browser Translation Immunity Guard
-   Scope:
-   - HiveDash is an English US-facing product. Browser auto-translation must
-     not rewrite visible business labels/enum values after render.
-   - Keep AX14A canonical enum repair for previously polluted stored values.
-   - No business logic, routing, persistence schema, Split/Harvest workflow,
-     Varroa/R03, Inspection, Treatment or Feeding behavior is changed here.
+   V2P2E5AX14G — Restore Browser Translation (retire AX14B UI block)
+   The UI may be translated for the user. Business enum integrity remains
+   protected by AX14A explicit option values plus AX14D/F canonicalization.
+   No no-translate attributes/classes are applied here.
    ============================================================== */
 (function(){
-  if(window.__HIVEDASH_V2P2E5AX14B__)return;
-  window.__HIVEDASH_V2P2E5AX14B__=true;
-
-  function ensureMeta(){
-    try{
-      let meta=document.querySelector('meta[name="google"]');
-      if(!meta){
-        meta=document.createElement('meta');
-        meta.setAttribute('name','google');
-        document.head&&document.head.appendChild(meta);
-      }
-      meta.setAttribute('content','notranslate');
-    }catch(_){ }
-  }
-
-  function guard(el){
-    if(!el||!el.setAttribute)return;
-    try{el.setAttribute('translate','no');}catch(_){ }
-    try{el.classList&&el.classList.add('notranslate');}catch(_){ }
-  }
-
-  function apply(){
-    try{
-      const html=document.documentElement;
-      if(html){
-        html.setAttribute('lang','en-US');
-        guard(html);
-      }
-      guard(document.body);
-      ensureMeta();
-      ['app','topbar','view','bottomnav','toast'].forEach(id=>guard(document.getElementById(id)));
-    }catch(_){ }
-  }
-
-  // Run synchronously before browser auto-translation normally starts,
-  // then re-assert after DOM readiness and dynamic route/modal insertion.
-  apply();
-  if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',apply,{once:true});
-  else setTimeout(apply,0);
-
-  try{
-    const mo=new MutationObserver(()=>apply());
-    const start=()=>{
-      const root=document.getElementById('app')||document.documentElement;
-      if(root)mo.observe(root,{childList:true,subtree:true});
-    };
-    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',start,{once:true});
-    else start();
-  }catch(_){ }
-
-  window.v2p2e5ax14bApplyNoTranslate=apply;
-  window.__HIVEDASH_V2P2E5AX14B_VERSION__='V2P2E5AX14B-app-ui-browser-translation-immunity';
+  window.__HIVEDASH_V2P2E5AX14B__=false;
+  window.v2p2e5ax14bApplyNoTranslate=function(){};
+  window.__HIVEDASH_V2P2E5AX14G_VERSION__='V2P2E5AX14G-restore-browser-translation';
 })();

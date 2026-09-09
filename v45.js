@@ -20774,7 +20774,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
       if(d?.__v2p2e5apNewEvidence===true&&txt(d.hiveId)===txt(id)){
         d.notes=document.getElementById('inotes')?.value??d.notes??'';
         const missing=missingGroups(d);
-        if(missing.length)return toast(`Confirm today’s ${missing.join(', ')} before saving the Inspection.`);
+        if(missing.length){toast(`Confirm today’s ${missing.join(', ')} before saving the Inspection.`);return false;}
       }
       const s0=S(),h0=hiveBy(s0,id),mirror=h0?{queen:h0.queen,eggs:h0.eggs,larvae:h0.larvae,queenCells:h0.queenCells,brood:h0.brood,honey:h0.honey,pollen:h0.pollen,shb:h0.shb,disease:h0.disease,swarm:h0.swarm,superStatus:h0.superStatus,strength:h0.strength,notes:h0.notes,nextInspection:h0.nextInspection}:null;
       const beforeIds=new Set((s0?.logs?.inspections||[]).filter(x=>txt(x?.hiveId)===txt(id)).map(x=>txt(x.id)));

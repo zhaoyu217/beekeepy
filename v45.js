@@ -20740,8 +20740,17 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   window.addEventListener('hashchange',function(){
     const next=String(location.hash||'#home').replace(/^#/,'');
     const wasInspection=/^inspection\//.test(routeBefore),isInspection=/^inspection\//.test(next);
+    /* V2P2E5AX11 — Inspection re-entry session ordering fix.
+       The global hashchange renderer runs before this later AP listener. On an
+       entry into #inspection/<hive>, inspectionPage() has therefore already
+       created the fresh current-visit draft. Clearing it here leaves a fully
+       rendered Inspection screen with no backing draft, so every editable card
+       appears normal but v211OpenModule()/editInspectionV49() immediately no-op.
+
+       Session reset belongs to inspectionPage() (activeHiveId mismatch) when
+       entering/switching hives, and to this listener only when LEAVING
+       Inspection. Never destroy the session after the new page has rendered. */
     if(wasInspection&&!isInspection){V49_INSPECTION_DRAFT=null;activeHiveId='';draftChoiceShown=false;closeDraftChoice()}
-    else if(isInspection&&next!==routeBefore){V49_INSPECTION_DRAFT=null;activeHiveId='';draftChoiceShown=false;closeDraftChoice()}
     routeBefore=next;
   });
 
@@ -22793,4 +22802,64 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
   }
 
   window.__HIVEDASH_V2P2E5AX7_VERSION__='v2p2e5ax7-inspection-editable-card-interaction-recovery';
+})();
+
+/* =========================================================
+   V2P2E5AX8 — INSPECTION NARROW-WIDTH CARD CLIPPING FIX
+   Scope locked: responsive layout only.
+   - Keeps the frozen two-column Inspection card architecture.
+   - Prevents intrinsic content width from forcing the right column
+     outside the mobile app shell.
+   - Does not alter Inspection fields, values, routes, evidence,
+     save behavior, R01/R02/R03, Treatment, or task logic.
+   ========================================================= */
+(function v2p2e5ax8InspectionNarrowWidthCardClippingFix(){
+  const id='v2p2e5ax8-inspection-narrow-card-fix';
+  if(document.getElementById(id))return;
+  const style=document.createElement('style');
+  style.id=id;
+  style.textContent=`
+    .v211-inspection .v211-grid{
+      width:100%!important;
+      max-width:100%!important;
+      min-width:0!important;
+      grid-template-columns:minmax(0,1fr) minmax(0,1fr)!important;
+      box-sizing:border-box!important;
+    }
+    .v211-inspection .v211-card{
+      width:100%!important;
+      max-width:100%!important;
+      min-width:0!important;
+      box-sizing:border-box!important;
+      overflow:hidden!important;
+    }
+    .v211-inspection .v211-card-head,
+    .v211-inspection .v211-card-row{
+      min-width:0!important;
+      max-width:100%!important;
+    }
+    .v211-inspection .v211-card-row>span,
+    .v211-inspection .v211-card-row>strong{
+      min-width:0!important;
+      overflow-wrap:anywhere!important;
+      word-break:normal!important;
+    }
+    .v211-inspection .v211-card-row>span{flex:1 1 42%!important;}
+    .v211-inspection .v211-card-row>strong{
+      flex:1 1 58%!important;
+      max-width:58%!important;
+    }
+    @media(max-width:393px){
+      .v211-inspection .v211-grid{gap:8px!important;}
+      .v211-inspection .v211-card{padding:11px!important;}
+    }
+    @media(max-width:350px){
+      .v211-inspection .v211-card{padding:9px!important;}
+      .v211-inspection .v211-card-row{gap:5px!important;}
+      .v211-inspection .v211-card-row>span,
+      .v211-inspection .v211-card-row>strong{font-size:10px!important;}
+    }
+  `;
+  document.head.appendChild(style);
+  window.__HIVEDASH_V2P2E5AX8_VERSION__='v2p2e5ax8-inspection-narrow-width-card-clipping-fix';
 })();

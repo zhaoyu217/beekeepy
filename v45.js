@@ -800,6 +800,26 @@ function syncHarvestBatchV107(input){
   const batch=form.elements['Batch_Name'];
   if(batch)batch.value=nextHarvestBatchV107(input.value,v45s());
 }
+function v2p2e5ax14hDeferredHarvestReturn(hiveId){
+  // AX14H — formal Harvest owns the Harvest overview route only when it was
+  // opened as a standalone record. Home quick, planned frequent Action and
+  // Actions > Record Now each have an outer completion wrapper that owns the
+  // return destination. Deferring here prevents Harvest -> destination flicker.
+  const now=Date.now(),hid=String(hiveId||'');
+  const checks=[
+    ['hivedash:v2p2e5l:home-exec',1800000,c=>c?.source==='home-quick'],
+    ['hivedash_v2p2e5s_frequent_plan_exec',1800000,c=>!!c?.actionId],
+    ['hivedash_v2p2e5t_actions_quick_exec',3600000,c=>c?.source==='actions-record-now']
+  ];
+  for(const [key,ttl,accept] of checks){
+    try{
+      const c=JSON.parse(sessionStorage.getItem(key)||'null');
+      const kind=String(c?.kind||'').trim().toLowerCase();
+      if(c&&accept(c)&&kind==='harvest'&&String(c?.hiveId||'')===hid&&now-Number(c?.startedAt||0)<ttl)return true;
+    }catch(_){}
+  }
+  return false;
+}
 function saveRec(type){
   const s=v45s(),fd=new FormData(idq('rform')),hiveId=fd.get('hiveId'),recordHive=hive(s,hiveId),today=v2p1bDateInHiveTimezone(s,recordHive),notes=fd.get('Notes')||'';
   if(type==='feeding'){
@@ -853,7 +873,9 @@ function saveRec(type){
       notes
     });
   }
-  save(s);toast('Record saved');go(type==='harvest'?'honey':'actions');
+  save(s);toast('Record saved');
+  const deferHarvestReturn=type==='harvest'&&v2p2e5ax14hDeferredHarvestReturn(hiveId);
+  if(!deferHarvestReturn)go(type==='harvest'?'honey':'actions');
 }
 
 function accountPage(r){

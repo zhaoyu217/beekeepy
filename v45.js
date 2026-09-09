@@ -2186,7 +2186,13 @@ function hiveDetail(r,id){
           ...(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Treatment'})),
           ...(Array.isArray(s.logs?.harvests)?s.logs.harvests:[]).filter(x=>x.hiveId===h.id).map(x=>({...x,type:'Harvest'}))
         ].sort((a,b)=>String(b.date||'').localeCompare(String(a.date||''))));
-  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(b43HiveLocText)}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Queen marked',h.insp?.queenMarked||'Not confirmed'],['Queen age',h.insp?.queenAge!==''&&h.insp?.queenAge!==undefined?`${h.insp.queenAge} yr`:'—'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')],['Laying pattern',h.insp?.layingPattern||'Not assessed']])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',h.insp?.broodStrength??h.insp?.strength??h.strength],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',h.insp?.colonySize??h.insp?.strength??h.strength],['Population',`${Number(h.insp?.populationFrames||8)} frames`],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',varroaEvidence?`${Number(varroaEvidence.mitesPer100)}/100`:'Not recorded'],['Risk',varroaEvidence?(Number(varroaEvidence.mitesPer100)>=3?'High':Number(varroaEvidence.mitesPer100)>=2?'Medium':'Low'):'Unknown'],['Test date',varroaEvidence?fmtDate(varroaEvidence.date):'Not recorded']])}${hg('Treatment',[
+  const ax13NumericTrusted=h?.insp?.numericEvidenceSemantics==='missing-not-zero-v1';
+  const ax13DisplayNum=(key,fallback='—',suffix='')=>{
+    const obj=h?.insp||{},has=Object.prototype.hasOwnProperty.call(obj,key),raw=has?obj[key]:fallback;
+    if(raw===null||raw===undefined||String(raw).trim()===''||(!ax13NumericTrusted&&Number(raw)===0))return '—';
+    return `${raw}${suffix}`;
+  };
+  r.innerHTML=`<div class="vs v82-hive-detail">${Vhero(v101HivePrimaryPhoto(h),`<div class="dover"><div><b>${esc(h.name)}</b><span>${esc(b43HiveLocText)}</span></div><div class="score"><b>${h.score}%</b><span>${Vstatus(h)}</span></div></div>`,'dhero')}<div class="meta"><span>Last inspection: ${fmtDate(h.lastInspection)}</span><span>Created Mar 5, 2025</span></div><div class="groups">${hg('Queen',[['Queen seen',h.insp?.queenStatus||h.queen||'Not Seen'],['Queen marked',h.insp?.queenMarked||'Not confirmed'],['Queen age',h.insp?.queenAge!==''&&h.insp?.queenAge!==undefined?`${h.insp.queenAge} yr`:'—'],['Eggs',h.insp?.eggs||(h.eggs?'Seen':'Not Seen')],['Larvae',h.insp?.larvae||(h.larvae?'Seen':'Not Seen')],['Queen cells',h.insp?.queenCells||(h.queenCells?'Present':'None')],['Laying pattern',h.insp?.layingPattern||'Not assessed']])}${hg('Brood',[['Pattern',h.insp?.brood||h.brood||'Good'],['Strength',ax13DisplayNum('broodStrength',h.insp?.strength??h.strength??'—')],['Abnormalities',h.insp?.abnormalities||'None']])}${hg('Colony',[['Size',ax13DisplayNum('colonySize',h.insp?.strength??h.strength??'—')],['Population',ax13DisplayNum('populationFrames','—',' frames')],['Temperament',h.insp?.temperament||'Calm']])}${hg('Food Stores',[['Honey',h.insp?.honey||h.honey||'Medium'],['Pollen',h.insp?.pollen||h.pollen||'Medium'],['Feeding need',h.insp?.feedingNeed||(h.honey==='Low'?'Yes':'No')]])}${hg('Varroa',[['Last count',varroaEvidence?`${Number(varroaEvidence.mitesPer100)}/100`:'Not recorded'],['Risk',varroaEvidence?(Number(varroaEvidence.mitesPer100)>=3?'High':Number(varroaEvidence.mitesPer100)>=2?'Medium':'Low'):'Unknown'],['Test date',varroaEvidence?fmtDate(varroaEvidence.date):'Not recorded']])}${hg('Treatment',[
   ['Last treatment',lastTx?.type||h.insp?.treatment||'None'],
   ['Status',lastTx?(lastTx.endDate?((String(lastTx.status||'').trim()==='Stopped')?'Stopped':'Completed'):(lastTx.status||'Active')):(h.insp?.treatmentStatus||'None')],
   ['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):(h.insp?.treatmentFollowUp?fmtDate(h.insp.treatmentFollowUp):'—')],
@@ -2211,7 +2217,7 @@ let V49_INSPECTION_DRAFT=null;
 function editInspectionV49(field,type='text'){
   if(!V49_INSPECTION_DRAFT)return;let old=V49_INSPECTION_DRAFT[field];
   const msg=field.replace(/([A-Z])/g,' $1').replace(/^./,x=>x.toUpperCase());let val=prompt(msg+':',old??'');if(val===null)return;
-  if(type==='number'){val=Math.max(0,Math.min(10,Number(val)||0))} V49_INSPECTION_DRAFT[field]=val; inspectionPage(idq('view'),V49_INSPECTION_DRAFT.hiveId);chrome('inspection');
+  if(type==='number'){val=String(val).trim()===''?null:Math.max(0,Math.min(10,Number(val)))} V49_INSPECTION_DRAFT[field]=val; inspectionPage(idq('view'),V49_INSPECTION_DRAFT.hiveId);chrome('inspection');
 }
 function inspectionPage(r,id){
   const s=v45s(),h=vh(id);
@@ -2230,10 +2236,10 @@ function inspectionPage(r,id){
       eggs:hi.eggs||(h.eggs?'Seen':'Not Seen'),
       larvae:hi.larvae||(h.larvae?'Seen':'Not Seen'),
       queenCells:hi.queenCells||(h.queenCells?'Present':'None'),
-      strength:Number(hi.strength??String(h.strength).match(/\d+/)?.[0]??8),
+      strength:(hi.strength??String(h.strength??'').match(/\d+/)?.[0]??''),
       brood:hi.brood||h.brood||'Good',
       abnormalities:hi.abnormalities||'None',
-      populationFrames:Number(hi.populationFrames||8),
+      populationFrames:(hi.populationFrames??''),
       temperament:hi.temperament||'Calm',
       honey:hi.honey||h.honey||'Medium',
       pollen:hi.pollen||h.pollen||'Medium',
@@ -2321,7 +2327,9 @@ function vSaveInspection(id){
   h.disease=String(d.disease).toLowerCase()!=='none';
   h.swarm=String(d.swarming).toLowerCase()!=='none';
   h.superStatus=d.super||h.superStatus;
-  h.strength=String(d.strength||h.strength);
+  const legacyNullableNumber=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
+  const legacyStrengthValue=legacyNullableNumber(d.strength),legacyPopulationFramesValue=legacyNullableNumber(d.populationFrames);
+  if(legacyStrengthValue!==null)h.strength=String(legacyStrengthValue);
 
   h.insp={
     ...(h.insp||{}),
@@ -2329,10 +2337,11 @@ function vSaveInspection(id){
     eggs:d.eggs,
     larvae:d.larvae,
     queenCells:d.queenCells,
-    strength:Number(d.strength)||0,
+    numericEvidenceSemantics:'missing-not-zero-v1',
+    strength:legacyStrengthValue,
     brood:d.brood,
     abnormalities:d.abnormalities,
-    populationFrames:Number(d.populationFrames)||0,
+    populationFrames:legacyPopulationFramesValue,
     temperament:d.temperament,
     honey:d.honey,
     pollen:d.pollen,
@@ -2346,10 +2355,10 @@ function vSaveInspection(id){
   };
 
   s.logs.inspections.push({
-    id:'i'+Date.now(),hiveId:id,date,
+    id:'i'+Date.now(),hiveId:id,date,numericEvidenceSemantics:'missing-not-zero-v1',
     queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,
-    strength:Number(d.strength)||0,brood:d.brood,abnormalities:d.abnormalities,
-    populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,
+    strength:legacyStrengthValue,brood:d.brood,abnormalities:d.abnormalities,
+    populationFrames:legacyPopulationFramesValue,temperament:d.temperament,
     honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,
     varroa:Number(d.varroa)||0,pests:d.pests,disease:d.disease,swarming:d.swarming,
     superStatus:d.super,treatment:d.treatment,voiceNotes:d.voiceNotes,
@@ -8644,7 +8653,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       o.querySelectorAll('[data-field]').forEach(el=>{
         const f=el.dataset.field;
         let v=el.value;
-        if(['broodStrength','colonySize','populationFrames','varroa'].includes(f))v=Number(v)||0;
+        // V2P2E5AX13 — Missing is not zero. Preserve a cleared numeric
+        // Inspection field as null; only an explicit user-entered "0" becomes 0.
+        if(['broodStrength','colonySize','populationFrames'].includes(f))v=(String(v).trim()===''?null:Number(v));
+        if(f==='varroa')v=Number(v)||0;
         if(f==='queenAge')v=(v===''?'' : Math.max(0,Math.min(5,Number(v)||0)));
         d[f]=v;
       });
@@ -8667,8 +8679,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         .sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')) || String(b.id||'').localeCompare(String(a.id||'')))[0];
       V49_INSPECTION_DRAFT={
         hiveId:h.id,queenStatus:hi.queenStatus||h.queen||'Seen',queenMarked:hi.queenMarked||'Not confirmed',queenAge:(hi.queenAge??''),layingPattern:hi.layingPattern||'Not assessed',eggs:hi.eggs||(h.eggs?'Seen':'Not Seen'),larvae:hi.larvae||(h.larvae?'Seen':'Not Seen'),queenCells:hi.queenCells||(h.queenCells?'Present':'None'),
-        brood:hi.brood||h.brood||'Good',broodStrength:Number(hi.broodStrength??hi.strength??8),abnormalities:hi.abnormalities||'None',
-        colonySize:Number(hi.colonySize??hi.strength??8),populationFrames:Number(hi.populationFrames||8),temperament:hi.temperament||'Calm',
+        brood:hi.brood||h.brood||'Good',broodStrength:(hi.broodStrength??hi.strength??''),abnormalities:hi.abnormalities||'None',
+        colonySize:(hi.colonySize??hi.strength??''),populationFrames:(hi.populationFrames??''),temperament:hi.temperament||'Calm',
         honey:hi.honey||h.honey||'Medium',pollen:hi.pollen||h.pollen||'Medium',feedingNeed:hi.feedingNeed||(h.honey==='Low'?'Yes':'No'),
         varroa:varroaEvidence?Number(varroaEvidence.mitesPer100):null,varroaTestDate:varroaEvidence?String(varroaEvidence.date||''):'',varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',
         treatment:lastTx?.type||hi.treatment||'None',treatmentStatus:lastTx?(lastTx.endDate?((String(lastTx.status||'').trim()==='Stopped')?'Stopped':'Completed'):(lastTx.status||'Active')):(hi.treatmentStatus||'None'),treatmentFollowUp:lastTx?.followUp||hi.treatmentFollowUp||'',treatmentWithdrawal:lastTx?.withdrawal||hi.treatmentWithdrawal||'None',
@@ -8682,8 +8694,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       <section class="vc switchh"><img src="${v101HivePrimaryPhoto(h)}"><div><b>${esc(h.name)}</b><span>${fmtDate(h.lastInspection)} · Inspection</span></div><select id="ihsel">${v224ActiveTrackedHives(s).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></section>
       <div class="v211-grid">
         ${card('queen','Queen','♛',[['Queen seen',d.queenStatus],['Queen marked',d.queenMarked||'Not confirmed'],['Queen age',d.queenAge!==''&&d.queenAge!==undefined?`${d.queenAge} yr`:'—'],['Eggs',d.eggs],['Larvae',d.larvae],['Queen cells',d.queenCells],['Laying pattern',d.layingPattern||'Not assessed']])}
-        ${card('brood','Brood','✿',[['Pattern',d.brood],['Strength',String(d.broodStrength)],['Abnormalities',d.abnormalities]])}
-        ${card('colony','Colony','♙',[['Size',String(d.colonySize)],['Population',`${d.populationFrames} frames`],['Temperament',d.temperament]])}
+        ${card('brood','Brood','✿',[['Pattern',d.brood],['Strength',(d.broodStrength===null||d.broodStrength===undefined||String(d.broodStrength).trim()==='')?'—':String(d.broodStrength)],['Abnormalities',d.abnormalities]])}
+        ${card('colony','Colony','♙',[['Size',(d.colonySize===null||d.colonySize===undefined||String(d.colonySize).trim()==='')?'—':String(d.colonySize)],['Population',(d.populationFrames===null||d.populationFrames===undefined||String(d.populationFrames).trim()==='')?'—':`${d.populationFrames} frames`],['Temperament',d.temperament]])}
         ${card('stores','Food Stores','◉',[['Honey',d.honey],['Pollen',d.pollen],['Feeding need',d.feedingNeed]])}
         ${card('varroa','Varroa','☼',[['Last count',d.varroaTestDate?`${Number(d.varroa)}/100`:'Not recorded'],['Risk',d.varroaTestDate?v211Risk(d.varroa):'Unknown'],['Test date',d.varroaTestDate?fmtDate(d.varroaTestDate):'Not recorded']])}
         ${card('treatment','Treatment','＋',[['Last treatment',d.treatment],['Status',d.treatmentStatus],['Follow-up',d.treatmentFollowUp?fmtDate(d.treatmentFollowUp):'—'],['Withdrawal',d.treatmentWithdrawal||'None']])}
@@ -8706,9 +8718,11 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const varroaEvidence=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,id):null;
     const authoritativeVarroa=varroaEvidence?Number(varroaEvidence.mitesPer100):null;
     const authoritativeVarroaDate=varroaEvidence?String(varroaEvidence.date||''):'';
-    h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=authoritativeVarroa;h.varroaTestDate=authoritativeVarroaDate;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;h.strength=String(d.colonySize||h.strength);h.nextInspection=d.nextInspection||'';
-    h.insp={...(h.insp||{}),queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
-    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:Number(d.broodStrength)||0,abnormalities:d.abnormalities,colonySize:Number(d.colonySize)||0,populationFrames:Number(d.populationFrames)||0,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
+    const nullableInspectionNumber=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
+    const broodStrengthValue=nullableInspectionNumber(d.broodStrength),colonySizeValue=nullableInspectionNumber(d.colonySize),populationFramesValue=nullableInspectionNumber(d.populationFrames);
+    h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=authoritativeVarroa;h.varroaTestDate=authoritativeVarroaDate;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;if(colonySizeValue!==null)h.strength=String(colonySizeValue);h.nextInspection=d.nextInspection||'';
+    h.insp={...(h.insp||{}),numericEvidenceSemantics:'missing-not-zero-v1',queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:broodStrengthValue,abnormalities:d.abnormalities,colonySize:colonySizeValue,populationFrames:populationFramesValue,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
+    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,numericEvidenceSemantics:'missing-not-zero-v1',queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:broodStrengthValue,abnormalities:d.abnormalities,colonySize:colonySizeValue,populationFrames:populationFramesValue,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
     /* V224B21 semantic isolation:
        Treatment edited inside Inspection is an Inspection snapshot only.
        It must NOT create an independent Treatment Timeline event.
@@ -9123,6 +9137,12 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function currentInspection(s,h){
     const i=(h&&h.insp&&typeof h.insp==='object')?h.insp:{};
+    const numericTrusted=i.numericEvidenceSemantics==='missing-not-zero-v1';
+    const currentNumeric=(key,fallback='')=>{
+      const has=Object.prototype.hasOwnProperty.call(i,key),raw=has?i[key]:fallback;
+      if(raw===null||raw===undefined||String(raw).trim()===''||(!numericTrusted&&Number(raw)===0))return '';
+      return raw;
+    };
     const ve=typeof window.v2p2d1LatestVarroaEvidence==='function'?window.v2p2d1LatestVarroaEvidence(s,h?.id):null;
     return {
       queenStatus:i.queenStatus??h?.queen??'',
@@ -9130,10 +9150,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       larvae:i.larvae??(Object.prototype.hasOwnProperty.call(h||{},'larvae')?(h.larvae?'Seen':'Not Seen'):'Unknown'),
       queenCells:i.queenCells??(Object.prototype.hasOwnProperty.call(h||{},'queenCells')?(h.queenCells?'Present':'None'):'Unknown'),
       brood:i.brood??h?.brood??'Unknown',
-      broodStrength:i.broodStrength??i.strength??'',
+      broodStrength:currentNumeric('broodStrength',i.strength??''),
       abnormalities:i.abnormalities??'Unknown',
-      colonySize:i.colonySize??i.strength??h?.strength??'',
-      populationFrames:i.populationFrames??'',
+      colonySize:currentNumeric('colonySize',i.strength??h?.strength??''),
+      populationFrames:currentNumeric('populationFrames',''),
       temperament:i.temperament??'Unknown',
       honey:i.honey??h?.honey??'Unknown',
       pollen:i.pollen??h?.pollen??'Unknown',
@@ -9163,8 +9183,10 @@ body:has(.legal155) .vtop .iconbtn:first-child{
 
   function metric(row,key){
     if(!row)return null;
-    const v=Number(row[key]);
-    return Number.isFinite(v)&&v>0?v:null;
+    const raw=row[key],v=Number(raw);
+    if(raw===null||raw===undefined||String(raw).trim()===''||!Number.isFinite(v))return null;
+    if(v>0)return v;
+    return v===0&&row.numericEvidenceSemantics==='missing-not-zero-v1'?0:null;
   }
 
   function trendFromHistory(rows){
@@ -9306,7 +9328,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     let broodStrengthPenalty=0;
     if(!dormant&&!isUnknown(i.broodStrength)){
       const bs=num(i.broodStrength,0);
-      broodStrengthPenalty=bs>=8?0:bs>=6?2:bs>=4?4:bs>=1?6:0;
+      // AX13: an explicit 0 is real measured evidence, not missing data;
+      // keep it in the existing lowest-strength penalty bracket instead of treating it as perfect.
+      broodStrengthPenalty=bs>=8?0:bs>=6?2:bs>=4?4:6;
     }
     const queenBroodPenalty=Math.min(25,queenEvidencePenalty+queenCellPenalty+broodQualityPenalty+broodStrengthPenalty);
     const queenBroodScore=25-queenBroodPenalty;
@@ -9315,7 +9339,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     let sizePenalty=0;
     if(!dormant&&!isUnknown(i.colonySize)){
       const cs=num(i.colonySize,0);
-      sizePenalty=cs>=8?0:cs>=6?2:cs>=4?5:cs>=1?8:0;
+      // AX13: explicit 0 uses the existing weakest-colony penalty bracket.
+      sizePenalty=cs>=8?0:cs>=6?2:cs>=4?5:8;
     }
     const swarmSignal=isPresent(i.swarming);
     const swarmPenalty=((phase==='Population Increase'||phase==='Peak Population')&&swarmSignal)?4:0;
@@ -20595,13 +20620,15 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   function freshDraft(s,h){
     const prev=latestInspection(s,h.id),tx=latestTreatment(s,h.id),ve=latestVarroa(s,h.id);
     const hasPrev=!!prev;
+    const prevNumericTrusted=prev?.numericEvidenceSemantics==='missing-not-zero-v1';
     const v=(key,fallback='Not assessed')=>hasPrev&&prev[key]!==undefined&&prev[key]!==null&&txt(prev[key])!==''?prev[key]:fallback;
+    const nv=key=>{if(!hasPrev)return '';const raw=prev[key];if(raw===undefined||raw===null||txt(raw)==='')return '';if(Number(raw)===0&&!prevNumericTrusted)return '';return raw;};
     return {
       hiveId:h.id,
       queenStatus:v('queenStatus'),queenMarked:v('queenMarked'),queenAge:hasPrev?(prev.queenAge??''):'',layingPattern:v('layingPattern'),
       eggs:v('eggs'),larvae:v('larvae'),queenCells:v('queenCells'),
-      brood:v('brood'),broodStrength:hasPrev&&prev.broodStrength!==undefined&&prev.broodStrength!==null?prev.broodStrength:'',abnormalities:v('abnormalities'),
-      colonySize:hasPrev&&prev.colonySize!==undefined&&prev.colonySize!==null?prev.colonySize:'',populationFrames:hasPrev&&prev.populationFrames!==undefined&&prev.populationFrames!==null?prev.populationFrames:'',temperament:v('temperament'),
+      brood:v('brood'),broodStrength:nv('broodStrength'),abnormalities:v('abnormalities'),
+      colonySize:nv('colonySize'),populationFrames:nv('populationFrames'),temperament:v('temperament'),
       honey:v('honey'),pollen:v('pollen'),feedingNeed:v('feedingNeed'),
       varroa:ve?Number(ve.mitesPer100):null,varroaTestDate:ve?txt(ve.date):'',varroaTestId:ve?txt(ve.id):'',
       treatment:tx?.type||'None',treatmentStatus:tx?(tx.endDate?(txt(tx.status)==='Stopped'?'Stopped':'Completed'):(tx.status||'Active')):'None',treatmentFollowUp:tx?.followUp||'',treatmentWithdrawal:tx?.withdrawal||'None',
@@ -22863,3 +22890,11 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
   document.head.appendChild(style);
   window.__HIVEDASH_V2P2E5AX8_VERSION__='v2p2e5ax8-inspection-narrow-width-card-clipping-fix';
 })();
+
+
+/* V2P2E5AX13 — INSPECTION MISSING != ZERO
+   Blank Brood Strength / Colony Size / Population Frames stay missing (null).
+   Explicit user-entered 0 remains numeric 0 and is not scored as perfect evidence.
+   New records carry numericEvidenceSemantics provenance; legacy zero values are treated
+   as ambiguous/missing rather than silently trusted as measured zero. */
+window.__HIVEDASH_V2P2E5AX13_VERSION__='v2p2e5ax13-inspection-missing-not-zero';

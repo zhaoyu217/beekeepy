@@ -8382,3 +8382,32 @@ body .v211-inspection .v211-card-row > strong{
   body .v211-inspection .v211-card-row > span,
   body .v211-inspection .v211-card-row > strong{font-size:10px!important;}
 }
+
+/* ==============================================================
+   V2P2E5AX10 — INSPECTION CARD WORD-WRAP CLOSURE
+   Scope locked: typography/wrapping only on Inspection summary cards.
+   - Keeps AX9 two-column hard-width containment.
+   - Prevents normal English labels from breaking inside a word.
+   - Gives labels enough width while values wrap at spaces.
+   - No fields, routes, evidence, save behavior, or task logic changes.
+   ============================================================== */
+body .v211-inspection .v211-card-row{
+  grid-template-columns:minmax(0,52%) minmax(0,48%)!important;
+}
+body .v211-inspection .v211-card-row > span,
+body .v211-inspection .v211-card-row > strong{
+  overflow-wrap:normal!important;
+  word-break:normal!important;
+  hyphens:none!important;
+}
+body .v211-inspection .v211-card-row > span{
+  text-align:left!important;
+}
+body .v211-inspection .v211-card-row > strong{
+  text-align:right!important;
+}
+@media(max-width:350px){
+  body .v211-inspection .v211-card-row{
+    grid-template-columns:minmax(0,53%) minmax(0,47%)!important;
+  }
+}

@@ -130,7 +130,7 @@ async function loadCloudState(){
   const localOwned=local && local.meta?.userId===currentSession.user.id;
   if(data?.payload && Object.keys(data.payload).length){
     const remoteSource=clone(data.payload);
-    const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14C(remoteSource);
+    const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14D(remoteSource);
     const remote=normalizeStateV50(remoteSource);remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
     const merged=enforceAuthoritativePlan(mergeStateV50(localOwned?local:null,remote));
     merged.user={...(merged.user||{}),email:currentSession.user.email||merged.user?.email||'',name:currentSession.user.user_metadata?.name||merged.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
@@ -161,7 +161,7 @@ function startRealtimeSync(){
     if(payload.eventType==='DELETE')return;
     const row=payload.new;if(!row?.payload || row.updated_at===lastRemoteUpdatedAt)return;
     const remoteSource=clone(row.payload);
-    const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14C(remoteSource);
+    const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14D(remoteSource);
     const local=state(),remote=normalizeStateV50(remoteSource);remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||row.updated_at||'';
     const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||row.updated_at||0)||0;
     if(lt>rt){scheduleCloudSave(local);return}
@@ -436,7 +436,7 @@ async function initializeCloudApp(){
 
 
 /* ==============================================================
-   V2P2E5AX14C — Cloud/Local Enum Canonicalization Boundary
+   V2P2E5AX14D — Cloud/Local Enum Canonicalization Boundary
    Problem closed here:
    a previously browser-translated enum can exist in Supabase app_state.
    The local UI may first render repaired English, then cloud hydration can
@@ -444,7 +444,7 @@ async function initializeCloudApp(){
    Canonicalize known enum fields BEFORE merge/render on every state boundary.
    Free text (notes, names, descriptions) is never rewritten.
    ============================================================== */
-const V2P2E5AX14C_ENUM_EXACT={
+const V2P2E5AX14D_ENUM_EXACT={
   '未见':'Not Seen','未看到':'Not Seen','没看见':'Not Seen','不确定':'Not confirmed','已见':'Seen','看见':'Seen','看到':'Seen',
   '现状':'Present','存在':'Present','无':'None','没有':'None',
   '优秀':'Excellent','优良':'Excellent','良好':'Good','公平':'Fair','一般':'Fair','差':'Poor',
@@ -455,13 +455,13 @@ const V2P2E5AX14C_ENUM_EXACT={
   '活跃':'Active','活动':'Active','进行中':'Active','计划中':'Planned','完成':'Completed','已完成':'Completed',
   '注意':'Attention','健康':'Healthy','危急':'Critical','严重':'Critical',
   '强壮':'Strong','还算可以':'Adequate','尚可':'Adequate','足够':'Adequate',
-  '女王在家':'Parent keeps queen','父母保留蜂王':'Parent keeps queen','亲本保留蜂王':'Parent keeps queen','母群保留蜂王':'Parent keeps queen',
+  '女王在家':'Parent keeps queen','女王在房':'Parent keeps queen','蜂王在家':'Parent keeps queen','蜂王在房':'Parent keeps queen','父母保留蜂王':'Parent keeps queen','亲本保留蜂王':'Parent keeps queen','母群保留蜂王':'Parent keeps queen','女王留在母群':'Parent keeps queen','蜂王留在母群':'Parent keeps queen','女王留在亲本群':'Parent keeps queen','蜂王留在亲本群':'Parent keeps queen',
   '新蜂群获得蜂王':'New hive gets queen','新蜂群接收蜂王':'New hive receives queen',
   '王台':'Queen cell','稍后引入蜂王':'Introduce queen later',
   '草酸':'Oxalic Acid','甲酸':'Formic Acid','阿米特拉':'Apivar',
   '0天':'0 days','7天':'7 days','14天':'14 days','21天':'21 days'
 };
-const V2P2E5AX14C_ENUM_KEYS=new Set([
+const V2P2E5AX14D_ENUM_KEYS=new Set([
   'priority','status','hiveStatus','hiveType',
   'colonyStrength','broodAvailability','foodStores','queenPlan',
   'queenSource','introductionMethod','queenAccepted','queenSeen','eggsPresent','layingPattern',
@@ -471,7 +471,7 @@ const V2P2E5AX14C_ENUM_KEYS=new Set([
   'queenStatus','queenMarked','eggs','larvae','queenCells','brood','abnormalities','temperament','honey','pollen','feedingNeed',
   'treatment','applicationMethod','withdrawal','honeySupersStatus','treatmentStatus','testType','method'
 ]);
-function canonicalizeEnumStateV2P2E5AX14C(root){
+function canonicalizeEnumStateV2P2E5AX14D(root){
   if(!root||typeof root!=='object')return false;
   let changed=false;
   const walk=obj=>{
@@ -479,20 +479,26 @@ function canonicalizeEnumStateV2P2E5AX14C(root){
     if(Array.isArray(obj)){obj.forEach(walk);return;}
     for(const [key,val] of Object.entries(obj)){
       if(val&&typeof val==='object'){walk(val);continue;}
-      if(typeof val!=='string'||!V2P2E5AX14C_ENUM_KEYS.has(key))continue;
+      if(typeof val!=='string'||!V2P2E5AX14D_ENUM_KEYS.has(key))continue;
       const raw=val.trim();
-      const next=Object.prototype.hasOwnProperty.call(V2P2E5AX14C_ENUM_EXACT,raw)?V2P2E5AX14C_ENUM_EXACT[raw]:val;
+      let next=Object.prototype.hasOwnProperty.call(V2P2E5AX14D_ENUM_EXACT,raw)?V2P2E5AX14D_ENUM_EXACT[raw]:val;
+      // AX14D: older translation engines produced multiple Chinese renderings for the same queenPlan enum
+      // (for example 女王在房). This rule is intentionally restricted to the queenPlan key so
+      // user-entered free text is never rewritten.
+      if(key==='queenPlan' && /^(?:女王|蜂王).*(?:在家|在房|留在.*(?:母群|亲本群)|保留)/.test(raw)){
+        next='Parent keeps queen';
+      }
       if(next!==val){obj[key]=next;changed=true;}
     }
   };
   walk(root);
   return changed;
 }
-window.__HIVEDASH_V2P2E5AX14C_VERSION__='V2P2E5AX14C-cloud-enum-canonicalization-boundary';
+window.__HIVEDASH_V2P2E5AX14D_VERSION__='V2P2E5AX14D-cloud-enum-canonicalization-boundary';
 
 function normalizeStateV50(input){
   const s=(input&&typeof input==='object')?input:{};
-  canonicalizeEnumStateV2P2E5AX14C(s);
+  canonicalizeEnumStateV2P2E5AX14D(s);
   s.user=(s.user&&typeof s.user==='object')?s.user:{name:'Beekeeper',email:'',plan:'Free'};
   if(!['Free','Pro'].includes(s.user.plan))s.user.plan='Free';
   s.settings=(s.settings&&typeof s.settings==='object')?s.settings:{};

@@ -457,7 +457,7 @@ const V2P2E5AX14D_ENUM_EXACT={
   '强壮':'Strong','还算可以':'Adequate','尚可':'Adequate','足够':'Adequate',
   '女王在家':'Parent keeps queen','女王在房':'Parent keeps queen','蜂王在家':'Parent keeps queen','蜂王在房':'Parent keeps queen','父母保留蜂王':'Parent keeps queen','亲本保留蜂王':'Parent keeps queen','母群保留蜂王':'Parent keeps queen','女王留在母群':'Parent keeps queen','蜂王留在母群':'Parent keeps queen','女王留在亲本群':'Parent keeps queen','蜂王留在亲本群':'Parent keeps queen',
   '新蜂群获得蜂王':'New hive gets queen','新蜂群接收蜂王':'New hive receives queen',
-  '王台':'Queen cell','稍后引入蜂王':'Introduce queen later',
+  '王台':'Queen cell','女王牢房':'Queen cell','蜂王牢房':'Queen cell','女王细胞':'Queen cell','蜂王细胞':'Queen cell','女王巢房':'Queen cell','蜂王巢房':'Queen cell','稍后引入蜂王':'Introduce queen later',
   '草酸':'Oxalic Acid','甲酸':'Formic Acid','阿米特拉':'Apivar',
   '0天':'0 days','7天':'7 days','14天':'14 days','21天':'21 days'
 };
@@ -485,7 +485,9 @@ function canonicalizeEnumStateV2P2E5AX14D(root){
       // AX14D: older translation engines produced multiple Chinese renderings for the same queenPlan enum
       // (for example 女王在房). This rule is intentionally restricted to the queenPlan key so
       // user-entered free text is never rewritten.
-      if(key==='queenPlan' && /^(?:女王|蜂王).*(?:在家|在房|留在.*(?:母群|亲本群)|保留)/.test(raw)){
+      if(key==='queenPlan' && /^(?:女王|蜂王).*(?:牢房|牢笼|细胞|巢房|王台)/.test(raw)){
+        next='Queen cell';
+      }else if(key==='queenPlan' && /^(?:女王|蜂王).*(?:在家|在房|留在.*(?:母群|亲本群)|保留)/.test(raw)){
         next='Parent keeps queen';
       }
       if(next!==val){obj[key]=next;changed=true;}

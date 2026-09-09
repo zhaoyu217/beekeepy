@@ -287,7 +287,7 @@ function v220EnglishDisplay(v){
     '注意':'Attention','健康':'Healthy','危急':'Critical','严重':'Critical',
     '强壮':'Strong','还算可以':'Adequate','尚可':'Adequate','足够':'Adequate',
     '女王在家':'Parent keeps queen','母群保留蜂王':'Parent keeps queen','新蜂群获得蜂王':'New hive gets queen',
-    '王台':'Queen cell','稍后引入蜂王':'Introduce queen later','媒介':'Medium','中等':'Medium'
+    '王台':'Queen cell','女王牢房':'Queen cell','蜂王牢房':'Queen cell','女王细胞':'Queen cell','蜂王细胞':'Queen cell','女王巢房':'Queen cell','蜂王巢房':'Queen cell','稍后引入蜂王':'Introduce queen later','媒介':'Medium','中等':'Medium'
   };
   return Object.prototype.hasOwnProperty.call(m,x)?m[x]:v;
 }
@@ -12498,12 +12498,13 @@ function detailHTML(a){
         '女王在家':'Parent keeps queen','女王在房':'Parent keeps queen','蜂王在家':'Parent keeps queen','蜂王在房':'Parent keeps queen',
         '父母保留蜂王':'Parent keeps queen','亲本保留蜂王':'Parent keeps queen','母群保留蜂王':'Parent keeps queen',
         '女王留在母群':'Parent keeps queen','蜂王留在母群':'Parent keeps queen','女王留在亲本群':'Parent keeps queen','蜂王留在亲本群':'Parent keeps queen',
-        '新蜂群获得蜂王':'New hive gets queen','新蜂群接收蜂王':'New hive gets queen','王台':'Queen cell','稍后引入蜂王':'Introduce queen later','未决定':'Not decided'
+        '新蜂群获得蜂王':'New hive gets queen','新蜂群接收蜂王':'New hive gets queen','王台':'Queen cell','女王牢房':'Queen cell','蜂王牢房':'Queen cell','女王细胞':'Queen cell','蜂王细胞':'Queen cell','女王巢房':'Queen cell','蜂王巢房':'Queen cell','稍后引入蜂王':'Introduce queen later','未决定':'Not decided'
       },
       priority:{'低':'Low','媒介':'Medium','中':'Medium','中等':'Medium','高':'High'}
     };
     let next=maps[field]?.[raw]||raw;
-    if(field==='queenPlan' && /^(?:女王|蜂王).*(?:在家|在房|留在.*(?:母群|亲本群)|保留)/.test(raw)) next='Parent keeps queen';
+    if(field==='queenPlan' && /^(?:女王|蜂王).*(?:牢房|牢笼|细胞|巢房|王台)/.test(raw)) next='Queen cell';
+    else if(field==='queenPlan' && /^(?:女王|蜂王).*(?:在家|在房|留在.*(?:母群|亲本群)|保留)/.test(raw)) next='Parent keeps queen';
     return next;
   }
 
@@ -12998,6 +12999,7 @@ function detailHTML(a){
       '父母保留蜂王':'Parent keeps queen',
       '亲本保留蜂王':'Parent keeps queen',
       '母群保留蜂王':'Parent keeps queen',
+      '女王牢房':'Queen cell','蜂王牢房':'Queen cell','女王细胞':'Queen cell','蜂王细胞':'Queen cell','女王巢房':'Queen cell','蜂王巢房':'Queen cell',
       'parent keeps queen':'Parent keeps queen',
       'new hive receives queen':'New hive receives queen',
       'queen cell':'Queen cell',
@@ -14211,6 +14213,7 @@ function detailHTML(a){
 })();
 
 window.__HIVEDASH_V2P2E5AX14E_VERSION__='V2P2E5AX14E-split-enum-render-persistence-fix';
+window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translation-repair';
 
 /* ==============================================================
    V224B40A — Combine Hives
@@ -22980,7 +22983,7 @@ window.__HIVEDASH_V2P2E5AX14__='split-harvest-missing-not-zero-v1';
   const EXACT={
     '强壮':'Strong','还算可以':'Adequate','尚可':'Adequate','足够':'Adequate',
     '女王在家':'Parent keeps queen','母群保留蜂王':'Parent keeps queen',
-    '新蜂群获得蜂王':'New hive gets queen','王台':'Queen cell','稍后引入蜂王':'Introduce queen later',
+    '新蜂群获得蜂王':'New hive gets queen','王台':'Queen cell','女王牢房':'Queen cell','蜂王牢房':'Queen cell','女王细胞':'Queen cell','蜂王细胞':'Queen cell','女王巢房':'Queen cell','蜂王巢房':'Queen cell','稍后引入蜂王':'Introduce queen later',
     '媒介':'Medium','中等':'Medium',
     '高':'High','中':'Medium','低':'Low',
     '完成':'Completed','已完成':'Completed','活跃':'Active','活动':'Active',

@@ -129,14 +129,16 @@ async function loadCloudState(){
   // state must never be silently attached to a different/new account.
   const localOwned=local && local.meta?.userId===currentSession.user.id;
   if(data?.payload && Object.keys(data.payload).length){
-    const remote=normalizeStateV50(clone(data.payload));remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
+    const remoteSource=clone(data.payload);
+    const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14C(remoteSource);
+    const remote=normalizeStateV50(remoteSource);remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
     const merged=enforceAuthoritativePlan(mergeStateV50(localOwned?local:null,remote));
     merged.user={...(merged.user||{}),email:currentSession.user.email||merged.user?.email||'',name:currentSession.user.user_metadata?.name||merged.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
     merged.meta.userId=currentSession.user.id;
     suppressCloudSave=true;
     if(!writeLocalV50(merged)){suppressCloudSave=false;throw new Error('Cloud data is too large for local storage')}
     suppressCloudSave=false;lastRemoteUpdatedAt=data.updated_at||remote.meta.updatedAt||'';setCloudStatus('Synced');
-    if(JSON.stringify(merged)!==JSON.stringify(remote))await pushCloudState(merged);
+    if(remoteEnumRepaired || JSON.stringify(merged)!==JSON.stringify(remote))await pushCloudState(merged);
     return true;
   }
   let seed=enforceAuthoritativePlan(localOwned?local:createEmptyAuthenticatedStateV2P2E4A(currentSession.user));
@@ -158,10 +160,12 @@ function startRealtimeSync(){
   realtimeChannel=supabaseClient.channel(`hivedash-state-${currentSession.user.id}`).on('postgres_changes',{event:'*',schema:'public',table:'app_state',filter:`user_id=eq.${currentSession.user.id}`},payload=>{
     if(payload.eventType==='DELETE')return;
     const row=payload.new;if(!row?.payload || row.updated_at===lastRemoteUpdatedAt)return;
-    const local=state(),remote=normalizeStateV50(clone(row.payload));remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||row.updated_at||'';
+    const remoteSource=clone(row.payload);
+    const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14C(remoteSource);
+    const local=state(),remote=normalizeStateV50(remoteSource);remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||row.updated_at||'';
     const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||row.updated_at||0)||0;
     if(lt>rt){scheduleCloudSave(local);return}
-    const merged=enforceAuthoritativePlan(mergeStateV50(local,remote));lastRemoteUpdatedAt=row.updated_at||'';suppressCloudSave=true;writeLocalV50(merged);suppressCloudSave=false;setCloudStatus('Synced');if(!document.querySelector('.modal'))render();
+    const merged=enforceAuthoritativePlan(mergeStateV50(local,remote));lastRemoteUpdatedAt=row.updated_at||'';suppressCloudSave=true;writeLocalV50(merged);suppressCloudSave=false;setCloudStatus('Synced');if(remoteEnumRepaired)scheduleCloudSave(merged);if(!document.querySelector('.modal'))render();
   }).subscribe(status=>{if(status==='SUBSCRIBED')setCloudStatus('Synced');if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setCloudStatus('Sync error')});
 }
 
@@ -430,8 +434,65 @@ async function initializeCloudApp(){
 }
 
 
+
+/* ==============================================================
+   V2P2E5AX14C — Cloud/Local Enum Canonicalization Boundary
+   Problem closed here:
+   a previously browser-translated enum can exist in Supabase app_state.
+   The local UI may first render repaired English, then cloud hydration can
+   re-introduce only those stored Chinese enum values a moment later.
+   Canonicalize known enum fields BEFORE merge/render on every state boundary.
+   Free text (notes, names, descriptions) is never rewritten.
+   ============================================================== */
+const V2P2E5AX14C_ENUM_EXACT={
+  '未见':'Not Seen','未看到':'Not Seen','没看见':'Not Seen','不确定':'Not confirmed','已见':'Seen','看见':'Seen','看到':'Seen',
+  '现状':'Present','存在':'Present','无':'None','没有':'None',
+  '优秀':'Excellent','优良':'Excellent','良好':'Good','公平':'Fair','一般':'Fair','差':'Poor',
+  '斑点窝':'Spotty brood','斑驳子脾':'Spotty brood','雄蜂子脾':'Drone brood','其他':'Other',
+  '平静':'Calm','普通':'Normal','正常':'Normal','防御性':'Defensive','攻击性':'Aggressive',
+  '高':'High','中':'Medium','低':'Low','媒介':'Medium','中等':'Medium',
+  '是':'Yes','是的':'Yes','否':'No','不是':'No',
+  '活跃':'Active','活动':'Active','进行中':'Active','计划中':'Planned','完成':'Completed','已完成':'Completed',
+  '注意':'Attention','健康':'Healthy','危急':'Critical','严重':'Critical',
+  '强壮':'Strong','还算可以':'Adequate','尚可':'Adequate','足够':'Adequate',
+  '女王在家':'Parent keeps queen','父母保留蜂王':'Parent keeps queen','亲本保留蜂王':'Parent keeps queen','母群保留蜂王':'Parent keeps queen',
+  '新蜂群获得蜂王':'New hive gets queen','新蜂群接收蜂王':'New hive receives queen',
+  '王台':'Queen cell','稍后引入蜂王':'Introduce queen later',
+  '草酸':'Oxalic Acid','甲酸':'Formic Acid','阿米特拉':'Apivar',
+  '0天':'0 days','7天':'7 days','14天':'14 days','21天':'21 days'
+};
+const V2P2E5AX14C_ENUM_KEYS=new Set([
+  'priority','status','hiveStatus','hiveType',
+  'colonyStrength','broodAvailability','foodStores','queenPlan',
+  'queenSource','introductionMethod','queenAccepted','queenSeen','eggsPresent','layingPattern',
+  'sourceCondition','targetCapacity','diseaseCheck','queenOutcome',
+  'swarmSigns','swarmRisk','plannedMethod','actualMethod','swarmOutcome',
+  'componentStatus','operation','measurement','temperature','weight','language','mode','super','focus',
+  'queenStatus','queenMarked','eggs','larvae','queenCells','brood','abnormalities','temperament','honey','pollen','feedingNeed',
+  'treatment','applicationMethod','withdrawal','honeySupersStatus','treatmentStatus','testType','method'
+]);
+function canonicalizeEnumStateV2P2E5AX14C(root){
+  if(!root||typeof root!=='object')return false;
+  let changed=false;
+  const walk=obj=>{
+    if(!obj||typeof obj!=='object')return;
+    if(Array.isArray(obj)){obj.forEach(walk);return;}
+    for(const [key,val] of Object.entries(obj)){
+      if(val&&typeof val==='object'){walk(val);continue;}
+      if(typeof val!=='string'||!V2P2E5AX14C_ENUM_KEYS.has(key))continue;
+      const raw=val.trim();
+      const next=Object.prototype.hasOwnProperty.call(V2P2E5AX14C_ENUM_EXACT,raw)?V2P2E5AX14C_ENUM_EXACT[raw]:val;
+      if(next!==val){obj[key]=next;changed=true;}
+    }
+  };
+  walk(root);
+  return changed;
+}
+window.__HIVEDASH_V2P2E5AX14C_VERSION__='V2P2E5AX14C-cloud-enum-canonicalization-boundary';
+
 function normalizeStateV50(input){
   const s=(input&&typeof input==='object')?input:{};
+  canonicalizeEnumStateV2P2E5AX14C(s);
   s.user=(s.user&&typeof s.user==='object')?s.user:{name:'Beekeeper',email:'',plan:'Free'};
   if(!['Free','Pro'].includes(s.user.plan))s.user.plan='Free';
   s.settings=(s.settings&&typeof s.settings==='object')?s.settings:{};

@@ -582,7 +582,6 @@ function recordPage(r,type,id){
     const metric=s.settings?.units==='metric'||s.settings?.region?.measurement==='Metric';
     const today=v2p1bDateInHiveTimezone(s,active);
     const qtyUnit=metric?'L':'qt';
-    const qtyValue=metric?'2.0':'2.1';
     const hivePhoto=v101HivePrimaryPhoto(active);
 
     r.innerHTML=`<div class="vs feeding-v98">
@@ -603,9 +602,9 @@ function recordPage(r,type,id){
 
         <section class="feeding-section-v98">
           <h3><i>▣</i> FEEDING DETAILS</h3>
-          <label><span>Feed Type</span><select name="Feed_Type"><option>Sugar Syrup</option><option>Pollen Patty</option><option>Dry Sugar</option></select></label>
-          <label><span>Syrup Ratio</span><select name="Syrup_Ratio"><option>1:1</option><option selected>2:1</option><option>N/A</option></select></label>
-          <label class="feeding-qty"><span>Quantity</span><div><input name="Quantity_Value" type="number" min="0" step=".1" value="${qtyValue}"><select name="Quantity_Unit"><option selected>${qtyUnit}</option>${metric?'<option>kg</option>':'<option>lb</option>'}</select></div></label>
+          <label><span>Feed Type</span><select name="Feed_Type"><option value="" selected>Select feed type</option><option value="Sugar Syrup">Sugar Syrup</option><option value="Pollen Patty">Pollen Patty</option><option value="Dry Sugar">Dry Sugar</option></select></label>
+          <label><span>Syrup Ratio</span><select name="Syrup_Ratio"><option value="" selected>Select ratio</option><option value="1:1">1:1</option><option value="2:1">2:1</option><option value="N/A">N/A</option></select></label>
+          <label class="feeding-qty"><span>Quantity</span><div><input name="Quantity_Value" type="number" min="0.1" step=".1" placeholder="e.g. 2.0"><select name="Quantity_Unit"><option value="${qtyUnit}" selected>${qtyUnit}</option>${metric?'<option value="kg">kg</option>':'<option value="lb">lb</option>'}</select></div></label>
         </section>
 
         <section class="feeding-section-v98">
@@ -667,18 +666,18 @@ function recordPage(r,type,id){
         <section class="treatment-section-v102">
           <h3><i>✚</i> TREATMENT DETAILS</h3>
           <label><span>Problem</span><select name="Problem">
-            <option value="Varroa Mites" selected>Varroa Mites</option><option value="Small Hive Beetle">Small Hive Beetle</option><option value="Wax Moth">Wax Moth</option><option value="Disease">Disease</option><option value="Other">Other</option>
+            <option value="" selected>Select problem</option><option value="Varroa Mites">Varroa Mites</option><option value="Small Hive Beetle">Small Hive Beetle</option><option value="Wax Moth">Wax Moth</option><option value="Disease">Disease</option><option value="Other">Other</option>
           </select></label>
           <label><span>Treatment</span><select name="Treatment">
-            <option value="Oxalic Acid (Dribble)" selected>Oxalic Acid (Dribble)</option><option value="Oxalic Acid (Vapor)">Oxalic Acid (Vapor)</option><option value="Formic Acid">Formic Acid</option><option value="Thymol">Thymol</option><option value="Other">Other</option>
+            <option value="" selected>Select treatment</option><option value="Oxalic Acid (Dribble)">Oxalic Acid (Dribble)</option><option value="Oxalic Acid (Vapor)">Oxalic Acid (Vapor)</option><option value="Formic Acid">Formic Acid</option><option value="Thymol">Thymol</option><option value="Other">Other</option>
           </select></label>
-          <label><span>Product</span><input name="Product" value="Oxalic Acid Solution"></label>
-          <label><span>Active Ingredient</span><input name="Active_Ingredient" value="Oxalic Acid"></label>
+          <label><span>Product</span><input name="Product" placeholder="Enter product used"></label>
+          <label><span>Active Ingredient</span><input name="Active_Ingredient" placeholder="Enter active ingredient"></label>
           <label><span>Application Method</span><select name="Application_Method">
-            <option value="Dribble" selected>Dribble</option><option value="Vaporization">Vaporization</option><option value="Strip">Strip</option><option value="Drench">Drench</option><option value="Spray">Spray</option><option value="Other">Other</option>
+            <option value="" selected>Select application method</option><option value="Dribble">Dribble</option><option value="Vaporization">Vaporization</option><option value="Strip">Strip</option><option value="Drench">Drench</option><option value="Spray">Spray</option><option value="Other">Other</option>
           </select></label>
           <label><span>Concentration / Strength</span><input name="Concentration" placeholder="e.g. 3.2%"></label>
-          <label><span>Dose</span><input name="Dose" value="5 ml / seam"></label>
+          <label><span>Dose</span><input name="Dose" placeholder="Enter dose from product label"></label>
         </section>
         <section class="treatment-section-v102">
           <h3><i>▦</i> SCHEDULE</h3>
@@ -686,7 +685,7 @@ function recordPage(r,type,id){
           <label><span>End Date</span><input name="End_Date" type="date" lang="en-US"></label>
           <label><span>Follow-up / Retest Due</span><input name="Follow_up" type="date" lang="en-US"></label>
           <label><span>Treatment Status</span><select name="Treatment_Status">
-            <option value="Planned">Planned</option><option value="Active" selected>Active</option><option value="Completed">Completed</option><option value="Stopped">Stopped</option>
+            <option value="Planned" selected>Planned</option><option value="Active">Active</option><option value="Completed">Completed</option><option value="Stopped">Stopped</option>
           </select></label>
         </section>
         <section class="treatment-section-v102">
@@ -724,7 +723,6 @@ function recordPage(r,type,id){
     const today=v2p1bDateInHiveTimezone(s,active);
     const weightUnit=typeof preferredWeightUnit==='function'?preferredWeightUnit(s):(String(s.settings?.region?.weight||'').toLowerCase()==='kg'?'kg':'lb');
     const metric=weightUnit==='kg';
-    const defaultWeight=metric?'12.7':'28.0';
     const nextBatch=nextHarvestBatchV107(today,s);
 
     r.innerHTML=`<div class="vs harvest-v103">
@@ -746,9 +744,9 @@ function recordPage(r,type,id){
         <section class="harvest-section-v103">
           <h3><i>▣</i> HARVEST DETAILS</h3>
           <label><span>Date</span><input name="Date" type="date" lang="en-US" value="${today}" onchange="syncHarvestBatchV107(this)"></label>
-          <label><span>Frames Harvested</span><input name="Frames_Harvested" type="number" min="0" step="1" value="8"></label>
-          <label class="harvest-weight"><span>Honey Weight</span><div><input name="Honey_Weight" type="number" min="0" step=".1" value="${defaultWeight}"><select name="Honey_Weight_Unit"><option selected>${weightUnit}</option>${metric?'<option>lb</option>':'<option>kg</option>'}</select></div></label>
-          <label class="harvest-moisture"><span>Moisture</span><div><input name="Moisture" type="number" min="0" max="100" step=".1" value="16.4"><b>%</b></div></label>
+          <label><span>Frames Harvested</span><input name="Frames_Harvested" type="number" min="1" step="1" placeholder="e.g. 8"></label>
+          <label class="harvest-weight"><span>Honey Weight</span><div><input name="Honey_Weight" type="number" min="0.1" step=".1" placeholder="e.g. 28.0"><select name="Honey_Weight_Unit"><option value="${weightUnit}" selected>${weightUnit}</option>${metric?'<option value="lb">lb</option>':'<option value="kg">kg</option>'}</select></div></label>
+          <label class="harvest-moisture"><span>Moisture</span><div><input name="Moisture" type="number" min="0.1" max="100" step=".1" placeholder="e.g. 16.4"><b>%</b></div></label>
         </section>
 
         <section class="harvest-section-v103">
@@ -769,18 +767,18 @@ function recordPage(r,type,id){
   }
 
   const fields=type==='treatment'?`
-    <label><span>Problem</span><input name="Problem" value="Varroa Mites"></label>
-    <label><span>Treatment</span><input name="Treatment" value="Oxalic Acid (Dribble)"></label>
-    <label><span>Product</span><input name="Product" value="Oxalic Acid Solution"></label>
-    <label><span>Dose</span><input name="Dose" value="5 ml / seam"></label>
+    <label><span>Problem</span><input name="Problem" placeholder="Select or enter problem"></label>
+    <label><span>Treatment</span><input name="Treatment" placeholder="Select or enter treatment"></label>
+    <label><span>Product</span><input name="Product" placeholder="Enter product used"></label>
+    <label><span>Dose</span><input name="Dose" placeholder="Enter dose from product label"></label>
     <label><span>Start Date</span><input name="Start_Date" type="date" value="${today}"></label>
     <label><span>End Date</span><input name="End_Date" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
     <label><span>Follow-up</span><input name="Follow_up" type="text" inputmode="none" placeholder="Select date" onfocus="this.type='date';if(this.showPicker)this.showPicker()" onblur="if(!this.value)this.type='text'"></label>
-    <label><span>Withdrawal</span><input name="Withdrawal" value="None"></label>`:`
+    <label><span>Withdrawal</span><input name="Withdrawal" placeholder="Record if applicable"></label>`:`
     <label><span>Date</span><input name="Date" type="date" value="${today}"></label>
-    <label><span>Frames Harvested</span><input name="Frames_Harvested" type="number" value="8"></label>
-    <label><span>Honey Weight</span><input name="Honey_Weight" type="number" step=".1" value="28"></label>
-    <label><span>Moisture</span><input name="Moisture" type="number" step=".1" value="16.4"></label>
+    <label><span>Frames Harvested</span><input name="Frames_Harvested" type="number" min="1" step="1" placeholder="e.g. 8"></label>
+    <label><span>Honey Weight</span><input name="Honey_Weight" type="number" min="0.1" step=".1" placeholder="e.g. 28.0"></label>
+    <label><span>Moisture</span><input name="Moisture" type="number" min="0.1" max="100" step=".1" placeholder="e.g. 16.4"></label>
     <label><span>Batch Name</span><input name="Batch_Name" value="${today}-01"></label>`;
   r.innerHTML=`<div class="vs"><div class="split rec"><img src="${cfg[1]}"><form id="rform"><label><span>Hive</span><select name="hiveId">${v224ActiveTrackedHives(s).map(x=>`<option value="${x.id}" ${x.id===h.id?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>${fields}<label><span>Notes</span><textarea name="Notes"></textarea></label></form></div><button class="primary" onclick="saveRec('${type}')">Save Record</button></div>`
 }
@@ -823,11 +821,12 @@ function v2p2e5ax14hDeferredHarvestReturn(hiveId){
 function saveRec(type){
   const s=v45s(),fd=new FormData(idq('rform')),hiveId=fd.get('hiveId'),recordHive=hive(s,hiveId),today=v2p1bDateInHiveTimezone(s,recordHive),notes=fd.get('Notes')||'';
   if(type==='feeding'){
-    s.logs.feedings.push({id:'f'+Date.now(),hiveId,date:fd.get('Date')||today,type:fd.get('Feed_Type'),ratio:fd.get('Syrup_Ratio'),amount:(fd.get('Quantity_Value')||'0')+' '+(fd.get('Quantity_Unit')||''),notes,nextFeeding:fd.get('Next_Feeding')||''});
+    const quantityValue=String(fd.get('Quantity_Value')||'').trim();
+    s.logs.feedings.push({id:'f'+Date.now(),hiveId,date:fd.get('Date')||today,type:fd.get('Feed_Type'),ratio:fd.get('Syrup_Ratio'),amount:quantityValue+' '+(fd.get('Quantity_Unit')||''),notes,nextFeeding:fd.get('Next_Feeding')||''});
   }else if(type==='treatment'){
     const treatmentId='t'+Date.now();
     const followUp=fd.get('Follow_up')||'';
-    let treatmentStatus=String(fd.get('Treatment_Status')||'Active').trim()||'Active';
+    let treatmentStatus=String(fd.get('Treatment_Status')||'Planned').trim()||'Planned';
     const endDate=fd.get('End_Date')||'';
     if(endDate&&['active','planned','活跃','进行中','计划中'].includes(String(treatmentStatus||'').trim().toLowerCase()))treatmentStatus='Completed';
     if((treatmentStatus==='Completed'||treatmentStatus==='Stopped')&&!endDate)return toast('End date is required for a completed or stopped Treatment');
@@ -3097,14 +3096,21 @@ saveRec=function(type){
   if(V50_RECORD_SAVING)return;const form=idq('rform');if(!form)return;const fd=new FormData(form),s=v45s(),hiveId=fd.get('hiveId');if(!hive(s,hiveId))return toast('Select a valid hive');
   const recordHive=hive(s,hiveId),today=v2p2d7TodayForHive(s,recordHive),notes=String(fd.get('Notes')||'');if(notes.length>2000)return toast('Notes are too long');
   if(type==='feeding'){
-    const date=fd.get('Date'),next=fd.get('Next_Feeding'),qty=String(fd.get('Quantity')||'').trim();if(!validDateV50(date)||date>today)return toast('Feeding date is invalid');if(!qty||qty.length>40)return toast('Enter a valid feeding quantity');if(next&&(!validDateV50(next)||next<date))return toast('Next feeding must be after the feeding date');
+    const date=fd.get('Date'),next=fd.get('Next_Feeding'),feedType=String(fd.get('Feed_Type')||'').trim(),ratio=String(fd.get('Syrup_Ratio')||'').trim(),qtyRaw=String(fd.get('Quantity_Value')||'').trim(),qty=Number(qtyRaw);if(!validDateV50(date)||date>today)return toast('Feeding date is invalid');if(!feedType)return toast('Select a feed type');if(!ratio)return toast('Select a syrup ratio or N/A');if(!qtyRaw||!Number.isFinite(qty)||qty<=0||qty>10000)return toast('Enter a feeding quantity greater than 0');if(next&&(!validDateV50(next)||next<date))return toast('Next feeding must be after the feeding date');
   }else if(type==='treatment'){
-    const start=fd.get('Start_Date'),end=fd.get('End_Date'),follow=fd.get('Follow_up');for(const k of ['Problem','Treatment','Product','Dose'])if(!String(fd.get(k)||'').trim())return toast(k.replace('_',' ')+' is required');if(!validDateV50(start)||start>today)return toast('Treatment start date is invalid');if(end&&(!validDateV50(end)||end<start))return toast('End date cannot be before start date');if(follow&&(!validDateV50(follow)||follow<start))return toast('Follow-up cannot be before start date');
+    const start=fd.get('Start_Date'),end=fd.get('End_Date'),follow=fd.get('Follow_up');for(const k of ['Problem','Treatment','Product','Application_Method','Dose'])if(!String(fd.get(k)||'').trim())return toast(k.replaceAll('_',' ')+' is required');if(!validDateV50(start)||start>today)return toast('Treatment start date is invalid');if(end&&(!validDateV50(end)||end<start))return toast('End date cannot be before start date');if(follow&&(!validDateV50(follow)||follow<start))return toast('Follow-up cannot be before start date');
   }else if(type==='harvest'){
-    const date=fd.get('Date'),frames=Number(fd.get('Frames_Harvested')),weight=Number(fd.get('Honey_Weight')),moistureRaw=String(fd.get('Moisture')??'').trim(),moisture=moistureRaw===''?null:Number(moistureRaw);if(!validDateV50(date)||date>today)return toast('Harvest date is invalid');if(!Number.isInteger(frames)||frames<1||frames>500)return toast('Frames must be a whole number from 1 to 500');if(!Number.isFinite(weight)||weight<=0||weight>5000)return toast('Honey weight must be greater than 0');if(moisture!==null&&(!Number.isFinite(moisture)||moisture<0||moisture>100))return toast('Moisture must be between 0% and 100%');
+    const date=fd.get('Date'),framesRaw=String(fd.get('Frames_Harvested')??'').trim(),weightRaw=String(fd.get('Honey_Weight')??'').trim(),frames=Number(framesRaw),weight=Number(weightRaw),moistureRaw=String(fd.get('Moisture')??'').trim(),moisture=moistureRaw===''?null:Number(moistureRaw);if(!validDateV50(date)||date>today)return toast('Harvest date is invalid');if(!framesRaw||!Number.isInteger(frames)||frames<1||frames>500)return toast('Frames must be a whole number from 1 to 500');if(!weightRaw||!Number.isFinite(weight)||weight<=0||weight>5000)return toast('Honey weight must be greater than 0');if(moisture!==null&&(!Number.isFinite(moisture)||moisture<=0||moisture>100))return toast('Moisture must be greater than 0% and no more than 100%');
   }
   V50_RECORD_SAVING=true;try{V50_OLD_SAVE_REC(type)}finally{setTimeout(()=>V50_RECORD_SAVING=false,500)}
 };
+
+/* V2P2E5AX15 — MEASURED / EXECUTED VALUES REQUIRE USER CONFIRMATION
+   - Feeding: no default feed type, ratio, or quantity; validator reads Quantity_Value.
+   - Harvest: no default frames/weight/moisture; blank moisture remains missing, explicit 0 is rejected.
+   - Manual Treatment: no default problem/drug/product/application/dose; status starts Planned.
+   Context defaults such as hive-local date, units, and auto batch id are preserved. */
+window.__HIVEDASH_V2P2E5AX15_VERSION__='v2p2e5ax15-explicit-measurement-and-treatment-input';
 
 // ---------- Safe backup import: schema check, size limit, no entitlement/account escalation ----------
 function validateBackupV50(x){return !!(x&&typeof x==='object'&&Array.isArray(x.hives)&&x.settings&&typeof x.settings==='object'&&x.logs&&['inspections','feedings','treatments','harvests'].every(k=>Array.isArray(x.logs[k]||[]))&&x.hives.every(h=>h&&typeof h.id==='string'&&typeof h.name==='string'))}

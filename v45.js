@@ -142,7 +142,7 @@ function honeyAnalytics(r){
 
   const totalLb=logs.reduce((n,x)=>n+(Number(x.weightLb)||0),0);
   const avgBatchLb=logs.length?totalLb/logs.length:0;
-  const moistureRows=logs.filter(x=>Number.isFinite(Number(x.moisture)) && Number(x.moisture)>0);
+  const moistureRows=logs.filter(x=>x&&x.moisture!==null&&x.moisture!==undefined&&String(x.moisture).trim()!==''&&Number.isFinite(Number(x.moisture)));
   const avgMoisture=moistureRows.length
     ? moistureRows.reduce((n,x)=>n+Number(x.moisture),0)/moistureRows.length
     : null;
@@ -845,7 +845,7 @@ function saveRec(type){
       weightLb:weightUnit==='kg'?Number((weight*2.20462).toFixed(2)):weight,
       weight,
       weightUnit,
-      moisture:Number(fd.get('Moisture')||0),
+      moisture:String(fd.get('Moisture')??'').trim()===''?null:Number(fd.get('Moisture')),
       batch:harvestBatch,
       notes
     });
@@ -2379,7 +2379,7 @@ function openHarvestRecordViewV49(id){
 
   const harvestNotes=String(x.notes||'').trim();
   const notesHtml=harvestNotes?`<div class="v224b18-harvest-notes"><b>Notes</b><div>${esc(harvestNotes)}</div></div>`:'';
-  const m=modal(`<div class="modalhead"><b>Harvest · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}% moisture<br>${x.frames||0} frames${x.batch?` · ${esc(x.batch)}`:''}${notesHtml}</div><button class="primary" onclick="closeModal(this);go('hive/${x.hiveId}')">Open Hive</button>`);
+  const m=modal(`<div class="modalhead"><b>Harvest · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="notice">${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture===null||x.moisture===undefined||String(x.moisture).trim()===''?'—':x.moisture+'% moisture'}<br>${x.frames||0} frames${x.batch?` · ${esc(x.batch)}`:''}${notesHtml}</div><button class="primary" onclick="closeModal(this);go('hive/${x.hiveId}')">Open Hive</button>`);
 
   if(m){
     m.classList.add('harvest-record-view-v189');
@@ -2402,7 +2402,8 @@ function honeyPage(r){
   const s=v45s();
   const logs=[...s.logs.harvests].sort((a,b)=>String(b.date).localeCompare(String(a.date)));
   const totalLb=logs.reduce((n,x)=>n+Number(x.weightLb||0),0);
-  const avg=logs.length?logs.reduce((n,x)=>n+Number(x.moisture||0),0)/logs.length:0;
+  const moistureLogs=logs.filter(x=>x&&x.moisture!==null&&x.moisture!==undefined&&String(x.moisture).trim()!==''&&Number.isFinite(Number(x.moisture)));
+  const avg=moistureLogs.length?moistureLogs.reduce((n,x)=>n+Number(x.moisture),0)/moistureLogs.length:null;
   const monthly=Array(12).fill(0);
   logs.forEach(x=>{
     const m=Number(String(x.date||'').slice(5,7))-1;
@@ -2426,7 +2427,7 @@ function honeyPage(r){
       </span>
       <span class="harvest-recent-value">
         <b>${w.toFixed(1)} ${unit}</b>
-        <small>${Number(x.moisture||0).toFixed(1)}% moisture</small>
+        <small>${x.moisture===null||x.moisture===undefined||String(x.moisture).trim()===''?'—':Number(x.moisture).toFixed(1)+'% moisture'}</small>
       </span>
       <em>›</em>
     </button>`;
@@ -2449,7 +2450,7 @@ function honeyPage(r){
     <section class="harvest-stats-v106">
       <div><span>Total Harvest</span><b>${totalDisplay.toFixed(1)} ${unit}</b></div>
       <div><span>Total Batches</span><b>${logs.length}</b></div>
-      <div><span>Avg Moisture</span><b>${logs.length?avg.toFixed(1):'—'}${logs.length?'%':''}</b></div>
+      <div><span>Avg Moisture</span><b>${avg===null?'—':avg.toFixed(1)+'%'}</b></div>
     </section>
 
     <section class="harvest-card-v106">
@@ -3075,7 +3076,7 @@ saveRec=function(type){
   }else if(type==='treatment'){
     const start=fd.get('Start_Date'),end=fd.get('End_Date'),follow=fd.get('Follow_up');for(const k of ['Problem','Treatment','Product','Dose'])if(!String(fd.get(k)||'').trim())return toast(k.replace('_',' ')+' is required');if(!validDateV50(start)||start>today)return toast('Treatment start date is invalid');if(end&&(!validDateV50(end)||end<start))return toast('End date cannot be before start date');if(follow&&(!validDateV50(follow)||follow<start))return toast('Follow-up cannot be before start date');
   }else if(type==='harvest'){
-    const date=fd.get('Date'),frames=Number(fd.get('Frames_Harvested')),weight=Number(fd.get('Honey_Weight')),moisture=Number(fd.get('Moisture'));if(!validDateV50(date)||date>today)return toast('Harvest date is invalid');if(!Number.isInteger(frames)||frames<1||frames>500)return toast('Frames must be a whole number from 1 to 500');if(!Number.isFinite(weight)||weight<=0||weight>5000)return toast('Honey weight must be greater than 0');if(!Number.isFinite(moisture)||moisture<0||moisture>100)return toast('Moisture must be between 0% and 100%');
+    const date=fd.get('Date'),frames=Number(fd.get('Frames_Harvested')),weight=Number(fd.get('Honey_Weight')),moistureRaw=String(fd.get('Moisture')??'').trim(),moisture=moistureRaw===''?null:Number(moistureRaw);if(!validDateV50(date)||date>today)return toast('Harvest date is invalid');if(!Number.isInteger(frames)||frames<1||frames>500)return toast('Frames must be a whole number from 1 to 500');if(!Number.isFinite(weight)||weight<=0||weight>5000)return toast('Honey weight must be greater than 0');if(moisture!==null&&(!Number.isFinite(moisture)||moisture<0||moisture>100))return toast('Moisture must be between 0% and 100%');
   }
   V50_RECORD_SAVING=true;try{V50_OLD_SAVE_REC(type)}finally{setTimeout(()=>V50_RECORD_SAVING=false,500)}
 };
@@ -6682,7 +6683,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
           typeof formatWeight==='function'
             ? formatWeight(x.weightLb||0,s)
             : String(x.weightLb||0),
-          x.moisture ? x.moisture+'% moisture' : ''
+          x.moisture!==null&&x.moisture!==undefined&&String(x.moisture).trim()!=='' ? x.moisture+'% moisture' : ''
         ].filter(Boolean).join(' · '),
         V45?.harvest||''
       )
@@ -12933,6 +12934,15 @@ function detailHTML(a){
     return 'hivedash_b39_split_result_draft_'+String(actionId||'');
   }
 
+  /* V2P2E5AX14 — Split actual-result numeric semantics.
+     Blank means not recorded; explicit 0 remains a real recorded zero. */
+  function b39mOptionalFrameValue(el){
+    const raw=String(el?.value??'').trim();
+    if(raw==='') return null;
+    const n=Number(raw);
+    return Number.isFinite(n)?Math.max(0,n):null;
+  }
+
   /* V224B39AG — Queen Outcome normalization.
      Keep a stable English value even if a browser page translator mutates visible option text.
      Legacy translated values are rendered back to the frozen English UI label. */
@@ -13027,8 +13037,8 @@ function detailHTML(a){
 
     const d={
       success,
-      actualBroodFrames:Math.max(0,Number(idq('b39m-brood')?.value||0)),
-      actualFoodFrames:Math.max(0,Number(idq('b39m-food')?.value||0)),
+      actualBroodFrames:b39mOptionalFrameValue(idq('b39m-brood')),
+      actualFoodFrames:b39mOptionalFrameValue(idq('b39m-food')),
       queenOutcome:String(idq('b39m-queen')?.value||''),
       actualNewHiveName:String(nameInput?.value||''),
       /* Draft value persists regardless of confirmation state. */
@@ -13524,7 +13534,7 @@ function detailHTML(a){
     const queenOutcome=b39QueenOutcomeEnglish(rd.queenOutcome)||'Unknown';
     const followYes=rd.followUpRequired===true||String(rd.followUpRequired).toLowerCase()==='yes';
     const plannedPriority=(w.priority)||((a.plannedPriority&&['Low','Medium','High'].includes(a.plannedPriority))?a.plannedPriority:'—');
-    const readonlyControl=(value,extra='')=>`<div class="b39-readonly-control ${extra}">${E(value||'—')}</div>`;
+    const readonlyControl=(value,extra='')=>`<div class="b39-readonly-control ${extra}">${E(value===null||value===undefined||value===''?'—':value)}</div>`;
     const readonlySelect=value=>`<div class="b39-readonly-control b39-readonly-select"><span>${E(value||'—')}</span></div>`;
     const readonlyDate=value=>`<div class="b39m-date-shell b39-readonly-date"><span>${E(value||'—')}</span><span class="b39-readonly-calendar" aria-hidden="true">▣</span></div>`;
 
@@ -13650,8 +13660,8 @@ function detailHTML(a){
 
     const completedDate=String(idq('b39m-date')?.value||'');
     if(!completedDate) return b39mValidationFail('Select the completed date.','b39m-date-button');
-    const actualBrood=Math.max(0,Number(idq('b39m-brood')?.value||0));
-    const actualFood=Math.max(0,Number(idq('b39m-food')?.value||0));
+    const actualBrood=b39mOptionalFrameValue(idq('b39m-brood'));
+    const actualFood=b39mOptionalFrameValue(idq('b39m-food'));
     const queenOutcome=b39QueenOutcomeEnglish(String(idq('b39m-queen')?.value||''));
     if(!queenOutcome) return b39mValidationFail('Record the queen outcome.','b39m-queen');
     const followUpRequired=String(idq('b39m-follow')?.value||'yes')==='yes';
@@ -17293,7 +17303,7 @@ window.__HIVEDASH_V2_P2C7_VERSION__='v2-p2c7-current-treatment-summary-source';
     const rows=[...(s.logs?.harvests||[])]
       .filter(x=>Number(String(x.date||'').slice(0,4))===y)
       .sort((a,b)=>String(b.date).localeCompare(String(a.date)));
-    modal(`<div class="modalhead"><div class="h2">Harvest History · ${y}</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="history-list-master">${rows.length?rows.map(x=>`<button class="history-row-master" onclick="document.querySelector('.modal')?.remove();go('hive/${x.hiveId}')"><i>⌁</i><span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b><small>${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture||'—'}%</small></span><em>›</em></button>`).join(''):'<div class="small muted">No harvest records for this year.</div>'}</div>`);
+    modal(`<div class="modalhead"><div class="h2">Harvest History · ${y}</div><button class="iconbtn" onclick="closeModal(this)">✕</button></div><div class="history-list-master">${rows.length?rows.map(x=>`<button class="history-row-master" onclick="document.querySelector('.modal')?.remove();go('hive/${x.hiveId}')"><i>⌁</i><span><b>${esc(hive(s,x.hiveId)?.name||'Hive')}</b><small>${fmtDate(x.date)} · ${formatWeight(x.weightLb||0,s)} · ${x.moisture===null||x.moisture===undefined||String(x.moisture).trim()===''?'—':x.moisture+'%'}</small></span><em>›</em></button>`).join(''):'<div class="small muted">No harvest records for this year.</div>'}</div>`);
   };
 })();
 window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
@@ -22898,3 +22908,7 @@ window.__HIVEDASH_V2P2E5AW4_VERSION__='v2p2e5aw4-varroa-retest-due-date-inherita
    New records carry numericEvidenceSemantics provenance; legacy zero values are treated
    as ambiguous/missing rather than silently trusted as measured zero. */
 window.__HIVEDASH_V2P2E5AX13_VERSION__='v2p2e5ax13-inspection-missing-not-zero';
+
+
+/* V2P2E5AX14 — Split + Harvest Missing != Zero */
+window.__HIVEDASH_V2P2E5AX14__='split-harvest-missing-not-zero-v1';

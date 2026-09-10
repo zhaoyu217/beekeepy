@@ -12919,7 +12919,9 @@ function detailHTML(a){
       const i=s.actions.findIndex(x=>x&&x.id===a.id);
       if(i>=0)s.actions[i]=a; else s.actions.push(a);
     }
-    save(s);
+    /* V2P2E5AX16A1 — never report a successful Split plan creation when
+       the canonical state save itself failed (quota/storage/etc.). */
+    if(save(s)===false)return;
     b39ClearPersistedDraft();
     window.__b39Draft=null;
     go('actions');
@@ -23138,3 +23140,33 @@ window.__HIVEDASH_V2P2E5AX14__='split-harvest-missing-not-zero-v1';
 
 /* V2P2E5AX16A — global dangerous-default audit, evidence/actual-fact closure. */
 window.__HIVEDASH_V2P2E5AX16A_VERSION__='v2p2e5ax16a-explicit-evidence-defaults';
+
+
+/* ==============================================================
+   V2P2E5AX16A1 — B39 Split Pending Durability Guard
+   AX16 browser QA exposed: Create Action returned to Actions, but the new
+   split-hive Pending row was absent immediately and after hard refresh.
+   B39's create payload itself is unchanged from the AX15A PASS baseline.
+   Preserve B39-owned Pending rows at the FINAL generateActions boundary,
+   matching the already-established B42/B43 defensive pattern.
+   Scope: split-hive Pending preservation only; no Split workflow, result,
+   completion, lineage, routing, health model, or evidence semantics changed.
+   ============================================================== */
+(function v2p2e5ax16a1SplitPendingDurability(){
+  if(window.__HIVEDASH_V2P2E5AX16A1_SPLIT_DURABILITY__)return;
+  window.__HIVEDASH_V2P2E5AX16A1_SPLIT_DURABILITY__=true;
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      const owned=(Array.isArray(s?.actions)?s.actions:[]).filter(a=>a&&
+        String(a.type||'').toLowerCase()==='split-hive'&&
+        a.status!=='Completed'&&a.priority!=='Done');
+      const base=prevGenerate(s)||[],m=new Map();
+      base.forEach((a,i)=>m.set(String(a?.id||`base-${i}`),a));
+      owned.forEach((a,i)=>m.set(String(a?.id||`split-${i}`),a));
+      return [...m.values()];
+    };
+    try{generateActions=window.generateActions}catch(_){}
+  }
+  window.__HIVEDASH_V2P2E5AX16A1_VERSION__='v2p2e5ax16a1-split-pending-durability';
+})();

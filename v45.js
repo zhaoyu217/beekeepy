@@ -23240,3 +23240,162 @@ window.__HIVEDASH_V2P2E5AX16B3_VERSION__='V2P2E5AX16B3-b40-explicit-combine-inte
 window.__HIVEDASH_V2P2E5AX16B3A_VERSION__='V2P2E5AX16B3A-b40-fresh-draft-isolation';
 window.__HIVEDASH_V2P2E5AX16B3B_VERSION__='V2P2E5AX16B3B-b40-optional-followup-default';
 window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-result';
+
+/* ==============================================================
+   V2P2E5AX17A — UNIFIED PENDING MANUAL ACTION CANCELLATION
+   Product contract:
+   - Only user-created Pending Actions can be cancelled here.
+   - System scientific tasks and automatic follow-ups keep their existing
+     correction / verification lifecycle and are not cancellable here.
+   - Cancellation never mutates Hive biological data, superCount, location,
+     treatment/feeding/inspection records, or Timeline facts.
+   - Cancelled work is removed from Active, never counted as Completed, and is
+     retained in meta.cancelledActions for audit. The existing All tab may show
+     it as read-only cancellation history.
+   ============================================================== */
+(function v2p2e5ax17aUnifiedPendingCancel(){
+  if(window.__HIVEDASH_V2P2E5AX17A__)return;
+  window.__HIVEDASH_V2P2E5AX17A__=true;
+
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escX=v=>typeof esc==='function'?esc(txt(v)):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsX=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
+  const cloneX=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
+  const USER_TYPES=new Set(['super-management','queen-management','split-hive','combine-hive','swarm-control','equipment-maintenance','move-hive','winter-preparation','spring-preparation','other-task']);
+  const DETAIL_ROUTES=new Set(['frequent-action','super-action','queen-action','split-action','combine-action','swarm-action','equipment-action','move-hive-action','winter-action','spring-action','other-task']);
+
+  function isSystem(a){
+    if(!a)return false;
+    const src=low(a.source),id=low(a.id);
+    return a.systemGenerated===true||!!a.modelVersion||src==='scientific-engine'||src==='health-model'||src==='system'||src==='initial-inspection'||id.startsWith('scientific-')||id.startsWith('v224b-');
+  }
+  function isAutomaticFollowup(a){
+    const src=low(a?.source),stage=low(a?.workflowStage);
+    return !!a&&(src.includes('follow-up')||stage==='follow-up');
+  }
+  function isUserCreated(a){
+    if(!a||isSystem(a)||isAutomaticFollowup(a))return false;
+    const src=low(a.source),type=low(a.type);
+    return src==='manual'||src==='manual-plan'||a.manualDecision===true||USER_TYPES.has(type);
+  }
+  function isCancelable(a){
+    return !!a&&isUserCreated(a)&&low(a.status)==='pending'&&low(a.priority)!=='done'&&!a.completedAt&&!a.resultAppliedAt;
+  }
+  function actionById(s,id){return (Array.isArray(s?.actions)?s.actions:[]).find(a=>a&&txt(a.id)===txt(id))||null}
+  function cancelledById(s,id){return (Array.isArray(s?.meta?.cancelledActions)?s.meta.cancelledActions:[]).find(a=>a&&txt(a.id)===txt(id))||null}
+  function hiveBy(s,id){return (Array.isArray(s?.hives)?s.hives:[]).find(h=>h&&txt(h.id)===txt(id))||null}
+
+  function clearResultDrafts(actionId){
+    const id=txt(actionId);if(!id)return;
+    const prefixes=[
+      'hivedash_b39_split_result_','hivedash_b40_combine_result_','hivedash_b41_swarm_result_',
+      'hivedash_b42_equipment_result_','hivedash_b43_move_result_','hivedash_b44_winter_result_',
+      'hivedash_b45_spring_result_','hivedash_b46_other_task_result_'
+    ];
+    prefixes.forEach(p=>{try{localStorage.removeItem(p+id)}catch(_){}});
+    try{if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[id]}catch(_){}
+  }
+
+  window.v2p2e5ax17OpenCancel=function(actionId){
+    const s=S(),a=actionById(s,actionId);
+    if(!a)return toast('Pending Action not found');
+    if(!isCancelable(a))return toast(isSystem(a)||isAutomaticFollowup(a)?'System and automatic follow-up tasks use their existing review controls':'Only Pending manual Actions can be cancelled');
+    const h=hiveBy(s,a.hiveId),m=modal(`<div class="modalhead"><div><b>Cancel this Action?</b><small>${escX(h?.name||a.hiveId||'Hive')} · ${escX(a.title||a.type||'Action')}</small></div><button class="iconbtn" onclick="closeModal(this)" aria-label="Close">✕</button></div><div class="vc v2p2e5ax17-confirm"><p>Canceling removes this Pending Action from Active. It does not change the hive and it does not count as completed work.</p><div class="v2p2e5af-check-actions"><button class="secondary" onclick="closeModal(this)">Keep Action</button><button class="primary v2p2e5ax17-cancel-confirm" onclick="v2p2e5ax17ConfirmCancel('${jsX(a.id)}')">Cancel Action</button></div></div>`);
+    m?.classList.add('v215-more-modal','v2p2e5af-choice-modal','v2p2e5ax17-modal');
+  };
+
+  window.v2p2e5ax17ConfirmCancel=function(actionId){
+    const s=S();if(!s)return toast('Action state is unavailable');
+    const idx=(s.actions||[]).findIndex(a=>a&&txt(a.id)===txt(actionId));
+    if(idx<0)return toast('Pending Action not found');
+    const a=s.actions[idx];
+    if(!isCancelable(a))return toast('Only Pending manual Actions can be cancelled');
+    const stamp=new Date().toISOString(),archived={...(cloneX(a)||{}),status:'Cancelled',originalStatus:txt(a.status)||'Pending',cancelledAt:stamp,cancellationReason:'User cancelled pending Action',cancelledBy:'user',biologicalEvidence:false};
+    s.meta=s.meta||{};s.meta.cancelledActions=Array.isArray(s.meta.cancelledActions)?s.meta.cancelledActions:[];
+    const oldIdx=s.meta.cancelledActions.findIndex(x=>x&&txt(x.id)===txt(a.id));
+    if(oldIdx>=0)s.meta.cancelledActions[oldIdx]=archived;else s.meta.cancelledActions.push(archived);
+    s.actions.splice(idx,1);
+    if(typeof save!=='function'||save(s)===false)return toast('Action was not cancelled');
+    clearResultDrafts(a.id);
+    try{document.querySelector('.modal.v2p2e5ax17-modal')?.remove()}catch(_){}
+    toast('Action cancelled');go('actions');
+  };
+
+  function routeActionId(){
+    const parts=txt(location.hash||'#home').replace(/^#/,'').split('/'),page=parts[0],id=parts[1]||'';
+    if(!DETAIL_ROUTES.has(page)||!id||id==='new')return '';
+    try{return decodeURIComponent(id)}catch(_){return id}
+  }
+  function decoratePendingDetail(){
+    try{
+      const id=routeActionId();if(!id)return;
+      const a=actionById(S(),id);if(!isCancelable(a))return;
+      const root=document.getElementById('view');if(!root||root.querySelector('[data-ax17-cancel]'))return;
+      const btn=document.createElement('button');btn.type='button';btn.className='b39m-back v2p2e5ax17-cancel';btn.dataset.ax17Cancel='1';btn.textContent='Cancel Action';btn.setAttribute('onclick',`v2p2e5ax17OpenCancel('${jsX(a.id)}')`);
+      const footer=root.querySelector('.b37-footer:last-of-type')||root.querySelector('.b39-footer:last-of-type');
+      if(footer){const back=[...footer.querySelectorAll('button')].find(b=>/back to actions/i.test(txt(b.textContent)));if(back)footer.insertBefore(btn,back);else footer.appendChild(btn)}
+      else root.querySelector('.b37-page,.b39-page')?.appendChild(btn);
+    }catch(err){console.error('AX17 pending cancel decorator failed',err)}
+  }
+
+  function cancelledHistoryHTML(a){
+    const s=S(),h=hiveBy(s,a.hiveId),when=txt(a.cancelledAt||'—');
+    const row=(k,v)=>`<div class="b37-meta"><span>${escX(k)}</span><b>${escX(v||'—')}</b></div>`;
+    return `<div class="b37-page b39-page b39-pending-detail-page v2p2e5ax17-history"><section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">${escX(a.title||a.type||'Cancelled Action')}</div><div class="b37-hint">Manual</div></div>${row('Hive',h?.name||a.hiveId)}${row('Status','Cancelled')}${row('Cancelled',when)}${row('Task type',a.type||'Action')}</section><section class="b37-card b39-card"><div class="b39-info">This planned Action was cancelled before completion. Cancellation did not change hive data and is not completed work or biological evidence.</div></section><div class="b37-footer b39-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;
+  }
+
+  const prevRows=window.v53ActionRows||((typeof v53ActionRows==='function')?v53ActionRows:null);
+  if(typeof prevRows==='function'){
+    window.v53ActionRows=function(mode='Pending'){
+      const base=prevRows.apply(this,arguments)||[],normalized=low(mode||'Pending');
+      if(normalized!=='all')return base;
+      const s=S(),cancelled=(Array.isArray(s?.meta?.cancelledActions)?s.meta.cancelledActions:[]).filter(a=>a&&a.status==='Cancelled').slice().sort((a,b)=>txt(b.cancelledAt).localeCompare(txt(a.cancelledAt)));
+      const seen=new Set(base.map(a=>txt(a?.id)));return [...base,...cancelled.filter(a=>!seen.has(txt(a.id)))];
+    };
+    try{v53ActionRows=window.v53ActionRows}catch(_){}
+  }
+
+  window.v2p2e5ax17OpenCancelled=function(actionId){go(`cancelled-action/${encodeURIComponent(txt(actionId))}`)};
+
+  const prevDraw=window.v53DrawActions||((typeof v53DrawActions==='function')?v53DrawActions:null);
+  if(typeof prevDraw==='function'){
+    window.v53DrawActions=function(mode='Pending'){
+      const ret=prevDraw.apply(this,arguments),normalized=low(mode||'Pending');
+      if(normalized==='all'){
+        try{
+          const rows=typeof v53ActionRows==='function'?v53ActionRows(mode):[],box=document.getElementById('alist'),buttons=box?[...box.querySelectorAll(':scope > button')]:[];
+          buttons.forEach((btn,i)=>{const a=rows[i];if(!a||low(a.status)!=='cancelled')return;btn.setAttribute('onclick',`v2p2e5ax17OpenCancelled('${jsX(a.id)}')`);btn.classList.add('v2p2e5ax17-cancelled-row');const stage=btn.querySelector('.v2p2e5ab-task-top em')||btn.querySelector('em');if(stage){stage.textContent='Cancelled';stage.className='v2p2e5ax17-cancelled-badge'}});
+        }catch(err){console.error('AX17 cancelled All-row projection failed',err)}
+      }
+      return ret;
+    };
+    try{v53DrawActions=window.v53DrawActions}catch(_){}
+  }
+
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){
+      const parts=txt(location.hash||'#home').replace(/^#/,'').split('/');
+      if(parts[0]==='cancelled-action'){
+        let id='';try{id=decodeURIComponent(parts[1]||'')}catch(_){id=parts[1]||''}
+        const r=document.getElementById('view');if(!r)return;
+        const a=cancelledById(S(),id);r.className='view secondary';r.innerHTML=a?cancelledHistoryHTML(a):'<div class="b37-page"><section class="b37-card">Cancelled Action not found.</section><div class="b37-footer"><button class="b37-primary" onclick="go(\'actions\')">Back to Actions</button></div></div>';
+        const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML='<button class="iconbtn" onclick="go(\'actions\')" aria-label="Back">‹</button><div class="pagebar-title">Action History</div><span></span>'}
+        document.getElementById('bottomnav')?.classList.add('hidden');return;
+      }
+      const ret=prevRender.apply(this,arguments);queueMicrotask(decoratePendingDetail);setTimeout(decoratePendingDetail,0);return ret;
+    };
+    try{render=window.render}catch(_){}
+  }
+
+  const style=document.createElement('style');style.id='v2p2e5ax17-style';style.textContent=`
+    .v2p2e5ax17-cancel{border-color:#D7C8C2!important;color:#7A4B42!important;background:#FFFDF9!important}
+    .v2p2e5ax17-confirm p{margin:0 0 14px;line-height:1.55;color:#4D5B50}.v2p2e5ax17-cancel-confirm{background:#7A4B42!important}
+    .v2p2e5ax17-cancelled-row{opacity:.82}.v2p2e5ax17-cancelled-badge{background:#EFEAE6!important;color:#765E55!important}
+    .v2p2e5ax17-history .b39-info{line-height:1.55}
+  `;document.head.appendChild(style);
+
+  window.__HIVEDASH_V2P2E5AX17A_VERSION__='V2P2E5AX17A-unified-pending-manual-action-cancel';
+})();

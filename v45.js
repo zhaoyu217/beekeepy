@@ -12155,7 +12155,8 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     window.__b38Draft={hiveId:h.id,source:String(source||'manual'),reasonCode:String(reason||'queen')};go('queen-action/new');
   };
   window.b38SelectTask=function(btn){
-    const task=btn?.dataset?.task||'Requeen';
+    const task=btn?.dataset?.task||'';
+    if(!TASKS.includes(task))return;
     window.__b38Draft=window.__b38Draft||{};
     window.__b38Draft.taskType=task;
     document.querySelectorAll('.b38-task').forEach(x=>x.classList.remove('active'));
@@ -12217,7 +12218,8 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
   function createHTML(){
     const s=S(),d=window.__b38Draft||{},h=s.hives.find(x=>x.id===d.hiveId)||s.hives[0];
-    const selectedTask=d.taskType||'Requeen';
+    /* V2P2E5AX16B2 — fresh manual Queen Management must not invent intent. */
+    const selectedTask=TASKS.includes(d.taskType)?d.taskType:'';
     const selectedDueDate=d.dueDate||TODAY();
     const selectedQueenSource=d.queenSource||'Not specified';
     const selectedIntroMethod=d.introductionMethod||'Not specified';
@@ -12262,9 +12264,11 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     </div>`;
   }
   window.b38CreateAction=function(){
-    const s=S(),task=window.__b38Draft?.taskType||document.querySelector('.b38-task.active')?.dataset.task||'Requeen',due=window.__b38Draft?.dueDate||idq('b38-due')?.value||TODAY();
+    const task=window.__b38Draft?.taskType||document.querySelector('.b38-task.active')?.dataset.task||'';
+    if(!TASKS.includes(task))return toast('Select a queen action');
+    const s=S(),due=window.__b38Draft?.dueDate||idq('b38-due')?.value||TODAY();
     const a={id:'queen-action-'+Date.now(),hiveId:window.__b38Draft?.hiveId||idq('b38-hive').value,type:TYPE,title:task,status:'Pending',priority:window.__b38Draft?.priority||idq('b38-priority').value||'Medium',due,dueDate:due,date:due,createdAt:new Date().toISOString(),startedAt:null,completedAt:null,followUpDate:null,source:window.__b38Draft?.source||'manual',reasonCode:window.__b38Draft?.reasonCode||'queen',workflowData:{taskType:task,queenSource:window.__b38Draft?.queenSource||idq('b38-source').value,introductionMethod:window.__b38Draft?.introductionMethod||idq('b38-method').value},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:(window.__b38Draft?.notes ?? idq('b38-notes').value ?? '')};
-    upsert(s,a);save(s);window.__b38Draft=null;go('actions');
+    upsert(s,a);if(save(s)===false)return;window.__b38Draft=null;go('actions');
   };
 
   

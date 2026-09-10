@@ -16940,7 +16940,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
           <h3><i>#</i> SAMPLING & METHOD</h3>
           <label><span>Method</span><select name="Method"><option value="">Select method</option><option value="Alcohol Wash">Alcohol Wash</option><option value="Sugar Roll">Sugar Roll</option><option value="Soapy Water Wash">Soapy Water Wash</option><option value="Other">Other</option></select></label>
           <label><span>Sample Size</span><div class="v2p2b-inline"><input name="Sample_Size" type="number" min="1" step="1" value="" placeholder="e.g. 300" oninput="v2p2bUpdateVarroaPreview()"><em>bees</em></div></label>
-          <label><span>Mites Counted</span><input name="Mite_Count" type="number" min="0" step="1" placeholder="0" oninput="v2p2bUpdateVarroaPreview()"></label>
+          <label><span>Mites Counted</span><input name="Mite_Count" type="number" min="0" step="1" oninput="v2p2bUpdateVarroaPreview()"></label>
         </section>
 
         <section class="v2p2b-section v2p2b-result">
@@ -17749,7 +17749,8 @@ window.__HIVEDASH_V2P2D7_VERSION__='v2p2d7-hive-local-date-consistency';
         const high=explicitRisks.some(r=>r.severity==='High');
         const medium=explicitRisks.some(r=>r.severity==='Medium');
         const independentRiskLevel=critical||high?'High':medium?'Medium':null;
-        const confidence={...(old.confidence||{}),level:'LOW',reasons:[...new Set(['No valid biological Inspection has been recorded',...((old.confidence?.reasons)||[])])],inspectionAgeDays:null,unknownCriticalFields:8};
+        const priorReasons=((old.confidence?.reasons)||[]).filter(r=>txt(r)!=='Inspection data is old');
+        const confidence={...(old.confidence||{}),level:'LOW',reasons:[...new Set(['No valid biological Inspection has been recorded',...priorReasons])],inspectionAgeDays:null,unknownCriticalFields:8};
         const unknownCurrent={queenStatus:'Unknown',eggs:'Unknown',larvae:'Unknown',queenCells:'Unknown',brood:'Unknown',broodStrength:'',abnormalities:'Unknown',colonySize:'',populationFrames:'',temperament:'Unknown',honey:'Unknown',pollen:'Unknown',feedingNeed:'Unknown',varroa:old.varroa?.count??null,varroaTestDate:'',pests:'Unknown',disease:'Unknown',diseaseExplicit:false,swarming:'Unknown',superStatus:'Unknown',date:''};
         map.set(h.id,{...old,score:0,baseHealthState:'Unassessed',displayStatus:'Unassessed',overallRisk:'Unassessed',biologicalRisk:'Unassessed',independentRiskLevel,criticalOverride:false,confidence,phase:'Uncertain',phaseInfo:{phase:'Uncertain',basis:['No valid biological Inspection'],trend:{direction:'Unknown',count:0,broodDelta:null,popDelta:null},band:old.phaseInfo?.band||'Unknown',month:old.phaseInfo?.month||null,historyCount:0},current:unknownCurrent,risks:explicitRisks,reasons:explicitRisks.map(r=>r.label),positives:[],assessed:false});
       });
@@ -20017,7 +20018,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
 
   function evidenceLines(a){
     const e=a.evidenceChain||{},conf=Array.isArray(e.conflicts)?e.conflicts:[],priority=Array.isArray(e.evidencePriority)?e.evidencePriority:[];
-    return `<section class="vc"><div class="vhead"><b>Evidence chain</b><span class="v2p2e5ad-confidence ${low(e.confidence)}">${escD(e.confidence||'LOW')}</span></div><div class="v2p2e5ad-evidence-grid"><span>Region<b>${escD(e.stateCode||'Not confirmed')}</b></span><span>Season context<b>${escD(e.season||'Uncertain')}</b></span><span>Colony phase<b>${escD(e.colonyPhase||'Uncertain')}</b></span><span>Current risk<b>${escD(e.risk||'Unassessed')}</b></span><span>Latest Inspection<b>${escD(fmt(e.latestInspectionDate)||'Not recorded')}</b></span><span>Rule version<b>${escD(e.ruleVersion||RULE_VERSION)}</b></span></div>${e.authority?`<div class="v2p2e5ad-authority"><b>${escD(e.authority)}</b><span>${escD(e.authoritySummary||'')}</span><small>${escD(e.ruleId||'')}</small></div>`:''}${priority.length?`<div class="v2p2e5ad-priority"><b>Evidence priority</b><ol>${priority.map(x=>`<li>${escD(x)}</li>`).join('')}</ol></div>`:''}${conf.length?`<div class="v2p2e5ad-conflicts"><b>Needs attention</b>${conf.map(x=>`<span>${escD(x)}</span>`).join('')}</div>`:''}</section>`;
+    return `<section class="vc"><div class="vhead"><b>Evidence chain</b><span class="v2p2e5ad-confidence ${low(e.confidence)}">${escD(e.confidence||'LOW')}</span></div><div class="v2p2e5ad-evidence-grid"><span>Region<b>${escD(e.stateCode||'Not confirmed')}</b></span><span>Season context<b>${escD(e.season||'Uncertain')}</b></span><span>Colony phase<b>${escD(e.colonyPhase||'Uncertain')}</b></span><span>Current risk<b>${escD(e.risk||'Unassessed')}</b></span><span>Latest Inspection<b>${escD(fmt(e.latestInspectionDate)||'Not recorded')}</b></span><span>Core Rule ID<b>${escD(a.coreRuleId||'HD-R01-PERIODIC-INSPECTION')}</b></span><span>Legacy compatibility version<b>${escD(e.ruleVersion||RULE_VERSION)}</b></span></div>${e.authority?`<div class="v2p2e5ad-authority"><b>${escD(e.authority)}</b><span>${escD(e.authoritySummary||'')}</span><small>${escD(e.ruleId||'')}</small></div>`:''}${priority.length?`<div class="v2p2e5ad-priority"><b>Evidence priority</b><ol>${priority.map(x=>`<li>${escD(x)}</li>`).join('')}</ol></div>`:''}${conf.length?`<div class="v2p2e5ad-conflicts"><b>Needs attention</b>${conf.map(x=>`<span>${escD(x)}</span>`).join('')}</div>`:''}</section>`;
   }
   function detail(a){
     const s=S(),h=hiveBy(s,a.hiveId),e=a.evidenceChain||{},needsConfirm=['inspection-adaptive-confirm','inspection-adaptive-low-disturbance'].includes(txt(a.intentKey)),initial=txt(a.intentKey)==='inspection-adaptive-initial',start=iso(a.dueWindowStart||a.proposedWindowStart),end=iso(a.dueWindowEnd||a.proposedWindowEnd||a.dueDate),today=h?todayFor(s,h):'',canStart=!needsConfirm||initial||a.userCorrection?.decision==='adjust-date',draftDate=readDateDraft(a.id),inputDate=draftDate!==null?draftDate:(end||'');
@@ -23395,3 +23396,7 @@ window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-
 
   window.__HIVEDASH_V2P2E5AX17A_VERSION__='V2P2E5AX17A1-unified-pending-manual-action-cancel-closure';
 })();
+
+
+/* V2P2E5AX18A — legacy audit closure: R01 traceability display, no-Inspection confidence wording, Varroa blank mite-count UI. */
+window.__HIVEDASH_V2P2E5AX18A_VERSION__='V2P2E5AX18A-audit-closure-r01-missing-evidence-varroa-ui';

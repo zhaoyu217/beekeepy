@@ -11418,7 +11418,10 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       : [['nectar-flow','Nectar flow'],['space-needed','Space needed'],['congestion','Congestion'],['colony-expansion','Colony expansion'],['other','Other']];
   }
   function b37ReasonLabel(op,value){
-    const hit=b37ReasonOptions(op).find(x=>x[0]===value); return hit?hit[1]:'Other';
+    const code=String(value||'').trim();
+    if(!code)return 'Not recorded';
+    const hit=b37ReasonOptions(op).find(x=>x[0]===code);
+    return hit?hit[1]:'Not recorded';
   }
   function b37EnsureStyle(){
     if(document.getElementById('v224b37-style'))return;
@@ -23188,3 +23191,6 @@ window.__HIVEDASH_V2P2E5AX16A2_VERSION__='v2p2e5ax16a2-no-inspection-task-risk-u
 
 /* V2P2E5AX16B1 — B37 explicit management intent + actual-result missing-state closure. */
 window.__HIVEDASH_V2P2E5AX16B1_VERSION__='v2p2e5ax16b1-b37-explicit-intent-result';
+
+/* V2P2E5AX16B1A — B37 optional Reason display integrity: missing/unknown reason remains Not recorded; explicit Other remains Other. */
+window.__HIVEDASH_V2P2E5AX16B1A_VERSION__='v2p2e5ax16b1a-b37-reason-display-integrity';

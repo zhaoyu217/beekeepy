@@ -21225,15 +21225,22 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
   }
 
   function buildContextSnapshot(s,hiveId){
-    const h=hiveBy(s,hiveId),d=h?evalHive(s,h):null,loc=h?effectiveLoc(s,h):null,today=todayFor(s,h);
+    const h=hiveBy(s,hiveId),d=h?evalHive(s,h):null,loc=h?effectiveLoc(s,h):null,today=todayFor(s,h),inspection=latestInspection(s,hiveId);
+    /* V2P2E5AX16A2 — no-Inspection means biological risk/phase are unassessed.
+       The raw single-hive evaluator can still derive a convenience Medium/phase
+       from missing fields; that output must not leak into Task Evidence as fact.
+       Explicit independent evidence (for example a real Varroa test) remains in
+       the Evidence snapshot and its dedicated rules; this context field does not
+       manufacture a colony-wide biological assessment without an Inspection. */
+    const hasInspection=!!inspection;
     return {
       schemaVersion:CONTEXT_SCHEMA_VERSION,hiveId:txt(hiveId),localDate:today,
       location:{stateCode:txt(loc?.stateCode).toUpperCase(),city:txt(loc?.city),postalCode:txt(loc?.postalCode),timezone:txt(loc?.timezone||h?.timezone||s?.settings?.timezone)},
       calendar:{month:Number(iso(today).slice(5,7)||0)},
       seasonalPhase:'UNRESOLVED',
-      colonyPhase:txt(d?.phase||'Uncertain'),
-      risk:txt(d?.overallRisk||'Unassessed'),
-      confidence:txt(d?.confidence?.level||d?.confidence||'Uncertain'),
+      colonyPhase:hasInspection?txt(d?.phase||'Uncertain'):'Uncertain',
+      risk:hasInspection?txt(d?.overallRisk||'Unassessed'):'Unassessed',
+      confidence:hasInspection?txt(d?.confidence?.level||d?.confidence||'Uncertain'):'LOW',
       contextPolicy:'MONTH_IS_SUPPORTING_CONTEXT_ONLY'
     };
   }
@@ -21476,7 +21483,7 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
     if(evidence?.inspection?.id)out.push('Latest real Inspection record');
     if(evidence?.nextInspection)out.push('Beekeeper-confirmed next Inspection date');
     if(ctx?.colonyPhase&&ctx.colonyPhase!=='Uncertain')out.push(`Colony phase: ${ctx.colonyPhase}`);
-    if(ctx?.risk)out.push(`Current risk: ${ctx.risk}`);
+    if(ctx?.risk&&ctx.risk!=='Unassessed')out.push(`Current risk: ${ctx.risk}`);
     if(rule?.rule)out.push(`Regional/seasonal rule: ${rule.rule.id}`);
     out.push('Calendar date only as supporting context');
     return out;
@@ -23170,3 +23177,7 @@ window.__HIVEDASH_V2P2E5AX16A_VERSION__='v2p2e5ax16a-explicit-evidence-defaults'
   }
   window.__HIVEDASH_V2P2E5AX16A1_VERSION__='v2p2e5ax16a1-split-pending-durability';
 })();
+
+
+/* V2P2E5AX16A2 — no-Inspection task evidence risk isolation. */
+window.__HIVEDASH_V2P2E5AX16A2_VERSION__='v2p2e5ax16a2-no-inspection-task-risk-unassessed';

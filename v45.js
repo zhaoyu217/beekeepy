@@ -11707,15 +11707,17 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     root.querySelectorAll('[data-b37-op]').forEach(b=>b.classList.toggle('active',b.dataset.b37Op===op));
     const reason=root.querySelector('#b37-reason');
     if(reason){
-      reason.innerHTML=b37ReasonOptions(op).map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');
-      window.__b37CreateDraft.reason=reason.value||'';
+      reason.innerHTML=`<option value="">Select reason (optional)</option>`+b37ReasonOptions(op).map(x=>`<option value="${x[0]}">${x[1]}</option>`).join('');
+      reason.value='';
+      window.__b37CreateDraft.reason='';
       window.__b37CreateDraft.reasonDetails='';
       window.b37ReasonChanged();
     }
   };
   window.b37Step=function(delta,target='b37-count'){
     const el=idq(target);if(!el)return;
-    const n=Math.max(1,Math.min(10,Number(el.textContent||1)+Number(delta||0)));
+    const raw=Number(el.textContent||0),base=Number.isFinite(raw)&&raw>=1?raw:0;
+    const n=base<1?1:Math.max(1,Math.min(10,base+Number(delta||0)));
     el.textContent=String(n);
     if(target==='b37-count'){
       window.__b37CreateDraft=window.__b37CreateDraft||{};
@@ -11803,7 +11805,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
 
   window.b37CreateAction=function(){
     const s=v45s(),hiveId=idq('b37-hive')?.value||'',h=hive(s,hiveId);if(!h)return toast('Select a valid hive');
-    const root=document.querySelector('.b37-page'),op=root?.dataset.operation||'add',count=Number(idq('b37-count')?.textContent||0),reason=idq('b37-reason')?.value||window.__b37PrefillReason||'',due=idq('b37-due')?.value||'',priority=idq('b37-priority')?.value||'Medium',notes=(idq('b37-notes')?.value||'').trim(),reasonDetails=(idq('b37-reason-details')?.value||'').trim();
+    const root=document.querySelector('.b37-page'),op=root?.dataset.operation||'',count=Number(idq('b37-count')?.textContent||0),reason=idq('b37-reason')?.value||'',due=idq('b37-due')?.value||'',priority=idq('b37-priority')?.value||'Medium',notes=(idq('b37-notes')?.value||'').trim(),reasonDetails=(idq('b37-reason-details')?.value||'').trim();
     if(!['add','remove'].includes(op))return toast('Choose Add or Remove');
     if(!Number.isInteger(count)||count<1||count>10)return toast('Choose a valid number of supers');
     /* B36 V2.1: Reason is optional for simple field work. */
@@ -11969,7 +11971,7 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       r.innerHTML=`<div class="b37-page"><section class="b37-card"><div class="b37-label">Hive unavailable</div><div class="b39-info">The hive linked to this Pending task is archived, combined, or missing. HiveDash did not substitute another hive. This task cannot be completed.</div></section><div class="b37-footer"><button class="b37-primary" onclick="go('actions')">Back to Actions</button></div></div>`;
       return;
     }
-    const op=a?.workflowData?.operation||draft?.operation||'add',
+    const op=isNew?(draft?.operation||''):(a?.workflowData?.operation||'add'),
       count=Number(a?.workflowData?.numberOfSupers||draft?.count||1),
       status=a?.status||'Create',done=status==='Completed';
     const resultDraft=(!isNew&&!done)?(window.__b37ResultDrafts?.[String(a?.id||'')]||null):null;
@@ -11980,22 +11982,23 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
       ? `Hive super count changed from ${baseline} to ${liveSuperCount}. Review this Pending action before completing.`
       : '';
     const completionError=(!isNew&&!done)?String(window.__b37CompletionErrors?.[String(a?.id||'')]||baselineConflict):'';
-    const reason=a?.workflowData?.reason||draft?.reason||window.__b37PrefillReason||b37ReasonOptions(op)[0][0],
+    const reason=a?.workflowData?.reason||draft?.reason||'',
       reasonDetails=a?.workflowData?.reasonDetails||draft?.reasonDetails||'',
       due=a?.dueDate||a?.date||draft?.due||b37Today(),
       priority=a?.priority==='Done'?'Medium':(a?.priority||draft?.priority||'Medium'),
-      actual=Number(a?.resultData?.numberOfSupers??resultDraft?.actual??count),
+      actualRaw=a?.resultData?.numberOfSupers??resultDraft?.actual??null,
+      actual=(actualRaw===null||actualRaw===''||!Number.isFinite(Number(actualRaw)))?null:Number(actualRaw),
       completedDate=a?.resultData?.completedDate||b37Today();
     const hiveSelector=isNew?`<label class="b37-field"><select id="b37-hive" aria-label="Hive">${hs.map(x=>`<option value="${esc(x.id)}" ${x.id===selectedId?'selected':''}>${esc(x.name)}</option>`).join('')}</select></label>`:`<div class="b37-hive-title">${esc(h.name)}</div><div class="b37-sub">${esc(h.location||s.settings?.apiaryName||'Apiary')} · ${Number(h.superCount)||0} super${Number(h.superCount)===1?'':'s'} recorded</div>`;
     r.innerHTML=`<div class="b37-page${(!isNew&&!done)?' b37-pending-page':''}" data-operation="${op}" data-action-id="${esc(a?.id||'')}">
       ${isNew?`<div class="b37-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Plan a super change</div><div class="b37-intro-sub">Schedule the work now. Hive configuration changes only after the action is completed.</div></div></div>`:(!done?`<div class="b37-intro"><div class="b37-intro-copy"><div class="b37-intro-title">Complete the super change</div><div class="b37-intro-sub">Confirm the actual supers added or removed, then complete this planned action.</div></div></div>`:'')}
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">${isNew?'Select target hive':''}</div></div>${hiveSelector}</section>
       ${isNew?`<section class="b37-card"><div class="b37-card-head"><div class="b37-label">Super Action</div><div class="b37-hint">Planned work</div></div><div class="b37-seg"><button type="button" data-b37-op="add" class="${op==='add'?'active':''}" onclick="b37SetOperation('add')">Add</button><button type="button" data-b37-op="remove" class="${op==='remove'?'active':''}" onclick="b37SetOperation('remove')">Remove</button></div><div class="b37-count-wrap"><div class="b37-count-top"><span>Number of Supers</span><span>1–10</span></div><div class="b37-step"><button type="button" onclick="b37Step(-1)">−</button><strong id="b37-count">${count}</strong><button type="button" onclick="b37Step(1)">+</button></div></div></section>
-      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Reason</div><div class="b37-hint">Optional context</div></div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()">${b37ReasonOptions(op).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>
+      <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Reason</div><div class="b37-hint">Optional context</div></div><label class="b37-field"><span>Reason</span><select id="b37-reason" onchange="b37ReasonChanged()"><option value="" ${!reason?'selected':''}>Select reason (optional)</option>${(['add','remove'].includes(op)?b37ReasonOptions(op):[]).map(x=>`<option value="${x[0]}" ${x[0]===reason?'selected':''}>${x[1]}</option>`).join('')}</select></label><label id="b37-reason-other" class="b37-field" style="display:${reason==='other'?'block':'none'}"><span>Reason details</span><input id="b37-reason-details" value="${esc(reasonDetails)}" placeholder="Describe the reason"></label></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b37-grid2"><label class="b37-field"><span>Due Date</span><div class="b37-date-shell"><button type="button" class="b37-date-button" onclick="b37OpenDatePicker()" aria-label="Choose due date"><span id="b37-due-display" class="b37-date-display">${esc(b37DisplayDate(due))}</span><span class="b37-date-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"><rect x="3.5" y="5.5" width="17" height="15" rx="2"></rect><path d="M8 3.5v4M16 3.5v4M3.5 10h17"></path></svg></span></button><input id="b37-due" class="b37-date-native" type="date" value="${esc(due)}" onchange="b37SyncDateDisplay()" aria-label="Choose due date"></div></label><label class="b37-field"><span>Priority</span><select id="b37-priority"><option ${priority==='High'?'selected':''}>High</option><option ${priority==='Medium'?'selected':''}>Medium</option><option ${priority==='Low'?'selected':''}>Low</option></select></label></div></section>
       <section class="b37-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b37-notes" placeholder="Add a note for your next apiary visit...">${esc(a?.notes||draft?.notes||'')}</textarea></label></section><div class="b37-footer"><button class="b37-primary" onclick="b37CreateAction()">Create Action</button></div>`:
       `<section class="b37-card"><div class="b37-label">Plan</div><div class="b37-meta"><span>Status</span><b><i class="b37-state ${done?'done':''}">${esc(status)}</i></b><span>Action</span><b>${op==='add'?'Add':'Remove'} ${count} Super${count===1?'':'s'}</b><span>Reason</span><b>${esc(b37ReasonLabel(op,reason))}</b><span>Due</span><b>${esc(a.due||a.dueDate||'—')}</b><span>Priority</span><b>${esc(a.priority||'Medium')}</b></div>${a.notes?`<div class="b37-warn">${esc(a.notes)}</div>`:''}</section>
-      ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><div class="b37-completed-date-shell"><span id="b37-completed-date-display" class="b37-completed-date-display">${esc(b37DisplayDate(completedDate))}</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''} onchange="b37SyncCompletedDateDisplay(this.value)"></div></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
+      ${(!isNew)?`<section class="b37-card"><div class="b37-label">Result</div><label class="b37-field"><span>Supers actually ${op==='add'?'added':'removed'}</span><div class="b37-step"><button type="button" ${done?'disabled':''} onclick="b37Step(-1,'b37-actual-count')">−</button><strong id="b37-actual-count">${actual??'—'}</strong><button type="button" ${done?'disabled':''} onclick="b37Step(1,'b37-actual-count')">+</button></div></label><label class="b37-field"><span>Completed Date</span><div class="b37-completed-date-shell"><span id="b37-completed-date-display" class="b37-completed-date-display">${esc(b37DisplayDate(completedDate))}</span><input id="b37-completed-date" type="date" value="${esc(completedDate)}" ${done?'disabled':''} onchange="b37SyncCompletedDateDisplay(this.value)"></div></label>${done?`<div class="b37-warn">Recorded supers: ${a.resultData?.superCountBefore??'—'} → ${a.resultData?.superCountAfter??'—'}</div>`:''}</section>`:''}
       ${baselineConflict?`<section class="b37-card"><div class="b37-card-head"><div class="b37-label">Plan needs confirmation</div><div class="b37-hint">State changed</div></div><div class="b37-warn" role="alert">The hive had ${baseline} super${baseline===1?'':'s'} when this task was planned and has ${liveSuperCount} now. Review the plan before completing it. Reconfirming the plan does not change the hive.</div></section>`:(completionError?`<div class="b37-warn" role="alert">${esc(completionError)}</div>`:'')}
       <div class="b37-actions">${status==='Pending'?(baselineConflict?`<button class="b37-primary" onclick="b37OpenPlanReview('${esc(a.id)}')">Review Current Plan</button><button class="b37-secondary" disabled aria-disabled="true">Complete Action</button>`:`<button class="b37-primary" ${completionError?'disabled aria-disabled="true"':''} onclick="b37CompleteAction('${esc(a.id)}')">Complete Action</button>`):`<button class="b37-secondary" onclick="go('actions')">Back to Actions</button>`}</div>`}
     </div>`;
@@ -23181,3 +23184,7 @@ window.__HIVEDASH_V2P2E5AX16A_VERSION__='v2p2e5ax16a-explicit-evidence-defaults'
 
 /* V2P2E5AX16A2 — no-Inspection task evidence risk isolation. */
 window.__HIVEDASH_V2P2E5AX16A2_VERSION__='v2p2e5ax16a2-no-inspection-task-risk-unassessed';
+
+
+/* V2P2E5AX16B1 — B37 explicit management intent + actual-result missing-state closure. */
+window.__HIVEDASH_V2P2E5AX16B1_VERSION__='v2p2e5ax16b1-b37-explicit-intent-result';

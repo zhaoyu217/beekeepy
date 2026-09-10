@@ -23464,3 +23464,91 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
   }
   window.__HIVEDASH_V2P2E5AX18B_VERSION__='V2P2E5AX18B-treatment-not-performed-lifecycle';
 })();
+
+
+/* ==============================================================
+   V2P2E5AX18B1 — NOT-PERFORMED DURABILITY GUARD
+   Runtime closure only:
+   - AX18B live QA proved the UI can select Not performed but the terminal
+     Treatment fact can fall back to Planned after the update returns.
+   - Reuse the existing Update Current Treatment path first. Only when that
+     path has returned to Actions AND the exact Treatment is not durably
+     Not performed do we repair that same entity in canonical state.
+   - No duplicate Treatment, no AX17 Action cancellation, no biological fact.
+   ============================================================== */
+(function v2p2e5ax18b1NotPerformedDurabilityGuard(){
+  if(window.__HIVEDASH_V2P2E5AX18B1__)return;
+  window.__HIVEDASH_V2P2E5AX18B1__=true;
+  const txt=v=>String(v??'').trim(),low=v=>txt(v).toLowerCase();
+  const prev=window.v2p2aSaveCurrentTreatment;
+  if(typeof prev!=='function')return;
+
+  window.v2p2aSaveCurrentTreatment=function(treatmentId){
+    const form=document.getElementById('rform');
+    const intendedStatus=txt(form?.elements?.['Treatment_Status']?.value);
+    const intendedNotPerformed=low(intendedStatus)==='not performed';
+    const intendedHiveId=txt(form?.elements?.['hiveId']?.value);
+    const ret=prev.apply(this,arguments);
+    if(!intendedNotPerformed)return ret;
+
+    // A validation failure leaves the user on the Treatment page. Never
+    // bypass those gates (for example Active -> Not performed or End Date).
+    const parts=txt(location.hash||'').replace(/^#/,'').split('/');
+    if(parts[0]!=='actions')return ret;
+
+    const s=typeof state==='function'?state():(typeof v45s==='function'?v45s():null);
+    if(!s)return ret;
+    const rows=Array.isArray(s.logs?.treatments)?s.logs.treatments:[];
+    const tx=rows.find(x=>x&&String(x.id)===String(treatmentId)&&String(x.hiveId)===String(intendedHiveId));
+    if(!tx)return ret;
+
+    if(low(tx.status)!=='not performed'){
+      const now=new Date().toISOString();
+      tx.status='Not performed';
+      tx.endDate='';
+      tx.followUp='';
+      tx.completedAt='';
+      tx.notPerformedAt=txt(tx.notPerformedAt)||now;
+      tx.notPerformedDate=txt(tx.notPerformedDate)||(typeof v2p1bDateInHiveTimezone==='function'?v2p1bDateInHiveTimezone(s,hive(s,intendedHiveId)):now.slice(0,10));
+      tx.updatedAt=now;
+
+      // Remove only a durable follow-up linked to THIS Treatment entity.
+      s.actions=Array.isArray(s.actions)?s.actions:[];
+      s.actions=s.actions.filter(a=>!(a&&String(a.hiveId)===String(intendedHiveId)&&a.type==='Treatment'&&String(a.sourceId||'')===String(tx.id)&&(String(a.source||'')==='treatment-follow-up'||String(a.title||'')==='Treatment follow-up')));
+
+      // Keep the Hive management mirror aligned to the latest Treatment that
+      // was actually performed/active; Not performed never becomes evidence.
+      const h=typeof hive==='function'?hive(s,intendedHiveId):null;
+      if(h){
+        h.insp=h.insp||{};
+        const fallback=typeof window.v2p2d2LatestTreatment==='function'
+          ? window.v2p2d2LatestTreatment(s,intendedHiveId)
+          : rows.filter(x=>x&&x!==tx&&String(x.hiveId)===String(intendedHiveId)&&low(x.status)!=='not performed').slice().sort((a,b)=>txt(b.date).localeCompare(txt(a.date)))[0]||null;
+        h.insp.treatment=fallback?.type||'';
+        h.insp.treatmentStatus=fallback?(fallback.endDate?(txt(fallback.status)==='Stopped'?'Stopped':'Completed'):(fallback.status||'Active')):'None';
+        h.insp.treatmentFollowUp=fallback?.followUp||'';
+        h.insp.treatmentWithdrawal=fallback?(fallback.withdrawal||'Not recorded'):'Not recorded';
+      }
+
+      // Regenerate current tasks from the corrected canonical Treatment fact,
+      // then force one local + cloud durable write. This is intentionally not
+      // save(s): the failed runtime path being guarded sits inside save/update.
+      try{if(typeof generateActions==='function')s.actions=generateActions(s)}catch(_){ }
+      const ok=typeof writeLocalV50==='function'?writeLocalV50(s):(typeof save==='function'?save(s):false);
+      if(ok!==false){
+        try{if(typeof scheduleCloudSave==='function')scheduleCloudSave(typeof clone==='function'?clone(s):JSON.parse(JSON.stringify(s)))}catch(_){ }
+      }
+    }
+
+    const check=typeof state==='function'?state():null;
+    const durable=(check?.logs?.treatments||[]).find(x=>x&&String(x.id)===String(treatmentId)&&String(x.hiveId)===String(intendedHiveId));
+    if(!durable||low(durable.status)!=='not performed'){
+      try{toast('Treatment Not performed status could not be saved. Please try again.')}catch(_){ }
+      return ret;
+    }
+    try{if(typeof render==='function')render()}catch(_){ }
+    return ret;
+  };
+  try{v2p2aSaveCurrentTreatment=window.v2p2aSaveCurrentTreatment}catch(_){ }
+  window.__HIVEDASH_V2P2E5AX18B1_VERSION__='V2P2E5AX18B1-not-performed-durability-guard';
+})();

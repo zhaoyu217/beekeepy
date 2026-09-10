@@ -14343,11 +14343,27 @@ window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translati
 
   function findAction(id){const s=S();return (s.actions||[]).find(a=>a&&String(a.id)===String(id))||(s.meta?.completedActions||[]).find(a=>a&&String(a.id)===String(id))}
   const B40_RESULT_PREFIX='hivedash_b40_combine_result_';
+  const B40_RESULT_DRAFT_VERSION='V2P2E5AX16B3B';
   function b40ResultDraft(a){
     const key=B40_RESULT_PREFIX+a.id;
-    let d={combineCompleted:'',diseaseStatus:'Not checked',queenOutcome:'',completedDate:TODAY(),followUpRequired:'yes',followUpDate:addDays(TODAY(),7),resultNotes:''};
-    try{const x=JSON.parse(localStorage.getItem(key)||'null');if(x&&typeof x==='object')d={...d,...x}}catch(_){ }
-    if(a.resultData)d={...d,...a.resultData};
+    /* AX16B3B — follow-up is optional. A pending Combine result must not create
+       a follow-up decision/date before the user explicitly chooses one. */
+    let d={combineCompleted:'',diseaseStatus:'Not checked',queenOutcome:'',completedDate:TODAY(),followUpRequired:'no',followUpDate:'',resultNotes:'',draftVersion:B40_RESULT_DRAFT_VERSION};
+    try{
+      const x=JSON.parse(localStorage.getItem(key)||'null');
+      if(x&&typeof x==='object'){
+        d={...d,...x};
+        /* Pre-AX16B3B drafts inherited the old Yes/+7-day convenience default.
+           Preserve other pending inputs, but do not preserve that ambiguous
+           follow-up intent unless it was created by this corrected draft schema. */
+        if(String(x.draftVersion||'')!==B40_RESULT_DRAFT_VERSION){
+          d.followUpRequired='no';
+          d.followUpDate='';
+        }
+        d.draftVersion=B40_RESULT_DRAFT_VERSION;
+      }
+    }catch(_){ }
+    if(a.resultData)d={...d,...a.resultData,draftVersion:B40_RESULT_DRAFT_VERSION};
     return d;
   }
   function b40PersistResult(a){
@@ -14356,6 +14372,7 @@ window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translati
     Object.entries(map).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});
     d.followUpRequired=String(d.followUpRequired).toLowerCase()==='yes'?'yes':'no';
     if(d.followUpRequired!=='yes')d.followUpDate='';
+    d.draftVersion=B40_RESULT_DRAFT_VERSION;
     try{localStorage.setItem(B40_RESULT_PREFIX+a.id,JSON.stringify(d))}catch(_){ }
     const dateDisplay=document.getElementById('b40-result-date-display');if(dateDisplay)dateDisplay.textContent=fmtDate(d.completedDate);
     const followDisplay=document.getElementById('b40-result-follow-date-display');if(followDisplay)followDisplay.textContent=fmtDate(d.followUpDate);
@@ -23221,3 +23238,4 @@ window.__HIVEDASH_V2P2E5AX16B1A_VERSION__='v2p2e5ax16b1a-b37-reason-display-inte
 
 window.__HIVEDASH_V2P2E5AX16B3_VERSION__='V2P2E5AX16B3-b40-explicit-combine-intent';
 window.__HIVEDASH_V2P2E5AX16B3A_VERSION__='V2P2E5AX16B3A-b40-fresh-draft-isolation';
+window.__HIVEDASH_V2P2E5AX16B3B_VERSION__='V2P2E5AX16B3B-b40-optional-followup-default';

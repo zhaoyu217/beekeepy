@@ -691,7 +691,7 @@ function recordPage(r,type,id){
         <section class="treatment-section-v102">
           <h3><i>!</i> SAFETY</h3>
           <label><span>Withdrawal</span><select name="Withdrawal">
-            <option value="None" selected>None</option><option value="1 day">1 day</option><option value="3 days">3 days</option><option value="7 days">7 days</option><option value="14 days">14 days</option><option value="Custom">Custom</option>
+            <option value="" selected>Not recorded</option><option value="None">None</option><option value="1 day">1 day</option><option value="3 days">3 days</option><option value="7 days">7 days</option><option value="14 days">14 days</option><option value="Custom">Custom</option>
           </select></label>
           <label><span>Honey Supers Status</span><select name="Honey_Supers_Status">
             <option value="Not recorded" selected>Not recorded</option><option value="Not present">Not present</option><option value="Present">Present</option><option value="Removed before treatment">Removed before treatment</option><option value="Honey harvest complete">Honey harvest complete</option>
@@ -2220,7 +2220,7 @@ function hiveDetail(r,id){
   ['Last treatment',lastTx?.type||h.insp?.treatment||'None'],
   ['Status',lastTx?(lastTx.endDate?((String(lastTx.status||'').trim()==='Stopped')?'Stopped':'Completed'):(lastTx.status||'Active')):(h.insp?.treatmentStatus||'None')],
   ['Follow-up',lastTx?.followUp?fmtDate(lastTx.followUp):(h.insp?.treatmentFollowUp?fmtDate(h.insp.treatmentFollowUp):'—')],
-  ['Withdrawal',lastTx?.withdrawal||h.insp?.treatmentWithdrawal||'None']
+  ['Withdrawal',lastTx?(String(lastTx.withdrawal||'').trim()||'Not recorded'):(String(h.insp?.treatmentWithdrawal||'').trim()||'Not recorded')]
 ])}</div>${Vcard('Photos',`
   <div class="photo-card-head-actions">
     <button class="photo-card-viewall" type="button" onclick="openHivePhotoGallery('${h.id}')">View All</button>
@@ -8671,7 +8671,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       body=v211Select('Treatment','treatment',d.treatment||'None',['None','Oxalic Acid','Formic Acid','Apivar','Other'])+
            v211Select('Status','treatmentStatus',d.treatmentStatus||'None',['None','Active','Completed'])+
            v211Input('Follow-up','treatmentFollowUp',d.treatmentFollowUp||'','date')+
-           v211Select('Withdrawal','treatmentWithdrawal',d.treatmentWithdrawal||'None',['None','0 days','7 days','14 days','21 days']);
+           v211Select('Withdrawal','treatmentWithdrawal',d.treatmentWithdrawal||'Not recorded',['Not recorded','None','0 days','7 days','14 days','21 days']);
     }else return;
 
     const o=document.createElement('div');o.className='v211-module-overlay';
@@ -8715,7 +8715,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         colonySize:(hi.colonySize??hi.strength??''),populationFrames:(hi.populationFrames??''),temperament:hi.temperament||'Calm',
         honey:hi.honey||h.honey||'Medium',pollen:hi.pollen||h.pollen||'Medium',feedingNeed:hi.feedingNeed||(h.honey==='Low'?'Yes':'No'),
         varroa:varroaEvidence?Number(varroaEvidence.mitesPer100):null,varroaTestDate:varroaEvidence?String(varroaEvidence.date||''):'',varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',
-        treatment:lastTx?.type||hi.treatment||'None',treatmentStatus:lastTx?(lastTx.endDate?((String(lastTx.status||'').trim()==='Stopped')?'Stopped':'Completed'):(lastTx.status||'Active')):(hi.treatmentStatus||'None'),treatmentFollowUp:lastTx?.followUp||hi.treatmentFollowUp||'',treatmentWithdrawal:lastTx?.withdrawal||hi.treatmentWithdrawal||'None',
+        treatment:lastTx?.type||hi.treatment||'None',treatmentStatus:lastTx?(lastTx.endDate?((String(lastTx.status||'').trim()==='Stopped')?'Stopped':'Completed'):(lastTx.status||'Active')):(hi.treatmentStatus||'None'),treatmentFollowUp:lastTx?.followUp||hi.treatmentFollowUp||'',treatmentWithdrawal:lastTx?(lastTx.withdrawal||'Not recorded'):(hi.treatmentWithdrawal||'Not recorded'),
         pests:hi.pests||(h.shb||h.waxMoth?'Present':'None'),disease:hi.disease||(h.disease?'Present':'None'),swarming:hi.swarming||(h.swarm?'Signs':'None'),super:hi.superStatus||h.superStatus||'Installed',
         voiceNotes:String(hi.voiceNotes??lastInspectionLog?.voiceNotes??''),nextInspection:h.nextInspection||'',notes:h.notes||''
       };
@@ -8730,7 +8730,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         ${card('colony','Colony','♙',[['Size',(d.colonySize===null||d.colonySize===undefined||String(d.colonySize).trim()==='')?'—':String(d.colonySize)],['Population',(d.populationFrames===null||d.populationFrames===undefined||String(d.populationFrames).trim()==='')?'—':`${d.populationFrames} frames`],['Temperament',d.temperament]])}
         ${card('stores','Food Stores','◉',[['Honey',d.honey],['Pollen',d.pollen],['Feeding need',d.feedingNeed]])}
         ${card('varroa','Varroa','☼',[['Last count',d.varroaTestDate?`${Number(d.varroa)}/100`:'Not recorded'],['Risk',d.varroaTestDate?v211Risk(d.varroa):'Unknown'],['Test date',d.varroaTestDate?fmtDate(d.varroaTestDate):'Not recorded']])}
-        ${card('treatment','Treatment','＋',[['Last treatment',d.treatment],['Status',d.treatmentStatus],['Follow-up',d.treatmentFollowUp?fmtDate(d.treatmentFollowUp):'—'],['Withdrawal',d.treatmentWithdrawal||'None']])}
+        ${card('treatment','Treatment','＋',[['Last treatment',d.treatment],['Status',d.treatmentStatus],['Follow-up',d.treatmentFollowUp?fmtDate(d.treatmentFollowUp):'—'],['Withdrawal',d.treatmentWithdrawal||'Not recorded']])}
       </div>
       <section class="iform v211-secondary"><div class="sectionlabel">ADDITIONAL CHECKS</div>${v211Row('Pests',d.pests,'pests')}${v211Row('Disease',d.disease,'disease')}${v211Row('Swarming',d.swarming,'swarming')}${v211Row('Super',d.super,'super')}</section>
       <section class="iform v211-secondary"><div class="sectionlabel">FIELD CAPTURE</div><div class="irow capture-row photo-row" onclick="idq('phinput2').click()"><span>Photos</span><b>Add photos</b><em>›</em></div><input id="phinput2" hidden type="file" accept="image/*" multiple><div class="irow capture-row voice-row" onclick="openVoiceNotesV193()"><span>Voice Notes</span><b>${d.voiceNotes?'Added':'Add voice note'}</b><em>›</em></div></section>
@@ -8753,8 +8753,8 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const nullableInspectionNumber=v=>{if(v===null||v===undefined||String(v).trim()==='')return null;const n=Number(v);return Number.isFinite(n)?n:null;};
     const broodStrengthValue=nullableInspectionNumber(d.broodStrength),colonySizeValue=nullableInspectionNumber(d.colonySize),populationFramesValue=nullableInspectionNumber(d.populationFrames);
     h.lastInspection=date;h.notes=d.notes;h.queen=d.queenStatus||h.queen;h.eggs=String(d.eggs).toLowerCase()==='seen';h.larvae=String(d.larvae).toLowerCase()==='seen';h.queenCells=String(d.queenCells).toLowerCase().includes('present');h.brood=d.brood||h.brood;h.honey=d.honey||h.honey;h.pollen=d.pollen||h.pollen;h.varroa=authoritativeVarroa;h.varroaTestDate=authoritativeVarroaDate;h.shb=String(d.pests).toLowerCase()!=='none';h.disease=String(d.disease).toLowerCase()!=='none';h.swarm=String(d.swarming).toLowerCase()!=='none';h.superStatus=d.super||h.superStatus;if(colonySizeValue!==null)h.strength=String(colonySizeValue);h.nextInspection=d.nextInspection||'';
-    h.insp={...(h.insp||{}),numericEvidenceSemantics:'missing-not-zero-v1',queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:broodStrengthValue,abnormalities:d.abnormalities,colonySize:colonySizeValue,populationFrames:populationFramesValue,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
-    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,numericEvidenceSemantics:'missing-not-zero-v1',queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:broodStrengthValue,abnormalities:d.abnormalities,colonySize:colonySizeValue,populationFrames:populationFramesValue,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'None',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
+    h.insp={...(h.insp||{}),numericEvidenceSemantics:'missing-not-zero-v1',queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:broodStrengthValue,abnormalities:d.abnormalities,colonySize:colonySizeValue,populationFrames:populationFramesValue,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',treatment:d.treatment||'None',treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'Not recorded',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,voiceNotes:String(d.voiceNotes||'')};
+    s.logs.inspections.push({id:'i'+Date.now(),hiveId:id,date,numericEvidenceSemantics:'missing-not-zero-v1',queenStatus:d.queenStatus,queenMarked:d.queenMarked||'Not confirmed',queenAge:d.queenAge,layingPattern:d.layingPattern||'Not assessed',eggs:d.eggs,larvae:d.larvae,queenCells:d.queenCells,brood:d.brood,broodStrength:broodStrengthValue,abnormalities:d.abnormalities,colonySize:colonySizeValue,populationFrames:populationFramesValue,temperament:d.temperament,honey:d.honey,pollen:d.pollen,feedingNeed:d.feedingNeed,varroa:authoritativeVarroa,varroaTestDate:authoritativeVarroaDate,varroaTestId:varroaEvidence?String(varroaEvidence.id||''):'',varroaEvidenceSource:varroaEvidence?'varroa-test-log':'none',pests:d.pests,disease:d.disease,swarming:d.swarming,superStatus:d.super,treatment:d.treatment,treatmentStatus:d.treatmentStatus||'None',treatmentFollowUp:d.treatmentFollowUp||'',treatmentWithdrawal:d.treatmentWithdrawal||'Not recorded',voiceNotes:d.voiceNotes,nextInspection:d.nextInspection,notes:d.notes});
     /* V224B21 semantic isolation:
        Treatment edited inside Inspection is an Inspection snapshot only.
        It must NOT create an independent Treatment Timeline event.
@@ -16574,7 +16574,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     setFormValue(form,'End_Date',pick('End_Date',tx.endDate||''));
     setFormValue(form,'Follow_up',pick('Follow_up',tx.followUp||''));
     setFormValue(form,'Treatment_Status',pick('Treatment_Status',tx.status||(tx.endDate?'Completed':'Active')));
-    setFormValue(form,'Withdrawal',pick('Withdrawal',tx.withdrawal||'None'));
+    setFormValue(form,'Withdrawal',pick('Withdrawal',tx.withdrawal||''));
     setFormValue(form,'Honey_Supers_Status',pick('Honey_Supers_Status',tx.honeySupersStatus||'Not recorded'));
     setFormValue(form,'Lot_Number',pick('Lot_Number',tx.lotNumber||'Not recorded'));
     setFormValue(form,'Notes',pick('Notes',tx.notes||''));
@@ -16672,7 +16672,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     tx.endDate=endDate;
     tx.followUp=followUp;
     tx.status=treatmentStatus;
-    tx.withdrawal=valueOf('Withdrawal')||'None';
+    tx.withdrawal=valueOf('Withdrawal')==='Not recorded'?'':valueOf('Withdrawal');
     tx.honeySupersStatus=valueOf('Honey_Supers_Status')==='Not recorded'?'':valueOf('Honey_Supers_Status');
     tx.lotNumber=valueOf('Lot_Number')==='Not recorded'?'':valueOf('Lot_Number');
     tx.notes=valueOf('Notes');
@@ -16688,7 +16688,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       currentHive.insp.treatment=tx.type||currentHive.insp.treatment||'';
       currentHive.insp.treatmentStatus=treatmentStatus;
       currentHive.insp.treatmentFollowUp=followUp;
-      currentHive.insp.treatmentWithdrawal=tx.withdrawal||'None';
+      currentHive.insp.treatmentWithdrawal=tx.withdrawal||'Not recorded';
     }
 
     // V2P2D5 — synchronize exactly one durable follow-up Action with this
@@ -20719,7 +20719,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
       colonySize:nv('colonySize'),populationFrames:nv('populationFrames'),temperament:v('temperament'),
       honey:v('honey'),pollen:v('pollen'),feedingNeed:v('feedingNeed'),
       varroa:ve?Number(ve.mitesPer100):null,varroaTestDate:ve?txt(ve.date):'',varroaTestId:ve?txt(ve.id):'',
-      treatment:tx?.type||'None',treatmentStatus:tx?(tx.endDate?(txt(tx.status)==='Stopped'?'Stopped':'Completed'):(tx.status||'Active')):'None',treatmentFollowUp:tx?.followUp||'',treatmentWithdrawal:tx?.withdrawal||'None',
+      treatment:tx?.type||'None',treatmentStatus:tx?(tx.endDate?(txt(tx.status)==='Stopped'?'Stopped':'Completed'):(tx.status||'Active')):'None',treatmentFollowUp:tx?.followUp||'',treatmentWithdrawal:tx?(tx.withdrawal||'Not recorded'):'Not recorded',
       pests:v('pests'),disease:v('disease'),diseaseExplicit:false,swarming:v('swarming'),super:v('superStatus'),
       voiceNotes:'',nextInspection:'',notes:'',
       __v2p2e5apNewEvidence:true,__v2p2e5apVersion:VERSION,__previousInspectionId:txt(prev?.id),__previousInspectionDate:txt(prev?.date),
@@ -20963,7 +20963,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     d.treatment=tx?.type||'None';
     d.treatmentStatus=txStatus(tx);
     d.treatmentFollowUp=tx?.followUp||'';
-    d.treatmentWithdrawal=tx?.withdrawal||'None';
+    d.treatmentWithdrawal=tx?(tx.withdrawal||'Not recorded'):'Not recorded';
     d.treatmentRecordId=tx?txt(tx.id):'';
     d.treatmentEvidenceSource=tx?'treatment-log-reference':'none';
     return {s,ve,tx};

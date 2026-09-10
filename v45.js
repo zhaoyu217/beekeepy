@@ -21533,7 +21533,7 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
     if(!state)out.push('Structured hive/apiary state is missing.');
     if(!evidence?.inspection?.id)out.push('No valid biological Inspection record exists.');
     if(txt(ctx?.colonyPhase)==='Uncertain')out.push('Colony phase is uncertain from current evidence.');
-    if(low(ctx?.confidence)==='low')out.push(...(rawDecision?.confidence?.reasons||[]).map(x=>txt(x)).filter(Boolean));
+    if(low(ctx?.confidence)==='low'){const confidenceReasons=(rawDecision?.confidence?.reasons||[]).map(x=>txt(x)).filter(Boolean).filter(x=>evidence?.inspection?.id||x!=='Inspection data is old');out.push(...confidenceReasons)}
     if(lastDate&&iso(h?.lastInspection)&&iso(h.lastInspection)!==lastDate)out.push('Hive summary and latest Inspection date do not match.');
     if(next&&rule?.maxDays!=null&&lastDate){
       const max=addDays(lastDate,rule.maxDays);
@@ -23400,3 +23400,7 @@ window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-
 
 /* V2P2E5AX18A — legacy audit closure: R01 traceability display, no-Inspection confidence wording, Varroa blank mite-count UI. */
 window.__HIVEDASH_V2P2E5AX18A_VERSION__='V2P2E5AX18A-audit-closure-r01-missing-evidence-varroa-ui';
+
+
+/* V2P2E5AX18A1 — R01 no-valid-Inspection conflict wording closure only. */
+window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-reason-closure';

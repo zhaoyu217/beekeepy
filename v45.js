@@ -11891,18 +11891,9 @@ window.__HIVEDASH_V224B35_VERSION__='224b35';
     m?.classList.add('v2p2e5as-revalidation','v215-more-modal','v2p2e5af-choice-modal');
   };
   window.b37CancelStalePlan=function(id){
-    const s=v45s(),idx=(s.actions||[]).findIndex(x=>String(x.id)===String(id));
-    if(idx<0)return toast('Pending Action not found');
-    const a=s.actions[idx];if(a.type!=='super-management'||a.status==='Completed')return toast('This task cannot be cancelled');
-    const h=b37ActiveHives(s).find(x=>String(x.id)===String(a.hiveId)),st=b37PlanState(a,h||{}),stamp=new Date().toISOString();
-    const archived={...a,status:'Cancelled',cancelledAt:stamp,cancellationReason:'Hive state changed before execution',cancelledState:{plannedSuperCount:st.baseline,currentSuperCount:st.current}};
-    s.meta=s.meta||{};s.meta.cancelledActions=Array.isArray(s.meta.cancelledActions)?s.meta.cancelledActions:[];
-    s.meta.cancelledActions.push(archived);
-    s.actions.splice(idx,1);
-    if(save(s)===false){s.actions.splice(idx,0,a);s.meta.cancelledActions.pop();return toast('Task was not cancelled')}
-    if(window.__b37CompletionErrors)delete window.__b37CompletionErrors[String(id)];
-    if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[String(id)];
-    b37CloseReviewModal();toast('Task cancelled');go('actions');
+    b37CloseReviewModal();
+    if(typeof window.v2p2e5ax17ConfirmCancel==='function')return window.v2p2e5ax17ConfirmCancel(id);
+    return toast('Cancel control is unavailable');
   };
 
   window.b37CompleteAction=function(id){
@@ -23263,8 +23254,8 @@ window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-
   const jsX=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
   const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
   const cloneX=v=>{try{return JSON.parse(JSON.stringify(v))}catch(_){return null}};
-  const USER_TYPES=new Set(['super-management','queen-management','split-hive','combine-hive','swarm-control','equipment-maintenance','move-hive','winter-preparation','spring-preparation','other-task']);
-  const DETAIL_ROUTES=new Set(['frequent-action','super-action','queen-action','split-action','combine-action','swarm-action','equipment-action','move-hive-action','winter-action','spring-action','other-task']);
+  const USER_TYPES=new Set(['super-management','queen-management','split-hive','combine-hive','swarm-control','equipment-maintenance','move-hive']);
+  const DETAIL_ROUTES=new Set(['frequent-action','super-action','queen-action','split-action','combine-action','swarm-action','equipment-action','move-hive-action']);
 
   function isSystem(a){
     if(!a)return false;
@@ -23278,7 +23269,7 @@ window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-
   function isUserCreated(a){
     if(!a||isSystem(a)||isAutomaticFollowup(a))return false;
     const src=low(a.source),type=low(a.type);
-    return src==='manual'||src==='manual-plan'||a.manualDecision===true||USER_TYPES.has(type);
+    return USER_TYPES.has(type)&&(src==='manual'||src==='manual-plan'||a.manualDecision===true);
   }
   function isCancelable(a){
     return !!a&&isUserCreated(a)&&low(a.status)==='pending'&&low(a.priority)!=='done'&&!a.completedAt&&!a.resultAppliedAt;
@@ -23291,8 +23282,7 @@ window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-
     const id=txt(actionId);if(!id)return;
     const prefixes=[
       'hivedash_b39_split_result_','hivedash_b40_combine_result_','hivedash_b41_swarm_result_',
-      'hivedash_b42_equipment_result_','hivedash_b43_move_result_','hivedash_b44_winter_result_',
-      'hivedash_b45_spring_result_','hivedash_b46_other_task_result_'
+      'hivedash_b42_equipment_result_','hivedash_b43_move_result_'
     ];
     prefixes.forEach(p=>{try{localStorage.removeItem(p+id)}catch(_){}});
     try{if(window.__b37ResultDrafts)delete window.__b37ResultDrafts[id]}catch(_){}
@@ -23315,9 +23305,14 @@ window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-
     const stamp=new Date().toISOString(),archived={...(cloneX(a)||{}),status:'Cancelled',originalStatus:txt(a.status)||'Pending',cancelledAt:stamp,cancellationReason:'User cancelled pending Action',cancelledBy:'user',biologicalEvidence:false};
     s.meta=s.meta||{};s.meta.cancelledActions=Array.isArray(s.meta.cancelledActions)?s.meta.cancelledActions:[];
     const oldIdx=s.meta.cancelledActions.findIndex(x=>x&&txt(x.id)===txt(a.id));
+    const previousArchived=oldIdx>=0?cloneX(s.meta.cancelledActions[oldIdx]):null;
     if(oldIdx>=0)s.meta.cancelledActions[oldIdx]=archived;else s.meta.cancelledActions.push(archived);
     s.actions.splice(idx,1);
-    if(typeof save!=='function'||save(s)===false)return toast('Action was not cancelled');
+    if(typeof save!=='function'||save(s)===false){
+      s.actions.splice(idx,0,a);
+      if(oldIdx>=0)s.meta.cancelledActions[oldIdx]=previousArchived;else s.meta.cancelledActions.pop();
+      return toast('Action was not cancelled');
+    }
     clearResultDrafts(a.id);
     try{document.querySelector('.modal.v2p2e5ax17-modal')?.remove()}catch(_){}
     toast('Action cancelled');go('actions');
@@ -23392,10 +23387,11 @@ window.__HIVEDASH_V2P2E5AX16B4_VERSION__='V2P2E5AX16B4-b43-explicit-move-intent-
 
   const style=document.createElement('style');style.id='v2p2e5ax17-style';style.textContent=`
     .v2p2e5ax17-cancel{border-color:#D7C8C2!important;color:#7A4B42!important;background:#FFFDF9!important}
+    .v2p2e5ax17-modal .modalhead>div{display:flex;flex-direction:column;gap:4px;min-width:0}.v2p2e5ax17-modal .modalhead small{display:block;margin-top:1px}
     .v2p2e5ax17-confirm p{margin:0 0 14px;line-height:1.55;color:#4D5B50}.v2p2e5ax17-cancel-confirm{background:#7A4B42!important}
     .v2p2e5ax17-cancelled-row{opacity:.82}.v2p2e5ax17-cancelled-badge{background:#EFEAE6!important;color:#765E55!important}
     .v2p2e5ax17-history .b39-info{line-height:1.55}
   `;document.head.appendChild(style);
 
-  window.__HIVEDASH_V2P2E5AX17A_VERSION__='V2P2E5AX17A-unified-pending-manual-action-cancel';
+  window.__HIVEDASH_V2P2E5AX17A_VERSION__='V2P2E5AX17A1-unified-pending-manual-action-cancel-closure';
 })();

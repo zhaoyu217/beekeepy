@@ -13044,8 +13044,10 @@ function detailHTML(a){
     const w=a?.workflowData||{};
     const base={
       success:'',
-      actualBroodFrames:Number(w.plannedBroodFrames??0),
-      actualFoodFrames:Number(w.plannedFoodFrames??0),
+      /* V2P2E5AX16A — actual transfer facts start unknown. Planned frame counts
+         remain visible in the plan, but are never copied into Actual Result. */
+      actualBroodFrames:null,
+      actualFoodFrames:null,
       queenOutcome:'',
       actualNewHiveName:'',
       completedDate:'',
@@ -13764,12 +13766,15 @@ function detailHTML(a){
       let seq=Date.now(),candidate='h'+seq;
       while((s.hives||[]).some(h=>String(h.id)===candidate)){seq++;candidate='h'+seq}
       newHiveId=candidate;
+      /* V2P2E5AX16A — a newly created split child has identity/lineage facts only.
+         Do not manufacture Queen/Brood/Food/Varroa/health/configuration evidence
+         before its first real Inspection or dedicated record. */
       const newHive={
-        id:newHiveId,name:newHiveName,score:75,status:'Attention',
-        queen:'Unknown',eggs:false,larvae:false,queenCells:false,brood:'Unknown',strength:'5',
-        honey:'Medium',pollen:'Medium',varroa:0,shb:false,waxMoth:false,disease:false,swarm:false,
-        superStatus:'None',superCount:0,lastInspection:'',notes:'Created from Split Hive action.',photos:[],
-        parentHiveId:sourceHive.id,createdFromSplitActionId:a.id,createdAt:new Date().toISOString()
+        id:newHiveId,name:newHiveName,status:'Unassessed',
+        startDate:completedDate,createdDate:completedDate,createdAt:new Date().toISOString(),
+        lastInspection:'',inspectionRecorded:false,
+        notes:'Created from Split Hive action.',photos:[],
+        parentHiveId:sourceHive.id,createdFromSplitActionId:a.id
       };
       s.hives=s.hives||[];
       s.hives.push(newHive);
@@ -14427,7 +14432,7 @@ window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translati
   const activeHives=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s.hives||[]).filter(h=>!h.archived&&String(h.lifecycleStatus||h.status||'').toLowerCase()!=='combined');
   const HERO='assets/inspection_beekeeper.jpg';
 
-  function baseDraft(){const hs=activeHives(S());return {hiveId:hs[0]?.id||'',swarmRisk:'Moderate',queenCellStatus:'Not checked',colonyCongestion:'Moderate',spaceAvailable:'Not checked',plannedMethod:'Add space',dueDate:TODAY(),priority:'Medium',notes:''}}
+  function baseDraft(){const hs=activeHives(S());return {hiveId:hs[0]?.id||'',swarmRisk:'Not assessed',queenCellStatus:'Not checked',colonyCongestion:'Not assessed',spaceAvailable:'Not checked',plannedMethod:'',dueDate:TODAY(),priority:'Medium',notes:''}}
   function normalize(d,hs=activeHives(S())){if(!hs.some(h=>String(h.id)===String(d.hiveId)))d.hiveId=hs[0]?.id||'';if(!/^\d{4}-\d{2}-\d{2}$/.test(String(d.dueDate||'')))d.dueDate=TODAY();return d}
   function readDraft(){let d=baseDraft();try{const x=JSON.parse(localStorage.getItem(DRAFT_KEY)||'null');if(x&&typeof x==='object')d={...d,...x}}catch(_){ }return normalize(d)}
   function persist(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){ }return d}
@@ -14444,8 +14449,8 @@ window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translati
     return `<div class="b37-page b39-page b39-create-page b41-page">
       <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Plan swarm control</b><small>Record the observed swarm risk and the planned intervention. Planning does not change hive data.</small></div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Active hive</div></div><label class="b37-field"><span>Hive</span><select id="b41-hive" onchange="b41SetDraft('hiveId',this.value)">${hiveOpts}</select></label></section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Swarm Check</div><div class="b37-hint">Current observations</div></div><label class="b37-field"><span>Swarm Risk</span><select id="b41-risk" onchange="b41SetDraft('swarmRisk',this.value)">${opts(['Low','Moderate','High','Imminent'],d.swarmRisk)}</select></label><label class="b37-field"><span>Queen Cell Status</span><select id="b41-queen-cells" onchange="b41SetDraft('queenCellStatus',this.value)">${opts(['None seen','Cups only','Charged cells','Capped swarm cells','Not checked'],d.queenCellStatus)}</select></label><label class="b37-field"><span>Colony Congestion</span><select id="b41-congestion" onchange="b41SetDraft('colonyCongestion',this.value)">${opts(['Low','Moderate','High','Severe'],d.colonyCongestion)}</select></label><label class="b37-field"><span>Space Available</span><select id="b41-space" onchange="b41SetDraft('spaceAvailable',this.value)">${opts(['Adequate','Limited','None','Not checked'],d.spaceAvailable)}</select></label></section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Control Plan</div><div class="b37-hint">Planned method</div></div><label class="b37-field"><span>Planned Method</span><select id="b41-method" onchange="b41SetDraft('plannedMethod',this.value)">${opts(['Add space','Remove swarm cells','Create split','Requeen','Equalize colony','Other'],d.plannedMethod)}</select></label><div class="b39-info">This action records the swarm-control plan only. Add Super, Split Hive, and Queen Management remain separate actions.</div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Swarm Check</div><div class="b37-hint">Current observations</div></div><label class="b37-field"><span>Swarm Risk</span><select id="b41-risk" onchange="b41SetDraft('swarmRisk',this.value)">${opts(['Not assessed','Low','Moderate','High','Imminent'],d.swarmRisk)}</select></label><label class="b37-field"><span>Queen Cell Status</span><select id="b41-queen-cells" onchange="b41SetDraft('queenCellStatus',this.value)">${opts(['None seen','Cups only','Charged cells','Capped swarm cells','Not checked'],d.queenCellStatus)}</select></label><label class="b37-field"><span>Colony Congestion</span><select id="b41-congestion" onchange="b41SetDraft('colonyCongestion',this.value)">${opts(['Not assessed','Low','Moderate','High','Severe'],d.colonyCongestion)}</select></label><label class="b37-field"><span>Space Available</span><select id="b41-space" onchange="b41SetDraft('spaceAvailable',this.value)">${opts(['Adequate','Limited','None','Not checked'],d.spaceAvailable)}</select></label></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Control Plan</div><div class="b37-hint">Planned method</div></div><label class="b37-field"><span>Planned Method</span><select id="b41-method" onchange="b41SetDraft('plannedMethod',this.value)"><option value="" ${!d.plannedMethod?'selected':''}>Select method</option>${opts(['Add space','Remove swarm cells','Create split','Requeen','Equalize colony','Other'],d.plannedMethod)}</select></label><div class="b39-info">This action records the swarm-control plan only. Add Super, Split Hive, and Queen Management remain separate actions.</div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b39-schedule-grid"><label class="b37-field"><span>Due Date</span><div class="b40-date-shell"><span id="b41-due-display">${fmtDate(d.dueDate)}</span><input id="b41-due" type="date" value="${E(d.dueDate)}" onchange="b41SyncDate(this)" aria-label="Due Date" data-v224b17-decorated="1"><i>▣</i></div></label><label class="b37-field"><span>Priority</span><select id="b41-priority" onchange="b41SetDraft('priority',this.value)">${opts(['Low','Medium','High'],d.priority)}</select></label></div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><textarea id="b41-notes" rows="3" placeholder="Add a note for the planned swarm control..." oninput="b41SetDraft('notes',this.value)">${E(d.notes)}</textarea></section>
       <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b41CreateAction()">Create Action</button></div></div>`;
@@ -14457,6 +14462,7 @@ window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translati
     Object.entries(ids).forEach(([k,id])=>{const el=document.getElementById(id);if(el)d[k]=el.value});normalize(d,hs);persist(d);
     if(!hs.length)return toast('No active hive is available');
     if(!d.hiveId||!hs.some(h=>String(h.id)===String(d.hiveId)))return toast('Select an active hive');
+    if(!d.plannedMethod)return toast('Select a planned swarm-control method');
     const now=new Date().toISOString();
     const a={id:'swarm-action-'+Date.now(),hiveId:d.hiveId,type:TYPE,title:'Swarm Control',status:'Pending',priority:d.priority||'Medium',due:d.dueDate||TODAY(),dueDate:d.dueDate||TODAY(),date:d.dueDate||TODAY(),createdAt:now,startedAt:null,completedAt:null,followUpDate:null,source:'manual',reasonCode:'management',workflowData:{swarmRisk:d.swarmRisk,queenCellStatus:d.queenCellStatus,colonyCongestion:d.colonyCongestion,spaceAvailable:d.spaceAvailable,plannedMethod:d.plannedMethod},resultData:null,linkedRecordId:null,linkedActionId:null,parentActionId:null,notes:d.notes||''};
     if(typeof upsert==='function')upsert(s,a);else{s.actions=Array.isArray(s.actions)?s.actions:[];s.actions.push(a)}
@@ -14639,7 +14645,7 @@ window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translati
   const fmt=d=>{if(!d)return '—';try{const [y,m,day]=String(d).split('-');return `${m}/${day}/${y}`}catch(_){return String(d)}};
   const opts=(arr,val)=>arr.map(x=>`<option value="${esc(x)}" ${String(x)===String(val)?'selected':''}>${esc(x)}</option>`).join('');
   const row=(k,v)=>`<div class="b40-row"><span>${esc(k)}</span><b>${esc(v||'—')}</b></div>`;
-  function defaultDraft(){const h=active(S())[0];return {hiveId:h?.id||'',component:'Hive body',issue:'Routine maintenance',plannedWork:'Inspect',dueDate:today(h?.id||''),priority:'Medium',notes:''}}
+  function defaultDraft(){const h=active(S())[0];return {hiveId:h?.id||'',component:'',issue:'',plannedWork:'',dueDate:today(h?.id||''),priority:'Medium',notes:''}}
   function loadDraft(){try{return {...defaultDraft(),...JSON.parse(localStorage.getItem(DRAFT_KEY)||'{}')}}catch(_){return defaultDraft()}}
   function saveDraft(d){try{localStorage.setItem(DRAFT_KEY,JSON.stringify(d))}catch(_){}}
   window.b42SetDraft=function(k,v){const d=loadDraft(),oldId=d.hiveId||'',oldDue=d.dueDate||'',wasAuto=!oldDue||oldDue===today(oldId);d[k]=v;if(k==='hiveId'&&wasAuto){d.dueDate=today(v);const input=document.getElementById('b42-date');if(input)input.value=d.dueDate;const display=document.getElementById('b42-date-display');if(display)display.textContent=fmt(d.dueDate);}saveDraft(d)};
@@ -14653,10 +14659,10 @@ window.__HIVEDASH_V2P2E5AX14F_VERSION__='V2P2E5AX14F-queen-cell-legacy-translati
       <section class="b39-hero b39-create-hero"><img class="b39-hero-img" src="${HERO}" alt=""><div class="b39-hero-shade"></div><div class="b39-hero-copy"><b>Plan equipment maintenance</b><small>Record the equipment issue and planned work. Planning does not change hive biological data.</small></div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Hive</div><div class="b37-hint">Active hive</div></div><label class="b37-field"><span>Hive</span><select id="b42-hive" onchange="b42SetDraft('hiveId',this.value)">${hiveOpts}</select></label></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Equipment</div><div class="b37-hint">What needs attention</div></div>
-        <label class="b37-field"><span>Component</span><select id="b42-component" onchange="b42SetDraft('component',this.value)">${opts(['Hive body','Super box','Bottom board','Inner cover','Outer cover','Frames','Foundation','Entrance reducer','Queen excluder','Feeder','Hive stand','Other'],d.component)}</select></label>
-        <label class="b37-field"><span>Issue</span><select id="b42-issue" onchange="b42SetDraft('issue',this.value)">${opts(['Damaged','Worn','Broken','Dirty','Mold / moisture','Loose / unstable','Paint / coating deterioration','Pest damage','Missing part','Routine maintenance','Other'],d.issue)}</select></label>
+        <label class="b37-field"><span>Component</span><select id="b42-component" onchange="b42SetDraft('component',this.value)"><option value="" ${!d.component?'selected':''}>Select component</option>${opts(['Hive body','Super box','Bottom board','Inner cover','Outer cover','Frames','Foundation','Entrance reducer','Queen excluder','Feeder','Hive stand','Other'],d.component)}</select></label>
+        <label class="b37-field"><span>Issue</span><select id="b42-issue" onchange="b42SetDraft('issue',this.value)"><option value="" ${!d.issue?'selected':''}>Select issue</option>${opts(['Damaged','Worn','Broken','Dirty','Mold / moisture','Loose / unstable','Paint / coating deterioration','Pest damage','Missing part','Routine maintenance','Other'],d.issue)}</select></label>
       </section>
-      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Maintenance Plan</div><div class="b37-hint">Planned work</div></div><label class="b37-field"><span>Planned Work</span><select id="b42-work" onchange="b42SetDraft('plannedWork',this.value)">${opts(['Inspect','Clean','Repair','Replace','Repaint / reseal','Tighten / secure','Other'],d.plannedWork)}</select></label><div class="b39-info">This action records equipment work only. Hive health and biological observations remain separate workflows.</div></section>
+      <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Maintenance Plan</div><div class="b37-hint">Planned work</div></div><label class="b37-field"><span>Planned Work</span><select id="b42-work" onchange="b42SetDraft('plannedWork',this.value)"><option value="" ${!d.plannedWork?'selected':''}>Select planned work</option>${opts(['Inspect','Clean','Repair','Replace','Repaint / reseal','Tighten / secure','Other'],d.plannedWork)}</select></label><div class="b39-info">This action records equipment work only. Hive health and biological observations remain separate workflows.</div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Schedule</div><div class="b37-hint">When to do it</div></div><div class="b39-schedule-grid"><label class="b37-field"><span>Due Date</span><div class="b40-date-shell"><span id="b42-date-display">${fmt(d.dueDate)}</span><input id="b42-date" type="date" value="${esc(d.dueDate)}" onchange="b42DateChanged(this.value)" data-v224b17-decorated="1" aria-label="Due Date"><i>▣</i></div></label><label class="b37-field"><span>Priority</span><select id="b42-priority" onchange="b42SetDraft('priority',this.value)">${opts(['Low','Medium','High'],d.priority)}</select></label></div></section>
       <section class="b37-card b39-card"><div class="b37-card-head"><div class="b37-label">Notes</div><div class="b37-hint">Optional</div></div><label class="b37-field"><textarea id="b42-notes" rows="3" placeholder="Add a note for the planned maintenance..." oninput="b42SetDraft('notes',this.value)">${esc(d.notes||'')}</textarea></label></section>
       <div class="b37-footer b39-footer"><button class="b37-primary" onclick="b42CreateAction()">Create Action</button><button class="b39m-back" onclick="go('actions')">Back to Actions</button></div></div>`;
@@ -16892,8 +16898,8 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
 
         <section class="v2p2b-section">
           <h3><i>#</i> SAMPLING & METHOD</h3>
-          <label><span>Method</span><select name="Method"><option value="Alcohol Wash">Alcohol Wash</option><option value="Sugar Roll">Sugar Roll</option><option value="Soapy Water Wash">Soapy Water Wash</option><option value="Other">Other</option></select></label>
-          <label><span>Sample Size</span><div class="v2p2b-inline"><input name="Sample_Size" type="number" min="1" step="1" value="300" oninput="v2p2bUpdateVarroaPreview()"><em>bees</em></div></label>
+          <label><span>Method</span><select name="Method"><option value="">Select method</option><option value="Alcohol Wash">Alcohol Wash</option><option value="Sugar Roll">Sugar Roll</option><option value="Soapy Water Wash">Soapy Water Wash</option><option value="Other">Other</option></select></label>
+          <label><span>Sample Size</span><div class="v2p2b-inline"><input name="Sample_Size" type="number" min="1" step="1" value="" placeholder="e.g. 300" oninput="v2p2bUpdateVarroaPreview()"><em>bees</em></div></label>
           <label><span>Mites Counted</span><input name="Mite_Count" type="number" min="0" step="1" placeholder="0" oninput="v2p2bUpdateVarroaPreview()"></label>
         </section>
 
@@ -16927,13 +16933,13 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const form=document.getElementById('v2p2b-varroa-form');if(!form)return toast('Varroa Test form is unavailable');
     const s=v45s(),fd=new FormData(form);
     const hiveId=text(fd.get('hiveId')),h=hive(s,hiveId);if(!h)return toast('Hive not found');
-    const testType=canonicalVarroaTestTypeV2P2C6(fd.get('Test_Type')),testDate=text(fd.get('Test_Date')),method=canonicalVarroaMethodV2P2C6(fd.get('Method'));
+    const testType=canonicalVarroaTestTypeV2P2C6(fd.get('Test_Type')),testDate=text(fd.get('Test_Date')),rawMethod=text(fd.get('Method')),method=canonicalVarroaMethodV2P2C6(rawMethod);
     const sampleRaw=text(fd.get('Sample_Size')),mitesRaw=text(fd.get('Mite_Count'));
     const sample=Number(sampleRaw),mites=Number(mitesRaw);
     const today=v2p1bDateInHiveTimezone(s,h);
     if(!testDate)return toast('Test date is required');
     if(Date.parse(testDate+'T00:00:00')>Date.parse(today+'T00:00:00'))return toast('Test date cannot be in the future');
-    if(!method)return toast('Test method is required');
+    if(!rawMethod)return toast('Test method is required');
     if(sampleRaw===''||!Number.isInteger(sample)||sample<1)return toast('Sample size must be at least 1 bee');
     if(mitesRaw===''||!Number.isInteger(mites)||mites<0)return toast('Mites counted is required and must be 0 or greater');
     const rate=Math.round((mites/sample*100)*10)/10;
@@ -23129,3 +23135,6 @@ window.__HIVEDASH_V2P2E5AX14__='split-harvest-missing-not-zero-v1';
   window.v2p2e5ax14bApplyNoTranslate=function(){};
   window.__HIVEDASH_V2P2E5AX14G_VERSION__='V2P2E5AX14G-restore-browser-translation';
 })();
+
+/* V2P2E5AX16A — global dangerous-default audit, evidence/actual-fact closure. */
+window.__HIVEDASH_V2P2E5AX16A_VERSION__='v2p2e5ax16a-explicit-evidence-defaults';

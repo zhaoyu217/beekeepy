@@ -16331,7 +16331,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     if(!e||e.type!=='Treatment')return prevOpenTimelineEventV2P2C(key);
     const s=S(),h=hive(s,e.hiveId),tx=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).find(x=>x&&String(x.id)===String(e.sourceId||String(key).split(':').slice(1).join(':')));
     if(!tx)return prevOpenTimelineEventV2P2C(key);
-    const rawStatus=txt(tx.status), status=tx.endDate&&!['stopped','已停止','停止'].includes(low(rawStatus))?'Completed':(rawStatus||(tx.endDate?'Completed':'Active'));
+    const rawStatus=txt(tx.status), notPerformed=low(rawStatus)==='not performed', status=tx.endDate&&!['stopped','已停止','停止'].includes(low(rawStatus))?'Completed':(rawStatus||(tx.endDate?'Completed':'Active'));
     const val=v=>txt(v)||'Not recorded';
     const rows=[
       ['Problem',englishTreatmentProblem(tx.problem||'')],
@@ -16342,13 +16342,14 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
       ['Concentration / Strength',val(tx.concentration)],
       ['Dose',val(tx.dose)],
       ['Status',status],
-      ['Start Date',tx.date?fmtDate(tx.date):'Not recorded'],
-      ['End Date',tx.endDate?fmtDate(tx.endDate):'Not recorded'],
-      ['Follow-up / Retest Due',tx.followUp?fmtDate(tx.followUp):'Not recorded'],
+      [notPerformed?'Planned Start Date':'Start Date',tx.date?fmtDate(tx.date):'Not recorded'],
+      ...(notPerformed?[['Not performed date',tx.notPerformedDate?fmtDate(tx.notPerformedDate):(tx.notPerformedAt?fmtDate(String(tx.notPerformedAt).slice(0,10)):'Not recorded')]]:[]),
+      ['End Date',tx.endDate?fmtDate(tx.endDate):(notPerformed?'Not applicable':'Not recorded')],
+      ['Follow-up / Retest Due',notPerformed?'Not applicable':(tx.followUp?fmtDate(tx.followUp):'Not recorded')],
       ['Withdrawal',val(tx.withdrawal)],
       ['Honey Supers Status',val(tx.honeySupersStatus)],
       ['Lot / Batch Number',val(tx.lotNumber)],
-      ['Linked Retest',linkedRetestDisplay(s,tx)]
+      ['Linked Retest',notPerformed?'Not applicable — treatment was not performed':linkedRetestDisplay(s,tx)]
     ];
     modal(`<div class="modalhead"><b>Treatment · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div><div class="v2p2c-treatment-detail">${rows.map(([k,v])=>`<div><span>${esc(k)}</span><b>${esc(v)}</b></div>`).join('')}${tx.notes?`<div class="v2p2c-notes"><span>Notes</span><b>${esc(tx.notes)}</b></div>`:''}</div><button class="primary" onclick="closeModal(this);v224b11OpenHiveFromTimeline('${e.hiveId}')">Open Hive</button>`);
   };
@@ -16620,6 +16621,12 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     setFormValue(form,'End_Date',pick('End_Date',tx.endDate||''));
     setFormValue(form,'Follow_up',pick('Follow_up',tx.followUp||''));
     setFormValue(form,'Treatment_Status',pick('Treatment_Status',tx.status||(tx.endDate?'Completed':'Active')));
+    const statusSelect=form.elements?.['Treatment_Status'];
+    if(statusSelect&&!Array.from(statusSelect.options).some(o=>o.value==='Not performed')){
+      const o=document.createElement('option');o.value='Not performed';o.textContent='Not performed';statusSelect.appendChild(o);
+    }
+    const statusLabel=statusSelect?.closest('label');
+    if(statusLabel&&!r.querySelector('.v2p2e5ax18b-not-performed-note'))statusLabel.insertAdjacentHTML('afterend','<div class="treatment-safety-note v2p2e5ax18b-not-performed-note">Use <b>Not performed</b> only when this planned Treatment was never applied. If application started but ended early, use <b>Stopped</b>. Marking a plan Not performed removes its treatment follow-up/retest task and does not count as treatment evidence.</div>');
     setFormValue(form,'Withdrawal',pick('Withdrawal',tx.withdrawal||''));
     setFormValue(form,'Honey_Supers_Status',pick('Honey_Supers_Status',tx.honeySupersStatus||'Not recorded'));
     setFormValue(form,'Lot_Number',pick('Lot_Number',tx.lotNumber||'Not recorded'));
@@ -16702,10 +16709,16 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const endDate=valueOf('End_Date');
     const followUp=valueOf('Follow_up');
     let treatmentStatus=valueOf('Treatment_Status')||tx.status||(endDate?'Completed':'Active');
+    const priorTreatmentStatus=String(tx.status||'').trim();
+    const notPerformed=treatmentStatus==='Not performed';
+    if(notPerformed&&priorTreatmentStatus.toLowerCase()!=='planned')return toast('Only a Planned Treatment can be marked Not performed. Use Stopped if treatment was started');
+    if(notPerformed&&endDate)return toast('Remove End Date when marking a Treatment Not performed');
     if(endDate&&['active','planned','活跃','进行中','计划中'].includes(String(treatmentStatus||'').trim().toLowerCase()))treatmentStatus='Completed';
     if(endDate&&dateMs(endDate)<dateMs(startDate))return toast('End date cannot be before start date');
-    if(followUp&&dateMs(followUp)<dateMs(startDate))return toast('Follow-up cannot be before start date');
+    if(!notPerformed&&followUp&&dateMs(followUp)<dateMs(startDate))return toast('Follow-up cannot be before start date');
     if((treatmentStatus==='Completed'||treatmentStatus==='Stopped')&&!endDate)return toast('End date is required for a completed or stopped Treatment');
+    const effectiveFollowUp=notPerformed?'':followUp;
+    const transitionAt=new Date().toISOString();
 
     tx.problem=valueOf('Problem')||tx.problem||'';
     tx.type=valueOf('Treatment')||tx.type||'';
@@ -16715,15 +16728,17 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     tx.concentration=valueOf('Concentration')==='Not recorded'?'':valueOf('Concentration');
     tx.dose=valueOf('Dose')||tx.dose||'';
     tx.date=startDate;
-    tx.endDate=endDate;
-    tx.followUp=followUp;
+    tx.endDate=notPerformed?'':endDate;
+    tx.followUp=effectiveFollowUp;
     tx.status=treatmentStatus;
     tx.withdrawal=valueOf('Withdrawal')==='Not recorded'?'':valueOf('Withdrawal');
     tx.honeySupersStatus=valueOf('Honey_Supers_Status')==='Not recorded'?'':valueOf('Honey_Supers_Status');
     tx.lotNumber=valueOf('Lot_Number')==='Not recorded'?'':valueOf('Lot_Number');
     tx.notes=valueOf('Notes');
     tx.completedAt=(treatmentStatus==='Completed'||treatmentStatus==='Stopped')?(endDate||tx.completedAt||''):'';
-    tx.updatedAt=new Date().toISOString();
+    tx.notPerformedAt=notPerformed?transitionAt:'';
+    tx.notPerformedDate=notPerformed?(typeof v2p1bDateInHiveTimezone==='function'?v2p1bDateInHiveTimezone(s,hive(s,hiveId)):transitionAt.slice(0,10)):'';
+    tx.updatedAt=transitionAt;
 
     // Keep the old Inspection summary from contradicting the formal Treatment
     // record. This mirrors management status only; it does not change Varroa
@@ -16731,10 +16746,20 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     const currentHive=hive(s,hiveId);
     if(currentHive){
       currentHive.insp=currentHive.insp||{};
-      currentHive.insp.treatment=tx.type||currentHive.insp.treatment||'';
-      currentHive.insp.treatmentStatus=treatmentStatus;
-      currentHive.insp.treatmentFollowUp=followUp;
-      currentHive.insp.treatmentWithdrawal=tx.withdrawal||'Not recorded';
+      if(notPerformed){
+        const fallbackTx=typeof window.v2p2d2LatestTreatment==='function'
+          ? window.v2p2d2LatestTreatment(s,hiveId)
+          : rows.filter(x=>x&&x!==tx&&String(x.hiveId)===String(hiveId)&&String(x.status||'').trim().toLowerCase()!=='not performed').slice().sort((a,b)=>String(b.date||'').localeCompare(String(a.date||'')))[0]||null;
+        currentHive.insp.treatment=fallbackTx?.type||'';
+        currentHive.insp.treatmentStatus=fallbackTx?(fallbackTx.endDate?(String(fallbackTx.status||'').trim()==='Stopped'?'Stopped':'Completed'):(fallbackTx.status||'Active')):'None';
+        currentHive.insp.treatmentFollowUp=fallbackTx?.followUp||'';
+        currentHive.insp.treatmentWithdrawal=fallbackTx?(fallbackTx.withdrawal||'Not recorded'):'Not recorded';
+      }else{
+        currentHive.insp.treatment=tx.type||currentHive.insp.treatment||'';
+        currentHive.insp.treatmentStatus=treatmentStatus;
+        currentHive.insp.treatmentFollowUp=effectiveFollowUp;
+        currentHive.insp.treatmentWithdrawal=tx.withdrawal||'Not recorded';
+      }
     }
 
     // V2P2D5 — synchronize exactly one durable follow-up Action with this
@@ -16742,11 +16767,11 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     // pending follow-up; it never touches generated risk Actions.
     s.actions=Array.isArray(s.actions)?s.actions:[];
     const existingFollow=s.actions.find(a=>a&&String(a.hiveId)===String(hiveId)&&a.type==='Treatment'&&String(a.sourceId||'')===String(tx.id)&&(String(a.source||'')==='treatment-follow-up'||String(a.title||'')==='Treatment follow-up'));
-    if(followUp){
+    if(effectiveFollowUp){
       if(existingFollow){
-        existingFollow.title='Treatment follow-up';existingFollow.priority='Medium';existingFollow.due=followUp;existingFollow.dueDate=followUp;existingFollow.date=followUp;existingFollow.status='Pending';existingFollow.source='treatment-follow-up';existingFollow.updatedAt=tx.updatedAt;
+        existingFollow.title='Treatment follow-up';existingFollow.priority='Medium';existingFollow.due=effectiveFollowUp;existingFollow.dueDate=effectiveFollowUp;existingFollow.date=effectiveFollowUp;existingFollow.status='Pending';existingFollow.source='treatment-follow-up';existingFollow.updatedAt=tx.updatedAt;
       }else{
-        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:followUp,dueDate:followUp,date:followUp,status:'Pending',source:'treatment-follow-up',sourceId:tx.id,createdAt:tx.updatedAt});
+        s.actions.push({id:'a'+Date.now(),type:'Treatment',hiveId,title:'Treatment follow-up',priority:'Medium',due:effectiveFollowUp,dueDate:effectiveFollowUp,date:effectiveFollowUp,status:'Pending',source:'treatment-follow-up',sourceId:tx.id,createdAt:tx.updatedAt});
       }
     }else if(existingFollow){
       s.actions=s.actions.filter(a=>a!==existingFollow);
@@ -16771,7 +16796,7 @@ window.__HIVEDASH_V2_P1B_VERSION__='v2-p1b-record-current-location-timezone';
     }
 
     clearTreatmentDraft(treatmentId);
-    toast((treatmentStatus==='Completed'||treatmentStatus==='Stopped')?'Treatment closed · Varroa reassessment is now due':'Current Treatment updated');
+    toast(notPerformed?'Treatment marked Not performed · no treatment effect recorded':(treatmentStatus==='Completed'||treatmentStatus==='Stopped')?'Treatment closed · Varroa reassessment is now due':'Current Treatment updated');
     go('actions');
   };
 
@@ -17509,7 +17534,7 @@ window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
   };
   window.v2p2d2LatestTreatment=function(s,hiveId){
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
-      .filter(x=>x&&String(x.hiveId)===String(hiveId))
+      .filter(x=>x&&String(x.hiveId)===String(hiveId)&&text(x.status).toLowerCase()!=='not performed')
       .slice()
       .sort(window.v2p2d2TreatmentComparator)[0]||null;
   };
@@ -17613,7 +17638,7 @@ window.__HIVEDASH_V2P2C11_VERSION__='v2p2c11';
     : txt(b?.date).localeCompare(txt(a?.date))||txt(b?.updatedAt).localeCompare(txt(a?.updatedAt))||txt(b?.id).localeCompare(txt(a?.id));
   window.v2p2d3LatestVarroaTreatment=function(s,hiveId){
     return (Array.isArray(s?.logs?.treatments)?s.logs.treatments:[])
-      .filter(x=>x&&String(x.hiveId)===String(hiveId)&&window.v2p2d3IsVarroaTreatment(x))
+      .filter(x=>x&&String(x.hiveId)===String(hiveId)&&low(x.status)!=='not performed'&&window.v2p2d3IsVarroaTreatment(x))
       .slice().sort(cmp)[0]||null;
   };
   window.v2p2d3LatestCompletedVarroaTreatment=function(s,hiveId){
@@ -19319,7 +19344,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   const newestByDate=rows=>rows.slice().sort((a,b)=>txt(b.date||b.updatedAt||b.recordedAt).localeCompare(txt(a.date||a.updatedAt||a.recordedAt)))[0]||null;
   const latestInspection=(s,hid)=>newestByDate(logRows(s,'inspections',hid));
   const latestFeeding=(s,hid)=>newestByDate(logRows(s,'feedings',hid));
-  const latestTreatment=(s,hid)=>newestByDate(logRows(s,'treatments',hid));
+  const latestTreatment=(s,hid)=>newestByDate(logRows(s,'treatments',hid).filter(x=>low(x?.status)!=='not performed'));
   const latestVarroa=(s,hid)=>newestByDate(logRows(s,'varroaTests',hid).filter(x=>Number.isFinite(Number(x.mitesPer100))));
   const isVarroaTx=tx=>{try{if(typeof window.v2p2d3IsVarroaTreatment==='function')return !!window.v2p2d3IsVarroaTreatment(tx)}catch(_){}const t=low([tx?.problem,tx?.type,tx?.product,tx?.activeIngredient,tx?.notes].join(' '));return /varroa|mite/.test(t)};
   const isManual=a=>a&&(txt(a.source)==='manual-plan'||txt(a.source)==='manual'||['split-hive-follow-up','combine-hive-follow-up','swarm-control-follow-up','equipment-maintenance-follow-up','move-hive-follow-up','winter-preparation-follow-up','spring-preparation-follow-up'].includes(txt(a.source))||['super-management','queen-management','split-hive','combine-hive','swarm-control','equipment-maintenance','move-hive','winter-preparation','spring-preparation','other-task'].includes(low(a.type)));
@@ -21237,7 +21262,7 @@ window.__HIVEDASH_V2P2E5AT_VERSION__='v2p2e5at-pending-action-freshness';
 
   function latestInspection(s,hid){return newest(rows(s,'inspections',hid).filter(x=>x&&x.legacySnapshot!==true))}
   function latestVarroa(s,hid){return newest(rows(s,'varroaTests',hid).filter(x=>Number.isFinite(Number(x?.mitesPer100))))}
-  function latestTreatment(s,hid){return newest(rows(s,'treatments',hid))}
+  function latestTreatment(s,hid){return newest(rows(s,'treatments',hid).filter(x=>low(x?.status)!=='not performed'))}
   function latestFeeding(s,hid){return newest(rows(s,'feedings',hid))}
 
   function freshnessState(date,today,kind){
@@ -23404,3 +23429,38 @@ window.__HIVEDASH_V2P2E5AX18A_VERSION__='V2P2E5AX18A-audit-closure-r01-missing-e
 
 /* V2P2E5AX18A1 — R01 no-valid-Inspection conflict wording closure only. */
 window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-reason-closure';
+
+
+/* ==============================================================
+   V2P2E5AX18B — TREATMENT PLANNED-BUT-NOT-PERFORMED LIFECYCLE
+   Contract:
+   - "Not performed" is a terminal Treatment-record state meaning a Planned
+     Treatment was never applied. It is NOT AX17 Action cancellation.
+   - Only Planned -> Not performed is valid. Started treatment must use Stopped.
+   - Not performed remains durable Treatment history but is excluded from
+     current/executed Treatment evidence, Varroa lifecycle ownership and Task
+     Engine management evidence.
+   - Any Treatment follow-up/retest Action linked to the abandoned plan is
+     removed; no post-treatment verification is implied.
+   ============================================================== */
+(function v2p2e5ax18bTreatmentNotPerformedHistory(){
+  if(window.__HIVEDASH_V2P2E5AX18B__)return;
+  window.__HIVEDASH_V2P2E5AX18B__=true;
+  const txt=v=>String(v??'').trim(),low=v=>txt(v).toLowerCase();
+  const prev=window.v49TimelineRows||((typeof v49TimelineRows==='function')?v49TimelineRows:null);
+  if(typeof prev==='function'){
+    window.v49TimelineRows=function(hiveId=''){
+      const rows=prev.apply(this,arguments)||[],s=typeof v45s==='function'?v45s():{},txs=Array.isArray(s?.logs?.treatments)?s.logs.treatments:[],byId=new Map(txs.map(x=>[txt(x?.id),x]));
+      rows.forEach(row=>{
+        if(!row||row.type!=='Treatment')return;
+        const id=txt(row.sourceId||txt(row.key).split(':').slice(1).join(':')),tx=byId.get(id);
+        if(!tx||low(tx.status)!=='not performed')return;
+        row.detail=['Not performed',txt(tx.type),txt(tx.product),txt(tx.dose)].filter(Boolean).join(' · ');
+        row.savedAt=txt(tx.notPerformedAt||tx.updatedAt||row.savedAt);
+      });
+      return rows;
+    };
+    try{v49TimelineRows=window.v49TimelineRows}catch(_){}
+  }
+  window.__HIVEDASH_V2P2E5AX18B_VERSION__='V2P2E5AX18B-treatment-not-performed-lifecycle';
+})();

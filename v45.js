@@ -24562,3 +24562,295 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
   try{normalizeS14Detail()}catch(_){ }
   window.__HIVEDASH_V2P2E5S14A1_VERSION__='v2p2e5s14a1-s14-legacy-treatment-enum-display-normalization';
 })();
+
+/* ==============================================================
+   V2P2E5R02A — R02 / S05 QUEEN-RIGHT VERIFICATION CORE MIGRATION
+   Catalog rule: R02 Queen-right verification
+   Catalog task: S05 Suspected queenlessness verification
+
+   Scope ONLY:
+   - Replace the historical Queen-risk projection with a Core scientific rule.
+   - Separate "queen not seen" from biologically meaningful queen-right concern.
+   - Use eggs / larvae / brood pattern / queen-status consistency as evidence.
+   - B-level recommendation for the initial Queen Verification.
+   - New Inspection evidence verifies PASS / FAIL / INCONCLUSIVE.
+   - FAIL hands off to the frozen B38 Queen Management workflow; it never
+     preselects Requeen, product, source, or another irreversible action.
+   - Completed Requeen / Introduce Queen management can create a verification
+     follow-up, but completion itself never proves biological success.
+   - No historical Inspection or Queen Management record is rewritten.
+   ============================================================== */
+(function v2p2e5r02QueenRightVerificationCore(){
+  if(window.__HIVEDASH_V2P2E5R02A__)return;
+  window.__HIVEDASH_V2P2E5R02A__=true;
+
+  const base=window.HiveDashTaskEngineCoreV1;
+  if(!base){console.error('V2P2E5R02A requires HiveDashTaskEngineCoreV1');return}
+
+  const CORE_RULE_ID='HD-R02Q-QUEEN-RIGHT-VERIFICATION';
+  const RULE_VERSION='HD-R02Q-v1.0-2026-09-11';
+  const MIGRATION_VERSION='V2P2E5R02A';
+  const CATALOG_RULE_ID='R02';
+  const CATALOG_TASK_ID='S05';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)));
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v))?txt(v):'';
+  const addDays=(d,n)=>{const x=iso(d);if(!x)return'';const q=new Date(x+'T12:00:00Z');q.setUTCDate(q.getUTCDate()+Number(n||0));return q.toISOString().slice(0,10)};
+  const todayFor=(s,h)=>{try{return txt(typeof v2p2e5Today==='function'?v2p2e5Today(s,h?.id||''):new Date().toISOString().slice(0,10))}catch(_){return new Date().toISOString().slice(0,10)}};
+  const canon=v=>{try{return txt(typeof v212English==='function'?v212English(v):v)}catch(_){return txt(v)}};
+  const cLow=v=>canon(v).toLowerCase();
+  const unknown=v=>!txt(v)||['unknown','not assessed','not checked','not recorded','not confirmed','unsure','—','-'].includes(cLow(v));
+  const seen=v=>['seen','yes','present'].includes(cLow(v));
+  const absent=v=>['not seen','no','none','absent'].includes(cLow(v));
+  const poor=v=>['poor','spotty','none'].includes(cLow(v));
+  const goodLaying=v=>['good','fair'].includes(cLow(v));
+  const present=v=>['present','yes'].includes(cLow(v));
+  const cleanAbnormal=v=>unknown(v)||['none','no'].includes(cLow(v));
+  const escQ=v=>typeof esc==='function'?esc(txt(v)):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  const jsQ=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
+
+  function inspectionRows(s,hid){
+    const src=Array.isArray(s?.logs?.inspections)?s.logs.inspections:[];
+    return src.map((r,index)=>({r,index})).filter(x=>x.r&&txt(x.r.hiveId)===txt(hid)).sort((a,b)=>{
+      const ad=txt(a.r.date||a.r.updatedAt||a.r.recordedAt),bd=txt(b.r.date||b.r.updatedAt||b.r.recordedAt);
+      return bd.localeCompare(ad)||b.index-a.index;
+    });
+  }
+  function snapshot(row){
+    const r=row?.r||{};
+    return {
+      id:txt(r.id),index:Number.isFinite(row?.index)?row.index:-1,date:iso(r.date),
+      queenStatus:canon(r.queenStatus),eggs:canon(r.eggs),larvae:canon(r.larvae),queenCells:canon(r.queenCells),
+      broodPattern:canon(r.brood),layingPattern:canon(r.layingPattern),abnormalities:canon(r.abnormalities),temperament:canon(r.temperament)
+    };
+  }
+  function biologicalSupport(i){return !!i&&(seen(i.eggs)||seen(i.larvae)||(seen(i.queenStatus)&&goodLaying(i.layingPattern)))}
+  function noLayingEvidence(i){return !!i&&!unknown(i.eggs)&&!unknown(i.larvae)&&absent(i.eggs)&&absent(i.larvae)}
+  function broodConcern(i){return !!i&&(poor(i.broodPattern)||!cleanAbnormal(i.abnormalities)||poor(i.layingPattern))}
+  function queenConflict(i){return !!i&&seen(i.queenStatus)&&noLayingEvidence(i)}
+  function singleNonSightingWithBio(i){return !!i&&absent(i.queenStatus)&&(seen(i.eggs)||seen(i.larvae))&&!broodConcern(i)}
+  function healthQueenConcern(s,h){
+    try{return !!window.v224bEvaluateHive?.(s,h)?.risks?.some(r=>low(r?.type)==='queen')}catch(_){return false}
+  }
+  function verificationResult(i){
+    if(!i)return 'INCONCLUSIVE';
+    if(seen(i.eggs)||seen(i.larvae)||(seen(i.queenStatus)&&goodLaying(i.layingPattern)))return 'PASS';
+    if(noLayingEvidence(i))return 'FAIL';
+    return 'INCONCLUSIVE';
+  }
+  function completedQueenManagement(s,hid){
+    const rows=Array.isArray(s?.meta?.completedActions)?s.meta.completedActions:[];
+    const biological=new Set(['requeen','introduce queen']);
+    return rows.filter(a=>a&&low(a.type)==='queen-management'&&txt(a.hiveId)===txt(hid)&&biological.has(low(a.workflowData?.taskType||a.title))).slice().sort((a,b)=>{
+      const ad=txt(a.resultData?.completedDate||a.completedAt||a.date),bd=txt(b.resultData?.completedDate||b.completedAt||b.date);return bd.localeCompare(ad);
+    })[0]||null;
+  }
+  function managementDate(a){return iso(a?.resultData?.completedDate)||iso(txt(a?.completedAt).slice(0,10))||iso(a?.date)}
+  function inspectionMoment(i){const m=txt(i?.id).match(/(?:^|[^0-9])(\d{12,14})(?:$|[^0-9])/);return m?Number(m[1]):0}
+  function managementAfterInspection(a,i){const md=managementDate(a),id=iso(i?.date);if(!md)return false;if(!id)return true;if(md>id)return true;if(md<id)return false;const cm=Date.parse(txt(a?.completedAt));const im=inspectionMoment(i);return Number.isFinite(cm)&&im>0?cm>im:false}
+  function activeQueenManagement(s,hid){
+    return (Array.isArray(s?.actions)?s.actions:[]).find(a=>a&&txt(a.hiveId)===txt(hid)&&low(a.type)==='queen-management'&&low(a.status)!=='completed'&&low(a.priority)!=='done')||null;
+  }
+  function priorCoreTask(s,hid){
+    return (Array.isArray(s?.actions)?s.actions:[]).find(a=>a&&txt(a.hiveId)===txt(hid)&&(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)===CATALOG_TASK_ID))||null;
+  }
+  function isLegacyQueenTask(a){
+    if(!a)return false;
+    if(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)===CATALOG_TASK_ID)return true;
+    const id=txt(a.id),src=low(a.source),intent=low(a.intentKey),reason=low(a.reasonCode),title=low(a.title);
+    if(id.startsWith('v224b-queen-'))return true;
+    if(src==='scientific-engine'&&reason==='queen'&&['queen-recheck','queen-verification'].includes(intent))return true;
+    if(src==='scientific-engine'&&['recheck queen status','confirm queen status'].includes(title)&&!txt(a.ruleEngineOwner))return true;
+    return false;
+  }
+  function manualQueenManagementRow(existingRows,hid){
+    return (existingRows||[]).find(a=>a&&txt(a.hiveId)===txt(hid)&&low(a.type)==='queen-management'&&low(a.status)!=='completed'&&low(a.priority)!=='done')||null;
+  }
+  function taskBase(h,title,stage,baseline,today){
+    return {
+      hiveId:h.id,type:'Inspection',title,status:'Pending',priority:'Medium',source:'scientific-engine',systemGenerated:true,
+      reasonCode:'queen',intentKey:stage==='management-review'?'queen-management-review-core':stage==='follow-up'?'queen-verification-follow-up-core':'queen-verification-core',
+      workflowStage:stage,executionRoute:stage==='management-review'?'':`inspection/${h.id}`,
+      coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,ruleEngineOwner:'HiveDashTaskEngineCoreV1',ruleMigrationVersion:MIGRATION_VERSION,
+      catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID,dueEarliest:today,dueLatest:addDays(today,7),dueDate:addDays(today,7),date:addDays(today,7),due:'Within 7 days',
+      evidenceChain:{baselineInspectionId:txt(baseline?.id),baselineInspectionIndex:Number(baseline?.index??-1),baselineInspectionDate:iso(baseline?.date)}
+    };
+  }
+  function evidencePayload(current,previous,triggerReason,extra={}){
+    return {
+      latestInspectionId:txt(current?.id),latestInspectionIndex:Number(current?.index??-1),latestInspectionDate:iso(current?.date),
+      queenStatus:txt(current?.queenStatus)||'Not assessed',eggs:txt(current?.eggs)||'Not assessed',larvae:txt(current?.larvae)||'Not assessed',
+      queenCells:txt(current?.queenCells)||'Not assessed',broodPattern:txt(current?.broodPattern)||'Not assessed',layingPattern:txt(current?.layingPattern)||'Not assessed',
+      abnormalities:txt(current?.abnormalities)||'Not assessed',temperament:txt(current?.temperament)||'Not assessed',
+      previousInspectionId:txt(previous?.id),previousInspectionDate:iso(previous?.date),previousEggs:txt(previous?.eggs)||'Not assessed',previousLarvae:txt(previous?.larvae)||'Not assessed',
+      triggerReason:txt(triggerReason),evidencePriority:['fresh eggs / larvae','queen status + laying pattern','brood pattern / abnormalities','queen cells as context only'],
+      ...extra
+    };
+  }
+
+  function evaluateR02(s,h,existingRows=[],priorTask=null){
+    const today=todayFor(s,h),rows=inspectionRows(s,h.id),current=snapshot(rows[0]),previous=snapshot(rows[1]);
+    const evaluation={ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID,hiveId:h.id,assessment:{status:'NO_TRIGGER'},decision:{type:'NO_TASK',automationLevel:'NONE'},verification:{result:'NOT_REQUIRED'},outcome:{status:'NOT_OPEN'},task:null};
+    if(!current?.id){evaluation.assessment={status:'NO_VALID_INSPECTION',ownerRule:'R01'};return evaluation}
+
+    const activeMgmt=activeQueenManagement(s,h.id)||manualQueenManagementRow(existingRows,h.id);
+    if(activeMgmt){
+      evaluation.assessment={status:'QUEEN_MANAGEMENT_IN_PROGRESS',managementActionId:txt(activeMgmt.id)};
+      evaluation.outcome={status:'HANDOFF_ACTIVE'};return evaluation;
+    }
+
+    const prior=priorTask||priorCoreTask(s,h.id);
+    const priorEvidence=prior?.evidenceChain||{};
+    const baselineIndex=Number(priorEvidence.baselineInspectionIndex);
+    const hasPriorBaseline=prior&&Number.isFinite(baselineIndex)&&baselineIndex>=0;
+    const hasNewInspection=hasPriorBaseline&&current.index>baselineIndex;
+
+    /* Completed biological Queen Management never equals biological success.
+       If it is newer than the latest Inspection, R02 automatically requests
+       new Inspection evidence. Explicit B38 follow-up date wins if present. */
+    const qm=completedQueenManagement(s,h.id),qmDate=managementDate(qm);
+    if(qm&&qmDate&&managementAfterInspection(qm,current)&&(!prior||low(prior.workflowStage)!=='management-review')){
+      const a=taskBase(h,'Verify queen status after management','follow-up',current,today);
+      const due=iso(qm.followUpDate);if(due){a.dueEarliest=due;a.dueLatest=due;a.dueDate=due;a.date=due;a.due=due}else{a.dueEarliest='';a.dueLatest='';a.dueDate='';a.date='';a.due='Needs confirmation'}
+      a.id=`scientific-queen-post-management-${h.id}-${txt(qm.id)}`;
+      a.priority='Medium';a.systemWhy='Queen Management was completed, but management completion is not biological proof. New queen-right evidence is required before the episode can be resolved.';
+      a.evidenceChain={...a.evidenceChain,...evidencePayload(current,previous,'completed-biological-queen-management',{managementActionId:txt(qm.id),managementCompletedDate:qmDate,managementTaskType:txt(qm.workflowData?.taskType||qm.title),scheduleSource:due?'queen-management-follow-up':'needs-confirmation'})};
+      evaluation.assessment={status:'QUEEN_VERIFICATION_REQUIRED_AFTER_MANAGEMENT',managementActionId:txt(qm.id)};
+      evaluation.decision={type:'AUTO_CREATE',automationLevel:'A_AUTO_TASK'};evaluation.verification={result:'PENDING'};evaluation.outcome={status:'OPEN'};evaluation.task=a;return evaluation;
+    }
+
+    if(prior&&hasNewInspection){
+      const result=verificationResult(current);
+      if(result==='PASS'){
+        evaluation.assessment={status:'QUEEN_RIGHT_CONFIRMED',inspectionId:current.id};evaluation.verification={result:'PASS'};evaluation.outcome={status:'RESOLVED'};return evaluation;
+      }
+      if(result==='FAIL'){
+        const a=taskBase(h,'Review queen management','management-review',current,today);
+        a.id=`scientific-queen-management-review-${h.id}-${txt(priorEvidence.baselineInspectionId||current.id)}`;a.priority='Medium';a.due='Review now';a.dueEarliest=today;a.dueLatest=addDays(today,7);a.dueDate=addDays(today,7);a.date=a.dueDate;
+        a.systemWhy='A new Queen Verification still found no eggs or larvae. The evidence does not support closing the queen-right concern; review Queen Management rather than making an irreversible decision automatically.';
+        a.evidenceChain={...a.evidenceChain,...evidencePayload(current,previous,'verification-no-laying-evidence',{failedVerificationInspectionId:current.id,priorTaskId:txt(prior.id),queenCellsTypeRecorded:false})};
+        evaluation.assessment={status:'QUEEN_VERIFICATION_FAILED',inspectionId:current.id};evaluation.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM'};evaluation.verification={result:'FAIL'};evaluation.outcome={status:'CONTINUE'};evaluation.task=a;return evaluation;
+      }
+      const a=taskBase(h,'Queen verification still needed','evidence',current,today);
+      a.id=`scientific-queen-verification-${h.id}-${txt(priorEvidence.baselineInspectionId||current.id)}`;a.systemWhy='The follow-up Inspection did not provide enough reviewed queen-right evidence to confirm or reject the concern. Recheck the targeted fields rather than treating missing values as biological absence.';
+      a.evidenceChain={...a.evidenceChain,...evidencePayload(current,previous,'verification-inconclusive',{priorTaskId:txt(prior.id),verificationResult:'INCONCLUSIVE'})};
+      evaluation.assessment={status:'QUEEN_VERIFICATION_INCONCLUSIVE',inspectionId:current.id};evaluation.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM'};evaluation.verification={result:'INCONCLUSIVE'};evaluation.outcome={status:'OPEN'};evaluation.task=a;return evaluation;
+    }
+
+    /* If a prior task exists but no new Inspection has been saved yet, retain
+       the same episode instead of manufacturing a second Queen task. */
+    if(prior&&!hasNewInspection){
+      const a={...prior,evidenceChain:{...(prior.evidenceChain||{})}};
+      evaluation.assessment={status:'QUEEN_VERIFICATION_PENDING',inspectionId:current.id};evaluation.decision={type:txt(prior.decisionType)==='AUTO_CREATE'?'AUTO_CREATE':'RECOMMEND_CONFIRM',automationLevel:txt(prior.automationLevel)||'B_RECOMMEND_CONFIRM'};evaluation.verification={result:'PENDING'};evaluation.outcome={status:'OPEN'};evaluation.task=a;return evaluation;
+    }
+
+    const support=biologicalSupport(current),singleExclusion=singleNonSightingWithBio(current),repeatedAbsence=noLayingEvidence(current)&&noLayingEvidence(previous),broodRisk=broodConcern(current),conflict=queenConflict(current),existingConcern=healthQueenConcern(s,h);
+    if(singleExclusion){
+      evaluation.assessment={status:'QUEEN_NOT_SEEN_BUT_BIOLOGICAL_SUPPORT_PRESENT',inspectionId:current.id};evaluation.outcome={status:'RESOLVED_BY_EVIDENCE'};return evaluation;
+    }
+    if(support&&!broodRisk&&!conflict){
+      evaluation.assessment={status:'QUEEN_RIGHT_SUPPORTED',inspectionId:current.id};evaluation.outcome={status:'RESOLVED_BY_EVIDENCE'};return evaluation;
+    }
+
+    let trigger='';
+    if(repeatedAbsence)trigger='consecutive-inspections-without-eggs-or-larvae';
+    else if(conflict)trigger='queen-status-conflicts-with-laying-evidence';
+    else if(broodRisk)trigger='brood-or-laying-pattern-concern';
+    else if(existingConcern)trigger='existing-queen-concern';
+    if(!trigger)return evaluation;
+
+    const a=taskBase(h,'Recheck queen status','evidence',current,today);
+    a.id=`scientific-queen-verification-${h.id}-${current.id}`;
+    a.systemWhy=trigger==='consecutive-inspections-without-eggs-or-larvae'?'Consecutive Inspection records lack eggs or larvae. Confirm queen-right status before making an irreversible queen-management decision.':trigger==='queen-status-conflicts-with-laying-evidence'?'Queen status conflicts with the recorded laying evidence. Gather targeted biological evidence before deciding on Queen Management.':trigger==='brood-or-laying-pattern-concern'?'Brood or laying-pattern evidence is concerning. Verify queen-right status using eggs, larvae, queen cells and brood pattern before selecting Queen Management.':'A current Queen concern needs targeted biological verification before an irreversible Queen Management decision.';
+    a.evidenceChain={...a.evidenceChain,...evidencePayload(current,previous,trigger,{singleQueenNonSightingExcluded:false,queenCellsTypeRecorded:false})};
+    evaluation.assessment={status:'QUEEN_STATUS_UNCERTAIN',trigger,inspectionId:current.id};evaluation.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM'};evaluation.verification={result:'PENDING'};evaluation.outcome={status:'OPEN'};evaluation.task=a;return evaluation;
+  }
+
+  const SOURCES=Object.freeze({
+    PSU:Object.freeze({id:'PSU-QUEEN-SEASONAL-BIOLOGY',authority:'Penn State Extension',title:'Seasonal management / queen and swarm biology'}),
+    CORE:Object.freeze({id:'R02-SOURCE-CONTRACT',authority:'HiveDash Scientific Task Engine v1.0',title:'R02 Queen-right verification source contract'})
+  });
+  const ruleDefinition=Object.freeze({
+    id:CORE_RULE_ID,version:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID,
+    category:'QUEEN_VERIFICATION',assessmentType:'QUEEN_STATUS_UNCERTAIN',decisionClass:'B_RECOMMEND_CONFIRM',
+    evidenceInputs:Object.freeze(['latest Inspection queen status','eggs','larvae','queen cells','brood pattern','laying pattern','prior Inspection','Queen concern']),
+    contextInputs:Object.freeze(['Context.colonyPhase','local date / suitable opening conditions']),authorityRules:SOURCES,
+    policy:Object.freeze({queenNotSeenAloneIsNotQueenless:true,biologicalEvidencePriority:true,singleNonSightingWithEggsOrLarvaeExcluded:true,initialDecisionRequiresUserConfirmation:true,verificationPassCloses:true,verificationFailHandsOffToB38:true,noAutomaticRequeen:true,queenCellsPresenceDoesNotAssertEmergencyCellType:true,managementCompletionRequiresBiologicalVerification:true}),
+    evaluate:(s,h,existingRows,priorTask)=>evaluateR02(s,h,existingRows,priorTask)
+  });
+  try{if(typeof base.registerRule==='function')base.registerRule(ruleDefinition)}catch(err){console.error('V2P2E5R02A rule registration failed',err)}
+
+  function projectTask(evaluation,s){
+    if(!evaluation?.task)return null;
+    let task=base.normalizeTaskProjection(evaluation.task,s,{evidence:new Map(),context:new Map()});
+    task.coreRuleId=CORE_RULE_ID;task.ruleVersion=RULE_VERSION;task.ruleEngineOwner='HiveDashTaskEngineCoreV1';task.ruleMigrationVersion=MIGRATION_VERSION;task.catalogRuleId=CATALOG_RULE_ID;task.catalogTaskId=CATALOG_TASK_ID;task.assessmentType='QUEEN_STATUS_UNCERTAIN';
+    if(evaluation.decision?.type==='AUTO_CREATE'){task.decisionType='AUTO_CREATE';task.automationLevel='A_AUTO_TASK'}else{task.decisionType='RECOMMEND_CONFIRM';task.automationLevel='B_RECOMMEND_CONFIRM';task.taskLifecycleState='RECOMMENDED'}
+    task.verificationStatus=evaluation.verification?.result||task.verificationStatus||'PENDING';task.ruleRef={...(task.ruleRef||{}),ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID,authority:'Penn State Extension + frozen R02 source contract',authorityRuleIds:[SOURCES.PSU.id,SOURCES.CORE.id]};
+    task.ruleEvaluation={assessment:evaluation.assessment,decision:evaluation.decision,verification:evaluation.verification,outcome:evaluation.outcome};task.outcomeSnapshot=evaluation.outcome;return task;
+  }
+
+  const extended=Object.freeze({...base,queenRightVerificationRule:ruleDefinition,evaluateQueenRightVerification:(s,hid,existingRows=[],priorTask=null)=>{const h=hiveBy(s,hid);return h?evaluateR02(s,h,existingRows,priorTask):null}});
+  window.HiveDashTaskEngineCoreV1=extended;
+  window.V2P2E5R02_QUEEN_RIGHT_RULE=ruleDefinition;
+  window.v2p2e5r02Evaluate=function(hiveId){const s=S(),h=hiveBy(s,hiveId);return h?evaluateR02(s,h,typeof generateActions==='function'?generateActions(s):[],priorCoreTask(s,hiveId)):null};
+
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      const priorByHive=new Map((Array.isArray(s?.actions)?s.actions:[]).filter(a=>a&&(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)===CATALOG_TASK_ID)).map(a=>[txt(a.hiveId),a]));
+      let out=(prevGenerate(s)||[]).filter(a=>!isLegacyQueenTask(a));
+      const seen=new Set(out.map(a=>txt(a.id)||txt(a.dedupeKey)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`));
+      for(const h of active(s)){
+        const evaluation=evaluateR02(s,h,out,priorByHive.get(txt(h.id))||null),task=projectTask(evaluation,s);if(!task)continue;
+        const k=txt(task.id)||txt(task.dedupeKey)||`${txt(task.hiveId)}|${txt(task.intentKey)}|${txt(task.title)}`;if(seen.has(k))continue;seen.add(k);out.push(task);
+      }
+      return out;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  function currentAction(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');if(p[0]!=='scientific-action'||!p[1])return null;
+    const s=S();return (s?.actions||[]).find(x=>x&&txt(x.id)===txt(p[1]))||(()=>{try{return (typeof generateActions==='function'?generateActions(s):[]).find(x=>x&&txt(x.id)===txt(p[1]))||null}catch(_){return null}})();
+  }
+  function detailHTML(a){
+    const e=a?.evidenceChain||{},v=x=>txt(x)||'Not assessed';
+    const management=low(a.workflowStage)==='management-review';
+    return `<section class="vc v2p2e5r02-evidence"><div class="vhead"><b>Queen verification evidence</b><span class="v2p2e5r02-pill">${escQ(a.catalogRuleId||CATALOG_RULE_ID)} · ${escQ(a.catalogTaskId||CATALOG_TASK_ID)}</span></div><div class="v2p2e5r02-grid">
+      <span>Core Rule ID<b>${escQ(a.coreRuleId||CORE_RULE_ID)}</b></span><span>Decision<b>${escQ(a.decisionType||'RECOMMEND_CONFIRM')}</b></span>
+      <span>Latest Inspection<b>${escQ(v(e.latestInspectionDate))}</b></span><span>Trigger<b>${escQ(v(e.triggerReason))}</b></span>
+      <span>Queen status<b>${escQ(v(e.queenStatus))}</b></span><span>Eggs<b>${escQ(v(e.eggs))}</b></span>
+      <span>Larvae<b>${escQ(v(e.larvae))}</b></span><span>Queen cells<b>${escQ(v(e.queenCells))}</b></span>
+      <span>Brood pattern<b>${escQ(v(e.broodPattern))}</b></span><span>Laying pattern<b>${escQ(v(e.layingPattern))}</b></span>
+      <span>Abnormalities<b>${escQ(v(e.abnormalities))}</b></span><span>Colony behavior<b>${escQ(v(e.temperament))}</b></span>
+    </div><div class="v2p2e5r02-review"><b>${management?'Before choosing Queen Management':'Targeted verification fields'}</b>${management?'<p>• Review why eggs / larvae remain absent before choosing an irreversible queen action.</p><p>• Queen-cell presence is context only; the current Inspection schema does not identify emergency-cell type.</p><p>• Queen Management remains a user-confirmed B38 workflow; HiveDash does not auto-select Requeen or Introduce Queen.</p>':'<p>• Check eggs and larvae first; biological evidence outranks a single failure to see the queen.</p><p>• Review queen cells, brood pattern and laying pattern.</p><p>• Record colony behavior / temperament as supporting context.</p>'}</div></section>`;
+  }
+  window.v2p2e5r02OpenQueenManagement=function(actionId){
+    const s=S(),a=(s?.actions||[]).find(x=>x&&txt(x.id)===txt(actionId))||currentAction();if(!a)return toast('This task is no longer active');
+    if(typeof b38OpenQueenAction==='function')return b38OpenQueenAction(txt(a.hiveId),'scientific-engine','queen');
+    return go('actions');
+  };
+  function decorate(){
+    const a=currentAction();if(!a||txt(a.coreRuleId)!==CORE_RULE_ID)return;
+    const root=document.querySelector('.v2p2e5ab-detail');if(!root||root.querySelector('.v2p2e5r02-evidence'))return;
+    const sections=root.querySelectorAll(':scope > section.vc'),why=sections[1]||sections[0];if(!why)return;
+    why.insertAdjacentHTML('afterend',detailHTML(a));
+    const btn=root.querySelector('.v2p2e5ab-detail-actions .primary');
+    if(btn){
+      if(low(a.workflowStage)==='management-review'){btn.textContent='Review Queen Management';btn.setAttribute('onclick',`v2p2e5r02OpenQueenManagement('${jsQ(a.id)}')`)}
+      else btn.textContent='Start Queen Verification';
+    }
+    const ps=[...root.querySelectorAll(':scope > section.vc p')];if(ps.length)ps[ps.length-1].textContent=low(a.workflowStage)==='management-review'?'Review the failed Queen Verification and choose a Queen Management step only if appropriate. The management action will not be treated as biological success.':'Collect targeted queen-right evidence. A single failure to see the queen is not queenlessness when fresh biological evidence supports queen-right status.';
+    if(!document.getElementById('v2p2e5r02-style')){const st=document.createElement('style');st.id='v2p2e5r02-style';st.textContent=`.v2p2e5r02-pill{margin-left:auto;font-size:9px;font-weight:800;padding:4px 7px;border-radius:999px;background:#EDF2EA;color:#50654A}.v2p2e5r02-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:10px}.v2p2e5r02-grid span{display:grid;gap:3px;font-size:10px;color:#7A817B}.v2p2e5r02-grid b{font-size:12px;color:#334C38;overflow-wrap:anywhere}.v2p2e5r02-review{margin-top:12px;padding-top:10px;border-top:1px solid #E7E1D5}.v2p2e5r02-review>b{font-size:11px;color:#4A604C}.v2p2e5r02-review p{margin:5px 0!important;font-size:10px!important;line-height:1.45!important}`;document.head.appendChild(st)}
+  }
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){const ret=prevRender.apply(this,arguments);try{decorate()}catch(err){console.error('V2P2E5R02A detail decoration failed',err)}queueMicrotask(()=>{try{decorate()}catch(_){}});return ret};
+    try{render=window.render}catch(_){ }
+  }
+
+  window.__HIVEDASH_V2P2E5R02A_VERSION__='v2p2e5r02a-r02-s05-queen-right-verification-core-migration';
+})();

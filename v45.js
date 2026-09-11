@@ -25433,3 +25433,73 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
   }
   window.__HIVEDASH_V2P2E5R02A4_VERSION__=VERSION;
 })();
+
+
+/* ==============================================================
+   V2P2E5R02A5 — R02 TASK DETAIL MUST USE NORMALIZED CURRENT PROJECTION
+   Real-device QA found the R02 detail decorator preferred a persisted
+   legacy action row from state.actions before the normalized generated task.
+   That could display Decision=AUTO_CREATE even though the R02 core and
+   Actions projection correctly normalized the initial S05 recommendation to
+   B-level RECOMMEND_CONFIRM.
+
+   This patch changes display/projection only:
+   - Prefer current generateActions() projection for the open R02 task.
+   - Initial Queen Verification detail always shows RECOMMEND_CONFIRM.
+   - Post-Queen-Management deterministic verification and management-review
+     branches keep their existing decision semantics.
+   - No historical task/evidence record is rewritten.
+   ============================================================== */
+(function v2p2e5r02a5TaskDetailProjectionFix(){
+  if(window.__HIVEDASH_V2P2E5R02A5__)return;
+  window.__HIVEDASH_V2P2E5R02A5__=true;
+  const CORE_RULE_ID='HD-R02Q-QUEEN-RIGHT-VERIFICATION';
+  const VERSION='v2p2e5r02a5-r02-task-detail-normalized-projection';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+
+  function currentId(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    return p[0]==='scientific-action'?txt(p[1]):'';
+  }
+  function generatedR02Action(){
+    const id=currentId();if(!id)return null;
+    let s=null;try{s=typeof v45s==='function'?v45s():state()}catch(_){return null}
+    let rows=[];try{rows=typeof generateActions==='function'?(generateActions(s)||[]):[]}catch(_){rows=[]}
+    let a=rows.find(x=>x&&txt(x.id)===id&&txt(x.coreRuleId)===CORE_RULE_ID)||null;
+    if(a)return a;
+    const persisted=(Array.isArray(s?.actions)?s.actions:[]).find(x=>x&&txt(x.id)===id)||null;
+    if(!persisted)return null;
+    return rows.find(x=>x&&txt(x.coreRuleId)===CORE_RULE_ID&&txt(x.hiveId)===txt(persisted.hiveId))||null;
+  }
+  function isPostManagement(a){
+    const ec=a?.evidenceChain||{};
+    return txt(a?.id).startsWith('scientific-queen-post-management-') || low(ec.triggerReason)==='completed-biological-queen-management';
+  }
+  function normalizedDecision(a){
+    if(!a)return '';
+    if(low(a.workflowStage)==='management-review')return txt(a.decisionType||'RECOMMEND_CONFIRM');
+    if(isPostManagement(a))return txt(a.decisionType||'AUTO_CREATE');
+    return 'RECOMMEND_CONFIRM';
+  }
+  function fixDetail(){
+    const a=generatedR02Action();if(!a||txt(a.coreRuleId)!==CORE_RULE_ID)return;
+    const box=document.querySelector('.v2p2e5r02-evidence');if(!box)return;
+    const spans=[...box.querySelectorAll('.v2p2e5r02-grid > span')];
+    const decisionSpan=spans.find(x=>/^\s*Decision/i.test(txt(x.textContent)));
+    const b=decisionSpan?.querySelector('b');if(b)b.textContent=normalizedDecision(a);
+  }
+
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){
+      const ret=prevRender.apply(this,arguments);
+      try{fixDetail()}catch(_){ }
+      queueMicrotask(()=>{try{fixDetail()}catch(_){ }});
+      return ret;
+    };
+    try{render=window.render}catch(_){ }
+  }
+  try{fixDetail()}catch(_){ }
+  window.__HIVEDASH_V2P2E5R02A5_VERSION__=VERSION;
+})();

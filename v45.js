@@ -23690,3 +23690,199 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
 
   window.__HIVEDASH_V2P2E5AX19B1_VERSION__='V2P2E5AX19B1-inspection-historical-detail-truth';
 })();
+
+/* ==============================================================
+   V2P2E5AX19B2 — TIMELINE FORMAL HISTORY DETAIL TRUTH CLOSURE
+   Scope ONLY: read-only Timeline detail projection for
+   Feeding, Harvest, Varroa Test/Retest, and Split Hive.
+   Also removes generic Harvest artwork from Timeline rows because
+   no record-level Harvest photo linkage is stored.
+   NO persistence, workflow, health, task, AX17 or AX18 mutation.
+   ============================================================== */
+(function(){
+  if(window.__HIVEDASH_V2P2E5AX19B2__)return;
+  window.__HIVEDASH_V2P2E5AX19B2__=true;
+
+  const txt=v=>String(v??'').trim();
+  const present=v=>v!==null&&v!==undefined&&txt(v)!=='';
+  const display=v=>{
+    if(v===true)return 'Yes';
+    if(v===false)return 'No';
+    return present(v)?txt(v):'Not recorded';
+  };
+  const dateDisplay=v=>present(v)?(typeof fmtDate==='function'?fmtDate(txt(v)):txt(v)):'Not recorded';
+  const numberDisplay=(v,suffix='')=>present(v)?`${txt(v)}${suffix}`:'Not recorded';
+  const getState=()=>typeof v45s==='function'?v45s():null;
+  const hiveById=(s,id)=>typeof hive==='function'?hive(s,id):(s?.hives||[]).find(x=>String(x?.id)===String(id));
+  const idFromEvent=(e,key)=>txt(e?.sourceId)||txt(key).split(':').slice(1).join(':');
+  const safeHiveId=id=>String(id??'').replace(/'/g,"\\'");
+
+  function detailRow(label,value){
+    return `<div><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+  }
+  function detailGroup(title,rows){
+    return `<section class="ax19b2-history-group"><div class="ax19b2-history-group-title">${esc(title)}</div><div class="v2p2c-treatment-detail">${rows.map(([k,v])=>detailRow(k,v)).join('')}</div></section>`;
+  }
+  function notice(date,label){
+    return `<div class="ax19b2-history-notice"><b>${esc(dateDisplay(date))} · Historical record</b><span>Read-only values from this saved ${esc(label)} only. Current Hive state is not substituted.</span></div>`;
+  }
+  function openHiveButton(hiveId){
+    return `<button class="primary" onclick="closeModal(this);v224b11OpenHiveFromTimeline('${safeHiveId(hiveId)}')">Open Hive</button>`;
+  }
+  function showHistoryModal(type,hiveName,date,label,groups,hiveId){
+    const html=`
+      <div class="modalhead"><b>${esc(type)} · ${esc(hiveName||'Hive')}</b><button onclick="closeModal(this)">✕</button></div>
+      ${notice(date,label)}
+      ${groups.join('')}
+      ${openHiveButton(hiveId)}`;
+    const m=modal(html);
+    if(m)m.classList.add('v2p2c8-timeline-detail-modal','ax19b2-formal-history-modal');
+    return m;
+  }
+
+  /* Generic Harvest artwork is not record-level evidence. Remove only the
+     Timeline projection image; Photo events and Hive photos remain untouched. */
+  const prevRows=window.v49TimelineRows||((typeof v49TimelineRows==='function')?v49TimelineRows:null);
+  if(typeof prevRows==='function'){
+    window.v49TimelineRows=function(hiveId=''){
+      const rows=prevRows.apply(this,arguments)||[];
+      rows.forEach(row=>{if(row&&row.type==='Harvest')row.img='';});
+      return rows;
+    };
+    try{v49TimelineRows=window.v49TimelineRows}catch(_){}
+  }
+
+  function findLogRecord(s,collection,e,key){
+    const id=idFromEvent(e,key);
+    return (Array.isArray(s?.logs?.[collection])?s.logs[collection]:[])
+      .find(x=>x&&String(x.id)===String(id)&&String(x.hiveId)===String(e?.hiveId||x.hiveId));
+  }
+  function findCompletedSplit(s,e,key){
+    const id=idFromEvent(e,key);
+    return (Array.isArray(s?.meta?.completedActions)?s.meta.completedActions:[])
+      .find(a=>a&&String(a.id)===String(id)&&String(a.type||'').toLowerCase()==='split-hive'&&String(a.status||'').toLowerCase()==='completed');
+  }
+
+  const prevOpen=window.openTimelineEventV49||((typeof openTimelineEventV49==='function')?openTimelineEventV49:null);
+  if(typeof prevOpen==='function'){
+    window.openTimelineEventV49=function(key){
+      const cache=(typeof V49_TIMELINE_CACHE!=='undefined'?V49_TIMELINE_CACHE:(window.V49_TIMELINE_CACHE||[]));
+      const e=cache.find(x=>x&&x.key===key);
+      if(!e)return prevOpen.apply(this,arguments);
+      const s=getState();
+      if(!s)return prevOpen.apply(this,arguments);
+      const h=hiveById(s,e.hiveId);
+
+      if(e.type==='Feeding'){
+        const x=findLogRecord(s,'feedings',e,key);
+        if(!x)return prevOpen.apply(this,arguments);
+        return showHistoryModal('Feeding',h?.name,x.date,'Feeding',[
+          detailGroup('Feeding record',[
+            ['Date',dateDisplay(x.date)],
+            ['Feed type',display(x.type)],
+            ['Syrup ratio',display(x.ratio)],
+            ['Amount',display(x.amount)],
+            ['Next feeding',dateDisplay(x.nextFeeding)],
+            ['Notes',display(x.notes)]
+          ])
+        ],x.hiveId);
+      }
+
+      if(e.type==='Harvest'){
+        const x=findLogRecord(s,'harvests',e,key);
+        if(!x)return prevOpen.apply(this,arguments);
+        const recordedWeight=present(x.weight)
+          ? `${txt(x.weight)}${present(x.weightUnit)?` ${txt(x.weightUnit)}`:''}`
+          : (present(x.weightLb)?`${txt(x.weightLb)} lb`:'Not recorded');
+        return showHistoryModal('Harvest',h?.name,x.date,'Harvest',[
+          detailGroup('Harvest record',[
+            ['Date',dateDisplay(x.date)],
+            ['Frames harvested',numberDisplay(x.frames)],
+            ['Recorded honey weight',recordedWeight],
+            ['Moisture',present(x.moisture)?`${txt(x.moisture)}%`:'Not recorded'],
+            ['Batch',display(x.batch)],
+            ['Notes',display(x.notes)],
+            ['Photo linkage','No record-level photo link stored for this Harvest']
+          ])
+        ],x.hiveId);
+      }
+
+      if(e.type==='Varroa Test'||e.type==='Varroa Retest'){
+        const x=findLogRecord(s,'varroaTests',e,key);
+        if(!x)return prevOpen.apply(this,arguments);
+        const linkedId=txt(x.linkedTreatmentId);
+        const linked=(Array.isArray(s.logs?.treatments)?s.logs.treatments:[]).find(t=>t&&String(t.id)===linkedId);
+        const linkedText=linkedId
+          ? (linked?`${display(linked.type)}${present(linked.product)?` · ${display(linked.product)}`:''} · ${dateDisplay(linked.date)}`:`Treatment ID ${linkedId}`)
+          : (txt(x.testType)==='Post-treatment Retest'?'Not recorded':'Not applicable');
+        return showHistoryModal(e.type,h?.name,x.date,'Varroa Test',[
+          detailGroup('Test context',[
+            ['Test type',display(x.testType)],
+            ['Test date',dateDisplay(x.date)]
+          ]),
+          detailGroup('Sampling & result',[
+            ['Method',display(x.method)],
+            ['Sample size',present(x.sampleSize)?`${txt(x.sampleSize)} bees`:'Not recorded'],
+            ['Mites counted',numberDisplay(x.miteCount)],
+            ['Mites per 100 bees',numberDisplay(x.mitesPer100,'/100')]
+          ]),
+          detailGroup('Linkage & notes',[
+            ['Linked Treatment',linkedText],
+            ['Notes',display(x.notes)],
+            ['Recorded at',present(x.recordedAt)?txt(x.recordedAt):'Not recorded']
+          ])
+        ],x.hiveId);
+      }
+
+      if(e.type==='Split Hive'){
+        const a=findCompletedSplit(s,e,key);
+        if(!a)return prevOpen.apply(this,arguments);
+        const w=a.workflowData||{},rd=a.resultData||{};
+        const source=hiveById(s,a.hiveId);
+        const child=hiveById(s,rd.newHiveId);
+        const plannedName=display(w.plannedNewHiveName||w.newHiveName);
+        const actualName=display(rd.actualNewHiveName||(child?.name||''));
+        const completedDate=rd.completedDate||String(a.completedAt||'').slice(0,10);
+        return showHistoryModal('Split Hive',source?.name,completedDate,'Split Hive',[
+          detailGroup('Plan context',[
+            ['Source hive',display(source?.name||a.hiveId)],
+            ['Planned new hive name',plannedName],
+            ['Planned brood frames',numberDisplay(w.broodFrames)],
+            ['Planned food frames',numberDisplay(w.foodFrames)],
+            ['Queen plan',display(w.queenPlan)],
+            ['Notes',display(a.notes||w.notes)]
+          ]),
+          detailGroup('Actual result',[
+            ['Split completed','Yes'],
+            ['Actual brood frames',numberDisplay(rd.actualBroodFrames)],
+            ['Actual food frames',numberDisplay(rd.actualFoodFrames)],
+            ['Queen outcome',display(rd.queenOutcome)],
+            ['Actual new hive name',actualName],
+            ['Completed date',dateDisplay(completedDate)],
+            ['Follow-up required',rd.followUpRequired===true?'Yes':rd.followUpRequired===false?'No':'Not recorded'],
+            ['Follow-up date',rd.followUpRequired?dateDisplay(rd.followUpDate):'Not applicable']
+          ])
+        ],a.hiveId);
+      }
+
+      return prevOpen.apply(this,arguments);
+    };
+    try{openTimelineEventV49=window.openTimelineEventV49}catch(_){}
+  }
+
+  if(!document.getElementById('ax19b2-formal-history-style')){
+    const st=document.createElement('style');
+    st.id='ax19b2-formal-history-style';
+    st.textContent=`
+      #app>.modal.ax19b2-formal-history-modal>.modalpanel{max-height:calc(100dvh - 88px)!important;overflow:auto!important;overscroll-behavior:contain!important}
+      .ax19b2-history-notice{display:grid;gap:4px;margin:2px 0 12px;padding:11px 12px;border:1px solid #E4E0D5;border-radius:12px;background:#FFF8DE;color:#2F3B33}
+      .ax19b2-history-notice b{font-size:12px}.ax19b2-history-notice span{font-size:11px;line-height:1.45;color:#667067}
+      .ax19b2-history-group{margin:0 0 12px}.ax19b2-history-group-title{margin:0 2px 6px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#5E7350}
+      .ax19b2-formal-history-modal .v2p2c-treatment-detail{margin-bottom:0}
+      .ax19b2-formal-history-modal .v2p2c-treatment-detail b{white-space:pre-wrap;overflow-wrap:anywhere}
+    `;
+    document.head.appendChild(st);
+  }
+
+  window.__HIVEDASH_V2P2E5AX19B2_VERSION__='V2P2E5AX19B2-formal-history-detail-truth';
+})();

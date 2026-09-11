@@ -23908,3 +23908,58 @@ window.__HIVEDASH_V2P2E5AX19B3_VERSION__='V2P2E5AX19B3-history-projection-closur
 
 /* V2P2E5AX19B4 — Varroa Timeline audit timestamp display timezone normalization. */
 window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display-closure';
+
+/* ==============================================================
+   V2P2E5AX19C1 — LEGACY INSPECTION ENUM DISPLAY NORMALIZATION
+   Scope ONLY:
+   - Read-only Timeline Inspection historical-detail display.
+   - Normalize known legacy/localized enum labels for display only.
+   - Never rewrite logs.inspections or any Hive/current-state data.
+   - Free-text Notes / Voice Notes are intentionally excluded.
+   ============================================================== */
+(function v2p2e5ax19c1LegacyInspectionEnumDisplayNormalization(){
+  if(window.__HIVEDASH_V2P2E5AX19C1__)return;
+  window.__HIVEDASH_V2P2E5AX19C1__=true;
+
+  const ENUM_LABELS=new Set([
+    'Queen seen','Queen marked','Eggs','Larvae','Queen cells','Laying pattern',
+    'Brood pattern','Abnormalities','Temperament','Honey','Pollen','Feeding need',
+    'Pests','Disease','Swarming','Super','Treatment','Treatment status','Withdrawal'
+  ]);
+  const EXTRA={
+    '很好':'Good'
+  };
+  function normalizeDisplay(v){
+    const raw=String(v??'').trim();
+    if(Object.prototype.hasOwnProperty.call(EXTRA,raw))return EXTRA[raw];
+    try{
+      if(typeof window.v220EnglishDisplay==='function')return String(window.v220EnglishDisplay(raw));
+      if(typeof v220EnglishDisplay==='function')return String(v220EnglishDisplay(raw));
+    }catch(_){ }
+    return raw;
+  }
+  function normalizeInspectionHistoryModal(){
+    const modals=[...document.querySelectorAll('#app>.modal.ax19b1-inspection-history-modal')];
+    const m=modals[modals.length-1];
+    if(!m)return;
+    m.querySelectorAll('.v2p2c-treatment-detail>div').forEach(row=>{
+      const label=String(row.querySelector('span')?.textContent||'').trim();
+      const value=row.querySelector('b');
+      if(!value||!ENUM_LABELS.has(label))return;
+      const next=normalizeDisplay(value.textContent);
+      if(next!==String(value.textContent||''))value.textContent=next;
+    });
+  }
+
+  const prevOpen=window.openTimelineEventV49||((typeof openTimelineEventV49==='function')?openTimelineEventV49:null);
+  if(typeof prevOpen==='function'){
+    window.openTimelineEventV49=function(key){
+      const ret=prevOpen.apply(this,arguments);
+      try{normalizeInspectionHistoryModal()}catch(_){ }
+      return ret;
+    };
+    try{openTimelineEventV49=window.openTimelineEventV49}catch(_){ }
+  }
+
+  window.__HIVEDASH_V2P2E5AX19C1_VERSION__='V2P2E5AX19C1-legacy-inspection-enum-display-normalization';
+})();

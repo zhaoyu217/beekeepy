@@ -24280,3 +24280,227 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
 
   window.__HIVEDASH_V2P2E5S13A_VERSION__='v2p2e5s13a-s13-varroa-post-treatment-core-migration';
 })();
+
+/* ==============================================================
+   V2P2E5S14A — S14 VARROA CONTROL INADEQUATE CORE MIGRATION
+   Core rule: HD-R05-VARROA-CONTROL-INADEQUATE
+   Catalog task: S14 Varroa management review
+
+   Contract:
+   - Trigger only from a standardized S13/R04 post-treatment verification FAIL.
+   - Incomplete / non-standardized retest evidence remains owned by R04 and must
+     not be relabeled as treatment failure.
+   - S14 is B-level RECOMMEND_CONFIRM. It never auto-repeats the same treatment
+     and never preselects a product, active ingredient, dose, or application method.
+   - The review surfaces execution / label conditions, brood & honey-super context,
+     reinfestation possibility, and repeat-use / resistance risk as review factors;
+     unknowns remain unknown rather than being invented.
+   - Once a later Varroa Treatment exists, the more specific Treatment lifecycle
+     and R04 post-treatment verification own the next step; S14 no longer duplicates it.
+   - Existing Treatment / Varroa persistence, R01-R04, AX17-AX19, B37-B43 and
+     Timeline facts remain untouched.
+   ============================================================== */
+(function v2p2e5s14aVarroaControlInadequateCore(){
+  if(window.__HIVEDASH_V2P2E5S14A__)return;
+  window.__HIVEDASH_V2P2E5S14A__=true;
+
+  const CORE_RULE_ID='HD-R05-VARROA-CONTROL-INADEQUATE';
+  const RULE_VERSION='HD-R05-v1.0-2026-09-11';
+  const MIGRATION_VERSION='V2P2E5S14A';
+  const CATALOG_TASK_ID='S14';
+  const R04_RULE_ID='HD-R04-VARROA-POST-TREATMENT-VERIFICATION';
+  const base=window.HiveDashTaskEngineCoreV1;
+  if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.evaluateVarroaPostTreatment!=='function'||typeof base.buildContextSnapshot!=='function'){
+    console.error('V2P2E5S14A requires HiveDashTaskEngineCoreV1 + R04');return;
+  }
+
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const iso=v=>/^\d{4}-\d{2}-\d{2}$/.test(txt(v).slice(0,10))?txt(v).slice(0,10):'';
+  const num=v=>v===null||v===undefined||txt(v)===''?null:(Number.isFinite(Number(v))?Number(v):null);
+  const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
+  const active=s=>{try{return typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)))}catch(_){return (s?.hives||[]).filter(Boolean)}};
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const rows=(s,key,hid)=>(Array.isArray(s?.logs?.[key])?s.logs[key]:[]).filter(x=>x&&(!hid||txt(x.hiveId)===txt(hid)));
+  const parseMs=v=>{const n=Date.parse(txt(v));return Number.isFinite(n)?n:0};
+  const idMs=v=>{const m=txt(v).match(/(\d{10,})/);return m?Number(m[1])||0:0};
+  const orderMs=x=>Math.max(parseMs(x?.updatedAt),parseMs(x?.createdAt),parseMs(x?.recordedAt),parseMs(iso(x?.endDate)?iso(x.endDate)+'T12:00:00Z':''),parseMs(iso(x?.date)?iso(x.date)+'T12:00:00Z':''),idMs(x?.id));
+  const latestByOrder=list=>list.slice().sort((a,b)=>orderMs(b)-orderMs(a))[0]||null;
+
+  function isVarroaTx(tx){
+    try{if(typeof window.v2p2d3IsVarroaTreatment==='function')return !!window.v2p2d3IsVarroaTreatment(tx)}catch(_){ }
+    return /varroa|mite/.test(low([tx?.problem,tx?.type,tx?.product,tx?.activeIngredient,tx?.notes].join(' ')));
+  }
+  function txState(tx){
+    if(!tx)return 'NONE';
+    const s=low(tx.status),end=iso(tx.endDate);
+    if(s==='not performed')return 'NOT_PERFORMED';
+    if(s==='stopped')return 'STOPPED';
+    if(s==='planned'&&!end)return 'PLANNED';
+    if(s==='active'&&!end)return 'ACTIVE';
+    if((s==='completed'&&end)||end)return 'COMPLETED';
+    return s?String(s).toUpperCase():'UNKNOWN';
+  }
+  function byId(s,key,id){return rows(s,key).find(x=>txt(x.id)===txt(id))||null}
+  function laterVarroaTreatment(s,hid,failedTx,failedRetest){
+    const floor=Math.max(orderMs(failedTx),orderMs(failedRetest));
+    return latestByOrder(rows(s,'treatments',hid).filter(isVarroaTx).filter(tx=>txt(tx.id)!==txt(failedTx?.id)).filter(tx=>txState(tx)!=='NOT_PERFORMED').filter(tx=>orderMs(tx)>floor));
+  }
+  function manualTreatmentCover(existingRows,hid){
+    return (existingRows||[]).find(a=>{
+      if(!a||txt(a.hiveId)!==txt(hid))return false;
+      const src=low(a.source),status=low(a.status||a.priority),type=low(a.type),route=low(a.executionRoute),intent=low(a.intentKey);
+      if(['completed','done','cancelled'].includes(status))return false;
+      return (src==='manual'||src==='manual-plan'||a.manualDecision===true)&&(type.includes('treat')||route.includes('treatment-record')||intent==='varroa-management');
+    })||null;
+  }
+  function historySummary(s,hid,failedTx){
+    const completed=rows(s,'treatments',hid).filter(isVarroaTx).filter(tx=>txState(tx)==='COMPLETED');
+    const product=low(failedTx?.product),ingredient=low(failedTx?.activeIngredient);
+    const sameProduct=product?completed.filter(tx=>low(tx.product)===product).length:0;
+    const sameIngredient=ingredient?completed.filter(tx=>low(tx.activeIngredient)===ingredient).length:0;
+    return {completedVarroaTreatments:completed.length,sameProductCompletedCount:sameProduct,sameActiveIngredientCompletedCount:sameIngredient};
+  }
+  function evidenceChain(s,h,tx,retest,r04){
+    const v=r04?.verification||{},ctx=v.context||base.buildContextSnapshot(s,h.id),hist=historySummary(s,h.id,tx);
+    return {
+      complete:true,ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,sourceRuleId:R04_RULE_ID,
+      failedTreatmentId:txt(tx?.id),treatmentEndDate:iso(tx?.endDate),treatmentProduct:txt(tx?.product)||'Not recorded',activeIngredient:txt(tx?.activeIngredient)||'Not recorded',applicationMethod:txt(tx?.applicationMethod)||'Not recorded',dose:txt(tx?.dose)||'Not recorded',honeySupersStatus:txt(tx?.honeySupersStatus)||'Not recorded',withdrawal:txt(tx?.withdrawal)||'Not recorded',
+      failedRetestId:txt(retest?.id),failedRetestDate:iso(retest?.date),retestMethod:txt(v?.quality?.method||retest?.method)||'Not recorded',sampleSize:v?.quality?.sampleSize??num(retest?.sampleSize),miteCount:v?.quality?.miteCount??num(retest?.miteCount),mitesPer100:v?.rate??num(retest?.mitesPer100),threshold:v?.threshold??null,thresholdMode:txt(v?.thresholdMode),colonyPhase:txt(v?.phase||ctx?.colonyPhase||'Uncertain'),risk:txt(ctx?.risk||'Unassessed'),stateCode:txt(ctx?.location?.stateCode).toUpperCase(),
+      completedVarroaTreatments:hist.completedVarroaTreatments,sameProductCompletedCount:hist.sameProductCompletedCount,sameActiveIngredientCompletedCount:hist.sameActiveIngredientCompletedCount,
+      reviewFactors:['Confirm the prior treatment was applied according to the applicable product label and intended course.','Review treatment-period temperature / label conditions; no live historical temperature is invented by HiveDash.','Review current brood status and honey-super conditions before choosing another option.','Consider reinfestation or immigration pressure where locally plausible; HiveDash does not assert reinfestation without evidence.','Review repeat use of the same product / active ingredient and resistance-management guidance before repeating a treatment.'],
+      authority:'Honey Bee Health Coalition + Penn State IPM + EPA product-label gate'
+    };
+  }
+  function managementReviewTask(s,h,tx,retest,r04){
+    const v=r04.verification||{},rate=num(v.rate??retest?.mitesPer100),threshold=num(v.threshold),phase=txt(v.phase||v.context?.colonyPhase||'current colony phase'),e=evidenceChain(s,h,tx,retest,r04);
+    const thresholdText=threshold===null?'the applicable action threshold':`${threshold}/100 bees`;
+    const a={
+      id:`scientific-varroa-control-inadequate-r05-${h.id}-${txt(retest?.id)||txt(tx?.id)}`,
+      taskId:`scientific-varroa-control-inadequate-r05-${h.id}-${txt(retest?.id)||txt(tx?.id)}`,
+      hiveId:h.id,type:'Treatment',title:'Varroa management review',status:'Pending',priority:'High',
+      source:'scientific-engine',systemGenerated:true,reasonCode:'varroa',intentKey:'varroa-control-inadequate',workflowStage:'management-review',executionRoute:`treatment-record/${h.id}`,
+      coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,ruleEngineOwner:'HiveDashTaskEngineCoreV1',ruleMigrationVersion:MIGRATION_VERSION,catalogTaskId:CATALOG_TASK_ID,
+      sourceDecisionId:`decision-${CORE_RULE_ID}-${txt(retest?.id)||txt(tx?.id)}`,sourceId:txt(retest?.id),linkedTreatmentId:txt(tx?.id),linkedRetestId:txt(retest?.id),
+      due:'Now',dueDate:'',date:'',decisionType:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',taskLifecycleState:'RECOMMENDED',verificationRequired:true,verificationStatus:'PENDING',
+      dedupeKey:`${CATALOG_TASK_ID}|${txt(retest?.id)||txt(tx?.id)}`
+    };
+    a.systemWhy=`The standardized post-treatment retest is ${rate===null?'not quantified':`${rate}/100 bees`} and still meets or exceeds ${thresholdText} for ${phase}. The prior management episode is not resolved. Review why control may have been inadequate before choosing the next legal management option. HiveDash will not automatically repeat the same treatment, product, dose, or application method.`;
+    a.reason=a.systemWhy;a.evidenceChain=e;return a;
+  }
+  function isLegacyS14Task(a,s){
+    if(!a||txt(a.coreRuleId)===CORE_RULE_ID)return false;
+    const hid=txt(a.hiveId);if(!hid)return false;
+    let r04=null;try{r04=base.evaluateVarroaPostTreatment(s,hid,[])}catch(_){ }
+    if(r04?.verification?.result!=='FAIL')return false;
+    const src=low(a.source),intent=low(a.intentKey),title=low(a.title),stage=low(a.varroaStage||a.workflowStage),systemish=src==='scientific-engine'||src==='varroa-management-stage'||a.systemGenerated===true||!!a.modelVersion;
+    if(!systemish)return false;
+    return stage==='retest-still-high'||title.includes('varroa still high after treatment')||title.includes('varroa remains high after treatment')||intent==='varroa-control-inadequate';
+  }
+  function evaluateR05(s,h,existingRows=[]){
+    const hid=txt(h.id),result={ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,catalogTaskId:CATALOG_TASK_ID,hiveId:hid,assessment:null,decision:null,task:null,outcome:null};
+    let r04=null;try{r04=base.evaluateVarroaPostTreatment(s,hid,(existingRows||[]).filter(a=>txt(a.coreRuleId)!==CORE_RULE_ID))}catch(err){result.assessment={type:'VARROA_CONTROL_INADEQUATE',status:'R04_EVALUATION_ERROR'};result.decision={type:'NO_TASK',reason:err.message};return result}
+    const r04Status=txt(r04?.assessment?.status),vr=txt(r04?.verification?.result);
+    if(vr!=='FAIL'||r04Status!=='VERIFIED_FAIL'){
+      result.assessment={type:'VARROA_CONTROL_INADEQUATE',status:vr==='INCONCLUSIVE'?'DEFER_TO_R04_INCONCLUSIVE':vr==='PASS'?'R04_VERIFIED_PASS':'NO_FAILED_POST_TREATMENT_VERIFICATION',sourceAssessment:r04Status,sourceVerification:vr};
+      result.decision={type:'NO_TASK',reason:vr==='INCONCLUSIVE'?'insufficient-retest-evidence-owned-by-r04':vr==='PASS'?'post-treatment-control-verified':'no-r04-fail-handoff'};
+      result.outcome={status:vr==='PASS'?'RESOLVED':'NOT_OPEN'};return result;
+    }
+    const tx=byId(s,'treatments',r04?.assessment?.treatmentId||r04?.verification?.treatmentId),retest=byId(s,'varroaTests',r04?.assessment?.linkedRetestId||r04?.verification?.retestId);
+    if(!tx||!retest){result.assessment={type:'VARROA_CONTROL_INADEQUATE',status:'DEFER_TO_R04_INCOMPLETE_LINKAGE'};result.decision={type:'NO_TASK',reason:'r04-fail-linkage-incomplete'};result.outcome={status:'OPEN'};return result}
+    const laterTx=laterVarroaTreatment(s,hid,tx,retest);
+    if(laterTx&&['PLANNED','ACTIVE','COMPLETED'].includes(txState(laterTx))){
+      result.assessment={type:'VARROA_CONTROL_INADEQUATE',status:'SUPERSEDED_BY_NEXT_TREATMENT',failedTreatmentId:txt(tx.id),failedRetestId:txt(retest.id),nextTreatmentId:txt(laterTx.id),nextTreatmentState:txState(laterTx)};
+      result.decision={type:'SUPERSEDED',automationLevel:'B_RECOMMEND_CONFIRM',reason:'later-varroa-treatment-owns-next-step',coveringRecordId:txt(laterTx.id)};result.outcome={status:'CONTINUE'};return result;
+    }
+    const manual=manualTreatmentCover(existingRows,hid);
+    if(manual){result.assessment={type:'VARROA_CONTROL_INADEQUATE',status:'SUPERSEDED_BY_USER_MANAGEMENT_PLAN',failedTreatmentId:txt(tx.id),failedRetestId:txt(retest.id)};result.decision={type:'SUPERSEDED',automationLevel:'B_RECOMMEND_CONFIRM',reason:'user-management-plan-covers-s14',coveringTaskId:txt(manual.id)};result.outcome={status:'CONTINUE'};return result}
+    result.assessment={type:'VARROA_CONTROL_INADEQUATE',status:'MANAGEMENT_REVIEW_REQUIRED',failedTreatmentId:txt(tx.id),failedRetestId:txt(retest.id),mitesPer100:num(r04?.verification?.rate),threshold:num(r04?.verification?.threshold),colonyPhase:txt(r04?.verification?.phase||'Uncertain')};
+    result.task=managementReviewTask(s,h,tx,retest,r04);
+    result.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:'post-treatment-varroa-control-inadequate'};
+    result.outcome={status:'CONTINUE',verification:'FAIL',nextStep:'MANAGEMENT_REVIEW'};return result;
+  }
+
+  const SOURCES=Object.freeze({
+    PSU_IPM:Object.freeze({id:'PSU-VARROA-IPM-2025',authority:'Penn State Extension',title:'Methods to Control Varroa Mites: An Integrated Pest Management Approach'}),
+    HBHC:Object.freeze({id:'HBHC-VARROA-9E-2026',authority:'Honey Bee Health Coalition',title:'Tools for Varroa Management, Ninth Edition'}),
+    EPA_LABEL_GATE:Object.freeze({id:'EPA-LABEL-GATE',authority:'US EPA / registered product label',title:'Product selection and use remain constrained by the applicable label'})
+  });
+  const ruleDefinition=Object.freeze({
+    id:CORE_RULE_ID,version:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,catalogTaskId:CATALOG_TASK_ID,
+    category:'VARROA_MANAGEMENT_REVIEW',assessmentType:'VARROA_CONTROL_INADEQUATE',decisionClass:'B_RECOMMEND_CONFIRM',
+    evidenceInputs:Object.freeze(['R04 VERIFIED_FAIL','linked standardized Post-treatment Retest','linked completed Varroa Treatment']),
+    contextInputs:Object.freeze(['Context.colonyPhase','Treatment product / active ingredient / application method / honey-super context','current legal product-label constraints']),
+    authorityRules:SOURCES,
+    policy:Object.freeze({onlyR04VerifiedFailTriggers:true,incompleteEvidenceReturnsToR04:true,noAutomaticRepeatTreatment:true,noDrugProductDoseOrApplicationPreselection:true,reviewExecutionAndLabelConditions:true,reviewBroodAndHoneySuperContext:true,reviewReinfestationPossibilityWithoutAssertingIt:true,reviewRepeatUseAndResistanceRisk:true,nextCompletedTreatmentReturnsToR04:true,persistentFailureEscalationRequiresSeparateVerifiedEpisode:true}),
+    evaluate:(s,h,existingRows)=>evaluateR05(s,h,existingRows)
+  });
+  try{if(typeof base.registerRule==='function')base.registerRule(ruleDefinition)}catch(err){console.error('V2P2E5S14A rule registration failed',err)}
+
+  function projectTask(evaluation,s){
+    if(!evaluation?.task)return null;
+    let task=base.normalizeTaskProjection(evaluation.task,s,{evidence:new Map(),context:new Map()});
+    task.coreRuleId=CORE_RULE_ID;task.ruleVersion=RULE_VERSION;task.ruleEngineOwner='HiveDashTaskEngineCoreV1';task.ruleMigrationVersion=MIGRATION_VERSION;task.catalogTaskId=CATALOG_TASK_ID;task.assessmentType='VARROA_CONTROL_INADEQUATE';
+    task.decisionType='RECOMMEND_CONFIRM';task.automationLevel='B_RECOMMEND_CONFIRM';task.taskLifecycleState='RECOMMENDED';
+    task.ruleRef={...(task.ruleRef||{}),ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,engineOwner:'HiveDashTaskEngineCoreV1',migrationVersion:MIGRATION_VERSION,catalogTaskId:CATALOG_TASK_ID,authority:'Penn State IPM + Honey Bee Health Coalition + EPA product-label gate',authorityRuleIds:[SOURCES.PSU_IPM.id,SOURCES.HBHC.id,SOURCES.EPA_LABEL_GATE.id]};
+    task.ruleEvaluation={assessment:evaluation.assessment,decision:evaluation.decision,outcome:evaluation.outcome,verificationPolicy:'NEXT_COMPLETED_VARROA_TREATMENT_RETURNS_TO_R04'};
+    task.outcomeSnapshot=evaluation.outcome;return task;
+  }
+
+  const extended=Object.freeze({...base,varroaControlInadequateRule:ruleDefinition,evaluateVarroaControlInadequate:(s,hid,existingRows=[])=>{const h=hiveBy(s,hid);return h?evaluateR05(s,h,existingRows):null}});
+  window.HiveDashTaskEngineCoreV1=extended;
+  window.V2P2E5S14_VARROA_CONTROL_INADEQUATE_RULE=ruleDefinition;
+  window.v2p2e5s14Evaluate=function(hiveId){const s=S(),h=hiveBy(s,hiveId);return h?evaluateR05(s,h,typeof generateActions==='function'?generateActions(s):[]):null};
+
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      let out=(prevGenerate(s)||[]).filter(a=>!isLegacyS14Task(a,s));
+      const seen=new Set(out.map(a=>txt(a.id)||txt(a.dedupeKey)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`));
+      for(const h of active(s)){
+        const evaluation=evaluateR05(s,h,out),task=projectTask(evaluation,s);if(!task)continue;
+        const k=txt(task.id)||txt(task.dedupeKey)||`${txt(task.hiveId)}|${txt(task.intentKey)}|${txt(task.title)}`;if(seen.has(k))continue;
+        seen.add(k);out.push(task);
+      }
+      return out;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  const escS=v=>typeof esc==='function'?esc(txt(v)):txt(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]));
+  function currentAction(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');if(p[0]!=='scientific-action'||!p[1])return null;
+    const s=S();return (s?.actions||[]).find(x=>x&&txt(x.id)===txt(p[1]))||(()=>{try{return (window.v53ActionRows?.('Pending')||[]).find(x=>x&&txt(x.id)===txt(p[1]))||null}catch(_){return null}})();
+  }
+  function fmt(v){const d=iso(v);if(!d)return txt(v)||'Not recorded';try{return typeof fmtDate==='function'?fmtDate(d):d}catch(_){return d}}
+  function detailHTML(a){
+    const e=a?.evidenceChain||{},rate=num(e.mitesPer100),threshold=num(e.threshold),value=x=>txt(x)||'Not recorded';
+    const review=Array.isArray(e.reviewFactors)?e.reviewFactors:[];
+    return `<section class="vc v2p2e5s14-evidence"><div class="vhead"><b>Management review evidence</b><span class="v2p2e5s14-pill">${escS(a.catalogTaskId||CATALOG_TASK_ID)}</span></div><div class="v2p2e5s14-grid">
+      <span>Core Rule ID<b>${escS(a.coreRuleId||CORE_RULE_ID)}</b></span><span>Rule version<b>${escS(a.ruleVersion||RULE_VERSION)}</b></span>
+      <span>Failed treatment<b>${escS(value(e.failedTreatmentId))}</b></span><span>Treatment completed<b>${escS(fmt(e.treatmentEndDate))}</b></span>
+      <span>Product<b>${escS(value(e.treatmentProduct))}</b></span><span>Active ingredient<b>${escS(value(e.activeIngredient))}</b></span>
+      <span>Application method<b>${escS(value(e.applicationMethod))}</b></span><span>Honey supers status<b>${escS(value(e.honeySupersStatus))}</b></span>
+      <span>Failed retest<b>${escS(e.failedRetestId?`${fmt(e.failedRetestDate)} · ${e.failedRetestId}`:'Not recorded')}</b></span><span>Measured result<b>${rate===null?'—':escS(`${rate}/100 bees`)}</b></span>
+      <span>Verification threshold<b>${threshold===null?'Context dependent':escS(`${threshold}/100 bees`)}</b></span><span>Colony phase<b>${escS(value(e.colonyPhase))}</b></span>
+      <span>Prior completed Varroa treatments<b>${escS(value(e.completedVarroaTreatments))}</b></span><span>Same active ingredient count<b>${escS(value(e.sameActiveIngredientCompletedCount))}</b></span>
+    </div><div class="v2p2e5s14-review"><b>Review before choosing the next management step</b>${review.map(x=>`<p>• ${escS(x)}</p>`).join('')}<p class="v2p2e5s14-safety">Do not mechanically repeat the same treatment. Any next product or method must be rechecked against the current EPA label, temperature, brood, honey-super, and local conditions.</p></div></section>`;
+  }
+  function decorate(){
+    const a=currentAction();if(!a||txt(a.coreRuleId)!==CORE_RULE_ID)return;
+    const root=document.querySelector('.v2p2e5ab-detail');if(!root||root.querySelector('.v2p2e5s14-evidence'))return;
+    const sections=root.querySelectorAll(':scope > section.vc'),why=sections[1]||sections[0];if(!why)return;
+    why.insertAdjacentHTML('afterend',detailHTML(a));
+    const next=root.querySelector(':scope > section.vc:nth-of-type(4) p')||root.querySelector(':scope > section.vc:last-of-type p');
+    if(next)next.textContent='Review the failed verification evidence and contributing factors, then choose a new legal management step if appropriate. A later completed Treatment will return to post-treatment verification; HiveDash does not equate choosing a next action with biological success.';
+    const btn=root.querySelector('.v2p2e5ab-detail-actions .primary');if(btn)btn.textContent='Review Management Options';
+    if(!document.getElementById('v2p2e5s14-style')){const st=document.createElement('style');st.id='v2p2e5s14-style';st.textContent=`.v2p2e5s14-pill{margin-left:auto;font-size:9px;font-weight:800;padding:4px 7px;border-radius:999px;background:#F8F0DE;color:#7A5B18}.v2p2e5s14-grid{display:grid;grid-template-columns:1fr 1fr;gap:10px 12px;margin-top:10px}.v2p2e5s14-grid span{display:grid;gap:3px;font-size:10px;color:#7A817B}.v2p2e5s14-grid b{font-size:12px;color:#334C38;overflow-wrap:anywhere}.v2p2e5s14-review{margin-top:12px;padding-top:10px;border-top:1px solid #E7E1D5}.v2p2e5s14-review>b{font-size:11px;color:#4A604C}.v2p2e5s14-review p{margin:5px 0!important;font-size:10px!important;line-height:1.45!important}.v2p2e5s14-safety{margin-top:8px!important;padding:9px 10px;border-radius:10px;background:#FBF4DA;color:#67551D!important}`;document.head.appendChild(st)}
+  }
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){const ret=prevRender.apply(this,arguments);try{decorate()}catch(err){console.error('V2P2E5S14A detail decoration failed',err)}queueMicrotask(()=>{try{decorate()}catch(_){}});return ret};
+    try{render=window.render}catch(_){ }
+  }
+
+  window.__HIVEDASH_V2P2E5S14A_VERSION__='v2p2e5s14a-s14-varroa-control-inadequate-core-migration';
+})();

@@ -23719,9 +23719,15 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
     if(Number.isNaN(d.getTime()))return txt(v);
     let tz='America/Denver';
     try{if(typeof v2p1bHiveTimezone==='function')tz=v2p1bHiveTimezone(s,h)||tz}catch(_){}
+    /* Per-Hive currentLocation can contain a legacy/translated timezone even when
+       settings have already been sanitized. Normalize for DISPLAY only; never
+       rewrite the stored audit timestamp or location record here. */
+    try{if(typeof v224b16NormalizeTimezone==='function')tz=v224b16NormalizeTimezone(tz)||'America/Denver'}catch(_){tz='America/Denver'}
     try{
       return new Intl.DateTimeFormat('en-US',{timeZone:tz,month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(d);
-    }catch(_){return txt(v)}
+    }catch(_){
+      try{return new Intl.DateTimeFormat('en-US',{timeZone:'America/Denver',month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(d)}catch(__){return txt(v)}
+    }
   }
   const hiveById=(s,id)=>typeof hive==='function'?hive(s,id):(s?.hives||[]).find(x=>String(x?.id)===String(id));
   const idFromEvent=(e,key)=>txt(e?.sourceId)||txt(key).split(':').slice(1).join(':');
@@ -23899,3 +23905,6 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
 
 /* V2P2E5AX19B3 — Timeline history projection field/time display closure. */
 window.__HIVEDASH_V2P2E5AX19B3_VERSION__='V2P2E5AX19B3-history-projection-closure';
+
+/* V2P2E5AX19B4 — Varroa Timeline audit timestamp display timezone normalization. */
+window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display-closure';

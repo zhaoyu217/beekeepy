@@ -25606,3 +25606,80 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
 
   window.__HIVEDASH_V2P2E5R02A6_VERSION__=VERSION;
 })();
+
+/* ==============================================================
+   V2P2E5R02A8 — R02 FAIL HANDOFF MUST EXPOSE B38 CTA
+   Real-device QA found the R02 FAIL projection correctly produced the
+   generated "Review queen management" task, but its executionRoute is
+   intentionally empty. The shared scientific Task Detail template therefore
+   rendered only Back and omitted the primary CTA entirely.
+
+   Scope ONLY:
+   - On an active R02/S05 management-review detail, ensure a visible
+     "Review Queen Management" primary button exists.
+   - The button opens the frozen B38 Queen Management new-action page for the
+     same hive without preselecting Requeen, Introduce Queen, or any action.
+   - No task/evidence/history record is rewritten.
+   - PASS / INCONCLUSIVE / initial R02 branches are untouched.
+   ============================================================== */
+(function v2p2e5r02a8FailHandoffCta(){
+  if(window.__HIVEDASH_V2P2E5R02A8__)return;
+  window.__HIVEDASH_V2P2E5R02A8__=true;
+  const CORE_RULE_ID='HD-R02Q-QUEEN-RIGHT-VERIFICATION';
+  const VERSION='v2p2e5r02a8-r02-fail-b38-handoff-cta';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const S=()=>typeof v45s==='function'?v45s():state();
+
+  function currentId(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    return p[0]==='scientific-action'?txt(p[1]):'';
+  }
+  function currentGenerated(){
+    const id=currentId();if(!id)return null;
+    const s=S();let rows=[];
+    try{rows=typeof generateActions==='function'?(generateActions(s)||[]):[]}catch(_){rows=[]}
+    let a=rows.find(x=>x&&txt(x.id)===id&&txt(x.coreRuleId)===CORE_RULE_ID)||null;
+    if(a)return a;
+    const persisted=(Array.isArray(s?.actions)?s.actions:[]).find(x=>x&&txt(x.id)===id)||null;
+    if(!persisted)return null;
+    return rows.find(x=>x&&txt(x.coreRuleId)===CORE_RULE_ID&&txt(x.hiveId)===txt(persisted.hiveId)&&low(x.workflowStage)==='management-review')||null;
+  }
+
+  window.v2p2e5r02a8OpenQueenManagement=function(actionId){
+    const s=S();let a=null;
+    try{a=(typeof generateActions==='function'?(generateActions(s)||[]):[]).find(x=>x&&txt(x.id)===txt(actionId))||null}catch(_){ }
+    if(!a||txt(a.coreRuleId)!==CORE_RULE_ID||low(a.workflowStage)!=='management-review')return toast('This Queen Management review is no longer active');
+    if(typeof b38OpenQueenAction==='function')return b38OpenQueenAction(txt(a.hiveId),'scientific-engine','queen-verification-failed');
+    return go('actions');
+  };
+
+  function ensureCta(){
+    const a=currentGenerated();
+    if(!a||txt(a.coreRuleId)!==CORE_RULE_ID||low(a.workflowStage)!=='management-review')return;
+    const root=document.querySelector('.v2p2e5ab-detail');
+    const actions=root?.querySelector('.v2p2e5ab-detail-actions');
+    if(!actions)return;
+    let btn=actions.querySelector('.primary');
+    if(!btn){
+      btn=document.createElement('button');
+      btn.className='primary v2p2e5r02a8-management-cta';
+      actions.appendChild(btn);
+    }
+    btn.textContent='Review Queen Management';
+    btn.setAttribute('onclick',`v2p2e5r02a8OpenQueenManagement('${txt(a.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')`);
+  }
+
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){
+      const ret=prevRender.apply(this,arguments);
+      try{ensureCta()}catch(_){ }
+      queueMicrotask(()=>{try{ensureCta()}catch(_){ }});
+      return ret;
+    };
+    try{render=window.render}catch(_){ }
+  }
+  try{ensureCta()}catch(_){ }
+  window.__HIVEDASH_V2P2E5R02A8_VERSION__=VERSION;
+})();

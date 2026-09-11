@@ -23713,6 +23713,16 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
   const dateDisplay=v=>present(v)?(typeof fmtDate==='function'?fmtDate(txt(v)):txt(v)):'Not recorded';
   const numberDisplay=(v,suffix='')=>present(v)?`${txt(v)}${suffix}`:'Not recorded';
   const getState=()=>typeof v45s==='function'?v45s():null;
+  function auditTimeDisplay(s,h,v){
+    if(!present(v))return 'Not recorded';
+    const d=new Date(v);
+    if(Number.isNaN(d.getTime()))return txt(v);
+    let tz='America/Denver';
+    try{if(typeof v2p1bHiveTimezone==='function')tz=v2p1bHiveTimezone(s,h)||tz}catch(_){}
+    try{
+      return new Intl.DateTimeFormat('en-US',{timeZone:tz,month:'short',day:'numeric',year:'numeric',hour:'numeric',minute:'2-digit',timeZoneName:'short'}).format(d);
+    }catch(_){return txt(v)}
+  }
   const hiveById=(s,id)=>typeof hive==='function'?hive(s,id):(s?.hives||[]).find(x=>String(x?.id)===String(id));
   const idFromEvent=(e,key)=>txt(e?.sourceId)||txt(key).split(':').slice(1).join(':');
   const safeHiveId=id=>String(id??'').replace(/'/g,"\\'");
@@ -23829,7 +23839,7 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
           detailGroup('Linkage & notes',[
             ['Linked Treatment',linkedText],
             ['Notes',display(x.notes)],
-            ['Recorded at',present(x.recordedAt)?txt(x.recordedAt):'Not recorded']
+            ['Recorded at',auditTimeDisplay(s,h,x.recordedAt)]
           ])
         ],x.hiveId);
       }
@@ -23847,8 +23857,8 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
           detailGroup('Plan context',[
             ['Source hive',display(source?.name||a.hiveId)],
             ['Planned new hive name',plannedName],
-            ['Planned brood frames',numberDisplay(w.broodFrames)],
-            ['Planned food frames',numberDisplay(w.foodFrames)],
+            ['Planned brood frames',numberDisplay(present(w.plannedBroodFrames)?w.plannedBroodFrames:w.broodFrames)],
+            ['Planned food frames',numberDisplay(present(w.plannedFoodFrames)?w.plannedFoodFrames:w.foodFrames)],
             ['Queen plan',display(w.queenPlan)],
             ['Notes',display(a.notes||w.notes)]
           ]),
@@ -23886,3 +23896,6 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
 
   window.__HIVEDASH_V2P2E5AX19B2_VERSION__='V2P2E5AX19B2-formal-history-detail-truth';
 })();
+
+/* V2P2E5AX19B3 — Timeline history projection field/time display closure. */
+window.__HIVEDASH_V2P2E5AX19B3_VERSION__='V2P2E5AX19B3-history-projection-closure';

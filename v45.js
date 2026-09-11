@@ -25113,3 +25113,243 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
 
   window.__HIVEDASH_V2P2E5R02A2_VERSION__=VERSION;
 })();
+
+/* ==============================================================
+   V2P2E5R02A3 — TARGETED QUEEN VERIFICATION EXECUTION SCOPE
+   Real-device QA closure for R02/S05.
+
+   Problem discovered in QA:
+   The R02 task correctly routed into Inspection, but the full-Inspection save
+   gate then required Brood, Colony, Food Stores and Additional Checks. Filling
+   unrelated sections just to close a Queen Verification would manufacture
+   evidence and would also let a targeted visit reset full-Inspection cadence.
+
+   Contract:
+   - Starting an R02 Queen Verification creates an explicit targeted execution
+     context and persists the B-level task as user-confirmed/in-progress.
+   - The targeted screen clearly says Queen evidence is required; other cards
+     are optional and remain unconfirmed unless actually assessed.
+   - Saving from this context writes a dedicated Queen Verification evidence
+     record, NOT a full Inspection record. It therefore cannot satisfy R01,
+     reset full-Inspection recency, or pollute colony/food/brood trend history.
+   - PASS / FAIL / INCONCLUSIVE are evaluated from the targeted evidence.
+   - PASS resolves S05; FAIL produces Review Queen Management; INCONCLUSIVE
+     keeps Queen Verification open.
+   - Normal/full Inspection save validation remains unchanged.
+   ============================================================== */
+(function v2p2e5r02a3TargetedQueenVerification(){
+  if(window.__HIVEDASH_V2P2E5R02A3__)return;
+  window.__HIVEDASH_V2P2E5R02A3__=true;
+
+  const VERSION='v2p2e5r02a3-targeted-queen-verification-scope';
+  const CORE_RULE_ID='HD-R02Q-QUEEN-RIGHT-VERIFICATION';
+  const RULE_VERSION='HD-R02Q-v1.1-2026-09-11';
+  const CATALOG_RULE_ID='R02';
+  const CATALOG_TASK_ID='S05';
+  const CTX_KEY='hivedash_r02_queen_verification_context_v1';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const canon=v=>{try{return txt(typeof v212English==='function'?v212English(v):v)}catch(_){return txt(v)}};
+  const cLow=v=>canon(v).toLowerCase();
+  const unknown=v=>!txt(v)||['unknown','not assessed','not checked','not recorded','not confirmed','unsure','—','-'].includes(cLow(v));
+  const seen=v=>['seen','yes','present'].includes(cLow(v));
+  const absent=v=>['not seen','no','none','absent'].includes(cLow(v));
+  const goodLaying=v=>['good','fair'].includes(cLow(v));
+  const S=()=>typeof v45s==='function'?v45s():state();
+  const active=s=>typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)));
+  const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
+  const todayFor=(s,h)=>{try{return txt(typeof v2p2e5Today==='function'?v2p2e5Today(s,h?.id||''):typeof v2p2d7TodayForHive==='function'?v2p2d7TodayForHive(s,h):new Date().toISOString().slice(0,10))}catch(_){return new Date().toISOString().slice(0,10)}};
+  const esc3=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]||m));
+
+  function readCtx(){
+    try{
+      const x=JSON.parse(sessionStorage.getItem(CTX_KEY)||'null');
+      if(!x||txt(x.coreRuleId)!==CORE_RULE_ID||!x.hiveId)return null;
+      const age=Date.now()-Number(x.startedAtMs||0);if(age>12*60*60*1000){sessionStorage.removeItem(CTX_KEY);return null}
+      return x;
+    }catch(_){return null}
+  }
+  function writeCtx(x){try{sessionStorage.setItem(CTX_KEY,JSON.stringify(x))}catch(_){}}
+  function clearCtx(){try{sessionStorage.removeItem(CTX_KEY)}catch(_){}}
+  function currentR02Action(){
+    const p=txt(location.hash||'#home').replace(/^#/,'').split('/');if(p[0]!=='scientific-action'||!p[1])return null;
+    const s=S();try{return (typeof generateActions==='function'?generateActions(s):[]).find(a=>a&&txt(a.id)===txt(p[1])&&txt(a.coreRuleId)===CORE_RULE_ID)||null}catch(_){return null}
+  }
+  function persistedTask(s,hid){
+    return (Array.isArray(s?.actions)?s.actions:[]).filter(a=>a&&txt(a.hiveId)===txt(hid)&&txt(a.coreRuleId)===CORE_RULE_ID&&txt(a.catalogTaskId)===CATALOG_TASK_ID).slice().sort((a,b)=>txt(b.startedAt||b.createdAt||b.id).localeCompare(txt(a.startedAt||a.createdAt||a.id)))[0]||null;
+  }
+  function latestVerification(s,hid,taskId){
+    return (Array.isArray(s?.logs?.queenVerifications)?s.logs.queenVerifications:[]).filter(v=>v&&txt(v.hiveId)===txt(hid)&&(!taskId||txt(v.sourceTaskId)===txt(taskId))).slice().sort((a,b)=>txt(b.recordedAt||b.date||b.id).localeCompare(txt(a.recordedAt||a.date||a.id)))[0]||null;
+  }
+  function verificationResult(v){
+    if(!v)return 'INCONCLUSIVE';
+    if(seen(v.eggs)||seen(v.larvae)||(seen(v.queenStatus)&&goodLaying(v.layingPattern)))return 'PASS';
+    if(!unknown(v.eggs)&&!unknown(v.larvae)&&absent(v.eggs)&&absent(v.larvae))return 'FAIL';
+    return 'INCONCLUSIVE';
+  }
+  function persistConfirmedTask(a){
+    const s=S();s.actions=Array.isArray(s.actions)?s.actions:[];
+    let p=s.actions.find(x=>x&&txt(x.id)===txt(a.id));
+    if(!p){
+      try{p=JSON.parse(JSON.stringify(a))}catch(_){p={...a,evidenceChain:{...(a.evidenceChain||{})}}}
+      p.status='Pending';p.priority=a.priority||'Medium';p.taskLifecycleState='IN_PROGRESS';p.verificationStatus='PENDING';p.confirmedAt=new Date().toISOString();p.startedAt=p.confirmedAt;p.userConfirmed=true;
+      s.actions.push(p);
+    }else{
+      p.taskLifecycleState='IN_PROGRESS';p.verificationStatus='PENDING';p.userConfirmed=true;p.confirmedAt=p.confirmedAt||new Date().toISOString();p.startedAt=new Date().toISOString();
+    }
+    if(typeof save==='function')save(s);
+    return p;
+  }
+
+  window.v2p2e5r02a3StartVerification=function(actionId){
+    const s=S();let a=null;
+    try{a=(typeof generateActions==='function'?generateActions(s):[]).find(x=>x&&txt(x.id)===txt(actionId))||null}catch(_){ }
+    if(!a||txt(a.coreRuleId)!==CORE_RULE_ID)return toast('This Queen Verification is no longer active');
+    if(low(a.workflowStage)==='management-review')return typeof v2p2e5r02OpenQueenManagement==='function'?v2p2e5r02OpenQueenManagement(a.id):go('actions');
+    const p=persistConfirmedTask(a);
+    writeCtx({hiveId:txt(a.hiveId),taskId:txt(p?.id||a.id),coreRuleId:CORE_RULE_ID,catalogTaskId:CATALOG_TASK_ID,baselineInspectionId:txt(a?.evidenceChain?.baselineInspectionId||a?.evidenceChain?.latestInspectionId),baselineInspectionIndex:Number(a?.evidenceChain?.baselineInspectionIndex??a?.evidenceChain?.latestInspectionIndex??-1),startedAt:new Date().toISOString(),startedAtMs:Date.now()});
+    go('inspection/'+a.hiveId);
+  };
+
+  function decorateTaskButton(){
+    const a=currentR02Action();if(!a||low(a.workflowStage)==='management-review')return;
+    const root=document.querySelector('.v2p2e5ab-detail');const btn=root?.querySelector('.v2p2e5ab-detail-actions .primary');if(!btn)return;
+    btn.textContent='Start Queen Verification';btn.setAttribute('onclick',`v2p2e5r02a3StartVerification('${txt(a.id).replace(/\\/g,'\\\\').replace(/'/g,"\\'")}')`);
+  }
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){const ret=prevRender.apply(this,arguments);try{decorateTaskButton()}catch(_){}queueMicrotask(()=>{try{decorateTaskButton()}catch(_){}});return ret};
+    try{render=window.render}catch(_){ }
+  }
+
+  function decorateInspection(id){
+    const ctx=readCtx();if(!ctx||txt(ctx.hiveId)!==txt(id))return;
+    const root=document.getElementById('view');if(!root)return;
+    const current=root.querySelector('.v2p2e5ap-current-visit');
+    if(current){current.classList.add('v2p2e5r02a3-targeted');current.innerHTML='<b>Queen Verification · targeted evidence</b><span>Review the Queen card for this task. Brood, Colony, Food Stores and Additional Checks are optional; leave them unconfirmed unless you actually assess them today.</span>'}
+    const queen=[...root.querySelectorAll('.v211-card')].find(x=>String(x.getAttribute('onclick')||'').includes("v211OpenModule('queen')"));
+    if(queen&&!queen.querySelector('.v2p2e5r02a3-required'))queen.querySelector('.v211-card-head')?.insertAdjacentHTML('beforeend','<span class="v2p2e5r02a3-required">Required</span>');
+    const saveBtn=[...root.querySelectorAll('.dual button')].find(b=>/save inspection/i.test(b.textContent||''));if(saveBtn)saveBtn.textContent='Save Queen Verification';
+  }
+  const prevInspection=window.inspectionPage||((typeof inspectionPage==='function')?inspectionPage:null);
+  if(typeof prevInspection==='function'){
+    window.inspectionPage=function(r,id){const ret=prevInspection.apply(this,arguments);try{decorateInspection(id)}catch(_){ }return ret};
+    try{inspectionPage=window.inspectionPage}catch(_){ }
+  }
+
+  function reviewed(d,f){return d?.__confirmedFields?.[f]===true}
+  function val(d,f,fallback='Not assessed'){return reviewed(d,f)?(d?.[f]??fallback):fallback}
+  function num(d,f){if(!reviewed(d,f))return null;const raw=d?.[f];if(raw===null||raw===undefined||txt(raw)==='')return null;const n=Number(raw);return Number.isFinite(n)?n:null}
+  function patchCurrentHive(h,d){
+    h.insp={...(h.insp||{})};
+    const setText=(f,hField)=>{if(reviewed(d,f)&&!unknown(d[f])){h.insp[f]=d[f];if(hField)h[hField]=d[f]}};
+    setText('queenStatus','queen');setText('queenMarked');if(reviewed(d,'queenAge')&&txt(d.queenAge)!=='')h.insp.queenAge=d.queenAge;setText('layingPattern');
+    if(reviewed(d,'eggs')&&!unknown(d.eggs)){h.insp.eggs=d.eggs;h.eggs=seen(d.eggs)}
+    if(reviewed(d,'larvae')&&!unknown(d.larvae)){h.insp.larvae=d.larvae;h.larvae=seen(d.larvae)}
+    if(reviewed(d,'queenCells')&&!unknown(d.queenCells)){h.insp.queenCells=d.queenCells;h.queenCells=seen(d.queenCells)}
+    setText('brood','brood');if(reviewed(d,'broodStrength')&&num(d,'broodStrength')!==null)h.insp.broodStrength=num(d,'broodStrength');setText('abnormalities');
+    if(reviewed(d,'colonySize')&&num(d,'colonySize')!==null){h.insp.colonySize=num(d,'colonySize');h.strength=String(num(d,'colonySize'))}
+    if(reviewed(d,'populationFrames')&&num(d,'populationFrames')!==null)h.insp.populationFrames=num(d,'populationFrames');setText('temperament');
+    setText('honey','honey');setText('pollen','pollen');setText('feedingNeed');
+    setText('pests');setText('disease');setText('swarming');setText('super','superStatus');
+    h.insp.lastTargetedQueenVerificationDate=h.lastQueenVerification||'';
+  }
+
+  function saveTargetedQueenVerification(id,ctx){
+    const s=S(),h=hiveBy(s,id),d=window.V49_INSPECTION_DRAFT||V49_INSPECTION_DRAFT;if(!h||!d)return false;
+    d.notes=document.getElementById('inotes')?.value??d.notes??'';
+    if(d?.__confirmedSections?.queen!==true){toast('Review today’s Queen evidence before saving this Queen Verification.');return false}
+    const primary=['queenStatus','eggs','larvae','queenCells','layingPattern'];
+    if(!primary.some(f=>reviewed(d,f)&&!unknown(d[f]))){toast('Record at least one current Queen, egg, larva, queen-cell, or laying observation.');return false}
+    s.logs=s.logs||{};s.logs.queenVerifications=Array.isArray(s.logs.queenVerifications)?s.logs.queenVerifications:[];
+    const date=todayFor(s,h),now=new Date().toISOString();
+    const rec={
+      id:'qv'+Date.now(),hiveId:id,date,recordedAt:now,recordType:'Queen Verification',inspectionScope:'TARGETED_QUEEN_VERIFICATION',satisfiesFullInspection:false,
+      coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID,sourceTaskId:txt(ctx.taskId),baselineInspectionId:txt(ctx.baselineInspectionId),baselineInspectionIndex:Number(ctx.baselineInspectionIndex??-1),
+      queenStatus:val(d,'queenStatus'),queenMarked:val(d,'queenMarked'),queenAge:reviewed(d,'queenAge')?d.queenAge:'',eggs:val(d,'eggs'),larvae:val(d,'larvae'),queenCells:val(d,'queenCells'),layingPattern:val(d,'layingPattern'),
+      brood:val(d,'brood'),broodStrength:num(d,'broodStrength'),abnormalities:val(d,'abnormalities'),colonySize:num(d,'colonySize'),populationFrames:num(d,'populationFrames'),temperament:val(d,'temperament'),
+      honey:val(d,'honey'),pollen:val(d,'pollen'),feedingNeed:val(d,'feedingNeed'),pests:val(d,'pests'),disease:val(d,'disease'),swarming:val(d,'swarming'),superStatus:val(d,'super'),notes:txt(d.notes),voiceNotes:txt(d.voiceNotes),
+      reviewedFields:Object.keys(d.__confirmedFields||{}).filter(k=>d.__confirmedFields[k]===true),numericEvidenceSemantics:'missing-not-zero-v1'
+    };
+    rec.verificationResult=verificationResult(rec);
+    s.logs.queenVerifications.push(rec);
+    h.lastQueenVerification=date;patchCurrentHive(h,d);
+    const p=persistedTask(s,id)||s.actions?.find(a=>txt(a.id)===txt(ctx.taskId));
+    if(p){
+      p.ruleVersion=RULE_VERSION;p.lastVerificationId=rec.id;p.verificationStatus=rec.verificationResult;p.lastVerificationAt=now;
+      if(rec.verificationResult==='PASS'){p.status='Completed';p.priority='Done';p.taskLifecycleState='RESOLVED';p.resolvedAt=now;p.outcomeSnapshot={status:'RESOLVED'}}
+      else if(rec.verificationResult==='FAIL'){p.status='Completed';p.priority='Done';p.taskLifecycleState='COMPLETED';p.completedAt=now;p.outcomeSnapshot={status:'CONTINUE'}}
+      else {p.status='Pending';p.taskLifecycleState='VERIFICATION_DUE';p.outcomeSnapshot={status:'OPEN'}}
+    }
+    const committed=typeof save==='function'?save(s):true;if(committed===false){s.logs.queenVerifications.pop();toast('Queen Verification was not saved. Your entries are still on this page.');return false}
+    try{localStorage.removeItem('hivedash_inspection_draft_'+txt(id))}catch(_){ }
+    clearCtx();try{V49_INSPECTION_DRAFT=null}catch(_){ }
+    toast(`Queen Verification saved · ${rec.verificationResult}`);go('actions');return true;
+  }
+
+  const prevSaveInspection=window.vSaveInspection||((typeof vSaveInspection==='function')?vSaveInspection:null);
+  if(typeof prevSaveInspection==='function'){
+    window.vSaveInspection=function(id){const ctx=readCtx();if(ctx&&txt(ctx.hiveId)===txt(id))return saveTargetedQueenVerification(id,ctx);return prevSaveInspection.apply(this,arguments)};
+    try{vSaveInspection=window.vSaveInspection}catch(_){ }
+  }
+
+  /* Override only R02 projection so dedicated Queen Verification evidence drives
+     PASS/FAIL/INCONCLUSIVE. All initial-trigger science remains owned by R02A. */
+  const oldCore=window.HiveDashTaskEngineCoreV1;
+  const oldEval=oldCore?.evaluateQueenRightVerification;
+  function evaluateV11(s,hid,existingRows=[],priorTask=null){
+    const p=priorTask||persistedTask(s,hid);const v=p?latestVerification(s,hid,p.id):null;
+    if(p&&v){
+      const result=verificationResult(v),baseEval={ruleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID,hiveId:hid,assessment:{},decision:{type:'NO_TASK',automationLevel:'NONE'},verification:{result},outcome:{status:'NOT_OPEN'},task:null};
+      if(result==='PASS'){baseEval.assessment={status:'QUEEN_RIGHT_CONFIRMED',verificationId:v.id};baseEval.outcome={status:'RESOLVED'};return baseEval}
+      if(result==='FAIL'){
+        const h=hiveBy(s,hid),today=todayFor(s,h),task={...p,id:`scientific-queen-management-review-${hid}-${v.id}`,title:'Review queen management',status:'Pending',priority:'Medium',workflowStage:'management-review',executionRoute:'',decisionType:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',taskLifecycleState:'RECOMMENDED',verificationStatus:'FAIL',due:'Review now',dueDate:'',date:'',dueEarliest:today,dueLatest:'',ruleVersion:RULE_VERSION,evidenceChain:{...(p.evidenceChain||{}),failedVerificationId:v.id,failedVerificationDate:v.date,queenStatus:v.queenStatus,eggs:v.eggs,larvae:v.larvae,queenCells:v.queenCells,layingPattern:v.layingPattern,broodPattern:v.brood,abnormalities:v.abnormalities,temperament:v.temperament,triggerReason:'targeted-queen-verification-failed',queenCellsTypeRecorded:false}};
+        task.systemWhy='The targeted Queen Verification still found no eggs or larvae. Review Queen Management rather than making an irreversible queen decision automatically.';
+        baseEval.assessment={status:'QUEEN_VERIFICATION_FAILED',verificationId:v.id};baseEval.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM'};baseEval.outcome={status:'CONTINUE'};baseEval.task=task;return baseEval;
+      }
+      const task={...p,title:'Queen verification still needed',status:'Pending',priority:'Medium',workflowStage:'evidence',executionRoute:`inspection/${hid}`,decisionType:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',taskLifecycleState:'VERIFICATION_DUE',verificationStatus:'INCONCLUSIVE',ruleVersion:RULE_VERSION,evidenceChain:{...(p.evidenceChain||{}),latestVerificationId:v.id,latestVerificationDate:v.date,queenStatus:v.queenStatus,eggs:v.eggs,larvae:v.larvae,queenCells:v.queenCells,layingPattern:v.layingPattern,triggerReason:'targeted-queen-verification-inconclusive'}};
+      task.systemWhy='The targeted Queen Verification did not provide enough biological evidence to confirm or reject queen-right status. Recheck the targeted fields; missing values are not biological absence.';
+      baseEval.assessment={status:'QUEEN_VERIFICATION_INCONCLUSIVE',verificationId:v.id};baseEval.decision={type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM'};baseEval.outcome={status:'OPEN'};baseEval.task=task;return baseEval;
+    }
+    return typeof oldEval==='function'?oldEval(s,hid,existingRows,p||priorTask):null;
+  }
+  if(oldCore&&typeof oldEval==='function'){
+    const extended=Object.freeze({...oldCore,evaluateQueenRightVerification:evaluateV11});window.HiveDashTaskEngineCoreV1=extended;
+    window.v2p2e5r02Evaluate=function(hiveId){const s=S();return evaluateV11(s,hiveId,typeof generateActions==='function'?generateActions(s):[],persistedTask(s,hiveId))};
+  }
+
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      let out=(prevGenerate(s)||[]).filter(a=>!(a&&(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)===CATALOG_TASK_ID)));
+      const seen=new Set(out.map(a=>txt(a.id)));
+      for(const h of active(s)){
+        const e=evaluateV11(s,h.id,out,persistedTask(s,h.id));if(!e?.task)continue;
+        let task=e.task;try{task=window.HiveDashTaskEngineCoreV1.normalizeTaskProjection(task,s,{evidence:new Map(),context:new Map()})}catch(_){task={...task}}
+        task.coreRuleId=CORE_RULE_ID;task.ruleVersion=RULE_VERSION;task.ruleEngineOwner='HiveDashTaskEngineCoreV1';task.catalogRuleId=CATALOG_RULE_ID;task.catalogTaskId=CATALOG_TASK_ID;task.ruleEvaluation={assessment:e.assessment,decision:e.decision,verification:e.verification,outcome:e.outcome};
+        const k=txt(task.id);if(k&&seen.has(k))continue;if(k)seen.add(k);out.push(task);
+      }
+      return out;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  /* R02 window is a flexible several-days-to-one-week recommendation, not a
+     fabricated hard deadline. Display it as a window unless a later rule or
+     beekeeper supplies a concrete date. */
+  const prevGenerateWindow=window.generateActions;
+  if(typeof prevGenerateWindow==='function'){
+    window.generateActions=function(s){const out=prevGenerateWindow(s)||[];for(const a of out){if(txt(a?.coreRuleId)!==CORE_RULE_ID||low(a.workflowStage)==='management-review')continue;if(txt(a.scheduleSource))continue;a.dueDate='';a.date='';a.due='Within 7 days';a.scheduleSource='R02-queen-verification-window'}return out};
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  let previousRoute=txt(location.hash||'#home').replace(/^#/,'');
+  window.addEventListener('hashchange',()=>{const next=txt(location.hash||'#home').replace(/^#/,'');const c=readCtx();if(c&&/^inspection\//.test(previousRoute)&&!/^inspection\//.test(next))clearCtx();previousRoute=next});
+
+  const st=document.createElement('style');st.id='v2p2e5r02a3-style';st.textContent=`
+    .v2p2e5r02a3-targeted{border-color:#D8C98E!important;background:#FFF9E7!important}.v2p2e5r02a3-targeted b{color:#36533B!important}
+    .v2p2e5r02a3-required{margin-left:auto;padding:3px 6px;border-radius:999px;background:#EEF3EA;color:#55704E;font-size:8px;font-weight:800}
+  `;document.head.appendChild(st);
+
+  window.__HIVEDASH_V2P2E5R02A3_VERSION__=VERSION;
+})();

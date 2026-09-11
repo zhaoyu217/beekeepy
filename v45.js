@@ -24504,3 +24504,61 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
 
   window.__HIVEDASH_V2P2E5S14A_VERSION__='v2p2e5s14a-s14-varroa-control-inadequate-core-migration';
 })();
+
+/* ==============================================================
+   V2P2E5S14A1 — S14 LEGACY TREATMENT ENUM DISPLAY NORMALIZATION
+   Scope ONLY:
+   - Read-only S14 Management Review task-detail display.
+   - Canonicalize known legacy/localized Treatment enum labels.
+   - Never rewrite logs.treatments or any Treatment/Varroa persistence.
+   - Free-text Product / Notes / IDs are intentionally untouched.
+   ============================================================== */
+(function v2p2e5s14a1LegacyTreatmentEnumDisplayNormalization(){
+  if(window.__HIVEDASH_V2P2E5S14A1__)return;
+  window.__HIVEDASH_V2P2E5S14A1__=true;
+
+  const txt=v=>String(v??'').trim();
+  function canonApplication(v){
+    const x=txt(v),k=x.toLowerCase(),c=x.replace(/\s+/g,'');
+    if(!x)return 'Not recorded';
+    if(k.includes('dribble')||/滴注|滴灌|滴落|滴液|运球/.test(c))return 'Dribble';
+    if(k.includes('vapor')||/气化|汽化|蒸发|熏蒸/.test(c))return 'Vaporization';
+    if(k.includes('strip')||/条带/.test(c))return 'Strip';
+    if(k.includes('drench')||/浸透|灌注/.test(c))return 'Drench';
+    if(k.includes('spray')||/喷/.test(c))return 'Spray';
+    if(k==='other'||/其他/.test(c))return 'Other';
+    return x;
+  }
+  function canonSupers(v){
+    const x=txt(v),k=x.toLowerCase(),c=x.replace(/\s+/g,'');
+    if(!x)return 'Not recorded';
+    if(k==='not present'||k==='absent'||/不在|不存在|无|没有/.test(c))return 'Not present';
+    if(k==='present'||/存在|在场|现状/.test(c))return 'Present';
+    if(k.includes('removed before treatment')||/治疗前.*移除|处理前.*移除/.test(c))return 'Removed before treatment';
+    if(k.includes('honey harvest complete')||/蜂蜜.*采收.*完成|采蜜.*完成/.test(c))return 'Honey harvest complete';
+    if(k==='not recorded'||/未录制|未记录/.test(c))return 'Not recorded';
+    return x;
+  }
+  function normalizeS14Detail(){
+    const root=document.querySelector('.v2p2e5s14-evidence');
+    if(!root)return;
+    root.querySelectorAll('.v2p2e5s14-grid span').forEach(row=>{
+      const label=txt(row.childNodes?.[0]?.textContent||row.textContent).replace(txt(row.querySelector('b')?.textContent),'').trim();
+      const b=row.querySelector('b');if(!b)return;
+      const raw=txt(b.textContent),next=label==='Application method'?canonApplication(raw):label==='Honey supers status'?canonSupers(raw):raw;
+      if(next!==raw)b.textContent=next;
+    });
+  }
+  const prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){
+      const ret=prevRender.apply(this,arguments);
+      try{normalizeS14Detail()}catch(_){ }
+      queueMicrotask(()=>{try{normalizeS14Detail()}catch(_){ }});
+      return ret;
+    };
+    try{render=window.render}catch(_){ }
+  }
+  try{normalizeS14Detail()}catch(_){ }
+  window.__HIVEDASH_V2P2E5S14A1_VERSION__='v2p2e5s14a1-s14-legacy-treatment-enum-display-normalization';
+})();

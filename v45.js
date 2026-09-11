@@ -25503,3 +25503,106 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
   try{fixDetail()}catch(_){ }
   window.__HIVEDASH_V2P2E5R02A5_VERSION__=VERSION;
 })();
+
+/* ==============================================================
+   V2P2E5R02A6 — R02 TARGETED VERIFICATION MUST CLOSE DURABLY
+   Real-device QA found the targeted Queen Verification record itself was
+   correct (PASS / RESOLVED / NO_TASK), but after save() regenerated Actions
+   the original Inspection trigger could recreate the same S05 recommendation.
+   Root cause: the dedicated verification lived in logs.queenVerifications,
+   while the R02 projection only consulted it when the source task still
+   existed in state.actions. save() correctly archived Completed/Done rows,
+   then regenerated current Actions, so the durable source task moved to
+   meta.completedActions and the old trigger could be rediscovered.
+
+   Scope ONLY:
+   - Treat a Queen Verification linked to the same baseline Inspection as the
+     durable result for that biological episode even after the source task is
+     archived.
+   - PASS => no active R02/S05 task; episode remains RESOLVED.
+   - FAIL => project Queen Management Review from the archived source task.
+   - INCONCLUSIVE => project VERIFICATION_DUE from the archived source task.
+   - A newer full Inspection after the saved baseline starts a new evaluation;
+     old Queen Verification never suppresses genuinely newer evidence.
+   - No historical Inspection, Queen Verification, Action, S13 or S14 record is
+     rewritten.
+   ============================================================== */
+(function v2p2e5r02a6DurableQueenVerificationClosure(){
+  if(window.__HIVEDASH_V2P2E5R02A6__)return;
+  window.__HIVEDASH_V2P2E5R02A6__=true;
+  const CORE_RULE_ID='HD-R02Q-QUEEN-RIGHT-VERIFICATION';
+  const CATALOG_TASK_ID='S05';
+  const VERSION='v2p2e5r02a6-durable-targeted-queen-verification-closure';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const S=()=>typeof v45s==='function'?v45s():state();
+
+  function latestInspectionRow(s,hid){
+    const src=Array.isArray(s?.logs?.inspections)?s.logs.inspections:[];
+    return src.map((r,index)=>({r,index})).filter(x=>x.r&&txt(x.r.hiveId)===txt(hid)).sort((a,b)=>{
+      const ad=txt(a.r.date||a.r.updatedAt||a.r.recordedAt),bd=txt(b.r.date||b.r.updatedAt||b.r.recordedAt);
+      return bd.localeCompare(ad)||b.index-a.index;
+    })[0]||null;
+  }
+  function latestQV(s,hid){
+    const rows=Array.isArray(s?.logs?.queenVerifications)?s.logs.queenVerifications:[];
+    return rows.filter(v=>v&&txt(v.hiveId)===txt(hid)&&txt(v.coreRuleId)===CORE_RULE_ID).slice().sort((a,b)=>
+      txt(b.recordedAt||b.date||b.id).localeCompare(txt(a.recordedAt||a.date||a.id))
+    )[0]||null;
+  }
+  function archivedSource(s,v){
+    if(!v)return null;
+    const pools=[...(Array.isArray(s?.actions)?s.actions:[]),...(Array.isArray(s?.meta?.completedActions)?s.meta.completedActions:[])];
+    return pools.find(a=>a&&txt(a.id)===txt(v.sourceTaskId))||
+      pools.filter(a=>a&&txt(a.hiveId)===txt(v.hiveId)&&(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)===CATALOG_TASK_ID)).slice().sort((a,b)=>
+        txt(b.resolvedAt||b.completedAt||b.startedAt||b.createdAt||b.id).localeCompare(txt(a.resolvedAt||a.completedAt||a.startedAt||a.createdAt||a.id))
+      )[0]||null;
+  }
+  function appliesToCurrentEpisode(s,hid,v){
+    if(!v)return false;
+    const latest=latestInspectionRow(s,hid);
+    const baseIndex=Number(v.baselineInspectionIndex??-1);
+    const baseId=txt(v.baselineInspectionId);
+    if(!latest)return true;
+    if(baseId&&txt(latest.r?.id)===baseId)return true;
+    if(Number.isFinite(baseIndex)&&baseIndex>=0&&latest.index<=baseIndex)return true;
+    return false;
+  }
+  function durableEval(s,hid,rows=[]){
+    const v=latestQV(s,hid);
+    if(!v||!appliesToCurrentEpisode(s,hid,v))return null;
+    const prior=archivedSource(s,v);
+    if(!prior)return null;
+    try{return window.HiveDashTaskEngineCoreV1.evaluateQueenRightVerification(s,hid,rows,prior)}catch(_){return null}
+  }
+
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      let out=prevGenerate(s)||[];
+      const activeHives=typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived);
+      for(const h of activeHives){
+        const v=latestQV(s,h.id);if(!v||!appliesToCurrentEpisode(s,h.id,v))continue;
+        const ev=durableEval(s,h.id,out);if(!ev)continue;
+        out=out.filter(a=>!(a&&txt(a.hiveId)===txt(h.id)&&(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)===CATALOG_TASK_ID)));
+        if(ev.task){
+          let task=ev.task;
+          try{task=window.HiveDashTaskEngineCoreV1.normalizeTaskProjection(task,s,{evidence:new Map(),context:new Map()})}catch(_){task={...task}}
+          task.coreRuleId=CORE_RULE_ID;task.catalogTaskId=CATALOG_TASK_ID;task.ruleEvaluation={assessment:ev.assessment,decision:ev.decision,verification:ev.verification,outcome:ev.outcome};
+          out.push(task);
+        }
+      }
+      return out;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+
+  window.v2p2e5r02Evaluate=function(hiveId){
+    const s=S(),rows=typeof generateActions==='function'?generateActions(s):[];
+    const durable=durableEval(s,hiveId,rows);if(durable)return durable;
+    const prior=(Array.isArray(s?.actions)?s.actions:[]).find(a=>a&&txt(a.hiveId)===txt(hiveId)&&(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)===CATALOG_TASK_ID))||null;
+    try{return window.HiveDashTaskEngineCoreV1.evaluateQueenRightVerification(s,hiveId,rows,prior)}catch(_){return null}
+  };
+
+  window.__HIVEDASH_V2P2E5R02A6_VERSION__=VERSION;
+})();

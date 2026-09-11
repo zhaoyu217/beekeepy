@@ -25353,3 +25353,83 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
 
   window.__HIVEDASH_V2P2E5R02A3_VERSION__=VERSION;
 })();
+
+/* ==============================================================
+   V2P2E5R02A4 — R02 initial decision-class normalization
+   Scope ONLY:
+   - R02 initial Queen-right verification remains a B-level recommendation.
+   - A legacy/current persisted queen-recheck row must never leak AUTO_CREATE
+     into the initial R02 decision snapshot.
+   - Post-Queen-Management biological verification may remain A-level because
+     the action has already completed and the follow-up evidence collection is
+     deterministic.
+   - No historical task/evidence record is rewritten; normalization is runtime
+     projection/evaluation only.
+   ============================================================== */
+(function v2p2e5r02a4DecisionClassNormalization(){
+  if(window.__HIVEDASH_V2P2E5R02A4__)return;
+  window.__HIVEDASH_V2P2E5R02A4__=true;
+  const CORE_RULE_ID='HD-R02Q-QUEEN-RIGHT-VERIFICATION';
+  const VERSION='v2p2e5r02a4-r02-initial-b-level-decision-normalization';
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const base=window.HiveDashTaskEngineCoreV1;
+  if(!base||typeof base.evaluateQueenRightVerification!=='function'){
+    console.error('V2P2E5R02A4 requires R02A3 Queen-right Core');
+    return;
+  }
+  const oldEval=base.evaluateQueenRightVerification;
+  function postManagementFollowUp(e){
+    const a=e?.task||{};const ec=a.evidenceChain||{};const as=e?.assessment||{};
+    return txt(as.status)==='QUEEN_VERIFICATION_REQUIRED_AFTER_MANAGEMENT' ||
+      txt(a.id).startsWith('scientific-queen-post-management-') ||
+      low(ec.triggerReason)==='completed-biological-queen-management';
+  }
+  function normalizeEvaluation(e){
+    if(!e||!e.task||txt(e.ruleId)!==CORE_RULE_ID)return e;
+    if(postManagementFollowUp(e))return e;
+    const stage=low(e.task.workflowStage);
+    if(stage==='management-review')return e;
+    if(txt(e.decision?.type)==='AUTO_CREATE' || txt(e.task.decisionType)==='AUTO_CREATE'){
+      e={...e,
+        decision:{...(e.decision||{}),type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:e.decision?.reason||'initial-queen-verification-requires-user-confirmation'},
+        task:{...e.task,decisionType:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM'}
+      };
+      if(low(e.task.taskLifecycleState)!=='verification_due')e.task.taskLifecycleState='RECOMMENDED';
+    }
+    return e;
+  }
+  const extended=Object.freeze({...base,
+    evaluateQueenRightVerification:(s,hid,existingRows=[],priorTask=null)=>normalizeEvaluation(oldEval(s,hid,existingRows,priorTask))
+  });
+  window.HiveDashTaskEngineCoreV1=extended;
+
+  window.v2p2e5r02Evaluate=function(hiveId){
+    const s=typeof v45s==='function'?v45s():state();
+    const rows=typeof generateActions==='function'?generateActions(s):[];
+    const prior=(Array.isArray(s?.actions)?s.actions:[]).find(a=>a&&txt(a.hiveId)===txt(hiveId)&&(txt(a.coreRuleId)===CORE_RULE_ID||txt(a.catalogTaskId)==='S05'))||null;
+    return normalizeEvaluation(window.HiveDashTaskEngineCoreV1.evaluateQueenRightVerification(s,hiveId,rows,prior));
+  };
+
+  const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
+  if(typeof prevGenerate==='function'){
+    window.generateActions=function(s){
+      const out=prevGenerate(s)||[];
+      for(const a of out){
+        if(!a||txt(a.coreRuleId)!==CORE_RULE_ID)continue;
+        const ec=a.evidenceChain||{};
+        const isPost=txt(a.id).startsWith('scientific-queen-post-management-')||low(ec.triggerReason)==='completed-biological-queen-management';
+        if(isPost||low(a.workflowStage)==='management-review')continue;
+        a.decisionType='RECOMMEND_CONFIRM';
+        a.automationLevel='B_RECOMMEND_CONFIRM';
+        if(low(a.taskLifecycleState)!=='verification_due')a.taskLifecycleState='RECOMMENDED';
+        if(a.ruleEvaluation){
+          a.ruleEvaluation={...a.ruleEvaluation,decision:{...(a.ruleEvaluation.decision||{}),type:'RECOMMEND_CONFIRM',automationLevel:'B_RECOMMEND_CONFIRM',reason:a.ruleEvaluation.decision?.reason||'initial-queen-verification-requires-user-confirmation'}};
+        }
+      }
+      return out;
+    };
+    try{generateActions=window.generateActions}catch(_){ }
+  }
+  window.__HIVEDASH_V2P2E5R02A4_VERSION__=VERSION;
+})();

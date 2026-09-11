@@ -24854,3 +24854,262 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
 
   window.__HIVEDASH_V2P2E5R02A_VERSION__='v2p2e5r02a-r02-s05-queen-right-verification-core-migration';
 })();
+
+/* ==============================================================
+   V2P2E5R02A1 — CURRENT-VISIT OBSERVATION FIELDS MUST NOT PREFILL
+   Evidence-integrity hotfix discovered during R02/S05 real-device QA.
+
+   Problem:
+   V2P2E5AP correctly masked unconfirmed Inspection cards, but the modal
+   controls still rendered the prior Inspection snapshot as editable values.
+   Tapping Done could therefore promote old evidence into today's visit.
+
+   Scope:
+   - Queen / Brood / Colony / Food Stores editable current-visit modules.
+   - Additional Checks quick-selects (pests/disease/swarming/super).
+   - Previous values remain read-only reference only.
+   - Explicitly confirmed current-visit values and restored saved drafts remain.
+   - Formal Varroa / Treatment read-only ownership is untouched.
+   ============================================================== */
+(function v2p2e5r02a1CurrentVisitNoPrefill(){
+  if(window.__HIVEDASH_V2P2E5R02A1__)return;
+  window.__HIVEDASH_V2P2E5R02A1__=true;
+
+  const VERSION='v2p2e5r02a1-current-visit-no-reference-prefill';
+  const CORE_SECTIONS=new Set(['queen','brood','colony','stores']);
+  const SECTION_FIELDS={
+    queen:['queenStatus','queenMarked','queenAge','eggs','larvae','queenCells','layingPattern'],
+    brood:['brood','broodStrength','abnormalities'],
+    colony:['colonySize','populationFrames','temperament'],
+    stores:['honey','pollen','feedingNeed']
+  };
+  const UNKNOWN_SELECT={
+    queenStatus:'Not confirmed',
+    queenMarked:'Not assessed',
+    eggs:'Not assessed',
+    larvae:'Not assessed',
+    queenCells:'Not assessed',
+    layingPattern:'Not assessed',
+    brood:'Not assessed',
+    abnormalities:'Not assessed',
+    temperament:'Not assessed',
+    honey:'Not assessed',
+    pollen:'Not assessed',
+    feedingNeed:'Not assessed'
+  };
+  const ADDITIONAL_FIELDS=new Set(['pests','disease','swarming','super']);
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const escR=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]||m));
+  const isUnknown=v=>{const x=low(v);return !x||['unknown','not recorded','not assessed','not confirmed','—','n/a'].includes(x)};
+  function display(v){
+    const raw=txt(v);if(!raw)return raw;
+    try{
+      if(typeof window.v220EnglishDisplay==='function')return String(window.v220EnglishDisplay(raw));
+      if(typeof v220EnglishDisplay==='function')return String(v220EnglishDisplay(raw));
+    }catch(_){ }
+    return raw==='很好'?'Good':raw;
+  }
+  function sectionConfirmed(name){
+    try{return V49_INSPECTION_DRAFT?.__confirmedSections?.[name]===true}catch(_){return false}
+  }
+  function fieldConfirmed(name){
+    try{return V49_INSPECTION_DRAFT?.__confirmedFields?.[name]===true}catch(_){return false}
+  }
+  function addOption(sel,value,label=value){
+    if(!sel||[...sel.options].some(o=>o.value===value))return;
+    const o=document.createElement('option');o.value=value;o.textContent=label;sel.insertBefore(o,sel.firstChild);
+  }
+  function appendReference(control,value){
+    if(!control||isUnknown(value))return;
+    const label=control.closest?.('.v211-field');if(!label||label.querySelector('.v2p2e5r02a1-prev'))return;
+    label.insertAdjacentHTML('beforeend',`<small class="v2p2e5r02a1-prev">Previous: ${escR(display(value))} · reference only</small>`);
+  }
+  function neutralizeCoreModule(name,overlay,refs){
+    if(!overlay||!CORE_SECTIONS.has(name)||sectionConfirmed(name))return;
+    const body=overlay.querySelector('.v211-module-body');
+    const note=body?.querySelector('.v2p2e5ap-reference-note');
+    if(note)note.textContent='Previous Inspection values are reference only. Current-visit fields start unconfirmed; enter only what you assess today.';
+    overlay.querySelectorAll('[data-field]').forEach(el=>{
+      const f=txt(el.dataset.field);if(!f||!SECTION_FIELDS[name]?.includes(f))return;
+      appendReference(el,refs[f]);
+      if(el.tagName==='SELECT'){
+        const unknown=UNKNOWN_SELECT[f]||'Not assessed';
+        addOption(el,unknown);
+        el.value=unknown;
+      }else{
+        el.value='';
+        if(el.type==='number')el.placeholder='Not assessed';
+      }
+    });
+  }
+
+  const prevOpen=window.v211OpenModule;
+  if(typeof prevOpen==='function'){
+    window.v211OpenModule=function(name){
+      let refs={};
+      if(CORE_SECTIONS.has(name)&&!sectionConfirmed(name)){
+        try{for(const f of SECTION_FIELDS[name]||[])refs[f]=V49_INSPECTION_DRAFT?.[f]}catch(_){refs={}}
+      }
+      const ret=prevOpen.apply(this,arguments);
+      if(CORE_SECTIONS.has(name)&&!sectionConfirmed(name)){
+        try{neutralizeCoreModule(name,document.querySelector('.v211-module-overlay'),refs)}catch(err){console.error('V2P2E5R02A1 core-module neutralization failed',err)}
+      }
+      return ret;
+    };
+    try{v211OpenModule=window.v211OpenModule}catch(_){ }
+  }
+
+  /* Additional Checks use a different quick-select component.  Do not let the
+     prior Inspection appear selected before this field is explicitly reviewed. */
+  const prevEdit=window.editInspectionV49||((typeof editInspectionV49==='function')?editInspectionV49:null);
+  if(typeof prevEdit==='function'){
+    window.editInspectionV49=function(field,type){
+      const f=txt(field);
+      if(!ADDITIONAL_FIELDS.has(f)||fieldConfirmed(f))return prevEdit.apply(this,arguments);
+      let prior;
+      try{prior=V49_INSPECTION_DRAFT?.[f]}catch(_){prior=undefined}
+      const ret=prevEdit.apply(this,arguments);
+      try{
+        const o=document.querySelector('.v202-inspection-overlay');
+        if(o){
+          o.querySelectorAll('.v202-option').forEach(b=>{b.classList.remove('is-selected');const c=b.querySelector('.v202-check');if(c)c.textContent='' });
+          const sheet=o.querySelector('.v202-inspection-sheet');
+          if(sheet&&!sheet.querySelector('.v2p2e5r02a1-additional-prev')&&!isUnknown(prior)){
+            const head=sheet.querySelector('.v202-inspection-head');
+            head?.insertAdjacentHTML('afterend',`<div class="v2p2e5r02a1-additional-prev">Previous: ${escR(display(prior))} · reference only. Choose a value only if assessed today.</div>`);
+          }
+        }
+      }catch(err){console.error('V2P2E5R02A1 additional-check neutralization failed',err)}
+      return ret;
+    };
+    try{editInspectionV49=window.editInspectionV49}catch(_){ }
+  }
+
+  const st=document.createElement('style');st.id='v2p2e5r02a1-current-visit-style';st.textContent=`
+    .v2p2e5r02a1-prev{display:block!important;margin-top:6px!important;color:#8A7A52!important;font-size:9px!important;line-height:1.35!important;font-weight:600!important}
+    .v2p2e5r02a1-additional-prev{margin:10px 0 0!important;padding:9px 11px!important;border:1px solid #E8DFC9!important;border-radius:10px!important;background:#FBF7EC!important;color:#756A50!important;font-size:10px!important;line-height:1.4!important}
+  `;document.head.appendChild(st);
+
+  window.__HIVEDASH_V2P2E5R02A1_VERSION__=VERSION;
+})();
+
+/* ==============================================================
+   V2P2E5R02A2 — FRESH INSPECTION DRAFT MUST START EMPTY
+   Follow-up to R02A1 real-device QA.
+
+   Root cause:
+   V2P2E5AP freshDraft() intentionally carried the previous Inspection
+   snapshot into V49_INSPECTION_DRAFT. AP masked those values on summary
+   cards, and R02A1 neutralized controls only when a module opened, but the
+   draft itself still contained prior observations. A current-visit editor
+   must not start with historical evidence as editable current evidence.
+
+   Contract:
+   - A brand-new Inspection visit starts Queen/Brood/Colony/Food/Additional
+     observational fields unconfirmed / blank.
+   - The previous Inspection is preserved only in a read-only reference
+     snapshot for UI hints.
+   - Explicitly saved drafts keep the user's current-visit entries.
+   - Once a current-visit field/section is confirmed, it is not reset.
+   - Formal Varroa/Treatment records remain untouched/read-only.
+   ============================================================== */
+(function v2p2e5r02a2FreshInspectionStartsEmpty(){
+  if(window.__HIVEDASH_V2P2E5R02A2__)return;
+  window.__HIVEDASH_V2P2E5R02A2__=true;
+
+  const VERSION='v2p2e5r02a2-fresh-inspection-draft-empty';
+  const CORE_FIELDS=[
+    'queenStatus','queenMarked','queenAge','eggs','larvae','queenCells','layingPattern',
+    'brood','broodStrength','abnormalities',
+    'colonySize','populationFrames','temperament',
+    'honey','pollen','feedingNeed',
+    'pests','disease','swarming','super'
+  ];
+  const NEUTRAL={
+    queenStatus:'Not confirmed',queenMarked:'Not assessed',queenAge:'',eggs:'Not assessed',larvae:'Not assessed',queenCells:'Not assessed',layingPattern:'Not assessed',
+    brood:'Not assessed',broodStrength:null,abnormalities:'Not assessed',
+    colonySize:null,populationFrames:null,temperament:'Not assessed',
+    honey:'Not assessed',pollen:'Not assessed',feedingNeed:'Not assessed',
+    pests:'Not assessed',disease:'Not assessed',swarming:'Not assessed',super:'Not assessed'
+  };
+  const txt=v=>String(v??'').trim();
+  const low=v=>txt(v).toLowerCase();
+  const isUnknown=v=>!txt(v)||['unknown','not recorded','not assessed','not confirmed','—','n/a'].includes(low(v));
+  const esc2=v=>typeof esc==='function'?esc(String(v??'')):String(v??'').replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m]||m));
+  function english(v){
+    const raw=txt(v);if(!raw)return raw;
+    try{
+      if(typeof window.v220EnglishDisplay==='function')return String(window.v220EnglishDisplay(raw));
+      if(typeof v220EnglishDisplay==='function')return String(v220EnglishDisplay(raw));
+    }catch(_){ }
+    const map={'很好':'Good','良好':'Good','未见':'Not Seen','未看到':'Not Seen','已见':'Seen','看到':'Seen','无':'None','没有':'None','高':'High','中':'Medium','低':'Low','是':'Yes','否':'No','平静':'Calm'};
+    return map[raw]||raw;
+  }
+  function hasAnyConfirmation(d){
+    return Object.values(d?.__confirmedSections||{}).some(v=>v===true)||Object.values(d?.__confirmedFields||{}).some(v=>v===true);
+  }
+  function shouldSanitize(d){
+    return !!d&&d.__v2p2e5apNewEvidence===true&&d.__v2p2e5apSavedDraft!==true&&d.__v2p2e5r02a2Sanitized!==true&&!hasAnyConfirmation(d);
+  }
+  function sanitizeDraft(d){
+    if(!shouldSanitize(d))return false;
+    const prior={};
+    for(const f of CORE_FIELDS)prior[f]=d[f];
+    d.__previousObservationSnapshot=prior;
+    for(const [f,v] of Object.entries(NEUTRAL))d[f]=v;
+    d.__confirmedSections={};
+    d.__confirmedFields={};
+    d.__v2p2e5r02a2Sanitized=true;
+    d.__v2p2e5r02a2Version=VERSION;
+    return true;
+  }
+  function addPreviousReferences(overlay,name){
+    if(!overlay||!V49_INSPECTION_DRAFT?.__previousObservationSnapshot)return;
+    const prior=V49_INSPECTION_DRAFT.__previousObservationSnapshot;
+    const sectionFields={
+      queen:['queenStatus','queenMarked','queenAge','eggs','larvae','queenCells','layingPattern'],
+      brood:['brood','broodStrength','abnormalities'],
+      colony:['colonySize','populationFrames','temperament'],
+      stores:['honey','pollen','feedingNeed']
+    };
+    for(const f of sectionFields[name]||[]){
+      const el=overlay.querySelector(`[data-field="${f}"]`);if(!el)continue;
+      const value=prior[f];if(isUnknown(value))continue;
+      const label=el.closest('.v211-field');if(!label||label.querySelector(`.v2p2e5r02a2-prev[data-prev-field="${f}"]`))continue;
+      label.insertAdjacentHTML('beforeend',`<small class="v2p2e5r02a2-prev" data-prev-field="${esc2(f)}">Previous: ${esc2(english(value))} · reference only</small>`);
+    }
+  }
+
+  const prevInspection=window.inspectionPage||((typeof inspectionPage==='function')?inspectionPage:null);
+  if(typeof prevInspection==='function'){
+    let rerendering=false;
+    window.inspectionPage=function(r,id){
+      const ret=prevInspection.apply(this,arguments);
+      if(!rerendering&&sanitizeDraft(V49_INSPECTION_DRAFT)){
+        rerendering=true;
+        try{return prevInspection.call(this,r,id)}finally{rerendering=false}
+      }
+      return ret;
+    };
+    try{inspectionPage=window.inspectionPage}catch(_){ }
+  }
+
+  /* R02A1 neutralizes the controls. R02A2 restores only read-only prior-value
+     hints from the separate snapshot after the controls have been neutralized. */
+  const prevOpen=window.v211OpenModule;
+  if(typeof prevOpen==='function'){
+    window.v211OpenModule=function(name){
+      const ret=prevOpen.apply(this,arguments);
+      try{addPreviousReferences(document.querySelector('.v211-module-overlay'),name)}catch(err){console.error('V2P2E5R02A2 previous-reference render failed',err)}
+      return ret;
+    };
+    try{v211OpenModule=window.v211OpenModule}catch(_){ }
+  }
+
+  const st=document.createElement('style');st.id='v2p2e5r02a2-style';st.textContent=`
+    .v2p2e5r02a2-prev{display:block!important;margin-top:6px!important;color:#8A7A52!important;font-size:9px!important;line-height:1.35!important;font-weight:600!important}
+  `;document.head.appendChild(st);
+
+  window.__HIVEDASH_V2P2E5R02A2_VERSION__=VERSION;
+})();

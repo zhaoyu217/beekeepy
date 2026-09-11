@@ -23552,3 +23552,141 @@ window.__HIVEDASH_V2P2E5AX18A1_VERSION__='V2P2E5AX18A1-r01-no-inspection-old-rea
   try{v2p2aSaveCurrentTreatment=window.v2p2aSaveCurrentTreatment}catch(_){ }
   window.__HIVEDASH_V2P2E5AX18B1_VERSION__='V2P2E5AX18B1-not-performed-durability-guard';
 })();
+
+/* ==============================================================
+   V2P2E5AX19B1 — INSPECTION HISTORICAL DETAIL TRUTH
+   Scope ONLY:
+   - Timeline Inspection detail reads the exact s.logs.inspections entity
+     referenced by that Timeline event. It never substitutes current Hive state.
+   - Timeline Inspection rows do not show the generic V45 inspection artwork as
+     if it were a photo captured during that Inspection.
+   - Historical photo ownership is NOT invented or backfilled. Existing Hive
+     photos remain unchanged and continue to exist as Hive-level photos/events.
+   - Read-only presentation only. No Inspection/Treatment/Varroa/Action mutation.
+   ============================================================== */
+(function v2p2e5ax19b1InspectionHistoricalDetailTruth(){
+  if(window.__HIVEDASH_V2P2E5AX19B1__)return;
+  window.__HIVEDASH_V2P2E5AX19B1__=true;
+
+  const txt=v=>String(v??'').trim();
+  const present=v=>v!==null&&v!==undefined&&txt(v)!=='';
+  const display=v=>{
+    if(v===true)return 'Yes';
+    if(v===false)return 'No';
+    return present(v)?txt(v):'Not recorded';
+  };
+  const dateDisplay=v=>present(v)?(typeof fmtDate==='function'?fmtDate(txt(v)):txt(v)):'Not recorded';
+  const numericWithUnit=(v,unit)=>present(v)?`${txt(v)}${unit||''}`:'Not recorded';
+
+  /* Remove only the generic Inspection artwork from Timeline Inspection rows.
+     Photo events and Hive photos are untouched. */
+  const prevRows=window.v49TimelineRows||((typeof v49TimelineRows==='function')?v49TimelineRows:null);
+  if(typeof prevRows==='function'){
+    window.v49TimelineRows=function(hiveId=''){
+      const rows=prevRows.apply(this,arguments)||[];
+      rows.forEach(row=>{if(row&&row.type==='Inspection')row.img='';});
+      return rows;
+    };
+    try{v49TimelineRows=window.v49TimelineRows}catch(_){}
+  }
+
+  function inspectionRecordForEvent(e,key){
+    const s=typeof v45s==='function'?v45s():null;
+    if(!s)return {s:null,record:null};
+    const id=txt(e?.sourceId)||txt(key).split(':').slice(1).join(':');
+    const record=(Array.isArray(s.logs?.inspections)?s.logs.inspections:[])
+      .find(x=>x&&String(x.id)===String(id)&&String(x.hiveId)===String(e?.hiveId||x.hiveId));
+    return {s,record};
+  }
+
+  function detailRow(label,value){
+    return `<div><span>${esc(label)}</span><b>${esc(value)}</b></div>`;
+  }
+  function detailGroup(title,rows){
+    return `<section class="ax19b1-inspection-group"><div class="ax19b1-inspection-group-title">${esc(title)}</div><div class="v2p2c-treatment-detail">${rows.map(([k,v])=>detailRow(k,v)).join('')}</div></section>`;
+  }
+
+  const prevOpen=window.openTimelineEventV49||((typeof openTimelineEventV49==='function')?openTimelineEventV49:null);
+  if(typeof prevOpen==='function'){
+    window.openTimelineEventV49=function(key){
+      const cache=(typeof V49_TIMELINE_CACHE!=='undefined'?V49_TIMELINE_CACHE:(window.V49_TIMELINE_CACHE||[]));
+      const e=cache.find(x=>x&&x.key===key);
+      if(!e||e.type!=='Inspection')return prevOpen.apply(this,arguments);
+
+      const {s,record:x}=inspectionRecordForEvent(e,key);
+      if(!s||!x)return prevOpen.apply(this,arguments);
+      const h=typeof hive==='function'?hive(s,x.hiveId):null;
+
+      const queenAge=present(x.queenAge)?display(x.queenAge):'Not recorded';
+      const colonySize=present(x.colonySize)?display(x.colonySize):(present(x.strength)?display(x.strength):'Not recorded');
+      const superValue=present(x.superStatus)?display(x.superStatus):(present(x.super)?display(x.super):'Not recorded');
+      const varroaCount=present(x.varroa)?numericWithUnit(x.varroa,'/100'):'Not recorded';
+
+      const html=`
+        <div class="modalhead"><b>Inspection · ${esc(h?.name||'Hive')}</b><button onclick="closeModal(this)">✕</button></div>
+        <div class="ax19b1-history-notice"><b>${esc(dateDisplay(x.date))} · Historical record</b><span>Read-only values from this saved Inspection only. Current Hive state is not substituted.</span></div>
+        ${detailGroup('Queen & Brood',[
+          ['Queen seen',display(x.queenStatus)],
+          ['Queen marked',display(x.queenMarked)],
+          ['Queen age',queenAge],
+          ['Eggs',display(x.eggs)],
+          ['Larvae',display(x.larvae)],
+          ['Queen cells',display(x.queenCells)],
+          ['Laying pattern',display(x.layingPattern)],
+          ['Brood pattern',display(x.brood)],
+          ['Brood strength',display(x.broodStrength)],
+          ['Abnormalities',display(x.abnormalities)]
+        ])}
+        ${detailGroup('Colony & Food',[
+          ['Colony size',colonySize],
+          ['Population',present(x.populationFrames)?numericWithUnit(x.populationFrames,' frames'):'Not recorded'],
+          ['Temperament',display(x.temperament)],
+          ['Honey',display(x.honey)],
+          ['Pollen',display(x.pollen)],
+          ['Feeding need',display(x.feedingNeed)]
+        ])}
+        ${detailGroup('Additional checks',[
+          ['Pests',display(x.pests)],
+          ['Disease',display(x.disease)],
+          ['Swarming',display(x.swarming)],
+          ['Super',superValue]
+        ])}
+        ${detailGroup('Formal record snapshot',[
+          ['Varroa count',varroaCount],
+          ['Varroa test date',dateDisplay(x.varroaTestDate)],
+          ['Treatment',display(x.treatment)],
+          ['Treatment status',display(x.treatmentStatus)],
+          ['Treatment follow-up',dateDisplay(x.treatmentFollowUp)],
+          ['Withdrawal',display(x.treatmentWithdrawal)]
+        ])}
+        ${detailGroup('Follow-up & notes',[
+          ['Next inspection',dateDisplay(x.nextInspection)],
+          ['Voice notes',display(x.voiceNotes)],
+          ['Notes',display(x.notes)],
+          ['Photo linkage','No record-level photo link stored for this Inspection']
+        ])}
+        <button class="primary" onclick="closeModal(this);v224b11OpenHiveFromTimeline('${String(x.hiveId).replace(/'/g,"\\'")}')">Open Hive</button>`;
+
+      const m=modal(html);
+      if(m)m.classList.add('v2p2c8-timeline-detail-modal','ax19b1-inspection-history-modal');
+      return m;
+    };
+    try{openTimelineEventV49=window.openTimelineEventV49}catch(_){}
+  }
+
+  if(!document.getElementById('ax19b1-inspection-history-style')){
+    const st=document.createElement('style');
+    st.id='ax19b1-inspection-history-style';
+    st.textContent=`
+      #app>.modal.ax19b1-inspection-history-modal>.modalpanel{max-height:calc(100dvh - 88px)!important;overflow:auto!important;overscroll-behavior:contain!important}
+      .ax19b1-history-notice{display:grid;gap:4px;margin:2px 0 12px;padding:11px 12px;border:1px solid #E4E0D5;border-radius:12px;background:#FFF8DE;color:#2F3B33}
+      .ax19b1-history-notice b{font-size:12px}.ax19b1-history-notice span{font-size:11px;line-height:1.45;color:#667067}
+      .ax19b1-inspection-group{margin:0 0 12px}.ax19b1-inspection-group-title{margin:0 2px 6px;font-size:10px;font-weight:800;letter-spacing:.04em;text-transform:uppercase;color:#5E7350}
+      .ax19b1-inspection-history-modal .v2p2c-treatment-detail{margin-bottom:0}
+      .ax19b1-inspection-history-modal .v2p2c-treatment-detail b{white-space:pre-wrap}
+    `;
+    document.head.appendChild(st);
+  }
+
+  window.__HIVEDASH_V2P2E5AX19B1_VERSION__='V2P2E5AX19B1-inspection-historical-detail-truth';
+})();

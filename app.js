@@ -555,6 +555,12 @@ function normalizeStateV50(input){
   s.meta.scientificTaskReplacements=Array.isArray(s.meta.scientificTaskReplacements)
     ? s.meta.scientificTaskReplacements.filter(x=>x&&typeof x==='object').slice(-300)
     : [];
+  /* V2P2E5R10A12 — durable child-queen-path confirmations.
+     These user-confirmed post-Split facts refine R10 timing only when B39's
+     completed Actual Result does not fully define the child hive queen path. */
+  s.meta.splitQueenPathConfirmations=Array.isArray(s.meta.splitQueenPathConfirmations)
+    ? s.meta.splitQueenPathConfirmations.filter(x=>x&&typeof x==='object').slice(-300)
+    : [];
   s.meta.schema=50;s.meta.updatedAt=s.meta.updatedAt||'';s.meta.userId=s.meta.userId||'';
   return s;
 }
@@ -633,6 +639,7 @@ function mergeStateV50(local,remote){
   primary.meta.scientificTaskOverrides=mergeScientificMeta('scientificTaskOverrides');
   primary.meta.scientificInspectionValidations=mergeScientificMeta('scientificInspectionValidations');
   primary.meta.scientificTaskReplacements=mergeScientificMeta('scientificTaskReplacements');
+  primary.meta.splitQueenPathConfirmations=mergeScientificMeta('splitQueenPathConfirmations');
 
   /* V224B39AM — preserve approved manual/workflow Pending Actions across
      local/cloud merge. Split follow-up must not disappear during cloud hydration. */

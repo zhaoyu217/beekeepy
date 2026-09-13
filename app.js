@@ -516,7 +516,7 @@ function normalizeStateV50(input){
     }else h.superCount=Number(h.superCount);
   });
   s.logs=(s.logs&&typeof s.logs==='object')?s.logs:{};
-  for(const k of ['inspections','feedings','treatments','harvests','varroaTests'])s.logs[k]=Array.isArray(s.logs[k])?s.logs[k].filter(x=>x&&typeof x==='object'):[];
+  for(const k of ['inspections','feedings','treatments','harvests','varroaTests','splitVerifications'])s.logs[k]=Array.isArray(s.logs[k])?s.logs[k].filter(x=>x&&typeof x==='object'):[];
   /* V2P2C3 — canonical Treatment lifecycle repair.
      End Date is the durable completion fact. If an older/browser-translated
      form ever persisted End Date while leaving status as Active/Planned (or
@@ -586,7 +586,7 @@ function mergeStateV50(local,remote){
   if(!local)return normalizeStateV50(remote);if(!remote)return normalizeStateV50(local);
   const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||0)||0,primary=rt>=lt?clone(remote):clone(local),other=rt>=lt?local:remote;
   primary.logs=primary.logs||{};
-  for(const k of ['inspections','feedings','harvests','varroaTests'])primary.logs[k]=unionByIdV50(primary.logs[k]||[],other.logs?.[k]||[]);
+  for(const k of ['inspections','feedings','harvests','varroaTests','splitVerifications'])primary.logs[k]=unionByIdV50(primary.logs[k]||[],other.logs?.[k]||[]);
   primary.logs.treatments=mergeTreatmentRowsV2P2A4(primary.logs.treatments||[],other.logs?.treatments||[]);
   primary.notifications=unionByIdV50(primary.notifications||[],other.notifications||[]);
 
@@ -746,7 +746,7 @@ const DEFAULT_STATE={
     {id:'n1',title:'Hive #3 needs attention',body:'Varroa follow-up is recommended.',read:false,target:'#hive/h3'},
     {id:'n2',title:'Queen status',body:'Hive #2 queen has not been confirmed.',read:false,target:'#hive/h2'}
   ],
-  logs:{inspections:[],feedings:[],treatments:[],harvests:[],varroaTests:[]}
+  logs:{inspections:[],feedings:[],treatments:[],harvests:[],varroaTests:[],splitVerifications:[]}
 };
 
 /* V2P2E4A — authenticated accounts must never inherit demo/sample hives.
@@ -757,7 +757,7 @@ function createEmptyAuthenticatedStateV2P2E4A(user=currentSession?.user){
   fresh.hives=[];
   fresh.actions=[];
   fresh.notifications=[];
-  fresh.logs={inspections:[],feedings:[],treatments:[],harvests:[],varroaTests:[]};
+  fresh.logs={inspections:[],feedings:[],treatments:[],harvests:[],varroaTests:[],splitVerifications:[]};
   fresh.user={
     name:user?.user_metadata?.name||'Beekeeper',
     email:user?.email||'',

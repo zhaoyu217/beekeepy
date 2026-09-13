@@ -6693,6 +6693,9 @@ body:has(.legal155) .vtop .iconbtn:first-child{
     const feedings=Array.isArray(s.logs?.feedings)?s.logs.feedings:[];
     const treatments=Array.isArray(s.logs?.treatments)?s.logs.treatments:[];
     const harvests=Array.isArray(s.logs?.harvests)?s.logs.harvests:[];
+    /* V2P2E5R10A6 — Split Verification is a durable targeted evidence record.
+       It belongs in Timeline but remains semantically separate from Full Inspection. */
+    const splitVerifications=Array.isArray(s.logs?.splitVerifications)?s.logs.splitVerifications:[];
 
     inspections.forEach(x=>
       add('Inspection',x,x.notes||'Inspection saved',V45?.inspection||'')
@@ -6719,6 +6722,23 @@ body:has(.legal155) .vtop .iconbtn:first-child{
         V45?.harvest||''
       )
     );
+
+    splitVerifications.forEach(x=>
+      add(
+        'Split Verification',
+        x,
+        [
+          `Result: ${String(x.verificationResult||'INCONCLUSIVE')}`,
+          `Eggs: ${String(x.eggs||'Not assessed')}`,
+          `Young brood: ${String(x.youngBrood||'Not assessed')}`,
+          `Queen seen: ${String(x.queenSeen||'Not assessed')}`,
+          `Strength: ${String(x.colonyStrength||'Not assessed')}`,
+          `Food: ${String(x.foodStores||'Not assessed')}`
+        ].join(' · ')
+      )
+    );
+
+    window.__HIVEDASH_V2P2E5R10A6_VERSION__='v2p2e5r10a6-durable-split-verification-timeline';
 
     (s.hives||[]).forEach(h=>{
       const photos=typeof hivePhotos==='function'

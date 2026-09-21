@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5R11A3 — R11 / S22 SCIENTIFIC-TASK ROUTE ISOLATION FIX
+   V2P2E5R11A4 — R11 / S22 LEGACY PENDING-TASK ROUTE RECOVERY FIX
 
    CURRENT LAUNCH MAPPING (authoritative for this build):
    - Catalog rule R11 = Space insufficiency check
@@ -27,12 +27,12 @@
 
   const CORE_RULE_ID='HD-R11-SPACE-EVALUATION';
   const RULE_VERSION='HD-R11-v1.0-2026-09-20';
-  const MIGRATION_VERSION='V2P2E5R11A3';
+  const MIGRATION_VERSION='V2P2E5R11A4';
   const CATALOG_RULE_ID='R11';
   const CATALOG_TASK_ID='S22';
   const CTX_KEY='hivedash:v2p2e5r11:b37-exec';
   const DRAFT_PREFIX='hivedash:v2p2e5r11:space-draft:';
-  const VERSION='v2p2e5r11a3-r11-s22-scientific-task-route-isolation-fix';
+  const VERSION='v2p2e5r11a4-r11-s22-legacy-pending-task-route-recovery-fix';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){
@@ -47,6 +47,24 @@
   const js=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
   const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
   const active=s=>{try{return typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)))}catch(_){return (s?.hives||[]).filter(Boolean)}};
+
+  /* R11A4 compatibility migration. A1/A2 could persist the scientific
+     management-review task with type=super-management. That collides with
+     frozen B37 routing and can open a completion page for a scientific task.
+     Only active R11 scientific tasks are normalized; B37 actions and completed
+     history are never touched. */
+  function normalizeLegacyR11PendingTasks(){
+    const s=S();if(!s||!Array.isArray(s.actions))return 0;let changed=0;
+    for(const a of s.actions){
+      if(!a||txt(a.coreRuleId)!==CORE_RULE_ID||low(a.source)!=='scientific-engine')continue;
+      if(['completed','done','cancelled'].includes(low(a.status))||low(a.priority)==='done')continue;
+      if(low(a.workflowStage)==='management-review'&&low(a.type)==='super-management'){a.type='Space Management Review';changed++;}
+      if(low(a.workflowStage)==='management-review'&&!txt(a.executionRoute)&&txt(a.hiveId)&&txt(a.episodeId)){a.executionRoute=`r11-space-review/${encodeURIComponent(txt(a.hiveId))}/${encodeURIComponent(txt(a.episodeId))}`;changed++;}
+    }
+    if(changed&&typeof save==='function')try{save(s)}catch(_){}
+    return changed;
+  }
+  try{normalizeLegacyR11PendingTasks()}catch(err){console.error('V2P2E5R11A4 legacy R11 task migration failed',err)}
   const hiveBy=(s,id)=>active(s).find(h=>txt(h.id)===txt(id))||null;
   const todayFor=(s,h)=>{try{return typeof v2p2e5Today==='function'?txt(v2p2e5Today(s,h?.id||'')):typeof v2p1bDateInHiveTimezone==='function'?txt(v2p1bDateInHiveTimezone(s,h)):new Date().toISOString().slice(0,10)}catch(_){return new Date().toISOString().slice(0,10)}};
   const addDays=(d,n)=>{const x=iso(d);if(!x)return'';const dt=new Date(x+'T12:00:00Z');dt.setUTCDate(dt.getUTCDate()+Number(n||0));return dt.toISOString().slice(0,10)};
@@ -334,7 +352,7 @@
         const s=S(),created=(s?.actions||[]).filter(a=>a&&low(a.type)==='super-management'&&txt(a.hiveId)===txt(ctx.hiveId)&&!beforeIds.has(txt(a.id)));
         const row=created[created.length-1];
         if(row){row.r11EpisodeId=txt(ctx.episodeId);row.r11SourceTaskId=txt(ctx.taskId);row.r11LinkedAt=new Date().toISOString();row.r11CatalogRuleId=CATALOG_RULE_ID;row.r11CatalogTaskId=CATALOG_TASK_ID;if(typeof save==='function')save(s);clearCtx();}
-      }catch(err){console.error('V2P2E5R11A3 B37 linkage failed',err)}
+      }catch(err){console.error('V2P2E5R11A4 B37 linkage failed',err)}
       return ret;
     };
   }
@@ -349,6 +367,13 @@
   const prevRender=window.render||render;
   window.render=function(){
     const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    /* Recover stale A1/A2 type-based routes and old bookmarks. A scientific
+       R11 task must never be interpreted as a frozen B37 action. */
+    if(p[0]==='super-action'&&txt(p[1]).startsWith('scientific-r11-')){
+      const id=decodeURIComponent(txt(p[1]));
+      try{normalizeLegacyR11PendingTasks()}catch(_){}
+      return go(`scientific-action/${encodeURIComponent(id)}`);
+    }
     if(p[0]==='space-evaluation'){
       const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=renderEvaluation(decodeURIComponent(txt(p[1])),decodeURIComponent(txt(p[2])),txt(p[3]));
       const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Space Evaluation</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
@@ -357,7 +382,7 @@
       const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=renderReview(decodeURIComponent(txt(p[1])),decodeURIComponent(txt(p[2])));
       const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Space Management</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
     }
-    const ret=prevRender.apply(this,arguments);try{decorateR11Task()}catch(err){console.error('V2P2E5R11A3 task decoration failed',err)}return ret;
+    const ret=prevRender.apply(this,arguments);try{decorateR11Task()}catch(err){console.error('V2P2E5R11A4 task decoration failed',err)}return ret;
   };
   try{render=window.render}catch(_){ }
 

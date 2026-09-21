@@ -1,5 +1,5 @@
 /* ==============================================================
-   HiveDash V2P2E5AFR4 — Actions Fast Route Transient Direct Route Fix
+   HiveDash V2P2E5AFR5 — Unified Opener Transient Varroa Guard
 
    Scope ONLY:
    - Keep AFR2 instant Back snapshot for read-only scientific Task Detail.
@@ -15,9 +15,9 @@
    ============================================================== */
 (()=>{
   'use strict';
-  if(window.__HIVEDASH_V2P2E5AFR4__)return;
-  window.__HIVEDASH_V2P2E5AFR4__=true;
-  window.__HIVEDASH_V2P2E5AFR4_VERSION__='v2p2e5afr4-actions-fast-route-transient-direct-route';
+  if(window.__HIVEDASH_V2P2E5AFR5__)return;
+  window.__HIVEDASH_V2P2E5AFR5__=true;
+  window.__HIVEDASH_V2P2E5AFR5_VERSION__='v2p2e5afr5-unified-opener-transient-varroa-guard';
 
   const txt=v=>String(v??'').trim();
   const specialized=id=>/^scientific-r10(?:-|$)/i.test(id)||/^scientific-r11(?:-|$)/i.test(id);
@@ -221,12 +221,46 @@
     location.hash=`#scientific-action/${encodeURIComponent(id)}`;
   },true);
 
+  /* AFR5 root-cause fix:
+     The rendered Treatment planned card calls v2p2e5abOpenUnifiedAction()
+     directly via inline onclick. Capture listeners are not a reliable ownership
+     boundary across the stacked legacy route guards, so intercept the exact
+     unified opener itself, after all frozen wrappers have loaded. Only the four
+     deterministic transient Varroa lifecycle ids are handled here; every other
+     action delegates unchanged to the frozen opener chain. */
+  if(!window.__HIVEDASH_V2P2E5AFR5_UNIFIED_GUARD__){
+    window.__HIVEDASH_V2P2E5AFR5_UNIFIED_GUARD__=true;
+    const prevUnifiedOpen=window.v2p2e5abOpenUnifiedAction;
+    if(typeof prevUnifiedOpen==='function'){
+      window.v2p2e5abOpenUnifiedAction=function(actionId){
+        const id=txt(actionId);
+        const route=transientVarroaRoute(id);
+        if(route){
+          captureActionsSnapshot();
+          window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__={
+            actionId:id,
+            bypassed:false,
+            transient:true,
+            entry:'v2p2e5abOpenUnifiedAction',
+            clickedAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
+            fromHash:String(location.hash||''),
+            route
+          };
+          if(typeof go==='function')return go(route);
+          location.hash='#'+route;
+          return;
+        }
+        return prevUnifiedOpen.apply(this,arguments);
+      };
+    }
+  }
+
   window.v2p2e5afr3BackToActions=restoreActionsSnapshot;
   window.v2p2e5afr3CaptureActionsSnapshot=captureActionsSnapshot;
   window.v2p2e5afr3Audit=function(){
     const buttons=[...(document.querySelectorAll?.('#alist > button')||[])];
     return {
-      version:window.__HIVEDASH_V2P2E5AFR4_VERSION__,
+      version:window.__HIVEDASH_V2P2E5AFR5_VERSION__,
       snapshot:usableSnapshot()?{
         ageMs:Date.now()-window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.capturedAt,
         sourceHash:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.sourceHash,
@@ -247,5 +281,5 @@
     };
   };
 
-  console.log('V2P2E5AFR4 LOADED | durable System-task fast route + direct frozen Varroa lifecycle route + instant scientific-detail Back');
+  console.log('V2P2E5AFR5 LOADED | unified-opener transient Varroa guard + durable System-task fast route + instant scientific-detail Back');
 })();

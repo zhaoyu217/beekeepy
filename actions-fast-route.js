@@ -1,8 +1,10 @@
 /* ==============================================================
-   HiveDash V2P2E5AFR5 — Unified Opener Transient Varroa Guard
+   HiveDash V2P2E5AFR6 — Transient Detail Instant Back
 
    Scope ONLY:
-   - Keep AFR2 instant Back snapshot for read-only scientific Task Detail.
+   - Keep instant Back snapshot for read-only scientific Task Detail.
+   - Add instant Back for transient Treatment/Retest detail opened from Actions.
+   - Snapshot restore is used only for an exact AFR-origin route and Back-to-Actions click.
    - Keep direct fast routing only for task ids that are safe to open directly
      as durable scientific-action details.
    - DO NOT direct-route transient Varroa lifecycle projection rows. Those rows
@@ -15,9 +17,9 @@
    ============================================================== */
 (()=>{
   'use strict';
-  if(window.__HIVEDASH_V2P2E5AFR5__)return;
-  window.__HIVEDASH_V2P2E5AFR5__=true;
-  window.__HIVEDASH_V2P2E5AFR5_VERSION__='v2p2e5afr5-unified-opener-transient-varroa-guard';
+  if(window.__HIVEDASH_V2P2E5AFR6__)return;
+  window.__HIVEDASH_V2P2E5AFR6__=true;
+  window.__HIVEDASH_V2P2E5AFR6_VERSION__='v2p2e5afr6-transient-detail-instant-back';
 
   const txt=v=>String(v??'').trim();
   const specialized=id=>/^scientific-r10(?:-|$)/i.test(id)||/^scientific-r11(?:-|$)/i.test(id);
@@ -41,10 +43,29 @@
     }
     return '';
   }
-  const SNAP_TTL_MS=60000;
+  const SNAP_TTL_MS=1800000;
 
   function routeRoot(){
     return txt(location.hash||'#home').replace(/^#/,'').split('/')[0]||'home';
+  }
+
+
+  function currentRoute(){
+    return txt(location.hash||'#home').replace(/^#/,'');
+  }
+
+  function isFastOriginDetailBack(el){
+    const last=window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__;
+    if(!last||!last.transient||!txt(last.route))return false;
+    if(currentRoute()!==txt(last.route))return false;
+    const btn=el?.closest?.('button');
+    if(!btn)return false;
+    const onclick=txt(btn.getAttribute('onclick'));
+    const aria=txt(btn.getAttribute('aria-label')).toLowerCase();
+    const label=txt(btn.textContent).toLowerCase();
+    if(/safeBackV51\(['"]actions['"]\)/.test(onclick))return true;
+    if(/go\(['"]actions['"]\)/.test(onclick))return true;
+    return aria==='back'||label==='back'||label==='back to actions'||label==='‹';
   }
 
   function taskIdFromButton(btn){
@@ -148,6 +169,14 @@
   document.addEventListener('click',ev=>{
     const el=ev.target instanceof Element?ev.target:null;
 
+    if(isFastOriginDetailBack(el)&&usableSnapshot()){
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation?.();
+      restoreActionsSnapshot();
+      return;
+    }
+
     if(isScientificDetailBack(el)&&usableSnapshot()){
       ev.preventDefault();
       ev.stopPropagation();
@@ -228,8 +257,8 @@
      unified opener itself, after all frozen wrappers have loaded. Only the four
      deterministic transient Varroa lifecycle ids are handled here; every other
      action delegates unchanged to the frozen opener chain. */
-  if(!window.__HIVEDASH_V2P2E5AFR5_UNIFIED_GUARD__){
-    window.__HIVEDASH_V2P2E5AFR5_UNIFIED_GUARD__=true;
+  if(!window.__HIVEDASH_V2P2E5AFR6_UNIFIED_GUARD__){
+    window.__HIVEDASH_V2P2E5AFR6_UNIFIED_GUARD__=true;
     const prevUnifiedOpen=window.v2p2e5abOpenUnifiedAction;
     if(typeof prevUnifiedOpen==='function'){
       window.v2p2e5abOpenUnifiedAction=function(actionId){
@@ -260,7 +289,7 @@
   window.v2p2e5afr3Audit=function(){
     const buttons=[...(document.querySelectorAll?.('#alist > button')||[])];
     return {
-      version:window.__HIVEDASH_V2P2E5AFR5_VERSION__,
+      version:window.__HIVEDASH_V2P2E5AFR6_VERSION__,
       snapshot:usableSnapshot()?{
         ageMs:Date.now()-window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.capturedAt,
         sourceHash:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.sourceHash,
@@ -281,5 +310,5 @@
     };
   };
 
-  console.log('V2P2E5AFR5 LOADED | unified-opener transient Varroa guard + durable System-task fast route + instant scientific-detail Back');
+  console.log('V2P2E5AFR6 LOADED | transient Varroa direct route + instant scientific/transient-detail Back');
 })();

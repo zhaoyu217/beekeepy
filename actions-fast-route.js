@@ -1,25 +1,27 @@
 /* ==============================================================
-   HiveDash V2P2E5AFR2 — Actions Fast Route + Instant Detail Back
+   HiveDash V2P2E5AFR3 — Actions Fast Route Safety Guard
 
    Scope ONLY:
-   - Keep AFR1's direct routing for already-rendered generic System cards.
-   - Capture the already-rendered Actions DOM before opening a System task.
-   - On Back from a read-only scientific Task Detail, restore that exact
-     Actions snapshot immediately instead of synchronously regenerating the
-     entire task queue before the user sees the Actions page.
+   - Keep AFR2 instant Back snapshot for read-only scientific Task Detail.
+   - Keep direct fast routing only for task ids that are safe to open directly
+     as durable scientific-action details.
+   - DO NOT direct-route transient Varroa lifecycle projection rows. Those rows
+     are not persisted in state.actions and must continue through the frozen
+     AX5/AX6 opener so treatment/retest routes are resolved correctly.
    - R10/S21 and R11/S22 keep their specialized frozen forward routes.
    - Manual Actions keep their existing workflow-specific routing.
-   - Scientific rules, task generation, evaluators, persistence and B37 are
-     unchanged.
+   - Scientific rules, task generation, evaluators, persistence, B37, app.js,
+     v45.js and R11 are unchanged.
    ============================================================== */
 (()=>{
   'use strict';
-  if(window.__HIVEDASH_V2P2E5AFR2__)return;
-  window.__HIVEDASH_V2P2E5AFR2__=true;
-  window.__HIVEDASH_V2P2E5AFR2_VERSION__='v2p2e5afr2-actions-fast-route-instant-detail-back';
+  if(window.__HIVEDASH_V2P2E5AFR3__)return;
+  window.__HIVEDASH_V2P2E5AFR3__=true;
+  window.__HIVEDASH_V2P2E5AFR3_VERSION__='v2p2e5afr3-actions-fast-route-transient-guard';
 
   const txt=v=>String(v??'').trim();
   const specialized=id=>/^scientific-r10(?:-|$)/i.test(id)||/^scientific-r11(?:-|$)/i.test(id);
+  const transientProjected=id=>/^v2p2c-stage-varroa-/i.test(txt(id));
   const SNAP_TTL_MS=60000;
 
   function routeRoot(){
@@ -90,8 +92,6 @@
       return;
     }
 
-    /* replaceState changes the visible route without firing hashchange, so the
-       expensive Actions regeneration cannot block the first paint. */
     try{
       const url=location.pathname+location.search+'#actions';
       history.replaceState(history.state,'',url);
@@ -129,8 +129,6 @@
   document.addEventListener('click',ev=>{
     const el=ev.target instanceof Element?ev.target:null;
 
-    /* Fast Back: intercept before the inline go('actions') can trigger the
-       heavyweight hashchange Actions render. */
     if(isScientificDetailBack(el)&&usableSnapshot()){
       ev.preventDefault();
       ev.stopPropagation();
@@ -142,12 +140,32 @@
     const btn=el?.closest?.('#alist > button');
     if(!btn||!isSystemCard(btn))return;
 
-    /* Capture even specialized R10/R11 cards. Their frozen forward handlers
-       remain untouched; AFR2 only supplies the instant read-only Back path. */
-    captureActionsSnapshot();
-
     const id=taskIdFromButton(btn);
-    if(!id||specialized(id))return;
+
+    /* Capture specialized R10/R11 because their read-only Task Detail Back can
+       still use AFR3's instant snapshot restore. */
+    if(id&&specialized(id)){
+      captureActionsSnapshot();
+      return;
+    }
+
+    /* CRITICAL SAFETY GUARD:
+       v2p2c-stage-varroa-* rows are transient projections. They intentionally
+       do not exist in persisted state.actions. AX5/AX6 resolve them to the
+       current Treatment/retest route. Never bypass that opener by sending the
+       raw projection id to scientific-action/<id>. */
+    if(!id||transientProjected(id)){
+      window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__={
+        actionId:id,
+        bypassed:true,
+        reason:transientProjected(id)?'transient-varroa-projection':'missing-id',
+        clickedAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
+        fromHash:String(location.hash||'')
+      };
+      return;
+    }
+
+    captureActionsSnapshot();
 
     ev.preventDefault();
     ev.stopPropagation();
@@ -155,6 +173,7 @@
 
     window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__={
       actionId:id,
+      bypassed:false,
       clickedAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
       fromHash:String(location.hash||''),
       route:`scientific-action/${encodeURIComponent(id)}`
@@ -164,25 +183,30 @@
     location.hash=`#scientific-action/${encodeURIComponent(id)}`;
   },true);
 
-  window.v2p2e5afr2BackToActions=restoreActionsSnapshot;
-  window.v2p2e5afr2CaptureActionsSnapshot=captureActionsSnapshot;
-  window.v2p2e5afr2Audit=function(){
+  window.v2p2e5afr3BackToActions=restoreActionsSnapshot;
+  window.v2p2e5afr3CaptureActionsSnapshot=captureActionsSnapshot;
+  window.v2p2e5afr3Audit=function(){
     const buttons=[...(document.querySelectorAll?.('#alist > button')||[])];
     return {
-      version:window.__HIVEDASH_V2P2E5AFR2_VERSION__,
+      version:window.__HIVEDASH_V2P2E5AFR3_VERSION__,
       snapshot:usableSnapshot()?{
         ageMs:Date.now()-window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.capturedAt,
         sourceHash:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.sourceHash,
         htmlLength:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.viewHTML.length
       }:null,
-      systemCards:buttons.map(btn=>({
-        title:txt(btn.querySelector(':scope > strong')?.textContent||btn.querySelector(':scope > b')?.textContent),
-        system:isSystemCard(btn),
-        actionId:taskIdFromButton(btn),
-        specialized:specialized(taskIdFromButton(btn))
-      })).filter(x=>x.system)
+      systemCards:buttons.map(btn=>{
+        const actionId=taskIdFromButton(btn);
+        return {
+          title:txt(btn.querySelector(':scope > strong')?.textContent||btn.querySelector(':scope > b')?.textContent),
+          system:isSystemCard(btn),
+          actionId,
+          specialized:specialized(actionId),
+          transientProjected:transientProjected(actionId),
+          fastDirectSafe:!!actionId&&!specialized(actionId)&&!transientProjected(actionId)
+        };
+      }).filter(x=>x.system)
     };
   };
 
-  console.log('V2P2E5AFR2 LOADED | direct System-task forward route + instant scientific-detail Back snapshot restore');
+  console.log('V2P2E5AFR3 LOADED | direct durable System-task route + transient Varroa guard + instant scientific-detail Back');
 })();

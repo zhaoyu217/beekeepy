@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5R11A2 — R11 / S22 B37 USER-CONFIRMATION HANDOFF FIX
+   V2P2E5R11A3 — R11 / S22 SCIENTIFIC-TASK ROUTE ISOLATION FIX
 
    CURRENT LAUNCH MAPPING (authoritative for this build):
    - Catalog rule R11 = Space insufficiency check
@@ -27,12 +27,12 @@
 
   const CORE_RULE_ID='HD-R11-SPACE-EVALUATION';
   const RULE_VERSION='HD-R11-v1.0-2026-09-20';
-  const MIGRATION_VERSION='V2P2E5R11A2';
+  const MIGRATION_VERSION='V2P2E5R11A3';
   const CATALOG_RULE_ID='R11';
   const CATALOG_TASK_ID='S22';
   const CTX_KEY='hivedash:v2p2e5r11:b37-exec';
   const DRAFT_PREFIX='hivedash:v2p2e5r11:space-draft:';
-  const VERSION='v2p2e5r11a2-r11-s22-b37-user-confirmation-handoff-fix';
+  const VERSION='v2p2e5r11a3-r11-s22-scientific-task-route-isolation-fix';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){
@@ -148,10 +148,13 @@
   const episodeId=(h,signal)=>`r11-space-${txt(h.id)}-${txt(signal?.sourceId||signal?.sourceDate||'evidence')}`;
 
   function taskBase(s,h,signal,episode,title,stage,due,priority){
+    // R11A3: a scientific management-review task is NOT a B37 Super Action.
+    // Keep a distinct type so legacy B37 type-based routers cannot misread
+    // the system task as an executable Add/Remove Super record.
     const ctx=contextFor(s,h);
     return {
       id:`scientific-r11-${stage}-${txt(h.id)}-${txt(signal.sourceId)}`,
-      hiveId:h.id,type:stage==='management-review'?'super-management':'Inspection',title,status:'Pending',
+      hiveId:h.id,type:stage==='management-review'?'Space Management Review':'Inspection',title,status:'Pending',
       priority:priority||signal.severity||'Medium',due:due||todayFor(s,h),dueDate:iso(due||todayFor(s,h)),date:iso(due||todayFor(s,h)),
       source:'scientific-engine',systemGenerated:true,reasonCode:'space',intentKey:stage==='evidence'?'space-evaluation':stage==='follow-up'?'space-verification':'space-management',
       workflowStage:stage,executionRoute:'',coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,ruleEngineOwner:'HiveDashTaskEngineCoreV1',ruleMigrationVersion:MIGRATION_VERSION,
@@ -331,7 +334,7 @@
         const s=S(),created=(s?.actions||[]).filter(a=>a&&low(a.type)==='super-management'&&txt(a.hiveId)===txt(ctx.hiveId)&&!beforeIds.has(txt(a.id)));
         const row=created[created.length-1];
         if(row){row.r11EpisodeId=txt(ctx.episodeId);row.r11SourceTaskId=txt(ctx.taskId);row.r11LinkedAt=new Date().toISOString();row.r11CatalogRuleId=CATALOG_RULE_ID;row.r11CatalogTaskId=CATALOG_TASK_ID;if(typeof save==='function')save(s);clearCtx();}
-      }catch(err){console.error('V2P2E5R11A2 B37 linkage failed',err)}
+      }catch(err){console.error('V2P2E5R11A3 B37 linkage failed',err)}
       return ret;
     };
   }
@@ -354,7 +357,7 @@
       const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=renderReview(decodeURIComponent(txt(p[1])),decodeURIComponent(txt(p[2])));
       const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Space Management</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
     }
-    const ret=prevRender.apply(this,arguments);try{decorateR11Task()}catch(err){console.error('V2P2E5R11A2 task decoration failed',err)}return ret;
+    const ret=prevRender.apply(this,arguments);try{decorateR11Task()}catch(err){console.error('V2P2E5R11A3 task decoration failed',err)}return ret;
   };
   try{render=window.render}catch(_){ }
 

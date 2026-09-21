@@ -1,24 +1,30 @@
 /* ==============================================================
-   HiveDash V2P2E5AFR1 — Actions System Task Fast Route
+   HiveDash V2P2E5AFR2 — Actions Fast Route + Instant Detail Back
 
    Scope ONLY:
-   - Speed up clicks on already-rendered System cards in Actions.
-   - Route the exact rendered task id directly to scientific-action/<id>.
-   - Do NOT re-run task projection, state parsing, or any scientific evaluator
-     on the click path.
-   - R10/S21 and R11/S22 keep their specialized frozen route guards.
+   - Keep AFR1's direct routing for already-rendered generic System cards.
+   - Capture the already-rendered Actions DOM before opening a System task.
+   - On Back from a read-only scientific Task Detail, restore that exact
+     Actions snapshot immediately instead of synchronously regenerating the
+     entire task queue before the user sees the Actions page.
+   - R10/S21 and R11/S22 keep their specialized frozen forward routes.
    - Manual Actions keep their existing workflow-specific routing.
-   - Task Detail remains the validity gate: stale/replaced tasks are handled
-     after navigation by the existing detail renderer.
+   - Scientific rules, task generation, evaluators, persistence and B37 are
+     unchanged.
    ============================================================== */
 (()=>{
   'use strict';
-  if(window.__HIVEDASH_V2P2E5AFR1__)return;
-  window.__HIVEDASH_V2P2E5AFR1__=true;
-  window.__HIVEDASH_V2P2E5AFR1_VERSION__='v2p2e5afr1-actions-system-task-fast-route';
+  if(window.__HIVEDASH_V2P2E5AFR2__)return;
+  window.__HIVEDASH_V2P2E5AFR2__=true;
+  window.__HIVEDASH_V2P2E5AFR2_VERSION__='v2p2e5afr2-actions-fast-route-instant-detail-back';
 
   const txt=v=>String(v??'').trim();
   const specialized=id=>/^scientific-r10(?:-|$)/i.test(id)||/^scientific-r11(?:-|$)/i.test(id);
+  const SNAP_TTL_MS=60000;
+
+  function routeRoot(){
+    return txt(location.hash||'#home').replace(/^#/,'').split('/')[0]||'home';
+  }
 
   function taskIdFromButton(btn){
     if(!btn)return '';
@@ -36,13 +42,112 @@
     return !!badge;
   }
 
+  function captureActionsSnapshot(){
+    if(routeRoot()!=='actions')return null;
+    const view=document.getElementById('view');
+    const top=document.getElementById('topbar');
+    const bottom=document.getElementById('bottomnav');
+    if(!view||!top||!bottom||!document.getElementById('alist'))return null;
+
+    const snap={
+      capturedAt:Date.now(),
+      sourceHash:String(location.hash||'#actions'),
+      viewHTML:view.innerHTML,
+      viewClass:view.className,
+      topHTML:top.innerHTML,
+      topClass:top.className,
+      bottomHTML:bottom.innerHTML,
+      bottomClass:bottom.className,
+      scrollX:Number(window.scrollX||0),
+      scrollY:Number(window.scrollY||0)
+    };
+    window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__=snap;
+    return snap;
+  }
+
+  function usableSnapshot(){
+    const s=window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__;
+    if(!s)return null;
+    if(Date.now()-Number(s.capturedAt||0)>SNAP_TTL_MS)return null;
+    if(!txt(s.viewHTML))return null;
+    return s;
+  }
+
+  function restoreActionsSnapshot(){
+    const snap=usableSnapshot();
+    if(!snap){
+      if(typeof go==='function')return go('actions');
+      location.hash='#actions';
+      return;
+    }
+
+    const view=document.getElementById('view');
+    const top=document.getElementById('topbar');
+    const bottom=document.getElementById('bottomnav');
+    if(!view||!top||!bottom){
+      if(typeof go==='function')return go('actions');
+      location.hash='#actions';
+      return;
+    }
+
+    /* replaceState changes the visible route without firing hashchange, so the
+       expensive Actions regeneration cannot block the first paint. */
+    try{
+      const url=location.pathname+location.search+'#actions';
+      history.replaceState(history.state,'',url);
+    }catch(_){ }
+
+    view.className=snap.viewClass;
+    view.innerHTML=snap.viewHTML;
+    top.className=snap.topClass;
+    top.innerHTML=snap.topHTML;
+    bottom.className=snap.bottomClass;
+    bottom.innerHTML=snap.bottomHTML;
+
+    window.__HIVEDASH_ACTIONS_FAST_BACK_LAST__={
+      restoredAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
+      snapshotAgeMs:Date.now()-Number(snap.capturedAt||0),
+      from:'scientific-action',
+      route:'#actions'
+    };
+
+    requestAnimationFrame(()=>{
+      try{window.scrollTo(snap.scrollX||0,snap.scrollY||0)}catch(_){ }
+    });
+  }
+
+  function isScientificDetailBack(el){
+    if(routeRoot()!=='scientific-action')return false;
+    const btn=el?.closest?.('button');
+    if(!btn)return false;
+    const onclick=txt(btn.getAttribute('onclick'));
+    if(/go\(['"]actions['"]\)/.test(onclick))return true;
+    const label=txt(btn.textContent).toLowerCase();
+    return label==='back'||label==='back to actions';
+  }
+
   document.addEventListener('click',ev=>{
     const el=ev.target instanceof Element?ev.target:null;
+
+    /* Fast Back: intercept before the inline go('actions') can trigger the
+       heavyweight hashchange Actions render. */
+    if(isScientificDetailBack(el)&&usableSnapshot()){
+      ev.preventDefault();
+      ev.stopPropagation();
+      ev.stopImmediatePropagation?.();
+      restoreActionsSnapshot();
+      return;
+    }
+
     const btn=el?.closest?.('#alist > button');
     if(!btn||!isSystemCard(btn))return;
 
+    /* Capture even specialized R10/R11 cards. Their frozen forward handlers
+       remain untouched; AFR2 only supplies the instant read-only Back path. */
+    captureActionsSnapshot();
+
     const id=taskIdFromButton(btn);
-    if(!id||specialized(id))return; // frozen R10/R11 own their exact routes
+    if(!id||specialized(id))return;
 
     ev.preventDefault();
     ev.stopPropagation();
@@ -59,15 +164,25 @@
     location.hash=`#scientific-action/${encodeURIComponent(id)}`;
   },true);
 
-  window.v2p2e5afr1Audit=function(){
+  window.v2p2e5afr2BackToActions=restoreActionsSnapshot;
+  window.v2p2e5afr2CaptureActionsSnapshot=captureActionsSnapshot;
+  window.v2p2e5afr2Audit=function(){
     const buttons=[...(document.querySelectorAll?.('#alist > button')||[])];
-    return buttons.map(btn=>({
-      title:txt(btn.querySelector(':scope > strong')?.textContent||btn.querySelector(':scope > b')?.textContent),
-      system:isSystemCard(btn),
-      actionId:taskIdFromButton(btn),
-      specialized:specialized(taskIdFromButton(btn))
-    })).filter(x=>x.system);
+    return {
+      version:window.__HIVEDASH_V2P2E5AFR2_VERSION__,
+      snapshot:usableSnapshot()?{
+        ageMs:Date.now()-window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.capturedAt,
+        sourceHash:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.sourceHash,
+        htmlLength:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.viewHTML.length
+      }:null,
+      systemCards:buttons.map(btn=>({
+        title:txt(btn.querySelector(':scope > strong')?.textContent||btn.querySelector(':scope > b')?.textContent),
+        system:isSystemCard(btn),
+        actionId:taskIdFromButton(btn),
+        specialized:specialized(taskIdFromButton(btn))
+      })).filter(x=>x.system)
+    };
   };
 
-  console.log('V2P2E5AFR1 LOADED | rendered System cards route directly; no task-engine recompute on click');
+  console.log('V2P2E5AFR2 LOADED | direct System-task forward route + instant scientific-detail Back snapshot restore');
 })();

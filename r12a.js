@@ -36,6 +36,7 @@
   const CATALOG_TASK_ID='S24';
   const VERSION='v2p2e5r12a-r12-s24-robbing-prevention-core';
   const DRAFT_PREFIX='hivedash:v2p2e5r12:robbing-draft:';
+  const PREVENTION_DRAFT_PREFIX='hivedash:v2p2e5r12:prevention-draft:';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){
@@ -170,6 +171,14 @@
   function readDraft(hid,episode,stage){try{return JSON.parse(sessionStorage.getItem(draftKey(hid,episode,stage))||'null')||{}}catch(_){return {}}}
   function writeDraft(hid,episode,stage,patch){try{const k=draftKey(hid,episode,stage),cur=readDraft(hid,episode,stage);sessionStorage.setItem(k,JSON.stringify({...cur,...patch,updatedAt:Date.now()}))}catch(_){}}
   function clearDraft(hid,episode,stage){try{sessionStorage.removeItem(draftKey(hid,episode,stage))}catch(_){}}
+  const preventionDraftKey=(hid,episode)=>PREVENTION_DRAFT_PREFIX+[txt(hid),txt(episode)].map(encodeURIComponent).join('|');
+  function readPreventionDraft(hid,episode){try{const d=JSON.parse(sessionStorage.getItem(preventionDraftKey(hid,episode))||'null')||{};return {measures:Array.isArray(d.measures)?d.measures.map(txt).filter(Boolean):[],notes:txt(d.notes),dirty:d.dirty===true,updatedAt:Number(d.updatedAt||0)}}catch(_){return {measures:[],notes:'',dirty:false,updatedAt:0}}}
+  function writePreventionDraft(hid,episode,patch){try{const k=preventionDraftKey(hid,episode),cur=readPreventionDraft(hid,episode);sessionStorage.setItem(k,JSON.stringify({...cur,...patch,dirty:true,updatedAt:Date.now()}))}catch(_){}}
+  function clearPreventionDraft(hid,episode){try{sessionStorage.removeItem(preventionDraftKey(hid,episode))}catch(_){}}
+  function preventionDraftDirty(hid,episode){return readPreventionDraft(hid,episode).dirty===true}
+  window.v2p2e5r12PreventionToggle=(hid,episode,el)=>{const d=readPreventionDraft(hid,episode),set=new Set(d.measures);const v=txt(el?.value);if(v){if(el?.checked)set.add(v);else set.delete(v)}writePreventionDraft(hid,episode,{measures:[...set]})};
+  window.v2p2e5r12PreventionNotesSet=(hid,episode,value)=>writePreventionDraft(hid,episode,{notes:txt(value)});
+  window.v2p2e5r12PreventionBack=(hid,episode)=>{clearPreventionDraft(hid,episode);go('actions')};
   const opts=(items,current)=>items.map(v=>`<option${txt(v)===txt(current)?' selected':''}>${esc(v)}</option>`).join('');
   window.v2p2e5r12DraftSet=(hid,episode,stage,field,value)=>writeDraft(hid,episode,stage,{[txt(field)]:txt(value)});
   window.v2p2e5r12Cancel=(hid,episode,stage)=>{clearDraft(hid,episode,stage);go('actions')};
@@ -193,7 +202,7 @@
 
   function renderReview(hid,episode){
     const s=S(),h=hiveBy(s,hid),a=findTaskFor(hid,episode,'management-review');if(!h||!a)return `<div class="vs"><section class="vc"><div class="vhead"><b>Robbing prevention review no longer required</b></div><p>New evidence or a recorded prevention step has replaced this review.</p><button class="primary" onclick="go('actions')">Back to Actions</button></section></div>`;
-    const e=a.evidenceChain||{};
+    const e=a.evidenceChain||{},d=readPreventionDraft(hid,episode),selected=new Set(d.measures),isChecked=v=>selected.has(v)?' checked':'';
     return `<div class="vs v2p2e5r12-page v2p2e5r12-review-page">
       <section class="v2p2e5r12-review-hero">
         <div class="v2p2e5r12-review-hero-copy"><span class="v2p2e5r12-kicker">ROBBING PREVENTION</span><h2>Review prevention measures</h2><p>Targeted evidence shows robbing vulnerability or signs. Choose only the measures you actually use.</p></div>
@@ -205,14 +214,14 @@
         <div class="v2p2e5r12-evidence-item"><span>Entrance defense</span><b>${esc(e.entranceDefense||'Not assessed')}</b></div><div class="v2p2e5r12-evidence-item"><span>Colony vulnerability</span><b>${esc(e.colonyVulnerability||'Not assessed')}</b></div>
       </div></section>
       <section class="vc v2p2e5r12-review-card v2p2e5r12-measure-card"><div class="v2p2e5r12-section-head"><div><b>Record prevention measures</b><small>Select only what you actually did</small></div></div><div class="v2p2e5r12-measures">
-        <label><input type="checkbox" value="Reduce entrance / use robbing screen"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Reduce entrance / use robbing screen</b></span></label>
-        <label><input type="checkbox" value="Remove or clean exposed honey / syrup"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Remove or clean exposed honey / syrup</b></span></label>
-        <label><input type="checkbox" value="Minimize hive opening during dearth"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Minimize hive opening during dearth</b></span></label>
-        <label><input type="checkbox" value="Move feeding inside hive / avoid entrance feeder"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Move feeding inside hive / avoid entrance feeder</b></span></label>
-        <label><input type="checkbox" value="Other beekeeper-confirmed measure"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Other beekeeper-confirmed measure</b></span></label>
-      </div><label class="v2p2e5r12-note v2p2e5r12-review-note"><span>Notes <small>Optional</small></span><textarea id="r12-prevention-notes" placeholder="Optional prevention notes"></textarea></label></section>
+        <label><input type="checkbox" value="Reduce entrance / use robbing screen"${isChecked('Reduce entrance / use robbing screen')} onchange="v2p2e5r12PreventionToggle('${js(hid)}','${js(episode)}',this)"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Reduce entrance / use robbing screen</b></span></label>
+        <label><input type="checkbox" value="Remove or clean exposed honey / syrup"${isChecked('Remove or clean exposed honey / syrup')} onchange="v2p2e5r12PreventionToggle('${js(hid)}','${js(episode)}',this)"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Remove or clean exposed honey / syrup</b></span></label>
+        <label><input type="checkbox" value="Minimize hive opening during dearth"${isChecked('Minimize hive opening during dearth')} onchange="v2p2e5r12PreventionToggle('${js(hid)}','${js(episode)}',this)"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Minimize hive opening during dearth</b></span></label>
+        <label><input type="checkbox" value="Move feeding inside hive / avoid entrance feeder"${isChecked('Move feeding inside hive / avoid entrance feeder')} onchange="v2p2e5r12PreventionToggle('${js(hid)}','${js(episode)}',this)"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Move feeding inside hive / avoid entrance feeder</b></span></label>
+        <label><input type="checkbox" value="Other beekeeper-confirmed measure"${isChecked('Other beekeeper-confirmed measure')} onchange="v2p2e5r12PreventionToggle('${js(hid)}','${js(episode)}',this)"><span class="v2p2e5r12-check-ui" aria-hidden="true"></span><span class="v2p2e5r12-measure-copy"><b>Other beekeeper-confirmed measure</b></span></label>
+      </div><label class="v2p2e5r12-note v2p2e5r12-review-note"><span>Notes <small>Optional</small></span><textarea id="r12-prevention-notes" placeholder="Optional prevention notes" oninput="v2p2e5r12PreventionNotesSet('${js(hid)}','${js(episode)}',this.value)">${esc(d.notes)}</textarea></label></section>
       <section class="vc v2p2e5r12-review-card v2p2e5r12-source-card"><div class="v2p2e5r12-source-icon" aria-hidden="true">i</div><div><b>Why these options</b><p>These measures address the evidence recorded for this episode: exposed food, entrance access, and dearth-related robbing risk. HiveDash does not choose a measure automatically.</p><span class="v2p2e5r12-source-ref">Sources: Penn State Extension · Mississippi State Extension</span></div></section>
-      <div class="v2p2e5r12-actions v2p2e5r12-review-actions"><button class="secondary" onclick="go('actions')">Back</button><button class="primary" onclick="v2p2e5r12SavePrevention('${js(hid)}','${js(episode)}')">Record Prevention</button></div>
+      <div class="v2p2e5r12-actions v2p2e5r12-review-actions"><button class="secondary" onclick="v2p2e5r12PreventionBack('${js(hid)}','${js(episode)}')">Back</button><button class="primary" onclick="v2p2e5r12SavePrevention('${js(hid)}','${js(episode)}')">Record Prevention</button></div>
     </div>`;
   }
 
@@ -220,7 +229,7 @@
     const s=S(),h=hiveBy(s,hid),a=findTaskFor(hid,episode,'management-review');if(!h||!a)return toast('This robbing-prevention review is no longer active');
     const measures=[...document.querySelectorAll('.v2p2e5r12-measures input[type="checkbox"]:checked')].map(x=>txt(x.value)).filter(Boolean);if(!measures.length)return toast('Confirm at least one prevention measure before saving');
     const row={id:'robbing-prevention-'+Date.now(),hiveId:txt(hid),date:todayFor(s,h),episodeId:txt(episode),sourceTaskId:txt(a.id),measures,notes:txt(document.getElementById('r12-prevention-notes')?.value),recordedAt:new Date().toISOString(),coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID};
-    s.logs=s.logs||{};s.logs.robbingPreventions=Array.isArray(s.logs.robbingPreventions)?s.logs.robbingPreventions:[];s.logs.robbingPreventions.push(row);if(typeof save==='function'&&save(s)===false)return toast('Robbing prevention could not be saved');toast('Robbing prevention recorded');go('actions');
+    s.logs=s.logs||{};s.logs.robbingPreventions=Array.isArray(s.logs.robbingPreventions)?s.logs.robbingPreventions:[];s.logs.robbingPreventions.push(row);if(typeof save==='function'&&save(s)===false)return toast('Robbing prevention could not be saved');clearPreventionDraft(hid,episode);toast('Robbing prevention recorded');go('actions');
   };
 
   function detailHTML(a){
@@ -242,7 +251,12 @@
       const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=renderEvaluation(decodeURIComponent(txt(p[1])),decodeURIComponent(txt(p[2])),txt(p[3]));const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Robbing Risk Check</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
     }
     if(p[0]==='r12-robbing-review'){
-      const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=renderReview(decodeURIComponent(txt(p[1])),decodeURIComponent(txt(p[2])));const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Robbing Prevention</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
+      const hid=decodeURIComponent(txt(p[1])),episode=decodeURIComponent(txt(p[2])),r=document.getElementById('view');if(!r)return;
+      /* V2P2E5R12UI2A: R12-local dirty draft guard. Once the beekeeper has
+         changed a prevention checkbox or Notes, a same-route background render
+         must not replace the live DOM. Route changes still render normally. */
+      if(preventionDraftDirty(hid,episode)&&r.querySelector?.('.v2p2e5r12-review-page'))return;
+      r.className='view secondary';r.innerHTML=renderReview(hid,episode);const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Robbing Prevention</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
     }
     return prevRender.apply(this,arguments);
   };try{render=window.render}catch(_){ }
@@ -265,6 +279,7 @@
 `;document.head.appendChild(style);
 
   window.V2P2E5R12A_CATALOG=Object.freeze({version:VERSION,migrationVersion:MIGRATION_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID,coreRuleId:CORE_RULE_ID,scientificRuleChanged:'new-r12-s24-rule-no-frozen-rule-rewritten',automaticExecution:false,regionalProfiles:['Northeast','Mississippi','California']});
+  window.__HIVEDASH_V2P2E5R12UI2A_VERSION__='v2p2e5r12ui2a-prevention-draft-rollback-guard';
   window.__HIVEDASH_V2P2E5R12A_VERSION__=VERSION;
   console.log('V2P2E5R12A LOADED | R12/S24 robbing-prevention core');
 })();

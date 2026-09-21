@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5R11A7 — R11 / S22 FINAL WORDING CLOSURE
+   V2P2E5R11A8 — R11 / S22 EXACT TASK ROUTE ISOLATION
 
    CURRENT LAUNCH MAPPING (authoritative for this build):
    - Catalog rule R11 = Space insufficiency check
@@ -27,12 +27,12 @@
 
   const CORE_RULE_ID='HD-R11-SPACE-EVALUATION';
   const RULE_VERSION='HD-R11-v1.0-2026-09-20';
-  const MIGRATION_VERSION='V2P2E5R11A7';
+  const MIGRATION_VERSION='V2P2E5R11A8';
   const CATALOG_RULE_ID='R11';
   const CATALOG_TASK_ID='S22';
   const CTX_KEY='hivedash:v2p2e5r11:b37-exec';
   const DRAFT_PREFIX='hivedash:v2p2e5r11:space-draft:';
-  const VERSION='v2p2e5r11a7-r11-s22-final-wording-closure';
+  const VERSION='v2p2e5r11a8-r11-s22-exact-task-route-isolation';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){
@@ -47,6 +47,13 @@
   const js=v=>txt(v).replace(/\\/g,'\\\\').replace(/'/g,"\\'").replace(/\r?\n/g,' ');
   const S=()=>{try{return typeof v45s==='function'?v45s():state()}catch(_){return null}};
   const active=s=>{try{return typeof v224ActiveTrackedHives==='function'?v224ActiveTrackedHives(s):(s?.hives||[]).filter(h=>h&&!h.archived&&!['combined','archived'].includes(low(h.lifecycleStatus||h.status)))}catch(_){return (s?.hives||[]).filter(Boolean)}};
+
+  /* R11A8 route isolation cache. The Actions list has already evaluated the
+     current R11 task. Keep that exact rendered task by id so a click does not
+     need to traverse the shared scientific opener/decorator chain before
+     navigation. Cache is presentation-only and is refreshed by generateActions. */
+  const R11_TASK_CACHE=new Map();
+  const isR11TaskId=id=>/^scientific-r11-/.test(txt(id));
 
   /* R11A4 compatibility migration. A1/A2 could persist the scientific
      management-review task with type=super-management. That collides with
@@ -262,18 +269,22 @@
     window.generateActions=function(s){
       let out=(prevGenerate(s)||[]).filter(a=>txt(a?.coreRuleId)!==CORE_RULE_ID);
       const seen=new Set(out.map(a=>txt(a.id)||`${txt(a.hiveId)}|${txt(a.intentKey)}|${txt(a.title)}`));
+      const nextCache=new Map();
       for(const h of active(s)){
         const ev=evaluateR11(s,h),task=projectTask(ev,s);if(!task)continue;
-        const k=txt(task.id)||`${txt(task.hiveId)}|${txt(task.intentKey)}|${txt(task.title)}`;if(seen.has(k))continue;seen.add(k);out.push(task);
+        const k=txt(task.id)||`${txt(task.hiveId)}|${txt(task.intentKey)}|${txt(task.title)}`;if(seen.has(k))continue;seen.add(k);out.push(task);nextCache.set(txt(task.id),task);
       }
+      R11_TASK_CACHE.clear();for(const [id,task] of nextCache)R11_TASK_CACHE.set(id,task);
       return out;
     };
     try{generateActions=window.generateActions}catch(_){ }
   }
 
   function findTask(id){
+    const key=txt(id),cached=R11_TASK_CACHE.get(key);
+    if(cached&&txt(cached.coreRuleId)===CORE_RULE_ID)return cached;
     const s=S();
-    try{return (typeof generateActions==='function'?(generateActions(s)||[]):[]).find(a=>a&&txt(a.id)===txt(id)&&txt(a.coreRuleId)===CORE_RULE_ID)||null}catch(_){return null}
+    try{return (typeof generateActions==='function'?(generateActions(s)||[]):[]).find(a=>a&&txt(a.id)===key&&txt(a.coreRuleId)===CORE_RULE_ID)||null}catch(_){return null}
   }
   function findTaskFor(hid,episode,stage=''){
     const s=S();try{return (typeof generateActions==='function'?(generateActions(s)||[]):[]).find(a=>a&&txt(a.hiveId)===txt(hid)&&txt(a.coreRuleId)===CORE_RULE_ID&&txt(a.episodeId)===txt(episode)&&(!stage||low(a.workflowStage)===low(stage)))||null}catch(_){return null}
@@ -357,6 +368,41 @@
     };
   }
 
+  function r11DetailHTML(a){
+    const s=S(),h=hiveBy(s,a.hiveId),stage=low(a.workflowStage),stageLabel=stage==='evidence'?'Gather evidence':stage==='follow-up'?'Verify result':'Review management';
+    const why=txt(a.systemWhy||a.reason||'Current space evidence requires review.');
+    const due=txt(a.dueDate||a.due||a.date||'Needs confirmation');
+    const next=stage==='management-review'
+      ?'Review the evidence and choose the appropriate space-management step. HiveDash will not choose Add or Remove, the number of supers, or create an equipment action without your confirmation.'
+      :stage==='follow-up'
+        ?'Record new targeted space evidence. Completed equipment work is not treated as biological success until the follow-up evidence supports it.'
+        :'Collect the requested targeted space evidence. HiveDash will recalculate the task queue from the new record.';
+    const cta=stage==='management-review'?'Review Add-space Options':stage==='follow-up'?'Verify Space':'Start Space Evaluation';
+    return `<div class="vs v2p2e5ab-detail v2p2e5r11-detail"><section class="vc"><div class="vhead"><b>${esc(a.title||'R11 space task')}</b><span class="v2p2e5ab-source-pill">System</span><span class="v2p2e5r11-pill">R11 · S22</span></div><div class="v2p2e5ab-detail-grid"><span>Hive<b>${esc(h?.name||'Unavailable')}</b></span><span>Stage<b>${esc(stageLabel)}</b></span><span>Priority<b>${esc(a.priority||'Medium')}</b></span><span>Due<b>${esc(due)}</b></span></div></section><section class="vc"><div class="vhead"><b>Why this task exists</b></div><p>${esc(why)}</p></section><section class="vc"><div class="vhead"><b>What happens next</b></div><p>${esc(next)}</p></section><div class="v2p2e5ab-detail-actions"><button class="secondary" onclick="go('actions')">Back</button><button class="primary" onclick="v2p2e5r11OpenExactTask('${js(a.id)}')">${esc(cta)}</button></div></div>`;
+  }
+
+  window.v2p2e5r11OpenExactTask=function(taskId){
+    const a=findTask(taskId);if(!a)return typeof toast==='function'?toast('This R11 space task is no longer active'):null;
+    const route=txt(a.executionRoute);if(!route)return typeof toast==='function'?toast('This R11 space task has no active next step'):null;
+    return go(route);
+  };
+
+  /* R11A8: capture only R11 cards and route the exact rendered task id. This
+     bypasses the long shared scientific opener chain (R02/S13/R10/AX layers),
+     which could leave the previous scientific detail visible on the first
+     click and only show R11 on a second attempt. Other rules are untouched. */
+  if(!window.__HIVEDASH_V2P2E5R11A8_CARD_ROUTE_BOUND__){
+    window.__HIVEDASH_V2P2E5R11A8_CARD_ROUTE_BOUND__=true;
+    document.addEventListener('click',function(ev){
+      const el=ev.target instanceof Element?ev.target:null,btn=el?.closest?.('#alist > button');if(!btn)return;
+      let id=txt(btn.dataset?.actionId);
+      if(!id){const raw=txt(btn.getAttribute('onclick'));const m=raw.match(/(?:v2p2e5amOpenTask|v2p2e5abOpenUnifiedAction)\('([^']+)'\)/);if(m)id=txt(m[1]);}
+      if(!isR11TaskId(id))return;
+      ev.preventDefault();ev.stopPropagation();ev.stopImmediatePropagation?.();
+      if(typeof go==='function')go(`scientific-action/${encodeURIComponent(id)}`);
+    },true);
+  }
+
   function decorateR11Task(){
     const p=txt(location.hash||'#home').replace(/^#/,'').split('/');if(p[0]!=='scientific-action')return;
     const a=findTask(p[1]);if(!a)return;
@@ -378,6 +424,12 @@
   const prevRender=window.render||render;
   window.render=function(){
     const p=txt(location.hash||'#home').replace(/^#/,'').split('/');
+    if(p[0]==='scientific-action'&&isR11TaskId(decodeURIComponent(txt(p[1])))){
+      const id=decodeURIComponent(txt(p[1])),a=findTask(id),r=document.getElementById('view');if(!r)return;
+      r.className='view secondary';
+      r.innerHTML=a?r11DetailHTML(a):`<div class="vs"><section class="vc"><div class="vhead"><b>R11 task no longer required</b></div><p>New evidence or a changed workflow state has resolved or replaced this space task.</p><button class="primary" onclick="go('actions')">Back to Actions</button></section></div>`;
+      const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Task Detail</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
+    }
     /* Recover stale A1/A2 type-based routes and old bookmarks. A scientific
        R11 task must never be interpreted as a frozen B37 action. */
     if(p[0]==='super-action'&&txt(p[1]).startsWith('scientific-r11-')){

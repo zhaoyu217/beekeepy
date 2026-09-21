@@ -1,50 +1,60 @@
 /* ==============================================================
-   V2P2E5UI1 — NATIVE SELECT FIRST-OPEN STABILITY GUARD
+   V2P2E5UI1A — NATIVE SELECT POPUP FOCUS STABILITY GUARD
 
    UI-only scope:
-   - Prevent a same-route async/realtime render from replacing #view while
-     the user is actively opening/choosing a native <select> option.
-   - The render is deferred, not discarded, and is replayed after the select
-     commits (change) or loses focus.
-   - Route changes are never blocked.
-   - No Action, rule, workflow, persistence, data model, or scientific logic
-     is modified.
+   - Preserve a native <select> while its browser popup is open/committing.
+   - Fix UI1's over-eager focusout release: some desktop browsers can move
+     focus while the native popup is active, allowing a same-route repaint to
+     replace the control before the first option click commits.
+   - Same-route renders are deferred, never discarded; route changes always win.
+   - No Action, rule, workflow, persistence, data model, or scientific logic.
 
-   Root interaction gap:
-   - V224B14 protects dirty forms after input/change.
-   - A native select can be destroyed by a background render after pointerdown
-     but before its first change event, which collapses the first-open popup.
-   - This guard closes only that pre-change interaction window globally for
-     page-level selects inside #view.
+   UI1A lifecycle:
+   - begin on pointer/mouse/focus into a page-level select;
+   - DO NOT end merely because focusout fires;
+   - end after change (next task, after inline onchange has persisted draft),
+     Escape, focus moving to another real control, or pointerdown elsewhere;
+   - route changes clear ownership immediately and render normally.
    ============================================================== */
-(function v2p2e5ui1NativeSelectFirstOpenGuard(){
+(function v2p2e5ui1aNativeSelectPopupFocusGuard(){
   'use strict';
-  if(window.__HIVEDASH_V2P2E5UI1__)return;
-  window.__HIVEDASH_V2P2E5UI1__=true;
+  if(window.__HIVEDASH_V2P2E5UI1A__)return;
+  window.__HIVEDASH_V2P2E5UI1A__=true;
 
-  const VERSION='v2p2e5ui1-native-select-first-open-stability';
+  const VERSION='v2p2e5ui1a-native-select-popup-focus-stability';
   const routeNow=()=>String(location.hash||'#home').replace(/^#/,'');
   const baseRender=(typeof window.render==='function')?window.render:null;
   if(!baseRender){
-    console.warn('V2P2E5UI1 not installed: render() unavailable');
+    console.warn('V2P2E5UI1A not installed: render() unavailable');
     return;
   }
 
   let activeSelect=null;
   let activeRoute='';
   let pendingCall=null;
+  let replayTimer=0;
   let blockedRenders=0;
   let replayedRenders=0;
+  let focusoutIgnored=0;
 
   function pageSelect(el){
     if(!el||!el.matches?.('select')||el.disabled)return null;
     return el.closest?.('#view')?el:null;
+  }
+  function pageControl(el){
+    if(!el||!el.matches?.('input,select,textarea,button,a,[tabindex]'))return null;
+    return el.closest?.('#view')?el:null;
+  }
+
+  function cancelReplay(){
+    if(replayTimer){clearTimeout(replayTimer);replayTimer=0;}
   }
 
   function begin(el){
     el=pageSelect(el);
     if(!el)return;
     const route=routeNow();
+    cancelReplay();
     if(activeSelect===el&&activeRoute===route)return;
     if(activeRoute&&activeRoute!==route)pendingCall=null;
     activeSelect=el;
@@ -57,12 +67,13 @@
   }
 
   function replay(route){
+    replayTimer=0;
     if(!pendingCall||routeNow()!==route)return;
     const call=pendingCall;
     pendingCall=null;
     replayedRenders++;
     try{window.render.apply(call.thisArg,call.args)}catch(err){
-      console.error('V2P2E5UI1 deferred render replay failed',err);
+      console.error('V2P2E5UI1A deferred render replay failed',err);
     }
   }
 
@@ -71,33 +82,55 @@
     if(!activeSelect)return;
     const route=activeRoute;
     clearInteraction();
+    cancelReplay();
+    /* Use a task boundary, not a microtask. This guarantees the native select's
+       target/inline onchange and any bubbling draft handlers finish before a
+       deferred repaint is allowed to reconstruct the page. */
     if(pendingCall&&routeNow()===route){
-      if(typeof queueMicrotask==='function')queueMicrotask(()=>replay(route));
-      else Promise.resolve().then(()=>replay(route));
+      replayTimer=setTimeout(()=>replay(route),0);
     }
   }
 
-  /* Begin before the browser opens the native option popup. Pointer events are
-     primary; mousedown/focusin are harmless fallbacks and begin() is idempotent. */
-  document.addEventListener('pointerdown',e=>begin(e.target?.closest?.('select')),true);
-  document.addEventListener('mousedown',e=>begin(e.target?.closest?.('select')),true);
-  document.addEventListener('focusin',e=>begin(pageSelect(e.target)),true);
+  document.addEventListener('pointerdown',e=>{
+    const sel=pageSelect(e.target?.closest?.('select'));
+    if(sel){begin(sel);return;}
+    /* Clicking another real page control means the native popup interaction is
+       over. Defer the replay so the new control's click is not destroyed. */
+    if(activeSelect&&pageControl(e.target?.closest?.('input,select,textarea,button,a,[tabindex]')))finish(activeSelect);
+  },true);
 
-  /* change is captured before inline onchange, so finish is deliberately queued:
-     the target onchange handler gets the full event first and can persist its draft. */
+  document.addEventListener('mousedown',e=>{
+    const sel=pageSelect(e.target?.closest?.('select'));
+    if(sel)begin(sel);
+  },true);
+
+  document.addEventListener('focusin',e=>{
+    const sel=pageSelect(e.target);
+    if(sel){
+      if(activeSelect&&activeSelect!==sel)finish(activeSelect);
+      begin(sel);
+      return;
+    }
+    if(activeSelect&&pageControl(e.target))finish(activeSelect);
+  },true);
+
+  /* Critical UI1A change: focusout alone is NOT proof that the native popup is
+     finished. Chrome/Edge/OS-native select UI may temporarily move focus while
+     the option list is active. Replaying here can invalidate the first click. */
+  document.addEventListener('focusout',e=>{
+    if(pageSelect(e.target)&&activeSelect===e.target)focusoutIgnored++;
+  },true);
+
   document.addEventListener('change',e=>{
     const el=pageSelect(e.target);
     if(!el)return;
-    if(typeof queueMicrotask==='function')queueMicrotask(()=>finish(el));
-    else Promise.resolve().then(()=>finish(el));
+    /* schedule finish; target inline onchange persists the selected value first */
+    setTimeout(()=>finish(el),0);
   },true);
 
-  /* Covers Esc/cancel or clicking elsewhere without changing a value. Use a task
-     boundary so any browser-delivered change event can complete first. */
-  document.addEventListener('focusout',e=>{
-    const el=pageSelect(e.target);
-    if(!el)return;
-    setTimeout(()=>finish(el),0);
+  document.addEventListener('keydown',e=>{
+    if(!activeSelect)return;
+    if(String(e.key||'')==='Escape')setTimeout(()=>finish(activeSelect),0);
   },true);
 
   window.render=function(){
@@ -107,11 +140,11 @@
     if(activeSelect&&activeRoute&&route!==activeRoute){
       clearInteraction();
       pendingCall=null;
+      cancelReplay();
       return baseRender.apply(this,arguments);
     }
 
-    /* Same-route background repaint during native select interaction: keep the
-       live control mounted so the first-open popup stays open. Replay later. */
+    /* Same-route background repaint while the native option UI is active. */
     if(activeSelect&&activeRoute===route){
       blockedRenders++;
       pendingCall={thisArg:this,args:Array.from(arguments)};
@@ -126,6 +159,7 @@
     if(activeRoute&&routeNow()!==activeRoute){
       clearInteraction();
       pendingCall=null;
+      cancelReplay();
     }
   },true);
 
@@ -136,9 +170,10 @@
       route:activeRoute,
       pending:!!pendingCall,
       blockedRenders,
-      replayedRenders
+      replayedRenders,
+      focusoutIgnored
     })
   };
-  window.__HIVEDASH_V2P2E5UI1_VERSION__=VERSION;
-  console.log('V2P2E5UI1 LOADED | native select first-open stability guard active');
+  window.__HIVEDASH_V2P2E5UI1A_VERSION__=VERSION;
+  console.log('V2P2E5UI1A LOADED | native select popup focus stability guard active');
 })();

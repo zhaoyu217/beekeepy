@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5R11A — R11 / S22 SPACE EVALUATION CORE + WORKFLOW CLOSURE
+   V2P2E5R11A1 — R11 / S22 SPACE EVALUATION DRAFT-PERSISTENCE FIX
 
    CURRENT LAUNCH MAPPING (authoritative for this build):
    - Catalog rule R11 = Space insufficiency check
@@ -27,11 +27,12 @@
 
   const CORE_RULE_ID='HD-R11-SPACE-EVALUATION';
   const RULE_VERSION='HD-R11-v1.0-2026-09-20';
-  const MIGRATION_VERSION='V2P2E5R11A';
+  const MIGRATION_VERSION='V2P2E5R11A1';
   const CATALOG_RULE_ID='R11';
   const CATALOG_TASK_ID='S22';
   const CTX_KEY='hivedash:v2p2e5r11:b37-exec';
-  const VERSION='v2p2e5r11a-r11-s22-space-evaluation-core-closure';
+  const DRAFT_PREFIX='hivedash:v2p2e5r11:space-draft:';
+  const VERSION='v2p2e5r11a1-r11-s22-space-evaluation-draft-persistence-fix';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){
@@ -79,6 +80,20 @@
   }
 
   const unknown=v=>['','not assessed','not checked','not confirmed','unknown','not recorded','—','-','n/a'].includes(low(v));
+  const draftKey=(hid,episode,stage)=>DRAFT_PREFIX+[txt(hid),txt(episode),low(stage)==='follow-up'?'follow-up':'initial'].map(encodeURIComponent).join('|');
+  function readSpaceDraft(hid,episode,stage){
+    try{return JSON.parse(sessionStorage.getItem(draftKey(hid,episode,stage))||'null')||{}}catch(_){return {}}
+  }
+  function writeSpaceDraft(hid,episode,stage,patch){
+    try{
+      const key=draftKey(hid,episode,stage),cur=readSpaceDraft(hid,episode,stage);
+      sessionStorage.setItem(key,JSON.stringify({...cur,...(patch||{}),updatedAt:Date.now()}));
+    }catch(_){ }
+  }
+  function clearSpaceDraft(hid,episode,stage){try{sessionStorage.removeItem(draftKey(hid,episode,stage))}catch(_){ }}
+  const optionHtml=(items,current)=>items.map(v=>`<option${txt(v)===txt(current)?' selected':''}>${esc(v)}</option>`).join('');
+  window.v2p2e5r11DraftSet=function(hid,episode,stage,field,value){writeSpaceDraft(hid,episode,stage,{[txt(field)]:txt(value)})};
+  window.v2p2e5r11CancelSpaceEvaluation=function(hid,episode,stage){clearSpaceDraft(hid,episode,stage);go('actions')};
   const shortageSpace=v=>['limited','none'].includes(low(v));
   const adequateSpace=v=>low(v)==='adequate';
   const highCongestion=v=>['high','severe'].includes(low(v));
@@ -244,9 +259,11 @@
   }
 
   function renderEvaluation(hid,episode,stage){
-    const s=S(),h=hiveBy(s,hid),a=findTaskFor(hid,episode,stage==='follow-up'?'follow-up':'evidence');
+    const normalizedStage=stage==='follow-up'?'follow-up':'initial';
+    const s=S(),h=hiveBy(s,hid),a=findTaskFor(hid,episode,normalizedStage==='follow-up'?'follow-up':'evidence');
     if(!h||!a)return `<div class="vs"><section class="vc"><div class="vhead"><b>Space evaluation no longer required</b></div><p>New evidence or a changed workflow state has resolved or replaced this task.</p><button class="primary" onclick="go('actions')">Back to Actions</button></section></div>`;
-    const e=a.evidenceChain||{},ctx=contextFor(s,h);
+    const e=a.evidenceChain||{},ctx=contextFor(s,h),draft=readSpaceDraft(hid,episode,normalizedStage);
+    const broodDraft=txt(draft.broodNestSpace)||'Not assessed',superDraft=txt(draft.superSpace)||'Not assessed',congestionDraft=txt(draft.colonyCongestion)||'Not assessed',nectarDraft=txt(draft.nectarFlow)||'Not assessed',notesDraft=txt(draft.notes);
     return `<div class="vs v2p2e5r11-space-page">
       <section class="vc"><div class="vhead"><b>${stage==='follow-up'?'Space Verification':'Space Evaluation'} · targeted evidence</b><span class="v2p2e5r11-pill">R11 · S22</span></div><p class="muted">Record only what you assess now. Previous Inspection or swarm-space values are reference only. This does not count as a Full Inspection.</p></section>
       <section class="vc"><div class="vhead"><b>Current context</b></div><div class="v2p2e5r11-grid">
@@ -255,13 +272,13 @@
         <span>Colony phase<b>${esc(ctx.colonyPhase)}</b></span><span>Nectar state<b>${esc(ctx.nectarState)}</b></span>
       </div></section>
       <section class="vc v2p2e5r11-check-card">
-        <label><span>Brood Nest Space</span><select id="r11-brood-space"><option>Not assessed</option><option>Adequate</option><option>Limited</option><option>None</option></select></label>
-        <label><span>Honey / Super Space</span><select id="r11-super-space"><option>Not assessed</option><option>Adequate</option><option>Limited</option><option>None</option><option>No super installed</option></select></label>
-        <label><span>Colony Congestion</span><select id="r11-congestion"><option>Not assessed</option><option>Low</option><option>Moderate</option><option>High</option><option>Severe</option></select></label>
-        <label><span>Nectar Flow Context</span><select id="r11-nectar"><option>Not assessed</option><option>Active</option><option>Not active</option><option>Unknown</option></select><small>Context only. HiveDash does not invent a local nectar-flow state.</small></label>
+        <label><span>Brood Nest Space</span><select id="r11-brood-space" onchange="v2p2e5r11DraftSet('${js(hid)}','${js(episode)}','${normalizedStage}','broodNestSpace',this.value)">${optionHtml(['Not assessed','Adequate','Limited','None'],broodDraft)}</select></label>
+        <label><span>Honey / Super Space</span><select id="r11-super-space" onchange="v2p2e5r11DraftSet('${js(hid)}','${js(episode)}','${normalizedStage}','superSpace',this.value)">${optionHtml(['Not assessed','Adequate','Limited','None','No super installed'],superDraft)}</select></label>
+        <label><span>Colony Congestion</span><select id="r11-congestion" onchange="v2p2e5r11DraftSet('${js(hid)}','${js(episode)}','${normalizedStage}','colonyCongestion',this.value)">${optionHtml(['Not assessed','Low','Moderate','High','Severe'],congestionDraft)}</select></label>
+        <label><span>Nectar Flow Context</span><select id="r11-nectar" onchange="v2p2e5r11DraftSet('${js(hid)}','${js(episode)}','${normalizedStage}','nectarFlow',this.value)">${optionHtml(['Not assessed','Active','Not active','Unknown'],nectarDraft)}</select><small>Context only. HiveDash does not invent a local nectar-flow state.</small></label>
       </section>
-      <section class="vc"><label class="v2p2e5r11-note"><span>Notes</span><textarea id="r11-notes" placeholder="Optional current space context"></textarea></label></section>
-      <div class="v2p2e5r11-actions"><button class="secondary" onclick="go('actions')">Cancel</button><button class="primary" onclick="v2p2e5r11SaveSpaceEvaluation('${js(hid)}','${js(episode)}','${stage==='follow-up'?'follow-up':'initial'}')">Save Space Evaluation</button></div>
+      <section class="vc"><label class="v2p2e5r11-note"><span>Notes</span><textarea id="r11-notes" placeholder="Optional current space context" oninput="v2p2e5r11DraftSet('${js(hid)}','${js(episode)}','${normalizedStage}','notes',this.value)">${esc(notesDraft)}</textarea></label></section>
+      <div class="v2p2e5r11-actions"><button class="secondary" onclick="v2p2e5r11CancelSpaceEvaluation('${js(hid)}','${js(episode)}','${normalizedStage}')">Cancel</button><button class="primary" onclick="v2p2e5r11SaveSpaceEvaluation('${js(hid)}','${js(episode)}','${normalizedStage}')">Save Space Evaluation</button></div>
     </div>`;
   }
 
@@ -272,6 +289,7 @@
     const row={id:'space-eval-'+Date.now(),hiveId:txt(hid),date:todayFor(s,h),episodeId:txt(episode),sourceTaskId:txt(a.id),stage:low(stage)==='follow-up'?'follow-up':'initial',broodNestSpace:brood,superSpace:sup,colonyCongestion:cong,nectarFlow:nectar||'Not assessed',notes,recordedAt:new Date().toISOString(),coreRuleId:CORE_RULE_ID,ruleVersion:RULE_VERSION,catalogRuleId:CATALOG_RULE_ID,catalogTaskId:CATALOG_TASK_ID};
     row.verificationResult=checkResult(row);s.logs=s.logs||{};s.logs.spaceEvaluations=Array.isArray(s.logs.spaceEvaluations)?s.logs.spaceEvaluations:[];s.logs.spaceEvaluations.push(row);
     if(typeof save==='function'&&save(s)===false)return toast('Space Evaluation could not be saved');
+    clearSpaceDraft(hid,episode,stage);
     toast('Space Evaluation saved');go('actions');
   };
 

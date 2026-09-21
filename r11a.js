@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5R11A4 — R11 / S22 LEGACY PENDING-TASK ROUTE RECOVERY FIX
+   V2P2E5R11A5 — R11 / S22 SPACE-MANAGEMENT BUTTON WIRING FIX
 
    CURRENT LAUNCH MAPPING (authoritative for this build):
    - Catalog rule R11 = Space insufficiency check
@@ -27,12 +27,12 @@
 
   const CORE_RULE_ID='HD-R11-SPACE-EVALUATION';
   const RULE_VERSION='HD-R11-v1.0-2026-09-20';
-  const MIGRATION_VERSION='V2P2E5R11A4';
+  const MIGRATION_VERSION='V2P2E5R11A5';
   const CATALOG_RULE_ID='R11';
   const CATALOG_TASK_ID='S22';
   const CTX_KEY='hivedash:v2p2e5r11:b37-exec';
   const DRAFT_PREFIX='hivedash:v2p2e5r11:space-draft:';
-  const VERSION='v2p2e5r11a4-r11-s22-legacy-pending-task-route-recovery-fix';
+  const VERSION='v2p2e5r11a5-r11-s22-space-management-button-wiring-fix';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){
@@ -325,7 +325,7 @@
         <span>Congestion<b>${esc(e.colonyCongestion||'Not assessed')}</b></span><span>Nectar context<b>${esc(e.nectarFlow||'Not assessed')}</b></span>
       </div></section>
       <section class="vc"><div class="vhead"><b>What happens next</b></div><p>Open the existing Add / Remove Super workflow and decide whether to add space. HiveDash will not create an Add Super action or choose the number of supers until you confirm the plan.</p></section>
-      <div class="v2p2e5r11-actions"><button class="secondary" onclick="go('actions')">Back</button><button class="primary" onclick="v2p2e5r11PlanSpaceAction('${js(a.id)}')">Plan Add / Remove Super</button></div></div>`;
+      <div class="v2p2e5r11-actions"><button type="button" class="secondary" onclick="go('actions')">Back</button><button type="button" class="primary" data-r11-plan-task="${esc(a.id)}">Plan Add / Remove Super</button></div></div>`;
   }
 
   function writeCtx(a){try{sessionStorage.setItem(CTX_KEY,JSON.stringify({taskId:txt(a.id),hiveId:txt(a.hiveId),episodeId:txt(a.episodeId),startedAt:Date.now()}))}catch(_){ }}
@@ -352,7 +352,7 @@
         const s=S(),created=(s?.actions||[]).filter(a=>a&&low(a.type)==='super-management'&&txt(a.hiveId)===txt(ctx.hiveId)&&!beforeIds.has(txt(a.id)));
         const row=created[created.length-1];
         if(row){row.r11EpisodeId=txt(ctx.episodeId);row.r11SourceTaskId=txt(ctx.taskId);row.r11LinkedAt=new Date().toISOString();row.r11CatalogRuleId=CATALOG_RULE_ID;row.r11CatalogTaskId=CATALOG_TASK_ID;if(typeof save==='function')save(s);clearCtx();}
-      }catch(err){console.error('V2P2E5R11A4 B37 linkage failed',err)}
+      }catch(err){console.error('V2P2E5R11A5 B37 linkage failed',err)}
       return ret;
     };
   }
@@ -380,9 +380,14 @@
     }
     if(p[0]==='r11-space-review'){
       const r=document.getElementById('view');if(!r)return;r.className='view secondary';r.innerHTML=renderReview(decodeURIComponent(txt(p[1])),decodeURIComponent(txt(p[2])));
+      /* R11A5: bind the management handoff with a real DOM listener instead of
+         relying on an inline onclick. The button is explicitly type=button so a
+         surrounding/form-like host cannot submit/re-render before the handoff. */
+      const planBtn=r.querySelector('[data-r11-plan-task]');
+      if(planBtn)planBtn.addEventListener('click',function(ev){ev.preventDefault();ev.stopPropagation();const id=txt(planBtn.getAttribute('data-r11-plan-task'));if(id)window.v2p2e5r11PlanSpaceAction(id);});
       const top=document.getElementById('topbar');if(top){top.className='topbar vtop';top.innerHTML=`<button class="iconbtn" onclick="go('actions')" aria-label="Back">‹</button><div class="pagebar-title">Space Management</div><span></span>`}document.getElementById('bottomnav')?.classList.add('hidden');return;
     }
-    const ret=prevRender.apply(this,arguments);try{decorateR11Task()}catch(err){console.error('V2P2E5R11A4 task decoration failed',err)}return ret;
+    const ret=prevRender.apply(this,arguments);try{decorateR11Task()}catch(err){console.error('V2P2E5R11A5 task decoration failed',err)}return ret;
   };
   try{render=window.render}catch(_){ }
 

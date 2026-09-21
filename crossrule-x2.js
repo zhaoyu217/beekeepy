@@ -1,34 +1,35 @@
 /* ==============================================================
-   HiveDash V2P2E5X2A — R10/R02 queen-episode handoff ownership
+   HiveDash V2P2E5X2A1 — R10/R02 queen-episode handoff ownership
 
    Scope: cross-rule projection only. Frozen R02, R10, B38 and Inspection
    business logic/persistence are not modified.
 
-   Proven defect:
-   - R10/S21 Split Verification FAIL owns the split-specific queen episode and
-     projects "Split queen-right still uncertain" (management-review).
-   - The same child hive can independently satisfy generic R02/S05 Queen
-     uncertainty and project "Recheck queen status" at the same time.
-   - Two tasks then ask the beekeeper to act on the same queen-right problem.
+   X2A runtime finding fixed here:
+   - R10/S21 is intentionally NOT projected by generateActions().
+   - Frozen R10A4 inserts the R10 task lazily in v53ActionRows().
+   - X2A filtered generateActions(), so it ran BEFORE R10 existed in the row
+     set and could not see the owner. The generic R02 task therefore survived.
+   - X2A1 applies the same ownership contract at the final Actions-row layer,
+     AFTER R10A4 has inserted its lazy R10 projection.
 
    Ownership contract:
-   1) R10 FAIL management-review owns the episode until the beekeeper accepts
-      the handoff into Queen Management. Generic R02/S05 tasks are suppressed.
-   2) Once the R10 handoff has created an active B38 Queen Management action,
-      B38 owns the episode: the R10 handoff card is suppressed as well.
+   1) R10 FAIL management-review owns the split-specific queen episode until
+      the beekeeper accepts the handoff into Queen Management. Generic R02/S05
+      tasks are suppressed for that hive.
+   2) Once the direct R10 -> B38 handoff is active, B38 owns the episode:
+      suppress both the old R10 handoff card and generic R02 task.
    3) Completing a BIOLOGICAL R10-handoff B38 action (Requeen / Introduce Queen)
-      releases ownership to R02. R10 stays suppressed and R02 may create its
-      frozen post-management biological verification / downstream review.
-   4) Completing a non-biological B38 action does NOT close the R10 episode;
-      R10 may reappear and generic R02 remains suppressed.
+      releases ownership to R02. R10 remains hidden and R02 may project its
+      frozen post-management biological verification.
+   4) Completing a non-biological B38 action does NOT close the R10 episode.
    5) No records are deleted or rewritten. This is runtime projection only.
    ============================================================== */
 (()=>{
   'use strict';
-  if(window.__HIVEDASH_V2P2E5X2A__) return;
-  window.__HIVEDASH_V2P2E5X2A__=true;
+  if(window.__HIVEDASH_V2P2E5X2A1__) return;
+  window.__HIVEDASH_V2P2E5X2A1__=true;
 
-  const VERSION='v2p2e5x2a-r10-r02-queen-handoff-ownership';
+  const VERSION='v2p2e5x2a1-r10-r02-final-row-ownership';
   const R10_CORE='HD-R10S-SPLIT-VERIFICATION';
   const R10_RULE='R10';
   const R10_TASK='S21';
@@ -55,7 +56,13 @@
   }
 
   function isR02(a){
-    return !!a&&(txt(a.coreRuleId)===R02_CORE || (txt(a.catalogRuleId)===R02_RULE&&txt(a.catalogTaskId)===R02_TASK));
+    if(!a)return false;
+    if(txt(a.coreRuleId)===R02_CORE)return true;
+    if(txt(a.catalogRuleId)===R02_RULE&&txt(a.catalogTaskId)===R02_TASK)return true;
+    // Migration-safe fallback for a persisted/core-normalized S05 row whose
+    // catalogRuleId may be absent in older state, without catching B38.
+    return txt(a.catalogTaskId)===R02_TASK&&low(a.type)!==B38_TYPE&&
+      (low(a.reasonCode)==='queen'||low(a.title)==='recheck queen status'||low(a.title)==='verify queen status after management');
   }
 
   function allQueenActions(s){
@@ -66,8 +73,8 @@
   }
 
   // R10 opens B38 with b38OpenQueenAction(hiveId,'scientific-engine','queen').
-  // Restrict ownership transfer to that exact bridge so unrelated manual or
-  // R02-origin Queen Management never closes the R10 split episode by accident.
+  // Restrict transfer to that bridge so unrelated Queen Management does not
+  // accidentally close or release the Split episode.
   function isR10HandoffB38(a,hiveId){
     return !!a&&txt(a.hiveId)===txt(hiveId)&&low(a.type)===B38_TYPE&&low(a.source)==='scientific-engine'&&low(a.reasonCode)==='queen';
   }
@@ -88,9 +95,7 @@
 
   function ownersFrom(rows){
     const map=new Map();
-    for(const a of rows||[]){
-      if(isR10Owner(a))map.set(txt(a.hiveId),a);
-    }
+    for(const a of rows||[])if(isR10Owner(a))map.set(txt(a.hiveId),a);
     return map;
   }
 
@@ -113,34 +118,50 @@
       const activeHandoff=activeHandoffs.get(hid);
       const completedHandoff=completedHandoffs.get(hid);
 
-      // A completed biological handoff releases onward queen biology to R02.
-      // R10's old FAIL review must not remain as a competing entry point.
       if(completedHandoff){
         if(isR10Owner(a))return false;
         return true;
       }
 
-      // While a direct R10 -> B38 handoff is active, B38 is the one owner.
       if(activeHandoff){
         if(isR10Owner(a)||isR02(a))return false;
         return true;
       }
 
-      // Before B38 is created, R10 FAIL owns the split-specific episode.
-      // Suppress every R02/S05 projection for this hive, including a legacy
-      // persisted generic Recheck task already created before X2A loaded.
       if(isR02(a))return false;
       return true;
     });
   }
 
+  function readState(){
+    try{
+      if(typeof v45s==='function')return v45s();
+      if(typeof state==='function')return state();
+    }catch(err){console.error('V2P2E5X2A1 state read failed',err)}
+    return null;
+  }
+
+  // Keep generateActions guarded as a defense-in-depth boundary for any
+  // non-Actions caller that happens to receive R10 and R02 in the same set.
+  // The decisive fix is the v53ActionRows wrapper below, because R10A4 inserts
+  // R10 lazily only at that layer.
   const prevGenerate=window.generateActions||((typeof generateActions==='function')?generateActions:null);
   if(typeof prevGenerate==='function'){
-    window.generateActions=function(s){
-      const out=prevGenerate(s)||[];
-      return project(s,out);
+    const wrappedGenerate=function(s){return project(s,prevGenerate.apply(this,arguments)||[])};
+    try{window.generateActions=wrappedGenerate}catch(_){ }
+    try{generateActions=wrappedGenerate}catch(_){ }
+  }
+
+  // FINAL ACTIONS-ROW OWNERSHIP GATE — runs after frozen R10A4 lazy projection.
+  const prevRows=window.v53ActionRows||((typeof v53ActionRows==='function')?v53ActionRows:null);
+  if(typeof prevRows==='function'){
+    const wrappedRows=function(mode='Pending'){
+      const rows=prevRows.apply(this,arguments)||[];
+      if(low(mode)==='completed')return rows;
+      return project(readState(),rows);
     };
-    try{generateActions=window.generateActions}catch(_){ }
+    try{window.v53ActionRows=wrappedRows}catch(_){ }
+    try{v53ActionRows=wrappedRows}catch(_){ }
   }
 
   window.HiveDashCrossRuleOwnershipX2=Object.freeze({
@@ -152,5 +173,6 @@
     project
   });
   window.__HIVEDASH_V2P2E5X2A_VERSION__=VERSION;
-  console.log('V2P2E5X2A LOADED | R10/R02 queen handoff ownership active');
+  window.__HIVEDASH_V2P2E5X2A1_VERSION__=VERSION;
+  console.log('V2P2E5X2A1 LOADED | final Actions-row R10/R02 ownership active');
 })();

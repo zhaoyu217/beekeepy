@@ -539,6 +539,18 @@ function normalizeStateV50(input){
   s.meta.completedActions=Array.isArray(s.meta.completedActions)
     ? s.meta.completedActions.filter(a=>a&&typeof a==='object'&&(a.status==='Completed'||a.priority==='Done'))
     : [];
+  /* V2P2E5R11A6 — Completed entity wins over stale active duplicate.
+     Cloud/local reconciliation can briefly contain the SAME Action id in both
+     meta.completedActions (Completed) and actions (older Pending). The durable
+     Completed archive is authoritative: an entity cannot remain active after
+     that exact id has completed. This is identity-based only; unrelated Pending
+     Actions and every frozen workflow remain untouched. */
+  const completedActionIdsV2P2E5R11A6=new Set(
+    s.meta.completedActions.map(a=>String(a?.id||'')).filter(Boolean)
+  );
+  if(completedActionIdsV2P2E5R11A6.size){
+    s.actions=s.actions.filter(a=>!completedActionIdsV2P2E5R11A6.has(String(a?.id||'')));
+  }
   /* V2P2E5AS — durable archive for manually cancelled stale plans.
      Cancelled work is not Completed and is never treated as biological evidence. */
   s.meta.cancelledActions=Array.isArray(s.meta.cancelledActions)

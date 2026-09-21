@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5R11A5 — R11 / S22 SPACE-MANAGEMENT BUTTON WIRING FIX
+   V2P2E5R11A6 — R11 / S22 COMPLETED-ACTION MERGE AUTHORITY FIX
 
    CURRENT LAUNCH MAPPING (authoritative for this build):
    - Catalog rule R11 = Space insufficiency check
@@ -27,12 +27,12 @@
 
   const CORE_RULE_ID='HD-R11-SPACE-EVALUATION';
   const RULE_VERSION='HD-R11-v1.0-2026-09-20';
-  const MIGRATION_VERSION='V2P2E5R11A5';
+  const MIGRATION_VERSION='V2P2E5R11A6';
   const CATALOG_RULE_ID='R11';
   const CATALOG_TASK_ID='S22';
   const CTX_KEY='hivedash:v2p2e5r11:b37-exec';
   const DRAFT_PREFIX='hivedash:v2p2e5r11:space-draft:';
-  const VERSION='v2p2e5r11a5-r11-s22-space-management-button-wiring-fix';
+  const VERSION='v2p2e5r11a6-r11-s22-completed-action-merge-authority-fix';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){

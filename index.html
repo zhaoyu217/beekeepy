@@ -17,6 +17,12 @@
   </div>
   <div id="toast" class="toast"></div>
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script>
+    if(!window.supabase){
+      document.write('<script src="https://unpkg.com/@supabase/supabase-js@2"><\/script>');
+    }
+    window.__HIVEDASH_SUPABASE_CDN_FALLBACK__ = true;
+  </script>
   <script src="config.js?v=56"></script>
   <script src="app.js?v=v2p2e5r10a12-path-confirmation-durability-20260913"></script>
   <script src="v45.js?v=v2p2e5r10a6-timeline"></script>

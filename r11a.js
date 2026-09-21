@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5R11A6 — R11 / S22 COMPLETED-ACTION MERGE AUTHORITY FIX
+   V2P2E5R11A7 — R11 / S22 FINAL WORDING CLOSURE
 
    CURRENT LAUNCH MAPPING (authoritative for this build):
    - Catalog rule R11 = Space insufficiency check
@@ -27,12 +27,12 @@
 
   const CORE_RULE_ID='HD-R11-SPACE-EVALUATION';
   const RULE_VERSION='HD-R11-v1.0-2026-09-20';
-  const MIGRATION_VERSION='V2P2E5R11A6';
+  const MIGRATION_VERSION='V2P2E5R11A7';
   const CATALOG_RULE_ID='R11';
   const CATALOG_TASK_ID='S22';
   const CTX_KEY='hivedash:v2p2e5r11:b37-exec';
   const DRAFT_PREFIX='hivedash:v2p2e5r11:space-draft:';
-  const VERSION='v2p2e5r11a6-r11-s22-completed-action-merge-authority-fix';
+  const VERSION='v2p2e5r11a7-r11-s22-final-wording-closure';
 
   const base=window.HiveDashTaskEngineCoreV1;
   if(!base||typeof base.normalizeTaskProjection!=='function'||typeof base.buildContextSnapshot!=='function'){
@@ -362,6 +362,17 @@
     const a=findTask(p[1]);if(!a)return;
     const head=document.querySelector('.v2p2e5ab-detail .vhead');if(head&&!head.querySelector('.v2p2e5r11-pill'))head.insertAdjacentHTML('beforeend','<span class="v2p2e5r11-pill">R11 · S22</span>');
     const btn=document.querySelector('.v2p2e5ab-detail-actions .primary');if(btn){btn.textContent=low(a.workflowStage)==='management-review'?'Review Add-space Options':low(a.workflowStage)==='follow-up'?'Verify Space':'Start Space Evaluation';}
+    /* R11A7 final wording closure: the generic scientific-task template uses
+       treatment wording (drug/dose) for all management-review tasks. R11 is
+       equipment/space management, so override only this R11 task-detail copy.
+       No assessment, decision, verification, routing, persistence, or B37 logic
+       is changed here. */
+    if(low(a.workflowStage)==='management-review'){
+      const sections=[...document.querySelectorAll('.v2p2e5ab-detail section.vc')];
+      const next=sections.find(sec=>low(sec.querySelector('.vhead b')?.textContent)==='what happens next');
+      const p=next?.querySelector('p');
+      if(p)p.textContent='Review the evidence and choose the appropriate space-management step. HiveDash will not choose Add or Remove, the number of supers, or create an equipment action without your confirmation.';
+    }
   }
 
   const prevRender=window.render||render;

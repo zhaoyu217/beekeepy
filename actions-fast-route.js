@@ -1,72 +1,24 @@
 /* ==============================================================
-   HiveDash V2P2E5AFR6 — Transient Detail Instant Back
+   HiveDash V2P2E5AFR1 — Actions System Task Fast Route
 
    Scope ONLY:
-   - Keep instant Back snapshot for read-only scientific Task Detail.
-   - Add instant Back for transient Treatment/Retest detail opened from Actions.
-   - Snapshot restore is used only for an exact AFR-origin route and Back-to-Actions click.
-   - Keep direct fast routing only for task ids that are safe to open directly
-     as durable scientific-action details.
-   - DO NOT direct-route transient Varroa lifecycle projection rows. Those rows
-     are not persisted in state.actions and must continue through the frozen
-     AX5/AX6 opener so treatment/retest routes are resolved correctly.
-   - R10/S21 and R11/S22 keep their specialized frozen forward routes.
+   - Speed up clicks on already-rendered System cards in Actions.
+   - Route the exact rendered task id directly to scientific-action/<id>.
+   - Do NOT re-run task projection, state parsing, or any scientific evaluator
+     on the click path.
+   - R10/S21 and R11/S22 keep their specialized frozen route guards.
    - Manual Actions keep their existing workflow-specific routing.
-   - Scientific rules, task generation, evaluators, persistence, B37, app.js,
-     v45.js and R11 are unchanged.
+   - Task Detail remains the validity gate: stale/replaced tasks are handled
+     after navigation by the existing detail renderer.
    ============================================================== */
 (()=>{
   'use strict';
-  if(window.__HIVEDASH_V2P2E5AFR6__)return;
-  window.__HIVEDASH_V2P2E5AFR6__=true;
-  window.__HIVEDASH_V2P2E5AFR6_VERSION__='v2p2e5afr6-transient-detail-instant-back';
+  if(window.__HIVEDASH_V2P2E5AFR1__)return;
+  window.__HIVEDASH_V2P2E5AFR1__=true;
+  window.__HIVEDASH_V2P2E5AFR1_VERSION__='v2p2e5afr1-actions-system-task-fast-route';
 
   const txt=v=>String(v??'').trim();
   const specialized=id=>/^scientific-r10(?:-|$)/i.test(id)||/^scientific-r11(?:-|$)/i.test(id);
-  const transientProjected=id=>/^v2p2c-stage-varroa-/i.test(txt(id));
-  function transientVarroaRoute(id){
-    const raw=txt(id),prefix='v2p2c-stage-varroa-';
-    if(!raw.toLowerCase().startsWith(prefix))return '';
-    const tail=raw.slice(prefix.length);
-    const stages=[
-      ['treatment-active-unlinked',hid=>`hive/${encodeURIComponent(hid)}`],
-      ['treatment-planned',hid=>`treatment-record/${encodeURIComponent(hid)}/current`],
-      ['treatment-active',hid=>`treatment-record/${encodeURIComponent(hid)}/current`],
-      ['awaiting-retest',hid=>`varroa-test/${encodeURIComponent(hid)}/retest`]
-    ];
-    for(const [stage,make] of stages){
-      const marker=stage+'-';
-      if(tail.toLowerCase().startsWith(marker)){
-        const hid=tail.slice(marker.length);
-        return hid?make(hid):'';
-      }
-    }
-    return '';
-  }
-  const SNAP_TTL_MS=1800000;
-
-  function routeRoot(){
-    return txt(location.hash||'#home').replace(/^#/,'').split('/')[0]||'home';
-  }
-
-
-  function currentRoute(){
-    return txt(location.hash||'#home').replace(/^#/,'');
-  }
-
-  function isFastOriginDetailBack(el){
-    const last=window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__;
-    if(!last||!last.transient||!txt(last.route))return false;
-    if(currentRoute()!==txt(last.route))return false;
-    const btn=el?.closest?.('button');
-    if(!btn)return false;
-    const onclick=txt(btn.getAttribute('onclick'));
-    const aria=txt(btn.getAttribute('aria-label')).toLowerCase();
-    const label=txt(btn.textContent).toLowerCase();
-    if(/safeBackV51\(['"]actions['"]\)/.test(onclick))return true;
-    if(/go\(['"]actions['"]\)/.test(onclick))return true;
-    return aria==='back'||label==='back'||label==='back to actions'||label==='‹';
-  }
 
   function taskIdFromButton(btn){
     if(!btn)return '';
@@ -84,155 +36,13 @@
     return !!badge;
   }
 
-  function captureActionsSnapshot(){
-    if(routeRoot()!=='actions')return null;
-    const view=document.getElementById('view');
-    const top=document.getElementById('topbar');
-    const bottom=document.getElementById('bottomnav');
-    if(!view||!top||!bottom||!document.getElementById('alist'))return null;
-
-    const snap={
-      capturedAt:Date.now(),
-      sourceHash:String(location.hash||'#actions'),
-      viewHTML:view.innerHTML,
-      viewClass:view.className,
-      topHTML:top.innerHTML,
-      topClass:top.className,
-      bottomHTML:bottom.innerHTML,
-      bottomClass:bottom.className,
-      scrollX:Number(window.scrollX||0),
-      scrollY:Number(window.scrollY||0)
-    };
-    window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__=snap;
-    return snap;
-  }
-
-  function usableSnapshot(){
-    const s=window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__;
-    if(!s)return null;
-    if(Date.now()-Number(s.capturedAt||0)>SNAP_TTL_MS)return null;
-    if(!txt(s.viewHTML))return null;
-    return s;
-  }
-
-  function restoreActionsSnapshot(){
-    const snap=usableSnapshot();
-    if(!snap){
-      if(typeof go==='function')return go('actions');
-      location.hash='#actions';
-      return;
-    }
-
-    const view=document.getElementById('view');
-    const top=document.getElementById('topbar');
-    const bottom=document.getElementById('bottomnav');
-    if(!view||!top||!bottom){
-      if(typeof go==='function')return go('actions');
-      location.hash='#actions';
-      return;
-    }
-
-    try{
-      const url=location.pathname+location.search+'#actions';
-      history.replaceState(history.state,'',url);
-    }catch(_){ }
-
-    view.className=snap.viewClass;
-    view.innerHTML=snap.viewHTML;
-    top.className=snap.topClass;
-    top.innerHTML=snap.topHTML;
-    bottom.className=snap.bottomClass;
-    bottom.innerHTML=snap.bottomHTML;
-
-    window.__HIVEDASH_ACTIONS_FAST_BACK_LAST__={
-      restoredAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
-      snapshotAgeMs:Date.now()-Number(snap.capturedAt||0),
-      from:'scientific-action',
-      route:'#actions'
-    };
-
-    requestAnimationFrame(()=>{
-      try{window.scrollTo(snap.scrollX||0,snap.scrollY||0)}catch(_){ }
-    });
-  }
-
-  function isScientificDetailBack(el){
-    if(routeRoot()!=='scientific-action')return false;
-    const btn=el?.closest?.('button');
-    if(!btn)return false;
-    const onclick=txt(btn.getAttribute('onclick'));
-    if(/go\(['"]actions['"]\)/.test(onclick))return true;
-    const label=txt(btn.textContent).toLowerCase();
-    return label==='back'||label==='back to actions';
-  }
-
   document.addEventListener('click',ev=>{
     const el=ev.target instanceof Element?ev.target:null;
-
-    if(isFastOriginDetailBack(el)&&usableSnapshot()){
-      ev.preventDefault();
-      ev.stopPropagation();
-      ev.stopImmediatePropagation?.();
-      restoreActionsSnapshot();
-      return;
-    }
-
-    if(isScientificDetailBack(el)&&usableSnapshot()){
-      ev.preventDefault();
-      ev.stopPropagation();
-      ev.stopImmediatePropagation?.();
-      restoreActionsSnapshot();
-      return;
-    }
-
     const btn=el?.closest?.('#alist > button');
     if(!btn||!isSystemCard(btn))return;
 
     const id=taskIdFromButton(btn);
-
-    /* Capture specialized R10/R11 because their read-only Task Detail Back can
-       still use AFR3's instant snapshot restore. */
-    if(id&&specialized(id)){
-      captureActionsSnapshot();
-      return;
-    }
-
-    /* AFR4 correctness fix:
-       These Varroa lifecycle rows are transient projections and do not exist in
-       persisted state.actions. AFR3 merely yielded to the legacy opener chain,
-       but later wrappers can still reinterpret the raw projection id as a
-       generic scientific-action id. Resolve the four already-frozen AX6 stages
-       directly from the deterministic projection id and stop propagation. */
-    const transientRoute=transientVarroaRoute(id);
-    if(transientRoute){
-      captureActionsSnapshot();
-      ev.preventDefault();
-      ev.stopPropagation();
-      ev.stopImmediatePropagation?.();
-      window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__={
-        actionId:id,
-        bypassed:false,
-        transient:true,
-        clickedAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
-        fromHash:String(location.hash||''),
-        route:transientRoute
-      };
-      if(typeof go==='function')return go(transientRoute);
-      location.hash='#'+transientRoute;
-      return;
-    }
-    if(!id||transientProjected(id)){
-      window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__={
-        actionId:id,
-        bypassed:true,
-        reason:transientProjected(id)?'unknown-transient-varroa-stage':'missing-id',
-        clickedAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
-        fromHash:String(location.hash||'')
-      };
-      return;
-    }
-
-    captureActionsSnapshot();
+    if(!id||specialized(id))return; // frozen R10/R11 own their exact routes
 
     ev.preventDefault();
     ev.stopPropagation();
@@ -240,7 +50,6 @@
 
     window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__={
       actionId:id,
-      bypassed:false,
       clickedAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
       fromHash:String(location.hash||''),
       route:`scientific-action/${encodeURIComponent(id)}`
@@ -250,65 +59,15 @@
     location.hash=`#scientific-action/${encodeURIComponent(id)}`;
   },true);
 
-  /* AFR5 root-cause fix:
-     The rendered Treatment planned card calls v2p2e5abOpenUnifiedAction()
-     directly via inline onclick. Capture listeners are not a reliable ownership
-     boundary across the stacked legacy route guards, so intercept the exact
-     unified opener itself, after all frozen wrappers have loaded. Only the four
-     deterministic transient Varroa lifecycle ids are handled here; every other
-     action delegates unchanged to the frozen opener chain. */
-  if(!window.__HIVEDASH_V2P2E5AFR6_UNIFIED_GUARD__){
-    window.__HIVEDASH_V2P2E5AFR6_UNIFIED_GUARD__=true;
-    const prevUnifiedOpen=window.v2p2e5abOpenUnifiedAction;
-    if(typeof prevUnifiedOpen==='function'){
-      window.v2p2e5abOpenUnifiedAction=function(actionId){
-        const id=txt(actionId);
-        const route=transientVarroaRoute(id);
-        if(route){
-          captureActionsSnapshot();
-          window.__HIVEDASH_ACTIONS_FAST_ROUTE_LAST__={
-            actionId:id,
-            bypassed:false,
-            transient:true,
-            entry:'v2p2e5abOpenUnifiedAction',
-            clickedAt:(typeof performance!=='undefined'&&performance.now)?performance.now():Date.now(),
-            fromHash:String(location.hash||''),
-            route
-          };
-          if(typeof go==='function')return go(route);
-          location.hash='#'+route;
-          return;
-        }
-        return prevUnifiedOpen.apply(this,arguments);
-      };
-    }
-  }
-
-  window.v2p2e5afr3BackToActions=restoreActionsSnapshot;
-  window.v2p2e5afr3CaptureActionsSnapshot=captureActionsSnapshot;
-  window.v2p2e5afr3Audit=function(){
+  window.v2p2e5afr1Audit=function(){
     const buttons=[...(document.querySelectorAll?.('#alist > button')||[])];
-    return {
-      version:window.__HIVEDASH_V2P2E5AFR6_VERSION__,
-      snapshot:usableSnapshot()?{
-        ageMs:Date.now()-window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.capturedAt,
-        sourceHash:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.sourceHash,
-        htmlLength:window.__HIVEDASH_ACTIONS_FAST_ROUTE_SNAPSHOT__.viewHTML.length
-      }:null,
-      systemCards:buttons.map(btn=>{
-        const actionId=taskIdFromButton(btn);
-        return {
-          title:txt(btn.querySelector(':scope > strong')?.textContent||btn.querySelector(':scope > b')?.textContent),
-          system:isSystemCard(btn),
-          actionId,
-          specialized:specialized(actionId),
-          transientProjected:transientProjected(actionId),
-          transientRoute:transientVarroaRoute(actionId),
-          fastDirectSafe:!!actionId&&!specialized(actionId)&&(!transientProjected(actionId)||!!transientVarroaRoute(actionId))
-        };
-      }).filter(x=>x.system)
-    };
+    return buttons.map(btn=>({
+      title:txt(btn.querySelector(':scope > strong')?.textContent||btn.querySelector(':scope > b')?.textContent),
+      system:isSystemCard(btn),
+      actionId:taskIdFromButton(btn),
+      specialized:specialized(taskIdFromButton(btn))
+    })).filter(x=>x.system);
   };
 
-  console.log('V2P2E5AFR6 LOADED | transient Varroa direct route + instant scientific/transient-detail Back');
+  console.log('V2P2E5AFR1 LOADED | rendered System cards route directly; no task-engine recompute on click');
 })();

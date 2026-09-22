@@ -19483,14 +19483,67 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
   };
   try{generateActions=window.generateActions}catch(_){ }
 
-  function category(a,s){
-    if(txt(a.workflowStage)==='follow-up'||low(a.source).includes('follow-up')||low(a.status)==='follow-up')return 'Follow-up';
-    const h=findHive(s,a.hiveId),today=todayFor(s,h),d=iso(a.dueDate||a.due||a.date);
-    if(d){const diff=daysBetween(today,d);if(diff!==null&&diff<0)return 'Overdue';if(diff===0)return 'Today';return 'Upcoming'}
-    const due=low(a.due);if(due==='now'||due==='today')return 'Today';if(due.includes('overdue'))return 'Overdue';return 'Upcoming';
+  /* ==========================================================
+     V2P2E5GOV1 — ACTION CENTER RISK × TIME GOVERNANCE
+     Scope: presentation/category/sort only. No Action generation, scientific
+     rule, route, persistence, status, or workflow semantics are changed.
+
+     Policy:
+     - Time state outranks the generic Follow-up label:
+       past Follow-up -> Overdue; due-today Follow-up -> Today; only a future
+       (or undated) Follow-up stays in Follow-up.
+     - All Active order:
+       1) High + Overdue/Today
+       2) remaining Overdue
+       3) remaining Today
+       4) future/undated Follow-up
+       5) Upcoming
+     - Within a bucket: priority, then due-date urgency, then stable identity.
+       Overdue sorts oldest first; future work sorts nearest first.
+     ========================================================== */
+  function isFollowupAction(a){
+    return txt(a.workflowStage)==='follow-up'||low(a.source).includes('follow-up')||low(a.status)==='follow-up';
   }
-  const catRank={'Overdue':0,'Today':1,'Follow-up':2,'Upcoming':3};
+  function category(a,s){
+    const h=findHive(s,a.hiveId),today=todayFor(s,h),d=iso(a.dueDate||a.due||a.date),followup=isFollowupAction(a);
+    if(d){
+      const diff=daysBetween(today,d);
+      if(diff!==null&&diff<0)return 'Overdue';
+      if(diff===0)return 'Today';
+      return followup?'Follow-up':'Upcoming';
+    }
+    const due=low(a.due);
+    if(due==='now'||due==='today')return 'Today';
+    if(due.includes('overdue'))return 'Overdue';
+    if(followup)return 'Follow-up';
+    return 'Upcoming';
+  }
   const priRank={high:0,medium:1,low:2,routine:3,done:4};
+  function gov1Bucket(a,s){
+    const cat=category(a,s),priority=low(a.priority);
+    if(priority==='high'&&(cat==='Overdue'||cat==='Today'))return 0;
+    if(cat==='Overdue')return 1;
+    if(cat==='Today')return 2;
+    if(cat==='Follow-up')return 3;
+    return 4;
+  }
+  function gov1DueDay(a){
+    const d=iso(a.dueDate||a.due||a.date);
+    return d?dayNo(d):Number.POSITIVE_INFINITY;
+  }
+  function gov1Compare(a,b,s){
+    const bucketDiff=gov1Bucket(a,s)-gov1Bucket(b,s);if(bucketDiff)return bucketDiff;
+    const priorityDiff=(priRank[low(a.priority)]??9)-(priRank[low(b.priority)]??9);if(priorityDiff)return priorityDiff;
+    const da=gov1DueDay(a),db=gov1DueDay(b);
+    if(da!==db){
+      // Earlier calendar dates are more urgent both for overdue (older first)
+      // and future work (nearest first). Unknown dates remain after known dates.
+      if(!Number.isFinite(da))return 1;if(!Number.isFinite(db))return -1;return da-db;
+    }
+    const hiveDiff=txt(a.hiveId).localeCompare(txt(b.hiveId));if(hiveDiff)return hiveDiff;
+    const titleDiff=txt(a.title||a.type).localeCompare(txt(b.title||b.type));if(titleDiff)return titleDiff;
+    return txt(a.id).localeCompare(txt(b.id));
+  }
   function activeRows(){return typeof v53ActionRows==='function'?v53ActionRows('Pending'):S().actions||[]}
   function routeForManual(a){
     const t=low(a.type),src=low(a.source),id=jsA(a.id),hid=jsA(a.hiveId);
@@ -19524,7 +19577,7 @@ window.__HIVEDASH_V2P2E5AA__='manual-plan-runtime-preservation';
     const s=S(),all=activeRows().filter(a=>a&&a.status!=='Completed'&&a.priority!=='Done');
     const counts={Today:0,Overdue:0,'Follow-up':0,Upcoming:0};all.forEach(a=>counts[category(a,s)]++);
     const filter=txt(window.__v2p2e5abFilter||'all');
-    const rows=all.filter(a=>filter==='all'||category(a,s)===filter).sort((a,b)=>catRank[category(a,s)]-catRank[category(b,s)]||(priRank[low(a.priority)]??9)-(priRank[low(b.priority)]??9)||txt(a.hiveId).localeCompare(txt(b.hiveId)));
+    const rows=all.filter(a=>filter==='all'||category(a,s)===filter).sort((a,b)=>gov1Compare(a,b,s));
     let sum=document.querySelector('.v2p2e5ab-summary');
     if(!sum){sum=document.createElement('div');sum.className='v2p2e5ab-summary';box.insertAdjacentElement('beforebegin',sum)}
     sum.innerHTML=['Today','Overdue','Follow-up','Upcoming'].map(k=>`<button class="${filter===k?'active':''}" onclick="v2p2e5abSetFilter('${k}')"><b>${counts[k]}</b><span>${k}</span></button>`).join('')+`<button class="v2p2e5ab-all ${filter==='all'?'active':''}" onclick="v2p2e5abSetFilter('all')">All active</button>`;

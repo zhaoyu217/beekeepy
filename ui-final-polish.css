@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5UI2A1 — ICON RENDER FIX + TYPOGRAPHY POLISH CANDIDATE
+   V2P2E5UI2A3 — FINAL TYPOGRAPHY SYSTEM + UI2A2 ICON RESTORE
    Visual-only layer.
    Scope: iconography + typography hierarchy only.
    No routes, state, persistence, task engine, rule logic, data model,
@@ -8,42 +8,47 @@
 
 :root{
   --ui2-font:Inter,"Segoe UI",Arial,sans-serif;
-  --ui2-page-title:16px;
-  --ui2-section-title:13px;
-  --ui2-item-title:12px;
-  --ui2-body:12px;
-  --ui2-secondary:10.5px;
-  --ui2-meta:9.5px;
-  --ui2-nav:9.5px;
-  --ui2-line:1.38;
+  --ui2-page-title:18px;
+  --ui2-section-title:14px;
+  --ui2-item-title:14px;
+  --ui2-body:13px;
+  --ui2-secondary:11px;
+  --ui2-meta:10px;
+  --ui2-nav:11px;
+  --ui2-line:1.45;
 }
+
+/* UI2A3 locked mobile type scale:
+   Page title 18 / Module & card title 14 / Body 13 / Secondary 11 / Meta 10 / Nav 11.
+   Form controls intentionally remain 16px to prevent iOS Safari auto-zoom.
+   Large KPI numerals and health-ring display numbers are intentionally untouched. */
 
 /* Consistent family/fallback without external font dependency. */
 html,body,button,input,select,textarea,*{font-family:var(--ui2-font)!important;}
 body,button,input,select,textarea{line-height:var(--ui2-line);}
 
 /* Semantic hierarchy used across secondary/workflow pages. */
-.pagebar-title,.vtop .pagebar-title{font-size:var(--ui2-page-title)!important;font-weight:800!important;line-height:1.15!important;}
-.h1{font-size:var(--ui2-page-title)!important;font-weight:800!important;line-height:1.2!important;}
-.h2{font-size:var(--ui2-section-title)!important;font-weight:800!important;line-height:1.25!important;}
-.h3{font-size:var(--ui2-item-title)!important;font-weight:800!important;line-height:1.3!important;}
-.small{font-size:var(--ui2-secondary)!important;line-height:1.45!important;}
-.tiny{font-size:var(--ui2-meta)!important;line-height:1.4!important;}
-.sectionlabel{font-size:10px!important;font-weight:800!important;letter-spacing:.055em!important;line-height:1.25!important;}
-.formgroup>label,label:not(.switch){font-size:11px!important;line-height:1.3!important;}
-.formgroup input,.formgroup select,.formgroup textarea,input,select,textarea{font-size:var(--ui2-body)!important;line-height:1.35!important;}
-.btn,.aux-view .btn{font-size:11.5px!important;font-weight:750!important;line-height:1.2!important;}
+.pagebar-title,.vtop .pagebar-title{font-size:var(--ui2-page-title)!important;font-weight:700!important;line-height:1.2!important;}
+.h1{font-size:var(--ui2-page-title)!important;font-weight:700!important;line-height:1.25!important;}
+.h2{font-size:var(--ui2-section-title)!important;font-weight:700!important;line-height:1.3!important;}
+.h3{font-size:var(--ui2-item-title)!important;font-weight:700!important;line-height:1.35!important;}
+.small{font-size:var(--ui2-secondary)!important;line-height:1.5!important;}
+.tiny{font-size:var(--ui2-meta)!important;line-height:1.45!important;}
+.sectionlabel{font-size:11px!important;font-weight:700!important;letter-spacing:.045em!important;line-height:1.3!important;}
+.formgroup>label,label:not(.switch){font-size:12px!important;font-weight:500!important;line-height:1.35!important;}
+.formgroup input,.formgroup select,.formgroup textarea,input,select,textarea{font-size:16px!important;line-height:1.35!important;} /* 16px prevents iOS Safari focus-zoom on form controls. */
+.btn,.aux-view .btn{font-size:13px!important;font-weight:700!important;line-height:1.25!important;}
 .notice,.aux-view .notice{font-size:var(--ui2-secondary)!important;line-height:1.45!important;}
-.pill{font-size:9.5px!important;font-weight:700!important;}
+.pill{font-size:10px!important;font-weight:600!important;}
 
 /* Settings / support / notification rows: same semantic levels everywhere. */
 .srow b,.scopy>b{font-size:var(--ui2-item-title)!important;line-height:1.3!important;}
-.srow .tiny,.scopy .tiny{font-size:var(--ui2-meta)!important;line-height:1.4!important;}
+.srow .tiny,.scopy .tiny{font-size:var(--ui2-meta)!important;line-height:1.45!important;}
 .setmenu b{font-size:var(--ui2-item-title)!important;}
 .setphoto b{font-size:var(--ui2-page-title)!important;}
 .setphoto span,.acct>span{font-size:var(--ui2-secondary)!important;}
 .acct>b{font-size:var(--ui2-section-title)!important;}
-.toggles label{font-size:11px!important;}
+.toggles label{font-size:13px!important;}
 .notifs b{font-size:var(--ui2-item-title)!important;}
 .notifs span{font-size:var(--ui2-secondary)!important;}
 .notifs time{font-size:var(--ui2-meta)!important;}
@@ -58,13 +63,13 @@ body,button,input,select,textarea{line-height:var(--ui2-line);}
 .v63-card>em{font-size:var(--ui2-meta)!important;}
 
 /* Current Actions renderer. Preserve density, but make like-for-like text equal. */
-.v53-action-tabs button{font-size:10px!important;font-weight:700!important;}
+.v53-action-tabs button{font-size:11px!important;font-weight:600!important;}
 .v53-actions .alist button>b{font-size:var(--ui2-item-title)!important;line-height:1.25!important;}
 .v53-actions .alist button>span:first-of-type{font-size:var(--ui2-secondary)!important;line-height:1.25!important;}
 .v53-actions .alist button>em,
 .v53-actions .alist button>small{font-size:var(--ui2-meta)!important;line-height:1.25!important;}
-.v53-actions .v53-add-action{font-size:11.5px!important;}
-.v53-actions .v53-shortcuts button{font-size:10px!important;}
+.v53-actions .v53-add-action{font-size:13px!important;font-weight:700!important;}
+.v53-actions .v53-shortcuts button{font-size:11px!important;}
 
 /* Current Insights renderer. Do not touch KPI numerals; normalize labels/body only. */
 .v53-insights .insighttitle{font-size:var(--ui2-section-title)!important;font-weight:800!important;}
@@ -73,26 +78,26 @@ body,button,input,select,textarea{line-height:var(--ui2-line);}
 .v53-insights .vhead>b{font-size:var(--ui2-section-title)!important;}
 .v53-insights .bullets li{font-size:var(--ui2-body)!important;line-height:1.4!important;}
 .v53-insights .recol button,
-.v53-insights .inav button{font-size:10.5px!important;line-height:1.25!important;}
+.v53-insights .inav button{font-size:11px!important;line-height:1.3!important;}
 
 /* Current Inspection summary cards. Keep AX9/AX10 two-column containment untouched. */
-body .v211-inspection .v211-card-head b{font-size:14px!important;line-height:1.2!important;}
+body .v211-inspection .v211-card-head b{font-size:14px!important;font-weight:700!important;line-height:1.25!important;}
 body .v211-inspection .v211-card-row>span,
-body .v211-inspection .v211-card-row>strong{font-size:10.5px!important;line-height:1.3!important;}
-body .v211-inspection .v2p2e5ap-card-note{font-size:9.5px!important;line-height:1.4!important;}
-body .v211-inspection .v2p2e5ap-reference-note{font-size:10px!important;line-height:1.45!important;}
+body .v211-inspection .v211-card-row>strong{font-size:13px!important;line-height:1.35!important;}
+body .v211-inspection .v2p2e5ap-card-note{font-size:10px!important;line-height:1.45!important;}
+body .v211-inspection .v2p2e5ap-reference-note{font-size:11px!important;line-height:1.5!important;}
 
 /* Home keeps display numerals/health ring, while secondary labels align with the same scale. */
 .v56-row-copy>span{font-size:var(--ui2-section-title)!important;}
-.v56-row-copy>b{font-size:11.5px!important;}
+.v56-row-copy>b{font-size:13px!important;}
 .v56-row-copy>small,.v56-row-copy>em{font-size:var(--ui2-meta)!important;}
-.v56-soft-btn{font-size:9.5px!important;}
-.v56-quickbar span{font-size:9px!important;}
+.v56-soft-btn{font-size:11px!important;font-weight:600!important;}
+.v56-quickbar span{font-size:11px!important;}
 
 /* Bottom navigation label system. */
-.bottomnav .navitem{gap:4px!important;font-size:var(--ui2-nav)!important;font-weight:600!important;}
-.bottomnav .navitem>span{font-size:var(--ui2-nav)!important;line-height:1!important;font-weight:650!important;}
-.bottomnav .navitem.active{font-weight:800!important;}
+.bottomnav .navitem{gap:4px!important;font-size:var(--ui2-nav)!important;font-weight:500!important;}
+.bottomnav .navitem>span{font-size:var(--ui2-nav)!important;line-height:1.15!important;font-weight:500!important;}
+.bottomnav .navitem.active{font-weight:700!important;}
 
 /* Icon replacement — UI2A1: direct SVG backgrounds for browser-safe rendering.
    No CSS mask is used; this avoids the solid-square fallback seen in UI2A. */
@@ -138,8 +143,8 @@ body .v211-inspection .v2p2e5ap-reference-note{font-size:10px!important;line-hei
 
 @media(max-width:350px){
   body .v211-inspection .v211-card-row>span,
-  body .v211-inspection .v211-card-row>strong{font-size:10px!important;}
-  .bottomnav .navitem>span{font-size:9px!important;}
+  body .v211-inspection .v211-card-row>strong{font-size:12px!important;}
+  .bottomnav .navitem>span{font-size:10px!important;}
 }
 
 /* ==============================================================

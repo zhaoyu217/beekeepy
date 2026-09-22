@@ -971,3 +971,99 @@ html body #app #view :is(.core-save,.csave,.feeding-save-v98,.treatment-save-v10
 
 /* Decorative icon/KPI glyphs may keep their own display size, but not fake extra-bold text. */
 html body #app #view :is(.avatar,.about157-icon,.legal155-shield,.v123-risk-how-icon,.add-action-icon){font-weight:700!important}
+
+/* ==============================================================
+   V2P2E5UI2A6 — RUNTIME TYPOGRAPHY HARD LOCK
+   Final visual-only guard for CSS injected after initial page load.
+   Business logic/data/routes are untouched.
+   ============================================================== */
+
+/* A. Varroa Test — explicit late-runtime overrides */
+html body #app #view .v2p2b-page .v2p2b-section h3{font-size:14px!important;font-weight:700!important;line-height:18px!important;letter-spacing:0!important}
+html body #app #view .v2p2b-page .v2p2b-section label>span,
+html body #app #view .v2p2b-page .v2p2b-readrow>span{font-size:12px!important;font-weight:500!important;line-height:16px!important}
+html body #app #view .v2p2b-page .v2p2b-result>strong{font-size:13px!important;font-weight:500!important;line-height:18px!important;padding:4px 0!important}
+html body #app #view .v2p2b-page .v2p2b-hint{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v2p2b-page .v2p2b-inline>em{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #app #view .v2p2b-page :is(.v2p2b-readrow,.v2p2b-history)>b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #app #view .v2p2b-page .v2p2b-history>span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v2p2b-page .v2p2b-history small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #app #view .v2p2b-page textarea{min-height:96px!important}
+
+/* B. Settings/About/Help/Version runtime styles */
+html body #app #view .v145-settings .v145-settings-hero-copy b{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #app #view .v145-settings .v145-settings-hero-copy span:not(.v145-settings-hero-icon){font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #app #view .v145-settings .v145-group-title{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view .v145-settings .v145-copy b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view .v145-settings .v145-copy :is(span,small){font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view :is(.about157-copy b,.version161-h){font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view :is(.about157-copy span,.version161-feature span,.help156-copy,.help156-note){font-size:13px!important;font-weight:400!important;line-height:19px!important}
+
+/* C. Inspection/editor sheets injected at runtime */
+html body #app #view :is(.v197-hive-actions-title,.v198-record-head,.v200-qs-head,.v201-inspection-select-head,.v202-inspection-head,.v203-next-inspection-head,.v210-edit-head,.v211-module-head)>b,
+html body #app #view .v211-module-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view :is(.v197-hive-actions-title,.v198-record-head,.v200-qs-head,.v201-inspection-select-head,.v202-inspection-head,.v203-next-inspection-head,.v210-edit-head,.v211-module-head) button:not([aria-label]){font-size:13px!important;font-weight:700!important;line-height:16px!important}
+html body #app #view .v210-number input{font-size:16px!important;font-weight:500!important;line-height:22px!important}
+html body #app #view .v210-number button{font-size:18px!important;font-weight:600!important;line-height:1!important}
+
+/* D. B37/B38/B39 workflow runtime styles: text only; +/- glyphs stay display-sized */
+html body #app #view :is(.b37-card-head,.b39-card-head) :is(b,.b37-label){font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view :is(.b37-field,.b39m-pair,.b39m-full-field)>span:first-child{font-size:12px!important;font-weight:500!important;line-height:16px!important}
+html body #app #view :is(.b37-help,.b37-note,.b39-help,.b39-note,.b38-note){font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view :is(.b37-meta,.b39-meta,.b38-meta){font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #app #view :is(.b37-step,.b39-count-controls) strong{font-size:16px!important;font-weight:500!important;line-height:22px!important}
+html body #app #view :is(.b37-step,.b39-count-controls) button{font-size:18px!important;font-weight:600!important;line-height:1!important}
+html body #app #view .b38-task{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+
+/* E. Scientific Task / Task Detail / verification runtime guards */
+html body #app #view [class*="v2p2e5"] :is(h2,h3){font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view [class*="v2p2e5"] p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #app #view [class*="v2p2e5"] :is(.pill,[class*="-pill"],[class*="-badge"]){font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #app #view [class*="v2p2e5"] :is(.note,[class*="-note"],[class*="-hint"],[class*="-helper"]){font-size:11px!important;font-weight:400!important;line-height:16px!important}
+/* Explicit Task Detail data hierarchy */
+html body #app #view :is(.v2p2e5ab-detail,.v2p2e5r10-detail,.v2p2e5r11-detail,.v2p2e5r12-detail) :is(.v2p2e5ab-detail-grid,[class*="detail-grid"])>span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view :is(.v2p2e5ab-detail,.v2p2e5r10-detail,.v2p2e5r11-detail,.v2p2e5r12-detail) :is(.v2p2e5ab-detail-grid,[class*="detail-grid"])>span>b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+
+/* F. Season / Risk / Recommendations / Honey — remove legacy microtype */
+html body #app #view .v124-season-hero small{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #app #view .v124-season-hero b{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #app #view .v124-season-hero span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v124-season-context span{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #app #view .v124-season-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view .v124-season-head small{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v124-season-head>span{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #app #view .v124-season-action-top b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view .v124-season-action-top span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v124-season-action-top em{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #app #view .v124-season-action>small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #app #view .v124-season-empty b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #app #view .v124-season-empty span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v124-season-source b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #app #view .v124-season-source :is(span,small){font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #app #view :is(.v123-risk-how-grid,.v127-recommendations-page,.v128-honey-analytics) :is(small,[class*="-source"] span){font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #app #view .v128-honey-summary small{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #app #view .v128-honey-summary span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v128-honey-ranges button{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+/* KPI exceptions remain large on purpose. */
+html body #app #view .v128-honey-summary>strong,
+html body #app #view :is(.v118-trend-card,.v119-trend-card)>b,
+html body #app #view :is(.v118-trend-summary,.v119-trend-summary)>b{font-weight:700!important}
+
+/* G. Manual planner / Add Action picker late styles */
+html body>.modal.v2p2e5ag-plan-picker .add-action-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body>.modal.v2p2e5ag-plan-picker .b37-picker-group{font-size:11px!important;font-weight:700!important;line-height:14px!important}
+html body>.modal.v2p2e5ag-plan-picker .add-action-copy b,
+html body #app #view .v2p2e5ai-planner-page .add-action-copy b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body>.modal.v2p2e5ag-plan-picker .add-action-copy small,
+html body #app #view .v2p2e5ai-planner-page .add-action-copy small{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #app #view .v2p2e5ai-intro-copy,
+html body #app #view .v2p2e5ai-decision-note{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+
+/* H. Generic active-route hard limits for legacy text classes.
+   Do not touch icon-only controls or explicit KPI classes. */
+html body #app #view :is([class*="-title"],[class*="title-"]):not(.brand):not([class*="score"]):not([class*="icon"]){font-weight:700!important}
+html body #app #view :is([class*="-desc"],[class*="-description"],[class*="-copy"]):not([class*="hero-copy"]){font-weight:400!important}
+html body #app #view :is([class*="-meta"],[class*="-date"],[class*="-source"] small){font-weight:500!important}
+
+/* I. Keep intentional glyph/display exceptions untouched. */
+html body #app #view :is(.v109-map-zoom,.core-back,.add-action-arrow,.about157-chevron,.help156-chevron,.v145-ico,.v145-settings-hero-icon,.about157-logo,.about157-icon,.floating-add-master,.b37-intro-badge,.b37-date-icon,.b39v-pending-date-icon,.b39m-calendar-button){line-height:1!important}

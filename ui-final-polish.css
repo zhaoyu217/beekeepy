@@ -1140,3 +1140,68 @@ html body #app #view .v173-hives .v63-head .v173-settings::before{
   background-size:var(--ui2a6a-settings-icon-size) var(--ui2a6a-settings-icon-size)!important;
   background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%233F4541' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.1'/%3E%3Cpath d='M19.2 13.6a7.8 7.8 0 0 0 0-3.2l2-1.5-2-3.4-2.4 1A8 8 0 0 0 14 4.9L13.7 2H9.8l-.4 2.9a8 8 0 0 0-2.8 1.6l-2.4-1-2 3.4 2 1.5a7.8 7.8 0 0 0 0 3.2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 2.8 1.6l.4 2.9h3.9l.4-2.9a8 8 0 0 0 2.8-1.6l2.4 1 2-3.4Z'/%3E%3C/g%3E%3C/svg%3E")!important;
 }
+
+
+/* ==============================================================
+   V2P2E5UI2A6B — CORE SETTINGS ICON TRUE SINGLE-SOURCE LOCK
+   Home / Hives / Actions / Insights now render the same inline SVG.
+   All older pseudo-element settings glyphs are explicitly disabled.
+   ============================================================== */
+:root{--ui2a6b-settings-size:22px;--ui2a6b-settings-color:#3F4541;}
+
+/* Kill every older pseudo-generated gear on the four core headers. */
+html body #app #topbar button.iconbtn.core-settings-btn[aria-label="Settings"]::before,
+html body #app #view .v173-hives .v63-head button.v173-settings.core-settings-btn::before{
+  content:none!important;
+  display:none!important;
+  width:0!important;
+  height:0!important;
+  background:none!important;
+  background-image:none!important;
+}
+
+/* One identical button box on all four core pages. */
+html body #app #topbar button.iconbtn.core-settings-btn[aria-label="Settings"],
+html body #app #view .v173-hives .v63-head button.v173-settings.core-settings-btn{
+  width:40px!important;
+  height:40px!important;
+  min-width:40px!important;
+  min-height:40px!important;
+  padding:0!important;
+  margin:0!important;
+  display:grid!important;
+  place-items:center!important;
+  color:var(--ui2a6b-settings-color)!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  font-size:0!important;
+  line-height:0!important;
+  overflow:visible!important;
+}
+
+/* Override A6A's child-hiding rule and render the same app.js SVG everywhere. */
+html body #app #topbar button.iconbtn.core-settings-btn[aria-label="Settings"] > svg.icon,
+html body #app #view .v173-hives .v63-head button.v173-settings.core-settings-btn > svg.icon{
+  display:block!important;
+  visibility:visible!important;
+  opacity:1!important;
+  width:var(--ui2a6b-settings-size)!important;
+  height:var(--ui2a6b-settings-size)!important;
+  min-width:var(--ui2a6b-settings-size)!important;
+  min-height:var(--ui2a6b-settings-size)!important;
+  fill:none!important;
+  stroke:var(--ui2a6b-settings-color)!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+  transform:none!important;
+}
+html body #app #topbar button.iconbtn.core-settings-btn[aria-label="Settings"] > svg.icon *,
+html body #app #view .v173-hives .v63-head button.v173-settings.core-settings-btn > svg.icon *{
+  fill:none!important;
+  stroke:var(--ui2a6b-settings-color)!important;
+  stroke-width:1.8!important;
+  stroke-linecap:round!important;
+  stroke-linejoin:round!important;
+}

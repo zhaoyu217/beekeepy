@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5UI2A3 — PRIOR TYPOGRAPHY CANDIDATE + UI2A2 ICON RESTORE
+   V2P2E5UI2A4A — FULL-APP TYPOGRAPHY + INTER RUNTIME LOAD
    Visual-only layer.
    Scope: iconography + typography hierarchy only.
    No routes, state, persistence, task engine, rule logic, data model,
@@ -23,8 +23,9 @@
    Form controls intentionally remain 16px to prevent iOS Safari auto-zoom.
    Large KPI numerals and health-ring display numbers are intentionally untouched. */
 
-/* Consistent family/fallback without external font dependency. */
-html,body,button,input,select,textarea,*{font-family:var(--ui2-font)!important;}
+/* Inter is now explicitly loaded by index.html at 400/500/600/700.
+   Fallbacks remain for network failure; do not compensate with heavier local weights. */
+html,body,button,input,select,textarea,*{font-family:var(--ui2-font)!important;font-synthesis:none;}
 body,button,input,select,textarea{line-height:var(--ui2-line);}
 
 /* Semantic hierarchy used across secondary/workflow pages. */
@@ -701,3 +702,19 @@ html body #view :is(.v109-map-zoom,.photo-delete,.gallery-photo button,.b37-coun
 html body #view .v109-map-zoom{font-size:22px!important}
 html body #view :is(.b37-count-controls button,.b39-count-controls button){font-size:18px!important;font-weight:600!important}
 html body #topbar .csave{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+
+
+/* ---------- UI2A4A runtime-font + scientific-detail visual guard ---------- */
+html body #view .v2p2e5ab-detail section.vc>p{
+  font-family:var(--ui2-font)!important;
+  font-size:13px!important;
+  font-weight:400!important;
+  line-height:19px!important;
+  letter-spacing:0!important;
+}
+html body #view .v2p2e5ab-detail .v2p2e5ab-detail-grid>span{
+  font-size:11px!important;font-weight:400!important;line-height:16px!important;
+}
+html body #view .v2p2e5ab-detail .v2p2e5ab-detail-grid>span>b{
+  font-size:13px!important;font-weight:500!important;line-height:18px!important;
+}

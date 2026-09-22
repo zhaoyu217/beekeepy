@@ -1235,3 +1235,17 @@ html body #app #view .v53-actions .v2p2e5t-now-head{
   margin-bottom:7px!important;
   margin-left:2px!important;
 }
+
+/* ==============================================================
+   V2P2E5UI2A6E — ACTIONS RECORD-NOW / SHORTCUT GAP
+   Visual-only. Tighten only the gap below the "Record Now" header
+   and above the Inspection / Feeding / Treatment / Harvest buttons.
+   Parent .v53-actions uses a 12px flex gap; cancel 8px here so the
+   visible separation is about 4px. No Actions logic changes.
+   ============================================================== */
+html body #app #view .v53-actions .v2p2e5t-now-head{
+  margin-bottom:0!important;
+}
+html body #app #view .v53-actions .v2p2e5t-now-head + .v53-shortcuts{
+  margin-top:-8px!important;
+}

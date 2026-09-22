@@ -1067,3 +1067,76 @@ html body #app #view :is([class*="-meta"],[class*="-date"],[class*="-source"] sm
 
 /* I. Keep intentional glyph/display exceptions untouched. */
 html body #app #view :is(.v109-map-zoom,.core-back,.add-action-arrow,.about157-chevron,.help156-chevron,.v145-ico,.v145-settings-hero-icon,.about157-logo,.about157-icon,.floating-add-master,.b37-intro-badge,.b37-date-icon,.b39v-pending-date-icon,.b39m-calendar-button){line-height:1!important}
+
+
+/* ==============================================================
+   V2P2E5UI2A6A — CORE HEADER SETTINGS ICON HARD LOCK
+   Scope: Home / Hives / Actions / Insights settings control only.
+   - One identical outline gear on all four core pages.
+   - Removes the legacy Unicode gear on the Hives custom header,
+     which previously rendered together with the generated icon.
+   - No route, click target, page structure, or business logic changes.
+   ============================================================== */
+:root{
+  --ui2a6a-settings-icon-size:22px;
+}
+
+/* Standard core topbar: hide the legacy inline SVG and render one canonical gear. */
+html body #app #topbar button.iconbtn[aria-label="Settings"]{
+  width:40px!important;
+  height:40px!important;
+  padding:0!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:0!important;
+  line-height:0!important;
+  color:#3F4541!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+}
+html body #app #topbar button.iconbtn[aria-label="Settings"] > *{
+  display:none!important;
+}
+html body #app #topbar button.iconbtn[aria-label="Settings"]::before{
+  content:""!important;
+  display:block!important;
+  width:var(--ui2a6a-settings-icon-size)!important;
+  height:var(--ui2a6a-settings-icon-size)!important;
+  flex:0 0 var(--ui2a6a-settings-icon-size)!important;
+  background-color:transparent!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:var(--ui2a6a-settings-icon-size) var(--ui2a6a-settings-icon-size)!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%233F4541' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.1'/%3E%3Cpath d='M19.2 13.6a7.8 7.8 0 0 0 0-3.2l2-1.5-2-3.4-2.4 1A8 8 0 0 0 14 4.9L13.7 2H9.8l-.4 2.9a8 8 0 0 0-2.8 1.6l-2.4-1-2 3.4 2 1.5a7.8 7.8 0 0 0 0 3.2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 2.8 1.6l.4 2.9h3.9l.4-2.9a8 8 0 0 0 2.8-1.6l2.4 1 2-3.4Z'/%3E%3C/g%3E%3C/svg%3E")!important;
+}
+
+/* Hives has its own fixed header. Suppress the literal ⚙ text completely,
+   then use exactly the same canonical gear as the other three pages. */
+html body #app #view .v173-hives .v63-head .v173-settings{
+  width:40px!important;
+  height:40px!important;
+  padding:0!important;
+  margin:0!important;
+  display:grid!important;
+  place-items:center!important;
+  font-size:0!important;
+  line-height:0!important;
+  color:#3F4541!important;
+  background:transparent!important;
+  border:0!important;
+  box-shadow:none!important;
+  overflow:hidden!important;
+}
+html body #app #view .v173-hives .v63-head .v173-settings::before{
+  content:""!important;
+  display:block!important;
+  width:var(--ui2a6a-settings-icon-size)!important;
+  height:var(--ui2a6a-settings-icon-size)!important;
+  flex:0 0 var(--ui2a6a-settings-icon-size)!important;
+  background-color:transparent!important;
+  background-repeat:no-repeat!important;
+  background-position:center!important;
+  background-size:var(--ui2a6a-settings-icon-size) var(--ui2a6a-settings-icon-size)!important;
+  background-image:url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24'%3E%3Cg fill='none' stroke='%233F4541' stroke-width='1.8' stroke-linecap='round' stroke-linejoin='round'%3E%3Ccircle cx='12' cy='12' r='3.1'/%3E%3Cpath d='M19.2 13.6a7.8 7.8 0 0 0 0-3.2l2-1.5-2-3.4-2.4 1A8 8 0 0 0 14 4.9L13.7 2H9.8l-.4 2.9a8 8 0 0 0-2.8 1.6l-2.4-1-2 3.4 2 1.5a7.8 7.8 0 0 0 0 3.2l-2 1.5 2 3.4 2.4-1a8 8 0 0 0 2.8 1.6l.4 2.9h3.9l.4-2.9a8 8 0 0 0 2.8-1.6l2.4 1 2-3.4Z'/%3E%3C/g%3E%3C/svg%3E")!important;
+}

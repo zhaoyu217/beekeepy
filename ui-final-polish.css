@@ -1205,3 +1205,15 @@ html body #app #view .v173-hives .v63-head button.v173-settings.core-settings-bt
   stroke-linecap:round!important;
   stroke-linejoin:round!important;
 }
+
+/* ==============================================================
+   V2P2E5UI2A6C — ACTIONS BOTTOM SPACING TIGHTENING
+   Visual-only. Reduce the visible gap above the fixed bottom nav.
+   No Action logic, routing, task generation, or nav behavior changes.
+   ============================================================== */
+html body #app #view:has(.v53-actions){
+  padding-bottom:calc(var(--nav) + var(--safe) + 4px)!important;
+}
+html body #app #view .v53-actions{
+  padding-bottom:0!important;
+}

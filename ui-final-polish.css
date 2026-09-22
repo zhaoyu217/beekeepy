@@ -1217,3 +1217,21 @@ html body #app #view:has(.v53-actions){
 html body #app #view .v53-actions{
   padding-bottom:0!important;
 }
+
+
+/* ==============================================================
+   V2P2E5UI2A6D — ACTIONS PLAN / RECORD-NOW MIDDLE SPACING
+   Visual-only. Tighten the oversized vertical gap between the
+   "For work the system cannot know about" helper and "Record Now".
+   No Action logic, routing, task generation, or nav behavior changes.
+   ============================================================== */
+html body #app #view .v53-actions .v2p2e5t-plan-help{
+  margin-top:-5px!important;
+  margin-bottom:0!important;
+}
+html body #app #view .v53-actions .v2p2e5t-now-head{
+  margin-top:-4px!important;
+  margin-right:2px!important;
+  margin-bottom:7px!important;
+  margin-left:2px!important;
+}

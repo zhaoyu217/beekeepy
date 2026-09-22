@@ -1,5 +1,5 @@
 /* ==============================================================
-   V2P2E5UI2A3 — FINAL TYPOGRAPHY SYSTEM + UI2A2 ICON RESTORE
+   V2P2E5UI2A3 — PRIOR TYPOGRAPHY CANDIDATE + UI2A2 ICON RESTORE
    Visual-only layer.
    Scope: iconography + typography hierarchy only.
    No routes, state, persistence, task engine, rule logic, data model,
@@ -175,3 +175,529 @@ body .v211-inspection .v2p2e5ap-reference-note{font-size:11px!important;line-hei
   width:22px!important;
   height:22px!important;
 }
+
+/* ==============================================================
+   V2P2E5UI2A4 — FULL-APP TYPOGRAPHY + HEADER ICON CONSOLIDATION
+   Visual-only final candidate.
+   Locked semantic typography:
+   Page title 18/700/22
+   Module/card title 14/700/18
+   Body 13/400/19
+   Important value 13/500/18
+   Form label 12/500/16
+   Secondary 11/400/16
+   Date/meta 10/500/14
+   Status 10/600-700/14
+   Button 13/700/16
+   Bottom nav 11/500; active 700
+   Inputs/selects/textarea 16px (iOS Safari anti-zoom)
+   Header utility icons: deep gray #3F4541; active nav stays brand green.
+   No route, state, data, workflow, persistence, or scientific-rule changes.
+   ============================================================== */
+
+:root{
+  --ui2a4-page-title-size:18px;
+  --ui2a4-page-title-weight:700;
+  --ui2a4-page-title-line:22px;
+  --ui2a4-card-title-size:14px;
+  --ui2a4-card-title-weight:700;
+  --ui2a4-card-title-line:18px;
+  --ui2a4-body-size:13px;
+  --ui2a4-body-weight:400;
+  --ui2a4-body-line:19px;
+  --ui2a4-value-size:13px;
+  --ui2a4-value-weight:500;
+  --ui2a4-value-line:18px;
+  --ui2a4-label-size:12px;
+  --ui2a4-label-weight:500;
+  --ui2a4-label-line:16px;
+  --ui2a4-secondary-size:11px;
+  --ui2a4-secondary-weight:400;
+  --ui2a4-secondary-line:16px;
+  --ui2a4-meta-size:10px;
+  --ui2a4-meta-weight:500;
+  --ui2a4-meta-line:14px;
+  --ui2a4-status-size:10px;
+  --ui2a4-status-weight:600;
+  --ui2a4-status-line:14px;
+  --ui2a4-button-size:13px;
+  --ui2a4-button-weight:700;
+  --ui2a4-button-line:16px;
+  --ui2a4-nav-size:11px;
+  --ui2a4-icon-dark:#3F4541;
+  --ui2a4-icon-muted:#6F756F;
+  --ui2a4-brand:#5E7350;
+  --ui2a4-alert:#D92D20;
+}
+
+/* ---------- 1. Global semantic baseline ---------- */
+html body #view{
+  font-size:var(--ui2a4-body-size)!important;
+  font-weight:var(--ui2a4-body-weight)!important;
+  line-height:var(--ui2a4-body-line)!important;
+}
+html body #view p,
+html body #view li,
+html body #view .body{
+  font-size:var(--ui2a4-body-size)!important;
+  font-weight:var(--ui2a4-body-weight)!important;
+  line-height:var(--ui2a4-body-line)!important;
+}
+html body #view .h1,
+html body #view .pagetitle,
+html body #view .page-title,
+html body #view .v60-hero-title,
+html body #view .v55-title{
+  font-size:var(--ui2a4-page-title-size)!important;
+  font-weight:var(--ui2a4-page-title-weight)!important;
+  line-height:var(--ui2a4-page-title-line)!important;
+}
+html body #topbar .pagebar-title,
+html body #topbar .brand:not(:has(img)){
+  font-size:var(--ui2a4-page-title-size)!important;
+  font-weight:var(--ui2a4-page-title-weight)!important;
+  line-height:var(--ui2a4-page-title-line)!important;
+}
+html body #view .h2,
+html body #view .h3,
+html body #view .vhead>b,
+html body #view .section-title,
+html body #view .master-section-title,
+html body #view .v54-section-title>b,
+html body #view .v55-section-title,
+html body #view .v55-section-head,
+html body #view .v112-ai-reasons>.vhead>b{
+  font-size:var(--ui2a4-card-title-size)!important;
+  font-weight:var(--ui2a4-card-title-weight)!important;
+  line-height:var(--ui2a4-card-title-line)!important;
+}
+html body #view .small,
+html body #view .notice,
+html body #view .helper,
+html body #view .subtext,
+html body #view .caption{
+  font-size:var(--ui2a4-secondary-size)!important;
+  font-weight:var(--ui2a4-secondary-weight)!important;
+  line-height:var(--ui2a4-secondary-line)!important;
+}
+html body #view .tiny,
+html body #view .meta,
+html body #view time{
+  font-size:var(--ui2a4-meta-size)!important;
+  font-weight:var(--ui2a4-meta-weight)!important;
+  line-height:var(--ui2a4-meta-line)!important;
+}
+html body #view .pill,
+html body #view .badge,
+html body #view [class*="-pill"],
+html body #view [class*="status-pill"]{
+  font-size:var(--ui2a4-status-size)!important;
+  font-weight:var(--ui2a4-status-weight)!important;
+  line-height:var(--ui2a4-status-line)!important;
+}
+html body #view label:not(.switch),
+html body #view .formgroup>label,
+html body #view [class*="-label"]{
+  font-size:var(--ui2a4-label-size)!important;
+  font-weight:var(--ui2a4-label-weight)!important;
+  line-height:var(--ui2a4-label-line)!important;
+}
+html body #view input,
+html body #view select,
+html body #view textarea,
+html body .modal input,
+html body .modal select,
+html body .modal textarea{
+  font-size:16px!important;
+  font-weight:400!important;
+  line-height:22px!important;
+}
+html body #view button:not(.iconbtn):not(.navitem),
+html body .modal button:not(.iconbtn){
+  font-size:var(--ui2a4-button-size)!important;
+  font-weight:var(--ui2a4-button-weight)!important;
+  line-height:var(--ui2a4-button-line)!important;
+}
+
+/* Filters/tabs/chips are status controls, not primary CTA text. */
+html body #view :is(.tab,.tabs button,.filters button,.chip,.pill,.v53-action-tabs button,.v60-filters button,.v61-filter-btn,.v62-filter,.v63-filter,.v109-map-tabs button,.v118-trend-ranges button,.v119-trend-ranges button,.v128-honey-ranges button){
+  font-size:var(--ui2a4-status-size)!important;
+  font-weight:600!important;
+  line-height:var(--ui2a4-status-line)!important;
+}
+
+/* ---------- 2. Header utility icons ---------- */
+html body #topbar .iconbtn{
+  color:var(--ui2a4-icon-dark)!important;
+}
+html body #topbar .iconbtn svg,
+html body #topbar .iconbtn svg *{
+  stroke:currentColor!important;
+}
+html body #topbar .iconbtn svg [fill]:not([fill="none"]){
+  fill:currentColor!important;
+}
+html body #topbar .plusbtn,
+html body #topbar .core-back,
+html body #topbar .core-more,
+html body #topbar .core-filter,
+html body #topbar button[aria-label="Back"],
+html body #topbar button[aria-label="Settings"],
+html body #topbar button[aria-label="Notifications"],
+html body #topbar button[aria-label="Add Hive"],
+html body #topbar button[aria-label="Health Analysis"],
+html body #topbar button[aria-label="Add action"]{
+  color:var(--ui2a4-icon-dark)!important;
+}
+html body #topbar .badge,
+html body #topbar .nav-badge{
+  background:var(--ui2a4-alert)!important;
+  color:#fff!important;
+  font-size:10px!important;
+  font-weight:700!important;
+  line-height:14px!important;
+}
+/* Hives custom header utility buttons follow the same deep-gray system. */
+html body #view .v173-hives .v173-settings,
+html body #view .v173-hives .v173-more,
+html body #view .v63-head button{
+  color:var(--ui2a4-icon-dark)!important;
+}
+html body #view .v173-hives .v173-settings svg,
+html body #view .v173-hives .v173-more svg{
+  stroke:currentColor!important;
+}
+/* Replace the old green/white generated settings pseudo icon with deep gray. */
+html body .iconbtn[aria-label="Settings"]::before,
+html body .v173-settings::before{
+  filter:none!important;
+}
+html body .iconbtn[aria-label="Settings"]::before{
+  background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0Y0NTQxIiBzdHJva2Utd2lkdGg9IjEuNzUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMy4xIi8+PHBhdGggZD0iTTE5LjIgMTMuNmE3LjggNy44IDAgMCAwIDAtMy4ybDItMS41LTItMy40LTIuNCAxYTggOCAwIDAgMC0yLjgtMS42TDEzLjcgMkg5LjhsLS40IDIuOWE4IDggMCAwIDAtMi44IDEuNmwtMi40LTEtMiAzLjQgMiAxLjVhNy44IDcuOCAwIDAgMCAwIDMuMmwtMiAxLjUgMiAzLjQgMi40LTFhOCA4IDAgMCAwIDIuOCAxLjZsLjQgMi45aDMuOWwuNC0yLjlhOCA4IDAgMCAwIDIuOC0xLjZsMi40IDEgMi0zLjRaIi8+PC9nPjwvc3ZnPg==")!important;
+}
+html body .v173-settings::before{
+  background-image:url("data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHZpZXdCb3g9IjAgMCAyNCAyNCI+PGcgZmlsbD0ibm9uZSIgc3Ryb2tlPSIjM0Y0NTQxIiBzdHJva2Utd2lkdGg9IjEuNzUiIHN0cm9rZS1saW5lY2FwPSJyb3VuZCIgc3Ryb2tlLWxpbmVqb2luPSJyb3VuZCI+PGNpcmNsZSBjeD0iMTIiIGN5PSIxMiIgcj0iMy4xIi8+PHBhdGggZD0iTTE5LjIgMTMuNmE3LjggNy44IDAgMCAwIDAtMy4ybDItMS41LTItMy40LTIuNCAxYTggOCAwIDAgMC0yLjgtMS42TDEzLjcgMkg5LjhsLS40IDIuOWE4IDggMCAwIDAtMi44IDEuNmwtMi40LTEtMiAzLjQgMiAxLjVhNy44IDcuOCAwIDAgMCAwIDMuMmwtMiAxLjUgMiAzLjQgMi40LTFhOCA4IDAgMCAwIDIuOCAxLjZsLjQgMi45aDMuOWwuNC0yLjlhOCA4IDAgMCAwIDIuOC0xLjZsMi40IDEgMi0zLjRaIi8+PC9nPjwvc3ZnPg==")!important;
+}
+
+/* ---------- 3. Bottom navigation ---------- */
+html body #bottomnav .navitem,
+html body #bottomnav .navitem>span{
+  font-size:var(--ui2a4-nav-size)!important;
+  font-weight:500!important;
+  line-height:13px!important;
+  color:var(--ui2a4-icon-muted)!important;
+}
+html body #bottomnav .navitem>.icon.navsvg{
+  color:var(--ui2a4-icon-muted)!important;
+  stroke:currentColor!important;
+}
+html body #bottomnav .navitem.active,
+html body #bottomnav .navitem.active>span,
+html body #bottomnav .navitem.active>.icon.navsvg{
+  color:var(--ui2a4-brand)!important;
+  font-weight:700!important;
+}
+
+/* ---------- 4. Home / Hives / Actions / Insights ---------- */
+html body #view .v56-row-copy>span{
+  font-size:var(--ui2a4-card-title-size)!important;font-weight:700!important;line-height:18px!important;
+}
+html body #view .v56-row-copy>b{
+  font-size:var(--ui2a4-body-size)!important;font-weight:500!important;line-height:18px!important;
+}
+html body #view .v56-row-copy>small{
+  font-size:var(--ui2a4-meta-size)!important;font-weight:500!important;line-height:14px!important;
+}
+html body #view .v56-row-copy>em{
+  font-size:var(--ui2a4-secondary-size)!important;font-weight:400!important;line-height:16px!important;
+}
+html body #view .v56-soft-btn{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+html body #view .v56-quickbar span{font-size:11px!important;font-weight:500!important;line-height:13px!important}
+html body #view .v56-health-ring>span,
+html body #view .v56-health-stats span{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+
+html body #view .v63-head>b{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .v63-copy>b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v63-copy>small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v63-card>em{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+
+html body #view .v53-actions .alist button>b,
+html body #view .v2p2e5ab-task>strong{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v53-actions .alist button>span:first-of-type,
+html body #view .v2p2e5ab-task>small{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v53-actions .alist button>em,
+html body #view .v53-actions .alist button>small,
+html body #view .v2p2e5ab-task-foot time{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v2p2e5ab-task-top>b{font-size:11px!important;font-weight:600!important;line-height:16px!important}
+html body #view .v2p2e5ab-task-top i,
+html body #view .v2p2e5ab-task-top em,
+html body #view .v2p2e5ab-task-foot i{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #view .v2p2e5ab-summary>button span{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v2p2e5ab-summary .v2p2e5ab-all{font-size:11px!important;font-weight:600!important;line-height:16px!important}
+
+html body #view .v53-insights .insighttitle{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v53-insights .isum span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .v53-insights .isum small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v53-insights .bullets li{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v53-insights .recol button,
+html body #view .v53-insights .inav button{font-size:11px!important;font-weight:600!important;line-height:16px!important}
+
+/* ---------- 5. Hive Detail / Inspection / Timeline ---------- */
+html body #view .v82-hive-detail .dover>div:first-child b{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .v82-hive-detail .dover>div:first-child span,
+html body #view .v82-hive-detail .meta{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v82-hive-detail .hg>b,
+html body #view .v82-hive-detail .vhead>b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v82-hive-detail .hg>div,
+html body #view .v82-hive-detail .tease{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v82-hive-detail .hg span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .v82-hive-detail .hg strong{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+
+html body #view .v211-inspection .v211-card-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v211-inspection .v211-card-row>span{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v211-inspection .v211-card-row>strong{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view .v211-inspection .v2p2e5ap-card-note{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .v211-inspection .v2p2e5ap-reference-note{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .inspection-field-row span,
+html body #view .inspection-slider-row span{font-size:12px!important;font-weight:500!important;line-height:16px!important}
+html body #view .inspection-field-row b,
+html body #view .inspection-slider-row b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+
+html body #view .v88-timeline .timeline-date-master,
+html body #view .v88-timeline .timeline-event-head span,
+html body #view .v88-timeline .timeline-event-master>small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v88-timeline .timeline-event-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v88-timeline .timeline-event-master p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v88-timeline .timeline-filter-master button,
+html body #view .v88-timeline .year-master button{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+
+/* ---------- 6. Feeding / Treatment / Harvest ---------- */
+html body #view :is(.feeding-section-v98,.treatment-section-v102,.harvest-section-v103,.harvest-card-v106) .vhead>b,
+html body #view :is(.feeding-section-v98,.treatment-section-v102,.harvest-section-v103) .section-title,
+html body #view .harvest-card-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view :is(.feeding-hive-copy,.treatment-hive-copy,.harvest-hive-copy)>b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view :is(.feeding-hive-copy,.treatment-hive-copy,.harvest-hive-copy)>span,
+html body #view :is(.feeding-time-note,.treatment-time-note,.harvest-time-note,.treatment-safety-note,.feeding-notes-v98,.treatment-notes-v102,.harvest-notes-v103){font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view :is(.feeding-hive-copy,.treatment-hive-copy,.harvest-hive-copy)>em,
+html body #view .harvest-date,
+html body #view .harvest-card-head :is(span,small),
+html body #view .harvest-recent-main small,
+html body #view .harvest-recent-value small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .harvest-recent-main b,
+html body #view .harvest-recent-value b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view .harvest-empty b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .harvest-empty span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+
+/* ---------- 7. Map / AI / Trend / Risk / Season / Recommendations / Honey ---------- */
+html body #view .v109-map-head b{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .v109-map-head span,
+html body #view .v109-map-head small,
+html body #view .v109-map-label span,
+html body #view .v109-map-info small,
+html body #view .v109-map-hive-list small,
+html body #view .v109-map-free{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v109-map-label b,
+html body #view .v109-map-info b,
+html body #view .v109-map-hive-list b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view .v109-map-info>button{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+html body #view .v109-map-pin{font-size:10px!important;font-weight:700!important;line-height:14px!important}
+
+html body #view .v112-ai-copy b{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .v112-ai-copy span{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v112-ai-copy small,
+html body #view .v112-ai-score span,
+html body #view .v112-ai-risk span{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v112-ai-risk strong{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view .v112-ai-actions button,
+html body #view .v112-ai-cta{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+
+html body #view :is(.v118-trend-summary,.v119-trend-summary) small,
+html body #view .v119-chart-labels,
+html body #view :is(.v118-trend-card,.v119-trend-card) small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view :is(.v118-trend-summary,.v119-trend-summary) span,
+html body #view :is(.v118-trend-card,.v119-trend-card) span,
+html body #view .v119-chart-card .vhead span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view :is(.v118-trend-note,.v119-source-note) b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view :is(.v118-trend-note,.v119-source-note) span,
+html body #view .v119-chart-empty span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .v119-chart-empty b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v119-trend-card em{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+/* Trend KPI numerals intentionally retain display sizes. */
+
+html body #view .v123-risk-overview-copy b{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .v123-risk-overview-copy span,
+html body #view .v123-risk-card-copy p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v123-risk-overview-copy small,
+html body #view .v123-risk-counts span{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v123-risk-card-copy b,
+html body #view .v123-risk-how-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v123-risk-badge{font-size:10px!important;font-weight:700!important;line-height:14px!important}
+
+html body #view .v124-season-head>span{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v124-season-hero small,
+html body #view .v124-season-action-top em{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v124-season-action-top b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v124-season-action p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+
+html body #view .v127-reco-top b,
+html body #view .v127-reco-card b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v127-reco-top small,
+html body #view .v127-reco-grid small,
+html body #view .v127-reco-source{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v127-reco-card p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v127-reco-summary-pill{font-size:10px!important;font-weight:700!important;line-height:14px!important}
+html body #view .v127-reco-card>button{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+
+html body #view .v128-honey-summary small,
+html body #view .v128-honey-chart-labels,
+html body #view .v128-honey-source{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v128-honey-hive-list b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v128-honey-hive-list small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v128-honey-open,
+html body #view .v128-honey-empty button{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+/* Honey KPI numerals intentionally retain display sizes. */
+
+/* ---------- 8. Settings / Account / Legal / Notifications ---------- */
+html body #view .sectionlabel{font-size:11px!important;font-weight:700!important;line-height:16px!important}
+html body #view .srow b,
+html body #view .scopy>b,
+html body #view .setmenu b,
+html body #view .notifs b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .srow .tiny,
+html body #view .scopy .tiny,
+html body #view .notifs time{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .setphoto span,
+html body #view .acct>span,
+html body #view .notifs span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .acct>b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .legal h2{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .legal p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+
+/* ---------- 9. Low-frequency Action workflows B37/B38/B39/B40/B41/B43 ---------- */
+html body #view :is(.b37-page,.b38-page,.b38-detail-page,.b39-page,.b39-create-page,.b39-pending-detail-page,.b39-completed-detail-page,.b40-page,.b41-page,.b43-page){
+  font-size:13px!important;font-weight:400!important;line-height:19px!important;
+}
+html body #view :is(.b37-page,.b38-page,.b38-detail-page,.b39-page,.b39-create-page,.b39-pending-detail-page,.b39-completed-detail-page,.b40-page,.b41-page,.b43-page) p{
+  font-size:13px!important;font-weight:400!important;line-height:19px!important;
+}
+html body #view :is(.b37-intro-title,.b37-card-head b,.b38-task,.b38-detail-hive,.b39-count-head,.b39-hero-copy b,.b39-plan-cal-title,.b39m-result-card .vhead>b,.b40-result-card .vhead>b){
+  font-size:14px!important;font-weight:700!important;line-height:18px!important;
+}
+html body #view :is(.b37-intro-copy,.b37-intro-sub,.b37-hint,.b38-note,.b39-info,.b39-pending-note,.b40-note){
+  font-size:11px!important;font-weight:400!important;line-height:16px!important;
+}
+html body #view :is(.b37-label,.b39m-pair-label){font-size:12px!important;font-weight:500!important;line-height:16px!important}
+html body #view :is(.b37-meta,.b37-sub,.b38-date-display,.b38-detail-date-display,.b39-summary-row,.b39-date-shell,.b39v-pending-date-button){font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view :is(.b37-state,.b38-status-pill){font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #view :is(.b37-primary,.b37-secondary,.b38-page .b37-primary,.b39-footer button,.b40-page button,.b41-page button,.b43-page button){font-size:13px!important;font-weight:700!important;line-height:16px!important}
+/* Result/detail value grids: labels normal, actual values medium — never 800/900. */
+html body #view :is(.b38-task-grid,.b38-plan-list,.b39-summary-row,.b39m-result-info,.b40-row) span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view :is(.b38-task-grid,.b38-plan-list,.b39-summary-row,.b39m-result-info,.b40-row) b,
+html body #view :is(.b39-summary-strong,.b37-count-top strong,.b39-count-box strong){font-size:13px!important;font-weight:500!important;line-height:18px!important}
+
+/* ---------- 10. Scientific task detail + generic engine surfaces ---------- */
+html body #view .v2p2e5ab-detail .vhead>b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v2p2e5ab-detail .v2p2e5ab-detail-grid span{font-size:11px!important;font-weight:400!important;line-height:16px!important;color:#7A817B!important}
+html body #view .v2p2e5ab-detail .v2p2e5ab-detail-grid b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view .v2p2e5ab-detail .vc p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v2p2e5ab-source-pill{font-size:10px!important;font-weight:600!important;line-height:14px!important}
+
+html body .modal .modalhead b,
+html body .modal .modalhead .h2{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body .modal .modalhead small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body .modal p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body .modal small{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body .modal :is(.b37-picker-group,.v2p2e5af-decision-title){font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body .modal :is(.v2p2e5af-intro,.v2p2e5af-decision-note,.v2p2e5af-warning p){font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body .modal .add-action-card b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body .modal .add-action-card small{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+
+/* ---------- 11. R02/R03/S13/S14/R08/R09/R10/R11/R12 verification families ---------- */
+html body #view :is(.v2p2e5r02-review,.v2p2e5r02-evidence,.v2p2e5r03-detail,.v2p2e5r03-food-verification,.v2p2e5s13-evidence,.v2p2e5s14-review,.v2p2e5s14-evidence,.v2p2e5r08-detail,.v2p2e5r08-check,.v2p2e5r10-detail,.v2p2e5r10-form-page,.v2p2e5r10-path-page,.v2p2e5r11-detail,.v2p2e5r11-space-page,.v2p2e5r12-page,.v2p2e5r12-review-page){
+  font-size:13px!important;font-weight:400!important;line-height:19px!important;
+}
+html body #view :is(.v2p2e5r02-grid,.v2p2e5r03-grid,.v2p2e5s13-grid,.v2p2e5s14-grid,.v2p2e5r08-grid,.v2p2e5r10-grid,.v2p2e5r11-grid,.v2p2e5r12-grid,.v2p2e5r12-evidence-grid) span{
+  font-size:11px!important;font-weight:400!important;line-height:16px!important;
+}
+html body #view :is(.v2p2e5r02-grid,.v2p2e5r03-grid,.v2p2e5s13-grid,.v2p2e5s14-grid,.v2p2e5r08-grid,.v2p2e5r10-grid,.v2p2e5r11-grid,.v2p2e5r12-grid,.v2p2e5r12-evidence-grid) b{
+  font-size:13px!important;font-weight:500!important;line-height:18px!important;
+}
+html body #view :is(.v2p2e5r03-note,.v2p2e5r08-note,.v2p2e5r10-note,.v2p2e5r11-note,.v2p2e5s13-note,.v2p2e5s14-safety,.v2p2e5r12-note,.v2p2e5r12-review-note){
+  font-size:11px!important;font-weight:400!important;line-height:16px!important;
+}
+html body #view :is(.v2p2e5r02-pill,.v2p2e5r03-pill,.v2p2e5s13-pill,.v2p2e5s14-pill,.v2p2e5r08-pill,.v2p2e5r10-pill,.v2p2e5r11-pill,.v2p2e5r12-pill){
+  font-size:10px!important;font-weight:600!important;line-height:14px!important;
+}
+html body #view :is(.v2p2e5r03-warning,.v2p2e5r08-warning,.v2p2e5r10-warning,.v2p2e5r11-check-card,.v2p2e5r12-review-card,.v2p2e5r12-source-card) p{
+  font-size:13px!important;font-weight:400!important;line-height:19px!important;
+}
+html body #view :is(.v2p2e5r03-verify-actions,.v2p2e5r08-actions,.v2p2e5r10-actions,.v2p2e5r11-actions,.v2p2e5r12-actions,.v2p2e5r12-review-actions) button{
+  font-size:13px!important;font-weight:700!important;line-height:16px!important;
+}
+
+/* R12 was the largest remaining typography outlier; explicitly normalize every text tier. */
+html body #view .v2p2e5r12-kicker{font-size:10px!important;font-weight:600!important;line-height:14px!important;letter-spacing:.06em!important}
+html body #view .v2p2e5r12-review-hero h2{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .v2p2e5r12-review-hero p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v2p2e5r12-section-head b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v2p2e5r12-section-head small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v2p2e5r12-evidence-item span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .v2p2e5r12-evidence-item b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view .v2p2e5r12-measure-copy b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view .v2p2e5r12-review-note>span{font-size:12px!important;font-weight:500!important;line-height:16px!important}
+html body #view .v2p2e5r12-review-note>span small{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v2p2e5r12-source-card b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body #view .v2p2e5r12-source-card p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v2p2e5r12-source-ref{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .v2p2e5r12-source-icon{font-size:12px!important;font-weight:700!important}
+
+/* ---------- 12. Planner / correction / draft / auxiliary sheets ---------- */
+html body #view :is(.v2p2e5ai-planner-page,.v2p2e5am-history) p,
+html body :is(.v2p2e5an-sheet,.v2p2e5ap-sheet) p{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view :is(.v2p2e5ai-intro-copy,.v2p2e5ai-decision-note),
+html body :is(.v2p2e5an-note,.v2p2e5ap-info,.v2p2e5ap-reference-note,.v2p2e5aq-reference-note){font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body :is(.v2p2e5an-head,.v2p2e5ap-head) b{font-size:14px!important;font-weight:700!important;line-height:18px!important}
+html body :is(.v2p2e5an-head,.v2p2e5ap-head) span{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body :is(.v2p2e5an-actions,.v2p2e5ap-actions) button{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+
+/* ---------- 13. Auth ---------- */
+html body #view .auth-title,
+html body #view .v2p2e5ae-auth-heading{font-size:18px!important;font-weight:700!important;line-height:22px!important}
+html body #view .v2p2e5ae-auth-subtitle,
+html body #view .v2p2e5ae-auth-copy{font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .auth-security,
+html body #view .auth-legal,
+html body #view .auth-divider{font-size:10px!important;font-weight:500!important;line-height:14px!important}
+html body #view .auth-tab,
+html body #view .social-btn{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+
+/* ---------- 14. Explicit display/KPI exceptions ---------- */
+/* These retain their existing larger display sizes by design. */
+html body #view :is(.v56-health-ring strong,.v56-health-stats b,.score,.v54-score-number,.v112-ai-score strong,.v118-trend-summary b,.v118-trend-summary>strong,.v119-trend-summary b,.v119-trend-summary>strong,.v118-trend-card b,.v119-trend-card b,.v123-risk-counts strong,.v128-honey-stats strong,.v128-honey-summary strong,.harvest-stats-v106 b){
+  font-weight:700!important;
+}
+
+/* ---------- 15. Narrow-screen safety ---------- */
+@media(max-width:350px){
+  html body #view .v211-inspection .v211-card-row>span{font-size:12px!important;line-height:16px!important}
+  html body #view .v211-inspection .v211-card-row>strong{font-size:12px!important;line-height:16px!important}
+  html body #bottomnav .navitem,
+  html body #bottomnav .navitem>span{font-size:10px!important;line-height:12px!important}
+}
+
+/* ---------- UI2A4 follow-through: R09 + pure-icon/button exceptions ---------- */
+html body #view :is(.v2p2e5r09-detail,.v2p2e5r09-verification){font-size:13px!important;font-weight:400!important;line-height:19px!important}
+html body #view .v2p2e5r09-grid span{font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .v2p2e5r09-grid b{font-size:13px!important;font-weight:500!important;line-height:18px!important}
+html body #view :is(.v2p2e5r09-source,.v2p2e5r09-pill){font-size:10px!important;font-weight:600!important;line-height:14px!important}
+html body #view :is(.v2p2e5r09-warning,.v2p2e5r09-note){font-size:11px!important;font-weight:400!important;line-height:16px!important}
+html body #view .v2p2e5r09-actions button{font-size:13px!important;font-weight:700!important;line-height:16px!important}
+
+/* Text-button rule does not resize visual-only controls. */
+html body #view :is(.v109-map-zoom,.photo-delete,.gallery-photo button,.b37-count-controls button,.b39-count-controls button,.b39v-pending-date-icon,.b37-date-icon,.b39m-calendar-button){
+  font-size:inherit!important;
+  line-height:1!important;
+}
+html body #view .v109-map-zoom{font-size:22px!important}
+html body #view :is(.b37-count-controls button,.b39-count-controls button){font-size:18px!important;font-weight:600!important}
+html body #topbar .csave{font-size:13px!important;font-weight:700!important;line-height:16px!important}

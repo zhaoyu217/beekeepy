@@ -1249,3 +1249,68 @@ html body #app #view .v53-actions .v2p2e5t-now-head{
 html body #app #view .v53-actions .v2p2e5t-now-head + .v53-shortcuts{
   margin-top:-8px!important;
 }
+
+/* Hives visual polish. Preserve content, images, controls and navigation. */
+html body #app #view .v173-hives{
+  background-color:#F7F3EB!important;
+}
+html body #app #view .v173-hives .v63-stage{
+  background-color:#F7F3EB!important;
+}
+html body #app #view .v173-hives .v63-overlay{
+  background:linear-gradient(180deg,rgba(247,243,235,.94),rgba(247,243,235,.98))!important;
+}
+html body #app #view .v173-hives .v63-search{
+  background:#FFFDF9!important;
+  border-color:#E5DFD4!important;
+  border-radius:14px!important;
+  box-shadow:0 2px 8px rgba(70,62,46,.035)!important;
+}
+html body #app #view .v173-hives .v63-search > span{
+  color:#74836B!important;
+}
+html body #app #view .v173-hives .v63-search input{
+  color:#354336!important;
+}
+html body #app #view .v173-hives .v63-search input::placeholder{
+  color:#70766C!important;
+  opacity:1!important;
+}
+html body #app #view .v173-hives .v63-filter-btn{
+  background:#71836A!important;
+  box-shadow:0 2px 8px rgba(70,82,60,.10)!important;
+}
+html body #app #view .v173-hives .v63-list{
+  gap:12px!important;
+}
+html body #app #view .v173-hives .v63-card{
+  background:#FFFDF9!important;
+  border-color:#E7E1D6!important;
+  border-radius:16px!important;
+  box-shadow:0 3px 12px rgba(70,62,46,.045)!important;
+}
+html body #app #view .v173-hives .v63-card > img{
+  border-radius:11px!important;
+}
+html body #app #view .v173-hives .v63-copy > b{
+  color:#344433!important;
+  font-weight:700!important;
+}
+html body #app #view .v173-hives .v63-copy > small{
+  color:#6F756B!important;
+}
+html body #app #view .v173-hives .v63-card > em.good{
+  color:#58734F!important;
+  background-color:#EDF3E8!important;
+  border-radius:6px!important;
+}
+html body #app #view .v173-hives .v63-card > em.attention{
+  color:#876723!important;
+  background-color:#FAF1DE!important;
+  border-radius:6px!important;
+}
+html body #app #view .v173-hives .v63-card > em.unassessed{
+  color:#6E746D!important;
+  background-color:#F0F1ED!important;
+  border-radius:6px!important;
+}

@@ -1249,3 +1249,811 @@ html body #app #view .v53-actions .v2p2e5t-now-head{
 html body #app #view .v53-actions .v2p2e5t-now-head + .v53-shortcuts{
   margin-top:-8px!important;
 }
+
+/* ==============================================================
+   HiveDash UI Design System v1.0 — Phase C / Main only
+   Functional baseline: 235b48a30700285800853036c67297f46b63d23e
+   Private tokens and shell skins exist only while a real Main root
+   is mounted. Existing layout, images, ring geometry and handlers
+   remain owned by the production renderers and stylesheets.
+   ============================================================== */
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist){
+  --ui-rd-canvas:#F6F2E9;
+  --ui-rd-surface:#FFFEFA;
+  --ui-rd-raised:#FFFFFF;
+  --ui-rd-surface-muted:#F1EDE4;
+  --ui-rd-text:#26372C;
+  --ui-rd-secondary:#626C63;
+  --ui-rd-muted:#667062;
+  --ui-rd-placeholder:#70786E;
+  --ui-rd-inverse:#FFFEFA;
+  --ui-rd-brand:#2F5B43;
+  --ui-rd-brand-hover:#284F3A;
+  --ui-rd-brand-active:#234532;
+  --ui-rd-action:#B88428;
+  --ui-rd-action-hover:#AD7D25;
+  --ui-rd-action-active:#AB7C25;
+  --ui-rd-on-action:#231B0B;
+  --ui-rd-action-border:#805D1B;
+  --ui-rd-border:#E5DED2;
+  --ui-rd-control-border:#8A9588;
+  --ui-rd-disabled-surface:#EDEFEA;
+  --ui-rd-disabled-text:#626C63;
+  --ui-rd-disabled-border:#D3D8D0;
+  --ui-rd-good:#3F6346;
+  --ui-rd-good-bg:#EAF1E7;
+  --ui-rd-attention:#805D1B;
+  --ui-rd-attention-bg:#F8EED8;
+  --ui-rd-critical:#9D4138;
+  --ui-rd-critical-bg:#F8E9E5;
+  --ui-rd-unassessed:#626B63;
+  --ui-rd-unassessed-bg:#ECEFEA;
+  --ui-rd-completed:#385E68;
+  --ui-rd-completed-bg:#E8EFF0;
+  --ui-rd-cancelled:#6B5B51;
+  --ui-rd-cancelled-bg:#F0EBE5;
+  --ui-rd-font:Inter,"Segoe UI",Arial,sans-serif;
+  --ui-rd-radius-control:12px;
+  --ui-rd-radius-card:16px;
+  --ui-rd-shadow-card:0 2px 8px rgba(38,55,44,.04);
+  --ui-rd-shadow-hover:0 4px 12px rgba(38,55,44,.06);
+  --ui-rd-shadow-floating:0 6px 20px rgba(38,55,44,.08);
+  --ui-rd-shadow-nav:0 -2px 8px rgba(38,55,44,.04);
+  background:var(--ui-rd-canvas)!important;
+}
+html body #app #view:has(> :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),> .vs > .inshero,> .vs:not(.v53-actions) > .split > div > .alist){
+  background:var(--ui-rd-canvas)!important;
+}
+html body #app #view:has(> :is(.v56-home,.v53-actions,.v53-insights,.homev),> .vs > .inshero,> .vs:not(.v53-actions) > .split > div > .alist){
+  padding-left:16px!important;
+  padding-right:16px!important;
+}
+html body #app #view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)){
+  font-family:var(--ui-rd-font)!important;
+  font-size:14px!important;
+  line-height:21px!important;
+  color:var(--ui-rd-text)!important;
+  background:var(--ui-rd-canvas)!important;
+}
+html body #app #view :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) :is(button,input,select,textarea){
+  font-family:var(--ui-rd-font)!important;
+}
+html body #app #view :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) :is(button,input,select,textarea):focus-visible{
+  outline:2px solid var(--ui-rd-brand)!important;
+  outline-offset:2px!important;
+}
+html body #app #view :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) :is(button,input,select,textarea):disabled{
+  background:var(--ui-rd-disabled-surface)!important;
+  color:var(--ui-rd-disabled-text)!important;
+  border-color:var(--ui-rd-disabled-border)!important;
+  box-shadow:none!important;
+}
+
+/* Shared chrome: sibling elements are conditional on Main roots. */
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #topbar,
+html body #app #view .v173-hives .v63-head{
+  background:var(--ui-rd-surface)!important;
+  border-bottom:1px solid var(--ui-rd-border)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body #app:has(#view > :is(.v56-home,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #topbar .pagebar-title,
+html body #app #view .v173-hives .v63-head > b{
+  font-family:var(--ui-rd-font)!important;
+  font-size:20px!important;
+  font-weight:700!important;
+  line-height:28px!important;
+  color:var(--ui-rd-brand)!important;
+}
+html body #app:has(#view > :is(.v56-home,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #topbar .iconbtn,
+html body #app #view .v173-hives .v63-head :is(.v173-settings,.v173-more){
+  color:var(--ui-rd-brand)!important;
+}
+html body #app:has(#view > :is(.v56-home,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #topbar .core-settings-btn > svg.icon,
+html body #app:has(#view > :is(.v56-home,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #topbar .core-settings-btn > svg.icon *,
+html body #app #view .v173-hives .v63-head .core-settings-btn > svg.icon,
+html body #app #view .v173-hives .v63-head .core-settings-btn > svg.icon *{
+  stroke:var(--ui-rd-brand)!important;
+}
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #bottomnav{
+  background:var(--ui-rd-surface)!important;
+  border-top:1px solid var(--ui-rd-border)!important;
+  box-shadow:var(--ui-rd-shadow-nav)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #bottomnav .navitem,
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #bottomnav .navitem > span{
+  font-family:var(--ui-rd-font)!important;
+  font-size:11px!important;
+  font-weight:500!important;
+  line-height:16px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #bottomnav .navitem.active,
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #bottomnav .navitem.active > span{
+  font-weight:700!important;
+  color:var(--ui-rd-brand)!important;
+}
+html body #app:has(#view > :is(.v56-home,.v173-hives,.v53-actions,.v53-insights,.homev),#view > .vs > .inshero,#view > .vs:not(.v53-actions) > .split > div > .alist) > #bottomnav .navitem.active::after{
+  background:var(--ui-rd-brand)!important;
+}
+
+/* Home: retain the photo, health ring and five-column quick actions. */
+html body #app #view .v56-home{
+  padding:8px 0!important;
+  gap:12px!important;
+}
+html body #app #view .v56-home .v56-hero{
+  border-radius:var(--ui-rd-radius-card)!important;
+  color:var(--ui-rd-inverse)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+}
+html body #app #view .v56-home .v56-hero-shade{
+  background:rgba(22,33,25,.38)!important;
+}
+html body #app #view .v56-home .v56-greeting > span{
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  color:var(--ui-rd-inverse)!important;
+}
+html body #app #view .v56-home .v56-greeting > button{
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  color:var(--ui-rd-inverse)!important;
+}
+html body #app #view .v56-home .v56-health-ring{
+  color:var(--ui-rd-inverse)!important;
+}
+html body #app #view .v56-home .v56-health-ring .track{
+  stroke:rgba(255,254,250,.34)!important;
+}
+html body #app #view .v56-home .v56-health-ring .value{
+  stroke:var(--ui-rd-inverse)!important;
+}
+html body #app #view .v56-home .v56-health-ring strong{
+  font-size:32px!important;
+  font-weight:700!important;
+  line-height:40px!important;
+}
+html body #app #view .v56-home .v56-health-ring > span,
+html body #app #view .v56-home .v56-health-stats span{
+  font-size:11px!important;
+  font-weight:400!important;
+  line-height:16px!important;
+  color:var(--ui-rd-inverse)!important;
+}
+html body #app #view .v56-home .v56-health-stats{
+  gap:4px!important;
+}
+html body #app #view .v56-home .v56-health-stats button{
+  padding:4px 2px!important;
+  border-radius:8px!important;
+  background:var(--ui-rd-brand)!important;
+  color:var(--ui-rd-inverse)!important;
+  text-shadow:none!important;
+}
+html body #app #view .v56-home .v56-health-stats b{
+  font-size:16px!important;
+  font-weight:700!important;
+  line-height:24px!important;
+}
+html body #app #view .v56-home .v56-row-card{
+  padding:12px!important;
+  gap:12px!important;
+  background:var(--ui-rd-surface)!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-card)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+}
+html body #app #view .v56-home .v56-row-copy > span{
+  margin-bottom:4px!important;
+  font-size:16px!important;
+  font-weight:700!important;
+  line-height:24px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v56-home .v56-row-copy > b{
+  font-size:14px!important;
+  font-weight:500!important;
+  line-height:21px!important;
+  color:var(--ui-rd-text)!important;
+}
+/* The existing Risk Alerts summary keeps its single-line component.
+   Use the secondary text token so its full baseline text still fits. */
+html body #app #view .v56-home .v56-row-card:nth-of-type(3) .v56-row-copy > b{
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:18px!important;
+}
+html body #app #view .v56-home .v56-row-copy > small,
+html body #app #view .v56-home .v56-row-copy > em{
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:18px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v56-home .v56-soft-btn{
+  padding:0 12px!important;
+  border:1px solid var(--ui-rd-action-border)!important;
+  border-radius:8px!important;
+  background:var(--ui-rd-action)!important;
+  color:var(--ui-rd-on-action)!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  box-shadow:none!important;
+}
+html body #app #view .v56-home .v56-soft-btn:hover{
+  background:var(--ui-rd-action-hover)!important;
+}
+html body #app #view .v56-home .v56-soft-btn:active{
+  background:var(--ui-rd-action-active)!important;
+}
+html body #app #view .v56-home .v56-quickbar{
+  padding:8px 4px!important;
+  border-top:1px solid var(--ui-rd-border)!important;
+  border-radius:0 0 16px 16px!important;
+  background:var(--ui-rd-surface)!important;
+}
+html body #app #view .v56-home .v56-quickbar button{
+  padding:8px 0!important;
+  color:var(--ui-rd-brand)!important;
+}
+html body #app #view .v56-home .v56-quickbar i{
+  color:var(--ui-rd-brand)!important;
+}
+html body #app #view .v56-home .v56-quickbar span{
+  font-size:11px!important;
+  font-weight:500!important;
+  line-height:16px!important;
+}
+
+/* Hives: retain background/thumbnail assets and the existing list grid. */
+html body #app #view .v173-hives .v63-stage{
+  padding:70px 16px 16px!important;
+  background-color:var(--ui-rd-canvas)!important;
+}
+html body #app #view .v173-hives .v63-overlay{
+  background:rgba(246,242,233,.88)!important;
+}
+html body #app #view .v173-hives .v63-search-row{
+  gap:8px!important;
+  margin-bottom:16px!important;
+}
+html body #app #view .v173-hives .v63-search{
+  padding:0 12px!important;
+  border:1px solid var(--ui-rd-control-border)!important;
+  border-radius:var(--ui-rd-radius-control)!important;
+  background:var(--ui-rd-surface)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body #app #view .v173-hives .v63-search > span{
+  color:var(--ui-rd-brand)!important;
+}
+html body #app #view .v173-hives .v63-search input#hsearch{
+  padding:0!important;
+  border:0!important;
+  border-radius:0!important;
+  background:transparent!important;
+  box-shadow:none!important;
+  color:var(--ui-rd-text)!important;
+  font-size:16px!important;
+  font-weight:400!important;
+  line-height:24px!important;
+}
+html body #app #view .v173-hives .v63-search input#hsearch::placeholder{
+  color:var(--ui-rd-placeholder)!important;
+}
+html body #app #view .v173-hives .v63-filter-btn{
+  border:1px solid var(--ui-rd-action-border)!important;
+  background:var(--ui-rd-action)!important;
+  color:var(--ui-rd-on-action)!important;
+  box-shadow:none!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body #app #view .v173-hives .v63-filter-btn svg{
+  stroke:var(--ui-rd-on-action)!important;
+}
+html body #app #view .v173-hives .v63-filter-btn:hover{
+  background:var(--ui-rd-action-hover)!important;
+}
+html body #app #view .v173-hives .v63-filter-btn:active{
+  background:var(--ui-rd-action-active)!important;
+}
+html body #app #view .v173-hives .v63-list{
+  gap:12px!important;
+}
+html body #app #view .v173-hives .v63-card{
+  padding:12px!important;
+  gap:8px!important;
+  background:var(--ui-rd-surface)!important;
+  color:var(--ui-rd-text)!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-card)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body #app #view .v173-hives .v63-card:hover{
+  border-color:var(--ui-rd-control-border)!important;
+  box-shadow:var(--ui-rd-shadow-hover)!important;
+}
+html body #app #view .v173-hives .v63-card img{
+  border-radius:var(--ui-rd-radius-control)!important;
+}
+html body #app #view .v173-hives .v63-copy{
+  gap:4px!important;
+}
+html body #app #view .v173-hives .v63-copy > b{
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v173-hives .v63-copy > small{
+  margin-top:0!important;
+  font-size:11px!important;
+  font-weight:400!important;
+  line-height:16px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v173-hives .v63-card > em{
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:16px!important;
+}
+html body #app #view .v173-hives .v63-card > em.good{
+  color:var(--ui-rd-good)!important;
+}
+html body #app #view .v173-hives .v63-card > em.attention{
+  color:var(--ui-rd-attention)!important;
+}
+html body #app #view .v173-hives .v63-card > em.critical{
+  color:var(--ui-rd-critical)!important;
+}
+html body #app #view .v173-hives .v63-card > em.unassessed{
+  color:var(--ui-rd-unassessed)!important;
+  background:var(--ui-rd-unassessed-bg)!important;
+}
+
+/* Existing body-mounted Hives menus: no mounting or position changes. */
+html body:has(#app #view .v173-hives) > :is(.v63-menu,.v63-filter-pop){
+  padding:8px!important;
+  background:#FFFEFA!important;
+  border:1px solid #E5DED2!important;
+  border-radius:16px!important;
+  box-shadow:0 6px 20px rgba(38,55,44,.08)!important;
+  backdrop-filter:none!important;
+  -webkit-backdrop-filter:none!important;
+}
+html body:has(#app #view .v173-hives) > :is(.v63-menu,.v63-filter-pop) > button{
+  padding:8px 12px!important;
+  background:#FFFEFA!important;
+  color:#2F5B43!important;
+  border-radius:8px!important;
+  font-family:Inter,"Segoe UI",Arial,sans-serif!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+}
+html body:has(#app #view .v173-hives) > :is(.v63-menu,.v63-filter-pop) > button:hover{
+  background:#EDF2E9!important;
+}
+html body:has(#app #view .v173-hives) > :is(.v63-menu,.v63-filter-pop) > button:active{
+  background:#E4ECDF!important;
+}
+html body:has(#app #view .v173-hives) > :is(.v63-menu,.v63-filter-pop) > button:focus-visible{
+  outline:2px solid #2F5B43!important;
+  outline-offset:2px!important;
+}
+
+/* Actions: grouped Active tasks and flat Completed/All rows stay distinct. */
+html body #app #view .v53-actions{
+  gap:12px!important;
+}
+html body #app #view .v53-actions .v53-action-split{
+  background:var(--ui-rd-surface)!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-card)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+}
+html body #app #view .v53-actions .v53-action-tabs{
+  gap:4px!important;
+}
+html body #app #view .v53-actions .v53-action-tabs > button{
+  padding:8px!important;
+  border-radius:8px!important;
+  background:var(--ui-rd-surface-muted)!important;
+  color:var(--ui-rd-secondary)!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+}
+html body #app #view .v53-actions .v53-action-tabs > button.active{
+  background:var(--ui-rd-brand)!important;
+  color:var(--ui-rd-inverse)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-summary{
+  gap:4px!important;
+  margin:8px 0 12px!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-summary > button{
+  padding:8px 2px!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-control)!important;
+  background:var(--ui-rd-surface)!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-summary > button.active{
+  border-color:var(--ui-rd-control-border)!important;
+  background:#EDF2E9!important;
+  color:var(--ui-rd-brand)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-summary > button b{
+  font-size:16px!important;
+  font-weight:700!important;
+  line-height:24px!important;
+  color:var(--ui-rd-brand)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-summary > button span{
+  font-size:11px!important;
+  font-weight:400!important;
+  line-height:16px!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-summary .v2p2e5ab-all{
+  padding:8px!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+}
+html body #app #view .v53-actions .alist{
+  gap:12px!important;
+  margin-top:0!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task,
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task){
+  padding:12px!important;
+  margin-bottom:0!important;
+  border-color:var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-card)!important;
+  background:var(--ui-rd-surface)!important;
+  color:var(--ui-rd-text)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task.system{
+  border-left-color:var(--ui-rd-brand)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task.manual{
+  border-left-color:var(--ui-rd-action-border)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task:hover,
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task):hover{
+  box-shadow:var(--ui-rd-shadow-hover)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task-top{
+  gap:4px!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task-top > b{
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:16px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task-top :is(i,em){
+  padding:2px 4px!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:16px!important;
+  background:var(--ui-rd-surface-muted)!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task > strong,
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task) > b{
+  font-size:15px!important;
+  font-weight:600!important;
+  line-height:22px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task > small{
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:18px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task-foot{
+  gap:8px!important;
+  margin-top:8px!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task-foot :is(i,time){
+  font-size:11px!important;
+  font-weight:400!important;
+  line-height:16px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task-foot i.high{
+  font-weight:600!important;
+  color:var(--ui-rd-critical)!important;
+}
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task) > span{
+  font-size:14px!important;
+  font-weight:500!important;
+  line-height:21px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task) > :is(em,small){
+  font-size:11px!important;
+  font-weight:400!important;
+  line-height:16px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task) > em.attention{
+  color:var(--ui-rd-attention)!important;
+}
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task) > em.critical{
+  color:var(--ui-rd-critical)!important;
+}
+html body #app #view .v53-actions:has([data-v53-action="Completed"].active) .alist > button > em.good{
+  color:var(--ui-rd-completed)!important;
+}
+html body #app #view .v53-actions .v2p2e5ab-task-top > em.v2p2e5ax17-cancelled-badge,
+html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task) > em.v2p2e5ax17-cancelled-badge{
+  color:var(--ui-rd-cancelled)!important;
+  background:var(--ui-rd-cancelled-bg)!important;
+}
+html body #app #view .v53-actions .v53-add-action.v2p2e5ab-plan-secondary{
+  padding:12px 16px!important;
+  background:var(--ui-rd-surface)!important;
+  border:1px solid var(--ui-rd-control-border)!important;
+  border-radius:var(--ui-rd-radius-control)!important;
+  color:var(--ui-rd-brand)!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  box-shadow:none!important;
+}
+html body #app #view .v53-actions .v53-add-action.v2p2e5ab-plan-secondary:hover,
+html body #app #view .v53-actions .v53-shortcuts > button:hover{
+  background:#EDF2E9!important;
+}
+html body #app #view .v53-actions .v53-add-action.v2p2e5ab-plan-secondary:active,
+html body #app #view .v53-actions .v53-shortcuts > button:active{
+  background:#E4ECDF!important;
+}
+html body #app #view .v53-actions .v2p2e5t-plan-help{
+  margin:0!important;
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:18px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-actions .v2p2e5t-now-head{
+  margin:8px 0 0!important;
+}
+html body #app #view .v53-actions .v2p2e5t-now-head > b{
+  font-size:16px!important;
+  font-weight:700!important;
+  line-height:24px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-actions .v2p2e5t-now-head > small{
+  font-size:11px!important;
+  font-weight:400!important;
+  line-height:16px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-actions .v53-shortcuts{
+  gap:8px!important;
+}
+html body #app #view .v53-actions .v2p2e5t-now-head + .v53-shortcuts{
+  margin-top:0!important;
+}
+html body #app #view .v53-actions .v53-shortcuts > button{
+  padding:8px 4px!important;
+  background:var(--ui-rd-surface)!important;
+  border:1px solid var(--ui-rd-control-border)!important;
+  border-radius:var(--ui-rd-radius-control)!important;
+  color:var(--ui-rd-brand)!important;
+  font-size:11px!important;
+  font-weight:600!important;
+  line-height:16px!important;
+}
+html body #app #view .v53-actions .v53-empty-inline{
+  padding:16px!important;
+  background:var(--ui-rd-surface-muted)!important;
+  color:var(--ui-rd-secondary)!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-card)!important;
+  font-size:12px!important;
+  line-height:18px!important;
+}
+
+/* Insights: skin existing summaries and links without recoding metrics. */
+html body #app #view .v53-insights{
+  gap:12px!important;
+}
+html body #app #view :is(.v53-insights,.vs:has(> .inshero)) .inshero{
+  border-radius:var(--ui-rd-radius-card)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+}
+html body #app #view :is(.v53-insights,.vs:has(> .inshero)) .inshero > i{
+  background:rgba(22,33,25,.38)!important;
+}
+html body #app #view :is(.v53-insights,.vs:has(> .inshero)) .insighttitle{
+  font-size:16px!important;
+  font-weight:700!important;
+  line-height:24px!important;
+  color:var(--ui-rd-inverse)!important;
+}
+html body #app #view .v53-insights .isum{
+  gap:12px!important;
+}
+html body #app #view .v53-insights .isum > button,
+html body #app #view :is(.v53-insights,.homev,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) .vc,
+html body #app #view .v173-hives .v63-list > .vc{
+  padding:16px!important;
+  background:var(--ui-rd-surface)!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-card)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+}
+html body #app #view .v53-insights .isum > button{
+  padding:12px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-insights .isum > button:hover{
+  box-shadow:var(--ui-rd-shadow-hover)!important;
+}
+html body #app #view .v53-insights .isum span{
+  font-size:13px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view .v53-insights .isum b{
+  font-size:32px!important;
+  font-weight:700!important;
+  line-height:40px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-insights .isum small{
+  font-size:12px!important;
+  font-weight:400!important;
+  line-height:18px!important;
+  color:var(--ui-rd-secondary)!important;
+}
+html body #app #view :is(.v53-insights,.homev,.vs:has(> .inshero)) .vhead > b{
+  font-size:16px!important;
+  font-weight:700!important;
+  line-height:24px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-insights .bullets li{
+  margin:8px 0!important;
+  font-size:14px!important;
+  font-weight:400!important;
+  line-height:21px!important;
+  color:var(--ui-rd-text)!important;
+}
+html body #app #view .v53-insights .recol{
+  gap:8px!important;
+}
+html body #app #view .v53-insights .recol > button{
+  padding:8px 12px!important;
+  background:var(--ui-rd-surface-muted)!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-control)!important;
+  color:var(--ui-rd-brand)!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+}
+html body #app #view .v53-insights .inav{
+  gap:8px!important;
+}
+html body #app #view .v53-insights .inav > button{
+  padding:0 8px!important;
+  background:var(--ui-rd-surface)!important;
+  border:1px solid var(--ui-rd-control-border)!important;
+  border-radius:var(--ui-rd-radius-control)!important;
+  color:var(--ui-rd-brand)!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+}
+html body #app #view .v53-insights .inav > .v108-harvest-entry{
+  gap:0!important;
+  background:var(--ui-rd-attention-bg)!important;
+  border-color:var(--ui-rd-action-border)!important;
+  color:var(--ui-rd-attention)!important;
+}
+html body #app #view .v53-insights .inav > .v108-harvest-entry > span{
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  color:var(--ui-rd-attention)!important;
+}
+html body #app #view .v53-insights .inav > .v108-harvest-entry > small{
+  font-size:11px!important;
+  font-weight:400!important;
+  line-height:16px!important;
+  color:var(--ui-rd-attention)!important;
+}
+html body #app #view .v53-insights .recol > button:hover,
+html body #app #view .v53-insights .inav > button:not(.v108-harvest-entry):hover{
+  background:#EDF2E9!important;
+}
+html body #app #view .v53-insights .recol > button:active,
+html body #app #view .v53-insights .inav > button:not(.v108-harvest-entry):active{
+  background:#E4ECDF!important;
+}
+
+/* Existing first-use components, scoped by their real Main DOM roots. */
+html body #app #view :is(.homev,.v173-hives,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) .empty-master{
+  padding:16px!important;
+  color:var(--ui-rd-secondary)!important;
+  font-size:14px!important;
+  line-height:21px!important;
+}
+html body #app #view :is(.homev,.v173-hives,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) .primary{
+  padding:12px 16px!important;
+  background:var(--ui-rd-action)!important;
+  color:var(--ui-rd-on-action)!important;
+  border:1px solid var(--ui-rd-action-border)!important;
+  border-radius:var(--ui-rd-radius-control)!important;
+  font-size:14px!important;
+  font-weight:600!important;
+  line-height:20px!important;
+  box-shadow:none!important;
+}
+html body #app #view :is(.homev,.v173-hives,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) .primary:hover{
+  background:var(--ui-rd-action-hover)!important;
+}
+html body #app #view :is(.homev,.v173-hives,.vs:has(> .inshero),.vs:has(> .split > div > .alist):not(.v53-actions)) .primary:active{
+  background:var(--ui-rd-action-active)!important;
+}
+html body #app #view .vs:has(> .split > div > .alist):not(.v53-actions) > .split{
+  background:var(--ui-rd-surface)!important;
+  border:1px solid var(--ui-rd-border)!important;
+  border-radius:var(--ui-rd-radius-card)!important;
+  box-shadow:var(--ui-rd-shadow-card)!important;
+}
+html body #app #view .vs:has(> .split > div > .alist):not(.v53-actions) .filters > button{
+  background:var(--ui-rd-surface-muted)!important;
+  color:var(--ui-rd-secondary)!important;
+  border-radius:8px!important;
+}
+html body #app #view .vs:has(> .split > div > .alist):not(.v53-actions) .filters > button.active{
+  background:var(--ui-rd-brand)!important;
+  color:var(--ui-rd-inverse)!important;
+}
+
+@media (max-width:360px){
+  html body #app #view:has(> :is(.v56-home,.v53-actions,.v53-insights,.homev),> .vs > .inshero,> .vs:not(.v53-actions) > .split > div > .alist){
+    padding-left:12px!important;
+    padding-right:12px!important;
+  }
+  html body #app #view .v173-hives .v63-stage{
+    padding-left:8px!important;
+    padding-right:8px!important;
+  }
+  html body #app #view .v173-hives .v63-card{
+    padding:8px 4px!important;
+    gap:4px!important;
+  }
+  html body #app #view .v56-home .v56-row-card,
+  html body #app #view .v53-actions .v2p2e5ab-task,
+  html body #app #view .v53-actions .alist > button:not(.v2p2e5ab-task),
+  html body #app #view .v53-insights .vc{
+    padding:12px!important;
+  }
+  html body #app #view .v56-home .v56-row-card{
+    gap:8px!important;
+  }
+}

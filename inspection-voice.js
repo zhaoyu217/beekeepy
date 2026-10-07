@@ -26,7 +26,7 @@
     var best=null;
     choices.forEach(function(c){
       var flags=c[0].flags.indexOf('g')>=0?c[0].flags:c[0].flags+'g';
-      var re=new RegExp(c[0].source,flags),m;
+      var src=c[0].source.replace(/\\\\/g,'\\');var re=new RegExp(src,flags),m;
       while((m=re.exec(text))){if(!best||m.index>=best.i)best={i:m.index,v:c[1]};if(m[0]==='')re.lastIndex++;}
     });
     return best?best.v:undefined;
@@ -44,7 +44,7 @@
     return best?best.v:undefined;
   }
   function parse(raw){
-    var text=' '+T(raw).toLowerCase().replace(/[’]/g,"'").replace(/\\s+/g,' ')+' ';
+    var text=' '+T(raw).toLowerCase().replace(/[’]/g,"'").replace(/\s+/g,' ')+' ';
     var out=[];
     function put(field,value){
       if(value===undefined||value===null||value==='')return;
@@ -146,7 +146,7 @@
       [/\\bsuper\\s+(?:is\\s+)?(?:removed|off)\\b/i,'Removed']
     ]));
 
-    return {fields:out,formalMention:/\\b(varroa|mite count|mites per|treat(?:ed|ment|ing)?|apivar|oxalic acid|formic acid)\\b/i.test(text)};
+    return {fields:out,formalMention:/\b(varroa|mite count|mites per|treat(?:ed|ment|ing)?|apivar|oxalic acid|formic acid)\b/i.test(text)};
   }
 
   function confirmFlags(d,applied){
@@ -195,7 +195,7 @@
       rec.onresult=function(e){
         var add='',interim='';
         for(var i=e.resultIndex;i<e.results.length;i++){var part=T(e.results[i][0]&&e.results[i][0].transcript);if(!part)continue;if(e.results[i].isFinal)add+=(add?' ':'')+part;else interim+=(interim?' ':'')+part;}
-        if(add)finalTranscript=(finalTranscript?finalTranscript.replace(/\\s+$/,'')+' ':'')+add;
+        if(add)finalTranscript=(finalTranscript?finalTranscript.replace(/\s+$/,'')+' ':'')+add;
         if(area)area.value=[finalTranscript,interim].filter(Boolean).join(' ').trim();
         review(w);
       };
@@ -221,7 +221,7 @@
       var p=parse(tr),selected=new Set(Array.from(w.querySelectorAll('[data-det]:checked')).map(function(x){return Number(x.dataset.det);}));
       var applied=p.fields.filter(function(x,i){return selected.has(i);}),draft=D();if(!draft){close();return;}
       applied.forEach(function(x){draft[x.field]=x.value;});confirmFlags(draft,applied);
-      var old=T(draft.notes);draft.notes=old?old.replace(/\\s+$/,'')+'\\n'+tr:tr;
+      var old=T(draft.notes);draft.notes=old?old.replace(/\s+$/,'')+'\n'+tr:tr;
       var hid=draft.hiveId;close();
       try{inspectionPage(document.getElementById('view'),hid);if(typeof chrome==='function')chrome('inspection');}catch(e){console.error('Structured voice refresh failed',e);}
       if(typeof toast==='function')toast(applied.length?'Voice applied to '+applied.length+' Inspection field'+(applied.length===1?'':'s'):'Voice added to Notes');

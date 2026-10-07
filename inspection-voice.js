@@ -3,7 +3,7 @@
   if(window.__HD_STRUCTURED_VOICE_V1__) return;
   window.__HD_STRUCTURED_VOICE_V1__=true;
 
-  var recorder=null, mediaStream=null, listening=false, transcribing=false, cancelled=false, finalTranscript='', structuredTranscript='', audioChunks=[], stopTimer=null;
+  var recorder=null, mediaStream=null, listening=false, transcribing=false, cancelled=false, finalTranscript='', structuredTranscript='', audioChunks=[], stopTimer=null, structuredGeneration=0;
 
   function T(v){return String(v==null?'':v).trim();}
   function E(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
@@ -657,7 +657,7 @@
   }
 
   var voskPromise=null,voskModel=null;
-  var VOSK_SCRIPT='https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js';
+  var VOSK_SCRIPT='https://cdn.jsdelivr.net/npm/vosk-browser@0.0.5/dist/vosk.js';
   var VOSK_MODEL='https://cdn.jsdelivr.net/gh/ccoreilly/vosk-browser@gh-pages/models/vosk-model-small-en-us-0.15.tar.gz';
   var VOSK_GRAMMAR=(function(){
     var g=[
@@ -780,13 +780,22 @@
 
     text=normalizeBeeSpeech(text);
     structuredTranscript='';
-    status(w,'Checking Inspection fields with local grammar…','idle');
-    try{
-      structuredTranscript=normalizeBeeSpeech(await voskStructuredPass(audio));
-    }catch(e){
-      console.warn('Vosk structured pass skipped:',e);
-      structuredTranscript='';
-    }
+    var generation=++structuredGeneration;
+
+    // Vosk is deliberately non-blocking. Sherpa text returns immediately;
+    // grammar fields are merged later only if this is still the same recording.
+    (async function(){
+      await new Promise(function(r){setTimeout(r,0);});
+      try{
+        var structured=normalizeBeeSpeech(await voskStructuredPass(audio));
+        if(generation!==structuredGeneration||cancelled||!document.body.contains(w))return;
+        structuredTranscript=structured;
+        review(w);
+      }catch(e){
+        if(generation===structuredGeneration)console.warn('Vosk structured pass skipped:',e);
+      }
+    })();
+
     return text;
   }
 
@@ -798,7 +807,7 @@
   function close(){
     cancelled=true;
     if(recorder&&listening){try{recorder.stop();}catch(e){}}
-    cleanupMedia();recorder=null;listening=false;transcribing=false;structuredTranscript='';audioChunks=[];
+    structuredGeneration++;cleanupMedia();recorder=null;listening=false;transcribing=false;structuredTranscript='';audioChunks=[];
     document.querySelector('.hd-voice-overlay')?.remove();
   }
   function status(w,msg,kind){var l=w.querySelector('.hd-voice-status span:last-child'),d=w.querySelector('.hd-voice-dot');if(l)l.textContent=msg;if(d){d.classList.toggle('listen',kind==='listen');d.classList.toggle('err',kind==='err');}}
@@ -879,7 +888,8 @@
     var w=document.createElement('div');w.className='hd-voice-overlay';
     w.innerHTML='<section class="hd-voice-sheet" role="dialog" aria-modal="true"><div class="hd-voice-head"><b>Speak Inspection</b><button class="hd-voice-close" type="button">×</button></div><div class="hd-voice-status"><span class="hd-voice-dot"></span><span>Tap Start and describe what you see.</span></div><textarea class="hd-voice-transcript" placeholder="Your speech will appear here. You can edit it before applying."></textarea><div class="hd-voice-controls"><button class="hd-start" type="button">● Start</button><button class="hd-stop" type="button" disabled>■ Stop</button></div><div class="hd-review"></div><div class="hd-voice-actions"><button class="hd-cancel" type="button">Cancel</button><button class="hd-apply" type="button">Apply to Inspection</button></div><div class="hd-note">Nothing is saved automatically. Review the detected observations, then use the existing Save Inspection button.</div></section>';
     document.body.appendChild(w);review(w);
-    var area=w.querySelector('.hd-voice-transcript');if(area)area.addEventListener('input',function(){structuredTranscript='';review(w);});
+    loadVoskModel().catch(function(e){console.warn('Vosk background preload skipped:',e);});
+    var area=w.querySelector('.hd-voice-transcript');if(area)area.addEventListener('input',function(){structuredGeneration++;structuredTranscript='';review(w);});
     w.querySelector('.hd-voice-close').onclick=close;w.querySelector('.hd-cancel').onclick=close;w.querySelector('.hd-start').onclick=function(){start(w);};w.querySelector('.hd-stop').onclick=stop;
     w.addEventListener('click',function(e){if(e.target===w)close();});
     w.querySelector('.hd-apply').onclick=function(){
@@ -913,5 +923,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.12-vosk-grammar-ab';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.12.1-vosk-nonblocking';
 })();

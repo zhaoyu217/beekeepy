@@ -181,6 +181,7 @@
     mediaStream=null;
   }
   function sherpaAsset(path){return 'https://modelscope.cn/studio/k2-fsa/web-assembly-asr-sherpa-onnx-en/resolve/master/'+path;}
+  var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt?download=true';
   var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='',sherpaBpeVocab='';
   var BEE_HOTWORDS=[
     'QUEEN','QUEEN SEEN','QUEEN CELLS','NO QUEEN CELLS',
@@ -233,7 +234,7 @@
   }
 
   async function prepareHotwordResources(){
-    var r=await fetch(sherpaAsset('tokens.txt'),{mode:'cors',cache:'force-cache'});
+    var r=await fetch(SHERPA_TOKENS,{mode:'cors',cache:'force-cache'});
     if(!r.ok)throw new Error('Sherpa token vocabulary returned HTTP '+r.status+'.');
     var raw=await r.text();
     var rows=[];
@@ -497,5 +498,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.5-recognizer-hotwords-bpe';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.5.1-model-token-source-fix';
 })();

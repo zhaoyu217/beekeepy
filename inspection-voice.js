@@ -653,30 +653,60 @@
     s=t.join(' ');
     s=s.replace(/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE|SEN)\b/g,'QUEEN SEEN');
     s=s.replace(/\bQUEEN\s+(?:IT\s+S|ITS|IS)\s+NOT\s+SEEN\b/g,'QUEEN NOT SEEN');
+    s=s.replace(/\bQUEEN\s+QUEEN\b/g,'QUEEN');
     return repairInspectionSequence(s).trim();
   }
 
   var kwsPromise=null,kwsState=null;
   var KWS_RUNTIME_WASM='https://raw.githubusercontent.com/moeru-ai/sherpaw/8111bc138b32e99aad44f8f76b4de3191e24b431/packages/kws/src/prebuilt/kws.wasm';
-  var KWS_MODEL_BASE='https://huggingface.co/moeru-ai/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/resolve/main/install/bin/wasm/';
+  var KWS_MODEL_BASE='https://modelscope.cn/models/pkufool/icefall-kws-zipformer-zh-en-3M-2025-12-20/resolve/master/';
+  var KWS_MODEL_FILES={
+    'encoder.onnx':'onnx/encoder-epoch-13-avg-2-chunk-16-left-64.onnx',
+    'decoder.onnx':'onnx/decoder-epoch-13-avg-2-chunk-16-left-64.onnx',
+    'joiner.onnx':'onnx/joiner-epoch-13-avg-2-chunk-16-left-64.onnx',
+    'tokens.txt':'data/lang_phone/tokens.txt'
+  };
   var KWS_PHRASES=[
-    {id:'queen_seen',field:'queen',phrase:'QUEEN SEEN',tokens:['K','W','IY1','N','S','IY1','N']},
-    {id:'queen_not_seen',field:'queen',phrase:'QUEEN NOT SEEN',tokens:['K','W','IY1','N','N','AA1','T','S','IY1','N']},
-    {id:'eggs_present',field:'eggs',phrase:'EGGS PRESENT',tokens:['EH1','G','Z','P','R','EH1','Z','AH0','N','T']},
-    {id:'eggs_not_seen',field:'eggs',phrase:'EGGS NOT SEEN',tokens:['EH1','G','Z','N','AA1','T','S','IY1','N']},
-    {id:'larvae_present',field:'larvae',phrase:'LARVAE PRESENT',tokens:['L','AA1','R','V','IY0','P','R','EH1','Z','AH0','N','T']},
-    {id:'larvae_not_seen',field:'larvae',phrase:'LARVAE NOT SEEN',tokens:['L','AA1','R','V','IY0','N','AA1','T','S','IY1','N']},
-    {id:'queen_cells_none',field:'queenCells',phrase:'NO QUEEN CELLS',tokens:['N','OW1','K','W','IY1','N','S','EH1','L','Z']},
-    {id:'queen_cells_present',field:'queenCells',phrase:'QUEEN CELLS PRESENT',tokens:['K','W','IY1','N','S','EH1','L','Z','P','R','EH1','Z','AH0','N','T']},
-    {id:'swarm_none',field:'swarming',phrase:'NO SWARM SIGNS',tokens:['N','OW1','S','W','AO1','R','M','S','AY1','N','Z']},
-    {id:'swarm_present',field:'swarming',phrase:'SWARM SIGNS PRESENT',tokens:['S','W','AO1','R','M','S','AY1','N','Z','P','R','EH1','Z','AH0','N','T']}
+    {id:'queen_cells_none',field:'queenCells',phrase:'NO QUEEN CELLS',matches:[
+      ['N','OW1','K','W','IY1','N','S','EH1','L','Z']
+    ]},
+    {id:'queen_cells_present',field:'queenCells',phrase:'QUEEN CELLS PRESENT',matches:[
+      ['K','W','IY1','N','S','EH1','L','Z','P','R','EH1','Z','AH0','N','T'],
+      ['K','W','IY1','N','S','EH1','L','Z','P','R','IY0','Z','EH1','N','T'],
+      ['K','W','IY1','N','S','EH1','L','Z','P','ER0','Z','EH1','N','T']
+    ]},
+    {id:'swarm_none',field:'swarming',phrase:'NO SWARM SIGNS',matches:[
+      ['N','OW1','S','W','AO1','R','M','S','AY1','N','Z']
+    ]},
+    {id:'swarm_present',field:'swarming',phrase:'SWARM SIGNS PRESENT',matches:[
+      ['S','W','AO1','R','M','S','AY1','N','Z','P','R','EH1','Z','AH0','N','T'],
+      ['S','W','AO1','R','M','S','AY1','N','Z','P','R','IY0','Z','EH1','N','T'],
+      ['S','W','AO1','R','M','S','AY1','N','Z','P','ER0','Z','EH1','N','T']
+    ]}
   ];
 
   function kwsEncodedText(){
-    return KWS_PHRASES.map(function(k){
-      var score=(/_not_seen$|_present$/.test(k.id)&&k.id!=='eggs_present'&&k.id!=='larvae_present')?1.5:1.35;
-      return k.tokens.join(' ')+' :'+score+' #0.22 @'+k.id;
-    }).join('\n');
+    var lines=[];
+    KWS_PHRASES.forEach(function(k){
+      (k.matches||[]).forEach(function(tokens){
+        lines.push(tokens.join(' ')+' :1.65 #0.10 @'+k.id);
+      });
+    });
+    return lines.join('\n');
+  }
+
+  function withTimeout(promise,ms,label){
+    return new Promise(function(resolve,reject){
+      var done=false;
+      var timer=setTimeout(function(){
+        if(done)return;done=true;reject(new Error((label||'Operation')+' timed out.'));
+      },ms);
+      Promise.resolve(promise).then(function(v){
+        if(done)return;done=true;clearTimeout(timer);resolve(v);
+      },function(e){
+        if(done)return;done=true;clearTimeout(timer);reject(e);
+      });
+    });
   }
 
   function kwsAllocText(mod,text,ptrs){
@@ -692,27 +722,25 @@
       var pkg=await import('./sherpa-kws/kws.js?v=hd-kws-runtime-1');
       if(!pkg||typeof pkg.default!=='function')throw new Error('KWS WebAssembly module is missing.');
 
-      var responses=await Promise.all([
-        fetch(KWS_MODEL_BASE+'preload.js.metadata',{mode:'cors',cache:'force-cache'}),
-        fetch(KWS_MODEL_BASE+'preload.data',{mode:'cors',cache:'force-cache'})
-      ]);
-      if(!responses[0].ok)throw new Error('KWS model metadata returned HTTP '+responses[0].status+'.');
-      if(!responses[1].ok)throw new Error('KWS model data returned HTTP '+responses[1].status+'.');
-
-      var metadata=await responses[0].json();
-      var packed=new Uint8Array(await responses[1].arrayBuffer());
-      if(!metadata||!Array.isArray(metadata.files)||packed.byteLength<1000000)throw new Error('KWS model package is invalid.');
+      var names=Object.keys(KWS_MODEL_FILES);
+      var responses=await Promise.all(names.map(function(name){
+        return fetch(KWS_MODEL_BASE+KWS_MODEL_FILES[name],{mode:'cors',cache:'force-cache'});
+      }));
+      responses.forEach(function(r,i){
+        if(!r.ok)throw new Error('KWS '+names[i]+' returned HTTP '+r.status+'.');
+      });
+      var bytes=await Promise.all(responses.map(function(r){return r.arrayBuffer();}));
 
       var mod=await pkg.default({
         locateFile:function(path){return /\.wasm(?:$|\?)/.test(path)?KWS_RUNTIME_WASM:path;},
         printErr:function(msg){console.warn('Sherpa KWS:',msg);}
       });
 
-      metadata.files.forEach(function(file){
-        var name=String(file.filename||'').replace(/^\/+/,''),bytes=packed.subarray(file.start,file.end);
-        if(!name||!bytes.length)throw new Error('KWS model file is invalid.');
+      names.forEach(function(name,i){
+        var data=new Uint8Array(bytes[i]);
+        if(!data.length)throw new Error('KWS '+name+' is empty.');
         try{if(mod.FS.analyzePath('/'+name).exists)mod.FS.unlink('/'+name);}catch(e){}
-        mod.FS_createDataFile('/',name,bytes,true,true,true);
+        mod.FS_createDataFile('/',name,data,true,true,true);
       });
 
       var ptrs=[],spotter=0;
@@ -740,7 +768,7 @@
 
   async function detectInspectionKeywords(audio){
     var state;
-    try{state=await loadKwsEngine();}catch(e){return [];}
+    try{state=await withTimeout(loadKwsEngine(),15000,'KWS initialization');}catch(e){console.warn('Inspection KWS skipped:',e);return [];}
     var mod=state.module,spotter=state.spotter,stream=mod._SherpaOnnxCreateKeywordStream(spotter);
     if(!stream)return [];
     var hits=[],seen=new Set();
@@ -905,6 +933,7 @@
     var w=document.createElement('div');w.className='hd-voice-overlay';
     w.innerHTML='<section class="hd-voice-sheet" role="dialog" aria-modal="true"><div class="hd-voice-head"><b>Speak Inspection</b><button class="hd-voice-close" type="button">×</button></div><div class="hd-voice-status"><span class="hd-voice-dot"></span><span>Tap Start and describe what you see.</span></div><textarea class="hd-voice-transcript" placeholder="Your speech will appear here. You can edit it before applying."></textarea><div class="hd-voice-controls"><button class="hd-start" type="button">● Start</button><button class="hd-stop" type="button" disabled>■ Stop</button></div><div class="hd-review"></div><div class="hd-voice-actions"><button class="hd-cancel" type="button">Cancel</button><button class="hd-apply" type="button">Apply to Inspection</button></div><div class="hd-note">Nothing is saved automatically. Review the detected observations, then use the existing Save Inspection button.</div></section>';
     document.body.appendChild(w);review(w);
+    loadKwsEngine().catch(function(e){console.warn('KWS modal preload skipped:',e);});
     var area=w.querySelector('.hd-voice-transcript');if(area)area.addEventListener('input',function(){review(w);});
     w.querySelector('.hd-voice-close').onclick=close;w.querySelector('.hd-cancel').onclick=close;w.querySelector('.hd-start').onclick=function(){start(w);};w.querySelector('.hd-stop').onclick=stop;
     w.addEventListener('click',function(e){if(e.target===w)close();});
@@ -939,5 +968,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.11-dual-asr-kws';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.11.2-focused-kws';
 })();

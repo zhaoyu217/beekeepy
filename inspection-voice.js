@@ -427,6 +427,17 @@
     window.inspectionPage=function(r,id){var ret=prev.apply(this,arguments);decorate(r);return ret;};
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
+
+  // Direct hash navigation can render Inspection before this enhancement script
+  // loads, so decorate the current view immediately and watch for later re-renders.
+  try{decorate(document.getElementById('view'));}catch(e){}
+  try{
+    var voiceView=document.getElementById('view');
+    if(voiceView&&typeof MutationObserver==='function'){
+      new MutationObserver(function(){try{decorate(voiceView);}catch(e){}}).observe(voiceView,{childList:true,subtree:true});
+    }
+  }catch(e){}
+
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.2-sherpa-ncnn-public';
+  window.__HD_STRUCTURED_VOICE_VERSION__='3.0.1-whisper-initial-decorate';
 })();

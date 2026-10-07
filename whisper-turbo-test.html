@@ -53,7 +53,7 @@
         <div class="test"><b>负向标准句</b>Queen not seen. Eggs not seen. Larvae not seen. Brood pattern poor. Colony strength six. Honey stores low. Queen cells present. Swarm signs present.</div>
       </div>
 
-      <textarea id="out" placeholder="Whisper 的原始转写会出现在这里……" readonly></textarea>
+      <textarea id="out" placeholder="Whisper 的高精度转写会出现在这里……" readonly></textarea><div id="compare" class="meta"></div>
       <div id="meta" class="meta"></div>
 
       <div class="note">第一次加载需要下载较大的模型文件，可能耗时较长。模型会由浏览器缓存。这个页面只用于判断 large-v3-turbo 的原始准确率是否值得继续。</div>
@@ -97,7 +97,7 @@
 
     function ensureWorker() {
       if (worker) return worker;
-      worker = new Worker("./whisper-turbo-worker.js?v=1", { type: "module" });
+      worker = new Worker("./whisper-turbo-worker.js?v=2", { type: "module" });
 
       worker.onmessage = (event) => {
         const m = event.data || {};
@@ -131,9 +131,15 @@
         }
 
         if (m.type === "result") {
-          out.value = m.text || "";
-          meta.textContent = "本地转写耗时：" + ((m.elapsedMs || 0) / 1000).toFixed(1) + " 秒；精度：" + (m.dtype || "");
-          setStatus("转写完成。", "ok");
+          out.value = m.beamText || m.text || "";
+          $("compare").textContent =
+            "普通解码：" + (m.greedyText || "") +
+            " ｜ 5-beam：" + (m.beamText || m.text || "");
+          meta.textContent =
+            "普通耗时：" + ((m.greedyMs || 0) / 1000).toFixed(1) +
+            " 秒；5-beam：" + ((m.beamMs || 0) / 1000).toFixed(1) +
+            " 秒；精度：" + (m.dtype || "");
+          setStatus("两种解码都完成。", "ok");
           startBtn.disabled = false;
           stopBtn.disabled = true;
           return;

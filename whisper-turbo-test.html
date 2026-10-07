@@ -53,7 +53,13 @@
         <div class="test"><b>负向标准句</b>Queen not seen. Eggs not seen. Larvae not seen. Brood pattern poor. Colony strength six. Honey stores low. Queen cells present. Swarm signs present.</div>
       </div>
 
-      <textarea id="out" placeholder="Whisper 的高精度转写会出现在这里……" readonly></textarea><div id="compare" class="meta"></div>
+      <textarea id="out" placeholder="Whisper 的高精度原始转写会出现在这里……" readonly></textarea>
+      <div id="compare" class="meta"></div>
+
+      <div style="margin-top:18px">
+        <div style="font-weight:800;margin-bottom:10px">保守结构解析结果</div>
+        <div id="fields" class="tests"></div>
+      </div>
       <div id="meta" class="meta"></div>
 
       <div class="note">第一次加载需要下载较大的模型文件，可能耗时较长。模型会由浏览器缓存。这个页面只用于判断 large-v3-turbo 的原始准确率是否值得继续。</div>
@@ -95,6 +101,73 @@
       bar.style.width = pct.toFixed(1) + "%";
     }
 
+    function parseInspectionFields(raw) {
+      const s = String(raw || "")
+        .toUpperCase()
+        .replace(/[’']/g, "'")
+        .replace(/[^A-Z0-9'.\s-]+/g, " ")
+        .replace(/\s+/g, " ")
+        .trim();
+
+      const out = [];
+
+      // Queen seen/not seen. Conservative special case:
+      // QUEEN C / QUEEN C. is treated as QUEEN SEEN only when no nearby negation exists.
+      if (/\bQUEEN\s+NOT\s+SEEN\b/.test(s)) {
+        out.push(["Queen seen","Not Seen"]);
+      } else if (/\bQUEEN\s+SEEN\b/.test(s)) {
+        out.push(["Queen seen","Seen"]);
+      } else {
+        const m=s.match(/\bQUEEN\s+C\.?\b/);
+        if(m){
+          const start=Math.max(0,m.index-12), end=Math.min(s.length,m.index+m[0].length+12);
+          const nearby=s.slice(start,end);
+          if(!/\b(?:NO|NOT)\b/.test(nearby)) out.push(["Queen seen","Seen"]);
+        }
+      }
+
+      if (/\bEGGS\s+NOT\s+SEEN\b/.test(s)) out.push(["Eggs","Not Seen"]);
+      else if (/\bEGGS\s+(?:PRESENT|SEEN)\b/.test(s)) out.push(["Eggs","Seen"]);
+
+      if (/\bLARV(?:A|AE)\s+NOT\s+SEEN\b/.test(s)) out.push(["Larvae","Not Seen"]);
+      else if (/\bLARV(?:A|AE)\s+(?:PRESENT|SEEN)\b/.test(s)) out.push(["Larvae","Seen"]);
+
+      const brood=s.match(/\bBROOD\s+PATTERN\s+(EXCELLENT|GOOD|FAIR|POOR)\b/);
+      if(brood) out.push(["Brood pattern",brood[1][0]+brood[1].slice(1).toLowerCase()]);
+
+      const nums={ZERO:0,ONE:1,TWO:2,THREE:3,FOUR:4,FIVE:5,SIX:6,SEVEN:7,EIGHT:8,NINE:9,TEN:10};
+      const colony=s.match(/\bCOLONY\s+STRENGTH\s+(ZERO|ONE|TWO|THREE|FOUR|FIVE|SIX|SEVEN|EIGHT|NINE|TEN|\d{1,2})\b/);
+      if(colony){
+        const v=Object.prototype.hasOwnProperty.call(nums,colony[1])?nums[colony[1]]:Number(colony[1]);
+        if(Number.isFinite(v)) out.push(["Colony strength",String(v)]);
+      }
+
+      const honey=s.match(/\bHONEY\s+STORES\s+(HIGH|MEDIUM|LOW)\b/);
+      if(honey) out.push(["Honey stores",honey[1][0]+honey[1].slice(1).toLowerCase()]);
+
+      if (/\bNO\s+QUEEN\s+CELLS\b/.test(s)) out.push(["Queen cells","None"]);
+      else if (/\bQUEEN\s+CELLS\s+PRESENT\b/.test(s)) out.push(["Queen cells","Present"]);
+
+      if (/\bNO\s+SWARM\s+SIGNS\b/.test(s)) out.push(["Swarming","None"]);
+      else if (/\bSWARM\s+SIGNS\s+PRESENT\b/.test(s)) out.push(["Swarming","Present"]);
+
+      return out;
+    }
+
+    function renderFields(raw){
+      const host=$("fields");
+      if(!host) return;
+      const fields=parseInspectionFields(raw);
+      if(!fields.length){
+        host.innerHTML='<div class="test">暂未检测到结构字段。</div>';
+        return;
+      }
+      host.innerHTML=fields.map(([k,v]) =>
+        '<div class="test" style="display:flex;justify-content:space-between;gap:16px"><b style="margin:0">'+
+        k+'</b><span style="font-weight:800">'+v+'</span></div>'
+      ).join('');
+    }
+
     function ensureWorker() {
       if (worker) return worker;
       worker = new Worker("./whisper-turbo-worker.js?v=2", { type: "module" });
@@ -131,7 +204,8 @@
         }
 
         if (m.type === "result") {
-          out.value = m.beamText || m.text || "";
+          const best = m.beamText || m.text || "";
+          out.value = best;
           $("compare").textContent =
             "普通解码：" + (m.greedyText || "") +
             " ｜ 5-beam：" + (m.beamText || m.text || "");
@@ -139,6 +213,7 @@
             "普通耗时：" + ((m.greedyMs || 0) / 1000).toFixed(1) +
             " 秒；5-beam：" + ((m.beamMs || 0) / 1000).toFixed(1) +
             " 秒；精度：" + (m.dtype || "");
+          renderFields(best);
           setStatus("两种解码都完成。", "ok");
           startBtn.disabled = false;
           stopBtn.disabled = true;

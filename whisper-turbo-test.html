@@ -1,0 +1,278 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <title>Whisper large-v3-turbo 本地语音测试</title>
+  <style>
+    :root{font-family:Inter,system-ui,-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif;color:#18321f;background:#f4f2eb}
+    *{box-sizing:border-box}
+    body{margin:0;padding:24px}
+    .wrap{max-width:760px;margin:0 auto}
+    .card{background:#fff;border:1px solid #e5dfd3;border-radius:18px;padding:22px;box-shadow:0 12px 34px rgba(28,52,33,.08)}
+    h1{font-size:22px;margin:0 0 8px}
+    .sub{margin:0 0 18px;color:#617064;font-size:14px;line-height:1.55}
+    .status{display:flex;gap:9px;align-items:flex-start;padding:12px 13px;background:#f8f7f2;border-radius:12px;margin-bottom:14px;font-size:13px;line-height:1.45}
+    .dot{width:9px;height:9px;border-radius:50%;background:#98a79d;margin-top:5px;flex:none}
+    .dot.ok{background:#56805b}.dot.err{background:#c93b31}.dot.busy{background:#d99500}
+    .progress{height:7px;background:#ebe8df;border-radius:99px;overflow:hidden;margin:-5px 0 15px;display:none}
+    .progress>div{height:100%;width:0;background:#5c7d58;transition:width .15s}
+    .row{display:flex;gap:10px;flex-wrap:wrap;margin-bottom:16px}
+    button{appearance:none;border:1px solid #d9d4c8;background:#fff;border-radius:11px;padding:11px 16px;font-weight:700;font-size:14px;cursor:pointer}
+    button.primary{background:#2f5d38;color:#fff;border-color:#2f5d38}
+    button.stop{background:#b64235;color:#fff;border-color:#b64235}
+    button:disabled{opacity:.45;cursor:not-allowed}
+    .tests{display:grid;gap:10px;margin:16px 0}
+    .test{border:1px solid #e7e1d5;border-radius:12px;padding:12px;font-size:13px;line-height:1.55}
+    .test b{display:block;margin-bottom:4px}
+    textarea{width:100%;min-height:150px;border:1px solid #d8d2c5;border-radius:12px;padding:13px;font:14px/1.55 ui-monospace,SFMono-Regular,Menlo,monospace;resize:vertical}
+    .meta{font-size:12px;color:#758078;margin-top:8px;min-height:18px}
+    .note{margin-top:16px;padding:12px 13px;border-radius:12px;background:#fff8e9;color:#725c29;font-size:12px;line-height:1.5}
+  </style>
+</head>
+<body>
+  <main class="wrap">
+    <section class="card">
+      <h1>Whisper large-v3-turbo 本地语音测试</h1>
+      <p class="sub">独立 A/B 测试页。只测试浏览器本地 Whisper 原始转写，不连接 Inspection，不做热词、不做纠错、不自动修改任何字段。</p>
+
+      <div class="status">
+        <span id="dot" class="dot"></span>
+        <span id="status">正在检查 WebGPU……</span>
+      </div>
+      <div id="progress" class="progress"><div id="bar"></div></div>
+
+      <div class="row">
+        <button id="load" class="primary">1. 加载模型</button>
+        <button id="start" disabled>2. 开始录音</button>
+        <button id="stop" class="stop" disabled>3. 停止并转写</button>
+      </div>
+
+      <div class="tests">
+        <div class="test"><b>正向标准句</b>Queen seen. Eggs present. Larvae present. Brood pattern good. Colony strength eight. Honey stores medium. No queen cells. No swarm signs.</div>
+        <div class="test"><b>负向标准句</b>Queen not seen. Eggs not seen. Larvae not seen. Brood pattern poor. Colony strength six. Honey stores low. Queen cells present. Swarm signs present.</div>
+      </div>
+
+      <textarea id="out" placeholder="Whisper 的原始转写会出现在这里……" readonly></textarea>
+      <div id="meta" class="meta"></div>
+
+      <div class="note">第一次加载需要下载较大的模型文件，可能耗时较长。模型会由浏览器缓存。这个页面只用于判断 large-v3-turbo 的原始准确率是否值得继续。</div>
+    </section>
+  </main>
+
+  <script>
+    const $ = (id) => document.getElementById(id);
+    const statusEl = $("status");
+    const dot = $("dot");
+    const loadBtn = $("load");
+    const startBtn = $("start");
+    const stopBtn = $("stop");
+    const out = $("out");
+    const meta = $("meta");
+    const progress = $("progress");
+    const bar = $("bar");
+
+    let worker = null;
+    let modelReady = false;
+    let recorder = null;
+    let stream = null;
+    let chunks = [];
+    let requestId = 0;
+
+    function setStatus(message, kind="") {
+      statusEl.textContent = message;
+      dot.className = "dot" + (kind ? " " + kind : "");
+    }
+
+    function setProgress(value) {
+      if (typeof value !== "number" || !Number.isFinite(value)) {
+        progress.style.display = "none";
+        bar.style.width = "0%";
+        return;
+      }
+      const pct = Math.max(0, Math.min(100, value > 1 ? value : value * 100));
+      progress.style.display = "block";
+      bar.style.width = pct.toFixed(1) + "%";
+    }
+
+    function ensureWorker() {
+      if (worker) return worker;
+      worker = new Worker("./whisper-turbo-worker.js?v=1", { type: "module" });
+
+      worker.onmessage = (event) => {
+        const m = event.data || {};
+
+        if (m.type === "progress") {
+          const p = m.progress || {};
+          const name = p.file ? String(p.file).split("/").pop() : "模型文件";
+          if (p.status === "progress") {
+            setStatus("正在下载 " + name + "……", "busy");
+            setProgress(Number(p.progress));
+          } else if (p.status === "done") {
+            setStatus(name + " 下载完成，继续加载……", "busy");
+          } else if (p.status === "initiate" || p.status === "download") {
+            setStatus("准备下载 " + name + "……", "busy");
+          }
+          return;
+        }
+
+        if (m.type === "status") {
+          setStatus(m.message || "正在处理……", "busy");
+          return;
+        }
+
+        if (m.type === "ready") {
+          modelReady = true;
+          setProgress(null);
+          setStatus("模型已就绪：" + (m.dtype || "WebGPU"), "ok");
+          loadBtn.disabled = true;
+          startBtn.disabled = false;
+          return;
+        }
+
+        if (m.type === "result") {
+          out.value = m.text || "";
+          meta.textContent = "本地转写耗时：" + ((m.elapsedMs || 0) / 1000).toFixed(1) + " 秒；精度：" + (m.dtype || "");
+          setStatus("转写完成。", "ok");
+          startBtn.disabled = false;
+          stopBtn.disabled = true;
+          return;
+        }
+
+        if (m.type === "error") {
+          setProgress(null);
+          setStatus(m.message || "Whisper 运行失败。", "err");
+          loadBtn.disabled = modelReady;
+          startBtn.disabled = !modelReady;
+          stopBtn.disabled = true;
+        }
+      };
+
+      worker.onerror = (event) => {
+        setProgress(null);
+        setStatus("Whisper Worker 加载失败：" + (event.message || "未知错误"), "err");
+      };
+
+      return worker;
+    }
+
+    async function blobTo16k(blob) {
+      const AudioCtx = window.AudioContext || window.webkitAudioContext;
+      const OfflineCtx = window.OfflineAudioContext || window.webkitOfflineAudioContext;
+      if (!AudioCtx || !OfflineCtx) throw new Error("当前浏览器不支持本地音频解码。");
+
+      const ctx = new AudioCtx();
+      try {
+        const raw = await blob.arrayBuffer();
+        const decoded = await ctx.decodeAudioData(raw.slice(0));
+        const frames = Math.max(1, Math.ceil(decoded.duration * 16000));
+        const offline = new OfflineCtx(1, frames, 16000);
+        const src = offline.createBufferSource();
+        src.buffer = decoded;
+        src.connect(offline.destination);
+        src.start(0);
+        const rendered = await offline.startRendering();
+        return new Float32Array(rendered.getChannelData(0));
+      } finally {
+        try { await ctx.close(); } catch (_) {}
+      }
+    }
+
+    loadBtn.onclick = () => {
+      if (!navigator.gpu) {
+        setStatus("当前 Edge 没有可用的 WebGPU。请检查硬件加速是否开启。", "err");
+        return;
+      }
+      loadBtn.disabled = true;
+      setStatus("开始加载 Whisper large-v3-turbo……", "busy");
+      ensureWorker().postMessage({ type: "load" });
+    };
+
+    startBtn.onclick = async () => {
+      if (!modelReady || recorder) return;
+      out.value = "";
+      meta.textContent = "";
+      chunks = [];
+
+      try {
+        stream = await navigator.mediaDevices.getUserMedia({
+          audio: {
+            channelCount: 1,
+            echoCancellation: true,
+            noiseSuppression: true,
+            autoGainControl: true,
+          }
+        });
+
+        const candidates = [
+          "audio/webm;codecs=opus",
+          "audio/webm",
+          "audio/mp4",
+        ];
+        const mimeType = candidates.find((x) => MediaRecorder.isTypeSupported(x)) || "";
+        recorder = new MediaRecorder(stream, mimeType ? { mimeType } : undefined);
+
+        recorder.ondataavailable = (e) => {
+          if (e.data && e.data.size) chunks.push(e.data);
+        };
+
+        recorder.onstart = () => {
+          setStatus("正在录音……读完后点“停止并转写”。", "busy");
+          startBtn.disabled = true;
+          stopBtn.disabled = false;
+        };
+
+        recorder.onerror = () => {
+          setStatus("麦克风录音失败。", "err");
+        };
+
+        recorder.onstop = async () => {
+          const r = recorder;
+          recorder = null;
+          stopBtn.disabled = true;
+
+          try {
+            if (stream) stream.getTracks().forEach((t) => t.stop());
+            stream = null;
+
+            setStatus("正在把录音转换成 16kHz……", "busy");
+            const blob = new Blob(chunks, { type: r.mimeType || "audio/webm" });
+            chunks = [];
+            const audio = await blobTo16k(blob);
+
+            setStatus("正在用 large-v3-turbo 本地转写……", "busy");
+            const id = ++requestId;
+            ensureWorker().postMessage({ type: "transcribe", id, audio }, [audio.buffer]);
+          } catch (error) {
+            setStatus(String(error?.message || error), "err");
+            startBtn.disabled = false;
+          }
+        };
+
+        recorder.start();
+      } catch (error) {
+        if (stream) stream.getTracks().forEach((t) => t.stop());
+        stream = null;
+        recorder = null;
+        setStatus("无法启动麦克风：" + String(error?.message || error), "err");
+      }
+    };
+
+    stopBtn.onclick = () => {
+      if (recorder && recorder.state !== "inactive") {
+        setStatus("录音结束，正在准备转写……", "busy");
+        recorder.stop();
+      }
+    };
+
+    if (!window.isSecureContext) {
+      setStatus("当前页面不是安全 HTTPS 环境，麦克风/WebGPU 可能不可用。", "err");
+      loadBtn.disabled = true;
+    } else if (!navigator.gpu) {
+      setStatus("没有检测到 WebGPU。请使用新版 Edge，并确认“使用硬件加速”已开启。", "err");
+    } else {
+      setStatus("WebGPU 可用。先点“加载模型”。", "ok");
+    }
+  </script>
+</body>
+</html>

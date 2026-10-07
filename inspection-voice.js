@@ -180,7 +180,7 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  function sherpaAsset(path){return 'https://modelscope.cn/api/v1/studio/k2-fsa/web-assembly-asr-sherpa-onnx-en/repo?Revision=master&FilePath='+encodeURIComponent(path)+'&View=true';}
+  function sherpaAsset(path){return 'https://modelscope.cn/studio/k2-fsa/web-assembly-asr-sherpa-onnx-en/resolve/master/'+path;}
   var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt';
   var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='';
   var BEE_HOTWORDS=[
@@ -511,5 +511,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.3.1-modelscope-assets';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.3.2-modelscope-studio-resolve';
 })();

@@ -397,7 +397,7 @@
       }
 
       if((w==='BROOD'||oneOf(w,['BRUTE','BREW','BREED'])||beeNear(w,'BROOD',1))&&n){
-        if(oneOf(n,['PUTTING','PATTON','PATERN','PATTERN'])||beeNear(n,'PATTERN',2)){
+        if(oneOf(n,['PUTTING','PUNTING','PATTON','PATERN','PATTERN'])||beeNear(n,'PATTERN',2)){
           t[i]='BROOD';t[i+1]='PATTERN';
         }
       }
@@ -434,6 +434,7 @@
     s=s.replace(/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE|SEN)\b/g,'QUEEN SEEN');
     s=s.replace(/\bQUEEN\s+EGGS PRESENT(?=\s+(?:LARVAE PRESENT|BROOD PATTERN)\b)/g,'QUEEN SEEN EGGS PRESENT');
     s=s.replace(/\bEGGS PRESENT\s+MOTHER PRESENT(?=\s+BROOD PATTERN\b)/g,'EGGS PRESENT LARVAE PRESENT');
+    s=s.replace(/\bCOLONY STRENGTH EIGHT\s+CONNIE S DOORS MEDIUM(?=\s+NO QUEEN CELLS\b)/g,'COLONY STRENGTH EIGHT HONEY STORES MEDIUM');
     return s.trim();
   }
 
@@ -578,5 +579,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.2-honey-stores-context-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.3-current-near-speech-fixes';
 })();

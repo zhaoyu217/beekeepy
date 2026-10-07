@@ -393,8 +393,82 @@
     function broodLike(v){return ['BROOD','BRUTE','BREW','BREED'].indexOf(v)>=0||beeNear(v,'BROOD',2);}
     function storeValue(v){return ['HIGH','MEDIUM','LOW'].indexOf(v)>=0;}
     function blockedHoneySpan(a){
-      var bad=['POLLEN','TEMPERAMENT','CALM','NORMAL','DEFENSIVE','AGGRESSIVE','FEEDING','PESTS','DISEASE'];
+      var bad=['POLLEN','FOOD','TEMPERAMENT','CALM','NORMAL','DEFENSIVE','AGGRESSIVE','FEEDING','PESTS','DISEASE'];
       return a.some(function(x){return bad.indexOf(x)>=0;});
+    }
+
+    // Order-independent recovery: these local anchors do not depend on the
+    // standard Inspection sentence order.
+
+    // 1) Bare QUEEN between field boundaries: Sherpa sometimes drops "seen"
+    // completely. Do not infer Seen when a negation or Queen Cells is present.
+    for(var uq=0;uq<t.length;uq++){
+      if(t[uq]!=='QUEEN')continue;
+      var qprev=t[uq-1]||'',qnext=t[uq+1]||'';
+      if(qnext==='CELL'||qnext==='CELLS')continue;
+      if(['NO','NOT','NEVER','WITHOUT'].indexOf(qprev)>=0||['NOT','ABSENT'].indexOf(qnext)>=0)continue;
+      if(qnext==='SEEN'||qnext==='PRESENT'||qnext==='SPOTTED')continue;
+      if(qnext==='NO'||qnext==='COLONY'||qnext==='EGGS'||qnext==='LARVAE'||
+         qnext==='BROOD'||qnext==='BRUTE'||qnext==='HONEY'||qnext==='POLLEN'||
+         qnext==='SWARM'||qnext==='SWARMING'||qnext===''){
+        t.splice(uq+1,0,'SEEN');
+        break;
+      }
+    }
+
+    // 2) Eggs/Larvae PRESENT slots: if one is already known and there is one
+    // other unknown "... PRESENT" observation, recover the missing counterpart
+    // regardless of where it appears in the sentence.
+    var hasEggs=findSeq(['EGGS','PRESENT'],0)>=0;
+    var hasLarvae=findSeq(['LARVAE','PRESENT'],0)>=0;
+    var unknownPresent=[];
+    var reservedPresent=['QUEEN','CELLS','SWARM','SWARMING','PESTS','DISEASE','TREATMENT'];
+    for(var up=1;up<t.length;up++){
+      if(t[up]!=='PRESENT')continue;
+      var before=t[up-1];
+      if(before==='EGGS'||before==='LARVAE'||reservedPresent.indexOf(before)>=0)continue;
+      unknownPresent.push(up);
+    }
+    if(hasEggs&&!hasLarvae&&unknownPresent.length===1)t[unknownPresent[0]-1]='LARVAE';
+    if(hasLarvae&&!hasEggs&&unknownPresent.length===1)t[unknownPresent[0]-1]='EGGS';
+
+    // 3) Brood pattern quality: use BROOD-like acoustic anchor + a nearby
+    // quality word. The middle ASR tokens may vary freely.
+    for(var bq=0;bq<t.length;bq++){
+      if(!quality(t[bq]))continue;
+      var bs=-1;
+      for(var bk=bq-1;bk>=Math.max(0,bq-4);bk--){
+        if(['COLONY','HONEY','POLLEN','QUEEN','EGGS','LARVAE','NO'].indexOf(t[bk])>=0)break;
+        if(broodLike(t[bk])){bs=bk;break;}
+      }
+      if(bs>=0){
+        t.splice(bs,bq-bs+1,'BROOD','PATTERN',t[bq]);
+        break;
+      }
+    }
+
+    // 4) Honey stores value: "HONEY" itself may become AND HE / CONNIE, and
+    // STORES may become S DOORS. A stores-like acoustic anchor plus a valid
+    // value is sufficient unless the local context explicitly says POLLEN/FOOD.
+    for(var sv=0;sv<t.length;sv++){
+      if(!storeValue(t[sv]))continue;
+      var ss=-1,se=-1;
+      if(sv>=1&&(t[sv-1]==='STORE'||t[sv-1]==='STORES'||beeNear(t[sv-1],'STORES',3))){
+        ss=sv-1;se=sv-1;
+      }else if(sv>=2&&t[sv-2]==='S'&&(t[sv-1]==='DOOR'||t[sv-1]==='DOORS'||beeNear(t[sv-1],'STORES',3))){
+        ss=sv-2;se=sv-1;
+      }
+      if(ss<0)continue;
+      var local=t.slice(Math.max(0,ss-3),ss);
+      if(blockedHoneySpan(local))continue;
+      var honey=-1;
+      for(var hk=ss-1;hk>=Math.max(0,ss-3);hk--)if(t[hk]==='HONEY'){honey=hk;break;}
+      if(honey>=0){
+        t.splice(honey,sv-honey,'HONEY','STORES');
+      }else{
+        t.splice(ss,se-ss+1,'HONEY','STORES');
+      }
+      break;
     }
 
     // When Queen is immediately followed by a confirmed Eggs observation,
@@ -691,5 +765,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.8.1-structural-slot-repair';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.9-order-independent-field-anchors';
 })();

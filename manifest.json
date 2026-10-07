@@ -1,8 +1,8 @@
 {
   "name": "HiveDash",
   "short_name": "HiveDash",
-  "description": "Beekeeping & hive management \u2014 log inspections, track colony health, works offline.",
-  "start_url": "/app.html",
+  "description": "Backyard beekeeping health, inspections, reminders, and field records with offline support.",
+  "start_url": "/",
   "scope": "/",
   "display": "standalone",
   "background_color": "#FFFFFF",

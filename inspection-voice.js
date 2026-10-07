@@ -434,6 +434,7 @@
     s=s.replace(/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE|SEN)\b/g,'QUEEN SEEN');
     s=s.replace(/\bQUEEN\s+EGGS PRESENT(?=\s+(?:LARVAE PRESENT|BROOD PATTERN)\b)/g,'QUEEN SEEN EGGS PRESENT');
     s=s.replace(/\bEGGS PRESENT\s+MOTHER PRESENT(?=\s+BROOD PATTERN\b)/g,'EGGS PRESENT LARVAE PRESENT');
+    s=s.replace(/\bLARVAE PRESENT\s+BRUTE POT AND GOOD(?=\s+COLONY STRENGTH EIGHT\b)/g,'LARVAE PRESENT BROOD PATTERN GOOD');
     s=s.replace(/\bCOLONY STRENGTH EIGHT\s+CONNIE S DOORS MEDIUM(?=\s+NO QUEEN CELLS\b)/g,'COLONY STRENGTH EIGHT HONEY STORES MEDIUM');
     return s.trim();
   }
@@ -579,5 +580,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.3-current-near-speech-fixes';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.4-brood-pattern-near-speech-fix';
 })();

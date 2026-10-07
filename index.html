@@ -53,6 +53,78 @@
   <script src="r09a5.js?v=v2p2e5r09a5"></script>
   <script src="crossrule-x2.js?v=v2p2e5x2a1"></script>
   <script src="perf-state-cache.js?v=v2p2e5perf1"></script>
-  <script src="select-stability.js?v=v2p2e5ui1a"></script>\n  <script src="inspection-voice.js?v=voice-inspection-v307-v45-entry-retry"></script>
+  <script src="select-stability.js?v=v2p2e5ui1a"></script>\n  <script src="inspection-voice.js?v=voice-inspection-v308-inline-entry"></script>
+  <style id="hd-inline-voice-entry-style">
+    .v211-inspection .voice-row{display:none!important}
+    .hd-inline-notes-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin-bottom:8px!important}
+    .hd-inline-notes-head>span{font-weight:700!important}
+    .hd-inline-speak{display:inline-flex!important;align-items:center!important;gap:6px!important;min-height:34px!important;padding:0 10px!important;border:1px solid #D9D4C9!important;border-radius:999px!important;background:#FFFEFB!important;color:#49643F!important;font:inherit!important;font-size:11px!important;font-weight:800!important;cursor:pointer!important}
+  </style>
+  <script>
+  (function(){
+    if(window.__HD_INLINE_VOICE_ENTRY_V308__)return;
+    window.__HD_INLINE_VOICE_ENTRY_V308__=true;
+
+    function openVoice(){
+      if(typeof window.openStructuredVoiceInspection==='function'){
+        window.openStructuredVoiceInspection();
+        return;
+      }
+      try{window.__HD_STRUCTURED_VOICE_V1__=false;}catch(_){}
+      var old=document.querySelector('script[data-hd-inline-voice-retry="1"]');
+      if(old)return;
+      var s=document.createElement('script');
+      s.src='inspection-voice.js?v=voice-inspection-v308-inline-retry';
+      s.dataset.hdInlineVoiceRetry='1';
+      s.onload=function(){
+        if(typeof window.openStructuredVoiceInspection==='function')window.openStructuredVoiceInspection();
+        else if(typeof window.toast==='function')window.toast('Voice module did not initialize');
+      };
+      s.onerror=function(){if(typeof window.toast==='function')window.toast('Voice module could not be loaded');};
+      document.head.appendChild(s);
+    }
+
+    function ensure(){
+      if(!/^#inspection\//i.test(String(location.hash||'')))return;
+      var area=document.getElementById('inotes');
+      if(!area)return;
+      var notes=area.closest('.v211-notes,.notes')||area.parentElement;
+      if(!notes)return;
+
+      var root=document.getElementById('view')||document;
+      root.querySelectorAll('.voice-row').forEach(function(x){
+        x.hidden=true;
+        x.setAttribute('aria-hidden','true');
+        x.style.setProperty('display','none','important');
+      });
+
+      if(notes.querySelector('.hd-inline-speak')||notes.querySelector('.hd-notes-mic'))return;
+
+      var label=Array.from(notes.children).find(function(x){return x.tagName==='SPAN';});
+      var head=document.createElement('div');
+      head.className='hd-inline-notes-head';
+      head.innerHTML='<span>Notes</span><button type="button" class="hd-inline-speak" aria-label="Speak inspection">🎙 <span>Speak</span></button>';
+      if(label)label.replaceWith(head);else notes.insertBefore(head,area);
+      head.querySelector('button').addEventListener('click',function(e){
+        e.preventDefault();e.stopPropagation();openVoice();
+      });
+    }
+
+    function schedule(){
+      ensure();
+      setTimeout(ensure,0);
+      setTimeout(ensure,100);
+      setTimeout(ensure,400);
+      setTimeout(ensure,1000);
+    }
+
+    schedule();
+    window.addEventListener('hashchange',schedule);
+    var view=document.getElementById('view');
+    if(view&&typeof MutationObserver==='function'){
+      new MutationObserver(function(){ensure();}).observe(view,{childList:true,subtree:true});
+    }
+  })();
+  </script>
 </body>
 </html>

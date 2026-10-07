@@ -412,6 +412,12 @@
         if(oneOf(t[i+2],['MEDIA','MEDIUM'])||beeNear(t[i+2],'MEDIUM',2))t[i+2]='MEDIUM';
       }
 
+      if(w==='HONEY'&&t[i+1]==='S'&&
+         (oneOf(t[i+2],['DOOR','DOORS'])||beeNear(t[i+2],'STORES',2))){
+        t.splice(i+1,2,'STORES');
+        if(oneOf(t[i+2],['MEDIA','MEDIUM'])||beeNear(t[i+2],'MEDIUM',2))t[i+2]='MEDIUM';
+      }
+
       if(w==='NO'&&t[i+1]==='QUEEN'&&t[i+2]){
         if(oneOf(t[i+2],['CELL','CELLS','SELL','SELLS','SALES'])||beeNear(t[i+2],'CELLS',2))t[i+2]='CELLS';
       }
@@ -572,5 +578,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.1-larvae-context-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.2-honey-stores-context-fix';
 })();

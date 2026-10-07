@@ -54,7 +54,7 @@
     }
 
     put('queenStatus',lastChoice(text,[
-      [/\\b(?:did(?:n't| not) see|could(?:n't| not) find|never saw|no)\\s+(?:the\\s+)?queen\\b/i,'Not Seen'],
+      [/\\b(?:did(?:n't| not) see|could(?:n't| not) find|never saw|no)\\s+(?:the\\s+)?queen\\b(?!\\s+cells?\\b)/i,'Not Seen'],
       [/\\bqueen\\s+(?:not seen|not found|absent)\\b/i,'Not Seen'],
       [/\\b(?:saw|seen|found|spotted)\\s+(?:the\\s+)?queen\\b/i,'Seen'],
       [/\\bqueen\\s+(?:seen|present|spotted|looked good|looks good)\\b/i,'Seen']

@@ -222,7 +222,7 @@
           onRuntimeInitialized:function(){
             try{
               if(typeof createRecognizer!=='function')throw new Error('Speech recognizer wrapper did not initialize.');
-              sherpaRecognizer=createRecognizer();
+              sherpaRecognizer=createRecognizer(window.Module);
               done=true;clearTimeout(timer);resolve();
             }catch(e){clearTimeout(timer);reject(e);}
           }
@@ -398,5 +398,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.2-sherpa-ncnn-public';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.2.1-sherpa-module-init-fix';
 })();

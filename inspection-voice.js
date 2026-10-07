@@ -656,10 +656,148 @@
     return repairInspectionSequence(s).trim();
   }
 
+  var kwsPromise=null,kwsState=null;
+  var KWS_RUNTIME_WASM='https://raw.githubusercontent.com/moeru-ai/sherpaw/8111bc138b32e99aad44f8f76b4de3191e24b431/packages/kws/src/prebuilt/kws.wasm';
+  var KWS_MODEL_BASE='https://huggingface.co/moeru-ai/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/resolve/main/install/bin/wasm/';
+  var KWS_PHRASES=[
+    {id:'queen_seen',field:'queen',phrase:'QUEEN SEEN',tokens:['K','W','IY1','N','S','IY1','N']},
+    {id:'queen_not_seen',field:'queen',phrase:'QUEEN NOT SEEN',tokens:['K','W','IY1','N','N','AA1','T','S','IY1','N']},
+    {id:'eggs_present',field:'eggs',phrase:'EGGS PRESENT',tokens:['EH1','G','Z','P','R','EH1','Z','AH0','N','T']},
+    {id:'eggs_not_seen',field:'eggs',phrase:'EGGS NOT SEEN',tokens:['EH1','G','Z','N','AA1','T','S','IY1','N']},
+    {id:'larvae_present',field:'larvae',phrase:'LARVAE PRESENT',tokens:['L','AA1','R','V','IY0','P','R','EH1','Z','AH0','N','T']},
+    {id:'larvae_not_seen',field:'larvae',phrase:'LARVAE NOT SEEN',tokens:['L','AA1','R','V','IY0','N','AA1','T','S','IY1','N']},
+    {id:'queen_cells_none',field:'queenCells',phrase:'NO QUEEN CELLS',tokens:['N','OW1','K','W','IY1','N','S','EH1','L','Z']},
+    {id:'queen_cells_present',field:'queenCells',phrase:'QUEEN CELLS PRESENT',tokens:['K','W','IY1','N','S','EH1','L','Z','P','R','EH1','Z','AH0','N','T']},
+    {id:'swarm_none',field:'swarming',phrase:'NO SWARM SIGNS',tokens:['N','OW1','S','W','AO1','R','M','S','AY1','N','Z']},
+    {id:'swarm_present',field:'swarming',phrase:'SWARM SIGNS PRESENT',tokens:['S','W','AO1','R','M','S','AY1','N','Z','P','R','EH1','Z','AH0','N','T']}
+  ];
+
+  function kwsEncodedText(){
+    return KWS_PHRASES.map(function(k){
+      var score=(/_not_seen$|_present$/.test(k.id)&&k.id!=='eggs_present'&&k.id!=='larvae_present')?1.5:1.35;
+      return k.tokens.join(' ')+' :'+score+' #0.22 @'+k.id;
+    }).join('\n');
+  }
+
+  function kwsAllocText(mod,text,ptrs){
+    var n=mod.lengthBytesUTF8(text)+1,p=mod._malloc(n);
+    if(!p)throw new Error('KWS memory allocation failed.');
+    mod.stringToUTF8(text,p,n);ptrs.push(p);return p;
+  }
+
+  async function loadKwsEngine(){
+    if(kwsState)return kwsState;
+    if(kwsPromise)return kwsPromise;
+    kwsPromise=(async function(){
+      var pkg=await import('./sherpa-kws/kws.js?v=hd-kws-runtime-1');
+      if(!pkg||typeof pkg.default!=='function')throw new Error('KWS WebAssembly module is missing.');
+
+      var responses=await Promise.all([
+        fetch(KWS_MODEL_BASE+'preload.js.metadata',{mode:'cors',cache:'force-cache'}),
+        fetch(KWS_MODEL_BASE+'preload.data',{mode:'cors',cache:'force-cache'})
+      ]);
+      if(!responses[0].ok)throw new Error('KWS model metadata returned HTTP '+responses[0].status+'.');
+      if(!responses[1].ok)throw new Error('KWS model data returned HTTP '+responses[1].status+'.');
+
+      var metadata=await responses[0].json();
+      var packed=new Uint8Array(await responses[1].arrayBuffer());
+      if(!metadata||!Array.isArray(metadata.files)||packed.byteLength<1000000)throw new Error('KWS model package is invalid.');
+
+      var mod=await pkg.default({
+        locateFile:function(path){return /\.wasm(?:$|\?)/.test(path)?KWS_RUNTIME_WASM:path;},
+        printErr:function(msg){console.warn('Sherpa KWS:',msg);}
+      });
+
+      metadata.files.forEach(function(file){
+        var name=String(file.filename||'').replace(/^\/+/,''),bytes=packed.subarray(file.start,file.end);
+        if(!name||!bytes.length)throw new Error('KWS model file is invalid.');
+        try{if(mod.FS.analyzePath('/'+name).exists)mod.FS.unlink('/'+name);}catch(e){}
+        mod.FS_createDataFile('/',name,bytes,true,true,true);
+      });
+
+      var ptrs=[],spotter=0;
+      try{
+        var encoder=kwsAllocText(mod,'/encoder.onnx',ptrs);
+        var decoder=kwsAllocText(mod,'/decoder.onnx',ptrs);
+        var joiner=kwsAllocText(mod,'/joiner.onnx',ptrs);
+        var tokens=kwsAllocText(mod,'/tokens.txt',ptrs);
+        var keywords=kwsAllocText(mod,kwsEncodedText(),ptrs);
+        spotter=mod._SherpawCreateKeywordSpotter(encoder,decoder,joiner,tokens,keywords,16);
+        if(!spotter)throw new Error('KWS keyword spotter could not be created.');
+      }finally{
+        ptrs.forEach(function(p){try{mod._free(p);}catch(e){}});
+      }
+
+      kwsState={module:mod,spotter:spotter};
+      return kwsState;
+    })().catch(function(err){
+      kwsPromise=null;kwsState=null;
+      console.warn('Inspection KWS unavailable:',err);
+      throw err;
+    });
+    return kwsPromise;
+  }
+
+  async function detectInspectionKeywords(audio){
+    var state;
+    try{state=await loadKwsEngine();}catch(e){return [];}
+    var mod=state.module,spotter=state.spotter,stream=mod._SherpaOnnxCreateKeywordStream(spotter);
+    if(!stream)return [];
+    var hits=[],seen=new Set();
+
+    function readHits(){
+      while(mod._SherpaOnnxIsKeywordStreamReady(spotter,stream)){
+        mod._SherpaOnnxDecodeKeywordStream(spotter,stream);
+        var r=mod._SherpaOnnxGetKeywordResult(spotter,stream);
+        if(!r)break;
+        try{
+          var key=mod.UTF8ToString(mod._SherpawKeywordResultKeyword(r));
+          if(key&&KWS_PHRASES.some(function(x){return x.id===key;})){
+            if(!seen.has(key)){seen.add(key);hits.push(key);}
+            mod._SherpaOnnxResetKeywordStream(spotter,stream);
+          }
+        }finally{mod._SherpaOnnxDestroyKeywordResult(r);}
+      }
+    }
+
+    function feed(samples){
+      if(!samples.length)return;
+      var p=mod._malloc(samples.byteLength);
+      if(!p)throw new Error('KWS audio allocation failed.');
+      try{
+        mod.HEAPF32.set(samples,p/4);
+        mod._SherpaOnnxOnlineStreamAcceptWaveform(stream,16000,p,samples.length);
+      }finally{mod._free(p);}
+      readHits();
+    }
+
+    try{
+      var chunk=1600;
+      for(var i=0;i<audio.length;i+=chunk)feed(audio.subarray(i,Math.min(audio.length,i+chunk)));
+      feed(new Float32Array(16000));
+      return hits;
+    }catch(e){
+      console.warn('Inspection KWS detection failed:',e);
+      return [];
+    }finally{
+      try{mod._SherpaOnnxDestroyOnlineStream(stream);}catch(e){}
+    }
+  }
+
+  function mergeKwsHits(text,hits){
+    var s=normalizeBeeSpeech(text),last={};
+    (hits||[]).forEach(function(id){
+      var k=KWS_PHRASES.find(function(x){return x.id===id;});
+      if(k)last[k.field]=k.phrase;
+    });
+    var additions=Object.keys(last).map(function(field){return last[field];}).filter(function(p){return s.indexOf(p)<0;});
+    return [s].concat(additions).filter(Boolean).join(' ').trim();
+  }
+
   async function transcribe(blob,w){
     var rec=await loadSherpa(w),audio=await audioTo16k(blob);
     status(w,'Recognizing beekeeping terms on this device…','idle');
-    var stream=rec.createStream(),chunk=3200;
+    var stream=rec.createStream(),chunk=3200,text='';
     try{
       for(var i=0;i<audio.length;i+=chunk){
         stream.acceptWaveform(16000,audio.subarray(i,Math.min(audio.length,i+chunk)));
@@ -669,10 +807,13 @@
       if(stream.inputFinished)stream.inputFinished();
       var guard=0;
       while(rec.isReady(stream)&&guard++<10000)rec.decode(stream);
-      var result=rec.getResult(stream),text=T(result&&result.text);
+      var result=rec.getResult(stream);text=T(result&&result.text);
       if(!text)throw new Error('No speech was detected. Please try again.');
-      return normalizeBeeSpeech(text);
     }finally{try{if(stream&&stream.free)stream.free();}catch(e){}}
+
+    status(w,'Checking key Inspection phrases locally…','idle');
+    var hits=await detectInspectionKeywords(audio);
+    return mergeKwsHits(text,hits);
   }
 
   function stop(){
@@ -708,7 +849,7 @@
     if(listening||transcribing)return;
     cancelled=false;
     transcribing=true;buttons(w);
-    try{await loadSherpa(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local voice model could not be loaded.','err');return;}
+    try{await loadSherpa(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local voice model could not be loaded.','err');return;}\n    loadKwsEngine().catch(function(e){console.warn('KWS background preload skipped:',e);});
     if(cancelled||!document.body.contains(w)){transcribing=false;buttons(w);return;}
     transcribing=false;buttons(w);
     if(typeof MediaRecorder==='undefined'||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
@@ -797,5 +938,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.10.2-negative-boundary-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.11-dual-asr-kws';
 })();

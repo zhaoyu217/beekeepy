@@ -180,20 +180,8 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  function sherpaAsset(path){return 'https://modelscope.cn/studio/k2-fsa/web-assembly-asr-sherpa-onnx-en/resolve/master/'+path;}
-  var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt?download=true';
-  var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='',sherpaBpeVocab='';
-  var BEE_HOTWORDS=[
-    'QUEEN SEEN :6.0','QUEEN NOT SEEN :6.0',
-    'QUEEN CELLS :4.0','NO QUEEN CELLS :5.0','QUEEN CELLS PRESENT :5.0',
-    'EGGS PRESENT :4.0','EGGS NOT SEEN :5.0',
-    'LARVAE PRESENT :4.0','LARVAE NOT SEEN :5.0',
-    'BROOD PATTERN :4.0','BROOD STRENGTH :4.0',
-    'COLONY STRENGTH :4.0','HONEY STORES :4.0','POLLEN STORES :4.0',
-    'SWARM SIGNS :4.0','NO SWARM SIGNS :5.0','SWARM SIGNS PRESENT :5.0',
-    'MITE COUNT :4.0','OXALIC ACID :4.0','FORMIC ACID :4.0',
-    'SMALL HIVE BEETLE :4.0','WAX MOTH :4.0'
-  ];
+  function sherpaAsset(path){return 'https://modelscope.cn/studio/csukuangfj/web-assembly-vad-asr-sherpa-onnx-moonshine-v2-tiny-en/resolve/master/'+path;}
+  var sherpaPromise=null,sherpaRecognizer=null;
 
   function loadScript(src,label){
     return new Promise(function(resolve,reject){
@@ -247,117 +235,83 @@
     var m=String(raw||'').match(/Downloading data\.\.\. \((\d+)\/(\d+)\)/);
     if(m){
       var a=Number(m[1]),b=Number(m[2]);
-      if(b>0)return 'Downloading local voice model… '+Math.max(0,Math.min(100,Math.round(a*100/b)))+'%';
+      if(b>0)return 'Downloading Moonshine local voice model… '+Math.max(0,Math.min(100,Math.round(a*100/b)))+'%';
     }
-    if(raw==='Running...')return 'Initializing local voice model…';
-    return raw?'Preparing local voice model…':'Preparing local voice model…';
+    if(raw==='Running...')return 'Initializing Moonshine local voice model…';
+    return raw?'Preparing Moonshine local voice model…':'Preparing Moonshine local voice model…';
   }
 
-  async function prepareHotwordResources(){
-    var r=await fetch(SHERPA_TOKENS,{mode:'cors',cache:'force-cache'});
-    if(!r.ok)throw new Error('Sherpa token vocabulary returned HTTP '+r.status+'.');
-    var raw=await r.text();
-    var rows=[];
-    String(raw||'').split(/\r?\n/).forEach(function(line){
-      var t=line.trim();if(!t)return;
-      var p=t.split(/\s+/);if(p[0])rows.push(p[0]+'\t-1.0');
-    });
-    if(!rows.length)throw new Error('Sherpa token vocabulary is empty.');
-    sherpaBpeVocab=rows.join('\n')+'\n';
-    sherpaHotwords=BEE_HOTWORDS.join('\n');
-  }
-
-  function installRuntimeTextFile(Module,name,text){
-    var bytes=new TextEncoder().encode(String(text||''));
-    if(typeof Module.FS_createDataFile==='function'){
-      try{Module.FS_createDataFile('/',name,bytes,true,true,true);return;}
-      catch(e){
-        if(!(e&&/exist/i.test(String(e.message||e))))throw e;
-        return;
-      }
-    }
-    if(Module.FS&&typeof Module.FS.writeFile==='function'){
-      Module.FS.writeFile('/'+name,bytes);return;
-    }
-    throw new Error('Sherpa virtual filesystem file creation is unavailable.');
-  }
-
-  function sherpaConfig(){
-    var hotwordBytes=new TextEncoder().encode(sherpaHotwords).length;
+  function moonshineConfig(){
     return {
-      featConfig:{sampleRate:16000,featureDim:80},
       modelConfig:{
-        transducer:{encoder:'./encoder.onnx',decoder:'./decoder.onnx',joiner:'./joiner.onnx'},
-        paraformer:{encoder:'',decoder:''},
-        zipformer2Ctc:{model:''},
-        nemoCtc:{model:''},
-        toneCtc:{model:''},
-        tokens:'./tokens.txt',numThreads:1,provider:'cpu',debug:0,modelType:'',
-        modelingUnit:'bpe',bpeVocab:'/bpe.vocab'
-      },
-      decodingMethod:'modified_beam_search',maxActivePaths:4,enableEndpoint:0,
-      rule1MinTrailingSilence:2.4,rule2MinTrailingSilence:1.2,rule3MinUtteranceLength:20,
-      hotwordsFile:'',hotwordsScore:2.5,hotwordsBuf:sherpaHotwords,hotwordsBufSize:hotwordBytes,
-      ctcFstDecoderConfig:{graph:'',maxActive:3000},ruleFsts:'',ruleFars:'',blankPenalty:0
+        debug:0,
+        tokens:'./tokens.txt',
+        moonshine:{
+          encoder:'./moonshine-encoder.ort',
+          mergedDecoder:'./moonshine-merged-decoder.ort'
+        }
+      }
     };
   }
 
   async function loadSherpa(w){
     if(sherpaRecognizer){
-      status(w,'Local beekeeping voice model ready.','idle');
+      status(w,'Moonshine local voice model ready.','idle');
       return sherpaRecognizer;
     }
     if(sherpaPromise){
-      status(w,'Waiting for local voice model…','idle');
+      status(w,'Waiting for Moonshine local voice model…','idle');
       return sherpaPromise.then(function(r){
-        if(document.body.contains(w))status(w,'Local beekeeping voice model ready.','idle');
+        if(document.body.contains(w))status(w,'Moonshine local voice model ready.','idle');
         return r;
       });
     }
+
     sherpaPromise=(async function(){
-      status(w,'Loading Sherpa-ONNX JavaScript…','idle');
-      await loadScript(sherpaAsset('sherpa-onnx-asr.js'),'Sherpa-ONNX JavaScript');
-      if(typeof createOnlineRecognizer!=='function')throw new Error('Sherpa-ONNX JavaScript loaded, but createOnlineRecognizer is missing.');
+      status(w,'Loading Moonshine speech engine…','idle');
+      await loadScript(sherpaAsset('sherpa-onnx-asr.js'),'Sherpa Moonshine JavaScript');
+      if(typeof OfflineRecognizer!=='function')throw new Error('Moonshine recognizer wrapper is missing.');
 
-      status(w,'Preparing beekeeping hotwords…','idle');
-      await prepareHotwordResources();
+      status(w,'Loading Moonshine WebAssembly and model…','idle');
+      var wasmBinary=await fetchSherpaBinaryWithRetry('sherpa-onnx-wasm-main-vad-asr.wasm');
 
-      status(w,'Loading Sherpa-ONNX WebAssembly and model…','idle');
-      var wasmBinary=await fetchSherpaBinaryWithRetry('sherpa-onnx-wasm-main-asr.wasm');
       await new Promise(function(resolve,reject){
         var done=false,settled=false;
         function fail(err){
           if(settled)return;
           settled=true;clearTimeout(timer);
-          reject(err instanceof Error?err:new Error(String(err||'Sherpa-ONNX initialization failed.')));
+          reject(err instanceof Error?err:new Error(String(err||'Moonshine initialization failed.')));
         }
         var timer=setTimeout(function(){
-          if(!done)fail(new Error('Sherpa-ONNX WebAssembly/model initialization timed out.'));
+          if(!done)fail(new Error('Moonshine WebAssembly/model initialization timed out.'));
         },180000);
+
         window.Module={
           wasmBinary:wasmBinary,
           locateFile:function(path){return sherpaAsset(path);},
           setStatus:function(raw){if(document.body.contains(w))status(w,modelStatusText(raw),'idle');},
-          onAbort:function(why){fail(new Error('Sherpa-ONNX WebAssembly aborted: '+String(why||'unknown error')));},
-          printErr:function(msg){console.error('Sherpa-ONNX WASM:',msg);},
+          onAbort:function(why){fail(new Error('Moonshine WebAssembly aborted: '+String(why||'unknown error')));},
+          printErr:function(msg){console.error('Moonshine WASM:',msg);},
           onRuntimeInitialized:function(){
             try{
-              if(typeof createOnlineRecognizer!=='function')throw new Error('Speech recognizer wrapper did not initialize.');
-              installRuntimeTextFile(window.Module,'bpe.vocab',sherpaBpeVocab);
-              sherpaRecognizer=createOnlineRecognizer(window.Module,sherpaConfig());
-              if(!sherpaRecognizer||!sherpaRecognizer.handle)throw new Error('Sherpa hotword recognizer could not be created.');
+              if(typeof OfflineRecognizer!=='function')throw new Error('Moonshine recognizer wrapper did not initialize.');
+              sherpaRecognizer=new OfflineRecognizer(moonshineConfig(),window.Module);
+              if(!sherpaRecognizer||!sherpaRecognizer.handle)throw new Error('Moonshine recognizer could not be created.');
               done=true;settled=true;clearTimeout(timer);resolve();
             }catch(e){fail(e);}
           }
         };
-        loadScript(sherpaAsset('sherpa-onnx-wasm-main-asr.js'),'Sherpa-ONNX WebAssembly loader').catch(fail);
+
+        loadScript(sherpaAsset('sherpa-onnx-wasm-main-vad-asr.js'),'Moonshine WebAssembly loader').catch(fail);
       });
-      status(w,'Local beekeeping voice model ready.','idle');
+
+      status(w,'Moonshine local voice model ready.','idle');
       return sherpaRecognizer;
     })().catch(function(err){
       sherpaPromise=null;sherpaRecognizer=null;
       throw err;
     });
+
     return sherpaPromise;
   }
 
@@ -658,17 +612,11 @@
 
   async function transcribe(blob,w){
     var rec=await loadSherpa(w),audio=await audioTo16k(blob);
-    status(w,'Recognizing beekeeping terms on this device…','idle');
-    var stream=rec.createStream(),chunk=3200;
+    status(w,'Recognizing with Moonshine on this device…','idle');
+    var stream=rec.createStream();
     try{
-      for(var i=0;i<audio.length;i+=chunk){
-        stream.acceptWaveform(16000,audio.subarray(i,Math.min(audio.length,i+chunk)));
-        while(rec.isReady(stream))rec.decode(stream);
-        if(i%(chunk*8)===0)await new Promise(function(r){setTimeout(r,0);});
-      }
-      if(stream.inputFinished)stream.inputFinished();
-      var guard=0;
-      while(rec.isReady(stream)&&guard++<10000)rec.decode(stream);
+      stream.acceptWaveform(16000,audio);
+      rec.decode(stream);
       var result=rec.getResult(stream),text=T(result&&result.text);
       if(!text)throw new Error('No speech was detected. Please try again.');
       return normalizeBeeSpeech(text);
@@ -797,5 +745,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.10.2-negative-boundary-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='3.0-moonshine-v2-ab';
 })();

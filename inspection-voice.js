@@ -358,20 +358,75 @@
     }finally{try{await ctx.close();}catch(e){}}
   }
 
+  function beeEditDistance(a,b){
+    a=String(a||'');b=String(b||'');
+    var prev=[],cur=[],i,j;
+    for(j=0;j<=b.length;j++)prev[j]=j;
+    for(i=1;i<=a.length;i++){
+      cur=[i];
+      for(j=1;j<=b.length;j++){
+        cur[j]=Math.min(cur[j-1]+1,prev[j]+1,prev[j-1]+(a[i-1]===b[j-1]?0:1));
+      }
+      prev=cur;
+    }
+    return prev[b.length];
+  }
+
+  function beeNear(word,target,max){
+    word=String(word||'').toUpperCase();target=String(target||'').toUpperCase();
+    return !!word&&beeEditDistance(word,target)<=max;
+  }
+
   function normalizeBeeSpeech(raw){
-    var s=' '+T(raw).toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim()+' ';
-    var fixes=[
-      [/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE)\b/g,'QUEEN SEEN'],
-      [/\bQUEEN\s+EGGS PRESENT(?=\s+(?:LARVAE PRESENT|BROOD PATTERN)\b)/g,'QUEEN SEEN EGGS PRESENT'],
-      [/\b(?:EX|X|EG|EGG|EGGS)\s+PRESENT\b/g,'EGGS PRESENT'],
-      [/\b(?:MARVAIS|MARVET|MARVEY|LARVEY|LARVAE)\s+PRESENT\b/g,'LARVAE PRESENT'],
-      [/\b(?:BRUTE|BREW|BREED|BROOD)\s+PATTERN\b/g,'BROOD PATTERN'],
-      [/\bCOLONY\s+STRENGTH\s+(?:ATE|EIGHT)\b/g,'COLONY STRENGTH EIGHT'],
-      [/\bHONEY\s+STORES?\s+(?:MEDIA|MEDIUM)\b/g,'HONEY STORES MEDIUM'],
-      [/\bNO\s+QUEEN\s+CELLS?\b/g,'NO QUEEN CELLS'],
-      [/\bNO\s+SWARM(?:ING)?\s+SIGNS?\b/g,'NO SWARM SIGNS']
-    ];
-    fixes.forEach(function(x){s=s.replace(x[0],x[1]);});
+    var s=T(raw).toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim();
+    if(!s)return '';
+    var t=s.split(' '),i,w,n;
+
+    function oneOf(v,list){return list.indexOf(v)>=0;}
+
+    for(i=0;i<t.length;i++){
+      w=t[i];n=t[i+1]||'';
+
+      if(w==='QUEEN'&&n&&n!=='CELL'&&n!=='CELLS'){
+        if(oneOf(n,['SEN','SIN','SCENE','SAVE','SAME','SAY'])||beeNear(n,'SEEN',1))t[i+1]='SEEN';
+      }
+
+      if(n==='PRESENT'){
+        if(oneOf(w,['EX','X','EG','EGG','EGGS','AX'])||beeNear(w,'EGGS',1))t[i]='EGGS';
+        else if(oneOf(w,['MARVAIS','MARVET','MARVEY','LARVEY','LARVA','LARVAE','LOVELY','LOVLY'])||beeNear(w,'LARVAE',2))t[i]='LARVAE';
+      }
+
+      if((w==='BROOD'||oneOf(w,['BRUTE','BREW','BREED'])||beeNear(w,'BROOD',1))&&n){
+        if(oneOf(n,['PUTTING','PATTON','PATERN','PATTERN'])||beeNear(n,'PATTERN',2)){
+          t[i]='BROOD';t[i+1]='PATTERN';
+        }
+      }
+
+      if(w==='COLONY'&&(t[i+1]==='STRENGTH'||beeNear(t[i+1],'STRENGTH',2))){
+        t[i+1]='STRENGTH';
+        if(oneOf(t[i+2],['EGG','ATE','AID','EIGHT']))t[i+2]='EIGHT';
+      }
+
+      if(w==='HONEY'&&(t[i+1]==='STORE'||t[i+1]==='STORES'||beeNear(t[i+1],'STORES',1))){
+        t[i+1]='STORES';
+        if(oneOf(t[i+2],['MEDIA','MEDIUM'])||beeNear(t[i+2],'MEDIUM',2))t[i+2]='MEDIUM';
+      }
+
+      if(w==='NO'&&t[i+1]==='QUEEN'&&t[i+2]){
+        if(oneOf(t[i+2],['CELL','CELLS','SELL','SELLS','SALES'])||beeNear(t[i+2],'CELLS',2))t[i+2]='CELLS';
+      }
+
+      if(w==='NO'&&t[i+1]&&t[i+2]){
+        if(oneOf(t[i+1],['SWARM','SWARMING'])&&
+           (oneOf(t[i+2],['SIGN','SIGNS','SINES'])||beeNear(t[i+2],'SIGNS',2))){
+          t[i+1]='SWARM';t[i+2]='SIGNS';
+        }
+      }
+    }
+
+    s=t.join(' ');
+    s=s.replace(/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE|SEN)\b/g,'QUEEN SEEN');
+    s=s.replace(/\bQUEEN\s+EGGS PRESENT(?=\s+(?:LARVAE PRESENT|BROOD PATTERN)\b)/g,'QUEEN SEEN EGGS PRESENT');
     return s.trim();
   }
 
@@ -516,5 +571,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.6.1-queen-seen-context-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.7-contextual-bee-phrase-repair';
 })();

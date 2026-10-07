@@ -142,7 +142,7 @@
         if(Number.isFinite(v)) out.push(["Colony strength",String(v)]);
       }
 
-      const honey=s.match(/\bHONEY\s+STORES\s+(HIGH|MEDIUM|LOW)\b/);
+      const honey=s.match(/\bHONEY\s+(?:STORE|STORES|STORAGE)\s+(HIGH|MEDIUM|LOW)\b/);
       if(honey) out.push(["Honey stores",honey[1][0]+honey[1].slice(1).toLowerCase()]);
 
       if (/\bNO\s+QUEEN\s+CELLS\b/.test(s)) out.push(["Queen cells","None"]);

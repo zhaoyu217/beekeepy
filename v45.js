@@ -25756,3 +25756,115 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
   try{ensureCta()}catch(_){ }
   window.__HIVEDASH_V2P2E5R02A8_VERSION__=VERSION;
 })();
+
+
+/* ==============================================================
+   V2P2E5VOICE1 — Inspection Speak entry bootstrap
+   Scope only:
+   - Guarantee the Speak entry is visible on the current Inspection Notes UI.
+   - Hide the legacy Voice Notes row.
+   - Lazily load the independent structured voice module on first click if
+     it was not already loaded by index.html.
+   - No Inspection evidence, scientific rule, save, route or field logic changes.
+   ============================================================== */
+(function v2p2e5VoiceEntryBootstrap(){
+  if(window.__HIVEDASH_VOICE_ENTRY_BOOTSTRAP_V1__)return;
+  window.__HIVEDASH_VOICE_ENTRY_BOOTSTRAP_V1__=true;
+
+  function loadVoiceModule(){
+    if(typeof window.openStructuredVoiceInspection==='function'){
+      return Promise.resolve(window.openStructuredVoiceInspection);
+    }
+    if(window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__)return window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__;
+    window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__=new Promise(function(resolve,reject){
+      var s=document.createElement('script');
+      s.src='inspection-voice.js?v=voice-inspection-v305-v45-lazy-entry';
+      s.async=true;
+      s.onload=function(){
+        if(typeof window.openStructuredVoiceInspection==='function')resolve(window.openStructuredVoiceInspection);
+        else reject(new Error('Voice module loaded without an Inspection entry point.'));
+      };
+      s.onerror=function(){reject(new Error('Voice module could not be loaded.'));};
+      document.head.appendChild(s);
+    }).catch(function(err){
+      window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__=null;
+      throw err;
+    });
+    return window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__;
+  }
+
+  function openSpeak(){
+    loadVoiceModule().then(function(open){open();}).catch(function(err){
+      console.error('Inspection voice entry failed',err);
+      try{toast(err&&err.message?err.message:'Voice input could not be opened.');}catch(_){}
+    });
+  }
+  window.v2p2e5OpenInspectionSpeak=openSpeak;
+
+  function decorate(root){
+    if(!root)return;
+    var notes=root.querySelector('.v211-notes')||root.querySelector('.notes');
+    if(notes){
+      var existing=notes.querySelector('.hd-notes-mic');
+      if(!existing){
+        var old=Array.from(notes.children).find(function(x){return x.tagName==='SPAN';});
+        var head=document.createElement('div');
+        head.className='hd-notes-head';
+        head.innerHTML='<span>Notes</span><button type="button" class="hd-notes-mic" aria-label="Speak inspection">🎙 <span>Speak</span></button>';
+        if(old)old.replaceWith(head);else notes.insertBefore(head,notes.firstChild);
+        var btn=head.querySelector('button');
+        if(btn)btn.onclick=function(e){e.preventDefault();e.stopPropagation();openSpeak();};
+      }
+      notes.dataset.hdVoice='1';
+    }
+    root.querySelectorAll('.voice-row').forEach(function(legacy){
+      legacy.hidden=true;
+      legacy.setAttribute('aria-hidden','true');
+      legacy.style.setProperty('display','none','important');
+    });
+  }
+
+  if(!document.getElementById('v2p2e5voice-entry-style')){
+    var st=document.createElement('style');
+    st.id='v2p2e5voice-entry-style';
+    st.textContent='.hd-notes-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin-bottom:8px!important}.hd-notes-head>span{font-weight:700!important}.hd-notes-mic{display:inline-flex!important;align-items:center!important;gap:6px!important;min-height:34px!important;padding:0 10px!important;border:1px solid #D9D4C9!important;border-radius:999px!important;background:#FFFEFB!important;color:#49643F!important;font:inherit!important;font-size:11px!important;font-weight:800!important;cursor:pointer!important}';
+    document.head.appendChild(st);
+  }
+
+  var prevInspection=window.inspectionPage||((typeof inspectionPage==='function')?inspectionPage:null);
+  if(typeof prevInspection==='function'){
+    window.inspectionPage=function(r,id){
+      var ret=prevInspection.apply(this,arguments);
+      try{decorate(r);}catch(err){console.error('Inspection Speak decorate failed',err);}
+      queueMicrotask(function(){try{decorate(r);}catch(_){}});
+      return ret;
+    };
+    try{inspectionPage=window.inspectionPage;}catch(_){}
+  }
+
+  var prevRender=window.render||((typeof render==='function')?render:null);
+  if(typeof prevRender==='function'){
+    window.render=function(){
+      var ret=prevRender.apply(this,arguments);
+      if(/^#inspection\//.test(String(location.hash||''))){
+        queueMicrotask(function(){try{decorate(document.getElementById('view'));}catch(_){}});
+      }
+      return ret;
+    };
+    try{render=window.render;}catch(_){}
+  }
+
+  try{decorate(document.getElementById('view'));}catch(_){}
+  try{
+    var view=document.getElementById('view');
+    if(view&&typeof MutationObserver==='function'){
+      new MutationObserver(function(){
+        if(/^#inspection\//.test(String(location.hash||''))){
+          try{decorate(view);}catch(_){}
+        }
+      }).observe(view,{childList:true,subtree:true});
+    }
+  }catch(_){}
+
+  window.__HIVEDASH_V2P2E5VOICE1_VERSION__='v2p2e5voice1-direct-entry-bootstrap';
+})();

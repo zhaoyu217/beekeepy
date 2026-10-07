@@ -1,0 +1,98 @@
+name: Build Sherpa hotword WASM
+
+on:
+  push:
+    branches:
+      - voice-sherpa-hotword-test
+    paths:
+      - '.github/workflows/build-sherpa-hotword-wasm.yml'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout HiveDash test branch
+        uses: actions/checkout@v4
+        with:
+          ref: voice-sherpa-hotword-test
+          fetch-depth: 0
+
+      - name: Install Emscripten
+        uses: mymindstorm/setup-emsdk@v14
+        with:
+          version: 4.0.23
+          actions-cache-folder: emsdk-cache
+
+      - name: Clone sherpa-onnx
+        shell: bash
+        run: |
+          git clone --depth 1 https://github.com/k2-fsa/sherpa-onnx.git /tmp/sherpa-onnx
+
+      - name: Download matching English Zipformer model
+        shell: bash
+        run: |
+          cd /tmp/sherpa-onnx/wasm/asr/assets
+          wget -q https://github.com/k2-fsa/sherpa-onnx/releases/download/asr-models/sherpa-onnx-streaming-zipformer-en-2023-06-21.tar.bz2
+          tar xf sherpa-onnx-streaming-zipformer-en-2023-06-21.tar.bz2
+          rm sherpa-onnx-streaming-zipformer-en-2023-06-21.tar.bz2
+          mv sherpa-onnx-streaming-zipformer-en-2023-06-21/encoder-epoch-99-avg-1.int8.onnx encoder.onnx
+          mv sherpa-onnx-streaming-zipformer-en-2023-06-21/decoder-epoch-99-avg-1.onnx decoder.onnx
+          mv sherpa-onnx-streaming-zipformer-en-2023-06-21/joiner-epoch-99-avg-1.onnx joiner.onnx
+          mv sherpa-onnx-streaming-zipformer-en-2023-06-21/tokens.txt ./
+          rm -rf sherpa-onnx-streaming-zipformer-en-2023-06-21
+
+      - name: Enable browser hotword stream and FS
+        shell: bash
+        run: |
+          python3 - <<'PY'
+          from pathlib import Path
+          p=Path('/tmp/sherpa-onnx/wasm/asr/CMakeLists.txt')
+          s=p.read_text()
+          needle='  SherpaOnnxCreateOnlineStream\n'
+          if 'SherpaOnnxCreateOnlineStreamWithHotwords' not in s:
+              if needle not in s:
+                  raise SystemExit('CreateOnlineStream export anchor not found')
+              s=s.replace(needle, needle+'  SherpaOnnxCreateOnlineStreamWithHotwords\n', 1)
+          old="'HEAPU8','HEAP16','HEAP32','HEAPU32','HEAPF32','HEAPF64'"
+          new="'HEAPU8','HEAP16','HEAP32','HEAPU32','HEAPF32','HEAPF64','FS'"
+          if old not in s and new not in s:
+              raise SystemExit('EXPORTED_RUNTIME_METHODS anchor not found')
+          s=s.replace(old,new,1)
+          p.write_text(s)
+          PY
+          grep -n "CreateOnlineStreamWithHotwords\|EXPORTED_RUNTIME_METHODS" /tmp/sherpa-onnx/wasm/asr/CMakeLists.txt
+
+      - name: Build custom Sherpa WebAssembly
+        shell: bash
+        run: |
+          cd /tmp/sherpa-onnx
+          ./build-wasm-simd-asr.sh
+
+      - name: Copy browser engine into test branch
+        shell: bash
+        run: |
+          mkdir -p sherpa-hotword
+          src=/tmp/sherpa-onnx/build-wasm-simd-asr/install/bin/wasm/asr
+          cp "$src/sherpa-onnx-wasm-main-asr.js" sherpa-hotword/
+          cp "$src/sherpa-onnx-wasm-main-asr.wasm" sherpa-hotword/
+          printf '%s\n' "Custom sherpa-onnx browser runtime with SherpaOnnxCreateOnlineStreamWithHotwords exported." > sherpa-hotword/README.txt
+          ls -lh sherpa-hotword
+          test -s sherpa-hotword/sherpa-onnx-wasm-main-asr.js
+          test -s sherpa-hotword/sherpa-onnx-wasm-main-asr.wasm
+
+      - name: Commit custom runtime
+        shell: bash
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add sherpa-hotword/
+          if git diff --cached --quiet; then
+            echo "No runtime changes to commit."
+            exit 0
+          fi
+          git commit -m "Add custom Sherpa WASM with browser hotword export"
+          git push origin HEAD:voice-sherpa-hotword-test

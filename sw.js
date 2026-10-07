@@ -1,88 +1,132 @@
-// HiveDash service worker — network-first app shell, offline fallback.
-// v6: fixes stale-app bug (was cache-first for everything) and stops
-// intercepting cross-origin (Supabase / Google / CDN) requests.
-const CACHE = 'hivedash-v7';
-const SHELL = '/app.html';
+// HiveDash service worker — offline-first app shell for field use.
+// five-gaps-v1: precaches the current app shell and critical same-origin assets,
+// uses network-first navigation, and cache-first static resources.
+const CACHE='hivedash-field-v1';
+const FALLBACK='/index.html';
+const PRECACHE=[
+  '/',
+  '/index.html',
+  '/manifest.json',
+  '/style.css',
+  '/v45.css',
+  '/ui-final-polish.css',
+  '/field-ops.css',
+  '/config.js',
+  '/app.js',
+  '/v45.js',
+  '/r04a-catalog.js',
+  '/r05a-catalog.js',
+  '/r03a4.js',
+  '/r03a5.js',
+  '/r08a.js',
+  '/r08a1.js',
+  '/r09a.js',
+  '/r09a2.js',
+  '/r09a3.js',
+  '/r09a4.js',
+  '/b41tz1.js',
+  '/r10a15-core.js',
+  '/r10a4-projection.js',
+  '/r10a5-observability.js',
+  '/r10a14-route.js',
+  '/r10a10-closure.js',
+  '/r10a16-authority-explanation.js',
+  '/r11a.js',
+  '/r12a.js',
+  '/crossrule-x1.js',
+  '/r09a5.js',
+  '/crossrule-x2.js',
+  '/perf-state-cache.js',
+  '/select-stability.js',
+  '/field-ops.js',
+  '/assets/hivedash-login-logo.png',
+  '/icon-192.png',
+  '/icon-512.png'
+];
 
-self.addEventListener('install', e => {
-  e.waitUntil(caches.open(CACHE).then(c => c.add(SHELL).catch(() => {})));
-  self.skipWaiting();
-});
-
-self.addEventListener('activate', e => {
-  e.waitUntil(
-    caches.keys()
-      .then(keys => Promise.all(keys.filter(k => k !== CACHE).map(k => caches.delete(k))))
-      .then(() => self.clients.claim())
+self.addEventListener('install',event=>{
+  event.waitUntil(
+    caches.open(CACHE).then(async cache=>{
+      for(const url of PRECACHE){
+        try{
+          const resp=await fetch(url,{cache:'reload'});
+          if(resp&&resp.ok)await cache.put(url,resp);
+        }catch(_e){}
+      }
+    }).then(()=>self.skipWaiting())
   );
 });
 
-self.addEventListener('fetch', e => {
-  const req = e.request;
-  if (req.method !== 'GET') return;
+self.addEventListener('activate',event=>{
+  event.waitUntil(
+    caches.keys()
+      .then(keys=>Promise.all(keys.filter(k=>k!==CACHE).map(k=>caches.delete(k))))
+      .then(()=>self.clients.claim())
+  );
+});
 
+self.addEventListener('fetch',event=>{
+  const req=event.request;
+  if(req.method!=='GET')return;
   let url;
-  try { url = new URL(req.url); } catch (_) { return; }
+  try{url=new URL(req.url)}catch(_e){return}
 
-  // Never touch cross-origin requests (Supabase auth/data, Google sign-in,
-  // CDN fonts/scripts). They must always hit the live network.
-  if (url.origin !== self.location.origin) return;
+  // Auth, cloud data and third-party APIs remain live-network requests.
+  if(url.origin!==self.location.origin)return;
 
-  // App shell & navigations: NETWORK-FIRST so users always get the latest
-  // version; fall back to the cached shell only when offline.
-  if (req.mode === 'navigate' || url.pathname === '/app.html' || url.pathname === '/app') {
-    e.respondWith(
-      fetch(req)
-        .then(resp => {
-          if (resp && resp.status === 200) {
-            const clone = resp.clone();
-            caches.open(CACHE).then(c => c.put(SHELL, clone)).catch(() => {});
-          }
-          return resp;
-        })
-        .catch(() => caches.match(SHELL))
+  if(req.mode==='navigate'){
+    event.respondWith(
+      fetch(req).then(resp=>{
+        if(resp&&resp.ok){
+          const copy=resp.clone();
+          caches.open(CACHE).then(c=>c.put(FALLBACK,copy)).catch(()=>{});
+        }
+        return resp;
+      }).catch(async()=>{
+        return (await caches.match(req)) || (await caches.match(FALLBACK)) || Response.error();
+      })
     );
     return;
   }
 
-  // Other same-origin static assets (icons, manifest): cache-first is fine.
-  e.respondWith(
-    caches.match(req).then(cached =>
-      cached || fetch(req).then(resp => {
-        if (resp && resp.status === 200) {
-          const clone = resp.clone();
-          caches.open(CACHE).then(c => c.put(req, clone)).catch(() => {});
+  event.respondWith(
+    caches.match(req,{ignoreSearch:true}).then(cached=>{
+      if(cached)return cached;
+      return fetch(req).then(resp=>{
+        if(resp&&resp.ok){
+          const copy=resp.clone();
+          caches.open(CACHE).then(c=>c.put(req,copy)).catch(()=>{});
         }
         return resp;
-      }).catch(() => cached)
-    )
+      });
+    }).catch(()=>caches.match(req,{ignoreSearch:true}))
   );
 });
 
 // ---- Web Push ----
-self.addEventListener('push', function(e){
-  var data = {};
-  try { data = e.data ? e.data.json() : {}; } catch (_) { try { data = { body: e.data.text() }; } catch (e2) { data = {}; } }
-  var title = data.title || 'HiveDash';
-  var opts = {
-    body: data.body || 'A hive needs your attention.',
-    icon: '/icon-192.png',
-    badge: '/icon-192.png',
-    tag: data.tag || 'hivedash-reminder',
-    data: { url: data.url || '/app.html' }
+self.addEventListener('push',function(event){
+  let data={};
+  try{data=event.data?event.data.json():{}}catch(_e){try{data={body:event.data.text()}}catch(_e2){data={}}}
+  const title=data.title||'HiveDash';
+  const options={
+    body:data.body||'A hive needs your attention.',
+    icon:'/icon-192.png',
+    badge:'/icon-192.png',
+    tag:data.tag||'hivedash-reminder',
+    data:{url:data.url||'/'}
   };
-  e.waitUntil(self.registration.showNotification(title, opts));
+  event.waitUntil(self.registration.showNotification(title,options));
 });
 
-self.addEventListener('notificationclick', function(e){
-  e.notification.close();
-  var url = (e.notification.data && e.notification.data.url) || '/app.html';
-  e.waitUntil(
-    self.clients.matchAll({ type: 'window', includeUncontrolled: true }).then(function(wins){
-      for (var i = 0; i < wins.length; i++){
-        if (wins[i].url.indexOf('/app') > -1 && 'focus' in wins[i]) return wins[i].focus();
+self.addEventListener('notificationclick',function(event){
+  event.notification.close();
+  const url=event.notification.data&&event.notification.data.url||'/';
+  event.waitUntil(
+    self.clients.matchAll({type:'window',includeUncontrolled:true}).then(windows=>{
+      for(const win of windows){
+        if('focus' in win)return win.focus();
       }
-      if (self.clients.openWindow) return self.clients.openWindow(url);
+      if(self.clients.openWindow)return self.clients.openWindow(url);
     })
   );
 });

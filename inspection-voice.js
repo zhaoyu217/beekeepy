@@ -849,7 +849,8 @@
     if(listening||transcribing)return;
     cancelled=false;
     transcribing=true;buttons(w);
-    try{await loadSherpa(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local voice model could not be loaded.','err');return;}\n    loadKwsEngine().catch(function(e){console.warn('KWS background preload skipped:',e);});
+    try{await loadSherpa(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local voice model could not be loaded.','err');return;}
+    loadKwsEngine().catch(function(e){console.warn('KWS background preload skipped:',e);});
     if(cancelled||!document.body.contains(w)){transcribing=false;buttons(w);return;}
     transcribing=false;buttons(w);
     if(typeof MediaRecorder==='undefined'||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){

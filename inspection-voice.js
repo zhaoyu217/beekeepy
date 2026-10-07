@@ -659,13 +659,7 @@
 
   var kwsPromise=null,kwsState=null;
   var KWS_RUNTIME_WASM='https://raw.githubusercontent.com/moeru-ai/sherpaw/8111bc138b32e99aad44f8f76b4de3191e24b431/packages/kws/src/prebuilt/kws.wasm';
-  var KWS_MODEL_BASE='https://modelscope.cn/models/pkufool/icefall-kws-zipformer-zh-en-3M-2025-12-20/resolve/master/';
-  var KWS_MODEL_FILES={
-    'encoder.onnx':'onnx/encoder-epoch-13-avg-2-chunk-16-left-64.onnx',
-    'decoder.onnx':'onnx/decoder-epoch-13-avg-2-chunk-16-left-64.onnx',
-    'joiner.onnx':'onnx/joiner-epoch-13-avg-2-chunk-16-left-64.onnx',
-    'tokens.txt':'data/lang_phone/tokens.txt'
-  };
+  var KWS_PACK_BASE='https://huggingface.co/moeru-ai/sherpa-onnx-kws-zipformer-zh-en-3M-2025-12-20/resolve/main/install/bin/wasm/';
   var KWS_PHRASES=[
     {id:'queen_cells_none',field:'queenCells',phrase:'NO QUEEN CELLS',matches:[
       ['N','OW1','K','W','IY1','N','S','EH1','L','Z']
@@ -689,7 +683,7 @@
     var lines=[];
     KWS_PHRASES.forEach(function(k){
       (k.matches||[]).forEach(function(tokens){
-        lines.push(tokens.join(' ')+' :1.65 #0.10 @'+k.id);
+        lines.push(tokens.join(' ')+' :3.0 #0.10 @'+k.id);
       });
     });
     return lines.join('\n');
@@ -722,25 +716,27 @@
       var pkg=await import('./sherpa-kws/kws.js?v=hd-kws-runtime-1');
       if(!pkg||typeof pkg.default!=='function')throw new Error('KWS WebAssembly module is missing.');
 
-      var names=Object.keys(KWS_MODEL_FILES);
-      var responses=await Promise.all(names.map(function(name){
-        return fetch(KWS_MODEL_BASE+KWS_MODEL_FILES[name],{mode:'cors',cache:'force-cache'});
-      }));
-      responses.forEach(function(r,i){
-        if(!r.ok)throw new Error('KWS '+names[i]+' returned HTTP '+r.status+'.');
-      });
-      var bytes=await Promise.all(responses.map(function(r){return r.arrayBuffer();}));
+      var responses=await Promise.all([
+        fetch(KWS_PACK_BASE+'preload.js.metadata',{mode:'cors',cache:'force-cache'}),
+        fetch(KWS_PACK_BASE+'preload.data',{mode:'cors',cache:'force-cache'})
+      ]);
+      if(!responses[0].ok)throw new Error('KWS model metadata returned HTTP '+responses[0].status+'.');
+      if(!responses[1].ok)throw new Error('KWS model data returned HTTP '+responses[1].status+'.');
+
+      var metadata=await responses[0].json();
+      var packed=new Uint8Array(await responses[1].arrayBuffer());
+      if(!metadata||!Array.isArray(metadata.files)||packed.byteLength<1000000)throw new Error('KWS model package is invalid.');
 
       var mod=await pkg.default({
         locateFile:function(path){return /\.wasm(?:$|\?)/.test(path)?KWS_RUNTIME_WASM:path;},
         printErr:function(msg){console.warn('Sherpa KWS:',msg);}
       });
 
-      names.forEach(function(name,i){
-        var data=new Uint8Array(bytes[i]);
-        if(!data.length)throw new Error('KWS '+name+' is empty.');
+      metadata.files.forEach(function(file){
+        var name=String(file.filename||'').replace(/^\/+/,''),bytes=packed.subarray(file.start,file.end);
+        if(!name||!bytes.length)throw new Error('KWS model file is invalid.');
         try{if(mod.FS.analyzePath('/'+name).exists)mod.FS.unlink('/'+name);}catch(e){}
-        mod.FS_createDataFile('/',name,data,true,true,true);
+        mod.FS_createDataFile('/',name,bytes,true,true,true);
       });
 
       var ptrs=[],spotter=0;
@@ -750,7 +746,7 @@
         var joiner=kwsAllocText(mod,'/joiner.onnx',ptrs);
         var tokens=kwsAllocText(mod,'/tokens.txt',ptrs);
         var keywords=kwsAllocText(mod,kwsEncodedText(),ptrs);
-        spotter=mod._SherpawCreateKeywordSpotter(encoder,decoder,joiner,tokens,keywords,16);
+        spotter=mod._SherpawCreateKeywordSpotter(encoder,decoder,joiner,tokens,keywords,8);
         if(!spotter)throw new Error('KWS keyword spotter could not be created.');
       }finally{
         ptrs.forEach(function(p){try{mod._free(p);}catch(e){}});
@@ -968,5 +964,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.11.2-focused-kws';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.11.3-official-kws-pack';
 })();

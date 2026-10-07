@@ -181,11 +181,12 @@
     mediaStream=null;
   }
   function sherpaAsset(path){return 'https://modelscope.cn/studio/k2-fsa/web-assembly-asr-sherpa-onnx-en/resolve/master/'+path;}
+  var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt';
   var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='';
   var BEE_HOTWORDS=[
     'QUEEN','QUEEN SEEN','QUEEN CELLS','EGGS','EGGS PRESENT','LARVAE','LARVAE PRESENT',
     'BROOD','BROOD PATTERN','BROOD STRENGTH','COLONY STRENGTH','HONEY STORES','POLLEN STORES',
-    'SWARM','SWARMING','SWARM SIGNS','VARROA','MITE COUNT','APIVAR','OXALIC ACID','FORMIC ACID',
+    'SWARM','SWARMING','VARROA','MITE COUNT','APIVAR','OXALIC ACID','FORMIC ACID',
     'SMALL HIVE BEETLE','WAX MOTH','TEMPERAMENT','FEEDING','SUPER'
   ];
 
@@ -228,23 +229,45 @@
     return raw?'Preparing local voice model…':'Preparing local voice model…';
   }
 
-  function buildBpeVocabFromModel(Module){
-    var fs=Module&&Module.FS;
-    if(!fs||typeof fs.readFile!=='function'||typeof fs.writeFile!=='function'){
-      throw new Error('Sherpa model filesystem is unavailable.');
-    }
-    var tokens=fs.readFile('/tokens.txt',{encoding:'utf8'});
-    var vocab=String(tokens||'').split(/\r?\n/).map(function(line){
-      var t=line.trim();
-      if(!t)return '';
-      var p=t.split(/\s+/);
-      return p[0]+'\t-1.0';
-    }).filter(Boolean).join('\n')+'\n';
-    fs.writeFile('/bpe.vocab',vocab);
+  function parseTokens(raw){
+    var out=[];
+    String(raw||'').split(/\r?\n/).forEach(function(line){
+      var p=line.trim().split(/\s+/);
+      if(p.length>=2&&!/^</.test(p[0])&&!/^#\d+$/.test(p[0]))out.push(p[0]);
+    });
+    return out;
   }
 
-  function buildHotwords(){
-    return BEE_HOTWORDS.join('/');
+  function bpePhrase(phrase,vocab){
+    var set=new Set(vocab),pieces=vocab.slice().sort(function(a,b){return b.length-a.length;});
+    var s='▁'+String(phrase||'').toUpperCase().trim().replace(/\s+/g,'▁'),i=0,out=[];
+    while(i<s.length){
+      var hit='';
+      for(var k=0;k<pieces.length;k++){
+        var p=pieces[k];
+        if(p&&s.slice(i,i+p.length)===p){hit=p;break;}
+      }
+      if(!hit){
+        var ch=s[i];
+        if(set.has(ch))hit=ch;
+        else return '';
+      }
+      out.push(hit);i+=hit.length;
+    }
+    return out.join(' ');
+  }
+
+  async function buildHotwords(){
+    try{
+      var r=await fetch(SHERPA_TOKENS,{cache:'force-cache'});
+      if(!r.ok)throw new Error('tokens');
+      var vocab=parseTokens(await r.text()),rows=[];
+      BEE_HOTWORDS.forEach(function(x){var b=bpePhrase(x,vocab);if(b)rows.push(b);});
+      return rows.join('/');
+    }catch(e){
+      console.warn('HiveDash hotword vocabulary unavailable',e);
+      return '';
+    }
   }
 
   function sherpaConfig(){
@@ -257,11 +280,11 @@
         nemoCtc:{model:''},
         toneCtc:{model:''},
         tokens:'./tokens.txt',numThreads:1,provider:'cpu',debug:0,modelType:'',
-        modelingUnit:'bpe',bpeVocab:'/bpe.vocab'
+        modelingUnit:'cjkchar',bpeVocab:''
       },
       decodingMethod:'modified_beam_search',maxActivePaths:4,enableEndpoint:0,
       rule1MinTrailingSilence:2.4,rule2MinTrailingSilence:1.2,rule3MinUtteranceLength:20,
-      hotwordsFile:'',hotwordsScore:2.0,
+      hotwordsFile:'',hotwordsScore:3.5,
       ctcFstDecoderConfig:{graph:'',maxActive:3000},ruleFsts:'',ruleFars:'',blankPenalty:0
     };
   }
@@ -273,7 +296,8 @@
       await loadScript(sherpaAsset('sherpa-onnx-asr.js'),'Sherpa-ONNX JavaScript');
       if(typeof createOnlineRecognizer!=='function')throw new Error('Sherpa-ONNX JavaScript loaded, but createOnlineRecognizer is missing.');
 
-      sherpaHotwords=buildHotwords();
+      status(w,'Loading beekeeping hotword vocabulary…','idle');
+      sherpaHotwords=await buildHotwords();
 
       status(w,'Loading Sherpa-ONNX WebAssembly and model…','idle');
       await new Promise(function(resolve,reject){
@@ -294,7 +318,6 @@
           onRuntimeInitialized:function(){
             try{
               if(typeof createOnlineRecognizer!=='function')throw new Error('Speech recognizer wrapper did not initialize.');
-              buildBpeVocabFromModel(window.Module);
               sherpaRecognizer=createOnlineRecognizer(window.Module,sherpaConfig());
               done=true;settled=true;clearTimeout(timer);resolve();
             }catch(e){fail(e);}
@@ -488,5 +511,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.4-bpe-hotword-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.3.3-restored-working-sherpa-baseline';
 })();

@@ -358,6 +358,22 @@
     }finally{try{await ctx.close();}catch(e){}}
   }
 
+  function normalizeBeeSpeech(raw){
+    var s=' '+T(raw).toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim()+' ';
+    var fixes=[
+      [/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE)\b/g,'QUEEN SEEN'],
+      [/\b(?:EX|X|EG|EGG|EGGS)\s+PRESENT\b/g,'EGGS PRESENT'],
+      [/\b(?:MARVAIS|MARVET|MARVEY|LARVEY|LARVAE)\s+PRESENT\b/g,'LARVAE PRESENT'],
+      [/\b(?:BRUTE|BREW|BREED|BROOD)\s+PATTERN\b/g,'BROOD PATTERN'],
+      [/\bCOLONY\s+STRENGTH\s+(?:ATE|EIGHT)\b/g,'COLONY STRENGTH EIGHT'],
+      [/\bHONEY\s+STORES?\s+(?:MEDIA|MEDIUM)\b/g,'HONEY STORES MEDIUM'],
+      [/\bNO\s+QUEEN\s+CELLS?\b/g,'NO QUEEN CELLS'],
+      [/\bNO\s+SWARM(?:ING)?\s+SIGNS?\b/g,'NO SWARM SIGNS']
+    ];
+    fixes.forEach(function(x){s=s.replace(x[0],x[1]);});
+    return s.trim();
+  }
+
   async function transcribe(blob,w){
     var rec=await loadSherpa(w),audio=await audioTo16k(blob);
     status(w,'Recognizing beekeeping terms on this device…','idle');
@@ -373,7 +389,7 @@
       while(rec.isReady(stream)&&guard++<10000)rec.decode(stream);
       var result=rec.getResult(stream),text=T(result&&result.text);
       if(!text)throw new Error('No speech was detected. Please try again.');
-      return text;
+      return normalizeBeeSpeech(text);
     }finally{try{if(stream&&stream.free)stream.free();}catch(e){}}
   }
 
@@ -499,5 +515,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.5.3-phrase-hotwords';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.6-local-bee-term-normalizer';
 })();

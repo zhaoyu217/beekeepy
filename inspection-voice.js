@@ -180,34 +180,181 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  async function authHeaders(){
-    try{
-      if(typeof supabaseClient!=='undefined'&&supabaseClient&&supabaseClient.auth){
-        var sessionResult=await supabaseClient.auth.getSession();
-        var token=sessionResult&&sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.access_token;
-        if(token)return {Authorization:'Bearer '+token};
-      }
-    }catch(e){}
-    return {};
+  var SHERPA_BASE='https://huggingface.co/spaces/k2-fsa/web-assembly-asr-sherpa-onnx-en/resolve/main/';
+  var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt';
+  var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='';
+  var BEE_HOTWORDS=[
+    'QUEEN','QUEEN SEEN','QUEEN CELLS','EGGS','EGGS PRESENT','LARVAE','LARVAE PRESENT',
+    'BROOD','BROOD PATTERN','BROOD STRENGTH','COLONY STRENGTH','HONEY STORES','POLLEN STORES',
+    'SWARM','SWARMING','VARROA','MITE COUNT','APIVAR','OXALIC ACID','FORMIC ACID',
+    'SMALL HIVE BEETLE','WAX MOTH','TEMPERAMENT','FEEDING','SUPER'
+  ];
+
+  function loadScript(src){
+    return new Promise(function(resolve,reject){
+      var old=document.querySelector('script[data-hd-sherpa="'+src+'"]');
+      if(old&&old.dataset.loaded==='1'){resolve();return;}
+      var s=old||document.createElement('script');
+      if(!old){s.src=src;s.async=true;s.dataset.hdSherpa=src;document.head.appendChild(s);}
+      s.addEventListener('load',function(){s.dataset.loaded='1';resolve();},{once:true});
+      s.addEventListener('error',function(){reject(new Error('Could not load the local speech engine.'));},{once:true});
+    });
   }
-  async function transcribe(blob,w){
-    status(w,'Transcribing…','idle');
-    var headers=await authHeaders();
-    headers['Content-Type']=blob.type||'audio/webm';
-    var r=await fetch('/api/transcribe',{method:'POST',headers:headers,body:blob});
-    var data=await r.json().catch(function(){return {};});
-    if(!r.ok){
-      var code=String(data&&data.error||'transcription_failed');
-      if(code==='transcription_not_configured')throw new Error('Voice transcription is not configured yet.');
-      if(code==='rate_limited')throw new Error('Too many voice requests. Please wait a few minutes and try again.');
-      if(code==='audio_too_large')throw new Error('This recording is too long. Please record a shorter segment.');
-      if(code==='no_speech_detected')throw new Error('No speech was detected. Please try again.');
-      if(code==='unauthorized')throw new Error('Please sign in again before using voice transcription.');
-      throw new Error('Voice transcription failed. Please try again.');
+
+  function modelStatusText(raw){
+    var m=String(raw||'').match(/Downloading data\.\.\. \((\d+)\/(\d+)\)/);
+    if(m){
+      var a=Number(m[1]),b=Number(m[2]);
+      if(b>0)return 'Downloading local voice model… '+Math.max(0,Math.min(100,Math.round(a*100/b)))+'%';
     }
-    var text=T(data&&data.text);
-    if(!text)throw new Error('No speech was detected. Please try again.');
-    return text;
+    if(raw==='Running...')return 'Initializing local voice model…';
+    return raw?'Preparing local voice model…':'Preparing local voice model…';
+  }
+
+  function parseTokens(raw){
+    var out=[];
+    String(raw||'').split(/\r?\n/).forEach(function(line){
+      var p=line.trim().split(/\s+/);
+      if(p.length>=2&&!/^</.test(p[0])&&!/^#\d+$/.test(p[0]))out.push(p[0]);
+    });
+    return out;
+  }
+
+  function bpePhrase(phrase,vocab){
+    var set=new Set(vocab),pieces=vocab.slice().sort(function(a,b){return b.length-a.length;});
+    var s='▁'+String(phrase||'').toUpperCase().trim().replace(/\s+/g,'▁'),i=0,out=[];
+    while(i<s.length){
+      var hit='';
+      for(var k=0;k<pieces.length;k++){
+        var p=pieces[k];
+        if(p&&s.slice(i,i+p.length)===p){hit=p;break;}
+      }
+      if(!hit){
+        var ch=s[i];
+        if(set.has(ch))hit=ch;
+        else return '';
+      }
+      out.push(hit);i+=hit.length;
+    }
+    return out.join(' ');
+  }
+
+  async function buildHotwords(){
+    try{
+      var r=await fetch(SHERPA_TOKENS,{cache:'force-cache'});
+      if(!r.ok)throw new Error('tokens');
+      var vocab=parseTokens(await r.text()),rows=[];
+      BEE_HOTWORDS.forEach(function(x){var b=bpePhrase(x,vocab);if(b)rows.push(b);});
+      return rows.join('/');
+    }catch(e){
+      console.warn('HiveDash hotword vocabulary unavailable',e);
+      return '';
+    }
+  }
+
+  function sherpaConfig(){
+    return {
+      featConfig:{sampleRate:16000,featureDim:80},
+      modelConfig:{
+        transducer:{encoder:'./encoder.onnx',decoder:'./decoder.onnx',joiner:'./joiner.onnx'},
+        paraformer:{encoder:'',decoder:''},
+        zipformer2Ctc:{model:''},
+        nemoCtc:{model:''},
+        toneCtc:{model:''},
+        tokens:'./tokens.txt',numThreads:1,provider:'cpu',debug:0,modelType:'',
+        modelingUnit:'cjkchar',bpeVocab:''
+      },
+      decodingMethod:'modified_beam_search',maxActivePaths:4,enableEndpoint:0,
+      rule1MinTrailingSilence:2.4,rule2MinTrailingSilence:1.2,rule3MinUtteranceLength:20,
+      hotwordsFile:'',hotwordsScore:3.5,
+      ctcFstDecoderConfig:{graph:'',maxActive:3000},ruleFsts:'',ruleFars:'',blankPenalty:0
+    };
+  }
+
+  async function loadSherpa(w){
+    if(sherpaPromise)return sherpaPromise;
+    sherpaPromise=(async function(){
+      status(w,'Preparing local beekeeping voice model…','idle');
+      await loadScript(SHERPA_BASE+'sherpa-onnx-asr.js');
+      sherpaHotwords=await buildHotwords();
+
+      await new Promise(function(resolve,reject){
+        var done=false,timer=setTimeout(function(){if(!done)reject(new Error('Local voice model took too long to initialize.'));},180000);
+        window.Module={
+          locateFile:function(path){return SHERPA_BASE+path;},
+          setStatus:function(raw){if(document.body.contains(w))status(w,modelStatusText(raw),'idle');},
+          onRuntimeInitialized:function(){
+            try{
+              if(typeof createOnlineRecognizer!=='function')throw new Error('Speech recognizer wrapper did not initialize.');
+              sherpaRecognizer=createOnlineRecognizer(window.Module,sherpaConfig());
+              done=true;clearTimeout(timer);resolve();
+            }catch(e){clearTimeout(timer);reject(e);}
+          }
+        };
+        loadScript(SHERPA_BASE+'sherpa-onnx-wasm-main-asr.js').catch(function(e){clearTimeout(timer);reject(e);});
+      });
+      status(w,'Local beekeeping voice model ready.','idle');
+      return sherpaRecognizer;
+    })().catch(function(err){sherpaPromise=null;sherpaRecognizer=null;throw err;});
+    return sherpaPromise;
+  }
+
+  async function audioTo16k(blob){
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)throw new Error('Audio decoding is not supported in this browser.');
+    var ctx=new AC();
+    try{
+      var raw=await blob.arrayBuffer();
+      var decoded=await ctx.decodeAudioData(raw.slice(0));
+      if(decoded.sampleRate===16000&&decoded.numberOfChannels===1)return new Float32Array(decoded.getChannelData(0));
+      var Offline=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+      if(!Offline)throw new Error('Audio resampling is not supported in this browser.');
+      var frames=Math.max(1,Math.ceil(decoded.duration*16000));
+      var off=new Offline(1,frames,16000),src=off.createBufferSource();
+      src.buffer=decoded;src.connect(off.destination);src.start(0);
+      var rendered=await off.startRendering();
+      return new Float32Array(rendered.getChannelData(0));
+    }finally{try{await ctx.close();}catch(e){}}
+  }
+
+  function hotwordStream(rec,hotwords){
+    var M=rec&&rec.Module;
+    if(!M||!M._SherpaOnnxCreateOnlineStreamWithHotwords||!hotwords)return rec.createStream();
+    var n=M.lengthBytesUTF8(hotwords)+1,p=M._malloc(n);
+    M.stringToUTF8(hotwords,p,n);
+    var handle=M._SherpaOnnxCreateOnlineStreamWithHotwords(rec.handle,p);
+    M._free(p);
+    if(!handle)return rec.createStream();
+    return {
+      handle:handle,
+      acceptWaveform:function(sr,samples){
+        var ptr=M._malloc(samples.length*samples.BYTES_PER_ELEMENT);
+        M.HEAPF32.set(samples,ptr/samples.BYTES_PER_ELEMENT);
+        M._SherpaOnnxOnlineStreamAcceptWaveform(handle,sr,ptr,samples.length);
+        M._free(ptr);
+      },
+      inputFinished:function(){if(M._SherpaOnnxOnlineStreamInputFinished)M._SherpaOnnxOnlineStreamInputFinished(handle);},
+      free:function(){if(handle&&M._SherpaOnnxDestroyOnlineStream){M._SherpaOnnxDestroyOnlineStream(handle);handle=0;}}
+    };
+  }
+
+  async function transcribe(blob,w){
+    var rec=await loadSherpa(w),audio=await audioTo16k(blob);
+    status(w,'Recognizing beekeeping terms on this device…','idle');
+    var stream=hotwordStream(rec,sherpaHotwords),chunk=3200;
+    try{
+      for(var i=0;i<audio.length;i+=chunk){
+        stream.acceptWaveform(16000,audio.subarray(i,Math.min(audio.length,i+chunk)));
+        while(rec.isReady(stream))rec.decode(stream);
+        if(i%(chunk*8)===0)await new Promise(function(r){setTimeout(r,0);});
+      }
+      if(stream.inputFinished)stream.inputFinished();
+      var guard=0;
+      while(rec.isReady(stream)&&guard++<10000)rec.decode(stream);
+      var result=rec.getResult(stream),text=T(result&&result.text);
+      if(!text)throw new Error('No speech was detected. Please try again.');
+      return text;
+    }finally{try{if(stream&&stream.free)stream.free();}catch(e){}}
   }
 
   function stop(){
@@ -241,6 +388,11 @@
 
   async function start(w){
     if(listening||transcribing)return;
+    cancelled=false;
+    transcribing=true;buttons(w);
+    try{await loadSherpa(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local voice model could not be loaded.','err');return;}
+    if(cancelled||!document.body.contains(w)){transcribing=false;buttons(w);return;}
+    transcribing=false;buttons(w);
     if(typeof MediaRecorder==='undefined'||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
       status(w,'Microphone recording is not supported in this browser.','err');
       if(typeof toast==='function')toast('Microphone recording is not supported in this browser');
@@ -327,5 +479,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.0-server-transcribe';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.1-sherpa-hotwords-test';
 })();

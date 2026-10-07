@@ -427,6 +427,7 @@
     s=t.join(' ');
     s=s.replace(/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE|SEN)\b/g,'QUEEN SEEN');
     s=s.replace(/\bQUEEN\s+EGGS PRESENT(?=\s+(?:LARVAE PRESENT|BROOD PATTERN)\b)/g,'QUEEN SEEN EGGS PRESENT');
+    s=s.replace(/\bEGGS PRESENT\s+MOTHER PRESENT(?=\s+BROOD PATTERN\b)/g,'EGGS PRESENT LARVAE PRESENT');
     return s.trim();
   }
 
@@ -571,5 +572,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.7-contextual-bee-phrase-repair';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.1-larvae-context-fix';
 })();

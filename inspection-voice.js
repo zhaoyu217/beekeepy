@@ -67,13 +67,13 @@
     put('eggs',lastChoice(text,[
       [/\\b(?:no|did(?:n't| not) see|without)\\s+(?:any\\s+)?eggs\\b/i,'Not Seen'],
       [/\\beggs?\\s+(?:not seen|absent|missing)\\b/i,'Not Seen'],
-      [/\\b(?:saw|seen|found|plenty of|fresh)\\s+eggs\\b/i,'Seen'],
+      [/\\b(?:saw|found|plenty of|fresh)\\s+eggs\\b/i,'Seen'],
       [/\\beggs?\\s+(?:present|seen|visible)\\b/i,'Seen']
     ]));
     put('larvae',lastChoice(text,[
       [/\\b(?:no|did(?:n't| not) see|without)\\s+(?:any\\s+)?larvae\\b/i,'Not Seen'],
       [/\\blarvae\\s+(?:not seen|absent|missing)\\b/i,'Not Seen'],
-      [/\\b(?:saw|seen|found|plenty of)\\s+larvae\\b/i,'Seen'],
+      [/\\b(?:saw|found|plenty of)\\s+larvae\\b/i,'Seen'],
       [/\\blarvae\\s+(?:present|seen|visible)\\b/i,'Seen']
     ]));
     put('queenCells',lastChoice(text,[
@@ -597,6 +597,11 @@
     for(i=0;i<t.length;i++){
       w=t[i];n=t[i+1]||'';
 
+      if(w==='NOT'&&n&&
+         (oneOf(n,['SEN','SIN','SCENE'])||beeNear(n,'SEEN',1))){
+        t[i+1]='SEEN';n='SEEN';
+      }
+
       if(w==='QUEEN'&&n&&n!=='CELL'&&n!=='CELLS'){
         if(oneOf(n,['SEN','SIN','SCENE','SAVE','SAME','SAY'])||beeNear(n,'SEEN',1))t[i+1]='SEEN';
       }
@@ -792,5 +797,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.10.1-wasm-retry-loader';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.10.2-negative-boundary-fix';
 })();

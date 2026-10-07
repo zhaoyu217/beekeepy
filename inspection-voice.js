@@ -3,8 +3,7 @@
   if(window.__HD_STRUCTURED_VOICE_V1__) return;
   window.__HD_STRUCTURED_VOICE_V1__=true;
 
-  var SpeechCtor=window.SpeechRecognition||window.webkitSpeechRecognition||null;
-  var recognition=null, listening=false, finalTranscript='';
+  var recorder=null, mediaStream=null, listening=false, transcribing=false, cancelled=false, finalTranscript='', audioChunks=[], stopTimer=null;
 
   function T(v){return String(v==null?'':v).trim();}
   function E(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
@@ -170,10 +169,59 @@
     document.head.appendChild(s);
   }
 
-  function stop(){try{if(recognition&&listening)recognition.stop();}catch(e){}}
-  function close(){stop();recognition=null;listening=false;document.querySelector('.hd-voice-overlay')?.remove();}
+  function mimeType(){
+    var list=['audio/webm;codecs=opus','audio/webm','audio/mp4','audio/ogg;codecs=opus'];
+    if(typeof MediaRecorder==='undefined')return '';
+    for(var i=0;i<list.length;i++){try{if(MediaRecorder.isTypeSupported(list[i]))return list[i];}catch(e){}}
+    return '';
+  }
+  function cleanupMedia(){
+    clearTimeout(stopTimer);stopTimer=null;
+    if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
+    mediaStream=null;
+  }
+  async function authHeaders(){
+    try{
+      if(typeof supabaseClient!=='undefined'&&supabaseClient&&supabaseClient.auth){
+        var x=await supabaseClient.auth.getSession();
+        var token=x&&x.data&&x.data.session&&x.data.session.access_token;
+        if(token)return {Authorization:'Bearer '+token};
+      }
+    }catch(e){}
+    return {};
+  }
+  async function transcribe(blob){
+    var headers=await authHeaders();headers['Content-Type']=blob.type||'audio/webm';
+    var r=await fetch('/api/transcribe',{method:'POST',headers:headers,body:blob});
+    var data=await r.json().catch(function(){return {};});
+    if(!r.ok){
+      var code=String(data&&data.error||'transcription_failed');
+      if(code==='transcription_not_configured')throw new Error('Voice transcription service is not configured yet.');
+      if(code==='rate_limited')throw new Error('Too many voice requests. Please wait a few minutes and try again.');
+      if(code==='audio_too_large')throw new Error('This recording is too long. Please record a shorter segment.');
+      if(code==='no_speech_detected')throw new Error('No speech was detected. Please try again.');
+      throw new Error('Voice transcription failed. Please try again.');
+    }
+    return T(data&&data.text);
+  }
+  function stop(){
+    if(recorder&&listening){
+      try{recorder.stop();}catch(e){}
+    }
+  }
+  function close(){
+    cancelled=true;
+    if(recorder&&listening){try{recorder.stop();}catch(e){}}
+    cleanupMedia();recorder=null;listening=false;transcribing=false;audioChunks=[];
+    document.querySelector('.hd-voice-overlay')?.remove();
+  }
   function status(w,msg,kind){var l=w.querySelector('.hd-voice-status span:last-child'),d=w.querySelector('.hd-voice-dot');if(l)l.textContent=msg;if(d){d.classList.toggle('listen',kind==='listen');d.classList.toggle('err',kind==='err');}}
-  function buttons(w){var a=w.querySelector('.hd-start'),b=w.querySelector('.hd-stop');if(a)a.disabled=listening;if(b)b.disabled=!listening;}
+  function buttons(w){
+    var a=w.querySelector('.hd-start'),b=w.querySelector('.hd-stop'),p=w.querySelector('.hd-apply');
+    if(a)a.disabled=listening||transcribing;
+    if(b)b.disabled=!listening||transcribing;
+    if(p)p.disabled=transcribing;
+  }
 
   function review(w){
     var a=w.querySelector('.hd-voice-transcript'),box=w.querySelector('.hd-review');if(!a||!box)return;
@@ -185,24 +233,51 @@
     box.innerHTML=html;
   }
 
-  function start(w){
-    if(!SpeechCtor){status(w,'Voice recognition is not supported in this browser.','err');if(typeof toast==='function')toast('Voice recognition is not supported in this browser');return;}
-    if(listening)return;
-    var area=w.querySelector('.hd-voice-transcript');finalTranscript=T(area&&area.value);
+  async function start(w){
+    if(listening||transcribing)return;
+    if(typeof MediaRecorder==='undefined'||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
+      status(w,'Microphone recording is not supported in this browser.','err');
+      if(typeof toast==='function')toast('Microphone recording is not supported in this browser');
+      return;
+    }
+    var area=w.querySelector('.hd-voice-transcript');
+    finalTranscript=T(area&&area.value);
+    cancelled=false;audioChunks=[];
     try{
-      var rec=new SpeechCtor();recognition=rec;rec.lang='en-US';rec.continuous=true;rec.interimResults=true;rec.maxAlternatives=1;
-      rec.onstart=function(){listening=true;status(w,'Listening… speak naturally.','listen');buttons(w);};
-      rec.onresult=function(e){
-        var add='',interim='';
-        for(var i=e.resultIndex;i<e.results.length;i++){var part=T(e.results[i][0]&&e.results[i][0].transcript);if(!part)continue;if(e.results[i].isFinal)add+=(add?' ':'')+part;else interim+=(interim?' ':'')+part;}
-        if(add)finalTranscript=(finalTranscript?finalTranscript.replace(/\s+$/,'')+' ':'')+add;
-        if(area)area.value=[finalTranscript,interim].filter(Boolean).join(' ').trim();
-        review(w);
+      mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
+      var type=mimeType(),opts={audioBitsPerSecond:32000};if(type)opts.mimeType=type;
+      recorder=new MediaRecorder(mediaStream,opts);
+      recorder.ondataavailable=function(e){if(e.data&&e.data.size)audioChunks.push(e.data);};
+      recorder.onstart=function(){
+        listening=true;transcribing=false;status(w,'Recording… describe what you see.','listen');buttons(w);
+        stopTimer=setTimeout(function(){if(listening){status(w,'Maximum recording length reached. Transcribing…','idle');stop();}},180000);
       };
-      rec.onerror=function(e){listening=false;buttons(w);var code=String(e&&e.error||'');status(w,code==='not-allowed'||code==='service-not-allowed'?'Microphone permission was denied.':code==='no-speech'?'No speech detected. Try again.':'Voice recognition stopped. Try again.','err');};
-      rec.onend=function(){listening=false;buttons(w);if(document.body.contains(w)){if(area)area.value=T(finalTranscript||area.value);review(w);status(w,T(area&&area.value)?'Review the transcript and detected fields.':'Tap Start and describe what you see.','idle');}};
-      rec.start();
-    }catch(e){listening=false;buttons(w);status(w,'Microphone could not be started.','err');}
+      recorder.onerror=function(){listening=false;transcribing=false;cleanupMedia();buttons(w);status(w,'Microphone recording failed. Try again.','err');};
+      recorder.onstop=async function(){
+        listening=false;cleanupMedia();
+        if(cancelled){audioChunks=[];return;}
+        transcribing=true;buttons(w);status(w,'Transcribing…','idle');
+        try{
+          var blob=new Blob(audioChunks,{type:(recorder&&recorder.mimeType)||type||'audio/webm'});
+          audioChunks=[];
+          var text=await transcribe(blob);
+          if(area){
+            area.value=[finalTranscript,text].filter(Boolean).join(finalTranscript&&text?'\n':'').trim();
+          }
+          review(w);status(w,'Review the transcript and detected fields.','idle');
+        }catch(err){
+          console.error('Structured voice transcription failed',err);
+          status(w,err&&err.message?err.message:'Voice transcription failed.','err');
+        }finally{
+          transcribing=false;recorder=null;buttons(w);
+        }
+      };
+      recorder.start();
+    }catch(e){
+      cleanupMedia();recorder=null;listening=false;transcribing=false;buttons(w);
+      var denied=e&&(/NotAllowed|Permission/i.test(String(e.name||'')+' '+String(e.message||'')));
+      status(w,denied?'Microphone permission was denied.':'Microphone could not be started.','err');
+    }
   }
 
   function openVoice(){
@@ -210,7 +285,7 @@
     var notes=document.getElementById('inotes');if(notes)d.notes=notes.value;
     close();
     var w=document.createElement('div');w.className='hd-voice-overlay';
-    w.innerHTML='<section class="hd-voice-sheet" role="dialog" aria-modal="true"><div class="hd-voice-head"><b>Speak Inspection</b><button class="hd-voice-close" type="button">×</button></div><div class="hd-voice-status"><span class="hd-voice-dot"></span><span>'+(SpeechCtor?'Tap Start and describe what you see.':'Voice recognition is not supported in this browser.')+'</span></div><textarea class="hd-voice-transcript" placeholder="Your speech will appear here. You can edit it before applying."></textarea><div class="hd-voice-controls"><button class="hd-start" type="button">● Start</button><button class="hd-stop" type="button" disabled>■ Stop</button></div><div class="hd-review"></div><div class="hd-voice-actions"><button class="hd-cancel" type="button">Cancel</button><button class="hd-apply" type="button">Apply to Inspection</button></div><div class="hd-note">Nothing is saved automatically. Review the detected observations, then use the existing Save Inspection button.</div></section>';
+    w.innerHTML='<section class="hd-voice-sheet" role="dialog" aria-modal="true"><div class="hd-voice-head"><b>Speak Inspection</b><button class="hd-voice-close" type="button">×</button></div><div class="hd-voice-status"><span class="hd-voice-dot"></span><span>Tap Start and describe what you see.</span></div><textarea class="hd-voice-transcript" placeholder="Your speech will appear here. You can edit it before applying."></textarea><div class="hd-voice-controls"><button class="hd-start" type="button">● Start</button><button class="hd-stop" type="button" disabled>■ Stop</button></div><div class="hd-review"></div><div class="hd-voice-actions"><button class="hd-cancel" type="button">Cancel</button><button class="hd-apply" type="button">Apply to Inspection</button></div><div class="hd-note">Nothing is saved automatically. Review the detected observations, then use the existing Save Inspection button.</div></section>';
     document.body.appendChild(w);review(w);
     var area=w.querySelector('.hd-voice-transcript');if(area)area.addEventListener('input',function(){review(w);});
     w.querySelector('.hd-voice-close').onclick=close;w.querySelector('.hd-cancel').onclick=close;w.querySelector('.hd-start').onclick=function(){start(w);};w.querySelector('.hd-stop').onclick=stop;

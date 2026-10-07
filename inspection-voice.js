@@ -52,12 +52,20 @@
       if(old)Object.assign(old,row);else out.push(row);
     }
 
-    put('queenStatus',lastChoice(text,[
+    var queenStatus=lastChoice(text,[
       [/\\b(?:did(?:n't| not) see|could(?:n't| not) find|never saw|no)\\s+(?:the\\s+)?queen\\b(?!\\s+cells?\\b)/i,'Not Seen'],
       [/\\bqueen\\s+(?:not seen|not found|absent)\\b/i,'Not Seen'],
       [/\\b(?:saw|seen|found|spotted)\\s+(?:the\\s+)?queen\\b/i,'Seen'],
       [/\\bqueen\\s+(?:seen|present|spotted|looked good|looks good)\\b/i,'Seen']
-    ]));
+    ]);
+    if(queenStatus===undefined){
+      var qc=/\\bqueen\\s+c\\.?(?=\\s|$)/i.exec(text);
+      if(qc){
+        var near=text.slice(Math.max(0,qc.index-12),Math.min(text.length,qc.index+qc[0].length+12));
+        if(!/\\b(?:no|not)\\b/i.test(near))queenStatus='Seen';
+      }
+    }
+    put('queenStatus',queenStatus);
     put('queenMarked',lastChoice(text,[
       [/\\bqueen\\s+(?:is\\s+)?(?:not marked|unmarked)\\b/i,'No'],
       [/\\b(?:marked queen|queen\\s+(?:is\\s+)?marked)\\b/i,'Yes']
@@ -72,9 +80,9 @@
     ]));
     put('larvae',lastChoice(text,[
       [/\\b(?:no|did(?:n't| not) see|without)\\s+(?:any\\s+)?larvae\\b/i,'Not Seen'],
-      [/\\blarvae\\s+(?:not seen|absent|missing)\\b/i,'Not Seen'],
-      [/\\b(?:saw|seen|found|plenty of)\\s+larvae\\b/i,'Seen'],
-      [/\\blarvae\\s+(?:present|seen|visible)\\b/i,'Seen']
+      [/\\blarva(?:e)?\\s+(?:not seen|absent|missing)\\b/i,'Not Seen'],
+      [/\\b(?:saw|seen|found|plenty of)\\s+larva(?:e)?\\b/i,'Seen'],
+      [/\\blarva(?:e)?\\s+(?:present|seen|visible)\\b/i,'Seen']
     ]));
     put('queenCells',lastChoice(text,[
       [/\\b(?:no|without|did(?:n't| not) see)\\s+(?:any\\s+)?queen cells?\\b/i,'None'],
@@ -110,9 +118,9 @@
     ]));
 
     put('honey',lastChoice(text,[
-      [/\\bhoney(?: stores?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:high|plenty|full)\\b/i,'High'],
-      [/\\bhoney(?: stores?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:medium|moderate|okay|ok|average)\\b/i,'Medium'],
-      [/\\bhoney(?: stores?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:low|light|a little low|very low)\\b/i,'Low']
+      [/\\bhoney(?: store(?:s|age)?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:high|plenty|full)\\b/i,'High'],
+      [/\\bhoney(?: store(?:s|age)?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:medium|moderate|okay|ok|average)\\b/i,'Medium'],
+      [/\\bhoney(?: store(?:s|age)?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:low|light|a little low|very low)\\b/i,'Low']
     ]));
     put('pollen',lastChoice(text,[
       [/\\bpollen(?: stores?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:high|plenty|full)\\b/i,'High'],
@@ -180,63 +188,85 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  var SHERPA_BASE='https://huggingface.co/spaces/k2-fsa/web-assembly-asr-sherpa-ncnn-en/resolve/main/';
-  var sherpaPromise=null,sherpaRecognizer=null;
+  var whisperWorker=null,whisperReady=false,whisperLoadPromise=null,whisperLoadResolve=null,whisperLoadReject=null,whisperLoadTimer=null,whisperSeq=0,whisperPending={},whisperStatusWindow=null;
 
-  function loadScript(src){
-    return new Promise(function(resolve,reject){
-      var old=document.querySelector('script[data-hd-sherpa="'+src+'"]');
-      if(old&&old.dataset.loaded==='1'){resolve();return;}
-      var s=old||document.createElement('script');
-      if(!old){s.src=src;s.async=true;s.dataset.hdSherpa=src;document.head.appendChild(s);}
-      s.addEventListener('load',function(){s.dataset.loaded='1';resolve();},{once:true});
-      s.addEventListener('error',function(){reject(new Error('Could not load the local speech engine.'));},{once:true});
-    });
+  function whisperStatus(msg,kind){
+    var w=whisperStatusWindow;
+    if(w&&document.body.contains(w))status(w,msg,kind||'idle');
   }
-
-  function modelStatusText(raw){
-    var m=String(raw||'').match(/Downloading data\.\.\. \((\d+)\/(\d+)\)/);
-    if(m){
-      var a=Number(m[1]),b=Number(m[2]);
-      if(b>0)return 'Downloading local voice model… '+Math.max(0,Math.min(100,Math.round(a*100/b)))+'%';
+  function whisperProgress(p){
+    p=p||{};
+    if(p.status==='progress'){
+      var n=Number(p.progress);
+      if(Number.isFinite(n)){
+        if(n<=1)n*=100;
+        whisperStatus('Downloading local Whisper model… '+Math.max(0,Math.min(100,Math.round(n)))+'%','idle');
+        return;
+      }
     }
-    if(raw==='Running...')return 'Initializing local voice model…';
-    return raw?'Preparing local voice model…':'Preparing local voice model…';
+    if(p.status==='done'){whisperStatus('Local Whisper model file ready. Continuing…','idle');return;}
+    if(p.status==='initiate'||p.status==='download'){whisperStatus('Preparing local Whisper model download…','idle');}
   }
-
-  async function loadSherpa(w){
-    if(sherpaPromise)return sherpaPromise;
-    sherpaPromise=(async function(){
-      status(w,'Preparing local voice model…','idle');
-      await loadScript(SHERPA_BASE+'sherpa-ncnn.js');
-
-      await new Promise(function(resolve,reject){
-        var done=false;
-        var timer=setTimeout(function(){
-          if(!done)reject(new Error('Local voice model took too long to initialize.'));
-        },180000);
-
-        window.Module={
-          locateFile:function(path){return SHERPA_BASE+path;},
-          setStatus:function(raw){if(document.body.contains(w))status(w,modelStatusText(raw),'idle');},
-          onRuntimeInitialized:function(){
-            try{
-              if(typeof createRecognizer!=='function')throw new Error('Speech recognizer wrapper did not initialize.');
-              sherpaRecognizer=createRecognizer();
-              done=true;clearTimeout(timer);resolve();
-            }catch(e){clearTimeout(timer);reject(e);}
-          }
-        };
-
-        loadScript(SHERPA_BASE+'sherpa-ncnn-wasm-main.js').catch(function(e){
-          clearTimeout(timer);reject(e);
-        });
+  function resetWhisperLoad(err){
+    clearTimeout(whisperLoadTimer);whisperLoadTimer=null;
+    if(err&&whisperLoadReject)whisperLoadReject(err);
+    whisperLoadResolve=whisperLoadReject=null;
+    if(err){whisperLoadPromise=null;whisperReady=false;}
+  }
+  function ensureWhisperWorker(){
+    if(whisperWorker)return whisperWorker;
+    var worker=new Worker('whisper-inspection-worker.js?v=voice-whisper-large-v3-turbo-1',{type:'module'});
+    worker.onmessage=function(e){
+      var m=e.data||{};
+      if(m.type==='progress'){whisperProgress(m.progress);return;}
+      if(m.type==='status'){whisperStatus(m.message||'Preparing local Whisper model…','idle');return;}
+      if(m.type==='ready'){
+        whisperReady=true;
+        clearTimeout(whisperLoadTimer);whisperLoadTimer=null;
+        if(whisperLoadResolve)whisperLoadResolve(true);
+        whisperLoadResolve=whisperLoadReject=null;
+        whisperStatus('Local Whisper model ready.','idle');
+        return;
+      }
+      if(m.type==='result'){
+        var p=whisperPending[m.id];delete whisperPending[m.id];
+        if(p){clearTimeout(p.timer);p.resolve(T(m.text));}
+        return;
+      }
+      if(m.type==='error'){
+        var q=m.id!=null?whisperPending[m.id]:null;
+        var err=new Error(m.message||'Local Whisper transcription failed.');
+        if(q){delete whisperPending[m.id];clearTimeout(q.timer);q.reject(err);return;}
+        resetWhisperLoad(err);
+        whisperStatus(err.message,'err');
+      }
+    };
+    worker.onerror=function(e){
+      var err=new Error((e&&e.message)||'Local Whisper worker failed.');
+      Object.keys(whisperPending).forEach(function(id){
+        var p=whisperPending[id];delete whisperPending[id];
+        try{clearTimeout(p.timer);p.reject(err);}catch(x){}
       });
-
-      status(w,'Local voice model ready.','idle');
-      return sherpaRecognizer;
-    })().catch(function(err){sherpaPromise=null;sherpaRecognizer=null;throw err;});
-    return sherpaPromise;
+      resetWhisperLoad(err);whisperWorker=null;
+      whisperStatus(err.message,'err');
+    };
+    whisperWorker=worker;
+    return worker;
+  }
+  function loadWhisper(w){
+    whisperStatusWindow=w;
+    if(whisperReady){status(w,'Local Whisper model ready.','idle');return Promise.resolve(true);}
+    if(!navigator.gpu)return Promise.reject(new Error('WebGPU is required for local Whisper. Use current Edge/Chrome with hardware acceleration enabled.'));
+    if(whisperLoadPromise)return whisperLoadPromise;
+    whisperLoadPromise=new Promise(function(resolve,reject){
+      whisperLoadResolve=resolve;whisperLoadReject=reject;
+      whisperLoadTimer=setTimeout(function(){
+        resetWhisperLoad(new Error('Local Whisper model took too long to initialize.'));
+      },300000);
+      try{ensureWhisperWorker().postMessage({type:'load'});}
+      catch(e){resetWhisperLoad(e instanceof Error?e:new Error(String(e)));}
+    });
+    return whisperLoadPromise;
   }
 
   async function audioTo16k(blob){
@@ -258,22 +288,22 @@
   }
 
   async function transcribe(blob,w){
-    var rec=await loadSherpa(w),audio=await audioTo16k(blob);
-    status(w,'Recognizing speech on this device…','idle');
-    var stream=rec.createStream(),chunk=3200;
-    try{
-      for(var i=0;i<audio.length;i+=chunk){
-        stream.acceptWaveform(16000,audio.subarray(i,Math.min(audio.length,i+chunk)));
-        while(rec.isReady(stream))rec.decode(stream);
-        if(i%(chunk*8)===0)await new Promise(function(r){setTimeout(r,0);});
+    await loadWhisper(w);
+    var audio=await audioTo16k(blob);
+    status(w,'Transcribing locally with Whisper…','idle');
+    var id=++whisperSeq,worker=ensureWhisperWorker();
+    return new Promise(function(resolve,reject){
+      var timer=setTimeout(function(){
+        var p=whisperPending[id];delete whisperPending[id];
+        if(p)p.reject(new Error('Local Whisper transcription took too long.'));
+      },180000);
+      whisperPending[id]={resolve:resolve,reject:reject,timer:timer};
+      try{worker.postMessage({type:'transcribe',id:id,audio:audio},[audio.buffer]);}
+      catch(e){
+        delete whisperPending[id];clearTimeout(timer);
+        reject(e instanceof Error?e:new Error(String(e)));
       }
-      if(stream.inputFinished)stream.inputFinished();
-      var guard=0;
-      while(rec.isReady(stream)&&guard++<10000)rec.decode(stream);
-      var text=T(rec.getResult(stream));
-      if(!text)throw new Error('No speech was detected. Please try again.');
-      return text;
-    }finally{try{if(stream&&stream.free)stream.free();}catch(e){}}
+    });
   }
 
   function stop(){
@@ -309,7 +339,7 @@
     if(listening||transcribing)return;
     cancelled=false;
     transcribing=true;buttons(w);
-    try{await loadSherpa(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local voice model could not be loaded.','err');return;}
+    try{await loadWhisper(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local Whisper model could not be loaded.','err');return;}
     if(cancelled||!document.body.contains(w)){transcribing=false;buttons(w);return;}
     transcribing=false;buttons(w);
     if(typeof MediaRecorder==='undefined'||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){

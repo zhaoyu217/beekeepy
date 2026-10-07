@@ -362,16 +362,36 @@
     cacheWrite(key,out);return out;
   }
   async function pollenAt(coords){
+    const key=ENV_CACHE+':pollen:'+coords.latitude+','+coords.longitude;
+    const cached=cacheRead(key,60*60*1000);if(cached)return cached;
     try{
-      const cfg=window.HIVEDASH_CONFIG||{};if(!cfg.SUPABASE_URL)return null;
-      let token='';try{if(typeof currentSession!=='undefined')token=currentSession?.access_token||''}catch(_e){}
-      if(!token)return null;
-      const url=cfg.SUPABASE_URL.replace(/\/$/,'')+'/functions/v1/environment-context?latitude='+encodeURIComponent(coords.latitude)+'&longitude='+encodeURIComponent(coords.longitude);
-      const res=await fetch(url,{headers:{Authorization:'Bearer '+token,apikey:cfg.SUPABASE_PUBLISHABLE_KEY||''}});
+      const p=new URLSearchParams({
+        latitude:String(coords.latitude),
+        longitude:String(coords.longitude),
+        current:'alder_pollen,birch_pollen,grass_pollen,mugwort_pollen,olive_pollen,ragweed_pollen',
+        timezone:'auto'
+      });
+      const res=await fetch('https://air-quality-api.open-meteo.com/v1/air-quality?'+p.toString());
       if(!res.ok)return null;
-      const data=await res.json();return data?.pollen||null;
+      const data=await res.json();
+      const current=data?.current||{};
+      const labels={
+        alder_pollen:'Alder',
+        birch_pollen:'Birch',
+        grass_pollen:'Grass',
+        mugwort_pollen:'Mugwort',
+        olive_pollen:'Olive',
+        ragweed_pollen:'Ragweed'
+      };
+      const types=Object.entries(labels)
+        .map(([code,displayName])=>({code,displayName,value:current[code]}))
+        .filter(x=>Number.isFinite(Number(x.value)))
+        .map(x=>({...x,value:Number(x.value)}));
+      const out=types.length?{available:true,types}:{available:false,reason:'not_available_for_region'};
+      cacheWrite(key,out);return out;
     }catch(_e){return null}
   }
+
   function weatherSummary(weather){
     if(!weather)return '';
     return `${weather.temperature}${weather.temperatureUnit}, humidity ${weather.humidity}%, wind ${weather.wind} ${weather.windUnit}, precipitation ${weather.precipitation} ${weather.precipitationUnit}`;

@@ -225,6 +225,24 @@
     });
   }
 
+  async function fetchSherpaBinaryWithRetry(path){
+    var lastErr=null;
+    for(var attempt=1;attempt<=3;attempt++){
+      try{
+        var url=sherpaAsset(path)+(attempt>1?('?retry='+Date.now()+'-'+attempt):'');
+        var r=await fetch(url,{mode:'cors',cache:attempt===1?'default':'no-store'});
+        if(!r.ok)throw new Error(path+' returned HTTP '+r.status+'.');
+        var buf=await r.arrayBuffer();
+        if(!buf||buf.byteLength<1024)throw new Error(path+' returned an invalid binary.');
+        return new Uint8Array(buf);
+      }catch(e){
+        lastErr=e;
+        if(attempt<3)await new Promise(function(resolve){setTimeout(resolve,700*attempt);});
+      }
+    }
+    throw new Error('Sherpa WebAssembly download failed after 3 attempts. '+((lastErr&&lastErr.message)||''));
+  }
+
   function modelStatusText(raw){
     var m=String(raw||'').match(/Downloading data\.\.\. \((\d+)\/(\d+)\)/);
     if(m){
@@ -305,6 +323,7 @@
       await prepareHotwordResources();
 
       status(w,'Loading Sherpa-ONNX WebAssembly and model…','idle');
+      var wasmBinary=await fetchSherpaBinaryWithRetry('sherpa-onnx-wasm-main-asr.wasm');
       await new Promise(function(resolve,reject){
         var done=false,settled=false;
         function fail(err){
@@ -316,6 +335,7 @@
           if(!done)fail(new Error('Sherpa-ONNX WebAssembly/model initialization timed out.'));
         },180000);
         window.Module={
+          wasmBinary:wasmBinary,
           locateFile:function(path){return sherpaAsset(path);},
           setStatus:function(raw){if(document.body.contains(w))status(w,modelStatusText(raw),'idle');},
           onAbort:function(why){fail(new Error('Sherpa-ONNX WebAssembly aborted: '+String(why||'unknown error')));},
@@ -772,5 +792,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.10-negative-observation-support';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.10.1-wasm-retry-loader';
 })();

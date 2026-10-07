@@ -184,12 +184,13 @@
   var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt?download=true';
   var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='',sherpaBpeVocab='';
   var BEE_HOTWORDS=[
-    'QUEEN SEEN :6.0',
-    'QUEEN CELLS :4.0','NO QUEEN CELLS :5.0',
-    'EGGS PRESENT :4.0','LARVAE PRESENT :4.0',
+    'QUEEN SEEN :6.0','QUEEN NOT SEEN :6.0',
+    'QUEEN CELLS :4.0','NO QUEEN CELLS :5.0','QUEEN CELLS PRESENT :5.0',
+    'EGGS PRESENT :4.0','EGGS NOT SEEN :5.0',
+    'LARVAE PRESENT :4.0','LARVAE NOT SEEN :5.0',
     'BROOD PATTERN :4.0','BROOD STRENGTH :4.0',
     'COLONY STRENGTH :4.0','HONEY STORES :4.0','POLLEN STORES :4.0',
-    'SWARM SIGNS :4.0','NO SWARM SIGNS :5.0',
+    'SWARM SIGNS :4.0','NO SWARM SIGNS :5.0','SWARM SIGNS PRESENT :5.0',
     'MITE COUNT :4.0','OXALIC ACID :4.0','FORMIC ACID :4.0',
     'SMALL HIVE BEETLE :4.0','WAX MOTH :4.0'
   ];
@@ -585,6 +586,11 @@
         else if(oneOf(w,['MARVAIS','MARVET','MARVEY','LARVEY','LARVA','LARVAE','LOVELY','LOVLY'])||beeNear(w,'LARVAE',2))t[i]='LARVAE';
       }
 
+      if(n==='NOT'&&t[i+2]==='SEEN'){
+        if(oneOf(w,['EX','X','EG','EGG','EGGS','AX'])||beeNear(w,'EGGS',1))t[i]='EGGS';
+        else if(oneOf(w,['MARVAIS','MARVET','MARVEY','LARVEY','LARVA','LARVAE','LOVELY','LOVLY','MOTHER'])||beeNear(w,'LARVAE',2))t[i]='LARVAE';
+      }
+
       if((w==='BROOD'||oneOf(w,['BRUTE','BREW','BREED'])||beeNear(w,'BROOD',1))&&n){
         if(oneOf(n,['PUTTING','PUNTING','PATTON','PATERN','PATTERN'])||beeNear(n,'PATTERN',2)){
           t[i]='BROOD';t[i+1]='PATTERN';
@@ -621,6 +627,7 @@
 
     s=t.join(' ');
     s=s.replace(/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE|SEN)\b/g,'QUEEN SEEN');
+    s=s.replace(/\bQUEEN\s+(?:IT\s+S|ITS|IS)\s+NOT\s+SEEN\b/g,'QUEEN NOT SEEN');
     return repairInspectionSequence(s).trim();
   }
 
@@ -765,5 +772,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.9-order-independent-field-anchors';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.10-negative-observation-support';
 })();

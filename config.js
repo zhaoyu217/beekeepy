@@ -1,9 +1,10 @@
 /*
- HiveDash V13 — Supabase configuration
- Connected project: beekeepy / HiveDash
+ HiveDash local preview configuration.
+ Test-only branch: voice-inspection-preview-local
+ Cloud auth is intentionally disabled so Vercel Preview does not leave the preview origin.
 */
 window.HIVEDASH_CONFIG = {
-  SUPABASE_URL: "https://ydrawqnkwdvfhauansdf.supabase.co",
-  SUPABASE_PUBLISHABLE_KEY: "sb_publishable_6VC3g90SrIM5s7bI-CIwZQ_tbmk_h4B",
-  REQUIRE_AUTH: true
+  SUPABASE_URL: "",
+  SUPABASE_PUBLISHABLE_KEY: "",
+  REQUIRE_AUTH: false
 };

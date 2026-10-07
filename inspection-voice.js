@@ -181,7 +181,7 @@
     mediaStream=null;
   }
   var SHERPA_BASE='https://huggingface.co/spaces/k2-fsa/web-assembly-asr-sherpa-onnx-en/resolve/main/';
-  var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt';
+  var SHERPA_TOKENS=SHERPA_BASE+'tokens.txt';
   var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='';
   var BEE_HOTWORDS=[
     'QUEEN','QUEEN SEEN','QUEEN CELLS','EGGS','EGGS PRESENT','LARVAE','LARVAE PRESENT',
@@ -275,7 +275,7 @@
     if(sherpaPromise)return sherpaPromise;
     sherpaPromise=(async function(){
       status(w,'Preparing local beekeeping voice model…','idle');
-      await loadScript(SHERPA_BASE+'sherpa-onnx-asr.js');
+      await loadScript(SHERPA_BASE+'sherpa-onnx.js');
       sherpaHotwords=await buildHotwords();
 
       await new Promise(function(resolve,reject){
@@ -291,7 +291,7 @@
             }catch(e){clearTimeout(timer);reject(e);}
           }
         };
-        loadScript(SHERPA_BASE+'sherpa-onnx-wasm-main-asr.js').catch(function(e){clearTimeout(timer);reject(e);});
+        loadScript(SHERPA_BASE+'sherpa-onnx-wasm-asr-main.js').catch(function(e){clearTimeout(timer);reject(e);});
       });
       status(w,'Local beekeeping voice model ready.','idle');
       return sherpaRecognizer;
@@ -479,5 +479,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.1-sherpa-hotwords-test';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.1.1-sherpa-loader-fix';
 })();

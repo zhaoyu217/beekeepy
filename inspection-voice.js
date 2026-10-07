@@ -236,7 +236,7 @@
     var head=document.createElement('div');head.className='hd-notes-head';head.innerHTML='<span>Notes</span><button type="button" class="hd-notes-mic" aria-label="Speak inspection">🎙 <span>Speak</span></button>';
     if(old)old.replaceWith(head);else notes.insertBefore(head,notes.firstChild);
     head.querySelector('button').onclick=function(e){e.preventDefault();e.stopPropagation();openVoice();};
-    var legacy=root.querySelector('.voice-row');if(legacy)legacy.hidden=true;
+    var legacy=root.querySelector('.voice-row');if(legacy){legacy.hidden=true;legacy.setAttribute('aria-hidden','true');legacy.style.setProperty('display','none','important');}
   }
 
   styles();

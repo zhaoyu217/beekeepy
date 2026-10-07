@@ -180,31 +180,37 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  var localAsrPromise=null;
-  function modelProgress(w,p){
+  var localAsrPromise=null,enhancedAsrPromise=null,transformersModulePromise=null;
+  function loadTransformers(){
+    if(!transformersModulePromise){
+      transformersModulePromise=import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+    }
+    return transformersModulePromise;
+  }
+  function modelProgress(w,p,prefix){
     if(!w||!p)return;
-    var pct=Number(p.progress);
+    var pct=Number(p.progress),label=prefix||'Preparing local voice model';
     if(Number.isFinite(pct)){
-      status(w,'Preparing local voice model… '+Math.max(0,Math.min(100,Math.round(pct)))+'%','idle');
+      status(w,label+'… '+Math.max(0,Math.min(100,Math.round(pct)))+'%','idle');
     }else if(p.status==='ready'){
-      status(w,'Local voice model ready.','idle');
+      status(w,label.replace('Preparing','')+' ready.','idle');
     }
   }
   async function loadLocalAsr(w){
     if(localAsrPromise)return localAsrPromise;
     localAsrPromise=(async function(){
       status(w,'Preparing local voice model…','idle');
-      var mod=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
-      var options={progress_callback:function(p){modelProgress(w,p);}};
+      var mod=await loadTransformers();
+      var options={progress_callback:function(p){modelProgress(w,p,'Preparing local voice model');}};
       if(navigator.gpu)options.device='webgpu';
       try{
         return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-base.en',options);
       }catch(err){
         if(options.device==='webgpu'){
-          console.warn('WebGPU voice model failed; falling back to WASM',err);
-          status(w,'GPU unavailable. Preparing local voice model on CPU…','idle');
+          console.warn('WebGPU base voice model failed; falling back to WASM tiny model',err);
+          status(w,'GPU unavailable. Preparing fallback voice model…','idle');
           return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-tiny.en',{
-            progress_callback:function(p){modelProgress(w,p);}
+            progress_callback:function(p){modelProgress(w,p,'Preparing fallback voice model');}
           });
         }
         throw err;
@@ -212,6 +218,36 @@
     })().catch(function(err){localAsrPromise=null;throw err;});
     return localAsrPromise;
   }
+  async function loadEnhancedAsr(w){
+    if(enhancedAsrPromise)return enhancedAsrPromise;
+    enhancedAsrPromise=(async function(){
+      status(w,'Preparing enhanced local voice model…','idle');
+      var mod=await loadTransformers();
+      var options={progress_callback:function(p){modelProgress(w,p,'Preparing enhanced local voice model');}};
+      if(navigator.gpu)options.device='webgpu';
+      try{
+        return await mod.pipeline('automatic-speech-recognition','onnx-community/distil-small.en',options);
+      }catch(err){
+        if(options.device==='webgpu'){
+          console.warn('WebGPU enhanced voice model failed; falling back to CPU/WASM',err);
+          status(w,'GPU unavailable. Preparing enhanced model on CPU…','idle');
+          return await mod.pipeline('automatic-speech-recognition','onnx-community/distil-small.en',{
+            progress_callback:function(p){modelProgress(w,p,'Preparing enhanced local voice model');}
+          });
+        }
+        throw err;
+      }
+    })().catch(function(err){enhancedAsrPromise=null;throw err;});
+    return enhancedAsrPromise;
+  }
+  function structuredCoverage(text){
+    var fieldCount=parse(text).fields.length;
+    var clauses=T(text).split(/[.!?;]+/).map(function(x){return T(x);}).filter(function(x){return x.length>1;});
+    var cue=/\b(?:queen|clean|eggs?|larvae|brood|brew|colony|honey|pollen|stores?|present|seen|scene|pattern|strength|cells?|swarm|signs?|frames?|temperament|feeding|pests?|disease|super)\b/i;
+    var cueClauses=clauses.filter(function(x){return cue.test(x);}).length;
+    return {fields:fieldCount,cues:cueClauses};
+  }
+
   async function audioTo16k(blob){
     var AC=window.AudioContext||window.webkitAudioContext;
     if(!AC)throw new Error('Audio decoding is not supported in this browser.');
@@ -243,6 +279,24 @@
     var result=await asr(audio,{chunk_length_s:30,stride_length_s:5});
     var text=T(result&&result.text);
     if(!text)throw new Error('No speech was detected. Please try again.');
+
+    var baseScore=structuredCoverage(text);
+    var needsEnhanced=baseScore.cues>=4 && baseScore.fields<Math.ceil(baseScore.cues*0.65);
+    if(needsEnhanced){
+      try{
+        status(w,'Transcript looks uncertain. Running enhanced local recognition…','idle');
+        var enhanced=await loadEnhancedAsr(w);
+        status(w,'Rechecking speech with enhanced local model…','idle');
+        var betterResult=await enhanced(audio,{chunk_length_s:30,stride_length_s:5});
+        var betterText=T(betterResult&&betterResult.text);
+        if(betterText){
+          var betterScore=structuredCoverage(betterText);
+          if(betterScore.fields>baseScore.fields)text=betterText;
+        }
+      }catch(err){
+        console.warn('Enhanced local transcription unavailable; keeping base transcript',err);
+      }
+    }
     return text;
   }
 
@@ -363,5 +417,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='1.1-base-en';
+  window.__HD_STRUCTURED_VOICE_VERSION__='1.2-local-fallback';
 })();

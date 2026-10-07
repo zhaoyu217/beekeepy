@@ -353,7 +353,7 @@
       while(rec.isReady(stream)&&guard++<10000)rec.decode(stream);
       var result=rec.getResult(stream),text=T(result&&result.text);
       if(!text)throw new Error('No speech was detected. Please try again.');
-      return text.toLowerCase().replace(/\bi\b/g,'I');
+      return text;
     }finally{try{if(stream&&stream.free)stream.free();}catch(e){}}
   }
 
@@ -388,6 +388,7 @@
 
   async function start(w){
     if(listening||transcribing)return;
+    cancelled=false;
     transcribing=true;buttons(w);
     try{await loadSherpa(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local voice model could not be loaded.','err');return;}
     if(cancelled||!document.body.contains(w)){transcribing=false;buttons(w);return;}

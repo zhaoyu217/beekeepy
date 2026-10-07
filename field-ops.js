@@ -27,9 +27,13 @@
     console.info('[HiveDash]',msg);
   }
 
-  function requestCloudFlush(){
+  async function requestCloudFlush(){
     if(!navigator.onLine)return;
     try{
+      if(typeof currentSession!=='undefined'&&currentSession?.user&&typeof cloudReady!=='undefined'&&!cloudReady&&typeof hydrateAuthenticatedApp==='function'){
+        await hydrateAuthenticatedApp();
+        return;
+      }
       if(typeof scheduleCloudSave==='function'&&typeof state==='function')scheduleCloudSave(state());
     }catch(e){console.warn('HiveDash reconnect flush skipped',e)}
   }
@@ -451,15 +455,39 @@
 
   function enhanceInspection(root){
     if(!root||root.getAttribute(ENH_ATTR)===VERSION)return;
-    root.setAttribute(ENH_ATTR,VERSION);classifyInspectionCards(root);
+    root.setAttribute(ENH_ATTR,VERSION);
+    const isV211=root.classList.contains('v211-inspection');
+    if(isV211)classifyInspectionCards(root);
     const bar=document.createElement('div');
     bar.className='hd-field-tools';
     bar.innerHTML=`<button type="button" data-hd-quick aria-pressed="false">Quick mode: Off</button><button type="button" data-hd-voice>Voice fill</button><span class="hd-offline-indicator"></span>`;
     const anchor=q('.switchh',root);if(anchor)anchor.insertAdjacentElement('afterend',bar);else root.prepend(bar);
-    q('[data-hd-quick]',bar).onclick=()=>setQuickMode(root,!root.classList.contains('hd-quick-mode'));
-    q('[data-hd-voice]',bar).onclick=()=>openVoiceModal(root);
-    let saved=false;try{saved=localStorage.getItem(QUICK_STORAGE)==='1'}catch(_e){}
-    setQuickMode(root,saved);makeEnvironmentCard(root,true);
+    const quickBtn=q('[data-hd-quick]',bar);
+    const voiceBtn=q('[data-hd-voice]',bar);
+    if(isV211){
+      quickBtn.onclick=()=>setQuickMode(root,!root.classList.contains('hd-quick-mode'));
+      voiceBtn.onclick=()=>openVoiceModal(root);
+      let saved=false;try{saved=localStorage.getItem(QUICK_STORAGE)==='1'}catch(_e){}
+      setQuickMode(root,saved);
+    }else{
+      quickBtn.disabled=true;
+      quickBtn.textContent='Quick mode: full form required';
+      voiceBtn.onclick=()=>{
+        try{
+          if(typeof actionForm==='function'){
+            const hiveId=(typeof activeInspectionHiveId!=='undefined'&&activeInspectionHiveId)||safeState()?.hives?.[0]?.id;
+            actionForm('inspection',hiveId);
+            setTimeout(()=>{
+              const modal=q('.modal');
+              if(modal)openVoiceModal(modal);
+            },80);
+            return;
+          }
+        }catch(_e){}
+        toastSafe('Open the full Inspection form to use structured voice fill.');
+      };
+    }
+    makeEnvironmentCard(root,true);
     const offline=document.createElement('div');offline.className='hd-offline-banner';offline.textContent='Offline mode: inspection edits remain local on this device and will be queued for cloud sync when connectivity returns.';offline.hidden=navigator.onLine!==false;bar.insertAdjacentElement('afterend',offline);
     refreshConnectivityUI();
   }
@@ -468,7 +496,7 @@
   }
   function enhance(){
     const view=q('#view');if(!view)return;
-    const inspection=q('.v211-inspection',view);if(inspection)enhanceInspection(inspection);
+    const inspection=q('.v211-inspection,.inspection-screen',view);if(inspection)enhanceInspection(inspection);
     enhanceDataBackup(view);enhanceSeason(view);refreshConnectivityUI();
   }
   let timer=0;

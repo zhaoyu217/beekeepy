@@ -496,7 +496,12 @@
   }
   function enhance(){
     const view=q('#view');if(!view)return;
-    const inspection=q('.v211-inspection,.inspection-screen',view);if(inspection)enhanceInspection(inspection);
+    let inspection=q('.v211-inspection,.inspection-screen',view);
+    // The final Inspection renderer is replaced by a late scientific/UI layer
+    // and may not preserve the historical root class. Route identity is the
+    // authoritative fallback for mounting field helpers.
+    if(!inspection && routeName()==='inspection')inspection=view;
+    if(inspection)enhanceInspection(inspection);
     enhanceDataBackup(view);enhanceSeason(view);refreshConnectivityUI();
   }
   let timer=0;

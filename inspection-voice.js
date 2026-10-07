@@ -180,30 +180,72 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  async function authHeaders(){
-    try{
-      if(typeof supabaseClient!=='undefined'&&supabaseClient&&supabaseClient.auth){
-        var x=await supabaseClient.auth.getSession();
-        var token=x&&x.data&&x.data.session&&x.data.session.access_token;
-        if(token)return {Authorization:'Bearer '+token};
-      }
-    }catch(e){}
-    return {};
-  }
-  async function transcribe(blob){
-    var headers=await authHeaders();headers['Content-Type']=blob.type||'audio/webm';
-    var r=await fetch('/api/transcribe',{method:'POST',headers:headers,body:blob});
-    var data=await r.json().catch(function(){return {};});
-    if(!r.ok){
-      var code=String(data&&data.error||'transcription_failed');
-      if(code==='transcription_not_configured')throw new Error('Voice transcription service is not configured yet.');
-      if(code==='rate_limited')throw new Error('Too many voice requests. Please wait a few minutes and try again.');
-      if(code==='audio_too_large')throw new Error('This recording is too long. Please record a shorter segment.');
-      if(code==='no_speech_detected')throw new Error('No speech was detected. Please try again.');
-      throw new Error('Voice transcription failed. Please try again.');
+  var localAsrPromise=null;
+  function modelProgress(w,p){
+    if(!w||!p)return;
+    var pct=Number(p.progress);
+    if(Number.isFinite(pct)){
+      status(w,'Preparing local voice model… '+Math.max(0,Math.min(100,Math.round(pct)))+'%','idle');
+    }else if(p.status==='ready'){
+      status(w,'Local voice model ready.','idle');
     }
-    return T(data&&data.text);
   }
+  async function loadLocalAsr(w){
+    if(localAsrPromise)return localAsrPromise;
+    localAsrPromise=(async function(){
+      status(w,'Preparing local voice model…','idle');
+      var mod=await import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+      var options={progress_callback:function(p){modelProgress(w,p);}};
+      if(navigator.gpu)options.device='webgpu';
+      try{
+        return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-tiny.en',options);
+      }catch(err){
+        if(options.device==='webgpu'){
+          console.warn('WebGPU voice model failed; falling back to WASM',err);
+          status(w,'GPU unavailable. Preparing local voice model on CPU…','idle');
+          return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-tiny.en',{
+            progress_callback:function(p){modelProgress(w,p);}
+          });
+        }
+        throw err;
+      }
+    })().catch(function(err){localAsrPromise=null;throw err;});
+    return localAsrPromise;
+  }
+  async function audioTo16k(blob){
+    var AC=window.AudioContext||window.webkitAudioContext;
+    if(!AC)throw new Error('Audio decoding is not supported in this browser.');
+    var ctx=new AC();
+    try{
+      var raw=await blob.arrayBuffer();
+      var decoded=await ctx.decodeAudioData(raw.slice(0));
+      if(decoded.sampleRate===16000&&decoded.numberOfChannels===1){
+        return new Float32Array(decoded.getChannelData(0));
+      }
+      var Offline=window.OfflineAudioContext||window.webkitOfflineAudioContext;
+      if(!Offline)throw new Error('Audio resampling is not supported in this browser.');
+      var frames=Math.max(1,Math.ceil(decoded.duration*16000));
+      var offline=new Offline(1,frames,16000);
+      var source=offline.createBufferSource();
+      source.buffer=decoded;
+      source.connect(offline.destination);
+      source.start(0);
+      var rendered=await offline.startRendering();
+      return new Float32Array(rendered.getChannelData(0));
+    }finally{
+      try{await ctx.close();}catch(e){}
+    }
+  }
+  async function transcribe(blob,w){
+    var audio=await audioTo16k(blob);
+    var asr=await loadLocalAsr(w);
+    status(w,'Transcribing on this device…','idle');
+    var result=await asr(audio,{chunk_length_s:30,stride_length_s:5});
+    var text=T(result&&result.text);
+    if(!text)throw new Error('No speech was detected. Please try again.');
+    return text;
+  }
+
   function stop(){
     if(recorder&&listening){
       try{recorder.stop();}catch(e){}
@@ -260,7 +302,7 @@
         try{
           var blob=new Blob(audioChunks,{type:(recorder&&recorder.mimeType)||type||'audio/webm'});
           audioChunks=[];
-          var text=await transcribe(blob);
+          var text=await transcribe(blob,w);
           if(area){
             area.value=[finalTranscript,text].filter(Boolean).join(finalTranscript&&text?'\n':'').trim();
           }

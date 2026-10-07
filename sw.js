@@ -3,6 +3,7 @@
 // uses network-first navigation, and cache-first static resources.
 const CACHE='hivedash-field-v1';
 const FALLBACK='/index.html';
+const SUPABASE_CDN='https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2';
 const PRECACHE=[
   '/',
   '/index.html',
@@ -53,6 +54,10 @@ self.addEventListener('install',event=>{
           if(resp&&resp.ok)await cache.put(url,resp);
         }catch(_e){}
       }
+      try{
+        const supabaseResp=await fetch(new Request(SUPABASE_CDN,{mode:'no-cors',cache:'reload'}));
+        await cache.put(SUPABASE_CDN,supabaseResp);
+      }catch(_e){}
     }).then(()=>self.skipWaiting())
   );
 });
@@ -71,7 +76,19 @@ self.addEventListener('fetch',event=>{
   let url;
   try{url=new URL(req.url)}catch(_e){return}
 
-  // Auth, cloud data and third-party APIs remain live-network requests.
+  // Cache only the public Supabase browser bundle so an already-signed-in
+  // beekeeper can reopen HiveDash offline. Auth/data/API requests themselves
+  // remain live-network only.
+  if(url.href===SUPABASE_CDN){
+    event.respondWith(
+      caches.match(SUPABASE_CDN).then(cached=>cached||fetch(req).then(resp=>{
+        const copy=resp.clone();
+        caches.open(CACHE).then(cache=>cache.put(SUPABASE_CDN,copy)).catch(()=>{});
+        return resp;
+      }))
+    );
+    return;
+  }
   if(url.origin!==self.location.origin)return;
 
   if(req.mode==='navigate'){

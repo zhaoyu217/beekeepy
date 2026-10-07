@@ -183,7 +183,7 @@
   var localAsrPromise=null,enhancedAsrPromise=null,transformersModulePromise=null;
   function loadTransformers(){
     if(!transformersModulePromise){
-      transformersModulePromise=import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@3.8.1');
+      transformersModulePromise=import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0');
     }
     return transformersModulePromise;
   }
@@ -219,24 +219,16 @@
     return localAsrPromise;
   }
   async function loadEnhancedAsr(w){
+    if(!navigator.gpu)throw new Error('Enhanced local model requires WebGPU.');
     if(enhancedAsrPromise)return enhancedAsrPromise;
     enhancedAsrPromise=(async function(){
       status(w,'Preparing enhanced local voice model…','idle');
       var mod=await loadTransformers();
-      var options={progress_callback:function(p){modelProgress(w,p,'Preparing enhanced local voice model');}};
-      if(navigator.gpu)options.device='webgpu';
-      try{
-        return await mod.pipeline('automatic-speech-recognition','onnx-community/distil-small.en',options);
-      }catch(err){
-        if(options.device==='webgpu'){
-          console.warn('WebGPU enhanced voice model failed; falling back to CPU/WASM',err);
-          status(w,'GPU unavailable. Preparing enhanced model on CPU…','idle');
-          return await mod.pipeline('automatic-speech-recognition','onnx-community/distil-small.en',{
-            progress_callback:function(p){modelProgress(w,p,'Preparing enhanced local voice model');}
-          });
-        }
-        throw err;
-      }
+      return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-small.en',{
+        device:'webgpu',
+        dtype:{encoder_model:'fp32',decoder_model_merged:'q4'},
+        progress_callback:function(p){modelProgress(w,p,'Preparing enhanced local voice model');}
+      });
     })().catch(function(err){enhancedAsrPromise=null;throw err;});
     return enhancedAsrPromise;
   }
@@ -245,7 +237,8 @@
     var clauses=T(text).split(/[.!?;]+/).map(function(x){return T(x);}).filter(function(x){return x.length>1;});
     var cue=/\b(?:queen|clean|eggs?|larvae|brood|brew|colony|honey|pollen|stores?|present|seen|scene|pattern|strength|cells?|swarm|signs?|frames?|temperament|feeding|pests?|disease|super)\b/i;
     var cueClauses=clauses.filter(function(x){return cue.test(x);}).length;
-    return {fields:fieldCount,cues:cueClauses};
+    var noise=(T(text).match(/\[(?:beep|music|noise|silence)\]/gi)||[]).length;
+    return {fields:fieldCount,cues:cueClauses,noise:noise,score:(fieldCount*10)+(cueClauses*2)-(noise*8)};
   }
 
   async function audioTo16k(blob){
@@ -281,7 +274,7 @@
     if(!text)throw new Error('No speech was detected. Please try again.');
 
     var baseScore=structuredCoverage(text);
-    var needsEnhanced=baseScore.cues>=4 && baseScore.fields<Math.ceil(baseScore.cues*0.65);
+    var needsEnhanced=!!navigator.gpu && baseScore.cues>=4 && baseScore.fields<Math.ceil(baseScore.cues*0.65);
     if(needsEnhanced){
       try{
         status(w,'Transcript looks uncertain. Running enhanced local recognition…','idle');
@@ -291,7 +284,7 @@
         var betterText=T(betterResult&&betterResult.text);
         if(betterText){
           var betterScore=structuredCoverage(betterText);
-          if(betterScore.fields>baseScore.fields)text=betterText;
+          if(betterScore.score>baseScore.score && betterScore.fields>baseScore.fields)text=betterText;
         }
       }catch(err){
         console.warn('Enhanced local transcription unavailable; keeping base transcript',err);
@@ -417,5 +410,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='1.2-local-fallback';
+  window.__HD_STRUCTURED_VOICE_VERSION__='1.3-small-webgpu-fallback';
 })();

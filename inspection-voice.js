@@ -3,7 +3,7 @@
   if(window.__HD_STRUCTURED_VOICE_V1__) return;
   window.__HD_STRUCTURED_VOICE_V1__=true;
 
-  var recorder=null, mediaStream=null, listening=false, transcribing=false, cancelled=false, finalTranscript='', audioChunks=[], stopTimer=null;
+  var recorder=null, mediaStream=null, listening=false, transcribing=false, cancelled=false, finalTranscript='', structuredTranscript='', audioChunks=[], stopTimer=null;
 
   function T(v){return String(v==null?'':v).trim();}
   function E(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
@@ -656,8 +656,113 @@
     return repairInspectionSequence(s).trim();
   }
 
+  var voskPromise=null,voskModel=null;
+  var VOSK_SCRIPT='https://cdn.jsdelivr.net/npm/vosk-browser@0.0.8/dist/vosk.js';
+  var VOSK_MODEL='https://cdn.jsdelivr.net/gh/ccoreilly/vosk-browser@gh-pages/models/vosk-model-small-en-us-0.15.tar.gz';
+  var VOSK_GRAMMAR=(function(){
+    var g=[
+      'queen seen','queen not seen',
+      'eggs present','eggs not seen',
+      'larvae present','larvae not seen',
+      'brood pattern excellent','brood pattern good','brood pattern fair','brood pattern poor',
+      'honey stores high','honey stores medium','honey stores low',
+      'no queen cells','queen cells present',
+      'no swarm signs','swarm signs present'
+    ];
+    ['zero','one','two','three','four','five','six','seven','eight','nine','ten'].forEach(function(n){
+      g.push('colony strength '+n);
+    });
+    g.push('[unk]');
+    return JSON.stringify(g);
+  })();
+
+  function loadExternalScript(src,label){
+    return new Promise(function(resolve,reject){
+      var old=document.querySelector('script[data-hd-external="'+src+'"]');
+      if(old&&old.dataset.loaded==='1'){resolve();return;}
+      var s=old||document.createElement('script');
+      function ok(){s.dataset.loaded='1';resolve();}
+      function bad(){reject(new Error((label||'External script')+' could not be loaded.'));}
+      s.addEventListener('load',ok,{once:true});
+      s.addEventListener('error',bad,{once:true});
+      if(!old){
+        s.src=src;s.async=true;s.crossOrigin='anonymous';s.dataset.hdExternal=src;
+        document.head.appendChild(s);
+      }
+    });
+  }
+
+  function waitFor(promise,ms,label){
+    return new Promise(function(resolve,reject){
+      var done=false;
+      var timer=setTimeout(function(){
+        if(done)return;done=true;reject(new Error((label||'Operation')+' timed out.'));
+      },ms);
+      Promise.resolve(promise).then(function(v){
+        if(done)return;done=true;clearTimeout(timer);resolve(v);
+      },function(e){
+        if(done)return;done=true;clearTimeout(timer);reject(e);
+      });
+    });
+  }
+
+  async function loadVoskModel(){
+    if(voskModel)return voskModel;
+    if(voskPromise)return voskPromise;
+    voskPromise=(async function(){
+      await loadExternalScript(VOSK_SCRIPT,'Vosk local grammar engine');
+      if(!window.Vosk||typeof window.Vosk.createModel!=='function')throw new Error('Vosk browser engine is unavailable.');
+      var model=await window.Vosk.createModel(VOSK_MODEL);
+      if(!model||!model.ready)throw new Error('Vosk grammar model did not initialize.');
+      voskModel=model;
+      return model;
+    })().catch(function(e){
+      voskPromise=null;voskModel=null;throw e;
+    });
+    return voskPromise;
+  }
+
+  async function voskStructuredPass(audio){
+    var model=await waitFor(loadVoskModel(),90000,'Vosk grammar model');
+    return await new Promise(function(resolve,reject){
+      var rec=null,parts=[],finished=false,quietTimer=null,hardTimer=null,finalRequested=false;
+      function clean(){
+        clearTimeout(quietTimer);clearTimeout(hardTimer);
+        try{if(rec)rec.remove();}catch(e){}
+      }
+      function finish(){
+        if(finished)return;finished=true;clean();
+        resolve(parts.join(' ').replace(/\s+/g,' ').trim());
+      }
+      function fail(e){
+        if(finished)return;finished=true;clean();reject(e instanceof Error?e:new Error(String(e||'Vosk grammar failed.')));
+      }
+      function schedule(){
+        clearTimeout(quietTimer);
+        quietTimer=setTimeout(finish,500);
+      }
+      try{
+        rec=new model.KaldiRecognizer(16000,VOSK_GRAMMAR);
+        rec.on('result',function(msg){
+          var t=T(msg&&msg.result&&msg.result.text);
+          if(t)parts.push(t);
+          if(finalRequested)schedule();
+        });
+        rec.on('error',function(msg){fail(new Error((msg&&msg.error)||'Vosk grammar recognition failed.'));});
+        var chunk=3200;
+        for(var i=0;i<audio.length;i+=chunk){
+          rec.acceptWaveformFloat(audio.subarray(i,Math.min(audio.length,i+chunk)),16000);
+        }
+        rec.acceptWaveformFloat(new Float32Array(16000),16000);
+        finalRequested=true;
+        rec.retrieveFinalResult();
+        hardTimer=setTimeout(finish,20000);
+      }catch(e){fail(e);}
+    });
+  }
+
   async function transcribe(blob,w){
-    var rec=await loadSherpa(w),audio=await audioTo16k(blob);
+    var rec=await loadSherpa(w),audio=await audioTo16k(blob),text='';
     status(w,'Recognizing beekeeping terms on this device…','idle');
     var stream=rec.createStream(),chunk=3200;
     try{
@@ -669,10 +774,20 @@
       if(stream.inputFinished)stream.inputFinished();
       var guard=0;
       while(rec.isReady(stream)&&guard++<10000)rec.decode(stream);
-      var result=rec.getResult(stream),text=T(result&&result.text);
+      var result=rec.getResult(stream);text=T(result&&result.text);
       if(!text)throw new Error('No speech was detected. Please try again.');
-      return normalizeBeeSpeech(text);
     }finally{try{if(stream&&stream.free)stream.free();}catch(e){}}
+
+    text=normalizeBeeSpeech(text);
+    structuredTranscript='';
+    status(w,'Checking Inspection fields with local grammar…','idle');
+    try{
+      structuredTranscript=normalizeBeeSpeech(await voskStructuredPass(audio));
+    }catch(e){
+      console.warn('Vosk structured pass skipped:',e);
+      structuredTranscript='';
+    }
+    return text;
   }
 
   function stop(){
@@ -683,7 +798,7 @@
   function close(){
     cancelled=true;
     if(recorder&&listening){try{recorder.stop();}catch(e){}}
-    cleanupMedia();recorder=null;listening=false;transcribing=false;audioChunks=[];
+    cleanupMedia();recorder=null;listening=false;transcribing=false;structuredTranscript='';audioChunks=[];
     document.querySelector('.hd-voice-overlay')?.remove();
   }
   function status(w,msg,kind){var l=w.querySelector('.hd-voice-status span:last-child'),d=w.querySelector('.hd-voice-dot');if(l)l.textContent=msg;if(d){d.classList.toggle('listen',kind==='listen');d.classList.toggle('err',kind==='err');}}
@@ -696,7 +811,8 @@
 
   function review(w){
     var a=w.querySelector('.hd-voice-transcript'),box=w.querySelector('.hd-review');if(!a||!box)return;
-    var p=parse(a.value),html='<div class="hd-review-head"><b>Detected observations</b><span>'+p.fields.length+' field'+(p.fields.length===1?'':'s')+'</span></div>';
+    var source=[T(a.value),T(structuredTranscript)].filter(Boolean).join(' ');
+    var p=parse(source),html='<div class="hd-review-head"><b>Detected observations</b><span>'+p.fields.length+' field'+(p.fields.length===1?'':'s')+'</span></div>';
     if(p.fields.length){
       html+='<div class="hd-fields">'+p.fields.map(function(x,i){return '<label class="hd-field"><input type="checkbox" data-det="'+i+'" checked><span>'+E(x.label)+'</span><b>'+E(x.value)+'</b></label>';}).join('')+'</div>';
     }else html+='<div class="hd-empty">No structured Inspection fields detected yet. The transcript can still be added to Notes.</div>';
@@ -763,13 +879,13 @@
     var w=document.createElement('div');w.className='hd-voice-overlay';
     w.innerHTML='<section class="hd-voice-sheet" role="dialog" aria-modal="true"><div class="hd-voice-head"><b>Speak Inspection</b><button class="hd-voice-close" type="button">×</button></div><div class="hd-voice-status"><span class="hd-voice-dot"></span><span>Tap Start and describe what you see.</span></div><textarea class="hd-voice-transcript" placeholder="Your speech will appear here. You can edit it before applying."></textarea><div class="hd-voice-controls"><button class="hd-start" type="button">● Start</button><button class="hd-stop" type="button" disabled>■ Stop</button></div><div class="hd-review"></div><div class="hd-voice-actions"><button class="hd-cancel" type="button">Cancel</button><button class="hd-apply" type="button">Apply to Inspection</button></div><div class="hd-note">Nothing is saved automatically. Review the detected observations, then use the existing Save Inspection button.</div></section>';
     document.body.appendChild(w);review(w);
-    var area=w.querySelector('.hd-voice-transcript');if(area)area.addEventListener('input',function(){review(w);});
+    var area=w.querySelector('.hd-voice-transcript');if(area)area.addEventListener('input',function(){structuredTranscript='';review(w);});
     w.querySelector('.hd-voice-close').onclick=close;w.querySelector('.hd-cancel').onclick=close;w.querySelector('.hd-start').onclick=function(){start(w);};w.querySelector('.hd-stop').onclick=stop;
     w.addEventListener('click',function(e){if(e.target===w)close();});
     w.querySelector('.hd-apply').onclick=function(){
       stop();
       var tr=T(area&&area.value);if(!tr){if(typeof toast==='function')toast('Record or enter an inspection note first');return;}
-      var p=parse(tr),selected=new Set(Array.from(w.querySelectorAll('[data-det]:checked')).map(function(x){return Number(x.dataset.det);}));
+      var p=parse([tr,T(structuredTranscript)].filter(Boolean).join(' ')),selected=new Set(Array.from(w.querySelectorAll('[data-det]:checked')).map(function(x){return Number(x.dataset.det);}));
       var applied=p.fields.filter(function(x,i){return selected.has(i);}),draft=D();if(!draft){close();return;}
       applied.forEach(function(x){draft[x.field]=x.value;});confirmFlags(draft,applied);
       var old=T(draft.notes);draft.notes=old?old.replace(/\s+$/,'')+'\n'+tr:tr;
@@ -797,5 +913,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.10.2-negative-boundary-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.12-vosk-grammar-ab';
 })();

@@ -277,7 +277,7 @@
       },
       decodingMethod:'modified_beam_search',maxActivePaths:4,enableEndpoint:0,
       rule1MinTrailingSilence:2.4,rule2MinTrailingSilence:1.2,rule3MinUtteranceLength:20,
-      hotwordsFile:'',hotwordsScore:2.0,hotwordsBuf:sherpaHotwords,hotwordsBufSize:hotwordBytes,
+      hotwordsFile:'',hotwordsScore:4.0,hotwordsBuf:sherpaHotwords,hotwordsBufSize:hotwordBytes,
       ctcFstDecoderConfig:{graph:'',maxActive:3000},ruleFsts:'',ruleFars:'',blankPenalty:0
     };
   }
@@ -498,5 +498,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.5.1-model-token-source-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.5.2-hotword-score-4';
 })();

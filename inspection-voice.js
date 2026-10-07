@@ -610,17 +610,53 @@
     return repairInspectionSequence(s).trim();
   }
 
+  function splitMoonshineAudio(audio){
+    var sr=16000,max=Math.floor(sr*7.5),minCut=Math.floor(sr*4.0);
+    if(audio.length<=max)return [audio];
+    var out=[],start=0,win=Math.floor(sr*0.10),step=Math.floor(sr*0.05);
+    while(audio.length-start>max){
+      var hard=start+max,searchStart=Math.min(hard-win,start+minCut);
+      var best=hard,bestEnergy=Infinity;
+      for(var p=searchStart;p+win<=hard;p+=step){
+        var sum=0;
+        for(var j=0;j<win;j++){
+          var v=audio[p+j];
+          sum+=v*v;
+        }
+        var e=sum/win;
+        if(e<bestEnergy){bestEnergy=e;best=p+Math.floor(win/2);}
+      }
+      var cut=Math.max(start+minCut,Math.min(hard,best));
+      out.push(audio.slice(start,cut));
+      start=cut;
+    }
+    if(start<audio.length)out.push(audio.slice(start));
+    return out;
+  }
+
   async function transcribe(blob,w){
     var rec=await loadSherpa(w),audio=await audioTo16k(blob);
-    status(w,'Recognizing with Moonshine on this device…','idle');
-    var stream=rec.createStream();
-    try{
-      stream.acceptWaveform(16000,audio);
-      rec.decode(stream);
-      var result=rec.getResult(stream),text=T(result&&result.text);
-      if(!text)throw new Error('No speech was detected. Please try again.');
-      return normalizeBeeSpeech(text);
-    }finally{try{if(stream&&stream.free)stream.free();}catch(e){}}
+    var parts=splitMoonshineAudio(audio),texts=[];
+    for(var pi=0;pi<parts.length;pi++){
+      status(w,parts.length>1?
+        ('Recognizing with Moonshine… '+(pi+1)+'/'+parts.length):
+        'Recognizing with Moonshine on this device…','idle');
+      var stream=rec.createStream();
+      try{
+        stream.acceptWaveform(16000,parts[pi]);
+        rec.decode(stream);
+        var result=rec.getResult(stream),text=T(result&&result.text);
+        if(text)texts.push(text);
+      }catch(e){
+        throw new Error('Moonshine segment '+(pi+1)+' transcription failed: '+String((e&&e.message)||e||'unknown error'));
+      }finally{
+        try{if(stream&&stream.free)stream.free();}catch(e){}
+      }
+      if(pi+1<parts.length)await new Promise(function(r){setTimeout(r,0);});
+    }
+    var joined=T(texts.join(' '));
+    if(!joined)throw new Error('No speech was detected. Please try again.');
+    return normalizeBeeSpeech(joined);
   }
 
   function stop(){
@@ -745,5 +781,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='3.0-moonshine-v2-ab';
+  window.__HD_STRUCTURED_VOICE_VERSION__='3.0.1-moonshine-v2-segmented';
 })();

@@ -184,13 +184,14 @@
   var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt?download=true';
   var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='',sherpaBpeVocab='';
   var BEE_HOTWORDS=[
-    'QUEEN','QUEEN SEEN','QUEEN CELLS','NO QUEEN CELLS',
-    'EGGS','EGGS PRESENT','LARVAE','LARVAE PRESENT',
-    'BROOD','BROOD PATTERN','BROOD STRENGTH',
-    'COLONY STRENGTH','HONEY STORES','POLLEN STORES',
-    'SWARM','SWARMING','SWARM SIGNS','NO SWARM SIGNS',
-    'VARROA','MITE COUNT','APIVAR','OXALIC ACID','FORMIC ACID',
-    'SMALL HIVE BEETLE','WAX MOTH','TEMPERAMENT','FEEDING','SUPER'
+    'QUEEN SEEN :6.0',
+    'QUEEN CELLS :4.0','NO QUEEN CELLS :5.0',
+    'EGGS PRESENT :4.0','LARVAE PRESENT :4.0',
+    'BROOD PATTERN :4.0','BROOD STRENGTH :4.0',
+    'COLONY STRENGTH :4.0','HONEY STORES :4.0','POLLEN STORES :4.0',
+    'SWARM SIGNS :4.0','NO SWARM SIGNS :5.0',
+    'MITE COUNT :4.0','OXALIC ACID :4.0','FORMIC ACID :4.0',
+    'SMALL HIVE BEETLE :4.0','WAX MOTH :4.0'
   ];
 
   function loadScript(src,label){
@@ -277,7 +278,7 @@
       },
       decodingMethod:'modified_beam_search',maxActivePaths:4,enableEndpoint:0,
       rule1MinTrailingSilence:2.4,rule2MinTrailingSilence:1.2,rule3MinUtteranceLength:20,
-      hotwordsFile:'',hotwordsScore:4.0,hotwordsBuf:sherpaHotwords,hotwordsBufSize:hotwordBytes,
+      hotwordsFile:'',hotwordsScore:2.5,hotwordsBuf:sherpaHotwords,hotwordsBufSize:hotwordBytes,
       ctcFstDecoderConfig:{graph:'',maxActive:3000},ruleFsts:'',ruleFars:'',blankPenalty:0
     };
   }
@@ -498,5 +499,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.5.2-hotword-score-4';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.5.3-phrase-hotwords';
 })();

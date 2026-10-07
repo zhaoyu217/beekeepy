@@ -183,14 +183,35 @@
   var SHERPA_BASE='https://huggingface.co/spaces/k2-fsa/web-assembly-asr-sherpa-ncnn-en/resolve/main/';
   var sherpaPromise=null,sherpaRecognizer=null;
 
-  function loadScript(src){
+  function loadScript(src,label){
     return new Promise(function(resolve,reject){
       var old=document.querySelector('script[data-hd-sherpa="'+src+'"]');
       if(old&&old.dataset.loaded==='1'){resolve();return;}
-      var s=old||document.createElement('script');
-      if(!old){s.src=src;s.async=true;s.dataset.hdSherpa=src;document.head.appendChild(s);}
-      s.addEventListener('load',function(){s.dataset.loaded='1';resolve();},{once:true});
-      s.addEventListener('error',function(){reject(new Error('Could not load the local speech engine.'));},{once:true});
+      fetch(src,{mode:'cors',cache:'no-cache'}).then(function(r){
+        if(!r.ok)throw new Error((label||'Sherpa script')+' returned HTTP '+r.status+'.');
+        return r.text();
+      }).then(function(code){
+        var blobUrl=URL.createObjectURL(new Blob([code],{type:'text/javascript'}));
+        var s=old||document.createElement('script');
+        if(!old){
+          s.src=blobUrl;
+          s.async=true;
+          s.dataset.hdSherpa=src;
+          document.head.appendChild(s);
+        }
+        s.addEventListener('load',function(){
+          s.dataset.loaded='1';
+          try{URL.revokeObjectURL(blobUrl);}catch(e){}
+          resolve();
+        },{once:true});
+        s.addEventListener('error',function(){
+          try{URL.revokeObjectURL(blobUrl);}catch(e){}
+          reject(new Error((label||'Sherpa script')+' could not execute in this browser.'));
+        },{once:true});
+      }).catch(function(e){
+        var msg=(e&&e.message)||'Failed to fetch';
+        reject(new Error((label||'Sherpa script')+' could not be fetched from Hugging Face. '+msg));
+      });
     });
   }
 
@@ -207,30 +228,37 @@
   async function loadSherpa(w){
     if(sherpaPromise)return sherpaPromise;
     sherpaPromise=(async function(){
-      status(w,'Preparing local voice model…','idle');
-      await loadScript(SHERPA_BASE+'sherpa-ncnn.js');
+      status(w,'Loading Sherpa JavaScript…','idle');
+      await loadScript(SHERPA_BASE+'sherpa-ncnn.js','Sherpa JavaScript');
+      if(typeof createRecognizer!=='function')throw new Error('Sherpa JavaScript loaded, but createRecognizer is missing.');
 
+      status(w,'Loading Sherpa WebAssembly and local model…','idle');
       await new Promise(function(resolve,reject){
-        var done=false;
+        var done=false,settled=false;
+        function fail(err){
+          if(settled)return;
+          settled=true;clearTimeout(timer);
+          reject(err instanceof Error?err:new Error(String(err||'Sherpa initialization failed.')));
+        }
         var timer=setTimeout(function(){
-          if(!done)reject(new Error('Local voice model took too long to initialize.'));
+          if(!done)fail(new Error('Sherpa WebAssembly/model initialization timed out.'));
         },180000);
 
         window.Module={
           locateFile:function(path){return SHERPA_BASE+path;},
           setStatus:function(raw){if(document.body.contains(w))status(w,modelStatusText(raw),'idle');},
+          onAbort:function(why){fail(new Error('Sherpa WebAssembly aborted: '+String(why||'unknown error')));},
+          printErr:function(msg){console.error('Sherpa WASM:',msg);},
           onRuntimeInitialized:function(){
             try{
               if(typeof createRecognizer!=='function')throw new Error('Speech recognizer wrapper did not initialize.');
               sherpaRecognizer=createRecognizer(window.Module);
-              done=true;clearTimeout(timer);resolve();
-            }catch(e){clearTimeout(timer);reject(e);}
+              done=true;settled=true;clearTimeout(timer);resolve();
+            }catch(e){fail(e);}
           }
         };
 
-        loadScript(SHERPA_BASE+'sherpa-ncnn-wasm-main.js').catch(function(e){
-          clearTimeout(timer);reject(e);
-        });
+        loadScript(SHERPA_BASE+'sherpa-ncnn-wasm-main.js','Sherpa WebAssembly loader').catch(fail);
       });
 
       status(w,'Local voice model ready.','idle');
@@ -398,5 +426,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.2.1-sherpa-module-init-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.2.2-sherpa-loader-diagnostics';
 })();

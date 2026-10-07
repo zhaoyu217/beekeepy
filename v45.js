@@ -8755,7 +8755,7 @@ body:has(.legal155) .vtop .iconbtn:first-child{
       <section class="iform v211-secondary"><div class="sectionlabel">ADDITIONAL CHECKS</div>${v211Row('Pests',d.pests,'pests')}${v211Row('Disease',d.disease,'disease')}${v211Row('Swarming',d.swarming,'swarming')}${v211Row('Super',d.super,'super')}</section>
       <section class="iform v211-secondary"><div class="sectionlabel">FIELD CAPTURE</div><div class="irow capture-row photo-row" onclick="idq('phinput2').click()"><span>Photos</span><b>Add photos</b><em>›</em></div><input id="phinput2" hidden type="file" accept="image/*" multiple><div class="irow capture-row voice-row" onclick="openVoiceNotesV193()"><span>Voice Notes</span><b>${d.voiceNotes?'Added':'Add voice note'}</b><em>›</em></div></section>
       <section class="iform v211-secondary"><div class="sectionlabel">FOLLOW-UP</div>${v211Row('Next Inspection',d.nextInspection||'Set date','nextInspection')}</section>
-      <label class="notes v211-notes"><span>Notes</span><textarea id="inotes">${esc(d.notes)}</textarea></label>
+      <label class="notes v211-notes"><span class="hd-notes-head"><span>Notes</span><button type="button" class="hd-notes-mic" aria-label="Speak inspection" onclick="event.preventDefault();event.stopPropagation();v2p2e5OpenInspectionSpeak()">🎙 <span>Speak</span></button></span><textarea id="inotes">${esc(d.notes)}</textarea></label>
       <div class="dual"><button onclick="V49_INSPECTION_DRAFT.notes=idq('inotes').value;toast('Draft saved')">Save Draft</button><button onclick="vSaveInspection('${h.id}')">Save Inspection</button></div>
     </div>`;
     idq('ihsel').onchange=e=>{V49_INSPECTION_DRAFT=null;go('inspection/'+e.target.value)};
@@ -25778,7 +25778,7 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
     if(window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__)return window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__;
     window.__HIVEDASH_VOICE_ENTRY_LOAD_PROMISE__=new Promise(function(resolve,reject){
       var s=document.createElement('script');
-      s.src='inspection-voice.js?v=voice-inspection-v305-v45-lazy-entry';
+      s.src='inspection-voice.js?v=voice-inspection-v311-direct-render';
       s.async=true;
       s.onload=function(){
         if(typeof window.openStructuredVoiceInspection==='function')resolve(window.openStructuredVoiceInspection);
@@ -25866,5 +25866,5 @@ window.__HIVEDASH_V2P2E5AX19B4_VERSION__='V2P2E5AX19B4-varroa-audit-time-display
     }
   }catch(_){}
 
-  window.__HIVEDASH_V2P2E5VOICE1_VERSION__='v2p2e5voice1-direct-entry-bootstrap';
+  window.__HIVEDASH_V2P2E5VOICE1_VERSION__='v2p2e5voice2-direct-render-speak';
 })();

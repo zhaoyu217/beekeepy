@@ -412,24 +412,41 @@
     }
 
     // In the standard Queen -> Eggs -> Larvae -> Brood -> Colony sequence,
-    // use two PRESENT observations as semantic slots. This handles changing
-    // ASR near-speech (EX/MOTHER/LOVELY/MARVET/etc.) without memorizing it.
+    // use the two PRESENT observations as semantic slots. Unlike the old
+    // regex patches, this does not care whether Sherpa says EX/MOTHER/LOVELY/
+    // MARVET/etc. The surrounding Inspection structure is the evidence.
     var qs=findSeq(['QUEEN','SEEN'],0);
-    var colony=findSeq(['COLONY','STRENGTH'],Math.max(0,qs+2));
-    if(qs>=0&&colony>qs){
+    var colony=findSeq(['COLONY','STRENGTH'],0);
+    if(colony>0){
       var presents=[];
-      for(var p=qs+2;p<colony;p++)if(t[p]==='PRESENT')presents.push(p);
-      var e=findSeq(['EGGS','PRESENT'],qs+2,colony);
-      if(e<0&&presents.length>=2&&presents[0]>qs+2){
-        t[presents[0]-1]='EGGS';
+      for(var p=0;p<colony;p++)if(t[p]==='PRESENT')presents.push(p);
+
+      // If Sherpa mangled "Queen seen" but there are two observation slots
+      // before Colony strength, recover the whole leading slot only when a
+      // queen-like anchor is actually present.
+      if(qs<0&&presents.length>=2){
+        var qa=-1;
+        for(var qx=0;qx<presents[0];qx++){
+          if(t[qx]==='QUEEN'||/^QUEEN/.test(t[qx])||beeNear(t[qx],'QUEEN',2)){qa=qx;break;}
+        }
+        if(qa>=0&&t[Math.max(0,qa-1)]!=='NO'){
+          t.splice(qa,presents[0]-qa+1,'QUEEN','SEEN','EGGS','PRESENT');
+        }
       }
-      colony=findSeq(['COLONY','STRENGTH'],qs+2);
+
+      qs=findSeq(['QUEEN','SEEN'],0);
+      colony=findSeq(['COLONY','STRENGTH'],Math.max(0,qs+2));
       presents=[];
-      for(var p2=qs+2;p2<colony;p2++)if(t[p2]==='PRESENT')presents.push(p2);
-      var l=findSeq(['LARVAE','PRESENT'],qs+2,colony);
-      if(l<0&&presents.length>=2&&presents[1]>0){
-        t[presents[1]-1]='LARVAE';
-      }
+      for(var p2=Math.max(0,qs+2);p2<colony;p2++)if(t[p2]==='PRESENT')presents.push(p2);
+
+      var e=findSeq(['EGGS','PRESENT'],Math.max(0,qs+2),colony);
+      if(e<0&&presents.length>=2&&presents[0]>0)t[presents[0]-1]='EGGS';
+
+      colony=findSeq(['COLONY','STRENGTH'],Math.max(0,qs+2));
+      presents=[];
+      for(var p3=Math.max(0,qs+2);p3<colony;p3++)if(t[p3]==='PRESENT')presents.push(p3);
+      var l=findSeq(['LARVAE','PRESENT'],Math.max(0,qs+2),colony);
+      if(l<0&&presents.length>=2&&presents[1]>0)t[presents[1]-1]='LARVAE';
     }
 
     // Recover Brood pattern + quality from its stable position immediately
@@ -674,5 +691,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.8-structural-inspection-repair';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.8.1-structural-slot-repair';
 })();

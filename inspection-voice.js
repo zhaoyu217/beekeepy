@@ -377,6 +377,104 @@
     return !!word&&beeEditDistance(word,target)<=max;
   }
 
+  function repairInspectionSequence(raw){
+    var t=String(raw||'').trim().split(/\s+/).filter(Boolean);
+    if(!t.length)return '';
+
+    function findSeq(seq,from,to){
+      from=Math.max(0,from||0);to=to==null?t.length:Math.min(t.length,to);
+      outer:for(var i=from;i<=to-seq.length;i++){
+        for(var j=0;j<seq.length;j++)if(t[i+j]!==seq[j])continue outer;
+        return i;
+      }
+      return -1;
+    }
+    function quality(v){return ['GOOD','FAIR','POOR','EXCELLENT'].indexOf(v)>=0;}
+    function broodLike(v){return ['BROOD','BRUTE','BREW','BREED'].indexOf(v)>=0||beeNear(v,'BROOD',2);}
+    function storeValue(v){return ['HIGH','MEDIUM','LOW'].indexOf(v)>=0;}
+    function blockedHoneySpan(a){
+      var bad=['POLLEN','TEMPERAMENT','CALM','NORMAL','DEFENSIVE','AGGRESSIVE','FEEDING','PESTS','DISEASE'];
+      return a.some(function(x){return bad.indexOf(x)>=0;});
+    }
+
+    // When Queen is immediately followed by a confirmed Eggs observation,
+    // a dropped/mangled "seen" token can be recovered without treating
+    // unrelated queen mentions as Queen Seen.
+    var eggs=findSeq(['EGGS','PRESENT'],0);
+    if(eggs>0){
+      for(var q=eggs-1;q>=Math.max(0,eggs-3);q--){
+        if(t[q]==='QUEEN'&&t[q+1]!=='CELLS'){
+          if(q+1===eggs)t.splice(q+1,0,'SEEN');
+          else if(t[q+1]!=='SEEN')t.splice(q+1,eggs-q-1,'SEEN');
+          break;
+        }
+      }
+    }
+
+    // In the standard Queen -> Eggs -> Larvae -> Brood -> Colony sequence,
+    // use two PRESENT observations as semantic slots. This handles changing
+    // ASR near-speech (EX/MOTHER/LOVELY/MARVET/etc.) without memorizing it.
+    var qs=findSeq(['QUEEN','SEEN'],0);
+    var colony=findSeq(['COLONY','STRENGTH'],Math.max(0,qs+2));
+    if(qs>=0&&colony>qs){
+      var presents=[];
+      for(var p=qs+2;p<colony;p++)if(t[p]==='PRESENT')presents.push(p);
+      var e=findSeq(['EGGS','PRESENT'],qs+2,colony);
+      if(e<0&&presents.length>=2&&presents[0]>qs+2){
+        t[presents[0]-1]='EGGS';
+      }
+      colony=findSeq(['COLONY','STRENGTH'],qs+2);
+      presents=[];
+      for(var p2=qs+2;p2<colony;p2++)if(t[p2]==='PRESENT')presents.push(p2);
+      var l=findSeq(['LARVAE','PRESENT'],qs+2,colony);
+      if(l<0&&presents.length>=2&&presents[1]>0){
+        t[presents[1]-1]='LARVAE';
+      }
+    }
+
+    // Recover Brood pattern + quality from its stable position immediately
+    // before Colony strength. It accepts variable near-speech length instead
+    // of hard-coding "parting", "pot and", "putting", etc.
+    var larvae=findSeq(['LARVAE','PRESENT'],0);
+    colony=findSeq(['COLONY','STRENGTH'],Math.max(0,larvae+2));
+    if(larvae>=0&&colony>larvae+2&&findSeq(['BROOD','PATTERN'],larvae+2,colony)<0){
+      var start=-1,end=-1,qv='';
+      for(var bi=larvae+2;bi<colony;bi++){
+        if(start<0&&broodLike(t[bi]))start=bi;
+        if(start>=0&&quality(t[bi])&&bi-start<=4){end=bi;qv=t[bi];break;}
+      }
+      if(start<0){
+        for(var qi=colony-1;qi>=Math.max(larvae+2,colony-4);qi--){
+          if(quality(t[qi])){start=larvae+2;end=qi;qv=t[qi];break;}
+        }
+      }
+      if(start>=0&&end>=start&&qv){
+        t.splice(start,end-start+1,'BROOD','PATTERN',qv);
+      }
+    }
+
+    // Recover Honey stores from the bounded slot after Colony strength and
+    // before No queen cells. Pollen/temperament/etc. explicitly block this
+    // inference to avoid cross-field hallucination.
+    colony=findSeq(['COLONY','STRENGTH'],0);
+    var qcells=findSeq(['NO','QUEEN','CELLS'],Math.max(0,colony+2));
+    if(colony>=0&&qcells>colony){
+      var hs=findSeq(['HONEY','STORES'],colony+2,qcells);
+      if(hs<0){
+        var hstart=colony+2;
+        if(hstart<qcells&&numberOf(t[hstart])!==null)hstart++;
+        var hseg=t.slice(hstart,qcells);
+        if(hseg.length>=1&&hseg.length<=5&&!blockedHoneySpan(hseg)){
+          var hv='';
+          for(var hi=hseg.length-1;hi>=0;hi--)if(storeValue(hseg[hi])){hv=hseg[hi];break;}
+          if(hv)t.splice(hstart,qcells-hstart,'HONEY','STORES',hv);
+        }
+      }
+    }
+
+    return t.join(' ');
+  }
+
   function normalizeBeeSpeech(raw){
     var s=T(raw).toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim();
     if(!s)return '';
@@ -432,11 +530,7 @@
 
     s=t.join(' ');
     s=s.replace(/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE|SEN)\b/g,'QUEEN SEEN');
-    s=s.replace(/\bQUEEN\s+EGGS PRESENT(?=\s+(?:LARVAE PRESENT|BROOD PATTERN)\b)/g,'QUEEN SEEN EGGS PRESENT');
-    s=s.replace(/\bEGGS PRESENT\s+MOTHER PRESENT(?=\s+BROOD PATTERN\b)/g,'EGGS PRESENT LARVAE PRESENT');
-    s=s.replace(/\bLARVAE PRESENT\s+BRUTE POT AND GOOD(?=\s+COLONY STRENGTH EIGHT\b)/g,'LARVAE PRESENT BROOD PATTERN GOOD');
-    s=s.replace(/\bCOLONY STRENGTH EIGHT\s+CONNIE S DOORS MEDIUM(?=\s+NO QUEEN CELLS\b)/g,'COLONY STRENGTH EIGHT HONEY STORES MEDIUM');
-    return s.trim();
+    return repairInspectionSequence(s).trim();
   }
 
   async function transcribe(blob,w){
@@ -580,5 +674,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.7.4-brood-pattern-near-speech-fix';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.8-structural-inspection-repair';
 })();

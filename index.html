@@ -53,7 +53,7 @@
   <script src="r09a5.js?v=v2p2e5r09a5"></script>
   <script src="crossrule-x2.js?v=v2p2e5x2a1"></script>
   <script src="perf-state-cache.js?v=v2p2e5perf1"></script>
-  <script src="select-stability.js?v=v2p2e5ui1a"></script>\n  <script src="inspection-voice.js?v=voice-inspection-v308-inline-entry"></script>
+  <script src="select-stability.js?v=v2p2e5ui1a"></script>\n  <script src="inspection-voice.js?v=voice-inspection-v309-inline-entry"></script>
   <style id="hd-inline-voice-entry-style">
     .v211-inspection .voice-row{display:none!important}
     .hd-inline-notes-head{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:10px!important;margin-bottom:8px!important}
@@ -62,8 +62,8 @@
   </style>
   <script>
   (function(){
-    if(window.__HD_INLINE_VOICE_ENTRY_V308__)return;
-    window.__HD_INLINE_VOICE_ENTRY_V308__=true;
+    if(window.__HD_INLINE_VOICE_ENTRY_V309__)return;
+    window.__HD_INLINE_VOICE_ENTRY_V309__=true;
 
     function openVoice(){
       if(typeof window.openStructuredVoiceInspection==='function'){
@@ -74,7 +74,7 @@
       var old=document.querySelector('script[data-hd-inline-voice-retry="1"]');
       if(old)return;
       var s=document.createElement('script');
-      s.src='inspection-voice.js?v=voice-inspection-v308-inline-retry';
+      s.src='inspection-voice.js?v=voice-inspection-v309-inline-retry';
       s.dataset.hdInlineVoiceRetry='1';
       s.onload=function(){
         if(typeof window.openStructuredVoiceInspection==='function')window.openStructuredVoiceInspection();

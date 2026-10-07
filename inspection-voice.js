@@ -180,7 +180,7 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  var SHERPA_BASE='https://huggingface.co/spaces/k2-fsa/web-assembly-asr-sherpa-onnx-en/resolve/main/';
+  function sherpaAsset(path){return 'https://modelscope.cn/api/v1/studio/k2-fsa/web-assembly-asr-sherpa-onnx-en/repo?Revision=master&FilePath='+encodeURIComponent(path)+'&View=true';}
   var SHERPA_TOKENS='https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-21/resolve/main/tokens.txt';
   var sherpaPromise=null,sherpaRecognizer=null,sherpaHotwords='';
   var BEE_HOTWORDS=[
@@ -214,7 +214,7 @@
         },{once:true});
       }).catch(function(e){
         var msg=(e&&e.message)||'Failed to fetch';
-        reject(new Error((label||'Sherpa script')+' could not be fetched from Hugging Face. '+msg));
+        reject(new Error((label||'Sherpa script')+' could not be fetched from ModelScope. '+msg));
       });
     });
   }
@@ -293,7 +293,7 @@
     if(sherpaPromise)return sherpaPromise;
     sherpaPromise=(async function(){
       status(w,'Loading Sherpa-ONNX JavaScript…','idle');
-      await loadScript(SHERPA_BASE+'sherpa-onnx-asr.js','Sherpa-ONNX JavaScript');
+      await loadScript(sherpaAsset('sherpa-onnx-asr.js'),'Sherpa-ONNX JavaScript');
       if(typeof createOnlineRecognizer!=='function')throw new Error('Sherpa-ONNX JavaScript loaded, but createOnlineRecognizer is missing.');
 
       status(w,'Loading beekeeping hotword vocabulary…','idle');
@@ -311,7 +311,7 @@
           if(!done)fail(new Error('Sherpa-ONNX WebAssembly/model initialization timed out.'));
         },180000);
         window.Module={
-          locateFile:function(path){return SHERPA_BASE+path;},
+          locateFile:function(path){return sherpaAsset(path);},
           setStatus:function(raw){if(document.body.contains(w))status(w,modelStatusText(raw),'idle');},
           onAbort:function(why){fail(new Error('Sherpa-ONNX WebAssembly aborted: '+String(why||'unknown error')));},
           printErr:function(msg){console.error('Sherpa-ONNX WASM:',msg);},
@@ -323,7 +323,7 @@
             }catch(e){fail(e);}
           }
         };
-        loadScript(SHERPA_BASE+'sherpa-onnx-wasm-main-asr.js','Sherpa-ONNX WebAssembly loader').catch(fail);
+        loadScript(sherpaAsset('sherpa-onnx-wasm-main-asr.js'),'Sherpa-ONNX WebAssembly loader').catch(fail);
       });
       status(w,'Local beekeeping voice model ready.','idle');
       return sherpaRecognizer;
@@ -511,5 +511,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.3-sherpa-onnx-hotword-restored';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.3.1-modelscope-assets';
 })();

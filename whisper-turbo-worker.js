@@ -81,25 +81,40 @@ async function ensureLoaded() {
 async function transcribe(id, audio) {
   const pipe = await ensureLoaded();
 
-  post("status", { message: "Running local Whisper transcription…" });
-  const started = performance.now();
-
-  const output = await pipe(audio, {
+  const common = {
     language: "english",
     task: "transcribe",
     return_timestamps: false,
     chunk_length_s: 30,
     stride_length_s: 5,
     no_repeat_ngram_size: 3,
-  });
+  };
 
-  const text = String(output?.text || "").trim();
-  const elapsedMs = Math.round(performance.now() - started);
+  post("status", { message: "Running standard Whisper transcription…" });
+  const t0 = performance.now();
+  const greedy = await pipe(audio, common);
+  const greedyMs = Math.round(performance.now() - t0);
+  const greedyText = String(greedy?.text || "").trim();
+
+  post("status", { message: "Running 5-beam precision transcription…" });
+  const t1 = performance.now();
+  const beam = await pipe(audio, {
+    ...common,
+    num_beams: 5,
+    do_sample: false,
+    temperature: 0,
+  });
+  const beamMs = Math.round(performance.now() - t1);
+  const beamText = String(beam?.text || "").trim();
 
   post("result", {
     id,
-    text,
-    elapsedMs,
+    text: beamText,
+    greedyText,
+    beamText,
+    elapsedMs: beamMs,
+    greedyMs,
+    beamMs,
     dtype: selectedDtype,
   });
 }

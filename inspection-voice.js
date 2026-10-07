@@ -180,116 +180,33 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  var localAsrPromise=null,enhancedAsrPromise=null,transformersModulePromise=null;
-  function loadTransformers(){
-    if(!transformersModulePromise){
-      transformersModulePromise=import('https://cdn.jsdelivr.net/npm/@huggingface/transformers@4.3.0');
-    }
-    return transformersModulePromise;
-  }
-  function modelProgress(w,p,prefix){
-    if(!w||!p)return;
-    var pct=Number(p.progress),label=prefix||'Preparing local voice model';
-    if(Number.isFinite(pct)){
-      status(w,label+'… '+Math.max(0,Math.min(100,Math.round(pct)))+'%','idle');
-    }else if(p.status==='ready'){
-      status(w,label.replace('Preparing','')+' ready.','idle');
-    }
-  }
-  async function loadLocalAsr(w){
-    if(localAsrPromise)return localAsrPromise;
-    localAsrPromise=(async function(){
-      status(w,'Preparing local voice model…','idle');
-      var mod=await loadTransformers();
-      var options={progress_callback:function(p){modelProgress(w,p,'Preparing local voice model');}};
-      if(navigator.gpu)options.device='webgpu';
-      try{
-        return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-base.en',options);
-      }catch(err){
-        if(options.device==='webgpu'){
-          console.warn('WebGPU base voice model failed; falling back to WASM tiny model',err);
-          status(w,'GPU unavailable. Preparing fallback voice model…','idle');
-          return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-tiny.en',{
-            progress_callback:function(p){modelProgress(w,p,'Preparing fallback voice model');}
-          });
-        }
-        throw err;
-      }
-    })().catch(function(err){localAsrPromise=null;throw err;});
-    return localAsrPromise;
-  }
-  async function loadEnhancedAsr(w){
-    if(!navigator.gpu)throw new Error('Enhanced local model requires WebGPU.');
-    if(enhancedAsrPromise)return enhancedAsrPromise;
-    enhancedAsrPromise=(async function(){
-      status(w,'Preparing enhanced local voice model…','idle');
-      var mod=await loadTransformers();
-      return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-small.en',{
-        device:'webgpu',
-        dtype:{encoder_model:'fp32',decoder_model_merged:'q4'},
-        progress_callback:function(p){modelProgress(w,p,'Preparing enhanced local voice model');}
-      });
-    })().catch(function(err){enhancedAsrPromise=null;throw err;});
-    return enhancedAsrPromise;
-  }
-  function structuredCoverage(text){
-    var fieldCount=parse(text).fields.length;
-    var clauses=T(text).split(/[.!?;]+/).map(function(x){return T(x);}).filter(function(x){return x.length>1;});
-    var cue=/\b(?:queen|clean|eggs?|larvae|brood|brew|colony|honey|pollen|stores?|present|seen|scene|pattern|strength|cells?|swarm|signs?|frames?|temperament|feeding|pests?|disease|super)\b/i;
-    var cueClauses=clauses.filter(function(x){return cue.test(x);}).length;
-    var noise=(T(text).match(/\[(?:beep|music|noise|silence)\]/gi)||[]).length;
-    return {fields:fieldCount,cues:cueClauses,noise:noise,score:(fieldCount*10)+(cueClauses*2)-(noise*8)};
-  }
-
-  async function audioTo16k(blob){
-    var AC=window.AudioContext||window.webkitAudioContext;
-    if(!AC)throw new Error('Audio decoding is not supported in this browser.');
-    var ctx=new AC();
+  async function authHeaders(){
     try{
-      var raw=await blob.arrayBuffer();
-      var decoded=await ctx.decodeAudioData(raw.slice(0));
-      if(decoded.sampleRate===16000&&decoded.numberOfChannels===1){
-        return new Float32Array(decoded.getChannelData(0));
+      if(typeof supabaseClient!=='undefined'&&supabaseClient&&supabaseClient.auth){
+        var sessionResult=await supabaseClient.auth.getSession();
+        var token=sessionResult&&sessionResult.data&&sessionResult.data.session&&sessionResult.data.session.access_token;
+        if(token)return {Authorization:'Bearer '+token};
       }
-      var Offline=window.OfflineAudioContext||window.webkitOfflineAudioContext;
-      if(!Offline)throw new Error('Audio resampling is not supported in this browser.');
-      var frames=Math.max(1,Math.ceil(decoded.duration*16000));
-      var offline=new Offline(1,frames,16000);
-      var source=offline.createBufferSource();
-      source.buffer=decoded;
-      source.connect(offline.destination);
-      source.start(0);
-      var rendered=await offline.startRendering();
-      return new Float32Array(rendered.getChannelData(0));
-    }finally{
-      try{await ctx.close();}catch(e){}
-    }
+    }catch(e){}
+    return {};
   }
   async function transcribe(blob,w){
-    var audio=await audioTo16k(blob);
-    var asr=await loadLocalAsr(w);
-    status(w,'Transcribing on this device…','idle');
-    var result=await asr(audio,{chunk_length_s:30,stride_length_s:5});
-    var text=T(result&&result.text);
-    if(!text)throw new Error('No speech was detected. Please try again.');
-
-    var baseScore=structuredCoverage(text);
-    var needsEnhanced=!!navigator.gpu && baseScore.cues>=4 && baseScore.fields<Math.ceil(baseScore.cues*0.65);
-    if(needsEnhanced){
-      try{
-        status(w,'Transcript looks uncertain. Running enhanced local recognition…','idle');
-        var enhanced=await loadEnhancedAsr(w);
-        status(w,'Rechecking speech with enhanced local model…','idle');
-        var betterResult=await enhanced(audio,{chunk_length_s:30,stride_length_s:5});
-        var betterText=T(betterResult&&betterResult.text);
-        if(betterText){
-          var betterScore=structuredCoverage(betterText);
-          if(betterScore.score>baseScore.score && betterScore.fields>baseScore.fields)text=betterText;
-        }
-      }catch(err){
-        console.warn('Enhanced local transcription unavailable; keeping base transcript',err);
-      }
+    status(w,'Transcribing…','idle');
+    var headers=await authHeaders();
+    headers['Content-Type']=blob.type||'audio/webm';
+    var r=await fetch('/api/transcribe',{method:'POST',headers:headers,body:blob});
+    var data=await r.json().catch(function(){return {};});
+    if(!r.ok){
+      var code=String(data&&data.error||'transcription_failed');
+      if(code==='transcription_not_configured')throw new Error('Voice transcription is not configured yet.');
+      if(code==='rate_limited')throw new Error('Too many voice requests. Please wait a few minutes and try again.');
+      if(code==='audio_too_large')throw new Error('This recording is too long. Please record a shorter segment.');
+      if(code==='no_speech_detected')throw new Error('No speech was detected. Please try again.');
+      if(code==='unauthorized')throw new Error('Please sign in again before using voice transcription.');
+      throw new Error('Voice transcription failed. Please try again.');
     }
+    var text=T(data&&data.text);
+    if(!text)throw new Error('No speech was detected. Please try again.');
     return text;
   }
 
@@ -410,5 +327,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='1.3-small-webgpu-fallback';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.0-server-transcribe';
 })();

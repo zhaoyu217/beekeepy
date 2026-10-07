@@ -362,6 +362,7 @@
     var s=' '+T(raw).toUpperCase().replace(/[^A-Z0-9]+/g,' ').replace(/\s+/g,' ').trim()+' ';
     var fixes=[
       [/\b(?:MINE|WINE|LINE|FINE|QUEENS?)\s+(?:SAVE|SAME|SAY|SEEN|SCENE)\b/g,'QUEEN SEEN'],
+      [/\bQUEEN\s+EGGS PRESENT(?=\s+(?:LARVAE PRESENT|BROOD PATTERN)\b)/g,'QUEEN SEEN EGGS PRESENT'],
       [/\b(?:EX|X|EG|EGG|EGGS)\s+PRESENT\b/g,'EGGS PRESENT'],
       [/\b(?:MARVAIS|MARVET|MARVEY|LARVEY|LARVAE)\s+PRESENT\b/g,'LARVAE PRESENT'],
       [/\b(?:BRUTE|BREW|BREED|BROOD)\s+PATTERN\b/g,'BROOD PATTERN'],
@@ -515,5 +516,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='2.6-local-bee-term-normalizer';
+  window.__HD_STRUCTURED_VOICE_VERSION__='2.6.1-queen-seen-context-fix';
 })();

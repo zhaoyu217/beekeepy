@@ -198,7 +198,7 @@
       var options={progress_callback:function(p){modelProgress(w,p);}};
       if(navigator.gpu)options.device='webgpu';
       try{
-        return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-tiny.en',options);
+        return await mod.pipeline('automatic-speech-recognition','onnx-community/whisper-base.en',options);
       }catch(err){
         if(options.device==='webgpu'){
           console.warn('WebGPU voice model failed; falling back to WASM',err);
@@ -287,7 +287,7 @@
     cancelled=false;audioChunks=[];
     try{
       mediaStream=await navigator.mediaDevices.getUserMedia({audio:{echoCancellation:true,noiseSuppression:true,autoGainControl:true}});
-      var type=mimeType(),opts={audioBitsPerSecond:32000};if(type)opts.mimeType=type;
+      var type=mimeType(),opts={audioBitsPerSecond:64000};if(type)opts.mimeType=type;
       recorder=new MediaRecorder(mediaStream,opts);
       recorder.ondataavailable=function(e){if(e.data&&e.data.size)audioChunks.push(e.data);};
       recorder.onstart=function(){
@@ -363,5 +363,5 @@
     try{inspectionPage=window.inspectionPage;}catch(e){}
   }
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='1.0';
+  window.__HD_STRUCTURED_VOICE_VERSION__='1.1-base-en';
 })();

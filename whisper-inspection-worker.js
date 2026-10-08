@@ -73,14 +73,21 @@ async function transcribe(id, audio) {
   const pipe = await ensureLoaded();
   post("status", { message: "Transcribing locally with Whisper…" });
 
-  const output = await pipe(audio, {
-    language: "english",
-    task: "transcribe",
+  const generateOptions = {
     return_timestamps: false,
     chunk_length_s: 30,
     stride_length_s: 5,
     no_repeat_ngram_size: 3,
-  });
+  };
+
+  // English-only Whisper models (.en) already have the language/task baked in.
+  // Passing language/task to them causes Transformers.js to reject generation.
+  if (!MODEL_ID.endsWith(".en")) {
+    generateOptions.language = "english";
+    generateOptions.task = "transcribe";
+  }
+
+  const output = await pipe(audio, generateOptions);
 
   post("result", {
     id,

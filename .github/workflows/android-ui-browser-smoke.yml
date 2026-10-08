@@ -5,7 +5,7 @@ on:
   push:
     branches: [mobile-offline-v1]
     paths:
-      - 'mobile/tests/android-web-smoke.cjs'
+      - '.github/tests/android-web-smoke.cjs'
       - '.github/workflows/android-ui-browser-smoke.yml'
 
 permissions:
@@ -42,7 +42,7 @@ jobs:
           npm install --no-save --ignore-scripts playwright@1.56.1
           npx playwright install --with-deps chromium
       - name: Run click, modal, routing and safe-area smoke tests
-        run: node mobile/tests/android-web-smoke.cjs
+        run: node .github/tests/android-web-smoke.cjs
       - name: Upload diagnostic report and screenshots
         if: always()
         uses: actions/upload-artifact@v4

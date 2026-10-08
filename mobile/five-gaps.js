@@ -1,7 +1,7 @@
 (function fieldOps(){
   'use strict';
 
-  const VERSION='mobile-five-gaps-v1';
+  const VERSION='mobile-five-gaps-v2-authoritative-voice';
   const QUICK_STORAGE='hivedash_quick_inspection';
   const ENV_CACHE='hivedash_environment_cache_v1';
   const GEOCODE_CACHE='hivedash_geocode_cache_v1';
@@ -466,7 +466,13 @@
     const voiceBtn=q('[data-hd-voice]',bar);
     if(isV211){
       quickBtn.onclick=()=>setQuickMode(root,!root.classList.contains('hd-quick-mode'));
-      voiceBtn.onclick=()=>openVoiceModal(root);
+      voiceBtn.onclick=()=>{
+        if(typeof window.openStructuredVoiceInspection==='function'){
+          window.openStructuredVoiceInspection();
+          return;
+        }
+        openVoiceModal(root);
+      };
       let saved=false;try{saved=localStorage.getItem(QUICK_STORAGE)==='1'}catch(_e){}
       setQuickMode(root,saved);
     }else{
@@ -478,6 +484,10 @@
             const hiveId=(typeof activeInspectionHiveId!=='undefined'&&activeInspectionHiveId)||safeState()?.hives?.[0]?.id;
             actionForm('inspection',hiveId);
             setTimeout(()=>{
+              if(typeof window.openStructuredVoiceInspection==='function'){
+                window.openStructuredVoiceInspection();
+                return;
+              }
               const modal=q('.modal');
               if(modal)openVoiceModal(modal);
             },80);

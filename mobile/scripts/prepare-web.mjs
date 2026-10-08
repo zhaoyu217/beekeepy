@@ -48,6 +48,7 @@ await fs.writeFile(packagedV45, rawV45.replace(oldV77Header, retiredV77Header), 
 
 await fs.copyFile(path.join(root,'mobile','five-gaps.js'), path.join(out,'mobile-five-gaps.js'));
 await fs.copyFile(path.join(root,'mobile','five-gaps.css'), path.join(out,'mobile-five-gaps.css'));
+await fs.copyFile(path.join(root,'mobile','system-safe-area.css'), path.join(out,'mobile-system-safe-area.css'));
 await fs.copyFile(path.join(root,'mobile','native-voice-shim.js'), path.join(out,'mobile-native-voice-shim.js'));
 await fs.copyFile(path.join(root,'mobile','android-runtime-fixes.js'), path.join(out,'mobile-android-runtime-fixes.js'));
 
@@ -69,6 +70,10 @@ html = html.replace(
 
 if (!html.includes('mobile-five-gaps.css')) {
   html = html.replace('</head>', '  <link rel="stylesheet" href="mobile-five-gaps.css">\n</head>');
+}
+// Last stylesheet in the APK only; preserve all frozen web theme/layout assets.
+if (!html.includes('mobile-system-safe-area.css')) {
+  html = html.replace('</head>', '  <link rel="stylesheet" href="mobile-system-safe-area.css">\n</head>');
 }
 if (!html.includes('mobile-five-gaps.js')) {
   html = html.replace('</body>', '  <script src="mobile-five-gaps.js"></script>\n</body>');

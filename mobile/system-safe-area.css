@@ -1,0 +1,52 @@
+/* Android APK only: respect Android 15+ edge-to-edge safe areas.
+ * SystemBars(insetsHandling=native) pads the WebView on older Chromium builds;
+ * on modern builds env() contains actual unconsumed system bar insets.
+ * Do not hardcode a device-specific number of pixels or modify science/routes. */
+:root{
+  --hd-android-safe-top:env(safe-area-inset-top, 0px);
+  --hd-android-safe-bottom:env(safe-area-inset-bottom, 0px);
+}
+
+/* The fixed application header begins BELOW the native status bar. */
+html body #app > #topbar{
+  top:var(--hd-android-safe-top)!important;
+}
+
+/* Reserve top space for the status bar AND the existing 58px app header. */
+html body #app > #view.view:not(.auth-view){
+  padding-top:calc(var(--header) + var(--hd-android-safe-top) + 8px)!important;
+}
+html body #app > #view.view.aux-view{
+  padding-top:calc(var(--header) + var(--hd-android-safe-top) + 10px)!important;
+}
+
+/* Keep a 70px tappable app nav ABOVE the OS three-button/gesture region.
+ * Allow only its background, never its buttons, in the system inset area. */
+html body #app > #bottomnav.bottomnav{
+  bottom:0!important;
+  height:calc(70px + var(--hd-android-safe-bottom))!important;
+  padding-bottom:var(--hd-android-safe-bottom)!important;
+}
+
+/* Scrollable content must not disappear under the fixed app nav or OS nav. */
+html body #app > #view.view.main{
+  padding-bottom:calc(var(--nav) + var(--hd-android-safe-bottom) + 12px)!important;
+}
+html body #app > #view.view.main:has(.v53-actions){
+  padding-bottom:calc(var(--nav) + var(--hd-android-safe-bottom) + 4px)!important;
+}
+html body #app > #view.view.secondary{
+  padding-bottom:calc(22px + var(--hd-android-safe-bottom))!important;
+}
+
+/* Bottom sheets, field-ops sheets and toast messages must remain tappable. */
+html body #app > .modal .modalpanel{
+  padding-bottom:calc(11px + var(--hd-android-safe-bottom))!important;
+  max-height:calc(100dvh - var(--hd-android-safe-top) - 8px)!important;
+}
+html body .hd-modal{
+  padding-bottom:calc(16px + var(--hd-android-safe-bottom))!important;
+}
+html body #toast{
+  bottom:calc(88px + var(--hd-android-safe-bottom))!important;
+}

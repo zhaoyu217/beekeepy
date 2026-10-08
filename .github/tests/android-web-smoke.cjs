@@ -142,7 +142,7 @@ async function go(){
     await page.screenshot({path:path.join(out,'narrow-viewport.png')});
     await page.evaluate(()=>window.go('inspection/h1'));
     await page.waitForTimeout(500);
-    const inputs=page.locator('#view textarea, #view input:not([type=hidden]):not([type=checkbox]):not([type=radio])');
+    const inputs=page.locator('#view textarea:visible, #view input:not([type=hidden]):not([type=checkbox]):not([type=radio]):visible');
     const inputCount=await inputs.count();
     if(inputCount){
       const inp=inputs.first();

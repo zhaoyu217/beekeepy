@@ -1526,5 +1526,59 @@ if('serviceWorker' in navigator){
 })();
 </script>
 <script defer src="/_vercel/insights/script.js"></script>
+
+  <style id="hd-voice-diag-v313-style">
+    .v211-inspection .voice-row{display:none!important}
+    #hd-voice-diag-v313{
+      position:fixed!important;right:16px!important;bottom:92px!important;z-index:2147483000!important;
+      display:none!important;align-items:center!important;justify-content:center!important;
+      min-width:112px!important;height:46px!important;padding:0 16px!important;
+      border:0!important;border-radius:999px!important;background:#49643F!important;color:#fff!important;
+      font:700 14px/1 Inter,system-ui,sans-serif!important;box-shadow:0 10px 28px rgba(0,0,0,.28)!important;
+      opacity:1!important;visibility:visible!important;pointer-events:auto!important;
+    }
+    #hd-voice-diag-v313.hd-show{display:inline-flex!important}
+  </style>
+  <script>
+  (function HD_VOICE_DIAG_V313(){
+    if(window.__HD_VOICE_DIAG_V313__)return;window.__HD_VOICE_DIAG_V313__=true;
+    function inspectionPresent(){
+      return !!document.querySelector('.v211-inspection,#inotes,.v211-notes');
+    }
+    function openVoice(){
+      if(typeof window.openStructuredVoiceInspection==='function'){window.openStructuredVoiceInspection();return;}
+      try{window.__HD_STRUCTURED_VOICE_V1__=false;}catch(_){}
+      var old=document.querySelector('script[data-hd-v313-voice]');
+      if(old)return;
+      var s=document.createElement('script');
+      s.src='inspection-voice.js?v=voice-inspection-v313-diagnostic';
+      s.dataset.hdV313Voice='1';
+      s.onload=function(){
+        if(typeof window.openStructuredVoiceInspection==='function')window.openStructuredVoiceInspection();
+        else if(typeof window.toast==='function')window.toast('Voice module did not initialize');
+      };
+      s.onerror=function(){if(typeof window.toast==='function')window.toast('Voice module could not be loaded');};
+      document.head.appendChild(s);
+    }
+    function ensure(){
+      document.querySelectorAll('.v211-inspection .voice-row').forEach(function(x){
+        x.hidden=true;x.setAttribute('aria-hidden','true');x.style.setProperty('display','none','important');
+      });
+      var b=document.getElementById('hd-voice-diag-v313');
+      if(!b){
+        b=document.createElement('button');b.id='hd-voice-diag-v313';b.type='button';
+        b.textContent='🎙 Speak';b.setAttribute('aria-label','Speak inspection');
+        b.onclick=function(e){e.preventDefault();e.stopPropagation();openVoice();};
+        document.body.appendChild(b);
+      }
+      b.classList.toggle('hd-show',inspectionPresent());
+    }
+    function schedule(){ensure();setTimeout(ensure,50);setTimeout(ensure,300);setTimeout(ensure,1000);}
+    if(document.readyState==='loading')document.addEventListener('DOMContentLoaded',schedule);else schedule();
+    window.addEventListener('hashchange',schedule);
+    new MutationObserver(ensure).observe(document.documentElement,{childList:true,subtree:true});
+    setInterval(ensure,1000);
+  })();
+  </script>
 </body>
 </html>

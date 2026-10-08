@@ -78,10 +78,24 @@ jobs:
           curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/decoder-epoch-99-avg-1-chunk-16-left-128.onnx" "$BASE/decoder-epoch-99-avg-1-chunk-16-left-128.onnx"
           curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/joiner-epoch-99-avg-1-chunk-16-left-128.onnx" "$BASE/joiner-epoch-99-avg-1-chunk-16-left-128.onnx"
           curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/tokens.txt" "$BASE/tokens.txt"
+          curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/bpe.model" "$BASE/bpe.model"
+          python -m pip install --disable-pip-version-check --quiet sentencepiece==0.2.1
+          MODEL_DIR="$MODEL_DIR" python - <<'PY'
+          import os
+          import sentencepiece as spm
+          from pathlib import Path
+          model_dir = Path(os.environ["MODEL_DIR"])
+          sp = spm.SentencePieceProcessor(model_file=str(model_dir / "bpe.model"))
+          with (model_dir / "bpe.vocab").open("w", encoding="utf-8") as f:
+              for i in range(sp.get_piece_size()):
+                  f.write(f"{sp.id_to_piece(i)}\t{sp.get_score(i)}\n")
+          PY
           test "$(stat -c%s "$MODEL_DIR/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx")" -gt 70000000
           test "$(stat -c%s "$MODEL_DIR/decoder-epoch-99-avg-1-chunk-16-left-128.onnx")" -gt 2000000
           test "$(stat -c%s "$MODEL_DIR/joiner-epoch-99-avg-1-chunk-16-left-128.onnx")" -gt 1000000
           test -s "$MODEL_DIR/tokens.txt"
+          test -s "$MODEL_DIR/bpe.vocab"
+          grep -q "QUEEN" "$MODEL_DIR/bpe.vocab" || true
 
       - name: Configure Android native OfflineAsr plugin
         run: node mobile/scripts/configure-android.mjs
@@ -94,6 +108,7 @@ jobs:
           grep -q "registerPlugin(OfflineAsrPlugin.class)" android/app/src/main/java/app/hivefield/mobile/MainActivity.java
           grep -q "android.permission.RECORD_AUDIO" android/app/src/main/AndroidManifest.xml
           test -f android/app/libs/sherpa-onnx-1.13.8.aar
+          test -s android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26/bpe.vocab
           grep -q "mobile-native-voice-shim.js" mobile/dist/index.html
           grep -q "mobile-five-gaps.js" mobile/dist/index.html
           grep -q "vendor/supabase.min.js" mobile/dist/index.html

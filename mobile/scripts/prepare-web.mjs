@@ -39,6 +39,13 @@ await fs.copyFile(path.join(root,'mobile','native-voice-shim.js'), path.join(out
 const indexPath = path.join(out,'index.html');
 let html = await fs.readFile(indexPath,'utf8');
 
+// Native builds must not depend on a runtime CDN for Supabase. The pinned UMD
+// bundle is downloaded during the cloud build into mobile/dist/vendor/.
+html = html.replace(
+  /<script\s+src=["']https:\/\/cdn\.jsdelivr\.net\/npm\/@supabase\/supabase-js@2["']><\/script>\s*<script>[\s\S]*?window\.__HIVEDASH_SUPABASE_CDN_FALLBACK__\s*=\s*true;\s*<\/script>/i,
+  '<script src="vendor/supabase.min.js"></script>\n  <script>window.__HIVEDASH_SUPABASE_BUNDLED__=true;<\/script>'
+);
+
 // Native speech shim must exist before inspection-voice.js evaluates SpeechRecognition.
 html = html.replace(
   /<script\s+src=["']inspection-voice\.js([^"']*)["']><\/script>/i,

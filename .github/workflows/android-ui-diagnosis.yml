@@ -33,6 +33,14 @@ jobs:
           const fs = require('fs');
           for (const f of ['v45.js', 'app.js', 'mobile/android-runtime-fixes.js']) {
             const code = fs.readFileSync(f, 'utf8');
+            if (f === 'v45.js') {
+              const rx = /\\b(?:const|let|var|function|async\\s+function)\\s+vSaveInspection\\b/g;
+              for (const m of code.matchAll(rx)) {
+                const line = code.slice(0,m.index).split('\\n').length;
+                console.log('DECLARATION vSaveInspection line', line, 'index', m.index);
+                console.log(code.slice(Math.max(0,m.index-450), m.index+850));
+              }
+            }
             console.log('\nSOURCE', f, 'length', code.length);
             const terms = ['vSaveInspection', 'Choose the hive before starting this record.', 'Select Hive', 'v2p2e5lHomeQuick', 'v2p2e5lStartHomeQuick', 'v2p2e5l-quick-hive', 'v215-more-modal'];
             for (const t of terms) {

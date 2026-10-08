@@ -115,6 +115,7 @@ private class SherpaInspectionEngine(
                 context.assets.open("$MODEL_DIR/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx").close()
                 context.assets.open("$MODEL_DIR/decoder-epoch-99-avg-1-chunk-16-left-128.onnx").close()
                 context.assets.open("$MODEL_DIR/joiner-epoch-99-avg-1-chunk-16-left-128.onnx").close()
+                context.assets.open("$MODEL_DIR/bpe.vocab").close()
                 true
             } catch (_: Exception) {
                 false
@@ -141,6 +142,8 @@ private class SherpaInspectionEngine(
             numThreads = 2,
             provider = "cpu",
             modelType = "zipformer2",
+            modelingUnit = "bpe",
+            bpeVocab = "$MODEL_DIR/bpe.vocab",
         )
         val config = OnlineRecognizerConfig(
             featConfig = FeatureConfig(sampleRate = SAMPLE_RATE, featureDim = 80),

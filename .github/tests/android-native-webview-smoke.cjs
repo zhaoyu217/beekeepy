@@ -30,7 +30,7 @@ async function run(){
     report.targets=await CDP.List({host:'127.0.0.1',port:9222});
     check('WebView exposes a debuggable page',report.targets.some(x=>x.type==='page'),report.targets.map(x=>({type:x.type,url:x.url})));
     const target=report.targets.find(x=>x.type==='page'&&x.url&&x.url.includes('localhost'))||report.targets.find(x=>x.type==='page');
-    client=await CDP({host:'127.0.0.1',port:9222,target:target});
+    client=await CDP({host:'127.0.0.1',port:9222,target:target,local:true});
     check('Direct WebView page CDP connection',!!client,target?.url);
     await client.Runtime.enable();
     await client.Page.enable();

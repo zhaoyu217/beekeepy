@@ -76,6 +76,16 @@ if(!appGradle.includes("noCompress += ['onnx', 'txt']")){
     }`
   );
 }
+if(!appGradle.includes('applicationIdSuffix ".fix"')){
+  appGradle = appGradle.replace(
+    'buildTypes {',
+    `buildTypes {
+        debug {
+            applicationIdSuffix ".fix"
+            versionNameSuffix "-fix"
+        }`
+  );
+}
 if(!appGradle.includes('kotlinOptions {')){
   appGradle = appGradle.replace(
     /\n}\n\nrepositories \{/,
@@ -90,7 +100,16 @@ repositories {`
 }
 await write(appGradlePath, appGradle);
 
+const stringsPath = path.join(app,'src','main','res','values','strings.xml');
+let strings = await read(stringsPath);
+strings = strings
+  .replace(/<string name="app_name">[^<]*<\/string>/, '<string name="app_name">Hive FIX</string>')
+  .replace(/<string name="title_activity_main">[^<]*<\/string>/, '<string name="title_activity_main">Hive FIX</string>');
+await write(stringsPath, strings);
+
 console.log('Android native offline ASR integration configured.');
 console.log('Plugin:', pluginDst);
 console.log('Manifest permission: RECORD_AUDIO');
 console.log('Sherpa AAR: android/app/libs/sherpa-onnx-1.13.8.aar');
+console.log('Debug package: app.hivefield.mobile.fix');
+console.log('Debug app label: Hive FIX');

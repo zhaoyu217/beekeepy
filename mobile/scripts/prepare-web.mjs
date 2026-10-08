@@ -35,6 +35,7 @@ await copyTree(root);
 await fs.copyFile(path.join(root,'mobile','five-gaps.js'), path.join(out,'mobile-five-gaps.js'));
 await fs.copyFile(path.join(root,'mobile','five-gaps.css'), path.join(out,'mobile-five-gaps.css'));
 await fs.copyFile(path.join(root,'mobile','native-voice-shim.js'), path.join(out,'mobile-native-voice-shim.js'));
+await fs.copyFile(path.join(root,'mobile','android-runtime-fixes.js'), path.join(out,'mobile-android-runtime-fixes.js'));
 
 const indexPath = path.join(out,'index.html');
 let html = await fs.readFile(indexPath,'utf8');
@@ -57,6 +58,9 @@ if (!html.includes('mobile-five-gaps.css')) {
 }
 if (!html.includes('mobile-five-gaps.js')) {
   html = html.replace('</body>', '  <script src="mobile-five-gaps.js"></script>\n</body>');
+}
+if (!html.includes('mobile-android-runtime-fixes.js')) {
+  html = html.replace('</body>', '  <script src="mobile-android-runtime-fixes.js"></script>\n</body>');
 }
 
 // Service workers are unnecessary in a bundled native app and can preserve stale web code.

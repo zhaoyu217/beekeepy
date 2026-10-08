@@ -166,6 +166,7 @@ async function go(){
     }
     const unexpectedMissing=[...new Set(result.missingLocalScripts)].filter(x=>!['/r08a1.js','/r10a5-observability.js'].includes(x));
     check('No new missing local assets',unexpectedMissing.length===0,JSON.stringify(unexpectedMissing));
+    check('No local JavaScript 404 requests',result.missingLocalScripts.length===0,JSON.stringify(result.missingLocalScripts));
     check('No uncaught JavaScript exceptions',result.pageErrors.length===0,JSON.stringify(result.pageErrors.slice(0,5)));
     console.log('HEADER_DIAGNOSTIC '+JSON.stringify(result.headerSnapshots));
   }catch(error){

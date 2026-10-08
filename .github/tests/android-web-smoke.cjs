@@ -54,6 +54,17 @@ async function go(){
     check('Authoritative Home quick selector loaded',await page.evaluate(()=>typeof window.v2p2e5lHomeQuick==='function'));
     check('Authoritative Home quick start loaded',await page.evaluate(()=>typeof window.v2p2e5lStartHomeQuick==='function'));
     result.headerSnapshots.push(await page.evaluate(() => { const h=document.getElementById('topbar');const s=getComputedStyle(h);return {phase:'initial',className:h.className,display:s.display,visibility:s.visibility,innerText:h.innerText.slice(0,90),innerHTML:h.innerHTML.slice(0,200)}; }));
+    const scientificHooks=await page.evaluate(()=>({
+      r08:typeof window.v2p2e5r08Evaluate,
+      r08core:typeof window.HiveDashTaskEngineCoreV1?.evaluateSwarmRiskCheck,
+      r10core:typeof window.HiveDashTaskEngineCoreV1?.evaluateSplitVerification,
+      r10projection:typeof window.v2p2e5r10a4ProjectionAudit,
+      r10routing:typeof window.v2p2e5r10a14RouteAudit
+    }));
+    result.scientificHooks=scientificHooks;
+    check('R08 installed swarm-check evaluator',scientificHooks.r08==='function'&&scientificHooks.r08core==='function',JSON.stringify(scientificHooks));
+    check('R10 installed split verification evaluator',scientificHooks.r10core==='function',JSON.stringify(scientificHooks));
+    check('R10 projection and authoritative route hooks loaded',scientificHooks.r10projection==='function'&&scientificHooks.r10routing==='function',JSON.stringify(scientificHooks));
     await page.screenshot({path:path.join(out,'home.png')});
     for(const route of [['Hives','hives'],['Actions','actions'],['Insights','insights'],['Home','home']]){
       const button=page.locator('#bottomnav .navitem').filter({hasText:route[0]}).first();

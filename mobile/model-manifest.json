@@ -1,0 +1,12 @@
+{
+  "engine": "sherpa-onnx",
+  "engineVersionTarget": "1.13.8",
+  "model": "csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-26",
+  "license": "Apache-2.0",
+  "mode": "streaming-transducer",
+  "sampleRate": 16000,
+  "decodingMethod": "modified_beam_search",
+  "hotwordsScore": 2.0,
+  "packagePolicy": "Bundle model inside the installed app; never download at first use.",
+  "status": "candidate_requires_device_accuracy_benchmark"
+}

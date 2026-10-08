@@ -171,6 +171,12 @@ jobs:
           if(!t.includes('Hive FIX'))throw Error('Expected Hive FIX label');
           t=t.replaceAll('Hive FIX','Hive TOUCH QA');
           fs.writeFileSync(p,t);
+          const gradle='android/app/build.gradle';
+          let g=fs.readFileSync(gradle,'utf8');
+          if(!g.includes('applicationIdSuffix ".fix"'))throw Error('Expected debug suffix .fix');
+          // Separate package avoids changing any user's installed Hive FIX or local data.
+          g=g.replace('applicationIdSuffix ".fix"','applicationIdSuffix ".touchqa"');
+          fs.writeFileSync(gradle,g);
           NODE
 
       - name: Verify packaged inputs

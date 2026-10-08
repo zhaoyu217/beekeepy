@@ -1,0 +1,82 @@
+name: Android 15 Touch QA Native Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [mobile-offline-v1]
+    paths:
+      - '.github/workflows/android-touch-qa-native.yml'
+      - '.github/tests/android-touch-qa-native.cjs'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  emulator-webview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download previously verified original APK
+        uses: actions/download-artifact@v4
+        with:
+          name: hive-touch-diagnostic-apk
+          repository: zhaoyu217/beekeepy
+          run-id: 37790543784
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: candidate-apk
+      - name: Inspect original APK and set up browser driver
+        run: |
+          test -s candidate-apk/app-debug.apk
+          npm install --no-save --ignore-scripts chrome-remote-interface@0.33.3
+          node --check .github/tests/android-touch-qa-native.cjs
+          sha256sum candidate-apk/app-debug.apk
+      - name: Ensure KVM accessibility and preserve diagnostics metadata
+        run: |
+          if test -e /dev/kvm; then sudo chmod 666 /dev/kvm; ls -l /dev/kvm; else echo 'WARNING: /dev/kvm absent'; fi
+          mkdir -p native-smoke-results
+          date -u > native-smoke-results/runner-utc.txt
+      - name: Run WebView checks on Android 15 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 3072M
+          heap-size: 512M
+          disk-size: 6G
+          disable-animations: true
+          script: |
+            set -eux
+            timeout 120s adb wait-for-device
+            echo 'Set Android emulator navigation to three buttons'
+            timeout 20s adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.threebutton
+            timeout 15s adb shell cmd overlay list --user 0 | grep -i systemui.navbar || true
+            sleep 2
+            timeout 120s adb install -r candidate-apk/app-debug.apk
+            timeout 45s adb shell am start -W -n app.hivefield.mobile.touchqa/app.hivefield.mobile.MainActivity
+            sleep 10
+            mkdir -p native-smoke-results
+            timeout 20s adb shell screencap -p /sdcard/hive-native-launch.png
+            timeout 20s adb pull /sdcard/hive-native-launch.png native-smoke-results/device-launch.png
+            HIVE_REQUIRE_THREEBUTTON=1 node .github/tests/android-touch-qa-native.cjs
+      - name: Save emulator logs
+        if: always()
+        run: |
+          mkdir -p native-smoke-results
+          timeout 10s adb devices -l > native-smoke-results/adb-devices.txt 2>&1 || true
+          timeout 12s adb logcat -d -t 3000 > native-smoke-results/logcat.txt 2>&1 || true
+          timeout 12s adb shell dumpsys window > native-smoke-results/window-insets.txt 2>&1 || true
+      - name: Upload emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android15-touch-qa-native-report
+          path: native-smoke-results/
+          retention-days: 7
+          if-no-files-found: warn

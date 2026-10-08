@@ -108,5 +108,12 @@ for (const item of absentLegacyTags) {
   console.log('Android-only: omitted unreachable historical script:',item.name);
 }
 
+// Opt-in, APK-only touch diagnostics for Samsung device investigation.
+// It passively observes events and NEVER changes navigation, data or rules.
+if (process.env.HIVE_TOUCH_DIAGNOSTICS === '1') {
+  await fs.copyFile(path.join(root,'mobile','touch-diagnostic.js'), path.join(out,'mobile-touch-diagnostic.js'));
+  html=html.replace('</body>', '  <script src="mobile-touch-diagnostic.js"></script>\\n</body>');
+}
+
 await fs.writeFile(indexPath, html, 'utf8');
 console.log('Prepared Capacitor bundle at mobile/dist');

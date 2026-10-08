@@ -26,7 +26,7 @@ jobs:
         with:
           name: hive-offline-debug-apk
           repository: zhaoyu217/beekeepy
-          run-id: 37765875248
+          run-id: 37780390669
           github-token: ${{ secrets.GITHUB_TOKEN }}
           path: candidate-apk
       - name: Inspect original APK and set up browser driver
@@ -52,7 +52,7 @@ jobs:
           disk-size: 6G
           disable-animations: true
           script: |
-            set -euxo pipefail
+            set -eux
             timeout 120s adb wait-for-device
             timeout 120s adb install -r candidate-apk/app-debug.apk
             timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity

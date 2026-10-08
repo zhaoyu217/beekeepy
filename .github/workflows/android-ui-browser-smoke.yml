@@ -33,6 +33,30 @@ jobs:
           done
           echo 'INDEX REFERENCES'
           grep -nE 'r08a1.js|r10a5-observability.js' index.html
+      - name: Audit R08A1 and R10A5 missing-source dependencies
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs=require('fs'),path=require('path');
+          const matches=[],missing=['r08a1.js','r10a5-observability.js'];
+          function visit(dir){
+            for(const item of fs.readdirSync(dir,{withFileTypes:true})){
+              if(['.git','node_modules','mobile','smoke-results'].includes(item.name))continue;
+              const p=path.join(dir,item.name);
+              if(item.isDirectory())visit(p);
+              else if(/\.(js|html)$/.test(item.name)){
+                const rows=fs.readFileSync(p,'utf8').split('\n');
+                for(let i=0;i<rows.length;i++)if(/r08a1|r10a5/i.test(rows[i]))
+                  matches.push({file:p,line:i+1,fragment:rows[i].slice(0,250)});
+              }
+            }
+          }
+          visit('.');
+          console.log('MISSING_SCIENCE_FILE_AUDIT '+JSON.stringify({
+            missing:missing.map(f=>({name:f,exists:fs.existsSync(f)})),
+            references:matches,nonIndexReferences:matches.filter(x=>x.file!=='index.html')
+          }));
+          NODE
       - name: Prepare real Android WebView HTML bundle
         run: |
           node mobile/scripts/prepare-web.mjs

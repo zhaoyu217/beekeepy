@@ -42,6 +42,20 @@ jobs:
       - name: Prepare bundled web application
         run: npm run mobile:prepare
 
+      - name: Bundle Supabase runtime for offline cold start
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p mobile/dist/vendor
+          curl --fail --location --retry 4 --retry-delay 2 \
+            -o mobile/dist/vendor/supabase.min.js \
+            https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js
+          test "$(stat -c%s mobile/dist/vendor/supabase.min.js)" -gt 100000
+          grep -q "createClient" mobile/dist/vendor/supabase.min.js
+          grep -q 'vendor/supabase.min.js' mobile/dist/index.html
+          ! grep -q 'cdn.jsdelivr.net/npm/@supabase/supabase-js@2' mobile/dist/index.html
+          ! grep -q 'unpkg.com/@supabase/supabase-js@2' mobile/dist/index.html
+
       - name: Generate Capacitor Android project
         run: npx cap add android
 
@@ -82,6 +96,8 @@ jobs:
           test -f android/app/libs/sherpa-onnx-1.13.8.aar
           grep -q "mobile-native-voice-shim.js" mobile/dist/index.html
           grep -q "mobile-five-gaps.js" mobile/dist/index.html
+          grep -q "vendor/supabase.min.js" mobile/dist/index.html
+          test -f mobile/dist/vendor/supabase.min.js
 
       - name: Build Debug APK
         working-directory: android

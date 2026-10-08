@@ -59,7 +59,7 @@
       [/\\bqueen\\s+(?:seen|present|spotted|looked good|looks good)\\b/i,'Seen']
     ]);
     if(queenStatus===undefined){
-      var qc=/\\bqueen\\s+c\\.?(?=\\s|$)/i.exec(text);
+      var qc=/\\bqueen\\s+(?:c|see|seen)\\.?(?=\\s|$)/i.exec(text);
       if(qc){
         var near=text.slice(Math.max(0,qc.index-12),Math.min(text.length,qc.index+qc[0].length+12));
         if(!/\\b(?:no|not)\\b/i.test(near))queenStatus='Seen';
@@ -118,9 +118,9 @@
     ]));
 
     put('honey',lastChoice(text,[
-      [/\\bhoney(?: store(?:s|age)?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:high|plenty|full)\\b/i,'High'],
-      [/\\bhoney(?: store(?:s|age)?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:medium|moderate|okay|ok|average)\\b/i,'Medium'],
-      [/\\bhoney(?: store(?:s|age)?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:low|light|a little low|very low)\\b/i,'Low']
+      [/\\bhoney(?: store(?:s)?| storage)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:high|plenty|full)\\b/i,'High'],
+      [/\\bhoney(?: store(?:s)?| storage)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:medium|moderate|okay|ok|average)\\b/i,'Medium'],
+      [/\\bhoney(?: store(?:s)?| storage)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:low|light|a little low|very low)\\b/i,'Low']
     ]));
     put('pollen',lastChoice(text,[
       [/\\bpollen(?: stores?)?\\s+(?:is\\s+|are\\s+|looks?\\s+)?(?:high|plenty|full)\\b/i,'High'],

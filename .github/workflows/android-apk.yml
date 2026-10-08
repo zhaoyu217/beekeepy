@@ -1,0 +1,107 @@
+name: Build Android Offline APK
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - mobile-offline-v1
+    paths:
+      - 'mobile/**'
+      - 'package.json'
+      - 'capacitor.config.ts'
+      - '.github/workflows/android-apk.yml'
+      - 'inspection-voice.js'
+      - 'index.html'
+
+permissions:
+  contents: read
+
+jobs:
+  build-debug-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+
+    steps:
+      - name: Checkout mobile branch
+        uses: actions/checkout@v4
+
+      - name: Set up Node 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+
+      - name: Set up Java 21
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: '21'
+          cache: gradle
+
+      - name: Install Capacitor dependencies
+        run: npm install
+
+      - name: Prepare bundled web application
+        run: npm run mobile:prepare
+
+      - name: Generate Capacitor Android project
+        run: npx cap add android
+
+      - name: Download sherpa-onnx Android AAR
+        shell: bash
+        run: |
+          set -euxo pipefail
+          mkdir -p android/app/libs
+          curl --fail --location --retry 4 --retry-delay 2             -o android/app/libs/sherpa-onnx-1.13.8.aar             https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-1.13.8.aar
+          echo "633c24321e06b1fe79feafa03ea16cbc0f8a286641e2da3559bac91bdb13bd96  android/app/libs/sherpa-onnx-1.13.8.aar" | sha256sum -c -
+
+      - name: Bundle English offline streaming model
+        shell: bash
+        run: |
+          set -euxo pipefail
+          MODEL_DIR="android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26"
+          BASE="https://huggingface.co/csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-26/resolve/main"
+          mkdir -p "$MODEL_DIR"
+          curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx" "$BASE/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx"
+          curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/decoder-epoch-99-avg-1-chunk-16-left-128.onnx" "$BASE/decoder-epoch-99-avg-1-chunk-16-left-128.onnx"
+          curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/joiner-epoch-99-avg-1-chunk-16-left-128.onnx" "$BASE/joiner-epoch-99-avg-1-chunk-16-left-128.onnx"
+          curl --fail --location --retry 4 --retry-delay 2 -o "$MODEL_DIR/tokens.txt" "$BASE/tokens.txt"
+          test "$(stat -c%s "$MODEL_DIR/encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx")" -gt 70000000
+          test "$(stat -c%s "$MODEL_DIR/decoder-epoch-99-avg-1-chunk-16-left-128.onnx")" -gt 2000000
+          test "$(stat -c%s "$MODEL_DIR/joiner-epoch-99-avg-1-chunk-16-left-128.onnx")" -gt 1000000
+          test -s "$MODEL_DIR/tokens.txt"
+
+      - name: Configure Android native OfflineAsr plugin
+        run: node mobile/scripts/configure-android.mjs
+
+      - name: Verify packaged inputs
+        shell: bash
+        run: |
+          set -euxo pipefail
+          test -f android/app/src/main/java/app/hivefield/mobile/OfflineAsrPlugin.kt
+          grep -q "registerPlugin(OfflineAsrPlugin.class)" android/app/src/main/java/app/hivefield/mobile/MainActivity.java
+          grep -q "android.permission.RECORD_AUDIO" android/app/src/main/AndroidManifest.xml
+          test -f android/app/libs/sherpa-onnx-1.13.8.aar
+          grep -q "mobile-native-voice-shim.js" mobile/dist/index.html
+          grep -q "mobile-five-gaps.js" mobile/dist/index.html
+
+      - name: Build Debug APK
+        working-directory: android
+        run: |
+          chmod +x gradlew
+          ./gradlew --no-daemon --stacktrace assembleDebug
+
+      - name: Verify APK
+        shell: bash
+        run: |
+          set -euxo pipefail
+          APK="android/app/build/outputs/apk/debug/app-debug.apk"
+          test -f "$APK"
+          ls -lh "$APK"
+
+      - name: Upload installable APK
+        uses: actions/upload-artifact@v4
+        with:
+          name: hive-offline-debug-apk
+          path: android/app/build/outputs/apk/debug/app-debug.apk
+          if-no-files-found: error
+          retention-days: 14

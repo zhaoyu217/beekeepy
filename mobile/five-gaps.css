@@ -1,0 +1,185 @@
+/* HiveDash Field Ops v1 — five-gap enhancements.
+   Scope: inspection efficiency, voice review, environmental context,
+   export UI, offline status. No scientific rule styles are altered. */
+
+.hd-field-tools{
+  margin:0 0 12px;
+  padding:10px;
+  border:1px solid #dfe5da;
+  border-radius:12px;
+  background:#fbfcf8;
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  align-items:center;
+}
+.hd-field-tools button{
+  min-height:38px;
+  padding:8px 11px;
+  border:1px solid #aab7a8;
+  border-radius:10px;
+  background:#fff;
+  color:#2f5b43;
+  font:600 13px/18px Inter,"Segoe UI",Arial,sans-serif;
+}
+.hd-field-tools button.primary{
+  background:#2f5b43;
+  border-color:#2f5b43;
+  color:#fff;
+}
+.hd-field-tools .hd-offline-indicator{
+  margin-left:auto;
+  font:600 12px/18px Inter,"Segoe UI",Arial,sans-serif;
+  color:#667062;
+}
+.hd-field-tools .hd-offline-indicator.offline{color:#805d1b}
+.v211-inspection.hd-quick-mode .hd-quick-secondary{display:none!important}
+
+.hd-env-card,
+.hd-export-card{
+  margin:0 0 12px;
+  padding:12px;
+  border:1px solid #e5ded2;
+  border-radius:12px;
+  background:#fffefa;
+  color:#26372c;
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+}
+.hd-env-card h3,
+.hd-export-card h3{
+  margin:0 0 6px;
+  font-size:15px;
+  line-height:21px;
+}
+.hd-env-meta{
+  color:#626c63;
+  font-size:12px;
+  line-height:18px;
+}
+.hd-env-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:8px;
+  margin-top:10px;
+}
+.hd-env-item{
+  padding:9px 10px;
+  border-radius:10px;
+  background:#f6f2e9;
+}
+.hd-env-item b{
+  display:block;
+  font-size:14px;
+  line-height:19px;
+}
+.hd-env-item span{
+  display:block;
+  color:#626c63;
+  font-size:11px;
+  line-height:16px;
+  margin-top:2px;
+}
+.hd-env-actions,
+.hd-export-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:10px;
+}
+.hd-env-actions button,
+.hd-export-actions button{
+  min-height:38px;
+  padding:8px 11px;
+  border:1px solid #aab7a8;
+  border-radius:10px;
+  background:#fff;
+  color:#2f5b43;
+  font-weight:600;
+}
+.hd-offline-banner{
+  margin:0 0 10px;
+  padding:9px 11px;
+  border-radius:10px;
+  background:#f8eed8;
+  color:#6f5419;
+  font:600 12px/18px Inter,"Segoe UI",Arial,sans-serif;
+}
+.hd-modal{
+  position:fixed;
+  inset:0;
+  z-index:99999;
+  background:rgba(22,33,25,.38);
+  display:flex;
+  align-items:flex-end;
+  justify-content:center;
+  padding:16px;
+  font-family:Inter,"Segoe UI",Arial,sans-serif;
+}
+.hd-modal-panel{
+  width:min(100%,520px);
+  max-height:min(86vh,760px);
+  overflow:auto;
+  background:#fffefa;
+  color:#26372c;
+  border-radius:18px;
+  padding:16px;
+  box-shadow:0 16px 48px rgba(38,55,44,.18);
+}
+.hd-modal-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:10px;
+}
+.hd-modal-head h2{
+  margin:0;
+  font-size:18px;
+  line-height:24px;
+}
+.hd-modal-close{
+  width:38px;height:38px;border:0;border-radius:10px;background:#f1ede4;color:#26372c;font-size:20px
+}
+.hd-voice-text{
+  width:100%;
+  min-height:120px;
+  box-sizing:border-box;
+  resize:vertical;
+  border:1px solid #8a9588;
+  border-radius:12px;
+  padding:10px 12px;
+  background:#fff;
+  color:#26372c;
+  font:400 15px/22px Inter,"Segoe UI",Arial,sans-serif;
+}
+.hd-detected{
+  margin-top:12px;
+  padding:10px 12px;
+  border-radius:12px;
+  background:#f6f2e9;
+}
+.hd-detected ul{margin:6px 0 0;padding-left:18px}
+.hd-detected li{margin:3px 0;font-size:13px;line-height:19px}
+.hd-modal-actions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:8px;
+  margin-top:12px;
+}
+.hd-modal-actions button{
+  min-height:42px;
+  padding:9px 12px;
+  border:1px solid #aab7a8;
+  border-radius:10px;
+  background:#fff;
+  color:#2f5b43;
+  font-weight:700;
+}
+.hd-modal-actions button.primary{
+  background:#2f5b43;
+  border-color:#2f5b43;
+  color:#fff;
+}
+@media (min-width:560px){
+  .hd-modal{align-items:center}
+}

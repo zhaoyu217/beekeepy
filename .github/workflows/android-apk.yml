@@ -42,6 +42,40 @@ jobs:
       - name: Prepare bundled web application
         run: npm run mobile:prepare
 
+
+      - name: Guard Android UI script loading and syntax
+        shell: bash
+        run: |
+          set -euxo pipefail
+          node --check mobile/dist/app.js
+          node --check mobile/dist/v45.js
+          node --check mobile/dist/mobile-android-runtime-fixes.js
+          node --check mobile/dist/mobile-five-gaps.js
+          node --check mobile/dist/mobile-native-voice-shim.js
+          node <<'NODE'
+          const fs=require('node:fs');
+          const assert=require('node:assert/strict');
+          const original=fs.readFileSync('v45.js','utf8');
+          const mobile=fs.readFileSync('mobile/dist/v45.js','utf8');
+          const html=fs.readFileSync('mobile/dist/index.html','utf8');
+          assert(original.includes('function vSaveInspection(id){const s=v45s(),h=hive(s,id);'));
+          assert(mobile.includes('function v77RetiredSaveInspection(id){const s=v45s(),h=hive(s,id);'));
+          assert(mobile.includes('function vSaveInspection(id){\n  const s=v45s()'));
+          assert.equal((mobile.match(/function vSaveInspection\(id\)\{/g)||[]).length,1);
+          assert.equal(mobile.length,original.length+('v77RetiredSaveInspection'.length-'vSaveInspection'.length));
+          assert(mobile.includes('Choose the hive before starting this record.'));
+          assert(mobile.includes('window.v2p2e5lHomeQuick=function(kind)'));
+          assert(mobile.includes('window.v2p2e5lStartHomeQuick=startHomeQuick'));
+          assert(html.includes('mobile-android-runtime-fixes.js'));
+          assert(html.includes('mobile-native-voice-shim.js'));
+          assert(html.includes('mobile-five-gaps.js'));
+          console.log('UI source and native-bundle-only collision fix: PASS');
+          const localScripts=[...html.matchAll(/<script\s+src=["']([^"']+)["']/g)]
+            .map(x=>x[1].split('?')[0]).filter(x=>!/^https?:/.test(x)&&x!=='vendor/supabase.min.js');
+          const missing=localScripts.filter(x=>!fs.existsSync('mobile/dist/'+x));
+          console.log('Legacy HTML script references absent from repository:',missing);
+          NODE
+
       - name: Bundle Supabase runtime for offline cold start
         shell: bash
         run: |

@@ -32,6 +32,20 @@ async function copyTree(srcDir, rel='') {
 
 await copyTree(root);
 
+// Only in the bundled Android copy: V77's superseded inspection-save stub
+// collides with the current inspection-save declaration in strict JS parsing.
+// Never edit the authoritative source v45.js or either handler's implementation.
+const packagedV45 = path.join(out, 'v45.js');
+const rawV45 = await fs.readFile(packagedV45, 'utf8');
+const oldV77Header = 'function vSaveInspection(id){const s=v45s(),h=hive(s,id);';
+const retiredV77Header = 'function v77RetiredSaveInspection(id){const s=v45s(),h=hive(s,id);';
+if (rawV45.split(oldV77Header).length !== 2 ||
+    !rawV45.includes('function vSaveInspection(id){\n  const s=v45s()')) {
+  throw new Error('Native V77 save collision guard failed; investigate upstream v45.js');
+}
+await fs.writeFile(packagedV45, rawV45.replace(oldV77Header, retiredV77Header), 'utf8');
+
+
 await fs.copyFile(path.join(root,'mobile','five-gaps.js'), path.join(out,'mobile-five-gaps.js'));
 await fs.copyFile(path.join(root,'mobile','five-gaps.css'), path.join(out,'mobile-five-gaps.css'));
 await fs.copyFile(path.join(root,'mobile','native-voice-shim.js'), path.join(out,'mobile-native-voice-shim.js'));

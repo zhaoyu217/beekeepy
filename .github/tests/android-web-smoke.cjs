@@ -115,6 +115,44 @@ async function go(){
     check('32px bottom inset expands nav background',Math.abs(metrics.navHeight-102)<2,JSON.stringify(metrics));
     check('Nav buttons above 32px system region',metrics.buttons.every(x=>x.bottom<=metrics.viewport-31),JSON.stringify(metrics.buttons));
     await page.screenshot({path:path.join(out,'simulated-safe-insets.png')});
+    // Keep modal actions clear of the simulated Android 32px bottom inset.
+    await page.evaluate(()=>window.v2p2e5lHomeQuick('inspection'));
+    const safeModal=page.locator('#app > .modal.v215-more-modal').first();
+    await safeModal.waitFor({state:'visible'});
+    const modalMeasure=await safeModal.evaluate(el=>{
+      const b=[...el.querySelectorAll('button')].find(x=>x.textContent.trim()==='Continue');
+      const rect=b.getBoundingClientRect();
+      return {buttonBottom:rect.bottom,viewport:innerHeight,systemInset:32};
+    });
+    check('Modal Continue remains clear of system navigation',modalMeasure.buttonBottom<modalMeasure.viewport-modalMeasure.systemInset,JSON.stringify(modalMeasure));
+    await safeModal.locator('.modalhead .iconbtn').click();
+    // Narrow viewport approximates keyboard-constrained available height.
+    // It does NOT emulate the actual Android IME/windowSoftInputMode behavior.
+    await page.setViewportSize({width:393,height:600});
+    await page.waitForTimeout(180);
+    await page.evaluate(()=>document.scrollingElement.scrollTo(0,document.scrollingElement.scrollHeight));
+    await page.waitForTimeout(120);
+    const narrow=await page.evaluate(()=>{
+      const nav=document.getElementById('bottomnav');
+      const r=nav.getBoundingClientRect();
+      return {viewport:innerHeight,navBottom:r.bottom,buttons:[...nav.querySelectorAll('.navitem')].map(x=>x.getBoundingClientRect().bottom),scrollTop:document.scrollingElement.scrollTop,scrollHeight:document.scrollingElement.scrollHeight};
+    });
+    check('Nav fixed correctly after viewport height shrink',Math.abs(narrow.navBottom-600)<2&&narrow.buttons.every(x=>x<=600-31),JSON.stringify(narrow));
+    check('Long home page can scroll',narrow.scrollHeight>600&&narrow.scrollTop>0,JSON.stringify(narrow));
+    await page.screenshot({path:path.join(out,'narrow-viewport.png')});
+    await page.evaluate(()=>window.go('inspection/h1'));
+    await page.waitForTimeout(500);
+    const inputs=page.locator('#view textarea, #view input:not([type=hidden]):not([type=checkbox]):not([type=radio])');
+    const inputCount=await inputs.count();
+    if(inputCount){
+      const inp=inputs.first();
+      await inp.scrollIntoViewIfNeeded();
+      await inp.focus();
+      check('Inspection text input receives focus',await inp.evaluate(e=>document.activeElement===e),'inputs='+inputCount);
+      result.keyboardSimulation='Viewport reduced to 600px and editable Inspection field focused; real Android IME not verified';
+    }else{
+      result.keyboardSimulation='No editable Inspection field found in isolated fixture; native IME remains untested';
+    }
     const unexpectedMissing=[...new Set(result.missingLocalScripts)].filter(x=>!['/r08a1.js','/r10a5-observability.js'].includes(x));
     check('No new missing local assets',unexpectedMissing.length===0,JSON.stringify(unexpectedMissing));
     check('No uncaught JavaScript exceptions',result.pageErrors.length===0,JSON.stringify(result.pageErrors.slice(0,5)));

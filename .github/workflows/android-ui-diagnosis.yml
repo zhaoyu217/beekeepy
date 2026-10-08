@@ -26,6 +26,19 @@ jobs:
             echo "CHECK $file"
             node --check "$file" || echo "SYNTAX_FAILURE $file"
           done
+      - name: Syntax probe preserving current inspection handler
+        shell: bash
+        run: |
+          node <<'NODE'
+          const fs = require('fs');
+          const src=fs.readFileSync('v45.js','utf8');
+          const legacy='function vSaveInspection(id){const s=v45s(),h=hive(s,id);';
+          if(src.split(legacy).length!==2)throw new Error('Expected exactly one V77 legacy save declaration');
+          const patched=src.replace(legacy,'function v77DeprecatedSaveInspection(id){const s=v45s(),h=hive(s,id);');
+          fs.writeFileSync('/tmp/v45-syntax-probe.js', patched);
+          console.log('V77 old declaration isolated; current vSaveInspection unchanged:',patched.includes('function vSaveInspection(id){\n  const s=v45s()'));
+          NODE
+          node --check /tmp/v45-syntax-probe.js || true
       - name: Extract UI handler source around exact screenshot strings
         shell: bash
         run: |

@@ -89,6 +89,8 @@ async function go(){
     await page.locator('#bottomnav .navitem').filter({hasText:'Hives'}).click();
     check('Nav after modal close',await page.evaluate(()=>location.hash==='#hives'));
     await page.locator('#bottomnav .navitem').filter({hasText:'Home'}).click();
+    // Allow hashchange render + header animation to complete before reading geometry.
+    await page.waitForFunction(()=>location.hash==='#home'&&getComputedStyle(document.getElementById('topbar')).display!=='none',null,{timeout:12000});
     await page.evaluate(()=>{document.documentElement.style.setProperty('--hd-android-safe-top','24px');document.documentElement.style.setProperty('--hd-android-safe-bottom','32px');});
     const metrics=await page.evaluate(()=>{
       const top=document.querySelector('#topbar'),nav=document.querySelector('#bottomnav'),view=document.querySelector('#view');

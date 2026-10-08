@@ -73,7 +73,13 @@ jobs:
           const localScripts=[...html.matchAll(/<script\s+src=["']([^"']+)["']/g)]
             .map(x=>x[1].split('?')[0]).filter(x=>!/^https?:/.test(x)&&x!=='vendor/supabase.min.js');
           const missing=localScripts.filter(x=>!fs.existsSync('mobile/dist/'+x));
-          console.log('Legacy HTML script references absent from repository:',missing);
+          console.log('Android packaged HTML missing local scripts:',missing);
+          assert.deepEqual(missing,[], 'Every Android local script must actually exist');
+          const webIndex=fs.readFileSync('index.html','utf8');
+          for(const n of ['r08a1.js','r10a5-observability.js']){
+            assert(webIndex.includes(n),'Original web index source must be preserved');
+            assert(!html.includes(n),'Missing historical scripts must not load in Android');
+          }
           NODE
 
       - name: Verify Android safe-area bundle

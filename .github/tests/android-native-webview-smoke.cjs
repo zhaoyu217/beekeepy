@@ -1,37 +1,93 @@
-const fs=require('fs'),path=require('path'),{execFileSync}=require('child_process');
-const {chromium}=require('playwright');const dir='native-smoke-results';fs.mkdirSync(dir,{recursive:true});
-const adb=(...x)=>execFileSync('adb',x,{encoding:'utf8',timeout:30000}).trim();
-const wait=ms=>new Promise(r=>setTimeout(r,ms));
-const report={source:'original Android APK on API35 emulator',checks:[],fail:null};
-function check(name,pass,detail){report.checks.push({name,pass:!!pass,detail});if(!pass)throw Error(name+' '+JSON.stringify(detail))}
-async function run(){let browser;
-try{
- check('Installed original APK',adb('shell','pm','path','app.hivefield.mobile.fix').includes('package:'));
- const pid=adb('shell','pidof','app.hivefield.mobile.fix').split(/\s+/)[0];check('Android process launched',!!pid,pid);
- report.debuggable=adb('shell','dumpsys','package','app.hivefield.mobile.fix').split('\n').filter(x=>/DEBUGGABLE|debuggable/i.test(x)).slice(0,4);
- try{report.remoteSockets=adb('shell','cat','/proc/net/unix').split('\n').filter(x=>/devtools_remote|chrome_devtools|webview_devtools/.test(x)).slice(0,20)}catch(e){report.remoteSocketsError=String(e).slice(0,350)}
- adb('forward','tcp:9222','localabstract:webview_devtools_remote_'+pid);
- report.forwarded=adb('forward','--list');
- const http=require('node:http');
- async function probe(url){return new Promise(done=>{const req=http.get(url,res=>{let s='';res.setEncoding('utf8');res.on('data',t=>s+=t);res.on('end',()=>done({status:res.statusCode,body:s.slice(0,1800)}));});req.setTimeout(2500,()=>req.destroy(new Error('timeout')));req.on('error',e=>done({error:String(e)}));});}
- report.devtoolsProbe=await probe('http://127.0.0.1:9222/json/version');
-
- for(let i=0;i<10&&!browser;i++){try{browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{timeout:4000})}catch(e){report.connectError=String(e).slice(0,1200);await wait(1500)}}
- check('Real native WebView CDP available',!!browser);
- const pages=browser.contexts().flatMap(c=>c.pages());report.pages=pages.map(x=>x.url());const p=pages.find(x=>x.url().includes('localhost'))||pages[0];check('WebView page accessible',!!p,report.pages);
- const errors=[];p.on('pageerror',x=>errors.push(String(x.stack||x)));
- const initial=await p.evaluate(()=>({go:typeof window.go,r08:typeof window.v2p2e5r08Evaluate,r10:typeof window.HiveDashTaskEngineCoreV1?.evaluateSplitVerification,ready:document.readyState}));report.initial=initial;
- check('Runtime loaded R08 and R10',initial.go==='function'&&initial.r08==='function'&&initial.r10==='function',initial);
- const fixture=await p.evaluate(()=>{window.HIVEDASH_CONFIG.REQUIRE_AUTH=false;location.hash='home';if(typeof window.render==='function')window.render();return {hash:location.hash,nav:document.querySelectorAll('#bottomnav .navitem').length}});
- check('Isolated demo route available',fixture.nav===4,fixture);
- await p.screenshot({path:path.join(dir,'webview-home.png')});
- report.geometry=await p.evaluate(()=>{const top=document.getElementById('topbar').getBoundingClientRect(),bottom=document.getElementById('bottomnav').getBoundingClientRect();return {viewport:innerHeight,dpr:devicePixelRatio,top:top.top,topHeight:top.height,navHeight:bottom.height,navBottom:bottom.bottom,buttons:[...document.querySelectorAll('#bottomnav .navitem')].map(x=>x.getBoundingClientRect().bottom)}});
- check('Real WebView header and nav visible',report.geometry.topHeight>0&&report.geometry.navHeight>=60,report.geometry);
- for(const [n,h] of [['Hives','hives'],['Actions','actions'],['Insights','insights'],['Home','home']]){await p.locator('#bottomnav .navitem').filter({hasText:n}).click({timeout:12000});await p.waitForFunction(expected=>location.hash==='#'+expected,h);check(n+' navigates in real WebView',await p.evaluate(()=>location.hash)==='#'+h)}
- await p.evaluate(()=>window.v2p2e5lHomeQuick('inspection'));const modal=p.locator('#app > .modal.v215-more-modal');await modal.waitFor({state:'visible',timeout:12000});
- const id=await modal.locator('#v2p2e5l-quick-hive').inputValue();check('Select Hive has an active ID',!!id,id);await p.screenshot({path:path.join(dir,'webview-modal.png')});
- await modal.getByRole('button',{name:'Continue'}).click();await p.waitForFunction(id=>location.hash==='#inspection/'+id,id);check('Continue opens selected hive',await p.evaluate(()=>location.hash)==='#inspection/'+id);
- await p.screenshot({path:path.join(dir,'webview-inspection.png')});check('No detected runtime exception',errors.length===0,errors);
-}catch(e){report.fail=String(e.stack||e);process.exitCode=1}
-finally{try{await browser?.close()}catch(_){}fs.writeFileSync(path.join(dir,'report.json'),JSON.stringify(report,null,2));console.log('ANDROID_NATIVE_REPORT '+JSON.stringify(report))}}
-run().catch(e=>{console.error(e);process.exitCode=1});
+/* Android 15 actual installed APK: inspect the WebView page target directly.
+ * Chrome-remote-interface avoids Playwright's browser-level CDP commands,
+ * which Android WebView 124 does not support. No account credentials or writes. */
+const fs=require('node:fs');
+const path=require('node:path');
+const http=require('node:http');
+const {execFileSync}=require('node:child_process');
+const CDP=require('chrome-remote-interface');
+const out='native-smoke-results';
+fs.mkdirSync(out,{recursive:true});
+const report={mode:'Android 15 installed APK / direct WebView page CDP',tests:[],failure:null};
+const adb=(...args)=>execFileSync('adb',args,{encoding:'utf8',timeout:20000}).trim();
+const pause=ms=>new Promise(resolve=>setTimeout(resolve,ms));
+function check(name,pass,details){
+  report.tests.push({name,pass:!!pass,details:details===undefined?null:details});
+  if(!pass)throw Error(name+': '+JSON.stringify(details));
+}
+let client;
+async function run(){
+  try{
+    const pkg='app.hivefield.mobile.fix';
+    check('APK installed',adb('shell','pm','path',pkg).includes('package:'));
+    const pid=adb('shell','pidof',pkg).split(/\s+/)[0];
+    check('APK process running',/^\d+$/.test(pid),pid);
+    report.android={version:adb('shell','getprop','ro.build.version.release'),size:adb('shell','wm','size'),density:adb('shell','wm','density')};
+    report.sockets=[];
+    try{report.sockets=adb('shell','cat','/proc/net/unix').split('\n').filter(x=>/webview_devtools_remote/.test(x)).slice(0,5)}catch(e){report.socketsError=String(e).slice(0,250)}
+    adb('forward','tcp:9222','localabstract:webview_devtools_remote_'+pid);
+    report.forward=adb('forward','--list');
+    report.targets=await CDP.List({host:'127.0.0.1',port:9222});
+    check('WebView exposes a debuggable page',report.targets.some(x=>x.type==='page'),report.targets.map(x=>({type:x.type,url:x.url})));
+    const target=report.targets.find(x=>x.type==='page'&&x.url&&x.url.includes('localhost'))||report.targets.find(x=>x.type==='page');
+    client=await CDP({host:'127.0.0.1',port:9222,target:target});
+    check('Direct WebView page CDP connection',!!client,target?.url);
+    await client.Runtime.enable();
+    await client.Page.enable();
+    async function value(expression){
+      const reply=await client.Runtime.evaluate({expression,returnByValue:true,awaitPromise:true});
+      if(reply.exceptionDetails)throw Error('JS evaluation failed: '+JSON.stringify(reply.exceptionDetails).slice(0,600));
+      return reply.result?.value;
+    }
+    async function shot(name){
+      const s=await client.Page.captureScreenshot({format:'png',fromSurface:true});
+      fs.writeFileSync(path.join(out,name),Buffer.from(s.data,'base64'));
+    }
+    async function waitUntil(expression,label,timeout=9000){
+      const since=Date.now();let last;
+      while(Date.now()-since<timeout){last=await value(expression);if(last)return;await pause(180)}
+      throw Error('Timeout waiting for '+label+', last='+JSON.stringify(last));
+    }
+    async function tap(expression,label){
+      const rect=await value('(()=>{const e='+expression+';if(!e)return null;e.scrollIntoView({block:"nearest"});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,w:r.width,h:r.height,disabled:!!e.disabled}})()');
+      check(label+' clickable bounds',!!rect&&rect.w>0&&rect.h>0&&!rect.disabled,rect);
+      await client.Input.dispatchMouseEvent({type:'mouseMoved',x:rect.x,y:rect.y});
+      await client.Input.dispatchMouseEvent({type:'mousePressed',x:rect.x,y:rect.y,button:'left',clickCount:1});
+      await client.Input.dispatchMouseEvent({type:'mouseReleased',x:rect.x,y:rect.y,button:'left',clickCount:1});
+      await pause(220);
+    }
+    const initial=await value('({go:typeof window.go,r08:typeof window.v2p2e5r08Evaluate,r10:typeof window.HiveDashTaskEngineCoreV1?.evaluateSplitVerification,auth:!!document.querySelector("#view .auth-view"),ready:document.readyState})');
+    report.initial=initial;
+    check('Real APK JavaScript navigation loaded',initial.go==='function',initial);
+    check('Real APK R08 and R10 hooks loaded',initial.r08==='function'&&initial.r10==='function',initial);
+    const demo=await value('(()=>{window.HIVEDASH_CONFIG.REQUIRE_AUTH=false;location.hash="home";window.render();return {hash:location.hash,nav:document.querySelectorAll("#bottomnav .navitem").length}})()');
+    check('Isolated demo home mounted',demo.hash==='#home'&&demo.nav===4,demo);
+    await shot('android-home.png');
+    report.geometry=await value('(()=>{const h=document.querySelector("#topbar").getBoundingClientRect(),n=document.querySelector("#bottomnav").getBoundingClientRect();return {innerWidth,innerHeight,devicePixelRatio,headerTop:h.top,headerHeight:h.height,navBottom:n.bottom,navHeight:n.height,buttonBottoms:[...document.querySelectorAll("#bottomnav .navitem")].map(e=>e.getBoundingClientRect().bottom),safeTop:getComputedStyle(document.documentElement).getPropertyValue("--hd-android-safe-top"),safeBottom:getComputedStyle(document.documentElement).getPropertyValue("--hd-android-safe-bottom")}})()');
+    const g=report.geometry;
+    check('Native header visible',g.headerHeight>30,g);
+    check('Native bottom navigation visible and inside WebView',g.navHeight>=60&&g.buttonBottoms.length===4&&g.buttonBottoms.every(v=>v<=g.innerHeight+1),g);
+    for(const [label,route] of [['Hives','hives'],['Actions','actions'],['Insights','insights'],['Home','home']]){
+      await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==="'+label+'")','Tap '+label);
+      await waitUntil('location.hash==="#'+route+'"',label+' route');
+      check('Native navigation '+label,true,route);
+    }
+    await value('window.v2p2e5lHomeQuick("inspection")');
+    await waitUntil('!!document.querySelector("#app > .modal.v215-more-modal")','Select Hive modal');
+    const hiveId=await value('document.querySelector("#v2p2e5l-quick-hive")?.value||""');
+    check('Native Select Hive has selectable hive',!!hiveId,hiveId);
+    await shot('android-select-hive.png');
+    await tap('Array.from(document.querySelectorAll("#app > .modal.v215-more-modal button")).find(e=>e.textContent.trim()==="Continue")','Tap Continue');
+    await waitUntil('location.hash==="#inspection/'+hiveId+'"','Continue navigation');
+    check('Native Continue enters correct Inspection',true,'inspection/'+hiveId);
+    check('Select Hive modal dismissed',!(await value('!!document.querySelector("#app > .modal.v215-more-modal")')));
+    await shot('android-inspection.png');
+    // Native IME and Supabase authenticated flows require later device-specific tests.
+  }catch(err){report.failure=String(err.stack||err);process.exitCode=1}
+  finally{
+    try{if(client)await client.close()}catch(_){}
+    fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
+    console.log('ANDROID_NATIVE_REPORT '+JSON.stringify(report));
+  }
+}
+run().catch(e=>{report.failure=String(e);process.exitCode=1});

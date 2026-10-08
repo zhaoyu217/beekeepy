@@ -23,6 +23,14 @@ async function run(){
     const pid=adb('shell','pidof',pkg).split(/\s+/)[0];
     check('APK process running',/^\d+$/.test(pid),pid);
     report.android={version:adb('shell','getprop','ro.build.version.release'),size:adb('shell','wm','size'),density:adb('shell','wm','density')};
+    try{
+      report.android.navOverlays=adb('shell','cmd','overlay','list','--user','0').split('\n').filter(x=>/systemui\.navbar/.test(x));
+    }catch(err){report.android.navOverlayError=String(err).slice(0,350)}
+    if(process.env.HIVE_REQUIRE_THREEBUTTON==='1'){
+      const active=(report.android.navOverlays||[]).find(x=>/com\.android\.internal\.systemui\.navbar\.threebutton/.test(x));
+      check('Android 15 three-button navigation is actually enabled',!!active&&/^\s*\[x\]/.test(active),report.android.navOverlays);
+    }
+
     report.sockets=[];
     try{report.sockets=adb('shell','cat','/proc/net/unix').split('\n').filter(x=>/webview_devtools_remote/.test(x)).slice(0,5)}catch(e){report.socketsError=String(e).slice(0,250)}
     adb('forward','tcp:9222','localabstract:webview_devtools_remote_'+pid);

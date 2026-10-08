@@ -1,0 +1,53 @@
+name: Android UI Browser Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [mobile-offline-v1]
+    paths:
+      - 'mobile/tests/android-web-smoke.cjs'
+      - '.github/workflows/android-ui-browser-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  browser-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Audit missing legacy script history
+        shell: bash
+        run: |
+          echo 'AUDIT missing references and history'
+          for file in r08a1.js r10a5-observability.js; do
+            echo "FILE $file"
+            if test -f "$file"; then echo PRESENT; else echo MISSING; fi
+            git log --all --format='%h %s' -- "$file" | head -8
+          done
+          echo 'INDEX REFERENCES'
+          grep -nE 'r08a1.js|r10a5-observability.js' index.html
+      - name: Prepare real Android WebView HTML bundle
+        run: |
+          node mobile/scripts/prepare-web.mjs
+          node --check mobile/dist/v45.js
+      - name: Install headless browser
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run click, modal, routing and safe-area smoke tests
+        run: node mobile/tests/android-web-smoke.cjs
+      - name: Upload diagnostic report and screenshots
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android-ui-smoke-report
+          path: smoke-results/
+          retention-days: 7
+          if-no-files-found: warn

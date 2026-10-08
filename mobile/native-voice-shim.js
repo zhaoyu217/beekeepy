@@ -59,7 +59,7 @@
             'QUEEN','QUEEN SEEN','QUEEN CELLS','EGGS','LARVAE',
             'BROOD PATTERN','COLONY STRENGTH','HONEY STORES',
             'POLLEN STORES','SWARM SIGNS','VARROA','TREATMENT'
-          ]
+          ].join('\n')
         });
         this._running=true;
         if(typeof this.onstart === 'function') this.onstart();

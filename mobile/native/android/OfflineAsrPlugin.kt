@@ -73,7 +73,7 @@ class OfflineAsrPlugin : Plugin() {
                 activity.runOnUiThread { notifyListeners(event, data, true) }
             }
         }
-        val hotwords = call.getString("hotwords", "")
+        val hotwords = call.getString("hotwords") ?: ""
         try {
             engine!!.start(hotwords)
             call.resolve()

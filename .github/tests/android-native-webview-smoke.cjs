@@ -8,8 +8,15 @@ async function run(){let browser;
 try{
  check('Installed original APK',adb('shell','pm','path','app.hivefield.mobile.fix').includes('package:'));
  const pid=adb('shell','pidof','app.hivefield.mobile.fix').split(/\s+/)[0];check('Android process launched',!!pid,pid);
+ report.debuggable=adb('shell','dumpsys','package','app.hivefield.mobile.fix').split('\\n').filter(x=>/DEBUGGABLE|debuggable/i.test(x)).slice(0,4);
+ report.remoteSockets=adb('shell','cat','/proc/net/unix').split('\\n').filter(x=>/devtools_remote|chrome_devtools|webview_devtools/.test(x)).slice(0,20);
  adb('forward','tcp:9222','localabstract:webview_devtools_remote_'+pid);
- for(let i=0;i<10&&!browser;i++){try{browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{timeout:4000})}catch(e){await wait(1500)}}
+ report.forwarded=adb('forward','--list');
+ const http=require('node:http');
+ async function probe(url){return new Promise(done=>{const req=http.get(url,res=>{let s='';res.setEncoding('utf8');res.on('data',t=>s+=t);res.on('end',()=>done({status:res.statusCode,body:s.slice(0,1800)}));});req.setTimeout(2500,()=>req.destroy(new Error('timeout')));req.on('error',e=>done({error:String(e)}));});}
+ report.devtoolsProbe=await probe('http://127.0.0.1:9222/json/version');
+
+ for(let i=0;i<10&&!browser;i++){try{browser=await chromium.connectOverCDP('http://127.0.0.1:9222',{timeout:4000})}catch(e){report.connectError=String(e).slice(0,1200);await wait(1500)}}
  check('Real native WebView CDP available',!!browser);
  const pages=browser.contexts().flatMap(c=>c.pages());report.pages=pages.map(x=>x.url());const p=pages.find(x=>x.url().includes('localhost'))||pages[0];check('WebView page accessible',!!p,report.pages);
  const errors=[];p.on('pageerror',x=>errors.push(String(x.stack||x)));

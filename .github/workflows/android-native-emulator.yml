@@ -1,0 +1,71 @@
+name: Android 15 Native WebView Smoke
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [mobile-offline-v1]
+    paths:
+      - '.github/workflows/android-native-emulator.yml'
+      - '.github/tests/android-native-webview-smoke.cjs'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  emulator-webview:
+    runs-on: ubuntu-latest
+    timeout-minutes: 35
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download previously verified original APK
+        uses: actions/download-artifact@v4
+        with:
+          name: hive-offline-debug-apk
+          repository: zhaoyu217/beekeepy
+          run-id: 37765875248
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: candidate-apk
+      - name: Inspect original APK and set up browser driver
+        run: |
+          test -s candidate-apk/app-debug.apk
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          node --check .github/tests/android-native-webview-smoke.cjs
+          sha256sum candidate-apk/app-debug.apk
+      - name: Run WebView checks on Android 15 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 3072M
+          heap-size: 512M
+          disk-size: 6G
+          disable-animations: true
+          script: |
+            set -euxo pipefail
+            adb install -r candidate-apk/app-debug.apk
+            adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
+            sleep 10
+            mkdir -p native-smoke-results
+            adb shell screencap -p /sdcard/hive-native-launch.png
+            adb pull /sdcard/hive-native-launch.png native-smoke-results/device-launch.png
+            node .github/tests/android-native-webview-smoke.cjs
+      - name: Save emulator logs
+        if: always()
+        run: |
+          mkdir -p native-smoke-results
+          adb logcat -d -t 3000 > native-smoke-results/logcat.txt 2>/dev/null || true
+          adb shell dumpsys window > native-smoke-results/window-insets.txt 2>/dev/null || true
+      - name: Upload emulator evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android15-native-webview-report
+          path: native-smoke-results/
+          retention-days: 7
+          if-no-files-found: warn

@@ -3,7 +3,7 @@
   if(window.__HD_STRUCTURED_VOICE_V1__) return;
   window.__HD_STRUCTURED_VOICE_V1__=true;
 
-  var recorder=null, mediaStream=null, starting=false, listening=false, stopping=false, transcribing=false, cancelled=false, finalTranscript='', audioChunks=[], stopTimer=null, stopWatchdog=null, finalizing=false;
+  var recorder=null, mediaStream=null, browserRecognition=null, browserSpeechFinal='', browserSpeechStartedAt=0, starting=false, listening=false, stopping=false, transcribing=false, cancelled=false, finalTranscript='', audioChunks=[], stopTimer=null, stopWatchdog=null, finalizing=false;
 
   function T(v){return String(v==null?'':v).trim();}
   function E(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
@@ -367,15 +367,7 @@
 
   async function transcribe(blob,w){
     lastCloudError='';
-    try{
-      return await serverTranscribe(blob,w);
-    }catch(err){
-      console.warn('Server transcription unavailable; falling back to local Whisper',err);
-      var msg=String(err&&err.message||err||'');
-      lastCloudError=msg||'unknown cloud error';
-      status(w,'Cloud failed: '+lastCloudError+'. Using local fallback…','idle');
-      return await localTranscribe(blob,w);
-    }
+    return await localTranscribe(blob,w);
   }
 
   async function finishRecording(w,type,recorderRef){
@@ -417,6 +409,20 @@
   function stop(wArg){
     var w=wArg&&wArg.classList&&wArg.classList.contains('hd-voice-overlay')?wArg:document.querySelector('.hd-voice-overlay');
     if(stopping||finalizing)return;
+    if(browserRecognition){
+      stopping=true;starting=false;listening=false;
+      clearTimeout(stopTimer);stopTimer=null;
+      if(w){status(w,'Stopping recognition…','idle');buttons(w);}
+      var br=browserRecognition;
+      try{br.stop();}catch(e){
+        try{br.abort();}catch(_){}
+        finishBrowserRecognition(w);
+      }
+      stopWatchdog=setTimeout(function(){
+        if(browserRecognition===br)finishBrowserRecognition(w);
+      },1000);
+      return;
+    }
     var rr=recorder;
     if(!rr){
       starting=false;listening=false;stopping=false;
@@ -449,6 +455,10 @@
   function close(){
     cancelled=true;
     clearTimeout(stopWatchdog);stopWatchdog=null;
+    if(browserRecognition){
+      try{browserRecognition.abort();}catch(e){}
+      browserRecognition=null;
+    }
     if(recorder){
       try{
         if(recorder.state==='recording'||recorder.state==='paused')recorder.stop();
@@ -475,7 +485,122 @@
     box.innerHTML=html;
   }
 
-  async function start(w){
+
+  function speechCtor(){
+    return window.SpeechRecognition||window.webkitSpeechRecognition||null;
+  }
+
+  function applySpeechBias(rec){
+    try{
+      var Phrase=window.SpeechRecognitionPhrase;
+      if(!Phrase||!('phrases' in rec))return;
+      var words=[
+        ['queen',4],['queen seen',5],['queen cells',5],
+        ['eggs present',4],['larvae present',5],
+        ['brood pattern',5],['colony strength',5],
+        ['honey stores',5],['pollen stores',4],
+        ['swarm signs',5],['varroa',5],['treatment',3]
+      ];
+      rec.phrases=words.map(function(x){return new Phrase(x[0],x[1]);});
+    }catch(e){
+      console.warn('Speech contextual bias unavailable',e);
+    }
+  }
+
+  function composeBrowserTranscript(area,interim){
+    var parts=[];
+    if(finalTranscript)parts.push(finalTranscript);
+    if(browserSpeechFinal)parts.push(browserSpeechFinal);
+    if(interim)parts.push(interim);
+    if(area)area.value=parts.join(parts.length>1?'\n':'').trim();
+  }
+
+  function finishBrowserRecognition(w){
+    if(!browserRecognition)return;
+    var rec=browserRecognition;
+    browserRecognition=null;
+    starting=false;listening=false;stopping=false;transcribing=false;finalizing=false;
+    clearTimeout(stopTimer);stopTimer=null;
+    var area=w&&w.querySelector('.hd-voice-transcript');
+    composeBrowserTranscript(area,'');
+    if(w){
+      review(w);
+      var ms=browserSpeechStartedAt?Math.max(0,performance.now()-browserSpeechStartedAt):0;
+      status(w,'Review the transcript and detected fields. Browser '+(ms/1000).toFixed(1)+'s','idle');
+      buttons(w);
+    }
+    try{rec.onresult=rec.onerror=rec.onend=null;}catch(e){}
+  }
+
+  function startBrowserSpeech(w){
+    var Ctor=speechCtor();
+    if(!Ctor)return false;
+    if(starting||listening||stopping||transcribing||finalizing)return true;
+    cancelled=false;finalizing=false;starting=true;stopping=false;
+    clearTimeout(stopWatchdog);stopWatchdog=null;
+    var area=w.querySelector('.hd-voice-transcript');
+    finalTranscript=T(area&&area.value);
+    browserSpeechFinal='';
+    buttons(w);
+    try{
+      var rec=new Ctor();
+      browserRecognition=rec;
+      rec.lang='en-US';
+      rec.continuous=true;
+      rec.interimResults=true;
+      rec.maxAlternatives=1;
+      applySpeechBias(rec);
+      rec.onstart=function(){
+        starting=false;listening=true;stopping=false;transcribing=false;
+        browserSpeechStartedAt=performance.now();
+        status(w,'Recording… browser speech recognition active.','listen');
+        buttons(w);
+        stopTimer=setTimeout(function(){if(listening)stop(w);},180000);
+      };
+      rec.onresult=function(ev){
+        var interim='';
+        for(var i=ev.resultIndex;i<ev.results.length;i++){
+          var txt=T(ev.results[i][0]&&ev.results[i][0].transcript);
+          if(!txt)continue;
+          if(ev.results[i].isFinal){
+            browserSpeechFinal=(browserSpeechFinal?browserSpeechFinal+' ':'')+txt;
+          }else{
+            interim+=(interim?' ':'')+txt;
+          }
+        }
+        composeBrowserTranscript(area,interim);
+        review(w);
+      };
+      rec.onerror=function(ev){
+        var code=String(ev&&ev.error||'speech-error');
+        console.warn('Browser speech recognition error',code,ev&&ev.message||'');
+        if(code==='aborted'&&stopping)return;
+        browserRecognition=null;
+        starting=false;listening=false;stopping=false;transcribing=false;finalizing=false;
+        clearTimeout(stopTimer);stopTimer=null;
+        buttons(w);
+        status(w,'Browser speech recognition failed: '+code+'. Use Start to retry.','err');
+      };
+      rec.onend=function(){
+        if(browserRecognition===rec)finishBrowserRecognition(w);
+      };
+      rec.start();
+      return true;
+    }catch(e){
+      console.warn('Browser SpeechRecognition could not start',e);
+      browserRecognition=null;starting=false;listening=false;stopping=false;transcribing=false;finalizing=false;
+      buttons(w);
+      return false;
+    }
+  }
+
+  function start(w){
+    if(startBrowserSpeech(w))return;
+    status(w,'Browser speech recognition unavailable. Using local fallback…','idle');
+    startLocalRecorder(w);
+  }
+
+  async function startLocalRecorder(w){
     if(starting||listening||stopping||transcribing||finalizing)return;
     cancelled=false;finalizing=false;starting=true;
     clearTimeout(stopWatchdog);stopWatchdog=null;
@@ -572,5 +697,5 @@
   }catch(e){}
 
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='4.0.0-server-stt-with-local-fallback';
+  window.__HD_STRUCTURED_VOICE_VERSION__='5.0.0-free-browser-speech';
 })();

@@ -56,15 +56,9 @@
       [/\\b(?:did(?:n't| not) see|could(?:n't| not) find|never saw|no)\\s+(?:the\\s+)?queen\\b(?!\\s+cells?\\b)/i,'Not Seen'],
       [/\\bqueen\\s+(?:not seen|not found|absent)\\b/i,'Not Seen'],
       [/\\b(?:saw|seen|found|spotted)\\s+(?:the\\s+)?queen\\b/i,'Seen'],
-      [/\\bqueen\\s+(?:seen|present|spotted|looked good|looks good)\\b/i,'Seen']
+      [/\\bqueen\\s+(?:seen|present|spotted|looked good|looks good)\\b/i,'Seen'],
+      [/\\bqueen\\s+(?:c|see|seen)\\.?(?=\\s|$)/i,'Seen']
     ]);
-    if(queenStatus===undefined){
-      var qc=/\\bqueen\\s+(?:c|see|seen)\\.?(?=\\s|$)/i.exec(text);
-      if(qc){
-        var near=text.slice(Math.max(0,qc.index-12),Math.min(text.length,qc.index+qc[0].length+12));
-        if(!/\\b(?:no|not)\\b/i.test(near))queenStatus='Seen';
-      }
-    }
     put('queenStatus',queenStatus);
     put('queenMarked',lastChoice(text,[
       [/\\bqueen\\s+(?:is\\s+)?(?:not marked|unmarked)\\b/i,'No'],

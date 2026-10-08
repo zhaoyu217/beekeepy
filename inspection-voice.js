@@ -190,7 +190,7 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  var whisperWorker=null,whisperReady=false,whisperLoadPromise=null,whisperLoadResolve=null,whisperLoadReject=null,whisperLoadTimer=null,whisperSeq=0,whisperPending={},whisperStatusWindow=null,whisperLoadStartedAt=0,whisperLoadMs=0,whisperTranscribeStartedAt=0,whisperTranscribeMs=0,transcriptionMode='server';
+  var whisperWorker=null,whisperReady=false,whisperLoadPromise=null,whisperLoadResolve=null,whisperLoadReject=null,whisperLoadTimer=null,whisperSeq=0,whisperPending={},whisperStatusWindow=null,whisperLoadStartedAt=0,whisperLoadMs=0,whisperTranscribeStartedAt=0,whisperTranscribeMs=0,transcriptionMode='server',lastCloudError='';
 
   function whisperStatus(msg,kind){
     var w=whisperStatusWindow;
@@ -348,7 +348,12 @@
       var data={};
       try{data=await r.json();}catch(e){}
       if(!r.ok){
-        var msg=String(data&&data.error||('HTTP '+r.status));
+        var bits=['HTTP '+r.status];
+        if(data&&data.upstream_status)bits.push('OpenAI '+data.upstream_status);
+        if(data&&data.upstream_code)bits.push(String(data.upstream_code));
+        else if(data&&data.upstream_type)bits.push(String(data.upstream_type));
+        else if(data&&data.error)bits.push(String(data.error));
+        var msg=bits.join(' · ');
         var err=new Error(msg);err.status=r.status;throw err;
       }
       var text=T(data&&data.text);
@@ -361,12 +366,14 @@
   }
 
   async function transcribe(blob,w){
+    lastCloudError='';
     try{
       return await serverTranscribe(blob,w);
     }catch(err){
       console.warn('Server transcription unavailable; falling back to local Whisper',err);
       var msg=String(err&&err.message||err||'');
-      status(w,msg==='SERVER_STT_NOT_CONFIGURED'?'Cloud transcription is not configured. Using local fallback…':'Cloud transcription unavailable. Using local fallback…','idle');
+      lastCloudError=msg||'unknown cloud error';
+      status(w,'Cloud failed: '+lastCloudError+'. Using local fallback…','idle');
       return await localTranscribe(blob,w);
     }
   }
@@ -395,6 +402,7 @@
         var timing='Review the transcript and detected fields.';
         if(whisperTranscribeMs>0)timing+=(transcriptionMode==='server'?' Cloud ':' Local ')+(whisperTranscribeMs/1000).toFixed(1)+'s';
         if(transcriptionMode==='local'&&whisperLoadMs>0)timing+=' · Warm-up '+(whisperLoadMs/1000).toFixed(1)+'s';
+        if(transcriptionMode==='local'&&lastCloudError)timing+=' · Cloud error: '+lastCloudError;
         status(w,timing,'idle');
       }
     }catch(err){

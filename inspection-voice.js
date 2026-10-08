@@ -490,23 +490,6 @@
     return window.SpeechRecognition||window.webkitSpeechRecognition||null;
   }
 
-  function applySpeechBias(rec){
-    try{
-      var Phrase=window.SpeechRecognitionPhrase;
-      if(!Phrase||!('phrases' in rec))return;
-      var words=[
-        ['queen',4],['queen seen',5],['queen cells',5],
-        ['eggs present',4],['larvae present',5],
-        ['brood pattern',5],['colony strength',5],
-        ['honey stores',5],['pollen stores',4],
-        ['swarm signs',5],['varroa',5],['treatment',3]
-      ];
-      rec.phrases=words.map(function(x){return new Phrase(x[0],x[1]);});
-    }catch(e){
-      console.warn('Speech contextual bias unavailable',e);
-    }
-  }
-
   function composeBrowserTranscript(area,interim){
     var parts=[];
     if(finalTranscript)parts.push(finalTranscript);
@@ -549,7 +532,6 @@
       rec.continuous=true;
       rec.interimResults=true;
       rec.maxAlternatives=1;
-      applySpeechBias(rec);
       rec.onstart=function(){
         starting=false;listening=true;stopping=false;transcribing=false;
         browserSpeechStartedAt=performance.now();
@@ -697,5 +679,5 @@
   }catch(e){}
 
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='5.0.0-free-browser-speech';
+  window.__HD_STRUCTURED_VOICE_VERSION__='5.1.0-free-browser-speech-stable';
 })();

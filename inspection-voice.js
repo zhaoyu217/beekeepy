@@ -3,7 +3,7 @@
   if(window.__HD_STRUCTURED_VOICE_V1__) return;
   window.__HD_STRUCTURED_VOICE_V1__=true;
 
-  var recorder=null, mediaStream=null, listening=false, transcribing=false, cancelled=false, finalTranscript='', audioChunks=[], stopTimer=null;
+  var recorder=null, mediaStream=null, listening=false, transcribing=false, cancelled=false, finalTranscript='', audioChunks=[], stopTimer=null, stopWatchdog=null, finalizing=false;
 
   function T(v){return String(v==null?'':v).trim();}
   function E(v){return String(v==null?'':v).replace(/[&<>"']/g,function(m){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[m];});}
@@ -186,6 +186,7 @@
   }
   function cleanupMedia(){
     clearTimeout(stopTimer);stopTimer=null;
+    clearTimeout(stopWatchdog);stopWatchdog=null;
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
@@ -307,15 +308,66 @@
     });
   }
 
+  async function finishRecording(w,type,recorderRef){
+    if(finalizing)return;
+    finalizing=true;
+    listening=false;
+    cleanupMedia();
+    if(cancelled){audioChunks=[];finalizing=false;return;}
+    transcribing=true;
+    if(w){buttons(w);status(w,'Transcribing…','idle');}
+    try{
+      var blob=new Blob(audioChunks,{type:(recorderRef&&recorderRef.mimeType)||type||'audio/webm'});
+      audioChunks=[];
+      if(!blob.size)throw new Error('No audio was captured. Please try again.');
+      var text=await transcribe(blob,w);
+      var area=w&&w.querySelector('.hd-voice-transcript');
+      if(area){
+        area.value=[finalTranscript,text].filter(Boolean).join(finalTranscript&&text?'\n':'').trim();
+      }
+      if(w){review(w);status(w,'Review the transcript and detected fields.','idle');}
+    }catch(err){
+      console.error('Structured voice transcription failed',err);
+      if(w)status(w,err&&err.message?err.message:'Voice transcription failed.','err');
+    }finally{
+      transcribing=false;recorder=null;finalizing=false;
+      if(w)buttons(w);
+    }
+  }
+
   function stop(){
-    if(recorder&&listening){
-      try{recorder.stop();}catch(e){}
+    var w=document.querySelector('.hd-voice-overlay');
+    if(!recorder||finalizing)return;
+    var rr=recorder;
+    clearTimeout(stopTimer);stopTimer=null;
+    listening=false;
+    if(w){status(w,'Stopping recording…','idle');buttons(w);}
+    try{
+      if(rr.state==='recording'||rr.state==='paused'){
+        try{rr.requestData();}catch(_){}
+        rr.stop();
+        stopWatchdog=setTimeout(function(){
+          if(!finalizing&&recorder===rr){
+            finishRecording(w,rr.mimeType||'',rr);
+          }
+        },1200);
+      }else{
+        finishRecording(w,rr.mimeType||'',rr);
+      }
+    }catch(err){
+      console.warn('MediaRecorder stop failed; using captured audio fallback',err);
+      finishRecording(w,rr.mimeType||'',rr);
     }
   }
   function close(){
     cancelled=true;
-    if(recorder&&listening){try{recorder.stop();}catch(e){}}
-    cleanupMedia();recorder=null;listening=false;transcribing=false;audioChunks=[];
+    clearTimeout(stopWatchdog);stopWatchdog=null;
+    if(recorder){
+      try{
+        if(recorder.state==='recording'||recorder.state==='paused')recorder.stop();
+      }catch(e){}
+    }
+    cleanupMedia();recorder=null;listening=false;transcribing=false;finalizing=false;audioChunks=[];
     document.querySelector('.hd-voice-overlay')?.remove();
   }
   function status(w,msg,kind){var l=w.querySelector('.hd-voice-status span:last-child'),d=w.querySelector('.hd-voice-dot');if(l)l.textContent=msg;if(d){d.classList.toggle('listen',kind==='listen');d.classList.toggle('err',kind==='err');}}
@@ -337,8 +389,9 @@
   }
 
   async function start(w){
-    if(listening||transcribing)return;
-    cancelled=false;
+    if(listening||transcribing||finalizing)return;
+    cancelled=false;finalizing=false;
+    clearTimeout(stopWatchdog);stopWatchdog=null;
     transcribing=true;buttons(w);
     try{await loadWhisper(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local Whisper model could not be loaded.','err');return;}
     if(cancelled||!document.body.contains(w)){transcribing=false;buttons(w);return;}
@@ -361,24 +414,8 @@
         stopTimer=setTimeout(function(){if(listening){status(w,'Maximum recording length reached. Transcribing…','idle');stop();}},180000);
       };
       recorder.onerror=function(){listening=false;transcribing=false;cleanupMedia();buttons(w);status(w,'Microphone recording failed. Try again.','err');};
-      recorder.onstop=async function(){
-        listening=false;cleanupMedia();
-        if(cancelled){audioChunks=[];return;}
-        transcribing=true;buttons(w);status(w,'Transcribing…','idle');
-        try{
-          var blob=new Blob(audioChunks,{type:(recorder&&recorder.mimeType)||type||'audio/webm'});
-          audioChunks=[];
-          var text=await transcribe(blob,w);
-          if(area){
-            area.value=[finalTranscript,text].filter(Boolean).join(finalTranscript&&text?'\n':'').trim();
-          }
-          review(w);status(w,'Review the transcript and detected fields.','idle');
-        }catch(err){
-          console.error('Structured voice transcription failed',err);
-          status(w,err&&err.message?err.message:'Voice transcription failed.','err');
-        }finally{
-          transcribing=false;recorder=null;buttons(w);
-        }
+      recorder.onstop=function(){
+        finishRecording(w,type,this);
       };
       recorder.start();
     }catch(e){

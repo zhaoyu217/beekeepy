@@ -54,13 +54,17 @@ jobs:
           script: |
             set -eux
             timeout 120s adb wait-for-device
+            echo 'Set Android emulator navigation to three buttons'
+            timeout 20s adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.threebutton
+            timeout 15s adb shell cmd overlay list --user 0 | grep -i systemui.navbar || true
+            sleep 2
             timeout 120s adb install -r candidate-apk/app-debug.apk
             timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
             sleep 10
             mkdir -p native-smoke-results
             timeout 20s adb shell screencap -p /sdcard/hive-native-launch.png
             timeout 20s adb pull /sdcard/hive-native-launch.png native-smoke-results/device-launch.png
-            node .github/tests/android-native-webview-smoke.cjs
+            HIVE_REQUIRE_THREEBUTTON=1 node .github/tests/android-native-webview-smoke.cjs
       - name: Save emulator logs
         if: always()
         run: |

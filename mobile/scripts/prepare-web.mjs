@@ -88,5 +88,25 @@ html = html.replace(
   'Promise.resolve({ scope: "native-bundled" })'
 );
 
+// Android-bundle-only: these two references point to files absent from the
+// repository. Skip their 404 requests; never substitute or alter scientific code.
+// The frozen web index.html remains untouched.
+const absentLegacyTags = [
+  {name:'r08a1.js', regex:/<script src="r08a1\.js[^"]*"><\/script>\s*/g},
+  {name:'r10a5-observability.js', regex:/<script src="r10a5-observability\.js[^"]*"><\/script>\s*/g}
+];
+for (const item of absentLegacyTags) {
+  try {
+    await fs.access(path.join(root,item.name));
+    throw new Error('Restored scientific source requires a fresh review: '+item.name);
+  } catch (e) {
+    if (e?.code !== 'ENOENT') throw e;
+  }
+  if ([...html.matchAll(item.regex)].length !== 1)
+    throw new Error('Unexpected legacy script tag count for '+item.name);
+  html=html.replace(item.regex,'');
+  console.log('Android-only: omitted unreachable historical script:',item.name);
+}
+
 await fs.writeFile(indexPath, html, 'utf8');
 console.log('Prepared Capacitor bundle at mobile/dist');

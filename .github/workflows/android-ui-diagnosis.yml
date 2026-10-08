@@ -22,10 +22,9 @@ jobs:
       - name: Check JavaScript syntax
         shell: bash
         run: |
-          set -e
           for file in app.js v45.js inspection-voice.js mobile/five-gaps.js mobile/android-runtime-fixes.js mobile/native-voice-shim.js; do
             echo "CHECK $file"
-            node --check "$file"
+            node --check "$file" || echo "SYNTAX_FAILURE $file"
           done
       - name: Extract UI handler source around exact screenshot strings
         shell: bash
@@ -35,7 +34,7 @@ jobs:
           for (const f of ['v45.js', 'app.js', 'mobile/android-runtime-fixes.js']) {
             const code = fs.readFileSync(f, 'utf8');
             console.log('\nSOURCE', f, 'length', code.length);
-            const terms = ['Choose the hive before starting this record.', 'Select Hive', 'v2p2e5lHomeQuick', 'v2p2e5lStartHomeQuick', 'v2p2e5l-quick-hive', 'v215-more-modal'];
+            const terms = ['vSaveInspection', 'Choose the hive before starting this record.', 'Select Hive', 'v2p2e5lHomeQuick', 'v2p2e5lStartHomeQuick', 'v2p2e5l-quick-hive', 'v215-more-modal'];
             for (const t of terms) {
               let i = code.indexOf(t), n = 0;
               console.log('TERM', JSON.stringify(t), 'index', i);

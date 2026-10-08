@@ -7,7 +7,7 @@ const fs=require('node:fs');
 const path=require('node:path');
 const assert=require('node:assert/strict');
 const {chromium}=require('playwright');
-const dist=path.resolve(__dirname,'../dist');
+const dist=path.resolve(__dirname,'../../mobile/dist');
 const out=path.resolve(__dirname,'../../smoke-results');
 fs.mkdirSync(out,{recursive:true});
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.json':'application/json','.png':'image/png','.jpg':'image/jpeg','.webp':'image/webp'};

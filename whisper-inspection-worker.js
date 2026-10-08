@@ -2,7 +2,7 @@ import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transfo
 
 env.allowLocalModels = false;
 
-const MODEL_ID = "onnx-community/whisper-base.en";
+const MODEL_ID = "onnx-community/whisper-small.en";
 let transcriber = null;
 let loadingPromise = null;
 let selectedDtype = null;

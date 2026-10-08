@@ -113,8 +113,14 @@ export default async function handler(req, res) {
   try { data = await upstream.json(); } catch (_) {}
 
   if (!upstream.ok) {
-    console.error("STT upstream error", upstream.status, data && data.error ? data.error.message : data);
-    return json(res, 502, { error: "Transcription service failed", upstream_status: upstream.status });
+    const upstreamError = data && data.error ? data.error : {};
+    console.error("STT upstream error", upstream.status, upstreamError.message || data);
+    return json(res, 502, {
+      error: "Transcription service failed",
+      upstream_status: upstream.status,
+      upstream_code: upstreamError.code || "",
+      upstream_type: upstreamError.type || ""
+    });
   }
 
   const text = String(data && data.text || "").trim();

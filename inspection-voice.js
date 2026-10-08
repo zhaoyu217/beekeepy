@@ -217,7 +217,7 @@
   }
   function ensureWhisperWorker(){
     if(whisperWorker)return whisperWorker;
-    var worker=new Worker('whisper-inspection-worker.js?v=voice-whisper-base-en-ab2',{type:'module'});
+    var worker=new Worker('whisper-inspection-worker.js?v=voice-whisper-small-en-ab1',{type:'module'});
     worker.onmessage=function(e){
       var m=e.data||{};
       if(m.type==='progress'){whisperProgress(m.progress);return;}

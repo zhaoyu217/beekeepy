@@ -190,7 +190,7 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  var whisperWorker=null,whisperReady=false,whisperLoadPromise=null,whisperLoadResolve=null,whisperLoadReject=null,whisperLoadTimer=null,whisperSeq=0,whisperPending={},whisperStatusWindow=null,whisperLoadStartedAt=0,whisperLoadMs=0,whisperTranscribeStartedAt=0,whisperTranscribeMs=0;
+  var whisperWorker=null,whisperReady=false,whisperLoadPromise=null,whisperLoadResolve=null,whisperLoadReject=null,whisperLoadTimer=null,whisperSeq=0,whisperPending={},whisperStatusWindow=null,whisperLoadStartedAt=0,whisperLoadMs=0,whisperTranscribeStartedAt=0,whisperTranscribeMs=0,transcriptionMode='server';
 
   function whisperStatus(msg,kind){
     var w=whisperStatusWindow;
@@ -292,11 +292,12 @@
     }finally{try{await ctx.close();}catch(e){}}
   }
 
-  async function transcribe(blob,w){
+  async function localTranscribe(blob,w){
+    transcriptionMode='local';
     await loadWhisper(w);
     var audio=await audioTo16k(blob);
     whisperTranscribeStartedAt=performance.now();
-    status(w,'Transcribing locally with Whisper…','idle');
+    status(w,'Cloud unavailable. Transcribing locally…','idle');
     var id=++whisperSeq,worker=ensureWhisperWorker();
     return new Promise(function(resolve,reject){
       var timer=setTimeout(function(){
@@ -310,6 +311,64 @@
         reject(e instanceof Error?e:new Error(String(e)));
       }
     });
+  }
+
+  async function voiceAccessToken(){
+    try{
+      if(typeof supabaseClient!=='undefined'&&supabaseClient){
+        var got=await supabaseClient.auth.getSession();
+        var tok=got&&got.data&&got.data.session&&got.data.session.access_token;
+        if(tok)return tok;
+      }
+    }catch(e){}
+    try{
+      if(typeof currentSession!=='undefined'&&currentSession&&currentSession.access_token)return currentSession.access_token;
+    }catch(e){}
+    return '';
+  }
+
+  async function serverTranscribe(blob,w){
+    transcriptionMode='server';
+    whisperLoadMs=0;
+    var token=await voiceAccessToken();
+    if(!token)throw new Error('SERVER_AUTH_REQUIRED');
+    var ctrl=new AbortController(),timer=setTimeout(function(){ctrl.abort();},30000);
+    var started=performance.now();
+    try{
+      status(w,'Transcribing securely…','idle');
+      var r=await fetch('/api/transcribe',{
+        method:'POST',
+        headers:{
+          'Content-Type':blob.type||'audio/webm',
+          'Authorization':'Bearer '+token
+        },
+        body:blob,
+        signal:ctrl.signal
+      });
+      var data={};
+      try{data=await r.json();}catch(e){}
+      if(!r.ok){
+        var msg=String(data&&data.error||('HTTP '+r.status));
+        var err=new Error(msg);err.status=r.status;throw err;
+      }
+      var text=T(data&&data.text);
+      if(!text)throw new Error('Server transcription returned no text.');
+      whisperTranscribeMs=Math.max(0,performance.now()-started);
+      return text;
+    }finally{
+      clearTimeout(timer);
+    }
+  }
+
+  async function transcribe(blob,w){
+    try{
+      return await serverTranscribe(blob,w);
+    }catch(err){
+      console.warn('Server transcription unavailable; falling back to local Whisper',err);
+      var msg=String(err&&err.message||err||'');
+      status(w,msg==='SERVER_STT_NOT_CONFIGURED'?'Cloud transcription is not configured. Using local fallback…':'Cloud transcription unavailable. Using local fallback…','idle');
+      return await localTranscribe(blob,w);
+    }
   }
 
   async function finishRecording(w,type,recorderRef){
@@ -332,8 +391,8 @@
       if(w){
         review(w);
         var timing='Review the transcript and detected fields.';
-        if(whisperTranscribeMs>0)timing+=' Transcription '+(whisperTranscribeMs/1000).toFixed(1)+'s';
-        if(whisperLoadMs>0)timing+=' · Warm-up '+(whisperLoadMs/1000).toFixed(1)+'s';
+        if(whisperTranscribeMs>0)timing+=(transcriptionMode==='server'?' Cloud ':' Local ')+(whisperTranscribeMs/1000).toFixed(1)+'s';
+        if(transcriptionMode==='local'&&whisperLoadMs>0)timing+=' · Warm-up '+(whisperLoadMs/1000).toFixed(1)+'s';
         status(w,timing,'idle');
       }
     }catch(err){
@@ -402,10 +461,7 @@
     if(listening||transcribing||finalizing)return;
     cancelled=false;finalizing=false;
     clearTimeout(stopWatchdog);stopWatchdog=null;
-    transcribing=true;buttons(w);
-    try{await loadWhisper(w);}catch(e){transcribing=false;buttons(w);status(w,e&&e.message?e.message:'Local Whisper model could not be loaded.','err');return;}
-    if(cancelled||!document.body.contains(w)){transcribing=false;buttons(w);return;}
-    transcribing=false;buttons(w);
+    if(cancelled||!document.body.contains(w))return;
     if(typeof MediaRecorder==='undefined'||!navigator.mediaDevices||!navigator.mediaDevices.getUserMedia){
       status(w,'Microphone recording is not supported in this browser.','err');
       if(typeof toast==='function')toast('Microphone recording is not supported in this browser');
@@ -494,25 +550,5 @@
   }catch(e){}
 
   window.openStructuredVoiceInspection=openVoice;
-
-  // Warm the large-v3-turbo model only when Inspection is active, so users
-  // do not pay the model/GPU startup delay after pressing Speak.
-  function maybePrewarmWhisper(){
-    if(whisperReady||whisperLoadPromise||!navigator.gpu)return;
-    var active=/^#inspection(?:\/|$)/i.test(String(location.hash||''))||!!document.querySelector('.v211-inspection');
-    if(!active)return;
-    whisperStatusWindow=null;
-    loadWhisper(null).catch(function(e){console.warn('Whisper background warm-up failed',e);});
-  }
-  function schedulePrewarm(){
-    if('requestIdleCallback' in window){
-      requestIdleCallback(maybePrewarmWhisper,{timeout:1200});
-    }else{
-      setTimeout(maybePrewarmWhisper,700);
-    }
-  }
-  schedulePrewarm();
-  window.addEventListener('hashchange',schedulePrewarm);
-
-  window.__HD_STRUCTURED_VOICE_VERSION__='3.1.0-whisper-prewarm-timing';
+  window.__HD_STRUCTURED_VOICE_VERSION__='4.0.0-server-stt-with-local-fallback';
 })();

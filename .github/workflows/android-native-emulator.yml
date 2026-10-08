@@ -15,7 +15,7 @@ permissions:
 jobs:
   emulator-webview:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 25
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -35,6 +35,11 @@ jobs:
           npm install --no-save --ignore-scripts playwright@1.56.1
           node --check .github/tests/android-native-webview-smoke.cjs
           sha256sum candidate-apk/app-debug.apk
+      - name: Ensure KVM accessibility and preserve diagnostics metadata
+        run: |
+          if test -e /dev/kvm; then sudo chmod 666 /dev/kvm; ls -l /dev/kvm; else echo 'WARNING: /dev/kvm absent'; fi
+          mkdir -p native-smoke-results
+          date -u > native-smoke-results/runner-utc.txt
       - name: Run WebView checks on Android 15 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
@@ -48,19 +53,21 @@ jobs:
           disable-animations: true
           script: |
             set -euxo pipefail
-            adb install -r candidate-apk/app-debug.apk
-            adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
+            timeout 120s adb wait-for-device
+            timeout 120s adb install -r candidate-apk/app-debug.apk
+            timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
             sleep 10
             mkdir -p native-smoke-results
-            adb shell screencap -p /sdcard/hive-native-launch.png
-            adb pull /sdcard/hive-native-launch.png native-smoke-results/device-launch.png
+            timeout 20s adb shell screencap -p /sdcard/hive-native-launch.png
+            timeout 20s adb pull /sdcard/hive-native-launch.png native-smoke-results/device-launch.png
             node .github/tests/android-native-webview-smoke.cjs
       - name: Save emulator logs
         if: always()
         run: |
           mkdir -p native-smoke-results
-          adb logcat -d -t 3000 > native-smoke-results/logcat.txt 2>/dev/null || true
-          adb shell dumpsys window > native-smoke-results/window-insets.txt 2>/dev/null || true
+          timeout 10s adb devices -l > native-smoke-results/adb-devices.txt 2>&1 || true
+          timeout 12s adb logcat -d -t 3000 > native-smoke-results/logcat.txt 2>&1 || true
+          timeout 12s adb shell dumpsys window > native-smoke-results/window-insets.txt 2>&1 || true
       - name: Upload emulator evidence
         if: always()
         uses: actions/upload-artifact@v4

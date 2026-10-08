@@ -90,6 +90,36 @@ async function run(){
     check('Native Continue enters correct Inspection',true,'inspection/'+hiveId);
     check('Select Hive modal dismissed',!(await value('!!document.querySelector("#app > .modal.v215-more-modal")')));
     await shot('android-inspection.png');
+
+    // Native OS-driven tap diagnostic. ADB 'input tap' traverses Android's
+    // input dispatcher and WebView touch handling, unlike CDP mouse events.
+    await value('window.go("home")');
+    await waitUntil('location.hash==="#home"','diagnostic Home route');
+    await pause(400);
+    await value('(()=>{window.__androidTouchEvents=[];for(const name of ["touchstart","pointerdown","click"])document.addEventListener(name,e=>{const t=e.target;window.__androidTouchEvents.push({name,target:t?.tagName,cls:String(t?.className?.baseVal||t?.className||"").slice(0,180),text:(t?.textContent||"").trim().slice(0,60),x:e.touches?.[0]?.clientX??e.clientX??null,y:e.touches?.[0]?.clientY??e.clientY??null,cancelled:e.defaultPrevented});},true);return true})()');
+    const screenWidth=Number((report.android.size.match(/(\d+)x(\d+)/)||[])[1]);
+    const screenHeight=Number((report.android.size.match(/(\d+)x(\d+)/)||[])[2]);
+    const centerHives=(await value('(()=>{const e=[...document.querySelectorAll("#bottomnav .navitem")].find(x=>x.textContent.trim()==="Hives"),r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2}})()'));
+    const pixelX=Math.round(centerHives.x*g.devicePixelRatio);
+    report.realTouches={screenWidth,screenHeight,webviewHivesCenter:centerHives,physicalX:pixelX,attempts:[]};
+    for(const candidateY of [Math.round(centerHives.y*g.devicePixelRatio)+45,Math.round(screenHeight*0.88),Math.round(screenHeight*0.91)]){
+      await value('window.go("home")');
+      await waitUntil('location.hash==="#home"','reset route before physical touch');
+      await pause(250);
+      const pre=await value('window.__androidTouchEvents.length');
+      adb('shell','input','tap',String(pixelX),String(candidateY));
+      await pause(500);
+      const after=await value('({hash:location.hash,newEvents:window.__androidTouchEvents.slice('+pre+').slice(-12)})');
+      report.realTouches.attempts.push({pixelX,pixelY:candidateY,result:after});
+      if(after.hash==='#hives')break;
+    }
+    await shot('native-os-tap-after.png');
+    report.realTouches.delivered=report.realTouches.attempts.some(a=>a.result.newEvents.some(e=>e.name==="touchstart"||e.name==="pointerdown"));
+    report.realTouches.navigated=report.realTouches.attempts.some(a=>a.result.hash==='#hives');
+    // Record observations; do not label coordinate guesses as device pass.
+    check('Android OS touch reaches WebView',report.realTouches.delivered,report.realTouches);
+    check('Android OS touch activates Hives',report.realTouches.navigated,report.realTouches);
+
     // Native IME and Supabase authenticated flows require later device-specific tests.
   }catch(err){report.failure=String(err.stack||err);process.exitCode=1}
   finally{

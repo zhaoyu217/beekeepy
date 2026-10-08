@@ -112,7 +112,7 @@ for (const item of absentLegacyTags) {
 // It passively observes events and NEVER changes navigation, data or rules.
 if (process.env.HIVE_TOUCH_DIAGNOSTICS === '1') {
   await fs.copyFile(path.join(root,'mobile','touch-diagnostic.js'), path.join(out,'mobile-touch-diagnostic.js'));
-  html=html.replace('</body>', '  <script src="mobile-touch-diagnostic.js"></script>\\n</body>');
+  html=html.replace('</body>', '  <script src="mobile-touch-diagnostic.js"></script>\n</body>');
 }
 
 await fs.writeFile(indexPath, html, 'utf8');

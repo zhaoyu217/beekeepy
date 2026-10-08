@@ -8,8 +8,8 @@ async function run(){let browser;
 try{
  check('Installed original APK',adb('shell','pm','path','app.hivefield.mobile.fix').includes('package:'));
  const pid=adb('shell','pidof','app.hivefield.mobile.fix').split(/\s+/)[0];check('Android process launched',!!pid,pid);
- report.debuggable=adb('shell','dumpsys','package','app.hivefield.mobile.fix').split('\\n').filter(x=>/DEBUGGABLE|debuggable/i.test(x)).slice(0,4);
- report.remoteSockets=adb('shell','cat','/proc/net/unix').split('\\n').filter(x=>/devtools_remote|chrome_devtools|webview_devtools/.test(x)).slice(0,20);
+ report.debuggable=adb('shell','dumpsys','package','app.hivefield.mobile.fix').split('\n').filter(x=>/DEBUGGABLE|debuggable/i.test(x)).slice(0,4);
+ try{report.remoteSockets=adb('shell','cat','/proc/net/unix').split('\n').filter(x=>/devtools_remote|chrome_devtools|webview_devtools/.test(x)).slice(0,20)}catch(e){report.remoteSocketsError=String(e).slice(0,350)}
  adb('forward','tcp:9222','localabstract:webview_devtools_remote_'+pid);
  report.forwarded=adb('forward','--list');
  const http=require('node:http');

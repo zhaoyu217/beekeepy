@@ -2,7 +2,7 @@ import { pipeline, env } from "https://cdn.jsdelivr.net/npm/@huggingface/transfo
 
 env.allowLocalModels = false;
 
-const MODEL_ID = "onnx-community/distil-small.en";
+const MODEL_ID = "onnx-community/whisper-large-v3-turbo";
 let transcriber = null;
 let loadingPromise = null;
 let selectedDtype = null;
@@ -24,18 +24,12 @@ async function ensureLoaded() {
     }
 
     const attempts = [
+      { label: "q4f16", dtype: "q4f16" },
       {
         label: "fp16/q4",
         dtype: {
           encoder_model: "fp16",
           decoder_model_merged: "q4",
-        },
-      },
-      {
-        label: "fp16/q8",
-        dtype: {
-          encoder_model: "fp16",
-          decoder_model_merged: "q8",
         },
       },
     ];

@@ -441,9 +441,16 @@
       var p=parse(tr),selected=new Set(Array.from(w.querySelectorAll('[data-det]:checked')).map(function(x){return Number(x.dataset.det);}));
       var applied=p.fields.filter(function(x,i){return selected.has(i);}),draft=D();if(!draft){close();return;}
       applied.forEach(function(x){draft[x.field]=x.value;});confirmFlags(draft,applied);
-      var old=T(draft.notes);draft.notes=old?old.replace(/\s+$/,'')+'\n'+tr:tr;
+      var old=T(draft.notes);
+      var mergedNotes=old?old.replace(/\s+$/,'')+'\n'+tr:tr;
+      draft.notes=mergedNotes;
       var hid=draft.hiveId;close();
-      try{inspectionPage(document.getElementById('view'),hid);if(typeof chrome==='function')chrome('inspection');}catch(e){console.error('Structured voice refresh failed',e);}
+      try{
+        inspectionPage(document.getElementById('view'),hid);
+        if(typeof chrome==='function')chrome('inspection');
+        var notesAfter=document.getElementById('inotes');
+        if(notesAfter)notesAfter.value=mergedNotes;
+      }catch(e){console.error('Structured voice refresh failed',e);}
       if(typeof toast==='function')toast(applied.length?'Voice applied to '+applied.length+' Inspection field'+(applied.length===1?'':'s'):'Voice added to Notes');
     };
   }

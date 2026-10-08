@@ -190,7 +190,7 @@
     if(mediaStream){try{mediaStream.getTracks().forEach(function(t){t.stop();});}catch(e){}}
     mediaStream=null;
   }
-  var whisperWorker=null,whisperReady=false,whisperLoadPromise=null,whisperLoadResolve=null,whisperLoadReject=null,whisperLoadTimer=null,whisperSeq=0,whisperPending={},whisperStatusWindow=null;
+  var whisperWorker=null,whisperReady=false,whisperLoadPromise=null,whisperLoadResolve=null,whisperLoadReject=null,whisperLoadTimer=null,whisperSeq=0,whisperPending={},whisperStatusWindow=null,whisperLoadStartedAt=0,whisperLoadMs=0,whisperTranscribeStartedAt=0,whisperTranscribeMs=0;
 
   function whisperStatus(msg,kind){
     var w=whisperStatusWindow;
@@ -224,6 +224,7 @@
       if(m.type==='status'){whisperStatus(m.message||'Preparing local Whisper model…','idle');return;}
       if(m.type==='ready'){
         whisperReady=true;
+        if(whisperLoadStartedAt)whisperLoadMs=Math.max(0,performance.now()-whisperLoadStartedAt);
         clearTimeout(whisperLoadTimer);whisperLoadTimer=null;
         if(whisperLoadResolve)whisperLoadResolve(true);
         whisperLoadResolve=whisperLoadReject=null;
@@ -231,6 +232,7 @@
         return;
       }
       if(m.type==='result'){
+        if(whisperTranscribeStartedAt)whisperTranscribeMs=Math.max(0,performance.now()-whisperTranscribeStartedAt);
         var p=whisperPending[m.id];delete whisperPending[m.id];
         if(p){clearTimeout(p.timer);p.resolve(T(m.text));}
         return;
@@ -256,10 +258,11 @@
     return worker;
   }
   function loadWhisper(w){
-    whisperStatusWindow=w;
-    if(whisperReady){status(w,'Local Whisper model ready.','idle');return Promise.resolve(true);}
+    whisperStatusWindow=w||null;
+    if(whisperReady){if(w)status(w,'Local Whisper model ready.','idle');return Promise.resolve(true);}
     if(!navigator.gpu)return Promise.reject(new Error('WebGPU is required for local Whisper. Use current Edge/Chrome with hardware acceleration enabled.'));
     if(whisperLoadPromise)return whisperLoadPromise;
+    whisperLoadStartedAt=performance.now();
     whisperLoadPromise=new Promise(function(resolve,reject){
       whisperLoadResolve=resolve;whisperLoadReject=reject;
       whisperLoadTimer=setTimeout(function(){
@@ -292,6 +295,7 @@
   async function transcribe(blob,w){
     await loadWhisper(w);
     var audio=await audioTo16k(blob);
+    whisperTranscribeStartedAt=performance.now();
     status(w,'Transcribing locally with Whisper…','idle');
     var id=++whisperSeq,worker=ensureWhisperWorker();
     return new Promise(function(resolve,reject){
@@ -325,7 +329,13 @@
       if(area){
         area.value=[finalTranscript,text].filter(Boolean).join(finalTranscript&&text?'\n':'').trim();
       }
-      if(w){review(w);status(w,'Review the transcript and detected fields.','idle');}
+      if(w){
+        review(w);
+        var timing='Review the transcript and detected fields.';
+        if(whisperTranscribeMs>0)timing+=' Transcription '+(whisperTranscribeMs/1000).toFixed(1)+'s';
+        if(whisperLoadMs>0)timing+=' · Warm-up '+(whisperLoadMs/1000).toFixed(1)+'s';
+        status(w,timing,'idle');
+      }
     }catch(err){
       console.error('Structured voice transcription failed',err);
       if(w)status(w,err&&err.message?err.message:'Voice transcription failed.','err');
@@ -484,5 +494,25 @@
   }catch(e){}
 
   window.openStructuredVoiceInspection=openVoice;
-  window.__HD_STRUCTURED_VOICE_VERSION__='3.0.1-whisper-initial-decorate';
+
+  // Warm the large-v3-turbo model only when Inspection is active, so users
+  // do not pay the model/GPU startup delay after pressing Speak.
+  function maybePrewarmWhisper(){
+    if(whisperReady||whisperLoadPromise||!navigator.gpu)return;
+    var active=/^#inspection(?:\/|$)/i.test(String(location.hash||''))||!!document.querySelector('.v211-inspection');
+    if(!active)return;
+    whisperStatusWindow=null;
+    loadWhisper(null).catch(function(e){console.warn('Whisper background warm-up failed',e);});
+  }
+  function schedulePrewarm(){
+    if('requestIdleCallback' in window){
+      requestIdleCallback(maybePrewarmWhisper,{timeout:1200});
+    }else{
+      setTimeout(maybePrewarmWhisper,700);
+    }
+  }
+  schedulePrewarm();
+  window.addEventListener('hashchange',schedulePrewarm);
+
+  window.__HD_STRUCTURED_VOICE_VERSION__='3.1.0-whisper-prewarm-timing';
 })();

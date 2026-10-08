@@ -43,6 +43,13 @@
     return best?best.v:undefined;
   }
   function parse(raw){
+    // Normalize frequent ASR variants before field parsing. This is lexical only:
+    // it does not invent observations; it maps common Whisper spellings of the
+    // same spoken phrase to the canonical Inspection vocabulary.
+    raw=T(raw)
+      .replace(/\bqueen\s+(?:c|see|sea)\.(?=\s|$)/ig,'Queen seen.')
+      .replace(/\bqueen\s+(?:see|sea)(?=\s|$)/ig,'Queen seen')
+      .replace(/\bhoney\s+storage\b/ig,'honey stores');
     var text=' '+T(raw).toLowerCase().replace(/[’]/g,"'").replace(/\s+/g,' ')+' ';
     var out=[];
     function put(field,value){

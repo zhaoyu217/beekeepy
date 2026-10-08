@@ -35,8 +35,9 @@
     const nav=document.getElementById('bottomnav');
     const modalCount=document.querySelectorAll('#app > .modal,.hd-modal').length;
     const navPointer=nav?getComputedStyle(nav).pointerEvents:'missing';
+    const authenticated=typeof isAuthenticated==='function' ? (isAuthenticated()?'yes':'no') : 'unknown';
     panel.textContent='TOUCH QA '+qa.heart+'s  P'+qa.pointer+' T'+qa.touch+' C'+qa.click+
-      ' E'+qa.errors+'  '+qa.route+'\n'+qa.last+
+      ' E'+qa.errors+' auth:'+authenticated+' '+qa.route+'\n'+qa.last+
       '\nmodal:'+modalCount+' nav:'+navPointer+' • no data sent';
   }
   function mount(){

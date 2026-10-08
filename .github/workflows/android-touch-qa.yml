@@ -6,6 +6,7 @@ on:
     branches: [mobile-offline-v1]
     paths:
       - '.github/workflows/android-touch-qa.yml'
+      - 'mobile/touch-diagnostic.js'
 
 
 permissions:

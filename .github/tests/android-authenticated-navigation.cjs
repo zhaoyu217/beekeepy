@@ -38,7 +38,15 @@ async function main(){
     const after=await page.evaluate(()=>({auth:isAuthenticated(),hash:location.hash,view:document.querySelector('#view')?.innerText?.slice(0,260),loginVisible:!!document.querySelector('.auth-page')}));
     report.sessionLoss={before,after};
     report.staleUiReproduced=before.auth===false&&after.hash==='#home'&&!after.loginVisible&&before.view===after.view;
-    check('Session-loss navigation freeze reproduced',report.staleUiReproduced,report.sessionLoss);
+    check('Session-loss route shows sign-in instead of frozen view',before.auth===false&&after.hash==='#home'&&after.loginVisible&&!report.staleUiReproduced,report.sessionLoss);
+    await page.evaluate(()=>{window.__EMIT_AUTH_EVENT__('USER_UPDATED',window.__STUB_SESSION);window.render();});
+    await page.waitForTimeout(120);
+    const reactivated=await page.evaluate(()=>({auth:isAuthenticated(),page:location.hash,top:document.querySelector('#topbar')?.innerText?.slice(0,50)}));
+    check('Session restored in synthetic test',reactivated.auth===true,reactivated);
+    await page.evaluate(()=>window.__EMIT_AUTH_EVENT__('TOKEN_REFRESHED',null));
+    await page.locator('#topbar button[aria-label="Settings"]').click();
+    const control=await page.evaluate(()=>({auth:isAuthenticated(),hash:location.hash,loginVisible:!!document.querySelector('.auth-page')}));
+    check('Non-navigation button opens sign-in on stale session',!control.auth&&control.loginVisible&&control.hash==='#home',control);
   }catch(e){report.failure=String(e.stack||e);process.exitCode=1}
   finally{console.log('AUTHENTICATED_NAVIGATION_REPORT '+JSON.stringify(report));await browser?.close();await new Promise(r=>server.close(r))}
 }

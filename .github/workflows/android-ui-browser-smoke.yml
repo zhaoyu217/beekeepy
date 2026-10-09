@@ -6,6 +6,7 @@ on:
     branches: [mobile-offline-v1]
     paths:
       - '.github/tests/android-web-smoke.cjs'
+      - 'mobile/android-runtime-fixes.js'
       - '.github/workflows/android-ui-browser-smoke.yml'
 
 permissions:

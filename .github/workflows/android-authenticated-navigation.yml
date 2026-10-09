@@ -1,0 +1,27 @@
+name: Android Authenticated Navigation Diagnosis
+on:
+  push:
+    branches: [mobile-offline-v1]
+    paths:
+      - '.github/tests/android-authenticated-navigation.cjs'
+      - '.github/workflows/android-authenticated-navigation.yml'
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  diagnose:
+    runs-on: ubuntu-latest
+    timeout-minutes: 12
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare actual Android WebView HTML and JS bundle
+        run: node mobile/scripts/prepare-web.mjs
+      - name: Install headless Chromium driver
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Verify authenticated routing and stale-session behavior
+        run: node .github/tests/android-authenticated-navigation.cjs

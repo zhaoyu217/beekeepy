@@ -97,4 +97,40 @@
     new MutationObserver(syncNav).observe(app, { childList: true });
     syncNav();
   }
+
+  // Android-only auth UI consistency. If a token refresh clears the session
+  // while an already rendered screen remains, app.js hashchange intentionally
+  // refuses to render protected routes. Without a visible auth fallback every
+  // go() button appears dead although clicks are delivered.
+  // This does not change any scientific routes, state, or entitlement rules.
+  function showSignInForStaleProtectedView() {
+    if (window.HIVEDASH_CONFIG?.REQUIRE_AUTH !== true ||
+        typeof window.isAuthenticated !== 'function' ||
+        window.isAuthenticated()) return false;
+    const view = document.getElementById('view');
+    if (!view || view.classList.contains('auth-view')) return false;
+    const route = (location.hash || '#home').slice(1).split('/')[0];
+    if (route === 'terms' || route === 'privacy') return false;
+    if (typeof window.renderAuth !== 'function') return false;
+    window.renderAuth('signin', 'Your session needs to be renewed. Sign in to continue.');
+    return true;
+  }
+
+  // For navigation targets that modify the hash, restore a visible auth UI
+  // instead of leaving the previous page stranded.
+  window.addEventListener('hashchange', showSignInForStaleProtectedView);
+
+  // For buttons that do not modify the hash, do not allow stale UI controls
+  // to write local state after the authenticated session has disappeared.
+  document.addEventListener('click', (event) => {
+    const target = event.target instanceof Element
+      ? event.target.closest('button,a,[role="button"],[onclick],input,select,textarea')
+      : null;
+    if (!target) return;
+    if (showSignInForStaleProtectedView()) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+    }
+  }, true);
+
 })();

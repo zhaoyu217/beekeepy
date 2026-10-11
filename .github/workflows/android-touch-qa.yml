@@ -7,6 +7,7 @@ on:
     paths:
       - '.github/workflows/android-touch-qa.yml'
       - 'mobile/touch-diagnostic.js'
+      - 'mobile/android-runtime-fixes.js'
 
 
 permissions:

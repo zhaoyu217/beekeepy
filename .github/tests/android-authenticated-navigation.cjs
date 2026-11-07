@@ -2,7 +2,7 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright');
 const root=path.resolve('mobile/dist');
-const fakeSupabase="\nwindow.__STUB_SESSION={access_token:\"test-token\",refresh_token:\"test-refresh\",token_type:\"bearer\",expires_at:4102444800,\n user:{id:\"test-user-999\",email:\"qa@example.invalid\",app_metadata:{},user_metadata:{name:\"QA User\"}}};\nwindow.supabase={createClient:()=>({\n auth:{\n   async getSession(){return {data:{session:window.__STUB_SESSION},error:null}},\n   onAuthStateChange(fn){window.__EMIT_AUTH_EVENT__=fn;return {data:{subscription:{unsubscribe(){}}}}},\n   async refreshSession(){return {data:{session:window.__STUB_SESSION},error:null}}\n },\n from(){return {\n   select(){return {eq(){return {async maybeSingle(){return {data:null,error:null}}}}}},\n   async upsert(){return {data:null,error:null}}\n }},\n channel(){return {on(){return this},subscribe(fn){fn(\"SUBSCRIBED\");return this}}},\n removeChannel(){}\n})};\n";
+const fakeSupabase="\nwindow.__STUB_SESSION={access_token:\"test-token\",refresh_token:\"test-refresh\",token_type:\"bearer\",expires_at:4102444800,\n user:{id:\"test-user-999\",email:\"qa@example.invalid\",app_metadata:{},user_metadata:{name:\"QA User\"}}};\nwindow.__CLOUD_WRITES__=[];window.__UPSERT_DELAY_NEXT__=0;\nwindow.supabase={createClient:()=>({\n auth:{\n   async getSession(){return {data:{session:window.__STUB_SESSION},error:null}},\n   onAuthStateChange(fn){window.__EMIT_AUTH_EVENT__=fn;return {data:{subscription:{unsubscribe(){}}}}},\n   async refreshSession(){return {data:{session:window.__STUB_SESSION},error:null}}\n },\n from(){return {\n   select(){return {eq(){return {async maybeSingle(){return {data:null,error:null}}}}}},\n   async upsert(row){window.__CLOUD_WRITES__.push(JSON.parse(JSON.stringify(row)));const delay=window.__UPSERT_DELAY_NEXT__||0;window.__UPSERT_DELAY_NEXT__=0;if(delay)await new Promise(r=>setTimeout(r,delay));return {data:null,error:null}}\n }},\n channel(){return {on(){return this},subscribe(fn){fn(\"SUBSCRIBED\");return this}}},\n removeChannel(){}\n})};\n";
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'};
 const report={checks:[],pageErrors:[]};
 let browser,server;
@@ -47,6 +47,99 @@ async function main(){
     await page.locator('#topbar button[aria-label="Settings"]').click();
     const control=await page.evaluate(()=>({auth:isAuthenticated(),hash:location.hash,loginVisible:!!document.querySelector('.auth-page')}));
     check('Non-navigation button opens sign-in on stale session',!control.auth&&control.loginVisible&&control.hash==='#home',control);
+
+    // Account A queues a debounced write, then signs out before the 450ms timer.
+    // Account B must never receive A's snapshot, and A's unsynced local copy must survive.
+    await page.evaluate(async()=>{
+      await window.__EMIT_AUTH_EVENT__('SIGNED_IN',window.__STUB_SESSION);
+    });
+    await page.waitForTimeout(120);
+    await page.evaluate(()=>{
+      window.__CLOUD_WRITES__.length=0;
+      const a=state();
+      a.meta.syncIsolationSentinel='A_ONLY_SENTINEL';
+      if(!save(a))throw new Error('Could not save A isolation fixture');
+    });
+    await page.evaluate(async()=>{
+      await window.__EMIT_AUTH_EVENT__('SIGNED_OUT',null);
+      window.__STUB_SESSION_B={
+        access_token:'test-token-b',
+        refresh_token:'test-refresh-b',
+        token_type:'bearer',
+        expires_at:4102444800,
+        user:{id:'test-user-B',email:'qa-b@example.invalid',app_metadata:{},user_metadata:{name:'QA User B'}}
+      };
+      window.__STUB_SESSION=window.__STUB_SESSION_B;
+      await window.__EMIT_AUTH_EVENT__('SIGNED_IN',window.__STUB_SESSION_B);
+    });
+    await page.waitForTimeout(650);
+    const accountSwitch=await page.evaluate(()=>{
+      const aRaw=localStorage.getItem('hivedash_v9:user:test-user-999');
+      const aState=aRaw?JSON.parse(aRaw):null;
+      const bState=state();
+      return {
+        currentUser:currentSession?.user?.id||null,
+        aSentinel:aState?.meta?.syncIsolationSentinel||null,
+        bSentinel:bState?.meta?.syncIsolationSentinel||null,
+        writes:window.__CLOUD_WRITES__
+      };
+    });
+    report.accountSwitch=accountSwitch;
+    check('Pending A timer cannot upload A data under B identity',
+      !accountSwitch.writes.some(w=>w.user_id==='test-user-B'&&w.payload?.meta?.syncIsolationSentinel==='A_ONLY_SENTINEL'),
+      accountSwitch);
+    check('A local unsynced snapshot remains in A account storage',
+      accountSwitch.aSentinel==='A_ONLY_SENTINEL',accountSwitch);
+    check('B local state does not inherit A snapshot',
+      accountSwitch.currentUser==='test-user-B'&&accountSwitch.bSentinel!=='A_ONLY_SENTINEL',accountSwitch);
+
+    // Start a B upload, switch to A while its response is delayed, and verify
+    // the late B response cannot overwrite A's sync status or local state.
+    await page.evaluate(()=>{
+      window.__CLOUD_WRITES__.length=0;
+      const b=state();
+      b.meta.syncIsolationSentinel='B_ONLY_SENTINEL';
+      window.__UPSERT_DELAY_NEXT__=280;
+      if(!save(b))throw new Error('Could not save B in-flight fixture');
+    });
+    await page.waitForTimeout(480);
+    const inFlightStarted=await page.evaluate(()=>window.__CLOUD_WRITES__.some(
+      w=>w.user_id==='test-user-B'&&w.payload?.meta?.syncIsolationSentinel==='B_ONLY_SENTINEL'
+    ));
+    check('B delayed upload started with B-bound identity',inFlightStarted,window.__CLOUD_WRITES__);
+    await page.evaluate(async()=>{
+      await window.__EMIT_AUTH_EVENT__('SIGNED_OUT',null);
+      window.__STUB_SESSION=window.__STUB_SESSION_A||{
+        access_token:'test-token',
+        refresh_token:'test-refresh',
+        token_type:'bearer',
+        expires_at:4102444800,
+        user:{id:'test-user-999',email:'qa@example.invalid',app_metadata:{},user_metadata:{name:'QA User'}}
+      };
+      window.__STUB_SESSION_A=window.__STUB_SESSION;
+      await window.__EMIT_AUTH_EVENT__('SIGNED_IN',window.__STUB_SESSION_A);
+    });
+    await page.evaluate(()=>setCloudStatus('A_SESSION_READY_SENTINEL'));
+    await page.waitForTimeout(340);
+    const lateResponse=await page.evaluate(()=>{
+      const a=state();
+      return {
+        currentUser:currentSession?.user?.id||null,
+        status:cloudStatusText(),
+        aSentinel:a.meta?.syncIsolationSentinel||null,
+        writes:window.__CLOUD_WRITES__
+      };
+    });
+    report.lateResponse=lateResponse;
+    check('Late B response cannot overwrite A session sync status',
+      lateResponse.currentUser==='test-user-999'&&lateResponse.status==='A_SESSION_READY_SENTINEL',
+      lateResponse);
+    check('In-flight B snapshot remains bound to B and is not copied into A',
+      lateResponse.writes.some(w=>w.user_id==='test-user-B'&&w.payload?.meta?.syncIsolationSentinel==='B_ONLY_SENTINEL')&&
+      !lateResponse.writes.some(w=>w.user_id==='test-user-999'&&w.payload?.meta?.syncIsolationSentinel==='B_ONLY_SENTINEL')&&
+      lateResponse.aSentinel==='A_ONLY_SENTINEL',
+      lateResponse);
+    check('No uncaught browser errors',report.pageErrors.length===0,report.pageErrors);
   }catch(e){report.failure=String(e.stack||e);process.exitCode=1}
   finally{console.log('AUTHENTICATED_NAVIGATION_REPORT '+JSON.stringify(report));await browser?.close();await new Promise(r=>server.close(r))}
 }

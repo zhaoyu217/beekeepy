@@ -10,7 +10,7 @@ permissions:
   contents: read
 jobs:
   diagnose:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 12
     steps:
       - uses: actions/checkout@v4
@@ -19,6 +19,10 @@ jobs:
           node-version: '22'
       - name: Prepare actual Android WebView HTML and JS bundle
         run: node mobile/scripts/prepare-web.mjs
+      - name: Check JavaScript syntax
+        run: |
+          node --check app.js
+          node --check .github/tests/android-authenticated-navigation.cjs
       - name: Install headless Chromium driver
         run: |
           npm install --no-save --ignore-scripts playwright@1.56.1

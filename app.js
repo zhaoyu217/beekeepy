@@ -104,7 +104,11 @@ function parseLocalStateSnapshot(raw){
   try{
     const parsed=JSON.parse(raw);
     return parsed&&typeof parsed==='object'?normalizeStateV50(parsed):null;
-  }catch(_e){return null}
+  }catch(err){
+    try{localStorage.setItem('hivedash_corrupt_state_backup',String(raw).slice(0,200000))}catch(_e){}
+    console.error('HiveDash local state parse failed; corrupt bytes were backed up',err);
+    return null;
+  }
 }
 
 function writeAccountScopedRaw(userId,raw,legacyRawToRemove=null){
@@ -587,7 +591,6 @@ async function signOutCloud(){
 }
 
 let cloudHydrationPromise=null;
-let cloudHydrationPromise=null;
 
 function recoverAuthenticatedLocalState(err,context=currentCloudSessionContext()){
   if(!isCurrentCloudSession(context))return;
@@ -686,10 +689,6 @@ async function initializeCloudApp(){
 
   await hydrateAuthenticatedApp(initialContext);
 }
-
-
-/* ==============================================================
-   V2P2E5AX14D
 
 
 /* ==============================================================
@@ -1158,7 +1157,6 @@ function resetState(){
   render();
 }
 
-function esc(v=''){
 function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#2F3B33;'}[m]))}
 function idq(id){return document.getElementById(id)}
 function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}

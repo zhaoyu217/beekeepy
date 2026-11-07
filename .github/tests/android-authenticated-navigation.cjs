@@ -119,7 +119,7 @@ async function main(){
     const inFlightStarted=await page.evaluate(()=>window.__CLOUD_WRITES__.some(
       w=>w.user_id==='test-user-B'&&w.payload?.meta?.syncIsolationSentinel==='B_ONLY_SENTINEL'
     ));
-    check('B delayed upload started with B-bound identity',inFlightStarted,window.__CLOUD_WRITES__);
+    check('B delayed upload started with B-bound identity',inFlightStarted,{inFlightStarted});
     await page.evaluate(async()=>{
       await window.__EMIT_AUTH_EVENT__('SIGNED_OUT',null);
       window.__STUB_SESSION=window.__STUB_SESSION_A||{

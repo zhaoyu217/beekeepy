@@ -22,6 +22,8 @@ let realtimeChannel=null;
 let lastRemoteUpdatedAt='';
 let suppressCloudSave=false;
 let cloudStatus='Offline';
+let cloudSessionGeneration=0;
+let activeCloudUserId=null;
 
 if(CLOUD_CONFIGURED){
   supabaseClient=window.supabase.createClient(
@@ -73,7 +75,7 @@ async function refreshAuthoritativeEntitlement(){
   try{
     const {data,error}=await supabaseClient.auth.refreshSession();
     if(error)throw error;
-    if(data?.session)currentSession=data.session;
+    if(data?.session)adoptCloudSession(data.session);
     const s=state();
     enforceAuthoritativePlan(s);
     save(s);
@@ -93,58 +95,261 @@ function setCloudStatus(value){
   if(el)el.textContent=value;
 }
 
+function localStateStorageKey(userId){
+  return userId ? STORAGE_KEY + ':user:' + encodeURIComponent(String(userId)) : STORAGE_KEY;
+}
+
+function parseLocalStateSnapshot(raw){
+  if(!raw)return null;
+  try{
+    const parsed=JSON.parse(raw);
+    return parsed&&typeof parsed==='object'?normalizeStateV50(parsed):null;
+  }catch(_e){return null}
+}
+
+function writeAccountScopedRaw(userId,raw,legacyRawToRemove=null){
+  const key=localStateStorageKey(userId);
+  let previous=null;
+  try{previous=localStorage.getItem(key)}catch(_e){}
+  try{
+    localStorage.setItem(key,raw);
+    if(legacyRawToRemove!==null && localStorage.getItem(STORAGE_KEY)===legacyRawToRemove){
+      localStorage.removeItem(STORAGE_KEY);
+    }
+    return true;
+  }catch(firstError){
+    if(legacyRawToRemove===null){
+      console.error('Account-scoped local write failed',firstError);
+      return false;
+    }
+    try{
+      if(localStorage.getItem(STORAGE_KEY)===legacyRawToRemove)localStorage.removeItem(STORAGE_KEY);
+      localStorage.setItem(key,raw);
+      return true;
+    }catch(secondError){
+      try{
+        if(previous===null)localStorage.removeItem(key);
+        else localStorage.setItem(key,previous);
+      }catch(_e){}
+      try{
+        if(!localStorage.getItem(STORAGE_KEY))localStorage.setItem(STORAGE_KEY,legacyRawToRemove);
+      }catch(_e){}
+      console.error('Account-scoped local migration failed',secondError);
+      return false;
+    }
+  }
+}
+
+function readLocalStateForUser(userId){
+  if(!userId)return null;
+  const key=localStateStorageKey(userId);
+  let accountRaw=null,legacyRaw=null;
+  try{
+    accountRaw=localStorage.getItem(key);
+    legacyRaw=localStorage.getItem(STORAGE_KEY);
+  }catch(_e){return null}
+  let account=parseLocalStateSnapshot(accountRaw);
+  const legacy=parseLocalStateSnapshot(legacyRaw);
+  if(account && account.meta?.userId!==userId)account=null;
+  const legacyOwned=!!legacy && legacy.meta?.userId===userId;
+  if(legacyOwned){
+    if(account){
+      const merged=mergeStateV50(account,legacy);
+      merged.meta=merged.meta||{};
+      merged.meta.userId=userId;
+      const mergedRaw=JSON.stringify(normalizeStateV50(merged));
+      writeAccountScopedRaw(userId,mergedRaw,legacyRaw);
+      return normalizeStateV50(merged);
+    }
+    writeAccountScopedRaw(userId,legacyRaw,legacyRaw);
+    return legacy;
+  }
+  return account;
+}
+
+function preserveLegacySharedState(){
+  let raw=null;
+  try{raw=localStorage.getItem(STORAGE_KEY)}catch(_e){}
+  const legacy=parseLocalStateSnapshot(raw);
+  const owner=legacy?.meta?.userId;
+  if(owner)readLocalStateForUser(owner);
+}
+
+function clearPendingCloudSave(){
+  if(syncTimer!==null){
+    clearTimeout(syncTimer);
+    syncTimer=null;
+  }
+}
+
+function currentCloudSessionContext(){
+  const userId=currentSession?.user?.id||'';
+  return userId?{userId,generation:cloudSessionGeneration}:null;
+}
+
+function isCurrentCloudSession(context){
+  return !!context &&
+    context.generation===cloudSessionGeneration &&
+    context.userId===activeCloudUserId &&
+    context.userId===currentSession?.user?.id;
+}
+
+function adoptCloudSession(session){
+  const nextUserId=session?.user?.id||null;
+  if(nextUserId!==activeCloudUserId){
+    preserveLegacySharedState();
+    cloudSessionGeneration+=1;
+    activeCloudUserId=nextUserId;
+    clearPendingCloudSave();
+    cloudReady=false;
+    stopRealtimeSync();
+    lastRemoteUpdatedAt='';
+  }
+  currentSession=session||null;
+  return currentCloudSessionContext();
+}
+
+function invalidateCloudSessionWork(){
+  cloudSessionGeneration+=1;
+  clearPendingCloudSave();
+  cloudReady=false;
+  stopRealtimeSync();
+  lastRemoteUpdatedAt='';
+}
+
 function scheduleCloudSave(nextState){
-  if(!CLOUD_CONFIGURED || !cloudReady || !isAuthenticated() || suppressCloudSave)return;
-  clearTimeout(syncTimer);
+  const context=currentCloudSessionContext();
+  if(!CLOUD_CONFIGURED || !cloudReady || !context || suppressCloudSave)return;
   const snapshot=clone(normalizeStateV50(nextState));
+  if(snapshot.meta?.userId!==context.userId){
+    console.error('HiveDash refused to queue a snapshot owned by another account', {
+      snapshotUserId:snapshot.meta?.userId||null,
+      activeUserId:context.userId
+    });
+    setCloudStatus('Sync error');
+    return;
+  }
+  clearPendingCloudSave();
   setCloudStatus(navigator.onLine===false?'Offline':'Saving…');
   if(navigator.onLine===false)return;
-  syncTimer=setTimeout(()=>pushCloudState(snapshot),450);
+  const timer=setTimeout(()=>{
+    if(syncTimer===timer)syncTimer=null;
+    void pushCloudState(snapshot,context);
+  },450);
+  syncTimer=timer;
 }
 
-async function pushCloudState(nextState){
-  if(!supabaseClient || !isAuthenticated() || navigator.onLine===false)return;
+async function pushCloudState(nextState,context=currentCloudSessionContext()){
+  if(!supabaseClient || !isCurrentCloudSession(context) || navigator.onLine===false)return false;
+  const session=currentSession;
   try{
     const payload=enforceAuthoritativePlan(clone(normalizeStateV50(nextState)));
-    payload.meta.userId=currentSession.user.id;
-    payload.user={...payload.user,email:currentSession.user.email||payload.user?.email||'',name:currentSession.user.user_metadata?.name||payload.user?.name||'Beekeeper'};
+    if(payload.meta?.userId!==context.userId){
+      console.error('HiveDash refused to upload a snapshot with a mismatched owner', {
+        snapshotUserId:payload.meta?.userId||null,
+        activeUserId:context.userId
+      });
+      return false;
+    }
+    payload.user={
+      ...payload.user,
+      email:session.user.email||payload.user?.email||'',
+      name:session.user.user_metadata?.name||payload.user?.name||'Beekeeper'
+    };
     const updatedAt=payload.meta.updatedAt||new Date().toISOString();
-    const {error}=await supabaseClient.from('app_state').upsert({user_id:currentSession.user.id,payload,updated_at:updatedAt},{onConflict:'user_id'});
+    const {error}=await supabaseClient.from('app_state').upsert({
+      user_id:context.userId,
+      payload,
+      updated_at:updatedAt
+    },{onConflict:'user_id'});
+    if(!isCurrentCloudSession(context))return false;
     if(error)throw error;
-    lastRemoteUpdatedAt=updatedAt;setCloudStatus('Synced');
-  }catch(err){console.error('HiveDash cloud save failed',err);setCloudStatus('Sync error');toast('Cloud sync failed. Local data is still saved.')}
+    lastRemoteUpdatedAt=updatedAt;
+    setCloudStatus('Synced');
+    return true;
+  }catch(err){
+    if(!isCurrentCloudSession(context))return false;
+    console.error('HiveDash cloud save failed',err);
+    setCloudStatus('Sync error');
+    toast('Cloud sync failed. Local data is still saved.');
+    return false;
+  }
 }
 
-async function loadCloudState(){
-  if(!supabaseClient || !isAuthenticated())return false;
-  setCloudStatus(navigator.onLine===false?'Offline':'Syncing…');
-  if(navigator.onLine===false)return false;
-  const rawLocal=localStorage.getItem(STORAGE_KEY);
-  let local=null;
-  try{if(rawLocal)local=normalizeStateV50(JSON.parse(rawLocal))}catch(_e){}
-  const {data,error}=await supabaseClient.from('app_state').select('payload,updated_at').eq('user_id',currentSession.user.id).maybeSingle();
-  if(error){console.error('HiveDash cloud load failed',error);setCloudStatus('Sync error');throw error}
-  // V2P2E4A: an authenticated account may reuse local state only when it is
-  // explicitly owned by the exact same Supabase user id. Unowned legacy/demo
-  // state must never be silently attached to a different/new account.
-  const localOwned=local && local.meta?.userId===currentSession.user.id;
+async function loadCloudState(context=currentCloudSessionContext()){
+  if(!supabaseClient || !isCurrentCloudSession(context))return false;
+  const session=currentSession;
+  const user=session.user;
+  const local=readLocalStateForUser(context.userId);
+
+  if(navigator.onLine===false){
+    let offlineState=local||createEmptyAuthenticatedStateV2P2E4A(user);
+    offlineState=normalizeStateV50(offlineState);
+    offlineState.meta.userId=context.userId;
+    offlineState.user={
+      ...(offlineState.user||{}),
+      email:user.email||offlineState.user?.email||'',
+      name:user.user_metadata?.name||offlineState.user?.name||'Beekeeper',
+      plan:authoritativePlanFromSession(session)
+    };
+    if(!isCurrentCloudSession(context))return false;
+    if(!writeLocalV50(offlineState))throw new Error('Unable to preserve this account local state');
+    setCloudStatus('Offline');
+    return false;
+  }
+
+  setCloudStatus('Syncing…');
+  const {data,error}=await supabaseClient.from('app_state')
+    .select('payload,updated_at')
+    .eq('user_id',context.userId)
+    .maybeSingle();
+  if(!isCurrentCloudSession(context))return false;
+  if(error){
+    console.error('HiveDash cloud load failed',error);
+    setCloudStatus('Sync error');
+    throw error;
+  }
+
+  const localOwned=!!local && local.meta?.userId===context.userId;
   if(data?.payload && Object.keys(data.payload).length){
     const remoteSource=clone(data.payload);
     const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14D(remoteSource);
-    const remote=normalizeStateV50(remoteSource);remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
+    const remote=normalizeStateV50(remoteSource);
+    remote.meta.userId=context.userId;
+    remote.meta.updatedAt=remote.meta.updatedAt||data.updated_at||'';
     const merged=enforceAuthoritativePlan(mergeStateV50(localOwned?local:null,remote));
-    merged.user={...(merged.user||{}),email:currentSession.user.email||merged.user?.email||'',name:currentSession.user.user_metadata?.name||merged.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
-    merged.meta.userId=currentSession.user.id;
-    suppressCloudSave=true;
-    if(!writeLocalV50(merged)){suppressCloudSave=false;throw new Error('Cloud data is too large for local storage')}
-    suppressCloudSave=false;lastRemoteUpdatedAt=data.updated_at||remote.meta.updatedAt||'';setCloudStatus('Synced');
-    if(remoteEnumRepaired || JSON.stringify(merged)!==JSON.stringify(remote))await pushCloudState(merged);
+    merged.user={
+      ...(merged.user||{}),
+      email:user.email||merged.user?.email||'',
+      name:user.user_metadata?.name||merged.user?.name||'Beekeeper',
+      plan:authoritativePlanFromSession(session)
+    };
+    merged.meta.userId=context.userId;
+    if(!isCurrentCloudSession(context))return false;
+    if(!writeLocalV50(merged))throw new Error('Cloud data could not be preserved locally');
+    lastRemoteUpdatedAt=data.updated_at||remote.meta.updatedAt||'';
+    setCloudStatus('Synced');
+    if(remoteEnumRepaired || JSON.stringify(merged)!==JSON.stringify(remote)){
+      await pushCloudState(merged,context);
+      if(!isCurrentCloudSession(context))return false;
+    }
     return true;
   }
-  let seed=enforceAuthoritativePlan(localOwned?local:createEmptyAuthenticatedStateV2P2E4A(currentSession.user));
-  seed.meta.userId=currentSession.user.id;seed.meta.updatedAt=seed.meta.updatedAt||new Date().toISOString();
-  seed.user={...(seed.user||{}),email:currentSession.user.email||'',name:currentSession.user.user_metadata?.name||seed.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
-  writeLocalV50(seed);await pushCloudState(seed);return false;
+
+  let seed=enforceAuthoritativePlan(localOwned?local:createEmptyAuthenticatedStateV2P2E4A(user));
+  seed.meta.userId=context.userId;
+  seed.meta.updatedAt=seed.meta.updatedAt||new Date().toISOString();
+  seed.user={
+    ...(seed.user||{}),
+    email:user.email||'',
+    name:user.user_metadata?.name||seed.user?.name||'Beekeeper',
+    plan:authoritativePlanFromSession(session)
+  };
+  if(!isCurrentCloudSession(context))return false;
+  if(!writeLocalV50(seed))throw new Error('New account state could not be preserved locally');
+  await pushCloudState(seed,context);
+  if(!isCurrentCloudSession(context))return false;
+  return false;
 }
 
 function stopRealtimeSync(){
@@ -154,20 +359,47 @@ function stopRealtimeSync(){
   }
 }
 
-function startRealtimeSync(){
+function startRealtimeSync(context=currentCloudSessionContext()){
   stopRealtimeSync();
-  if(!supabaseClient || !isAuthenticated())return;
-  realtimeChannel=supabaseClient.channel(`hivedash-state-${currentSession.user.id}`).on('postgres_changes',{event:'*',schema:'public',table:'app_state',filter:`user_id=eq.${currentSession.user.id}`},payload=>{
-    if(payload.eventType==='DELETE')return;
-    const row=payload.new;if(!row?.payload || row.updated_at===lastRemoteUpdatedAt)return;
-    const remoteSource=clone(row.payload);
-    const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14D(remoteSource);
-    const local=state(),remote=normalizeStateV50(remoteSource);remote.meta.userId=currentSession.user.id;remote.meta.updatedAt=remote.meta.updatedAt||row.updated_at||'';
-    const lt=Date.parse(local.meta?.updatedAt||0)||0,rt=Date.parse(remote.meta?.updatedAt||row.updated_at||0)||0;
-    if(lt>rt){scheduleCloudSave(local);return}
-    const merged=enforceAuthoritativePlan(mergeStateV50(local,remote));lastRemoteUpdatedAt=row.updated_at||'';suppressCloudSave=true;writeLocalV50(merged);suppressCloudSave=false;setCloudStatus('Synced');if(remoteEnumRepaired)scheduleCloudSave(merged);if(!document.querySelector('.modal'))render();
-  }).subscribe(status=>{if(status==='SUBSCRIBED')setCloudStatus('Synced');if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setCloudStatus('Sync error')});
+  if(!supabaseClient || !isCurrentCloudSession(context))return;
+  const userId=context.userId;
+  realtimeChannel=supabaseClient.channel('hivedash-state-' + userId)
+    .on('postgres_changes',{
+      event:'*',
+      schema:'public',
+      table:'app_state',
+      filter:'user_id=eq.' + userId
+    },payload=>{
+      if(!isCurrentCloudSession(context))return;
+      if(payload.eventType==='DELETE')return;
+      const row=payload.new;
+      if(!row?.payload || (row.user_id&&row.user_id!==userId) || row.updated_at===lastRemoteUpdatedAt)return;
+      const remoteSource=clone(row.payload);
+      const remoteEnumRepaired=canonicalizeEnumStateV2P2E5AX14D(remoteSource);
+      const local=state();
+      if(local.meta?.userId!==userId)return;
+      const remote=normalizeStateV50(remoteSource);
+      remote.meta.userId=userId;
+      remote.meta.updatedAt=remote.meta.updatedAt||row.updated_at||'';
+      const lt=Date.parse(local.meta?.updatedAt||0)||0;
+      const rt=Date.parse(remote.meta?.updatedAt||row.updated_at||0)||0;
+      if(lt>rt){scheduleCloudSave(local);return}
+      const merged=enforceAuthoritativePlan(mergeStateV50(local,remote));
+      lastRemoteUpdatedAt=row.updated_at||'';
+      suppressCloudSave=true;
+      const saved=writeLocalV50(merged);
+      suppressCloudSave=false;
+      if(!saved){setCloudStatus('Sync error');return}
+      setCloudStatus('Synced');
+      if(remoteEnumRepaired)scheduleCloudSave(merged);
+      if(!document.querySelector('.modal'))render();
+    }).subscribe(status=>{
+      if(!isCurrentCloudSession(context))return;
+      if(status==='SUBSCRIBED')setCloudStatus('Synced');
+      if(status==='CHANNEL_ERROR'||status==='TIMED_OUT')setCloudStatus('Sync error');
+    });
 }
+
 
 function authShell(inner){
   return `<div class="auth-page v2p2e5ae-auth">
@@ -338,65 +570,87 @@ async function handlePasswordReset(){
 
 async function signOutCloud(){
   if(!supabaseClient)return;
-  stopRealtimeSync();
+  invalidateCloudSessionWork();
   setCloudStatus('Signing out…');
-  await supabaseClient.auth.signOut();
+  const {error}=await supabaseClient.auth.signOut();
+  if(error){
+    console.error('HiveDash sign-out failed',error);
+    const {data, error:sessionError}=await supabaseClient.auth.getSession();
+    if(!sessionError && data?.session){
+      const context=adoptCloudSession(data.session);
+      await hydrateAuthenticatedApp(context);
+    }else{
+      setCloudStatus('Sync error');
+      toast('Sign out failed. Your current account is still active.');
+    }
+  }
 }
 
 let cloudHydrationPromise=null;
+let cloudHydrationPromise=null;
 
-function recoverAuthenticatedLocalState(err){
-  console.error('HiveDash cloud load failed; continuing with authenticated local mode',err);
+function recoverAuthenticatedLocalState(err,context=currentCloudSessionContext()){
+  if(!isCurrentCloudSession(context))return;
+  console.error('HiveDash cloud load failed; continuing with this account local mode',err);
   cloudReady=false;
   stopRealtimeSync();
   setCloudStatus('Sync error');
 
-  let local=null;
-  try{
-    const raw=localStorage.getItem(STORAGE_KEY);
-    if(raw)local=normalizeStateV50(JSON.parse(raw));
-  }catch(_e){}
+  const session=currentSession;
+  const local=readLocalStateForUser(context.userId);
+  const owned=local && local.meta?.userId===context.userId;
+  const fallback=owned?local:createEmptyAuthenticatedStateV2P2E4A(session?.user);
 
-  const owned=local && local.meta?.userId===currentSession?.user?.id;
-  const fallback=owned?local:createEmptyAuthenticatedStateV2P2E4A(currentSession?.user);
+  fallback.meta.userId=context.userId;
+  fallback.user={
+    ...(fallback.user||{}),
+    email:session.user.email||fallback.user?.email||'',
+    name:session.user.user_metadata?.name||fallback.user?.name||'Beekeeper',
+    plan:authoritativePlanFromSession(session)
+  };
 
-  if(currentSession?.user){
-    fallback.meta.userId=currentSession.user.id;
-    fallback.user={
-      ...(fallback.user||{}),
-      email:currentSession.user.email||fallback.user?.email||'',
-      name:currentSession.user.user_metadata?.name||fallback.user?.name||'Beekeeper',
-      plan:authoritativePlanFromSession()
-    };
-  }
-
+  if(!isCurrentCloudSession(context))return;
   suppressCloudSave=true;
-  writeLocalV50(fallback);
+  const saved=writeLocalV50(fallback);
   suppressCloudSave=false;
+  if(!saved)toast('Local storage is full. Export a backup before continuing.');
 
   if(!location.hash || location.hash==='#signin')location.hash='home';
   render();
-  toast('Signed in. Cloud sync is temporarily unavailable; local data is still available.');
+  toast('Signed in. Cloud sync is temporarily unavailable; this account local data remains available.');
 }
 
-async function hydrateAuthenticatedApp(){
-  if(cloudHydrationPromise)return cloudHydrationPromise;
+async function hydrateAuthenticatedApp(context=currentCloudSessionContext()){
+  if(!isCurrentCloudSession(context))return false;
+  if(cloudHydrationPromise &&
+     cloudHydrationPromise.userId===context.userId &&
+     cloudHydrationPromise.generation===context.generation){
+    return cloudHydrationPromise.promise;
+  }
 
-  cloudHydrationPromise=(async()=>{
+  const task=(async()=>{
     try{
-      await loadCloudState();
+      await loadCloudState(context);
+      if(!isCurrentCloudSession(context))return false;
       cloudReady=true;
-      startRealtimeSync();
+      startRealtimeSync(context);
       if(!location.hash || location.hash==='#signin')location.hash='home';
       render();
+      return true;
     }catch(err){
-      recoverAuthenticatedLocalState(err);
+      if(isCurrentCloudSession(context))recoverAuthenticatedLocalState(err,context);
+      return false;
     }finally{
-      cloudHydrationPromise=null;
+      if(cloudHydrationPromise?.promise===task)cloudHydrationPromise=null;
     }
   })();
 
-  return cloudHydrationPromise;
+  cloudHydrationPromise={
+    userId:context.userId,
+    generation:context.generation,
+    promise:task
+  };
+  return task;
 }
 
 async function initializeCloudApp(){
@@ -408,20 +662,20 @@ async function initializeCloudApp(){
 
   clearLegacyDemoEntitlement();
   const {data:{session}}=await supabaseClient.auth.getSession();
-  currentSession=session;
+  const initialContext=adoptCloudSession(session);
 
-  supabaseClient.auth.onAuthStateChange(async(event,session)=>{
-    currentSession=session;
+  supabaseClient.auth.onAuthStateChange(async(event,nextSession)=>{
+    const context=adoptCloudSession(nextSession);
 
-    if(event==='SIGNED_OUT'){
+    if(event==='SIGNED_OUT' || !nextSession){
       cloudReady=false;
       stopRealtimeSync();
       renderAuth('signin');
       return;
     }
 
-    if((event==='SIGNED_IN' || event==='INITIAL_SESSION' || event==='TOKEN_REFRESHED') && session){
-      await hydrateAuthenticatedApp();
+    if(event==='SIGNED_IN' || event==='INITIAL_SESSION' || event==='TOKEN_REFRESHED'){
+      await hydrateAuthenticatedApp(context);
     }
   });
 
@@ -430,9 +684,12 @@ async function initializeCloudApp(){
     return;
   }
 
-  await hydrateAuthenticatedApp();
+  await hydrateAuthenticatedApp(initialContext);
 }
 
+
+/* ==============================================================
+   V2P2E5AX14D
 
 
 /* ==============================================================
@@ -577,7 +834,19 @@ function normalizeStateV50(input){
   return s;
 }
 function writeLocalV50(s){
-  try{const raw=JSON.stringify(enforceAuthoritativePlan(normalizeStateV50(s)));if(raw.length>4500000)return false;localStorage.setItem(STORAGE_KEY,raw);return true}catch(e){console.error('Local write failed',e);return false}
+  try{
+    const normalized=normalizeStateV50(s);
+    const owner=String(normalized.meta?.userId||'');
+    const activeUserId=currentSession?.user?.id||'';
+    if(activeUserId && owner!==activeUserId){
+      console.error('HiveDash refused a local write owned by another account',{owner:owner||null,activeUserId});
+      return false;
+    }
+    const raw=JSON.stringify(enforceAuthoritativePlan(normalized));
+    if(raw.length>4500000)return false;
+    localStorage.setItem(localStateStorageKey(owner),raw);
+    return true;
+  }catch(e){console.error('Local write failed',e);return false}
 }
 function unionByIdV50(a=[],b=[]){const m=new Map();[...a,...b].forEach((x,i)=>{if(!x||typeof x!=='object')return;const id=String(x.id||`${x.hiveId||''}|${x.date||''}|${i}`);m.set(id,{...(m.get(id)||{}),...x})});return [...m.values()]}
 
@@ -788,37 +1057,65 @@ function createEmptyAuthenticatedStateV2P2E4A(user=currentSession?.user){
 
 function clone(v){return JSON.parse(JSON.stringify(v))}
 function state(){
-  const raw=localStorage.getItem(STORAGE_KEY);
-  if(!raw){
-    const fresh=currentSession?.user
+  const activeUserId=currentSession?.user?.id||'';
+  const stored=activeUserId
+    ? readLocalStateForUser(activeUserId)
+    : parseLocalStateSnapshot(localStorage.getItem(STORAGE_KEY));
+
+  if(!stored){
+    const fresh=activeUserId
       ? createEmptyAuthenticatedStateV2P2E4A(currentSession.user)
       : clone(DEFAULT_STATE);
-    if(!fresh.meta)fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:''};
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh))}catch(e){console.error('Initial local save failed',e)}
+    if(!fresh.meta)fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:activeUserId};
+    if(!activeUserId || cloudReady){
+      try{localStorage.setItem(localStateStorageKey(activeUserId),JSON.stringify(fresh))}
+      catch(e){console.error('Initial local save failed',e)}
+    }
     return fresh;
   }
+
   try{
-    const s=normalizeStateV50(JSON.parse(raw));
+    const s=normalizeStateV50(stored);
+    if(activeUserId && s.meta?.userId!==activeUserId){
+      console.error('HiveDash refused to expose local data owned by another account');
+      return createEmptyAuthenticatedStateV2P2E4A(currentSession.user);
+    }
     s.actions=generateActions(s);
-    if(currentSession?.user){
-      s.meta.userId=s.meta.userId||currentSession.user.id;
-      s.user={...(s.user||{}),email:currentSession.user.email||s.user?.email||'',name:currentSession.user.user_metadata?.name||s.user?.name||'Beekeeper',plan:authoritativePlanFromSession()};
+    if(activeUserId){
+      s.user={
+        ...(s.user||{}),
+        email:currentSession.user.email||s.user?.email||'',
+        name:currentSession.user.user_metadata?.name||s.user?.name||'Beekeeper',
+        plan:authoritativePlanFromSession()
+      };
     }
     enforceAuthoritativePlan(s);
     return s;
   }catch(e){
     console.error('HiveDash local state was invalid; recovered defaults',e);
-    try{localStorage.setItem('hivedash_corrupt_state_backup',raw.slice(0,200000))}catch(_e){}
-    const fresh=currentSession?.user
+    const fresh=activeUserId
       ? createEmptyAuthenticatedStateV2P2E4A(currentSession.user)
       : clone(DEFAULT_STATE);
-    if(!fresh.meta)fresh.meta={schema:50,updatedAt:new Date().toISOString(),userId:''};
-    try{localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh))}catch(_e){}
+    if(!activeUserId || cloudReady){
+      try{localStorage.setItem(localStateStorageKey(activeUserId),JSON.stringify(fresh))}
+      catch(_e){}
+    }
     return fresh;
   }
 }
+
 function save(s){
-  s=enforceAuthoritativePlan(normalizeStateV50(s));
+  s=normalizeStateV50(s);
+  const activeUserId=currentSession?.user?.id||'';
+  if(activeUserId && s.meta?.userId!==activeUserId){
+    console.error('HiveDash refused to save a state snapshot owned by another account',{
+      snapshotUserId:s.meta?.userId||null,
+      activeUserId
+    });
+    toast('Account changed. This record was not saved to the other account.');
+    return false;
+  }
+  s=enforceAuthoritativePlan(s);
 
   /* V224B33: archive Completed/Done rows before generateActions() rebuilds
      current recommendations. This is scoped to completed Actions only. */
@@ -826,7 +1123,7 @@ function save(s){
     .filter(a=>a&&(a.status==='Completed'||a.priority==='Done'));
   const completedById=new Map(
     [...(s.meta.completedActions||[]),...completedBeforeRegen].map((a,i)=>[
-      String(a.sourceId||a.id||`${a.hiveId||''}|${a.type||''}|${a.date||a.due||''}|${i}`),
+      String(a.sourceId||a.id||(a.hiveId||'')+'|'+(a.type||'')+'|'+(a.date||a.due||'')+'|'+i),
       a
     ])
   );
@@ -835,25 +1132,33 @@ function save(s){
   s.actions=generateActions(s);
   s.meta.schema=50;
   s.meta.updatedAt=new Date().toISOString();
-  if(currentSession?.user?.id)s.meta.userId=currentSession.user.id;
   const payload=JSON.stringify(s);
   if(payload.length>4500000){toast('Local storage is nearly full. Remove photos or export a backup.');return false}
-  try{localStorage.setItem(STORAGE_KEY,payload)}catch(err){
-    console.error('HiveDash local save failed',err);toast('Storage is full. Delete some photos and try again.');return false;
+  try{
+    localStorage.setItem(localStateStorageKey(s.meta.userId||''),payload);
+  }catch(err){
+    console.error('HiveDash local save failed',err);
+    toast('Storage is full. Delete some photos and try again.');
+    return false;
   }
   scheduleCloudSave(clone(s));
   return true;
 }
+
 function resetState(){
   const fresh=currentSession?.user
     ? createEmptyAuthenticatedStateV2P2E4A(currentSession.user)
     : clone(DEFAULT_STATE);
-  localStorage.setItem(STORAGE_KEY,JSON.stringify(fresh));
+  if(!writeLocalV50(fresh)){
+    toast('Could not save the reset state. Existing data has been preserved.');
+    return;
+  }
   if(cloudReady)scheduleCloudSave(fresh);
   location.hash='home';
   render();
 }
 
+function esc(v=''){
 function esc(v=''){return String(v).replace(/[&<>"']/g,m=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#2F3B33;'}[m]))}
 function idq(id){return document.getElementById(id)}
 function fmtDate(d){if(!d)return'—';return new Date(d+'T12:00:00').toLocaleDateString('en-US',{month:'short',day:'numeric'})}

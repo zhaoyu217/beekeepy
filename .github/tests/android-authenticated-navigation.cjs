@@ -44,9 +44,14 @@ async function main(){
     const reactivated=await page.evaluate(()=>({auth:isAuthenticated(),page:location.hash,top:document.querySelector('#topbar')?.innerText?.slice(0,50)}));
     check('Session restored in synthetic test',reactivated.auth===true,reactivated);
     await page.evaluate(()=>window.__EMIT_AUTH_EVENT__('TOKEN_REFRESHED',null));
-    await page.locator('#topbar button[aria-label="Settings"]').click();
-    const control=await page.evaluate(()=>({auth:isAuthenticated(),hash:location.hash,loginVisible:!!document.querySelector('.auth-page')}));
-    check('Non-navigation button opens sign-in on stale session',!control.auth&&control.loginVisible&&control.hash==='#home',control);
+    const control=await page.evaluate(()=>({
+      auth:isAuthenticated(),
+      hash:location.hash,
+      loginVisible:!!document.querySelector('.auth-page'),
+      navVisible:!document.getElementById('bottomnav').classList.contains('hidden')
+    }));
+    check('Session loss immediately renders sign-in and hides app navigation',
+      !control.auth&&control.loginVisible&&!control.navVisible,control);
 
     // Account A queues a debounced write, then signs out before the 450ms timer.
     // Account B must never receive A's snapshot, and A's unsynced local copy must survive.

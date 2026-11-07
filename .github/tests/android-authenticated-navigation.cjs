@@ -106,6 +106,25 @@ async function main(){
     check('B local state does not inherit A snapshot',
       accountSwitch.currentUser==='test-user-B'&&accountSwitch.bSentinel!=='A_ONLY_SENTINEL',accountSwitch);
 
+    const staleOwnerGuards=await page.evaluate(async()=>{
+      const a=JSON.parse(localStorage.getItem('hivedash_v9:user:test-user-999'));
+      const before=window.__CLOUD_WRITES__.length;
+      const saveResult=save(a);
+      const pushResult=await pushCloudState(a,currentCloudSessionContext());
+      const bRaw=localStorage.getItem('hivedash_v9:user:test-user-B');
+      const bState=bRaw?JSON.parse(bRaw):null;
+      return {
+        saveResult,
+        pushResult,
+        writesAdded:window.__CLOUD_WRITES__.length-before,
+        bSentinel:bState?.meta?.syncIsolationSentinel||null
+      };
+    });
+    check('Stale A snapshot is rejected by both local-save and cloud-upload guards',
+      staleOwnerGuards.saveResult===false&&staleOwnerGuards.pushResult===false&&
+      staleOwnerGuards.writesAdded===0&&staleOwnerGuards.bSentinel!=='A_ONLY_SENTINEL',
+      staleOwnerGuards);
+
     // Start a B upload, switch to A while its response is delayed, and verify
     // the late B response cannot overwrite A's sync status or local state.
     await page.evaluate(()=>{

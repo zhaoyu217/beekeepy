@@ -200,7 +200,8 @@ function isCurrentCloudSession(context){
 
 function adoptCloudSession(session){
   const nextUserId=session?.user?.id||null;
-  if(nextUserId!==activeCloudUserId){
+  const previousUserId=activeCloudUserId;
+  if(nextUserId!==previousUserId){
     preserveLegacySharedState();
     cloudSessionGeneration+=1;
     activeCloudUserId=nextUserId;
@@ -208,6 +209,9 @@ function adoptCloudSession(session){
     cloudReady=false;
     stopRealtimeSync();
     lastRemoteUpdatedAt='';
+    if(previousUserId && nextUserId){
+      renderAuth('signin','Switching accounts. Loading the selected account…');
+    }
   }
   currentSession=session||null;
   return currentCloudSessionContext();
@@ -576,6 +580,7 @@ async function signOutCloud(){
   if(!supabaseClient)return;
   invalidateCloudSessionWork();
   setCloudStatus('Signing out…');
+  renderAuth('signin','Signing out…');
   const {error}=await supabaseClient.auth.signOut();
   if(error){
     console.error('HiveDash sign-out failed',error);

@@ -2,7 +2,7 @@
 const http=require('node:http'),fs=require('node:fs'),path=require('node:path');
 const {chromium}=require('playwright');
 const root=path.resolve('mobile/dist');
-const fakeSupabase="\nwindow.__STUB_SESSION={access_token:\"test-token\",refresh_token:\"test-refresh\",token_type:\"bearer\",expires_at:4102444800,\n user:{id:\"test-user-999\",email:\"qa@example.invalid\",app_metadata:{},user_metadata:{name:\"QA User\"}}};\nwindow.__CLOUD_WRITES__=[];window.__UPSERT_DELAY_NEXT__=0;\nwindow.supabase={createClient:()=>({\n auth:{\n   async getSession(){return {data:{session:window.__STUB_SESSION},error:null}},\n   onAuthStateChange(fn){window.__EMIT_AUTH_EVENT__=fn;return {data:{subscription:{unsubscribe(){}}}}},\n   async refreshSession(){return {data:{session:window.__STUB_SESSION},error:null}}\n },\n from(){return {\n   select(){return {eq(){return {async maybeSingle(){return {data:null,error:null}}}}}},\n   async upsert(row){window.__CLOUD_WRITES__.push(JSON.parse(JSON.stringify(row)));const delay=window.__UPSERT_DELAY_NEXT__||0;window.__UPSERT_DELAY_NEXT__=0;if(delay)await new Promise(r=>setTimeout(r,delay));return {data:null,error:null}}\n }},\n channel(){return {on(){return this},subscribe(fn){fn(\"SUBSCRIBED\");return this}}},\n removeChannel(){}\n})};\n";
+const fakeSupabase="\nwindow.__STUB_SESSION={access_token:\"test-token\",refresh_token:\"test-refresh\",token_type:\"bearer\",expires_at:4102444800,\n user:{id:\"test-user-999\",email:\"qa@example.invalid\",app_metadata:{},user_metadata:{name:\"QA User\"}}};\nwindow.__CLOUD_WRITES__=[];window.__UPSERT_DELAY_NEXT__=0;window.__SELECT_DELAY_NEXT__=0;\nwindow.supabase={createClient:()=>({\n auth:{\n   async getSession(){return {data:{session:window.__STUB_SESSION},error:null}},\n   onAuthStateChange(fn){window.__EMIT_AUTH_EVENT__=fn;return {data:{subscription:{unsubscribe(){}}}}},\n   async refreshSession(){return {data:{session:window.__STUB_SESSION},error:null}}\n },\n from(){return {\n   select(){return {eq(){return {async maybeSingle(){const delay=window.__SELECT_DELAY_NEXT__||0;window.__SELECT_DELAY_NEXT__=0;if(delay)await new Promise(r=>setTimeout(r,delay));return {data:null,error:null}}}}}},\n   async upsert(row){window.__CLOUD_WRITES__.push(JSON.parse(JSON.stringify(row)));const delay=window.__UPSERT_DELAY_NEXT__||0;window.__UPSERT_DELAY_NEXT__=0;if(delay)await new Promise(r=>setTimeout(r,delay));return {data:null,error:null}}\n }},\n channel(){return {on(){return this},subscribe(fn){fn(\"SUBSCRIBED\");return this}}},\n removeChannel(){}\n})};\n";
 const mime={'.html':'text/html','.js':'application/javascript','.css':'text/css','.svg':'image/svg+xml','.png':'image/png'};
 const report={checks:[],pageErrors:[]};
 let browser,server;
@@ -65,8 +65,8 @@ async function main(){
       a.meta.syncIsolationSentinel='A_ONLY_SENTINEL';
       if(!save(a))throw new Error('Could not save A isolation fixture');
     });
-    await page.evaluate(async()=>{
-      await window.__EMIT_AUTH_EVENT__('SIGNED_OUT',null);
+    const duringSwitch=await page.evaluate(()=>{
+      window.__SELECT_DELAY_NEXT__=180;
       window.__STUB_SESSION_B={
         access_token:'test-token-b',
         refresh_token:'test-refresh-b',
@@ -75,8 +75,16 @@ async function main(){
         user:{id:'test-user-B',email:'qa-b@example.invalid',app_metadata:{},user_metadata:{name:'QA User B'}}
       };
       window.__STUB_SESSION=window.__STUB_SESSION_B;
-      await window.__EMIT_AUTH_EVENT__('SIGNED_IN',window.__STUB_SESSION_B);
+      window.__EMIT_AUTH_EVENT__('SIGNED_IN',window.__STUB_SESSION_B);
+      return {
+        currentUser:currentSession?.user?.id||null,
+        loginVisible:!!document.querySelector('.auth-page'),
+        navHidden:document.getElementById('bottomnav').classList.contains('hidden')
+      };
     });
+    check('Direct account switch hides prior account UI during hydration',
+      duringSwitch.currentUser==='test-user-B'&&duringSwitch.loginVisible&&duringSwitch.navHidden,
+      duringSwitch);
     await page.waitForTimeout(650);
     const accountSwitch=await page.evaluate(()=>{
       const aRaw=localStorage.getItem('hivedash_v9:user:test-user-999');

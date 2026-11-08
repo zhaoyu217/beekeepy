@@ -1,0 +1,30 @@
+name: Supabase Live Backend Smoke Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - mobile-offline-v1
+    paths:
+      - 'config.js'
+      - '.github/tests/supabase-live-smoke.mjs'
+      - '.github/workflows/supabase-live-smoke.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  live-smoke:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Check smoke test syntax
+        run: node --check .github/tests/supabase-live-smoke.mjs
+      - name: Test real Supabase project endpoints and anonymous access
+        run: node .github/tests/supabase-live-smoke.mjs

@@ -50,7 +50,13 @@ jobs:
           script: |
             set -eux
             timeout 120s adb wait-for-device
-            timeout 120s adb install -r candidate-apk/app-debug.apk
+            adb devices -l
+            test "$(adb get-state)" = "device"
+            test "$(timeout 30s adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
+            ls -lh candidate-apk/app-debug.apk
+            # This APK is large; non-streaming avoids a long streaming install stall.
+            timeout 600s adb install --no-streaming -r candidate-apk/app-debug.apk
+            timeout 30s adb shell pm path app.hivefield.mobile.fix
             timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
             sleep 8
             mkdir -p android-auth-results

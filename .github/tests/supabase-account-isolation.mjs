@@ -94,18 +94,30 @@ async function waitFor(fn,ms=12000){
   }
   return false;
 }
-async function subscribe(client,name,events){
+const activeChannels=[];
+async function subscribe(client,name,events,systemEvents,filter){
+  const channel=client.channel("qa-"+tag+"-"+name,{
+    config:{postgres_changes_options:{wait:true,timeout:15000}}
+  });
+  activeChannels.push({client,channel});
   return new Promise((resolve,reject)=>{
     let settled=false;
-    const timer=setTimeout(()=>{if(!settled){settled=true;reject(new Error("Realtime subscription timed out: "+name))}},15000);
-    const channel=client.channel("qa-"+tag+"-"+name)
-      .on("postgres_changes",{event:"*",schema:"public",table:"app_state"},payload=>events.push(payload))
-      .subscribe(status=>{
-        if(status==="SUBSCRIBED"&&!settled){settled=true;clearTimeout(timer);resolve(channel)}
-        if((status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")&&!settled){
-          settled=true;clearTimeout(timer);reject(new Error("Realtime "+name+" status: "+status));
-        }
-      });
+    const timer=setTimeout(()=>{
+      if(!settled){settled=true;reject(new Error("Realtime subscription timed out: "+name))}
+    },25000);
+    channel.on("system",{},payload=>systemEvents.push(payload));
+    channel.on("postgres_changes",{
+      event:"*",schema:"public",table:"app_state",
+      ...(filter?{filter}:{})
+    },payload=>events.push(payload));
+    channel.subscribe((status,err)=>{
+      report.details.realtimeStatuses=report.details.realtimeStatuses||{};
+      report.details.realtimeStatuses[name]={status,error:err?String(err.stack||err):null};
+      if(status==="SUBSCRIBED"&&!settled){settled=true;clearTimeout(timer);resolve(channel)}
+      if((status==="CHANNEL_ERROR"||status==="TIMED_OUT"||status==="CLOSED")&&!settled){
+        settled=true;clearTimeout(timer);reject(new Error("Realtime "+name+" status: "+status+" "+(err?String(err.stack||err):"")));
+      }
+    });
   });
 }
 
@@ -205,42 +217,69 @@ async function main(){
   ]);
   if(sessionA.error||sessionB.error)throw new Error("Could not set realtime test sessions: "+JSON.stringify({A:sessionA.error,B:sessionB.error}));
 
-  const eventsA=[],eventsB=[];
-  channelA=await subscribe(clientA,"A",eventsA);
-  channelB=await subscribe(clientB,"B",eventsB);
-  check("Both authenticated Realtime subscriptions connect",!!channelA&&!!channelB,{A:!!channelA,B:!!channelB});
+  // Explicitly set each authenticated JWT for Realtime authorization.
+  // This is the same user token used by the app's row-level security checks.
+  clientA.realtime.setAuth(A.access);
+  clientB.realtime.setAuth(B.access);
+
+  const eventsA=[],eventsB=[],broadA=[],broadB=[];
+  const systems={A:[],B:[]};
+  channelA=await subscribe(clientA,"A-own",eventsA,systems.A,"user_id=eq."+A.id);
+  const channelABroad=await subscribe(clientA,"A-broad",broadA,systems.A,null);
+  channelB=await subscribe(clientB,"B-own",eventsB,systems.B,"user_id=eq."+B.id);
+  const channelBBroad=await subscribe(clientB,"B-broad",broadB,systems.B,null);
+  check("Both users' filtered and broad Realtime subscriptions connect",
+    !!channelA&&!!channelABroad&&!!channelB&&!!channelBBroad,
+    {A:!!channelA,A_broad:!!channelABroad,B:!!channelB,B_broad:!!channelBBroad});
+
+  // Give the server time to finish establishing the replication stream.
+  await new Promise(r=>setTimeout(r,1000));
 
   const bRealtime={...rowFor(B,"B_REALTIME"),updated_at:new Date(Date.now()+1000).toISOString()};
   bRealtime.payload.meta.updatedAt=bRealtime.updated_at;
   const bRealtimeWrite=await clientB.from("app_state").upsert(bRealtime,{onConflict:"user_id"});
   if(bRealtimeWrite.error)throw new Error("B realtime update failed: "+bRealtimeWrite.error.message);
+  const bPersisted=await rowsFor(B);
+  check("B realtime write is persisted in Postgres",
+    bPersisted.length===1&&bPersisted[0].payload.qa_marker==="B_REALTIME",
+    {marker:bPersisted[0]?.payload?.qa_marker});
   const bGotOwn=await waitFor(()=>eventsB.some(e=>e.new?.user_id===B.id&&e.new?.payload?.qa_marker==="B_REALTIME"));
-  await new Promise(r=>setTimeout(r,1500));
-  check("B receives its own Realtime change",bGotOwn,{events:eventsB.map(e=>e.new?.user_id)});
-  check("A does not receive B Realtime data",
-    !eventsA.some(e=>e.new?.user_id===B.id),
-    {events:eventsA.map(e=>e.new?.user_id)});
+  await new Promise(r=>setTimeout(r,1200));
+  check("B receives its own filtered Realtime change",bGotOwn,
+    {events:eventsB.map(e=>({user_id:e.new?.user_id,marker:e.new?.payload?.qa_marker})),
+     system:systems.B});
+  check("A does not receive B Realtime data through an unfiltered subscription",
+    !broadA.some(e=>e.new?.user_id===B.id),
+    {events:broadA.map(e=>e.new?.user_id),system:systems.A});
 
   const aRealtime={...rowFor(A,"A_REALTIME"),updated_at:new Date(Date.now()+2000).toISOString()};
   aRealtime.payload.meta.updatedAt=aRealtime.updated_at;
   const aRealtimeWrite=await clientA.from("app_state").upsert(aRealtime,{onConflict:"user_id"});
   if(aRealtimeWrite.error)throw new Error("A realtime update failed: "+aRealtimeWrite.error.message);
+  const aPersisted=await rowsFor(A);
+  check("A realtime write is persisted in Postgres",
+    aPersisted.length===1&&aPersisted[0].payload.qa_marker==="A_REALTIME",
+    {marker:aPersisted[0]?.payload?.qa_marker});
   const aGotOwn=await waitFor(()=>eventsA.some(e=>e.new?.user_id===A.id&&e.new?.payload?.qa_marker==="A_REALTIME"));
-  await new Promise(r=>setTimeout(r,1500));
-  check("A receives its own Realtime change",aGotOwn,{events:eventsA.map(e=>e.new?.user_id)});
-  check("B does not receive A Realtime data",
-    !eventsB.some(e=>e.new?.user_id===A.id),
-    {events:eventsB.map(e=>e.new?.user_id)});
+  await new Promise(r=>setTimeout(r,1200));
+  check("A receives its own filtered Realtime change",aGotOwn,
+    {events:eventsA.map(e=>({user_id:e.new?.user_id,marker:e.new?.payload?.qa_marker})),
+     system:systems.A});
+  check("B does not receive A Realtime data through an unfiltered subscription",
+    !broadB.some(e=>e.new?.user_id===A.id),
+    {events:broadB.map(e=>e.new?.user_id),system:systems.B});
 
-  report.details.realtime={eventsA:eventsA.length,eventsB:eventsB.length};
+  report.details.realtime={
+    filteredEventsA:eventsA.length,filteredEventsB:eventsB.length,
+    broadEventsA:broadA.length,broadEventsB:broadB.length,systems
+  };
 }
 main().catch(err=>{
   report.failure=String(err.stack||err);
   process.exitCode=1;
 }).finally(async()=>{
-  try{if(channelA)await clientA.removeChannel(channelA)}catch{}
-  try{if(channelB)await clientB.removeChannel(channelB)}catch{}
-  try{if(clientA)await clientA.auth.signOut({scope:"local"})}catch{}
-  try{if(clientB)await clientB.auth.signOut({scope:"local"})}catch{}
+  for(const item of activeChannels){try{await item.client.removeChannel(item.channel)}catch{}}
+  try{if(clientA){await clientA.removeAllChannels();clientA.realtime.disconnect();await clientA.auth.signOut({scope:"local"})}}catch{}
+  try{if(clientB){await clientB.removeAllChannels();clientB.realtime.disconnect();await clientB.auth.signOut({scope:"local"})}}catch{}
   console.log("SUPABASE_ACCOUNT_ISOLATION_REPORT "+JSON.stringify(report));
 });

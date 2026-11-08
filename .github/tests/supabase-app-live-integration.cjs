@@ -63,12 +63,15 @@ async function signup(page,label){
   report.accounts.push({label,email,password:"[not logged]",id:account.id});
   return {label,email,password,id:account.id};
 }
-async function signin(page,account){
+async function signin(page,account,expectedMarker=null){
   await page.waitForSelector("#authEmail",{timeout:20000});
   await page.fill("#authEmail",account.email);
   await page.fill("#authPassword",account.password);
   await page.click("#authSubmit");
   await waitForAuth(page,account.id);
+  if(expectedMarker){
+    await page.waitForFunction(marker=>state().meta?.qaMarker===marker,expectedMarker,{timeout:30000});
+  }
 }
 async function signout(page){
   await page.evaluate(()=>signOutCloud());
@@ -162,19 +165,19 @@ async function main(){
 
     // Switch the same browser installation from A to B and back.
     await signout(pageA);
-    await signin(pageA,B);
+    await signin(pageA,B,"APP_B_INITIAL");
     const switchedToB=await currentState(pageA);
     check("Same app instance switches from A to B without exposing A data",
       switchedToB.userId===B.id&&switchedToB.marker==="APP_B_INITIAL",switchedToB);
     await signout(pageA);
-    await signin(pageA,A);
+    await signin(pageA,A,"APP_A_INITIAL");
     const switchedBackA=await currentState(pageA);
     check("Same app instance switches back to A and restores A data",
       switchedBackA.userId===A.id&&switchedBackA.marker==="APP_A_INITIAL",switchedBackA);
 
     // A second device/browser session for A must receive A updates, while B must not.
     const pageA2=await makePage("A2");
-    await signin(pageA2,A);
+    await signin(pageA2,A,"APP_A_INITIAL");
     const a2Initial=await currentState(pageA2);
     check("Second A device loads A's cloud state",
       a2Initial.userId===A.id&&a2Initial.marker==="APP_A_INITIAL",a2Initial);

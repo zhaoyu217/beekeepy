@@ -1,0 +1,29 @@
+name: Supabase Account Isolation and Realtime E2E
+
+on:
+  push:
+    branches:
+      - mobile-offline-v1
+    paths:
+      - 'config.js'
+      - '.github/tests/supabase-account-isolation.mjs'
+      - '.github/workflows/supabase-account-isolation.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  account-isolation:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - name: Checkout test branch
+        uses: actions/checkout@v4
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Install Supabase client for Realtime tests
+        run: npm install --no-save --package-lock=false @supabase/supabase-js@2
+      - name: Run real two-account isolation and Realtime tests
+        run: node .github/tests/supabase-account-isolation.mjs

@@ -53,50 +53,7 @@ jobs:
           disk-size: 6G
           disable-animations: true
           script: |
-            set -eux
-            mkdir -p android-auth-results
-            trap 'rc=$?; echo "script_exit_code=$rc" > android-auth-results/script-exit.txt; timeout 15s adb logcat -b all -d -t 8000 > android-auth-results/logcat-on-exit.txt 2>&1 || true; timeout 15s adb shell df -h > android-auth-results/disk-on-exit.txt 2>&1 || true; timeout 15s adb shell dumpsys meminfo > android-auth-results/meminfo-on-exit.txt 2>&1 || true; exit "$rc"' EXIT
-            timeout 120s adb wait-for-device
-            adb devices -l | tee android-auth-results/adb-devices-before-install.txt
-            test "$(adb get-state)" = "device"
-            test "$(timeout 30s adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
-            ls -lh candidate-apk/app-debug.apk | tee android-auth-results/apk-size.txt
-            timeout 20s adb shell df -h /data > android-auth-results/data-partition.txt 2>&1 || true
-            timeout 20s adb shell cat /proc/meminfo > android-auth-results/device-meminfo.txt 2>&1 || true
-            timeout 20s adb shell service check package > android-auth-results/package-service.txt 2>&1 || true
-            set +e
-            timeout 20s adb shell cmd package list packages > android-auth-results/package-list-check.txt 2>&1
-            PM_RC=$?
-            set -e
-            echo "package_manager_check_exit_code=$PM_RC" | tee android-auth-results/package-manager-ready.txt
-            test "$PM_RC" -eq 0
-            test -s android-auth-results/package-list-check.txt
-            timeout 180s adb install -r candidate-apk/app-debug.apk
-            timeout 30s adb shell pm path app.hivefield.mobile.fix | tee android-auth-results/installed-package-path.txt
-            adb logcat -c
-            adb logcat -v threadtime > android-auth-results/logcat-live.txt 2>&1 &
-            LOGCAT_PID=$!
-            set +e
-            timeout 20s adb shell am start -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
-            START_RC=$?
-            set -e
-            echo "am_start_exit_code=$START_RC" | tee android-auth-results/launch-status.txt
-            sleep 25
-            set +e
-            timeout 20s adb get-state > android-auth-results/adb-state-after-launch.txt 2>&1
-            STATE_RC=$?
-            timeout 20s adb shell pidof app.hivefield.mobile.fix > android-auth-results/app-pid.txt 2>&1
-            PID_RC=$?
-            set -e
-            echo "adb_state_exit_code=$STATE_RC" >> android-auth-results/launch-status.txt
-            echo "app_pid_exit_code=$PID_RC" >> android-auth-results/launch-status.txt
-            kill "$LOGCAT_PID" 2>/dev/null || true
-            wait "$LOGCAT_PID" 2>/dev/null || true
-            cat android-auth-results/launch-status.txt
-            cat android-auth-results/app-pid.txt || true
-            test "$STATE_RC" -eq 0
-            test "$PID_RC" -eq 0
-            node .github/tests/android-authenticated-apk.cjs
+            bash .github/scripts/android-authenticated-emulator.sh
       - name: Save Android diagnostics
         if: always()
         run: |

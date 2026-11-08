@@ -15,7 +15,7 @@ permissions:
 jobs:
   authenticated-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 30
+    timeout-minutes: 35
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -43,32 +43,50 @@ jobs:
           target: google_apis
           arch: x86_64
           profile: pixel_6
-          ram-size: 3072M
-          heap-size: 512M
+          ram-size: 4096M
+          heap-size: 768M
           disk-size: 6G
           disable-animations: true
           script: |
             set -eux
+            mkdir -p android-auth-results
             timeout 120s adb wait-for-device
             adb devices -l
             test "$(adb get-state)" = "device"
             test "$(timeout 30s adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
             ls -lh candidate-apk/app-debug.apk
-            # This APK is large; non-streaming avoids a long streaming install stall.
             timeout 600s adb install --no-streaming -r candidate-apk/app-debug.apk
             timeout 30s adb shell pm path app.hivefield.mobile.fix
-            timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
-            sleep 8
-            mkdir -p android-auth-results
-            timeout 20s adb shell screencap -p /sdcard/hive-auth-launch.png
-            timeout 20s adb pull /sdcard/hive-auth-launch.png android-auth-results/device-launch.png
+            adb logcat -c
+            adb logcat -v threadtime > android-auth-results/logcat-live.txt 2>&1 &
+            LOGCAT_PID=$!
+            set +e
+            timeout 20s adb shell am start -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
+            START_RC=$?
+            set -e
+            echo "am_start_exit_code=$START_RC" | tee android-auth-results/launch-status.txt
+            sleep 25
+            set +e
+            timeout 20s adb get-state > android-auth-results/adb-state-after-launch.txt 2>&1
+            STATE_RC=$?
+            timeout 20s adb shell pidof app.hivefield.mobile.fix > android-auth-results/app-pid.txt 2>&1
+            PID_RC=$?
+            set -e
+            echo "adb_state_exit_code=$STATE_RC" >> android-auth-results/launch-status.txt
+            echo "app_pid_exit_code=$PID_RC" >> android-auth-results/launch-status.txt
+            kill "$LOGCAT_PID" 2>/dev/null || true
+            wait "$LOGCAT_PID" 2>/dev/null || true
+            cat android-auth-results/launch-status.txt
+            cat android-auth-results/app-pid.txt || true
+            test "$STATE_RC" -eq 0
+            test "$PID_RC" -eq 0
             node .github/tests/android-authenticated-apk.cjs
       - name: Save Android diagnostics
         if: always()
         run: |
           mkdir -p android-auth-results
           timeout 10s adb devices -l > android-auth-results/adb-devices.txt 2>&1 || true
-          timeout 12s adb logcat -d -t 4000 > android-auth-results/logcat.txt 2>&1 || true
+          timeout 12s adb logcat -d -t 4000 > android-auth-results/logcat-after.txt 2>&1 || true
       - name: Upload Android authenticated test evidence
         if: always()
         uses: actions/upload-artifact@v4

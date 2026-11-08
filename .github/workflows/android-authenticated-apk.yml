@@ -1,0 +1,73 @@
+name: Android 15 Authenticated APK and Supabase Test
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [mobile-offline-v1]
+    paths:
+      - '.github/tests/android-authenticated-apk.cjs'
+      - '.github/workflows/android-authenticated-apk.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  authenticated-apk:
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download APK built with isolated test backend
+        uses: actions/download-artifact@v4
+        with:
+          name: hive-offline-debug-apk
+          repository: zhaoyu217/beekeepy
+          run-id: 42453418933
+          github-token: \${{ secrets.GITHUB_TOKEN }}
+          path: candidate-apk
+      - name: Install WebView CDP driver
+        run: |
+          test -s candidate-apk/app-debug.apk
+          npm install --no-save --ignore-scripts chrome-remote-interface@0.33.3
+          node --check .github/tests/android-authenticated-apk.cjs
+          mkdir -p android-auth-results
+          sha256sum candidate-apk/app-debug.apk > android-auth-results/apk-sha256.txt
+      - name: Run actual APK on Android 15 emulator
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 3072M
+          heap-size: 512M
+          disk-size: 6G
+          disable-animations: true
+          script: |
+            set -eux
+            timeout 120s adb wait-for-device
+            timeout 120s adb install -r candidate-apk/app-debug.apk
+            timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
+            sleep 8
+            mkdir -p android-auth-results
+            timeout 20s adb shell screencap -p /sdcard/hive-auth-launch.png
+            timeout 20s adb pull /sdcard/hive-auth-launch.png android-auth-results/device-launch.png
+            node .github/tests/android-authenticated-apk.cjs
+      - name: Save Android diagnostics
+        if: always()
+        run: |
+          mkdir -p android-auth-results
+          timeout 10s adb devices -l > android-auth-results/adb-devices.txt 2>&1 || true
+          timeout 12s adb logcat -d -t 4000 > android-auth-results/logcat.txt 2>&1 || true
+      - name: Upload Android authenticated test evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android15-authenticated-apk-report
+          path: android-auth-results/
+          retention-days: 7
+          if-no-files-found: warn

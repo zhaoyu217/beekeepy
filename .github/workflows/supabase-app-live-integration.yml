@@ -1,0 +1,65 @@
+name: HiveDash Real App and Supabase Integration
+
+on:
+  push:
+    branches:
+      - mobile-offline-v1
+    paths:
+      - 'app.js'
+      - 'index.html'
+      - 'config.js'
+      - 'v45.js'
+      - 'r04a-catalog.js'
+      - 'r05a-catalog.js'
+      - 'r03a4.js'
+      - 'r03a5.js'
+      - 'r08a.js'
+      - 'r09a.js'
+      - 'r09a2.js'
+      - 'r09a3.js'
+      - 'r09a4.js'
+      - 'b41tz1.js'
+      - 'r10a15-core.js'
+      - 'r10a4-projection.js'
+      - 'r10a14-route.js'
+      - 'r10a10-closure.js'
+      - 'r10a16-authority-explanation.js'
+      - 'r11a.js'
+      - 'r12a.js'
+      - 'crossrule-x1.js'
+      - 'crossrule-x2.js'
+      - 'perf-state-cache.js'
+      - 'select-stability.js'
+      - 'inspection-voice.js'
+      - 'mobile/scripts/prepare-web.mjs'
+      - '.github/tests/supabase-app-live-integration.cjs'
+      - '.github/workflows/supabase-app-live-integration.yml'
+
+permissions:
+  contents: read
+
+jobs:
+  real-app:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Prepare the real app bundle
+        run: node mobile/scripts/prepare-web.mjs
+      - name: Bundle the same Supabase UMD runtime used by the Android app
+        run: |
+          set -euxo pipefail
+          mkdir -p mobile/dist/vendor
+          curl --fail --location --retry 4 --retry-delay 2 \
+            -o mobile/dist/vendor/supabase.min.js \
+            https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js
+          test "$(stat -c%s mobile/dist/vendor/supabase.min.js)" -gt 100000
+      - name: Install headless Chromium
+        run: |
+          npm install --no-save --ignore-scripts playwright@1.56.1
+          npx playwright install --with-deps chromium
+      - name: Run real app sign-up, cloud isolation, account switching and Realtime test
+        run: node .github/tests/supabase-app-live-integration.cjs

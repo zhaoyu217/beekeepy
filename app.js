@@ -19,6 +19,7 @@ let currentSession=null;
 let cloudReady=false;
 let syncTimer=null;
 let realtimeChannel=null;
+let onlineCloudSyncPromise=null;
 let lastRemoteUpdatedAt='';
 let suppressCloudSave=false;
 let cloudStatus='Offline';
@@ -207,6 +208,7 @@ function adoptCloudSession(session){
     activeCloudUserId=nextUserId;
     clearPendingCloudSave();
     cloudReady=false;
+    onlineCloudSyncPromise=null;
     stopRealtimeSync();
     lastRemoteUpdatedAt='';
     if(previousUserId && nextUserId){
@@ -660,6 +662,43 @@ async function hydrateAuthenticatedApp(context=currentCloudSessionContext()){
   };
   return task;
 }
+
+async function resumeCloudSyncAfterReconnect(){
+  if(!CLOUD_CONFIGURED || !supabaseClient || navigator.onLine===false)return false;
+  const context=currentCloudSessionContext();
+  if(!context || !isCurrentCloudSession(context))return false;
+  if(onlineCloudSyncPromise)return onlineCloudSyncPromise;
+
+  clearPendingCloudSave();
+  setCloudStatus('Syncing…');
+  const task=(async()=>{
+    try{
+      // Re-read the selected account's cloud row and merge it with its
+      // account-scoped local snapshot before uploading any offline changes.
+      await loadCloudState(context);
+      if(!isCurrentCloudSession(context))return false;
+      cloudReady=true;
+      startRealtimeSync(context);
+      setCloudStatus('Synced');
+      return true;
+    }catch(err){
+      if(isCurrentCloudSession(context)){
+        console.error('HiveDash reconnect sync failed; local data remains saved',err);
+        setCloudStatus('Sync error');
+        toast('Internet restored, but cloud sync failed. Your local data is still saved.');
+      }
+      return false;
+    }finally{
+      if(onlineCloudSyncPromise===task)onlineCloudSyncPromise=null;
+    }
+  })();
+  onlineCloudSyncPromise=task;
+  return task;
+}
+
+window.addEventListener('online',()=>{
+  void resumeCloudSyncAfterReconnect();
+});
 
 async function initializeCloudApp(){
   if(!CLOUD_CONFIGURED){

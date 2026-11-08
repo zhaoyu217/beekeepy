@@ -15,7 +15,7 @@ permissions:
 jobs:
   authenticated-apk:
     runs-on: ubuntu-latest
-    timeout-minutes: 35
+    timeout-minutes: 30
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-node@v4
@@ -36,19 +36,22 @@ jobs:
           node --check .github/tests/android-authenticated-apk.cjs
           mkdir -p android-auth-results
           sha256sum candidate-apk/app-debug.apk > android-auth-results/apk-sha256.txt
+      - name: Ensure KVM accessibility and preserve diagnostics metadata
+        run: |
+          if test -e /dev/kvm; then sudo chmod 666 /dev/kvm; ls -l /dev/kvm; else echo 'WARNING: /dev/kvm absent'; fi
+          mkdir -p android-auth-results
+          date -u > android-auth-results/runner-utc.txt
       - name: Run actual APK on Android 15 emulator
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          target: default
+          target: google_apis
           arch: x86_64
-          profile: pixel_2
-          ram-size: 4096M
-          heap-size: 768M
-          disk-size: 8G
-          emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
+          profile: pixel_6
+          ram-size: 3072M
+          heap-size: 512M
+          disk-size: 6G
           disable-animations: true
-          disable-spellchecker: true
           script: |
             set -eux
             mkdir -p android-auth-results
@@ -63,14 +66,15 @@ jobs:
             timeout 20s adb shell service check package > android-auth-results/package-service.txt 2>&1 || true
             set +e
             PACKAGE_READY=0
-            for i in $(seq 1 12); do
+            for i in $(seq 1 8); do
               timeout 15s adb shell cmd package list packages > android-auth-results/package-list-check.txt 2>&1
               if [ "$?" -eq 0 ]; then PACKAGE_READY=1; break; fi
               sleep 5
             done
             set -e
             echo "package_manager_ready=$PACKAGE_READY" | tee android-auth-results/package-manager-ready.txt
-            timeout 600s adb install --no-streaming -r candidate-apk/app-debug.apk
+            test "$PACKAGE_READY" -eq 1
+            timeout 180s adb install -r candidate-apk/app-debug.apk
             timeout 30s adb shell pm path app.hivefield.mobile.fix | tee android-auth-results/installed-package-path.txt
             adb logcat -c
             adb logcat -v threadtime > android-auth-results/logcat-live.txt 2>&1 &

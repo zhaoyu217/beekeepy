@@ -65,15 +65,12 @@ jobs:
             timeout 20s adb shell cat /proc/meminfo > android-auth-results/device-meminfo.txt 2>&1 || true
             timeout 20s adb shell service check package > android-auth-results/package-service.txt 2>&1 || true
             set +e
-            PACKAGE_READY=0
-            for i in $(seq 1 8); do
-              timeout 15s adb shell cmd package list packages > android-auth-results/package-list-check.txt 2>&1
-              if [ "$?" -eq 0 ]; then PACKAGE_READY=1; break; fi
-              sleep 5
-            done
+            timeout 20s adb shell cmd package list packages > android-auth-results/package-list-check.txt 2>&1
+            PM_RC=$?
             set -e
-            echo "package_manager_ready=$PACKAGE_READY" | tee android-auth-results/package-manager-ready.txt
-            test "$PACKAGE_READY" -eq 1
+            echo "package_manager_check_exit_code=$PM_RC" | tee android-auth-results/package-manager-ready.txt
+            test "$PM_RC" -eq 0
+            test -s android-auth-results/package-list-check.txt
             timeout 180s adb install -r candidate-apk/app-debug.apk
             timeout 30s adb shell pm path app.hivefield.mobile.fix | tee android-auth-results/installed-package-path.txt
             adb logcat -c

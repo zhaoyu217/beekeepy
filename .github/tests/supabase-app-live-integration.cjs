@@ -194,6 +194,54 @@ async function main(){
     check("B device does not receive A account updates",
       bAfterA.userId===B.id&&bAfterA.marker==="APP_B_REMOTE_UPDATE",bAfterA);
 
+    // Simulate a genuine browser network outage on A's app instance.
+    await pageA.context().setOffline(true);
+    await pageA.waitForFunction(()=>navigator.onLine===false,null,{timeout:10000});
+    const offlineMarker="APP_A_OFFLINE_PENDING";
+    const offlineLocal=await pageA.evaluate(marker=>{
+      const s=state();
+      s.meta.qaMarker=marker;
+      const saved=save(s);
+      return {saved,online:navigator.onLine,marker:state().meta?.qaMarker||null,status:cloudStatusText()};
+    },offlineMarker);
+    check("A can save locally while offline",
+      offlineLocal.saved===true&&offlineLocal.online===false&&
+      offlineLocal.marker===offlineMarker&&offlineLocal.status==="Offline",
+      offlineLocal);
+    await pageA.waitForTimeout(1000);
+
+    const remoteBeforeReconnect=await pageA2.evaluate(async()=>{
+      const {data,error}=await supabaseClient.from("app_state")
+        .select("payload").eq("user_id",currentSession.user.id).maybeSingle();
+      return {marker:data?.payload?.meta?.qaMarker||null,error:error?.message||null};
+    });
+    check("Offline change is not falsely reported as already uploaded",
+      remoteBeforeReconnect.marker==="APP_A_REMOTE_UPDATE"&&!remoteBeforeReconnect.error,
+      remoteBeforeReconnect);
+    const a2BeforeReconnect=await currentState(pageA2);
+    check("Other A device keeps last confirmed cloud version while A is offline",
+      a2BeforeReconnect.marker==="APP_A_REMOTE_UPDATE",a2BeforeReconnect);
+
+    await pageA.context().setOffline(false);
+    await pageA.waitForFunction(()=>navigator.onLine===true,null,{timeout:10000});
+    await pageA.waitForFunction(async marker=>{
+      const {data,error}=await supabaseClient.from("app_state")
+        .select("payload").eq("user_id",currentSession.user.id).maybeSingle();
+      return !error&&data?.payload?.meta?.qaMarker===marker;
+    },offlineMarker,{timeout:30000});
+    await pageA2.waitForFunction(marker=>state().meta?.qaMarker===marker,offlineMarker,{timeout:30000});
+    const afterReconnect=await currentState(pageA);
+    check("Offline A changes upload automatically after network reconnect",
+      afterReconnect.marker===offlineMarker&&afterReconnect.cloudStatus==="Synced",
+      afterReconnect);
+    const a2AfterReconnect=await currentState(pageA2);
+    check("Offline A changes reach the second A device through Realtime",
+      a2AfterReconnect.marker===offlineMarker,a2AfterReconnect);
+    const bAfterReconnect=await currentState(pageB);
+    check("Offline A recovery does not leak into B account",
+      bAfterReconnect.userId===B.id&&bAfterReconnect.marker==="APP_B_REMOTE_UPDATE",
+      bAfterReconnect);
+
     check("No uncaught browser JavaScript errors",report.pageErrors.length===0,report.pageErrors);
     check("No unexpected browser console errors",(report.consoleErrors||[]).length===0,report.consoleErrors||[]);
   }catch(err){

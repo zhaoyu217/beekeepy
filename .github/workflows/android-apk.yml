@@ -12,6 +12,7 @@ on:
       - '.github/workflows/android-apk.yml'
       - 'inspection-voice.js'
       - 'index.html'
+      - 'config.js'
 
 permissions:
   contents: read

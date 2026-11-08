@@ -40,25 +40,38 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          target: google_apis
+          target: default
           arch: x86_64
-          profile: pixel_6
-          ram-size: 2048M
-          heap-size: 512M
-          disk-size: 4G
+          profile: pixel_2
+          ram-size: 4096M
+          heap-size: 768M
+          disk-size: 8G
           emulator-options: -no-window -gpu swiftshader_indirect -no-snapshot -noaudio -no-boot-anim -camera-back none
           disable-animations: true
           disable-spellchecker: true
           script: |
             set -eux
             mkdir -p android-auth-results
+            trap 'rc=$?; echo "script_exit_code=$rc" > android-auth-results/script-exit.txt; timeout 15s adb logcat -b all -d -t 8000 > android-auth-results/logcat-on-exit.txt 2>&1 || true; timeout 15s adb shell df -h > android-auth-results/disk-on-exit.txt 2>&1 || true; timeout 15s adb shell dumpsys meminfo > android-auth-results/meminfo-on-exit.txt 2>&1 || true; exit "$rc"' EXIT
             timeout 120s adb wait-for-device
-            adb devices -l
+            adb devices -l | tee android-auth-results/adb-devices-before-install.txt
             test "$(adb get-state)" = "device"
             test "$(timeout 30s adb shell getprop sys.boot_completed | tr -d '\r')" = "1"
-            ls -lh candidate-apk/app-debug.apk
+            ls -lh candidate-apk/app-debug.apk | tee android-auth-results/apk-size.txt
+            timeout 20s adb shell df -h /data > android-auth-results/data-partition.txt 2>&1 || true
+            timeout 20s adb shell cat /proc/meminfo > android-auth-results/device-meminfo.txt 2>&1 || true
+            timeout 20s adb shell service check package > android-auth-results/package-service.txt 2>&1 || true
+            set +e
+            PACKAGE_READY=0
+            for i in $(seq 1 12); do
+              timeout 15s adb shell cmd package list packages > android-auth-results/package-list-check.txt 2>&1
+              if [ "$?" -eq 0 ]; then PACKAGE_READY=1; break; fi
+              sleep 5
+            done
+            set -e
+            echo "package_manager_ready=$PACKAGE_READY" | tee android-auth-results/package-manager-ready.txt
             timeout 600s adb install --no-streaming -r candidate-apk/app-debug.apk
-            timeout 30s adb shell pm path app.hivefield.mobile.fix
+            timeout 30s adb shell pm path app.hivefield.mobile.fix | tee android-auth-results/installed-package-path.txt
             adb logcat -c
             adb logcat -v threadtime > android-auth-results/logcat-live.txt 2>&1 &
             LOGCAT_PID=$!
@@ -88,7 +101,7 @@ jobs:
         run: |
           mkdir -p android-auth-results
           timeout 10s adb devices -l > android-auth-results/adb-devices.txt 2>&1 || true
-          timeout 12s adb logcat -d -t 4000 > android-auth-results/logcat-after.txt 2>&1 || true
+          timeout 12s adb logcat -b all -d -t 8000 > android-auth-results/logcat-after.txt 2>&1 || true
       - name: Upload Android authenticated test evidence
         if: always()
         uses: actions/upload-artifact@v4

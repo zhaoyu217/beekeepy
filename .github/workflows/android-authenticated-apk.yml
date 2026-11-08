@@ -27,7 +27,7 @@ jobs:
           name: hive-offline-debug-apk
           repository: zhaoyu217/beekeepy
           run-id: 42453418933
-          github-token: \${{ secrets.GITHUB_TOKEN }}
+          github-token: ${{ secrets.GITHUB_TOKEN }}
           path: candidate-apk
       - name: Install WebView CDP driver
         run: |

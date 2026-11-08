@@ -20,6 +20,7 @@ let cloudReady=false;
 let syncTimer=null;
 let realtimeChannel=null;
 let onlineCloudSyncPromise=null;
+let cloudNetworkWasOffline=navigator.onLine===false;
 let lastRemoteUpdatedAt='';
 let suppressCloudSave=false;
 let cloudStatus='Offline';
@@ -696,7 +697,14 @@ async function resumeCloudSyncAfterReconnect(){
   return task;
 }
 
+window.addEventListener('offline',()=>{
+  cloudNetworkWasOffline=true;
+  if(currentCloudSessionContext())setCloudStatus('Offline');
+});
+
 window.addEventListener('online',()=>{
+  if(!cloudNetworkWasOffline)return;
+  cloudNetworkWasOffline=false;
   void resumeCloudSyncAfterReconnect();
 });
 

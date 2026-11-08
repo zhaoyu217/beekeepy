@@ -227,9 +227,10 @@ async function main(){
     await pageA.waitForFunction(async marker=>{
       const {data,error}=await supabaseClient.from("app_state")
         .select("payload").eq("user_id",currentSession.user.id).maybeSingle();
-      return !error&&data?.payload?.meta?.qaMarker===marker;
+      return !error&&data?.payload?.meta?.qaMarker===marker&&cloudStatusText()==="Synced";
     },offlineMarker,{timeout:30000});
     await pageA2.waitForFunction(marker=>state().meta?.qaMarker===marker,offlineMarker,{timeout:30000});
+    await pageA2.waitForFunction(()=>cloudStatusText()==="Synced",null,{timeout:20000});
     const afterReconnect=await currentState(pageA);
     check("Offline A changes upload automatically after network reconnect",
       afterReconnect.marker===offlineMarker&&afterReconnect.cloudStatus==="Synced",

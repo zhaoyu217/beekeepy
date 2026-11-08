@@ -11,6 +11,7 @@ on:
       - 'capacitor.config.ts'
       - '.github/workflows/android-apk.yml'
       - 'inspection-voice.js'
+      - 'app.js'
       - 'index.html'
       - 'config.js'
 

@@ -6,7 +6,6 @@ on:
     paths:
       - '.github/tests/android-authenticated-navigation.cjs'
       - '.github/workflows/android-authenticated-navigation.yml'
-  workflow_dispatch:
 permissions:
   contents: read
 jobs:

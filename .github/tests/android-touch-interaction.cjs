@@ -122,7 +122,7 @@ async function run(){
     const homeAfterTap=await value('({hash:location.hash,title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||document.querySelector("#topbar .brand")?.textContent.trim()||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"",viewClass:document.querySelector("#view")?.className||"",viewText:(document.querySelector("#view")?.innerText||"").slice(0,500),topbarHTML:document.querySelector("#topbar")?.innerHTML||"",hashAudit:window.__hashAudit||[],renderAudit:window.__renderAudit||[],jsErrors:window.__jsErrors||[]})');
     report.homeAfterTap=homeAfterTap;
     await screenshot('android-touch-home-after-tap.png');
-    const homeRendered=homeAfterTap.hash==='#home'&&homeAfterTap.title==='HiveDash'&&homeAfterTap.active==='Home';
+    const homeRendered=homeAfterTap.hash==='#home'&&homeAfterTap.active==='Home'&&homeAfterTap.viewText.includes('Good Morning!')&&homeAfterTap.viewText.includes('Overall Health');
     report.tests.push({name:'Android OS touch returns from Insights to rendered Home page',pass:homeRendered,details:homeAfterTap});
     if(!homeRendered)report.failure='Physical Home tab changed route but did not render Home; see homeAfterTap diagnostics';
    }

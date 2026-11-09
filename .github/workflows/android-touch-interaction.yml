@@ -12,6 +12,10 @@ permissions:
   contents: read
   actions: read
 
+concurrency:
+  group: android-15-native-touch-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   android-native-touch:
     runs-on: ubuntu-latest
@@ -44,17 +48,23 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          target: google_apis
+          target: default
           arch: x86_64
           profile: pixel_6
-          ram-size: 3072M
-          heap-size: 512M
+          ram-size: 4096M
+          heap-size: 1024M
           disk-size: 6G
           disable-animations: true
           script: |
             set -eux
             timeout 120s adb wait-for-device
             adb devices -l
+            # Let Android 15 finish launcher, SystemUI, and package-service startup before touching the app.
+            adb shell input keyevent 82
+            sleep 20
+            test "$(timeout 20s adb shell getprop sys.boot_completed | tr -d '\\r')" = "1"
+            timeout 30s adb shell service check package
+            timeout 30s adb shell cmd package list packages > /dev/null
             timeout 20s adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.threebutton
             timeout 15s adb shell cmd overlay list --user 0 | grep -i systemui.navbar || true
             timeout 120s adb install -r candidate-apk/app-debug.apk

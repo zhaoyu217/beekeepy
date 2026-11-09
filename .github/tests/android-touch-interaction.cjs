@@ -182,6 +182,21 @@ async function run(){
   report.tests.push({name:'Physical Continue tap dismisses Select Hive modal and opens inspection',pass:continueWorked,details:{expectedHash,hashBeforeContinue,continueAfterTap,physicalEvents:report.physicalTaps.at(-1)?.events}});
   if(!continueWorked)report.failure='Physical Continue tap did not dismiss the Select Hive modal and open inspection; see continueAfterTap diagnostics';
 
+  // Verify the inspection's Voice fill control opens its review UI through real Android touch.
+  // Do not start recording or request microphone permission in this smoke test.
+  await tap('Array.from(document.querySelectorAll("button")).find(e=>e.textContent.trim()==="Voice fill")','Physical tap Inspection Voice fill');
+  await waitUntil('!!document.querySelector(".hd-voice-overlay")','structured Voice fill dialog');
+  const voiceDialog=await value('(()=>({visible:!!document.querySelector(".hd-voice-overlay"),title:document.querySelector(".hd-voice-head b")?.textContent.trim()||"",textarea:!!document.querySelector(".hd-voice-transcript"),start:!!document.querySelector(".hd-start"),cancel:!!document.querySelector(".hd-cancel"),apply:!!document.querySelector(".hd-apply")}))()');
+  report.voiceDialog=voiceDialog;
+  check('Voice fill opens the structured inspection dialog',voiceDialog.visible&&voiceDialog.textarea&&voiceDialog.start&&voiceDialog.cancel&&voiceDialog.apply,voiceDialog);
+  await tap('document.querySelector(".hd-voice-transcript")','Physical tap Voice fill transcript');
+  const voiceFocus=await value('document.activeElement?.classList?.contains("hd-voice-transcript")||false');
+  check('Voice fill transcript receives physical touch focus',voiceFocus,{voiceFocus});
+  await tap('document.querySelector(".hd-cancel")','Physical tap Voice fill Cancel');
+  const voiceClosed=await value('!document.querySelector(".hd-voice-overlay")');
+  check('Voice fill Cancel closes the dialog without applying changes',voiceClosed,{voiceClosed});
+  await screenshot('android-touch-voice-fill-cancelled.png');
+
   report.finalGeometry=await value('(()=>({height:innerHeight,top:document.querySelector("#topbar")?.getBoundingClientRect().top,bottom:document.querySelector("#bottomnav")?.getBoundingClientRect().bottom,navHeight:document.querySelector("#bottomnav")?.getBoundingClientRect().height}))()');
  }catch(e){report.failure=String(e.stack||e);process.exitCode=1}
  finally{

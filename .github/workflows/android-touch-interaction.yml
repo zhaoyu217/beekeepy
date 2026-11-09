@@ -48,11 +48,11 @@ jobs:
         uses: reactivecircus/android-emulator-runner@v2
         with:
           api-level: 35
-          target: default
+          target: google_apis
           arch: x86_64
           profile: pixel_6
-          ram-size: 4096M
-          heap-size: 1024M
+          ram-size: 3072M
+          heap-size: 512M
           disk-size: 6G
           disable-animations: true
           script: |
@@ -68,7 +68,9 @@ jobs:
             # Suppress ANR popups from background launcher processes; the app under test remains foreground.
             timeout 15s adb shell settings put global anr_show_background 0
             timeout 20s adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.threebutton
+            sleep 8
             timeout 15s adb shell cmd overlay list --user 0 | grep -i systemui.navbar || true
+            test "$(timeout 15s adb get-state)" = "device"
             timeout 120s adb install -r candidate-apk/app-debug.apk
             timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
             # Allow launcher/SystemUI and the app WebView to settle before native input dispatch.

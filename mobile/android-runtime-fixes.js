@@ -15,19 +15,90 @@
     return document.querySelector('#app > .modal');
   }
 
-  // Android WebView fallback for the persistent bottom navigation.
-  // We intentionally own these four stable routes in capture phase so a
-  // dynamically-rendered inline onclick cannot strand the user.
+  function navItemFromTarget(target) {
+    return target instanceof Element ? target.closest('#bottomnav .navitem') : null;
+  }
+
+  let pendingNavTouch = null;
+  let lastNavRoute = '';
+  let lastNavRouteAt = 0;
+
+  function navigateFromNavItem(target) {
+    if (!target || currentBlockingModal()) return false;
+    const label = String(target.textContent || '').trim().toLowerCase();
+    const route = routeByLabel[label];
+    if (!route || typeof window.go !== 'function') return false;
+
+    const now = performance.now();
+    if (lastNavRoute === route && now - lastNavRouteAt < 800) return true;
+    lastNavRoute = route;
+    lastNavRouteAt = now;
+    window.go(route);
+    return true;
+  }
+
+  // Some Android 15 WebView / edge-to-edge combinations deliver the complete
+  // touch sequence to a fixed bottom-nav button but omit the synthesized click.
+  // Route a short, stationary touch on the same nav item at pointerup instead.
+  // A later click is deduplicated; drags, pointercancel, and modal-blocked taps
+  // never navigate. This is APK-only runtime behavior, not scientific logic.
+  document.addEventListener('pointerdown', (event) => {
+    if (event.pointerType !== 'touch' && event.pointerType !== 'pen') return;
+    const target = navItemFromTarget(event.target);
+    if (!target) {
+      pendingNavTouch = null;
+      return;
+    }
+    pendingNavTouch = {
+      pointerId: event.pointerId,
+      target,
+      x: event.clientX,
+      y: event.clientY,
+      at: performance.now()
+    };
+  }, true);
+
+  document.addEventListener('pointercancel', (event) => {
+    if (pendingNavTouch && pendingNavTouch.pointerId === event.pointerId) {
+      pendingNavTouch = null;
+    }
+  }, true);
+
+  document.addEventListener('pointerup', (event) => {
+    const pending = pendingNavTouch;
+    if (!pending || pending.pointerId !== event.pointerId) return;
+    pendingNavTouch = null;
+
+    if (performance.now() - pending.at > 1200) return;
+    const hit = document.elementFromPoint(event.clientX, event.clientY);
+    const target = navItemFromTarget(hit) || navItemFromTarget(event.target);
+    if (target !== pending.target) return;
+
+    const distance = Math.hypot(event.clientX - pending.x, event.clientY - pending.y);
+    if (distance > 18) return;
+    navigateFromNavItem(target);
+  }, true);
+
+  // Normal mouse, keyboard and synthesized click activation remain supported.
+  // Suppress only a duplicate click immediately following the touch fallback.
   document.addEventListener('click', (event) => {
-    const target = event.target instanceof Element ? event.target.closest('#bottomnav .navitem') : null;
+    const target = navItemFromTarget(event.target);
     if (!target || currentBlockingModal()) return;
 
     const label = String(target.textContent || '').trim().toLowerCase();
     const route = routeByLabel[label];
     if (!route || typeof window.go !== 'function') return;
 
+    if (lastNavRoute === route && performance.now() - lastNavRouteAt < 800) {
+      event.preventDefault();
+      event.stopImmediatePropagation();
+      return;
+    }
+
     event.preventDefault();
     event.stopImmediatePropagation();
+    lastNavRoute = route;
+    lastNavRouteAt = performance.now();
     window.go(route);
   }, true);
 

@@ -204,13 +204,13 @@ jobs:
           test -s "$VOICE_DIR/en_US-lessac-medium.onnx"
           test -s "$VOICE_DIR/en_US-lessac-medium.onnx.json"
           cd "$PIPER_DIR"
-          printf '%s\n' "I saw the queen. Fresh eggs. Larvae present. The brood pattern is good. Colony strength is six. Honey stores are medium. There are no queen cells. There are no swarm signs. No pests. No disease." | \
+          printf '%s\n' "I saw the queen. Fresh eggs. Larva present. The brood pattern is good. Colony strength is six. Honey is medium. There are no queen cells. There are no swarm signs. No pests. No disease." | \
             "$PIPER_DIR/piper" \
               --model "$VOICE_DIR/en_US-lessac-medium.onnx" \
               --output_file /tmp/asr-test-inspection-raw.wav
           sox /tmp/asr-test-inspection-raw.wav \
             -r 16000 -c 1 -b 16 -e signed-integer \
-            "$MODEL_DIR/asr-test-inspection.wav"
+            "$MODEL_DIR/asr-test-inspection.wav" pad 0 1
           soxi "$MODEL_DIR/asr-test-inspection.wav"
           test "$(soxi -r "$MODEL_DIR/asr-test-inspection.wav")" = "16000"
           test "$(soxi -c "$MODEL_DIR/asr-test-inspection.wav")" = "1"

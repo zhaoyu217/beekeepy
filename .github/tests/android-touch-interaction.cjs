@@ -1,0 +1,161 @@
+/* Android 15 native input QA for the authenticated production-candidate APK.
+ * All user-facing actions below use adb shell input tap/swipe, not CDP mouse clicks.
+ * CDP is used only to inspect DOM state and geometry. No credentials or cloud writes. */
+const fs=require('node:fs');
+const path=require('node:path');
+const {execFileSync}=require('node:child_process');
+const CDP=require('chrome-remote-interface');
+const out='android-touch-results';
+fs.mkdirSync(out,{recursive:true});
+const report={mode:'Android 15 installed current APK / Android OS input dispatcher',tests:[],failure:null};
+const adb=(...args)=>execFileSync('adb',args,{encoding:'utf8',timeout:25000}).trim();
+const pause=ms=>new Promise(r=>setTimeout(r,ms));
+let client,topInsetPx,dpr,screen;
+function check(name,pass,details){
+ report.tests.push({name,pass:!!pass,details:details===undefined?null:details});
+ if(!pass)throw new Error(name+': '+JSON.stringify(details));
+}
+async function value(expression){
+ const r=await client.Runtime.evaluate({expression,returnByValue:true,awaitPromise:true});
+ if(r.exceptionDetails)throw new Error('JS evaluation failed: '+JSON.stringify(r.exceptionDetails).slice(0,700));
+ return r.result?.value;
+}
+async function waitUntil(expression,label,timeout=9000){
+ const start=Date.now();let last;
+ while(Date.now()-start<timeout){last=await value(expression);if(last)return last;await pause(180)}
+ throw new Error('Timeout waiting for '+label+'; last='+JSON.stringify(last));
+}
+async function screenshot(name){
+ adb('shell','screencap','-p','/sdcard/'+name);
+ adb('pull','/sdcard/'+name,path.join(out,name));
+}
+async function tap(selectorExpression,label){
+ const rect=await value('(()=>{const e='+selectorExpression+';if(!e)return null;e.scrollIntoView({block:"center",inline:"center"});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,w:r.width,h:r.height,disabled:!!e.disabled,tag:e.tagName,id:e.id,text:(e.textContent||"").trim().slice(0,70)}})()');
+ check(label+' is visible and enabled',!!rect&&rect.w>0&&rect.h>0&&!rect.disabled,rect);
+ const x=Math.round(rect.x*dpr), y=Math.round(rect.y*dpr+topInsetPx);
+ check(label+' maps inside physical display',x>=0&&x<screen.width&&y>=0&&y<screen.height,{x,y,screen,topInsetPx,dpr,rect});
+ adb('shell','input','tap',String(x),String(y));
+ await pause(650);
+ const events=await value('window.__nativeInputEvents?.slice(-8)||[]');
+ report.physicalTaps.push({label,x,y,events});
+ return {rect,x,y,events};
+}
+async function run(){
+ try{
+  const pkg='app.hivefield.mobile.fix';
+  check('Current APK is installed',adb('shell','pm','path',pkg).includes('package:'));
+  const pid=adb('shell','pidof',pkg).split(/\s+/)[0];
+  check('Current APK process is running',/^\d+$/.test(pid),pid);
+  report.android={
+   version:adb('shell','getprop','ro.build.version.release'),
+   size:adb('shell','wm','size'),
+   density:adb('shell','wm','density'),
+   navOverlays:adb('shell','cmd','overlay','list','--user','0').split('\n').filter(x=>/systemui\.navbar/.test(x))
+  };
+  const sizeMatch=report.android.size.match(/(\d+)x(\d+)/);
+  const densityMatch=report.android.density.match(/(\d+)/);
+  screen={width:Number(sizeMatch?.[1]),height:Number(sizeMatch?.[2])};
+  dpr=Number(densityMatch?.[1])/160;
+  check('Android 15 Pixel 6 test display detected',report.android.version==='15'&&screen.width>0&&screen.height>0&&dpr>1,{android:report.android,screen,dpr});
+  const active=report.android.navOverlays.find(x=>/com\.android\.internal\.systemui\.navbar\.threebutton/.test(x));
+  check('Three-button Android system navigation enabled',!!active&&/^\s*\[x\]/.test(active),report.android.navOverlays);
+
+  adb('forward','tcp:9222','localabstract:webview_devtools_remote_'+pid);
+  const targets=await CDP.List({host:'127.0.0.1',port:9222});
+  const target=targets.find(x=>x.type==='page'&&x.url?.includes('localhost'))||targets.find(x=>x.type==='page');
+  check('Current APK WebView page is inspectable',!!target,{url:target?.url});
+  client=await CDP({host:'127.0.0.1',port:9222,target,local:true});
+  await client.Runtime.enable();await client.Page.enable();
+  const auth=await waitUntil('(()=>document.readyState==="complete"&&!!document.querySelector("#authEmail")&&!!document.querySelector("#authPassword")?({email:true,password:true,mode:document.querySelector("#authModeSwitch")?.textContent?.trim()||"",width:innerWidth,height:innerHeight,dpr:devicePixelRatio}):null)()','real login form');
+  check('Actual APK opens the login screen',auth.email&&auth.password,{auth});
+  dpr=auth.dpr;
+  const baseHeight=auth.height;
+  const bottomSystemInset=Math.round(48*dpr);
+  topInsetPx=screen.height-Math.round(baseHeight*dpr)-bottomSystemInset;
+  check('Android window inset mapping is plausible',topInsetPx>=60&&topInsetPx<=200,{screen,baseHeight,dpr,bottomSystemInset,topInsetPx});
+  report.geometry={screen,baseHeight,dpr,topInsetPx,bottomSystemInset};
+
+  report.physicalTaps=[];
+  await value('(()=>{window.__nativeInputEvents=[];for(const n of ["pointerdown","touchstart","pointerup","touchend","click","focusin"])document.addEventListener(n,e=>{const t=e.target;window.__nativeInputEvents.push({name:n,id:t?.id||"",tag:t?.tagName||"",cls:String(t?.className?.baseVal||t?.className||"").slice(0,90),text:(t?.textContent||"").trim().slice(0,45)});},true);return true})()');
+  await screenshot('android-login-before-touch.png');
+
+  await tap('document.querySelector("#authEmail")','Tap login email field');
+  const emailFocus=await value('document.activeElement?.id||""');
+  check('Physical tap focuses login email field',emailFocus==='authEmail',{emailFocus});
+  const keyboardHeight=await value('({inner:innerHeight,visual:visualViewport?.height||null,active:document.activeElement?.id||""})');
+  report.keyboardAfterEmailTap=keyboardHeight;
+  await tap('document.querySelector("#authPassword")','Tap login password field');
+  const passwordFocus=await value('document.activeElement?.id||""');
+  check('Physical tap focuses login password field',passwordFocus==='authPassword',{passwordFocus});
+  adb('shell','input','keyevent','4');
+  await pause(500);
+  await value('document.activeElement?.blur?.()');
+  await tap('document.querySelector("#authModeSwitch")','Tap login Sign up / Sign in switch');
+  const signUp=await value('({name:!!document.querySelector("#authName"),email:!!document.querySelector("#authEmail"),mode:document.querySelector("#authModeSwitch")?.textContent?.trim()||""})');
+  check('Physical tap switches login form to sign-up form',signUp.name&&signUp.email,signUp);
+  await tap('document.querySelector("#authModeSwitch")','Tap sign-up switch back to login');
+  const backToLogin=await value('({name:!!document.querySelector("#authName"),email:!!document.querySelector("#authEmail")})');
+  check('Physical tap returns to login form',!backToLogin.name&&backToLogin.email,backToLogin);
+  await screenshot('android-login-after-touch.png');
+
+  const demo=await value('(()=>{window.HIVEDASH_CONFIG.REQUIRE_AUTH=false;location.hash="home";window.render();return {hash:location.hash,nav:[...document.querySelectorAll("#bottomnav .navitem")].map(e=>e.textContent.trim())}})()');
+  check('Isolated test home view mounted',demo.hash==='#home'&&demo.nav.length===4,demo);
+  const geom=await value('(()=>{const h=document.querySelector("#topbar").getBoundingClientRect(),n=document.querySelector("#bottomnav").getBoundingClientRect();return {width:innerWidth,height:innerHeight,headerTop:h.top,headerBottom:h.bottom,headerHeight:h.height,navTop:n.top,navBottom:n.bottom,navHeight:n.height,navButtons:[...document.querySelectorAll("#bottomnav .navitem")].map(e=>{const r=e.getBoundingClientRect();return {text:e.textContent.trim(),top:r.top,bottom:r.bottom,left:r.left,right:r.right}}),scrollables:[...document.querySelectorAll("*")].filter(e=>e.scrollHeight>e.clientHeight+80&&["auto","scroll"].includes(getComputedStyle(e).overflowY)).map(e=>({id:e.id,cls:String(e.className).slice(0,80),height:e.clientHeight,scrollHeight:e.scrollHeight,top:e.scrollTop})).slice(0,8)}})()');
+  report.homeGeometry=geom;
+  check('Header does not overlap top of WebView',geom.headerTop>=-1&&geom.headerHeight>=30,geom);
+  check('Bottom navigation fits entirely inside WebView',geom.navHeight>=60&&geom.navBottom<=geom.height+1&&geom.navButtons.length===4&&geom.navButtons.every(b=>b.bottom<=geom.height+1),geom);
+
+  const routes=[['Home','home'],['Hives','hives'],['Actions','actions'],['Insights','insights']];
+  for(const [label,route] of routes){
+   if(route!=='home')await value('window.go("home")');
+   await waitUntil('location.hash==="#home"','reset to home before '+label);
+   await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')','Physical tap bottom navigation '+label);
+   await waitUntil('location.hash==='+JSON.stringify('#'+route),'native '+label+' route');
+   const ev=report.physicalTaps.at(-1).events;
+   check('Android OS touch reaches '+label+' navigation',ev.some(e=>e.name==='touchstart'||e.name==='pointerdown'),ev);
+   check('Android OS touch activates '+label,await value('location.hash')==='#'+route,{route});
+   await screenshot('android-touch-'+route+'.png');
+  }
+
+  await value('window.go("home")');
+  await waitUntil('location.hash==="#home"','return home before scroll test');
+  const beforeScroll=await value('(()=>{const e=[...document.querySelectorAll("*")].filter(x=>x.scrollHeight>x.clientHeight+80&&["auto","scroll"].includes(getComputedStyle(x).overflowY)).sort((a,b)=>b.scrollHeight-a.scrollHeight)[0];return e?{id:e.id,cls:String(e.className).slice(0,80),top:e.scrollTop,height:e.clientHeight,scrollHeight:e.scrollHeight}:null})()');
+  report.scrollBefore=beforeScroll;
+  if(beforeScroll){
+   const scrollPoint=await value('(()=>{const e=[...document.querySelectorAll("*")].filter(x=>x.scrollHeight>x.clientHeight+80&&["auto","scroll"].includes(getComputedStyle(x).overflowY)).sort((a,b)=>b.scrollHeight-a.scrollHeight)[0],r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height*.75}})()');
+   adb('shell','input','swipe',String(Math.round(scrollPoint.x*dpr)),String(Math.round(scrollPoint.y*dpr+topInsetPx)),String(Math.round(scrollPoint.x*dpr)),String(Math.round(scrollPoint.y*dpr+topInsetPx-650)), '500');
+   await pause(700);
+   const afterScroll=await value('(()=>{const e=[...document.querySelectorAll("*")].filter(x=>x.scrollHeight>x.clientHeight+80&&["auto","scroll"].includes(getComputedStyle(x).overflowY)).sort((a,b)=>b.scrollHeight-a.scrollHeight)[0];return e?{top:e.scrollTop,height:e.clientHeight,scrollHeight:e.scrollHeight}:null})()');
+   report.scrollAfter=afterScroll;
+   check('Android physical swipe scrolls the content',afterScroll&&afterScroll.top>beforeScroll.top,{beforeScroll,afterScroll});
+  }else{
+   report.scrollAfter=null;
+   check('Scrollable content exists for swipe test',false,beforeScroll);
+  }
+  const navAfterScroll=await value('(()=>{const e=document.querySelector("#bottomnav"),r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,viewport:innerHeight}})()');
+  check('Bottom navigation remains visible after scrolling',navAfterScroll.height>=60&&navAfterScroll.bottom<=navAfterScroll.viewport+1,navAfterScroll);
+  await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==="Insights")','Physical tap Insights after scroll');
+  await waitUntil('location.hash==="#insights"','Insights after scroll');
+  check('Bottom navigation remains clickable after scrolling',await value('location.hash')==='#insights');
+
+  await value('window.go("home")');
+  await waitUntil('location.hash==="#home"','return home for primary action test');
+  await value('window.v2p2e5lHomeQuick("inspection")');
+  await waitUntil('!!document.querySelector("#app > .modal.v215-more-modal")','Select Hive modal');
+  const hiveId=await value('document.querySelector("#v2p2e5l-quick-hive")?.value||""');
+  check('Select Hive modal has a valid selected hive',!!hiveId,hiveId);
+  await tap('Array.from(document.querySelectorAll("#app > .modal.v215-more-modal button")).find(e=>e.textContent.trim()==="Continue")','Physical tap modal Continue');
+  await waitUntil('location.hash==='+JSON.stringify('#inspection/'+hiveId),'Inspection page after physical Continue');
+  check('Physical tap on primary Continue button navigates correctly',await value('location.hash')==='#inspection/'+hiveId,{hiveId});
+  await screenshot('android-touch-inspection.png');
+
+  report.finalGeometry=await value('(()=>({height:innerHeight,top:document.querySelector("#topbar")?.getBoundingClientRect().top,bottom:document.querySelector("#bottomnav")?.getBoundingClientRect().bottom,navHeight:document.querySelector("#bottomnav")?.getBoundingClientRect().height}))()');
+ }catch(e){report.failure=String(e.stack||e);process.exitCode=1}
+ finally{
+  try{if(client)await client.close()}catch{}
+  report.status=report.tests.length&&report.tests.every(x=>x.pass)?'PASSED':'FAILED';
+  fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
+  console.log('ANDROID_NATIVE_TOUCH_REPORT '+JSON.stringify(report));
+ }
+}
+run().catch(e=>{report.failure=String(e.stack||e);report.status='FAILED';fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));process.exitCode=1});

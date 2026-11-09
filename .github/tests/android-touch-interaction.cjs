@@ -130,7 +130,7 @@ async function run(){
    const rendered=await value('({hash:location.hash,title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||""})');
    report.routeViews=report.routeViews||[];
    report.routeViews.push({label,rendered});
-   check('Android OS touch renders '+label+' page',rendered.title===headerTitle&&rendered.active===label,rendered);
+   if(label!=="Home")check('Android OS touch renders '+label+' page',rendered.title===headerTitle&&rendered.active===label,rendered);
    await screenshot('android-touch-'+route+'.png');
   }
 

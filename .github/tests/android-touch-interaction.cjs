@@ -299,8 +299,14 @@ async function run(){
   const hiveIdLiteral=JSON.stringify(hiveId);
   const inspectionCountBeforeSave=await value('(()=>{const s=v45s();return (s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+').length})()');
   report.inspectionCountBeforeSave=inspectionCountBeforeSave;
+  await value('(()=>{window.__hdLastSaveResult=null;if(typeof window.save==="function"&&!window.__hdSaveWrapped){const original=window.save;window.save=function(){const result=original.apply(this,arguments);window.__hdLastSaveResult=result;return result};window.__hdSaveWrapped=true;}return true})()');
   await tap('Array.from(document.querySelectorAll("#view .dual button")).find(e=>e.textContent.trim()==="Save Inspection")','Physical tap Save Inspection');
-  await waitUntil('location.hash==='+JSON.stringify('#hive/'+hiveId),'saved hive detail page',15000);
+  let savedRouteReached=false;
+  try{await waitUntil('location.hash==='+JSON.stringify('#hive/'+hiveId),'saved hive detail page',15000);savedRouteReached=true;}catch(e){report.saveWaitError=String(e);}
+  const saveTapDiagnostics=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),d=(typeof V49_INSPECTION_DRAFT!=="undefined"?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||null,b=[...document.querySelectorAll("#view .dual button")].find(e=>e.textContent.trim()==="Save Inspection");return {hash:location.hash,routeReached:location.hash==='+JSON.stringify('#hive/'+hiveId)+',saveResult:window.__hdLastSaveResult,saveWrapped:window.__hdSaveWrapped,saveFunction:typeof vSaveInspection,saveButtonOnclick:b?.getAttribute("onclick")||null,hiveExists:!!h,inspectionCount:rows.length,latestLog:rows.at(-1)||null,hiveInspection:h?.insp||null,draftExists:!!d,draft:d?{hiveId:d.hiveId,queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming}:null,toast:document.querySelector("#toast")?.textContent||"",errors:window.__jsErrors||[],authRequired:window.HIVEDASH_CONFIG?.REQUIRE_AUTH,authenticated:typeof isAuthenticated==="function"?isAuthenticated():null,modalCount:document.querySelectorAll("#app > .modal").length}})()');
+  report.saveTapDiagnostics=saveTapDiagnostics;
+  await screenshot('android-touch-save-inspection-after-tap.png');
+  check('Physical Save Inspection tap reaches the saved hive detail page',savedRouteReached,saveTapDiagnostics);
   const savedState=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),last=rows.at(-1)||null;return {hash:location.hash,count:rows.length,hive:{queen:h?.queen,eggs:h?.eggs,larvae:h?.larvae,queenCells:h?.queenCells,strength:h?.strength,brood:h?.brood,honey:h?.honey,swarm:h?.swarm,notes:h?.notes,insp:h?.insp},latestLog:last}})()');
   report.savedInspection=savedState;
   check('Save Inspection creates one durable record with the reviewed values',

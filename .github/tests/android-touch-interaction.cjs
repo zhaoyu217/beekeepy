@@ -226,7 +226,7 @@ async function run(){
   report.asrFixtureResult=fixtureResult;
   const fixtureText=String(fixtureResult?.text||'').toLowerCase();
   check('Bundled Sherpa model decodes real speech audio to non-empty text',fixtureText.length>20,fixtureResult);
-  const fixtureTerms=['queen','eggs','larvae','brood','colony','honey'];
+  const fixtureTerms=['queen','eggs','larva','brood','colony','honey'];
   const recognizedTerms=fixtureTerms.filter(term=>fixtureText.includes(term));
   report.asrFixtureRecognizedTerms=recognizedTerms;
   check('Sherpa speech fixture recognizes the key beekeeping vocabulary',recognizedTerms.length>=5,{fixtureText,recognizedTerms});

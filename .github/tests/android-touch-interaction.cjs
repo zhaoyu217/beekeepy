@@ -111,8 +111,8 @@ async function run(){
    if(route!=='home'){
     await value('window.go("home")');
     await waitUntil('location.hash==="#home"','reset to home before '+label);
+    await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
    }
-   await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
    await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')','Physical tap bottom navigation '+label);
    await waitUntil('location.hash==='+JSON.stringify('#'+route),'native '+label+' route');
    await waitUntil('(()=>{const title=document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"";const active=document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"";return title==='+JSON.stringify(headerTitle)+'&&active==='+JSON.stringify(label) +'})()','rendered '+label+' page');

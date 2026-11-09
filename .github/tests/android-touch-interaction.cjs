@@ -106,9 +106,13 @@ async function run(){
   check('Header does not overlap top of WebView',geom.headerTop>=-1&&geom.headerHeight>=30,geom);
   check('Bottom navigation fits entirely inside WebView',geom.navHeight>=60&&geom.navBottom<=geom.height+1&&geom.navButtons.length===4&&geom.navButtons.every(b=>b.bottom<=geom.height+1),geom);
 
-  const routes=[['Home','home','HiveDash'],['Hives','hives','Hives'],['Actions','actions','Actions'],['Insights','insights','Insights']];
+  const routes=[['Hives','hives','Hives'],['Actions','actions','Actions'],['Insights','insights','Insights'],['Home','home','HiveDash']];
   for(const [label,route,headerTitle] of routes){
-   if(route!=='home')await value('window.go("home")');
+   if(route!=='home'){
+    await value('window.go("home")');
+    await waitUntil('location.hash==="#home"','reset to home before '+label);
+    await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
+   }
    await waitUntil('location.hash==="#home"','reset to home before '+label);
    await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
    await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')','Physical tap bottom navigation '+label);
@@ -167,7 +171,7 @@ async function run(){
  }catch(e){report.failure=String(e.stack||e);process.exitCode=1}
  finally{
   try{if(client)await client.close()}catch{}
-  report.status=report.tests.length&&report.tests.every(x=>x.pass)?'PASSED':'FAILED';
+  report.status=report.tests.length&&report.tests.every(x=>x.pass)&&!report.failure?'PASSED':'FAILED';
   fs.writeFileSync(path.join(out,'report.json'),JSON.stringify(report,null,2));
   console.log('ANDROID_NATIVE_TOUCH_REPORT '+JSON.stringify(report));
  }

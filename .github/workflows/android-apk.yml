@@ -128,7 +128,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p android/app/libs
-          curl --fail --location --retry 4 --retry-delay 2             -o android/app/libs/sherpa-onnx-1.13.8.aar             https://github.com/k2-fsa/sherpa-onnx/releases/download/v1.13.8/sherpa-onnx-1.13.8.aar
+          curl --fail --location --retry 8 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 120             -o android/app/libs/sherpa-onnx-1.13.8.aar             https://sourceforge.net/projects/sherpa-onnx.mirror/files/v1.13.8/sherpa-onnx-1.13.8.aar/download
           echo "633c24321e06b1fe79feafa03ea16cbc0f8a286641e2da3559bac91bdb13bd96  android/app/libs/sherpa-onnx-1.13.8.aar" | sha256sum -c -
 
       - name: Bundle English offline streaming model
@@ -173,7 +173,8 @@ jobs:
           mkdir -p "$PIPER_DIR" "$VOICE_DIR"
           curl --fail --location --retry 8 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 120 \
             -o /tmp/piper_amd64.tar.gz \
-            https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
+            https://sourceforge.net/projects/piper-tts.mirror/files/v1.2.0/piper_amd64.tar.gz/download
+          echo "467c17935d2a22dcce9dc9e08ba07485e29be813097e7cf08c5627aa09d32e42  /tmp/piper_amd64.tar.gz" | sha256sum -c -
           tar -xzf /tmp/piper_amd64.tar.gz -C /tmp
           test -x "$PIPER_DIR/piper"
           export LD_LIBRARY_PATH="$PIPER_DIR:$PIPER_DIR/lib:${LD_LIBRARY_PATH:-}"

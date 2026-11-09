@@ -167,7 +167,7 @@ jobs:
           set -euxo pipefail
           sudo apt-get update
           sudo apt-get install -y sox
-          MODEL_DIR="android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26"
+          MODEL_DIR="$GITHUB_WORKSPACE/android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26"
           PIPER_DIR="/tmp/piper"
           VOICE_DIR="/tmp/piper-voice"
           mkdir -p "$PIPER_DIR" "$VOICE_DIR"

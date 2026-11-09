@@ -243,7 +243,7 @@ async function run(){
     detectedFields['Eggs']==='Seen' &&
     detectedFields['Larvae']==='Seen' &&
     detectedFields['Brood pattern']==='Good' &&
-    detectedFields['Colony strength']==='8' &&
+    detectedFields['Colony strength']==='6' &&
     detectedFields['Honey stores']==='Medium' &&
     detectedFields['Queen cells']==='None' &&
     detectedFields['Swarming']==='None',
@@ -257,7 +257,7 @@ async function run(){
     appliedDraft.eggs==='Seen' &&
     appliedDraft.larvae==='Seen' &&
     appliedDraft.brood==='Good' &&
-    Number(appliedDraft.colonySize)===8 &&
+    Number(appliedDraft.colonySize)===6 &&
     appliedDraft.honey==='Medium' &&
     appliedDraft.queenCells==='None' &&
     appliedDraft.swarming==='None' &&

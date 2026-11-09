@@ -161,16 +161,36 @@ jobs:
           test -s "$MODEL_DIR/bpe.vocab"
           grep -q "QUEEN" "$MODEL_DIR/bpe.vocab" || true
 
-      - name: Generate deterministic English speech fixture for native ASR QA
+      - name: Generate natural English speech fixture with local Piper TTS
         shell: bash
         run: |
           set -euxo pipefail
           sudo apt-get update
-          sudo apt-get install -y espeak-ng sox
+          sudo apt-get install -y sox
           MODEL_DIR="android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26"
-          espeak-ng -v en-us+f3 -s 125 -a 180 -p 45 -g 5 \
-            -w /tmp/asr-test-inspection-raw.wav \
-            "Queen seen. Fresh eggs. Larvae present. Brood pattern good. Colony strength six. Honey stores medium. Queen cells none. No swarm signs."
+          PIPER_DIR="/tmp/piper"
+          VOICE_DIR="/tmp/piper-voice"
+          mkdir -p "$PIPER_DIR" "$VOICE_DIR"
+          curl --fail --location --retry 4 --retry-delay 2 \
+            -o /tmp/piper_amd64.tar.gz \
+            https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
+          tar -xzf /tmp/piper_amd64.tar.gz -C /tmp
+          test -x "$PIPER_DIR/piper"
+          export LD_LIBRARY_PATH="$PIPER_DIR:$PIPER_DIR/lib:${LD_LIBRARY_PATH:-}"
+          VOICE_BASE="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium"
+          curl --fail --location --retry 4 --retry-delay 2 \
+            -o "$VOICE_DIR/en_US-lessac-medium.onnx" \
+            "$VOICE_BASE/en_US-lessac-medium.onnx"
+          curl --fail --location --retry 4 --retry-delay 2 \
+            -o "$VOICE_DIR/en_US-lessac-medium.onnx.json" \
+            "$VOICE_BASE/en_US-lessac-medium.onnx.json"
+          test -s "$VOICE_DIR/en_US-lessac-medium.onnx"
+          test -s "$VOICE_DIR/en_US-lessac-medium.onnx.json"
+          cd "$PIPER_DIR"
+          printf '%s\n' "I saw the queen. Fresh eggs. Larvae present. The brood pattern is good. Colony strength is six. Honey stores are medium. There are no queen cells. There are no swarm signs." | \
+            "$PIPER_DIR/piper" \
+              --model "$VOICE_DIR/en_US-lessac-medium.onnx" \
+              --output_file /tmp/asr-test-inspection-raw.wav
           sox /tmp/asr-test-inspection-raw.wav \
             -r 16000 -c 1 -b 16 -e signed-integer \
             "$MODEL_DIR/asr-test-inspection.wav"

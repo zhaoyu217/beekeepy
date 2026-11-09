@@ -91,8 +91,11 @@ class OfflineAsrPlugin : Plugin() {
             return
         }
         val hotwords = call.getString("hotwords") ?: listOf(
-            "QUEEN", "QUEEN SEEN", "EGGS", "LARVAE", "BROOD PATTERN",
-            "COLONY STRENGTH", "HONEY STORES", "QUEEN CELLS", "SWARM SIGNS"
+            "QUEEN", "QUEEN SEEN", "EGGS", "EGGS PRESENT",
+            "LARVAE", "LARVA", "LARVA PRESENT", "BROOD PATTERN",
+            "BROOD PATTERN IS GOOD", "COLONY STRENGTH", "COLONY SIZE",
+            "HONEY STORES", "QUEEN CELLS", "SWARM SIGNS",
+            "NO QUEEN CELLS", "NO SWARM SIGNS"
         ).joinToString("\n")
         thread(start = true, name = "HiveAsrFixtureDecode") {
             var fixtureEngine: SherpaInspectionEngine? = null

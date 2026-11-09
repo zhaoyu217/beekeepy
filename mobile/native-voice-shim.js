@@ -10,6 +10,22 @@
     return;
   }
 
+  // One canonical vocabulary list is shared by live microphone capture and
+  // the bundled-audio QA decoder. This prevents the test from using stronger
+  // hotword bias than the actual Android app.
+  const HOTWORDS = [
+    'QUEEN','QUEEN SEEN','QUEEN CELLS','QUEEN CELLS NONE','NO QUEEN CELLS',
+    'EGGS','EGGS PRESENT','FRESH EGGS',
+    'LARVAE','LARVA','LARVAE PRESENT','LARVA PRESENT',
+    'BROOD PATTERN','BROOD PATTERN GOOD','BROOD PATTERN IS GOOD',
+    'COLONY STRENGTH','COLONY STRENGTH SIX','COLONY STRENGTH IS SIX',
+    'COLONY SIZE','COLONY SIZE SIX',
+    'HONEY STORES','HONEY STORES MEDIUM','HONEY STORES ARE MEDIUM',
+    'POLLEN STORES','SWARM SIGNS','NO SWARM SIGNS','VARROA','TREATMENT'
+  ];
+  const HOTWORDS_TEXT = HOTWORDS.join('\n');
+  window.__HD_NATIVE_OFFLINE_ASR_HOTWORDS__ = HOTWORDS_TEXT;
+
   class NativeSpeechRecognition {
     constructor(){
       this.lang='en-US';
@@ -55,12 +71,7 @@
 
         await plugin.start({
           language: this.lang || 'en-US',
-          hotwords: [
-            'QUEEN','QUEEN SEEN','QUEEN CELLS','EGGS','EGGS PRESENT',
-            'LARVAE','LARVA','LARVA PRESENT','BROOD PATTERN',
-            'COLONY STRENGTH','COLONY SIZE','HONEY STORES',
-            'POLLEN STORES','SWARM SIGNS','NO SWARM SIGNS','VARROA','TREATMENT'
-          ].join('\n')
+          hotwords: HOTWORDS_TEXT
         });
         this._running=true;
         if(typeof this.onstart === 'function') this.onstart();

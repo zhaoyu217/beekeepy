@@ -1,5 +1,6 @@
 name: Android Authenticated Navigation Diagnosis
 on:
+  workflow_dispatch:
   push:
     branches: [mobile-offline-v1]
     paths:

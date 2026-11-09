@@ -282,7 +282,7 @@ async function run(){
   }
   await tap('document.querySelector(".hd-apply")','Physical tap Apply to Inspection');
   await waitUntil('!document.querySelector(".hd-voice-overlay")','voice dialog closes after Apply',10000);
-  const appliedDraft=await value('(()=>{const lexical=typeof V49_INSPECTION_DRAFT!=="undefined",d=(lexical?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||{};return {readSource:lexical?"global lexical binding":"window property",queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,notes:d.notes||"",voiceNotes:d.voiceNotes||"",confirmed:d.__confirmedFields||{}}})()');
+  const appliedDraft=await value('(()=>{const lexical=typeof V49_INSPECTION_DRAFT!=="undefined",d=(lexical?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||{};return {readSource:lexical?"global lexical binding":"window property",queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,pests:d.pests,disease:d.disease,notes:d.notes||"",voiceNotes:d.voiceNotes||"",confirmed:d.__confirmedFields||{}}})()');
   report.asrAppliedDraft=appliedDraft;
   const appliedNotesInput=await value('document.querySelector("#inotes")?.value||""');
   report.appliedNotesInput=appliedNotesInput;

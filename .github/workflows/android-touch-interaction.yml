@@ -1,0 +1,81 @@
+name: Android 15 Native Touch and Login UI QA
+
+on:
+  workflow_dispatch:
+  push:
+    branches: [mobile-offline-v1]
+    paths:
+      - '.github/tests/android-touch-interaction.cjs'
+      - '.github/workflows/android-touch-interaction.yml'
+
+permissions:
+  contents: read
+  actions: read
+
+jobs:
+  android-native-touch:
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Download the same APK verified by authenticated Supabase tests
+        uses: actions/download-artifact@v4
+        with:
+          name: hive-offline-debug-apk
+          repository: zhaoyu217/beekeepy
+          run-id: 42453418933
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          path: candidate-apk
+      - name: Inspect APK and install native WebView driver
+        run: |
+          test -s candidate-apk/app-debug.apk
+          npm install --no-save --ignore-scripts chrome-remote-interface@0.33.3
+          node --check .github/tests/android-touch-interaction.cjs
+          mkdir -p android-touch-results
+          sha256sum candidate-apk/app-debug.apk | tee android-touch-results/apk-sha256.txt
+      - name: Ensure KVM accessibility
+        run: |
+          if test -e /dev/kvm; then sudo chmod 666 /dev/kvm; ls -l /dev/kvm; else echo 'WARNING: /dev/kvm absent'; fi
+          date -u > android-touch-results/runner-utc.txt
+      - name: Run real OS touch tests on Android 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 35
+          target: google_apis
+          arch: x86_64
+          profile: pixel_6
+          ram-size: 3072M
+          heap-size: 512M
+          disk-size: 6G
+          disable-animations: true
+          script: |
+            set -eux
+            timeout 120s adb wait-for-device
+            adb devices -l
+            timeout 20s adb shell cmd overlay enable-exclusive --category com.android.internal.systemui.navbar.threebutton
+            timeout 15s adb shell cmd overlay list --user 0 | grep -i systemui.navbar || true
+            timeout 120s adb install -r candidate-apk/app-debug.apk
+            timeout 45s adb shell am start -W -n app.hivefield.mobile.fix/app.hivefield.mobile.MainActivity
+            sleep 8
+            mkdir -p android-touch-results
+            timeout 20s adb shell screencap -p /sdcard/android-touch-launch.png
+            timeout 20s adb pull /sdcard/android-touch-launch.png android-touch-results/device-launch.png
+            node .github/tests/android-touch-interaction.cjs
+      - name: Save Android touch diagnostics
+        if: always()
+        run: |
+          mkdir -p android-touch-results
+          timeout 10s adb devices -l > android-touch-results/adb-devices.txt 2>&1 || true
+          timeout 12s adb logcat -b all -d -t 5000 > android-touch-results/logcat.txt 2>&1 || true
+          timeout 12s adb shell dumpsys window > android-touch-results/window-insets.txt 2>&1 || true
+      - name: Upload Android native touch evidence
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: android15-native-touch-report
+          path: android-touch-results/
+          retention-days: 7
+          if-no-files-found: warn

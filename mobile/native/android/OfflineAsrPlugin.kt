@@ -82,6 +82,45 @@ class OfflineAsrPlugin : Plugin() {
         }
     }
 
+    // Debug-only fixture decoder used by Android CI to prove real Sherpa inference
+    // and the same native event bridge used by live microphone recognition.
+    @PluginMethod
+    fun testDecodeBundledAudio(call: PluginCall) {
+        if (!BuildConfig.DEBUG) {
+            call.reject("ASR fixture decoding is available only in debug builds", "DEBUG_ONLY")
+            return
+        }
+        val hotwords = call.getString("hotwords") ?: listOf(
+            "QUEEN", "QUEEN SEEN", "EGGS", "LARVAE", "BROOD PATTERN",
+            "COLONY STRENGTH", "HONEY STORES", "QUEEN CELLS", "SWARM SIGNS"
+        ).joinToString("\n")
+        thread(start = true, name = "HiveAsrFixtureDecode") {
+            var fixtureEngine: SherpaInspectionEngine? = null
+            try {
+                fixtureEngine = SherpaInspectionEngine(context) { event, data ->
+                    activity.runOnUiThread { notifyListeners(event, data, true) }
+                }
+                val result = fixtureEngine.transcribeBundledTestAudio(
+                    "asr-test-inspection.wav",
+                    hotwords,
+                )
+                activity.runOnUiThread {
+                    call.resolve(result)
+                    fixtureEngine?.release()
+                }
+            } catch (e: Exception) {
+                activity.runOnUiThread {
+                    call.reject(
+                        e.message ?: "Bundled offline ASR test audio could not be decoded",
+                        "ASR_TEST_DECODE_FAILED",
+                        e,
+                    )
+                    fixtureEngine?.release()
+                }
+            }
+        }
+    }
+
     @PluginMethod
     fun stop(call: PluginCall) {
         engine?.stop(false)
@@ -154,6 +193,100 @@ private class SherpaInspectionEngine(
             hotwordsScore = 2.0f,
         )
         recognizer = OnlineRecognizer(assetManager = context.assets, config = config)
+    }
+
+    fun transcribeBundledTestAudio(assetName: String, hotwords: String): JSObject {
+        check(!running.get()) { "The live microphone recognizer is already running" }
+        val bytes = context.assets.open(assetName).use { it.readBytes() }
+        val buffer = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
+        check(bytes.size >= 44 && String(bytes, 0, 4, Charsets.US_ASCII) == "RIFF" &&
+            String(bytes, 8, 4, Charsets.US_ASCII) == "WAVE") {
+            "ASR fixture is not a valid RIFF/WAVE file"
+        }
+
+        var audioFormat = 0
+        var channels = 0
+        var sampleRate = 0
+        var bitsPerSample = 0
+        var dataOffset = -1
+        var dataSize = -1
+        var offset = 12
+        while (offset + 8 <= bytes.size) {
+            val chunkId = String(bytes, offset, 4, Charsets.US_ASCII)
+            val chunkSize = buffer.getInt(offset + 4)
+            val chunkStart = offset + 8
+            check(chunkSize >= 0 && chunkStart.toLong() + chunkSize <= bytes.size.toLong()) {
+                "ASR fixture contains an invalid WAV chunk"
+            }
+            when (chunkId) {
+                "fmt " -> if (chunkSize >= 16) {
+                    audioFormat = buffer.getShort(chunkStart).toInt() and 0xffff
+                    channels = buffer.getShort(chunkStart + 2).toInt() and 0xffff
+                    sampleRate = buffer.getInt(chunkStart + 4)
+                    bitsPerSample = buffer.getShort(chunkStart + 14).toInt() and 0xffff
+                }
+                "data" -> {
+                    dataOffset = chunkStart
+                    dataSize = chunkSize
+                }
+            }
+            offset = chunkStart + chunkSize + (chunkSize and 1)
+        }
+        check(audioFormat == 1 && channels == 1 && bitsPerSample == 16 &&
+            sampleRate == SAMPLE_RATE && dataOffset >= 0 && dataSize > 0 && dataSize % 2 == 0) {
+            "ASR fixture must be mono 16-bit PCM at 16000 Hz"
+        }
+
+        val samples = FloatArray(dataSize / 2) { index ->
+            buffer.getShort(dataOffset + index * 2).toFloat() / 32768.0f
+        }
+        val testStream = recognizer.createStream(hotwords)
+        val segments = mutableListOf<String>()
+        var lastPartial = ""
+        try {
+            var cursor = 0
+            while (cursor < samples.size) {
+                val count = minOf(1600, samples.size - cursor)
+                val chunk = FloatArray(count) { samples[cursor + it] }
+                testStream.acceptWaveform(chunk, sampleRate)
+                while (recognizer.isReady(testStream)) recognizer.decode(testStream)
+
+                val partial = recognizer.getResult(testStream).text.trim()
+                if (partial.isNotEmpty() && partial != lastPartial) {
+                    lastPartial = partial
+                    emit("asrPartial", JSObject().put("text", partial))
+                }
+
+                if (recognizer.isEndpoint(testStream)) {
+                    val finalText = recognizer.getResult(testStream).text.trim()
+                    if (finalText.isNotEmpty()) {
+                        segments.add(finalText)
+                        emit("asrFinal", JSObject().put("text", finalText))
+                    }
+                    recognizer.reset(testStream)
+                    lastPartial = ""
+                }
+                cursor += count
+            }
+
+            testStream.inputFinished()
+            while (recognizer.isReady(testStream)) recognizer.decode(testStream)
+            val tail = recognizer.getResult(testStream).text.trim()
+            if (tail.isNotEmpty()) {
+                segments.add(tail)
+                emit("asrFinal", JSObject().put("text", tail))
+            }
+
+            val transcript = segments.joinToString(" ").trim()
+            check(transcript.isNotEmpty()) { "Sherpa-ONNX returned an empty transcript for the speech fixture" }
+            return JSObject()
+                .put("text", transcript)
+                .put("sampleRate", sampleRate)
+                .put("sampleCount", samples.size)
+                .put("durationSeconds", samples.size.toDouble() / sampleRate)
+        } finally {
+            testStream.release()
+        }
     }
 
     fun start(hotwords: String) {

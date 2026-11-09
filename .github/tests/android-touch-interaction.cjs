@@ -207,6 +207,54 @@ async function run(){
   const asrStopped=await value('({status:document.querySelector(".hd-voice-status span:last-child")?.textContent||"",stopDisabled:!!document.querySelector(".hd-stop")?.disabled,startDisabled:!!document.querySelector(".hd-start")?.disabled,transcript:document.querySelector(".hd-voice-transcript")?.value||""})');
   report.asrStopped=asrStopped;
   check('Native offline ASR stops cleanly and re-enables controls',asrStopped.stopDisabled&& !asrStopped.startDisabled,asrStopped);
+  check('Silent microphone test does not invent a transcript',asrStopped.transcript.trim()==='',asrStopped);
+
+  // Run a known English speech fixture through a second instance of the exact
+  // bundled Sherpa model, then deliver its native events into the live UI shim.
+  await tap('document.querySelector(".hd-start")','Physical tap native offline ASR Start for speech fixture');
+  await waitUntil('document.querySelector(".hd-voice-status span:last-child")?.textContent.includes("Recording")','native ASR fixture capture state',15000);
+  const fixtureResult=await value('(async()=>{const p=window.Capacitor?.Plugins?.OfflineAsr;if(!p||typeof p.testDecodeBundledAudio!=="function")throw new Error("Debug ASR fixture method is missing");return await p.testDecodeBundledAudio()})()');
+  report.asrFixtureResult=fixtureResult;
+  const fixtureText=String(fixtureResult?.text||'').toLowerCase();
+  check('Bundled Sherpa model decodes real speech audio to non-empty text',fixtureText.length>20,fixtureResult);
+  const fixtureTerms=['queen','eggs','larvae','brood','colony','honey'];
+  const recognizedTerms=fixtureTerms.filter(term=>fixtureText.includes(term));
+  report.asrFixtureRecognizedTerms=recognizedTerms;
+  check('Sherpa speech fixture recognizes the key beekeeping vocabulary',recognizedTerms.length>=5,{fixtureText,recognizedTerms});
+  await waitUntil('document.querySelector(".hd-voice-transcript")?.value.trim().length>20','native speech result reaches the voice transcript',15000);
+  await tap('document.querySelector(".hd-stop")','Physical tap native offline ASR Stop after speech fixture');
+  await waitUntil('document.querySelector(".hd-stop")?.disabled===true&&document.querySelector(".hd-start")?.disabled===false','native ASR speech fixture stop completion',15000);
+  const asrTranscript=await value('document.querySelector(".hd-voice-transcript")?.value||""');
+  report.asrTranscript=asrTranscript;
+  check('Native ASR event bridge fills the visible transcript field',asrTranscript.trim().length>20,{asrTranscript});
+  const detectedFields=await value('(()=>Object.fromEntries([...document.querySelectorAll(".hd-fields .hd-field")].map(e=>[e.querySelector("span")?.textContent?.trim()||"",e.querySelector("b")?.textContent?.trim()||""])))()');
+  report.asrDetectedFields=detectedFields;
+  check('Speech transcript maps into structured Inspection fields',
+    detectedFields['Queen seen']==='Seen' &&
+    detectedFields['Eggs']==='Seen' &&
+    detectedFields['Larvae']==='Seen' &&
+    detectedFields['Brood pattern']==='Good' &&
+    detectedFields['Colony strength']==='8' &&
+    detectedFields['Honey stores']==='Medium' &&
+    detectedFields['Queen cells']==='None' &&
+    detectedFields['Swarming']==='None',
+    detectedFields);
+  await tap('document.querySelector(".hd-apply")','Physical tap Apply to Inspection');
+  await waitUntil('!document.querySelector(".hd-voice-overlay")','voice dialog closes after Apply',10000);
+  const appliedDraft=await value('(()=>{const d=window.V49_INSPECTION_DRAFT||{};return {queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,notes:d.notes||"",confirmed:d.__confirmedFields||{}}})()');
+  report.asrAppliedDraft=appliedDraft;
+  check('Voice Apply transfers detected values into the active Inspection draft',
+    appliedDraft.queenStatus==='Seen' &&
+    appliedDraft.eggs==='Seen' &&
+    appliedDraft.larvae==='Seen' &&
+    appliedDraft.brood==='Good' &&
+    Number(appliedDraft.colonySize)===8 &&
+    appliedDraft.honey==='Medium' &&
+    appliedDraft.queenCells==='None' &&
+    appliedDraft.swarming==='None' &&
+    appliedDraft.notes.toLowerCase().includes('queen'),
+    appliedDraft);
+  await screenshot('android-touch-voice-fill-applied.png');
   await tap('document.querySelector(".hd-voice-transcript")','Physical tap Voice fill transcript');
   const voiceFocus=await value('document.activeElement?.classList?.contains("hd-voice-transcript")||false');
   check('Voice fill transcript receives physical touch focus',voiceFocus,{voiceFocus});

@@ -187,7 +187,7 @@ jobs:
           test -s "$VOICE_DIR/en_US-lessac-medium.onnx"
           test -s "$VOICE_DIR/en_US-lessac-medium.onnx.json"
           cd "$PIPER_DIR"
-          printf '%s\n' "I saw the queen. Fresh eggs. Larvae present. The brood pattern is good. Colony strength is six. Honey stores are medium. There are no queen cells. There are no swarm signs." | \
+          printf '%s\n' "I saw the queen. Fresh eggs. Larvae present. The brood pattern is good. Colony strength is six. Honey stores are medium. There are no queen cells. There are no swarm signs. No pests. No disease." | \
             "$PIPER_DIR/piper" \
               --model "$VOICE_DIR/en_US-lessac-medium.onnx" \
               --output_file /tmp/asr-test-inspection-raw.wav

@@ -274,8 +274,10 @@ async function run(){
   }
   await tap('document.querySelector(".hd-apply")','Physical tap Apply to Inspection');
   await waitUntil('!document.querySelector(".hd-voice-overlay")','voice dialog closes after Apply',10000);
-  const appliedDraft=await value('(()=>{const d=(typeof V49_INSPECTION_DRAFT!=="undefined"?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||{};return {queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,notes:d.notes||"",confirmed:d.__confirmedFields||{}}})()');
+  const appliedDraft=await value('(()=>{const lexical=typeof V49_INSPECTION_DRAFT!=="undefined",d=(lexical?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||{};return {readSource:lexical?"global lexical binding":"window property",queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,notes:d.notes||"",voiceNotes:d.voiceNotes||"",confirmed:d.__confirmedFields||{}}})()');
   report.asrAppliedDraft=appliedDraft;
+  const appliedNotesInput=await value('document.querySelector("#inotes")?.value||""');
+  report.appliedNotesInput=appliedNotesInput;
   check('Voice Apply transfers detected values into the active Inspection draft',
     appliedDraft.queenStatus==='Seen' &&
     appliedDraft.eggs==='Seen' &&
@@ -285,8 +287,8 @@ async function run(){
     appliedDraft.honey==='Medium' &&
     appliedDraft.queenCells==='None' &&
     appliedDraft.swarming==='None' &&
-    appliedDraft.notes.toLowerCase().includes('queen'),
-    appliedDraft);
+    appliedNotesInput.toLowerCase().includes('queen'),
+    {appliedDraft,appliedNotesInput});
   await screenshot('android-touch-voice-fill-applied.png');
 
   // Save the inspection and verify the actual local state + log row. This remains
@@ -296,7 +298,7 @@ async function run(){
   report.inspectionCountBeforeSave=inspectionCountBeforeSave;
   await tap('Array.from(document.querySelectorAll("#view .dual button")).find(e=>e.textContent.trim()==="Save Inspection")','Physical tap Save Inspection');
   await waitUntil('location.hash==='+JSON.stringify('#hive/'+hiveId),'saved hive detail page',15000);
-  const savedState=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),last=rows.at(-1)||null;return {hash:location.hash,count:rows.length,hive:{queen:h?.queen,eggs:h?.eggs,larvae:h?.larvae,queenCells:h?.queenCells,strength:h?.strength,brood:h?.brood,honey:h?.honey,swarm:h?.swarm,insp:h?.insp},latestLog:last}})()');
+  const savedState=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),last=rows.at(-1)||null;return {hash:location.hash,count:rows.length,hive:{queen:h?.queen,eggs:h?.eggs,larvae:h?.larvae,queenCells:h?.queenCells,strength:h?.strength,brood:h?.brood,honey:h?.honey,swarm:h?.swarm,notes:h?.notes,insp:h?.insp},latestLog:last}})()');
   report.savedInspection=savedState;
   check('Save Inspection creates one durable record with the reviewed values',
     savedState.hash==='#hive/'+hiveId &&
@@ -308,7 +310,9 @@ async function run(){
     Number(savedState.hive?.insp?.colonySize)===6 &&
     savedState.hive?.insp?.honey==='Medium' &&
     savedState.hive?.insp?.queenCells==='None' &&
-    savedState.hive?.insp?.swarming==='None',
+    savedState.hive?.insp?.swarming==='None' &&
+    String(savedState.hive?.notes||'').toLowerCase().includes('queen') &&
+    String(savedState.latestLog?.notes||'').toLowerCase().includes('queen'),
     savedState);
 
   // Reload the WebView, then read from the app's persisted local state rather than
@@ -329,7 +333,9 @@ async function run(){
     Number(reloadedState.hive?.insp?.colonySize)===6 &&
     reloadedState.hive?.insp?.honey==='Medium' &&
     reloadedState.hive?.insp?.queenCells==='None' &&
-    reloadedState.hive?.insp?.swarming==='None',
+    reloadedState.hive?.insp?.swarming==='None' &&
+    String(reloadedState.hive?.notes||'').toLowerCase().includes('queen') &&
+    String(reloadedState.latestLog?.notes||'').toLowerCase().includes('queen'),
     reloadedState);
 
   await value('window.go("inspection/"+'+hiveIdLiteral+')');

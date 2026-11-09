@@ -233,7 +233,10 @@ async function run(){
   const fixtureTerms=['queen','eggs','larva','brood','colony','honey'];
   const recognizedTerms=fixtureTerms.filter(term=>fixtureText.includes(term));
   report.asrFixtureRecognizedTerms=recognizedTerms;
-  check('Sherpa speech fixture recognizes the key beekeeping vocabulary',recognizedTerms.length>=5,{fixtureText,recognizedTerms});
+  const vocabularyPass=recognizedTerms.length>=5;
+  // Preserve a failed ASR score without aborting downstream parser, Apply,
+  // save, reload, and reopen checks. The overall report still fails if ASR fails.
+  report.tests.push({name:'Sherpa speech fixture recognizes the key beekeeping vocabulary',pass:vocabularyPass,details:{fixtureText,recognizedTerms}});
   await waitUntil('document.querySelector(".hd-voice-transcript")?.value.trim().length>20','native speech result reaches the voice transcript',15000);
   await tap('document.querySelector(".hd-stop")','Physical tap native offline ASR Stop after speech fixture');
   await waitUntil('document.querySelector(".hd-stop")?.disabled===true&&document.querySelector(".hd-start")?.disabled===false','native ASR speech fixture stop completion',15000);

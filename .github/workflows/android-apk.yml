@@ -168,9 +168,9 @@ jobs:
           sudo apt-get update
           sudo apt-get install -y espeak-ng sox
           MODEL_DIR="android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26"
-          espeak-ng -v en-us -s 125 -a 180 -p 45 -g 5 \
+          espeak-ng -v en-us+f3 -s 125 -a 180 -p 45 -g 5 \
             -w /tmp/asr-test-inspection-raw.wav \
-            "Queen present. Fresh eggs. Larva present. Brood pattern strong. Colony size six. Honey stores medium. Queen cells none. No swarm signs."
+            "Queen seen. Fresh eggs. Larvae present. Brood pattern good. Colony strength six. Honey stores medium. Queen cells none. No swarm signs."
           sox /tmp/asr-test-inspection-raw.wav \
             -r 16000 -c 1 -b 16 -e signed-integer \
             "$MODEL_DIR/asr-test-inspection.wav"

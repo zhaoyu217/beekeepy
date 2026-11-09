@@ -49,6 +49,7 @@
     raw=T(raw)
       .replace(/\bqueen\s+c(?=[\s,.;:!?]|$)/ig,'Queen seen')
       .replace(/\bqueen\s+(?:see|sea)(?=[\s,.;:!?]|$)/ig,'Queen seen')
+      .replace(/\bbrute\s+pattern\b/ig,'brood pattern')
       .replace(/\bhoney\s+storage\b/ig,'honey stores');
     var text=' '+T(raw).toLowerCase().replace(/[’]/g,"'").replace(/\s+/g,' ')+' ';
     var out=[];

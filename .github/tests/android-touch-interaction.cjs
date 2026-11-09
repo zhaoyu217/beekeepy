@@ -84,7 +84,7 @@ async function run(){
   report.geometry={screen,baseHeight,dpr,topInsetPx,bottomSystemInset};
 
   report.physicalTaps=[];
-  await value('(()=>{window.__nativeInputEvents=[];window.__hashAudit=[];window.__renderAudit=[];window.__jsErrors=[];const originalRender=window.render;if(typeof originalRender==="function"){window.render=function(){const item={hash:location.hash,at:Date.now()};try{return originalRender.apply(this,arguments)}catch(e){item.error=String(e);throw e}finally{window.__renderAudit.push(item)}}}window.addEventListener("hashchange",()=>window.__hashAudit.push({hash:location.hash,active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"",title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||document.querySelector("#topbar .brand")?.textContent.trim()||""}));window.addEventListener("error",e=>window.__jsErrors.push({message:e.message,source:e.filename,line:e.lineno}));window.addEventListener("unhandledrejection",e=>window.__jsErrors.push({message:String(e.reason)}));for(const n of ["pointerdown","touchstart","pointerup","touchend","click","focusin"])document.addEventListener(n,e=>{const t=e.target;window.__nativeInputEvents.push({name:n,id:t?.id||"",tag:t?.tagName||"",cls:String(t?.className?.baseVal||t?.className||"").slice(0,90),text:(t?.textContent||"").trim().slice(0,45)});},true);return true})()');
+  await value('(()=>{window.__nativeInputEvents=[];window.__hashAudit=[];window.__renderAudit=[];window.__jsErrors=[];const originalRender=window.render;if(typeof originalRender==="function"){window.render=function(){const item={hash:location.hash,at:Date.now()};try{return originalRender.apply(this,arguments)}catch(e){item.error=String(e);throw e}finally{window.__renderAudit.push(item)}}}window.addEventListener("hashchange",()=>window.__hashAudit.push({hash:location.hash,active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"",title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||document.querySelector("#topbar .brand")?.textContent.trim()||""}));window.addEventListener("error",e=>window.__jsErrors.push({message:e.message,source:e.filename,line:e.lineno}));window.addEventListener("unhandledrejection",e=>window.__jsErrors.push({message:String(e.reason)}));for(const n of ["pointerdown","touchstart","pointerup","pointercancel","touchend","touchcancel","click","focusin"])document.addEventListener(n,e=>{const t=e.target;window.__nativeInputEvents.push({name:n,id:t?.id||"",tag:t?.tagName||"",cls:String(t?.className?.baseVal||t?.className||"").slice(0,90),text:(t?.textContent||"").trim().slice(0,45),pointerType:e.pointerType||null,pointerId:Number.isFinite(e.pointerId)?e.pointerId:null,clientX:Number.isFinite(e.clientX)?e.clientX:null,clientY:Number.isFinite(e.clientY)?e.clientY:null,defaultPrevented:!!e.defaultPrevented});},true);return true})()');
   await screenshot('android-login-before-touch.png');
 
   await tap('document.querySelector("#authEmail")','Tap login email field');
@@ -123,7 +123,7 @@ async function run(){
     await waitUntil('location.hash==="#home"','reset to home before '+label);
     await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
    }
-   await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')?.querySelector("span")','Physical tap bottom navigation '+label,'click');
+   await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')?.querySelector("span")','Physical tap bottom navigation '+label,'pointerup');
    await waitUntil('location.hash==='+JSON.stringify('#'+route),'native '+label+' route');
    if(label!=="Home"){await waitUntil('(()=>{const title=document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||document.querySelector("#topbar .brand")?.textContent.trim()||"";const active=document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"";return title==='+JSON.stringify(headerTitle)+'&&active==='+JSON.stringify(label) +'})()','rendered '+label+' page');}
    if(label==="Home"){
@@ -136,7 +136,8 @@ async function run(){
     if(!homeRendered)report.failure='Physical Home tab changed route but did not render Home; see homeAfterTap diagnostics';
    }
    const ev=report.physicalTaps.at(-1).events;
-   check('Android OS click activates '+label+' navigation',ev.some(e=>e.name==='click'),ev);
+   check('Android OS pointerup reaches '+label+' navigation',ev.some(e=>e.name==='pointerup'&&e.pointerType==='touch'),ev);
+   report.nativeClickEmitted=ev.some(e=>e.name==='click');
    const rendered=await value('({hash:location.hash,title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||document.querySelector("#topbar .brand")?.textContent.trim()||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||""})');
    report.routeViews=report.routeViews||[];
    report.routeViews.push({label,rendered});

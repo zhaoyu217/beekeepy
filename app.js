@@ -1430,7 +1430,7 @@ function chrome(page,secondary){
     ['hives','Hives','navHive'],
     ['actions','Actions','navActions'],
     ['insights','Insights','navInsights']
-  ].map(([key,label,ico])=>`<button class="navitem ${active===key?'active':''}" onclick="go('${key}')" aria-label="${label}" ${active===key?'aria-current="page"':''}>${icon(ico)}<span>${label}</span>${key==='actions'&&s.actions.length?`<i class="nav-badge">${Math.min(9,s.actions.length)}</i>`:''}</button>`).join('');
+  ].map(([key,label,ico])=>`<button class="navitem ${active===key?'active':''}" data-nav-route="${key}" onclick="go('${key}')" aria-label="${label}" ${active===key?'aria-current="page"':''}>${icon(ico)}<span>${label}</span>${key==='actions'&&s.actions.length?`<i class="nav-badge">${Math.min(9,s.actions.length)}</i>`:''}</button>`).join('');
 }
 
 function generateActions(s){
@@ -2609,6 +2609,23 @@ window.addEventListener('hashchange',()=>{
   if(!CLOUD_CONFIGURED || isAuthenticated() || CLOUD_CONFIG.REQUIRE_AUTH===false)render();
 });
 window.addEventListener('DOMContentLoaded',initializeCloudApp);
+window.addEventListener('DOMContentLoaded',()=>{
+  /* Android WebView can deliver pointer/touch events for fixed bottom-nav labels
+     without synthesizing a click. Route on the completed native touch instead. */
+  const nav=document.getElementById('bottomnav');
+  if(!nav||nav.dataset.nativeTouchRoutes==='1')return;
+  nav.dataset.nativeTouchRoutes='1';
+  nav.addEventListener('touchend',event=>{
+    if(event.changedTouches&&event.changedTouches.length!==1)return;
+    const item=event.target&&event.target.closest?event.target.closest('.navitem[data-nav-route]'):null;
+    if(!item||!nav.contains(item))return;
+    const route=item.dataset.navRoute;
+    if(!route)return;
+    if(event.cancelable)event.preventDefault();
+    if(location.hash!=='#'+route)go(route);
+  },{passive:false});
+});
+
 
 /* V2P2E5Z — preserve manual planned frequent Actions across regeneration/cloud merge. */
 window.__HIVEDASH_V2P2E5Z_VERSION__='v2p2e5z-action-plan-persistence';

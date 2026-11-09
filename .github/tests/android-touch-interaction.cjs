@@ -110,8 +110,6 @@ async function run(){
   for(const [label,route,headerTitle] of routes){
    if(route!=='home'){
     await value('window.go("home")');
-    await waitUntil('location.hash==="#home"','reset to home before '+label);
-    await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
    }
    await waitUntil('location.hash==="#home"','reset to home before '+label);
    await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);

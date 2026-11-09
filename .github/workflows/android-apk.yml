@@ -111,7 +111,7 @@ jobs:
         run: |
           set -euxo pipefail
           mkdir -p mobile/dist/vendor
-          curl --fail --location --retry 4 --retry-delay 2 \
+          curl --fail --location --retry 8 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 120 \
             -o mobile/dist/vendor/supabase.min.js \
             https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2.117.2/dist/umd/supabase.min.js
           test "$(stat -c%s mobile/dist/vendor/supabase.min.js)" -gt 100000
@@ -171,17 +171,17 @@ jobs:
           PIPER_DIR="/tmp/piper"
           VOICE_DIR="/tmp/piper-voice"
           mkdir -p "$PIPER_DIR" "$VOICE_DIR"
-          curl --fail --location --retry 4 --retry-delay 2 \
+          curl --fail --location --retry 8 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 120 \
             -o /tmp/piper_amd64.tar.gz \
             https://github.com/rhasspy/piper/releases/download/v1.2.0/piper_amd64.tar.gz
           tar -xzf /tmp/piper_amd64.tar.gz -C /tmp
           test -x "$PIPER_DIR/piper"
           export LD_LIBRARY_PATH="$PIPER_DIR:$PIPER_DIR/lib:${LD_LIBRARY_PATH:-}"
           VOICE_BASE="https://huggingface.co/rhasspy/piper-voices/resolve/v1.0.0/en/en_US/lessac/medium"
-          curl --fail --location --retry 4 --retry-delay 2 \
+          curl --fail --location --retry 8 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 120 \
             -o "$VOICE_DIR/en_US-lessac-medium.onnx" \
             "$VOICE_BASE/en_US-lessac-medium.onnx"
-          curl --fail --location --retry 4 --retry-delay 2 \
+          curl --fail --location --retry 8 --retry-all-errors --retry-delay 5 --connect-timeout 30 --max-time 120 \
             -o "$VOICE_DIR/en_US-lessac-medium.onnx.json" \
             "$VOICE_BASE/en_US-lessac-medium.onnx.json"
           test -s "$VOICE_DIR/en_US-lessac-medium.onnx"

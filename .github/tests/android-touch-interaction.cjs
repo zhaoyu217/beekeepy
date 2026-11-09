@@ -7,7 +7,7 @@ const {execFileSync}=require('node:child_process');
 const CDP=require('chrome-remote-interface');
 const out='android-touch-results';
 fs.mkdirSync(out,{recursive:true});
-const report={mode:'Android 15 installed current APK / Android OS input dispatcher',tests:[],failure:null};
+const report={mode:'Android 15 installed current APK / Android OS input dispatcher',tests:[],failure:null,physicalTaps:[],routeViews:[]};
 const adb=(...args)=>execFileSync('adb',args,{encoding:'utf8',timeout:25000}).trim();
 const pause=ms=>new Promise(r=>setTimeout(r,ms));
 let client,topInsetPx,dpr,screen;
@@ -25,7 +25,7 @@ async function waitUntil(expression,label,timeout=9000){
  while(Date.now()-start<timeout){last=await value(expression);if(last)return last;await pause(180)}
  throw new Error('Timeout waiting for '+label+'; last='+JSON.stringify(last));
 }
-async function screenshot(name){
+function innerWidthSafe(){return 206;}\nasync function screenshot(name){
  adb('shell','screencap','-p','/sdcard/'+name);
  adb('pull','/sdcard/'+name,path.join(out,name));
 }
@@ -105,48 +105,59 @@ async function run(){
   check('Header does not overlap top of WebView',geom.headerTop>=-1&&geom.headerHeight>=30,geom);
   check('Bottom navigation fits entirely inside WebView',geom.navHeight>=60&&geom.navBottom<=geom.height+1&&geom.navButtons.length===4&&geom.navButtons.every(b=>b.bottom<=geom.height+1),geom);
 
-  const routes=[['Home','home'],['Hives','hives'],['Actions','actions'],['Insights','insights']];
-  for(const [label,route] of routes){
+  const routes=[['Home','home','HiveDash'],['Hives','hives','Hives'],['Actions','actions','Actions'],['Insights','insights','Insights']];
+  for(const [label,route,headerTitle] of routes){
    if(route!=='home')await value('window.go("home")');
    await waitUntil('location.hash==="#home"','reset to home before '+label);
+   await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
    await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')','Physical tap bottom navigation '+label);
    await waitUntil('location.hash==='+JSON.stringify('#'+route),'native '+label+' route');
+   await waitUntil('(()=>{const title=document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"";const active=document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"";return title==='+JSON.stringify(headerTitle)+'&&active==='+JSON.stringify(label) +'})()','rendered '+label+' page');
    const ev=report.physicalTaps.at(-1).events;
    check('Android OS touch reaches '+label+' navigation',ev.some(e=>e.name==='touchstart'||e.name==='pointerdown'),ev);
-   check('Android OS touch activates '+label,await value('location.hash')==='#'+route,{route});
+   const rendered=await value('({hash:location.hash,title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||""})');
+   report.routeViews=report.routeViews||[];
+   report.routeViews.push({label,rendered});
+   check('Android OS touch renders '+label+' page',rendered.title===headerTitle&&rendered.active===label,rendered);
    await screenshot('android-touch-'+route+'.png');
   }
 
-  await value('window.go("home")');
-  await waitUntil('location.hash==="#home"','return home before scroll test');
-  const beforeScroll=await value('(()=>{const e=[...document.querySelectorAll("*")].filter(x=>x.scrollHeight>x.clientHeight+80&&["auto","scroll"].includes(getComputedStyle(x).overflowY)).sort((a,b)=>b.scrollHeight-a.scrollHeight)[0];return e?{id:e.id,cls:String(e.className).slice(0,80),top:e.scrollTop,height:e.clientHeight,scrollHeight:e.scrollHeight}:null})()');
+  // Actions contains a long task list. Test the actual document scroll root,
+  // not only descendants with overflow:auto; the app uses a full-page root.
+  await value('window.go("actions")');
+  await waitUntil('location.hash==="#actions"','open long Actions page');
+  await waitUntil('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Actions"','Actions page rendered for scroll test');
+  const beforeScroll=await value('(()=>{const es=[document.scrollingElement,document.documentElement,document.body,document.getElementById("app"),document.getElementById("view")].filter(Boolean);return es.map((e,i)=>({name:["document.scrollingElement","document.documentElement","document.body","#app","#view"][i],top:e.scrollTop,height:e.clientHeight,scrollHeight:e.scrollHeight,overflowY:getComputedStyle(e).overflowY}))})()');
   report.scrollBefore=beforeScroll;
-  if(beforeScroll){
-   const scrollPoint=await value('(()=>{const e=[...document.querySelectorAll("*")].filter(x=>x.scrollHeight>x.clientHeight+80&&["auto","scroll"].includes(getComputedStyle(x).overflowY)).sort((a,b)=>b.scrollHeight-a.scrollHeight)[0],r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height*.75}})()');
-   adb('shell','input','swipe',String(Math.round(scrollPoint.x*dpr)),String(Math.round(scrollPoint.y*dpr+topInsetPx)),String(Math.round(scrollPoint.x*dpr)),String(Math.round(scrollPoint.y*dpr+topInsetPx-650)), '500');
-   await pause(700);
-   const afterScroll=await value('(()=>{const e=[...document.querySelectorAll("*")].filter(x=>x.scrollHeight>x.clientHeight+80&&["auto","scroll"].includes(getComputedStyle(x).overflowY)).sort((a,b)=>b.scrollHeight-a.scrollHeight)[0];return e?{top:e.scrollTop,height:e.clientHeight,scrollHeight:e.scrollHeight}:null})()');
-   report.scrollAfter=afterScroll;
-   check('Android physical swipe scrolls the content',afterScroll&&afterScroll.top>beforeScroll.top,{beforeScroll,afterScroll});
-  }else{
-   report.scrollAfter=null;
-   check('Scrollable content exists for swipe test',false,beforeScroll);
-  }
-  const navAfterScroll=await value('(()=>{const e=document.querySelector("#bottomnav"),r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,viewport:innerHeight}})()');
+  const rootBefore=beforeScroll.find(x=>x.name==="document.scrollingElement");
+  const appBefore=beforeScroll.find(x=>x.name==="#app");
+  const viewBefore=beforeScroll.find(x=>x.name==="#view");
+  const canScroll=[rootBefore,appBefore,viewBefore].some(x=>x&&x.scrollHeight>x.height+80);
+  check('Long Actions page has scrollable overflow',canScroll,beforeScroll);
+  adb('shell','input','swipe',String(Math.round(innerWidthSafe()*dpr)),String(Math.round(610*dpr+topInsetPx)),String(Math.round(innerWidthSafe()*dpr)),String(Math.round(250*dpr+topInsetPx)),'550');
+  await pause(700);
+  const afterScroll=await value('(()=>{const es=[document.scrollingElement,document.getElementById("app"),document.getElementById("view")].filter(Boolean);return es.map((e,i)=>({name:["document.scrollingElement","#app","#view"][i],top:e.scrollTop,height:e.clientHeight,scrollHeight:e.scrollHeight}))})()');
+  report.scrollAfter=afterScroll;
+  const moved=afterScroll.some(x=>x.top>(beforeScroll.find(b=>b.name===x.name)?.top||0)+5);
+  check('Android physical swipe scrolls the long Actions page',moved,{beforeScroll,afterScroll});
+  const navAfterScroll=await value('(()=>{const e=document.querySelector("#bottomnav"),r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,viewport:innerHeight,active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()}})()');
   check('Bottom navigation remains visible after scrolling',navAfterScroll.height>=60&&navAfterScroll.bottom<=navAfterScroll.viewport+1,navAfterScroll);
   await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==="Insights")','Physical tap Insights after scroll');
   await waitUntil('location.hash==="#insights"','Insights after scroll');
-  check('Bottom navigation remains clickable after scrolling',await value('location.hash')==='#insights');
+  await waitUntil('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Insights"&&document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Insights"','Insights rendered after scroll');
+  check('Bottom navigation remains clickable after scrolling',await value('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Insights");
 
   await value('window.go("home")');
   await waitUntil('location.hash==="#home"','return home for primary action test');
+  await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home rendered for primary action test');
   await value('window.v2p2e5lHomeQuick("inspection")');
   await waitUntil('!!document.querySelector("#app > .modal.v215-more-modal")','Select Hive modal');
   const hiveId=await value('document.querySelector("#v2p2e5l-quick-hive")?.value||""');
   check('Select Hive modal has a valid selected hive',!!hiveId,hiveId);
   await tap('Array.from(document.querySelectorAll("#app > .modal.v215-more-modal button")).find(e=>e.textContent.trim()==="Continue")','Physical tap modal Continue');
   await waitUntil('location.hash==='+JSON.stringify('#inspection/'+hiveId),'Inspection page after physical Continue');
-  check('Physical tap on primary Continue button navigates correctly',await value('location.hash')==='#inspection/'+hiveId,{hiveId});
+  await waitUntil('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Inspection"','Inspection page rendered after physical Continue');
+  check('Physical tap on primary Continue button navigates correctly',await value('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Inspection",{hiveId});
   await screenshot('android-touch-inspection.png');
 
   report.finalGeometry=await value('(()=>({height:innerHeight,top:document.querySelector("#topbar")?.getBoundingClientRect().top,bottom:document.querySelector("#bottomnav")?.getBoundingClientRect().bottom,navHeight:document.querySelector("#bottomnav")?.getBoundingClientRect().height}))()');

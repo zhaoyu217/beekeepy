@@ -77,7 +77,7 @@ async function run(){
   report.geometry={screen,baseHeight,dpr,topInsetPx,bottomSystemInset};
 
   report.physicalTaps=[];
-  await value('(()=>{window.__nativeInputEvents=[];for(const n of ["pointerdown","touchstart","pointerup","touchend","click","focusin"])document.addEventListener(n,e=>{const t=e.target;window.__nativeInputEvents.push({name:n,id:t?.id||"",tag:t?.tagName||"",cls:String(t?.className?.baseVal||t?.className||"").slice(0,90),text:(t?.textContent||"").trim().slice(0,45)});},true);return true})()');
+  await value('(()=>{window.__nativeInputEvents=[];window.__hashAudit=[];window.__renderAudit=[];window.__jsErrors=[];const originalRender=window.render;if(typeof originalRender==="function"){window.render=function(){const item={hash:location.hash,at:Date.now()};try{return originalRender.apply(this,arguments)}catch(e){item.error=String(e);throw e}finally{window.__renderAudit.push(item)}}}window.addEventListener("hashchange",()=>window.__hashAudit.push({hash:location.hash,active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"",title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||""}));window.addEventListener("error",e=>window.__jsErrors.push({message:e.message,source:e.filename,line:e.lineno}));window.addEventListener("unhandledrejection",e=>window.__jsErrors.push({message:String(e.reason)}));for(const n of ["pointerdown","touchstart","pointerup","touchend","click","focusin"])document.addEventListener(n,e=>{const t=e.target;window.__nativeInputEvents.push({name:n,id:t?.id||"",tag:t?.tagName||"",cls:String(t?.className?.baseVal||t?.className||"").slice(0,90),text:(t?.textContent||"").trim().slice(0,45)});},true);return true})()');
   await screenshot('android-login-before-touch.png');
 
   await tap('document.querySelector("#authEmail")','Tap login email field');
@@ -115,7 +115,16 @@ async function run(){
    }
    await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')','Physical tap bottom navigation '+label);
    await waitUntil('location.hash==='+JSON.stringify('#'+route),'native '+label+' route');
-   await waitUntil('(()=>{const title=document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"";const active=document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"";return title==='+JSON.stringify(headerTitle)+'&&active==='+JSON.stringify(label) +'})()','rendered '+label+' page');
+   if(label!=="Home"){await waitUntil('(()=>{const title=document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"";const active=document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"";return title==='+JSON.stringify(headerTitle)+'&&active==='+JSON.stringify(label) +'})()','rendered '+label+' page');}
+   if(label==="Home"){
+    await pause(900);
+    const homeAfterTap=await value('({hash:location.hash,title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"",viewClass:document.querySelector("#view")?.className||"",viewText:(document.querySelector("#view")?.innerText||"").slice(0,500),topbarHTML:document.querySelector("#topbar")?.innerHTML||"",hashAudit:window.__hashAudit||[],renderAudit:window.__renderAudit||[],jsErrors:window.__jsErrors||[]})');
+    report.homeAfterTap=homeAfterTap;
+    await screenshot('android-touch-home-after-tap.png');
+    const homeRendered=homeAfterTap.hash==='#home'&&homeAfterTap.title==='HiveDash'&&homeAfterTap.active==='Home';
+    report.tests.push({name:'Android OS touch returns from Insights to rendered Home page',pass:homeRendered,details:homeAfterTap});
+    if(!homeRendered)report.failure='Physical Home tab changed route but did not render Home; see homeAfterTap diagnostics';
+   }
    const ev=report.physicalTaps.at(-1).events;
    check('Android OS touch reaches '+label+' navigation',ev.some(e=>e.name==='touchstart'||e.name==='pointerdown'),ev);
    const rendered=await value('({hash:location.hash,title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand")?.textContent.trim()||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||""})');

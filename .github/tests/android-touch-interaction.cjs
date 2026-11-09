@@ -30,7 +30,7 @@ async function screenshot(name){
  adb('shell','screencap','-p','/sdcard/'+name);
  adb('pull','/sdcard/'+name,path.join(out,name));
 }
-async function tap(selectorExpression,label){
+async function tap(selectorExpression,label,requiredEvent='pointerdown'){
  const rect=await value('(()=>{const e='+selectorExpression+';if(!e)return null;e.scrollIntoView({block:"center",inline:"center"});const r=e.getBoundingClientRect();return {x:r.left+r.width/2,y:r.top+r.height/2,w:r.width,h:r.height,disabled:!!e.disabled,tag:e.tagName,id:e.id,text:(e.textContent||"").trim().slice(0,70)}})()');
  check(label+' is visible and enabled',!!rect&&rect.w>0&&rect.h>0&&!rect.disabled,rect);
  const x=Math.round(rect.x*dpr), y=Math.round(rect.y*dpr+topInsetPx);
@@ -42,10 +42,10 @@ async function tap(selectorExpression,label){
   adb('shell','input','tap',String(x),String(y));
   await pause(900);
   events=await value('window.__nativeInputEvents?.slice('+eventStart+')||[]');
-  if(events.some(e=>e.name==='pointerdown'||e.name==='touchstart'||e.name==='click'))break;
+  if(events.some(e=>e.name===requiredEvent))break;
   await pause(450);
  }
- report.physicalTaps.push({label,x,y,attempts:Math.min(attempts,3),events});
+ report.physicalTaps.push({label,x,y,attempts:Math.min(attempts,3),requiredEvent,events});
  return {rect,x,y,attempts:Math.min(attempts,3),events};
 }
 async function run(){
@@ -96,12 +96,15 @@ async function run(){
   const passwordFocus=await value('document.activeElement?.id||""');
   check('Physical tap focuses login password field',passwordFocus==='authPassword',{passwordFocus});
   adb('shell','input','keyevent','4');
-  await pause(500);
   await value('document.activeElement?.blur?.()');
-  await tap('document.querySelector("#authModeSwitch")','Tap login Sign up / Sign in switch');
+  const keyboardDismissed=await waitUntil('(()=>{const vv=window.visualViewport;return (!document.activeElement?.matches?.("#authEmail,#authPassword"))&&(!vv||Math.abs(vv.height-innerHeight)<2)})()','Android soft keyboard fully dismissed',10000);
+  report.keyboardDismissed=keyboardDismissed;
+  await pause(500);
+  await value('window.scrollTo(0,0);return true');
+  await tap('document.querySelector("#authModeSwitch")','Tap login Sign up / Sign in switch','click');
   const signUp=await value('({name:!!document.querySelector("#authName"),email:!!document.querySelector("#authEmail"),mode:document.querySelector("#authModeSwitch")?.textContent?.trim()||""})');
   check('Physical tap switches login form to sign-up form',signUp.name&&signUp.email,signUp);
-  await tap('document.querySelector("#authModeSwitch")','Tap sign-up switch back to login');
+  await tap('document.querySelector("#authModeSwitch")','Tap sign-up switch back to login','click');
   const backToLogin=await value('({name:!!document.querySelector("#authName"),email:!!document.querySelector("#authEmail")})');
   check('Physical tap returns to login form',!backToLogin.name&&backToLogin.email,backToLogin);
   await screenshot('android-login-after-touch.png');

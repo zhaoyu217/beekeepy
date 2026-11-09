@@ -161,6 +161,25 @@ jobs:
           test -s "$MODEL_DIR/bpe.vocab"
           grep -q "QUEEN" "$MODEL_DIR/bpe.vocab" || true
 
+      - name: Generate deterministic English speech fixture for native ASR QA
+        shell: bash
+        run: |
+          set -euxo pipefail
+          sudo apt-get update
+          sudo apt-get install -y espeak-ng sox
+          MODEL_DIR="android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26"
+          espeak-ng -v en-us -s 140 -a 180 \
+            -w /tmp/asr-test-inspection-raw.wav \
+            "I saw the queen. I saw eggs. I saw larvae. Brood pattern good. Colony strength eight. Honey stores medium. No queen cells. No swarm signs."
+          sox /tmp/asr-test-inspection-raw.wav \
+            -r 16000 -c 1 -b 16 -e signed-integer \
+            "$MODEL_DIR/asr-test-inspection.wav"
+          soxi "$MODEL_DIR/asr-test-inspection.wav"
+          test "$(soxi -r "$MODEL_DIR/asr-test-inspection.wav")" = "16000"
+          test "$(soxi -c "$MODEL_DIR/asr-test-inspection.wav")" = "1"
+          test "$(soxi -b "$MODEL_DIR/asr-test-inspection.wav")" = "16"
+          test "$(stat -c%s "$MODEL_DIR/asr-test-inspection.wav")" -gt 20000
+
       - name: Configure Android native OfflineAsr plugin
         run: node mobile/scripts/configure-android.mjs
 
@@ -174,6 +193,8 @@ jobs:
           grep -q "android.permission.RECORD_AUDIO" android/app/src/main/AndroidManifest.xml
           test -f android/app/libs/sherpa-onnx-1.13.8.aar
           test -s android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26/bpe.vocab
+          test -s android/app/src/main/assets/sherpa-onnx-streaming-zipformer-en-2023-06-26/asr-test-inspection.wav
+          grep -q "testDecodeBundledAudio" android/app/src/main/java/app/hivefield/mobile/OfflineAsrPlugin.kt
           grep -q "mobile-native-voice-shim.js" mobile/dist/index.html
           grep -q "mobile-five-gaps.js" mobile/dist/index.html
           grep -q "vendor/supabase.min.js" mobile/dist/index.html

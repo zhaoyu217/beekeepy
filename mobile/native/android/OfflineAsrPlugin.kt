@@ -95,7 +95,8 @@ class OfflineAsrPlugin : Plugin() {
             "LARVAE", "LARVA", "LARVA PRESENT", "BROOD PATTERN",
             "BROOD PATTERN IS GOOD", "COLONY STRENGTH", "COLONY SIZE",
             "HONEY STORES", "QUEEN CELLS", "SWARM SIGNS",
-            "NO QUEEN CELLS", "NO SWARM SIGNS"
+            "NO QUEEN CELLS", "NO SWARM SIGNS", "PESTS", "NO PESTS",
+            "DISEASE", "NO DISEASE"
         ).joinToString("\n")
         thread(start = true, name = "HiveAsrFixtureDecode") {
             var fixtureEngine: SherpaInspectionEngine? = null

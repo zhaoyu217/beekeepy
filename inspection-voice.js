@@ -486,7 +486,26 @@
   }
 
 
+  function isNativeOfflineSpeech(){
+    try {
+      return !!(window.Capacitor &&
+        typeof window.Capacitor.isNativePlatform==='function' &&
+        window.Capacitor.isNativePlatform() &&
+        window.__HD_NATIVE_OFFLINE_ASR__===true);
+    } catch (_) { return false; }
+  }
+
+  function isNativeApp(){
+    try {
+      return !!(window.Capacitor &&
+        typeof window.Capacitor.isNativePlatform==='function' &&
+        window.Capacitor.isNativePlatform());
+    } catch (_) { return false; }
+  }
+
   function speechCtor(){
+    // Never silently fall back to a browser/cloud speech service in the native APK.
+    if(isNativeApp() && !isNativeOfflineSpeech()) return null;
     return window.SpeechRecognition||window.webkitSpeechRecognition||null;
   }
 
@@ -509,7 +528,7 @@
     if(w){
       review(w);
       var ms=browserSpeechStartedAt?Math.max(0,performance.now()-browserSpeechStartedAt):0;
-      status(w,'Review the transcript and detected fields. Browser '+(ms/1000).toFixed(1)+'s','idle');
+      status(w,'Review the transcript and detected fields. '+(isNativeOfflineSpeech()?'Local offline ':'Browser ')+(ms/1000).toFixed(1)+'s','idle');
       buttons(w);
     }
     try{rec.onresult=rec.onerror=rec.onend=null;}catch(e){}
@@ -535,7 +554,7 @@
       rec.onstart=function(){
         starting=false;listening=true;stopping=false;transcribing=false;
         browserSpeechStartedAt=performance.now();
-        status(w,'Recording… browser speech recognition active.','listen');
+        status(w,isNativeOfflineSpeech()?'Recording… local offline speech recognition active.':'Recording… browser speech recognition active.','listen');
         buttons(w);
         stopTimer=setTimeout(function(){if(listening)stop(w);},180000);
       };
@@ -577,7 +596,15 @@
   }
 
   function start(w){
+    if(isNativeApp() && !isNativeOfflineSpeech()){
+      status(w,'Native offline speech engine is not registered. Recognition stopped; no browser or cloud fallback was used.','err');
+      return;
+    }
     if(startBrowserSpeech(w))return;
+    if(isNativeApp()){
+      status(w,'Native offline speech recognition could not start. Check microphone permission and model availability.','err');
+      return;
+    }
     status(w,'Browser speech recognition unavailable. Using local fallback…','idle');
     startLocalRecorder(w);
   }

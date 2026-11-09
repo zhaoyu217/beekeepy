@@ -86,7 +86,7 @@ class OfflineAsrPlugin : Plugin() {
     // and the same native event bridge used by live microphone recognition.
     @PluginMethod
     fun testDecodeBundledAudio(call: PluginCall) {
-        if (!BuildConfig.DEBUG) {
+        if ((context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) == 0) {
             call.reject("ASR fixture decoding is available only in debug builds", "DEBUG_ONLY")
             return
         }

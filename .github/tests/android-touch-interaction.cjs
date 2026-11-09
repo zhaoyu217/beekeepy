@@ -100,7 +100,7 @@ async function run(){
   const keyboardDismissed=await waitUntil('(()=>{const vv=window.visualViewport;return (!document.activeElement?.matches?.("#authEmail,#authPassword"))&&(!vv||Math.abs(vv.height-innerHeight)<2)})()','Android soft keyboard fully dismissed',10000);
   report.keyboardDismissed=keyboardDismissed;
   await pause(500);
-  await value('window.scrollTo(0,0);return true');
+  await value('(()=>{window.scrollTo(0,0);return true})()');
   await tap('document.querySelector("#authModeSwitch")','Tap login Sign up / Sign in switch','click');
   const signUp=await value('({name:!!document.querySelector("#authName"),email:!!document.querySelector("#authEmail"),mode:document.querySelector("#authModeSwitch")?.textContent?.trim()||""})');
   check('Physical tap switches login form to sign-up form',signUp.name&&signUp.email,signUp);

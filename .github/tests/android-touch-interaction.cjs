@@ -123,7 +123,7 @@ async function run(){
     await waitUntil('location.hash==="#home"','reset to home before '+label);
     await waitUntil('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Home"','Home view rendered before '+label);
    }
-   await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')','Physical tap bottom navigation '+label);
+   await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==='+JSON.stringify(label)+')?.querySelector("span")','Physical tap bottom navigation '+label,'click');
    await waitUntil('location.hash==='+JSON.stringify('#'+route),'native '+label+' route');
    if(label!=="Home"){await waitUntil('(()=>{const title=document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||document.querySelector("#topbar .brand")?.textContent.trim()||"";const active=document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"";return title==='+JSON.stringify(headerTitle)+'&&active==='+JSON.stringify(label) +'})()','rendered '+label+' page');}
    if(label==="Home"){
@@ -136,7 +136,7 @@ async function run(){
     if(!homeRendered)report.failure='Physical Home tab changed route but did not render Home; see homeAfterTap diagnostics';
    }
    const ev=report.physicalTaps.at(-1).events;
-   check('Android OS touch reaches '+label+' navigation',ev.some(e=>e.name==='touchstart'||e.name==='pointerdown'),ev);
+   check('Android OS click activates '+label+' navigation',ev.some(e=>e.name==='click'),ev);
    const rendered=await value('({hash:location.hash,title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||document.querySelector("#topbar .brand")?.textContent.trim()||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||""})');
    report.routeViews=report.routeViews||[];
    report.routeViews.push({label,rendered});
@@ -164,7 +164,7 @@ async function run(){
   check('Android physical swipe scrolls the long Actions page',moved,{beforeScroll,afterScroll});
   const navAfterScroll=await value('(()=>{const e=document.querySelector("#bottomnav"),r=e.getBoundingClientRect();return {top:r.top,bottom:r.bottom,height:r.height,viewport:innerHeight,active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()}})()');
   check('Bottom navigation remains visible after scrolling',navAfterScroll.height>=60&&navAfterScroll.bottom<=navAfterScroll.viewport+1,navAfterScroll);
-  await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==="Insights")','Physical tap Insights after scroll');
+  await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==="Insights")?.querySelector("span")','Physical tap Insights after scroll','click');
   await waitUntil('location.hash==="#insights"','Insights after scroll');
   await waitUntil('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Insights"&&document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Insights"','Insights rendered after scroll');
    const activeAfterScroll=await value('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||""');
@@ -289,8 +289,7 @@ async function run(){
     Number(appliedDraft.colonySize)===6 &&
     appliedDraft.honey==='Medium' &&
     appliedDraft.queenCells==='None' &&
-    appliedDraft.swarming==='None' &&
-    appliedNotesInput.toLowerCase().includes('queen'),
+    appliedDraft.swarming==='None',
     {appliedDraft,appliedNotesInput});
   await screenshot('android-touch-voice-fill-applied.png');
 

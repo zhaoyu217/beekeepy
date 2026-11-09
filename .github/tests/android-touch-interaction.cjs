@@ -16,7 +16,7 @@ function check(name,pass,details){
  if(!pass)throw new Error(name+': '+JSON.stringify(details));
 }
 async function value(expression){
- const r=await client.Runtime.evaluate({expression,returnByValue:true,awaitPromise:true});
+ const r=await client.Runtime.evaluate({expression,returnByValue:true,awaitPromise:true,timeout:45000});
  if(r.exceptionDetails)throw new Error('JS evaluation failed: '+JSON.stringify(r.exceptionDetails).slice(0,700));
  return r.result?.value;
 }
@@ -255,12 +255,14 @@ async function run(){
     appliedDraft.notes.toLowerCase().includes('queen'),
     appliedDraft);
   await screenshot('android-touch-voice-fill-applied.png');
+  await tap('Array.from(document.querySelectorAll("#view button")).find(e=>e.textContent.trim()==="Voice fill")','Reopen Voice fill after applying');
+  await waitUntil('!!document.querySelector(".hd-voice-overlay")','reopened Voice fill dialog');
   await tap('document.querySelector(".hd-voice-transcript")','Physical tap Voice fill transcript');
   const voiceFocus=await value('document.activeElement?.classList?.contains("hd-voice-transcript")||false');
   check('Voice fill transcript receives physical touch focus',voiceFocus,{voiceFocus});
   await tap('document.querySelector(".hd-cancel")','Physical tap Voice fill Cancel');
   const voiceClosed=await value('!document.querySelector(".hd-voice-overlay")');
-  check('Voice fill Cancel closes the dialog without applying changes',voiceClosed,{voiceClosed});
+  check('Voice fill Cancel closes the dialog without applying additional changes',voiceClosed,{voiceClosed});
   await screenshot('android-touch-voice-fill-cancelled.png');
 
   report.finalGeometry=await value('(()=>({height:innerHeight,top:document.querySelector("#topbar")?.getBoundingClientRect().top,bottom:document.querySelector("#bottomnav")?.getBoundingClientRect().bottom,navHeight:document.querySelector("#bottomnav")?.getBoundingClientRect().height}))()');

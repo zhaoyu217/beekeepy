@@ -123,6 +123,22 @@ jobs:
       - name: Generate Capacitor Android project
         run: npx cap add android
 
+      - name: Configure resilient Gradle distribution download
+        shell: bash
+        run: |
+          set -euxo pipefail
+          PROPS="android/gradle/wrapper/gradle-wrapper.properties"
+          test -s "$PROPS"
+          # Avoid the services.gradle.org -> GitHub release redirect that has
+          # intermittently returned HTTP 504 in Actions. Use Gradle's direct CDN.
+          sed -i 's/services\\.gradle\\.org/downloads.gradle.org/g' "$PROPS"
+          if grep -q '^networkTimeout=' "$PROPS"; then
+            sed -i 's/^networkTimeout=.*/networkTimeout=120000/' "$PROPS"
+          else
+            printf '\\nnetworkTimeout=120000\\n' >> "$PROPS"
+          fi
+          grep -E 'distributionUrl|networkTimeout' "$PROPS"
+
       - name: Download sherpa-onnx Android AAR
         shell: bash
         run: |

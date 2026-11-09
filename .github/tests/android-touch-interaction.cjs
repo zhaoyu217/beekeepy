@@ -25,7 +25,8 @@ async function waitUntil(expression,label,timeout=9000){
  while(Date.now()-start<timeout){last=await value(expression);if(last)return last;await pause(180)}
  throw new Error('Timeout waiting for '+label+'; last='+JSON.stringify(last));
 }
-function innerWidthSafe(){return 206;}\nasync function screenshot(name){
+function innerWidthSafe(){return 206;}
+async function screenshot(name){
  adb('shell','screencap','-p','/sdcard/'+name);
  adb('pull','/sdcard/'+name,path.join(out,name));
 }

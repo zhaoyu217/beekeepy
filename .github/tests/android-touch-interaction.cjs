@@ -238,7 +238,7 @@ async function run(){
   check('Native ASR event bridge fills the visible transcript field',asrTranscript.trim().length>20,{asrTranscript});
   const detectedFields=await value('(()=>Object.fromEntries([...document.querySelectorAll(".hd-fields .hd-field")].map(e=>[e.querySelector("span")?.textContent?.trim()||"",e.querySelector("b")?.textContent?.trim()||""])))()');
   report.asrDetectedFields=detectedFields;
-  check('Speech transcript maps into structured Inspection fields',
+  const asrFieldMappingPass=
     detectedFields['Queen seen']==='Seen' &&
     detectedFields['Eggs']==='Seen' &&
     detectedFields['Larvae']==='Seen' &&
@@ -246,11 +246,35 @@ async function run(){
     detectedFields['Colony strength']==='6' &&
     detectedFields['Honey stores']==='Medium' &&
     detectedFields['Queen cells']==='None' &&
-    detectedFields['Swarming']==='None',
-    detectedFields);
+    detectedFields['Swarming']==='None';
+  // Keep the real ASR result as a hard pass/fail, but do not abort the
+  // downstream parser / Apply / durable-save tests when ASR is the only failure.
+  report.tests.push({
+    name:'Speech transcript maps into structured Inspection fields',
+    pass:asrFieldMappingPass,
+    details:detectedFields
+  });
+  report.applyTestSource=asrFieldMappingPass?'actual native ASR transcript':'controlled canonical transcript after preserving the ASR failure';
+  if(!asrFieldMappingPass){
+    const canonicalTranscript='Queen seen. Fresh eggs. Larvae present. Brood pattern is good. Colony strength six. Honey stores are medium. No queen cells. No swarm signs.';
+    report.controlledTranscript=canonicalTranscript;
+    await value('(()=>{const a=document.querySelector(".hd-voice-transcript");if(!a)throw new Error("Voice transcript field disappeared");a.value='+JSON.stringify(canonicalTranscript)+';a.dispatchEvent(new Event("input",{bubbles:true}));return true})()');
+    const controlledFields=await value('(()=>Object.fromEntries([...document.querySelectorAll(".hd-fields .hd-field")].map(e=>[e.querySelector("span")?.textContent?.trim()||"",e.querySelector("b")?.textContent?.trim()||""])))()');
+    report.controlledTranscriptFields=controlledFields;
+    check('Canonical transcript independently maps to all eight Inspection fields',
+      controlledFields['Queen seen']==='Seen' &&
+      controlledFields['Eggs']==='Seen' &&
+      controlledFields['Larvae']==='Seen' &&
+      controlledFields['Brood pattern']==='Good' &&
+      controlledFields['Colony strength']==='6' &&
+      controlledFields['Honey stores']==='Medium' &&
+      controlledFields['Queen cells']==='None' &&
+      controlledFields['Swarming']==='None',
+      controlledFields);
+  }
   await tap('document.querySelector(".hd-apply")','Physical tap Apply to Inspection');
   await waitUntil('!document.querySelector(".hd-voice-overlay")','voice dialog closes after Apply',10000);
-  const appliedDraft=await value('(()=>{const d=window.V49_INSPECTION_DRAFT||{};return {queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,notes:d.notes||"",confirmed:d.__confirmedFields||{}}})()');
+  const appliedDraft=await value('(()=>{const d=(typeof V49_INSPECTION_DRAFT!=="undefined"?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||{};return {queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,notes:d.notes||"",confirmed:d.__confirmedFields||{}}})()');
   report.asrAppliedDraft=appliedDraft;
   check('Voice Apply transfers detected values into the active Inspection draft',
     appliedDraft.queenStatus==='Seen' &&
@@ -264,6 +288,65 @@ async function run(){
     appliedDraft.notes.toLowerCase().includes('queen'),
     appliedDraft);
   await screenshot('android-touch-voice-fill-applied.png');
+
+  // Save the inspection and verify the actual local state + log row. This remains
+  // local-only in this unauthenticated Android QA session; no cloud session exists.
+  const hiveIdLiteral=JSON.stringify(hiveId);
+  const inspectionCountBeforeSave=await value('(()=>{const s=v45s();return (s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+').length})()');
+  report.inspectionCountBeforeSave=inspectionCountBeforeSave;
+  await tap('Array.from(document.querySelectorAll("#view .dual button")).find(e=>e.textContent.trim()==="Save Inspection")','Physical tap Save Inspection');
+  await waitUntil('location.hash==='+JSON.stringify('#hive/'+hiveId),'saved hive detail page',15000);
+  const savedState=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),last=rows.at(-1)||null;return {hash:location.hash,count:rows.length,hive:{queen:h?.queen,eggs:h?.eggs,larvae:h?.larvae,queenCells:h?.queenCells,strength:h?.strength,brood:h?.brood,honey:h?.honey,swarm:h?.swarm,insp:h?.insp},latestLog:last}})()');
+  report.savedInspection=savedState;
+  check('Save Inspection creates one durable record with the reviewed values',
+    savedState.hash==='#hive/'+hiveId &&
+    savedState.count===inspectionCountBeforeSave+1 &&
+    savedState.hive?.insp?.queenStatus==='Seen' &&
+    savedState.hive?.insp?.eggs==='Seen' &&
+    savedState.hive?.insp?.larvae==='Seen' &&
+    savedState.hive?.insp?.brood==='Good' &&
+    Number(savedState.hive?.insp?.colonySize)===6 &&
+    savedState.hive?.insp?.honey==='Medium' &&
+    savedState.hive?.insp?.queenCells==='None' &&
+    savedState.hive?.insp?.swarming==='None',
+    savedState);
+
+  // Reload the WebView, then read from the app's persisted local state rather than
+  // the still-live draft object. This proves that the saved record survives restart.
+  await client.Page.reload({ignoreCache:true});
+  await pause(1800);
+  await waitUntil('document.readyState==="complete"&&!!window.HIVEDASH_CONFIG&&typeof window.render==="function"','app reload after Inspection save',20000);
+  await value('(()=>{window.HIVEDASH_CONFIG.REQUIRE_AUTH=false;location.hash="home";window.render();return true})()');
+  await waitUntil('location.hash==="#home"&&!!document.querySelector("#bottomnav")','Home after WebView reload',15000);
+  const reloadedState=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),last=rows.at(-1)||null;return {hash:location.hash,count:rows.length,hive:{queen:h?.queen,eggs:h?.eggs,larvae:h?.larvae,queenCells:h?.queenCells,strength:h?.strength,brood:h?.brood,honey:h?.honey,swarm:h?.swarm,insp:h?.insp},latestLog:last}})()');
+  report.reloadedInspection=reloadedState;
+  check('Inspection record remains in local storage after full WebView reload',
+    reloadedState.count===inspectionCountBeforeSave+1 &&
+    reloadedState.hive?.insp?.queenStatus==='Seen' &&
+    reloadedState.hive?.insp?.eggs==='Seen' &&
+    reloadedState.hive?.insp?.larvae==='Seen' &&
+    reloadedState.hive?.insp?.brood==='Good' &&
+    Number(reloadedState.hive?.insp?.colonySize)===6 &&
+    reloadedState.hive?.insp?.honey==='Medium' &&
+    reloadedState.hive?.insp?.queenCells==='None' &&
+    reloadedState.hive?.insp?.swarming==='None',
+    reloadedState);
+
+  await value('window.go("inspection/"+'+hiveIdLiteral+')');
+  await waitUntil('location.hash==='+JSON.stringify('#inspection/'+hiveId),'reopen saved Inspection after reload',15000);
+  const reopenedDraft=await value('(()=>{const d=(typeof V49_INSPECTION_DRAFT!=="undefined"?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||{};return {queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,notes:d.notes||""}})()');
+  report.reopenedInspectionDraft=reopenedDraft;
+  check('Reopened Inspection displays the saved observation values',
+    reopenedDraft.queenStatus==='Seen' &&
+    reopenedDraft.eggs==='Seen' &&
+    reopenedDraft.larvae==='Seen' &&
+    reopenedDraft.brood==='Good' &&
+    Number(reopenedDraft.colonySize)===6 &&
+    reopenedDraft.honey==='Medium' &&
+    reopenedDraft.queenCells==='None' &&
+    reopenedDraft.swarming==='None',
+    reopenedDraft);
+
   await tap('Array.from(document.querySelectorAll("#view button")).find(e=>e.textContent.trim()==="Voice fill")','Reopen Voice fill after applying');
   await waitUntil('!!document.querySelector(".hd-voice-overlay")','reopened Voice fill dialog');
   await tap('document.querySelector(".hd-voice-transcript")','Physical tap Voice fill transcript');

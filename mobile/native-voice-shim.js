@@ -56,9 +56,10 @@
         await plugin.start({
           language: this.lang || 'en-US',
           hotwords: [
-            'QUEEN','QUEEN SEEN','QUEEN CELLS','EGGS','LARVAE',
-            'BROOD PATTERN','COLONY STRENGTH','HONEY STORES',
-            'POLLEN STORES','SWARM SIGNS','VARROA','TREATMENT'
+            'QUEEN','QUEEN SEEN','QUEEN CELLS','EGGS','EGGS PRESENT',
+            'LARVAE','LARVA','LARVA PRESENT','BROOD PATTERN',
+            'COLONY STRENGTH','COLONY SIZE','HONEY STORES',
+            'POLLEN STORES','SWARM SIGNS','NO SWARM SIGNS','VARROA','TREATMENT'
           ].join('\n')
         });
         this._running=true;

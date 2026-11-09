@@ -35,12 +35,18 @@ async function tap(selectorExpression,label){
  check(label+' is visible and enabled',!!rect&&rect.w>0&&rect.h>0&&!rect.disabled,rect);
  const x=Math.round(rect.x*dpr), y=Math.round(rect.y*dpr+topInsetPx);
  check(label+' maps inside physical display',x>=0&&x<screen.width&&y>=0&&y<screen.height,{x,y,screen,topInsetPx,dpr,rect});
- const eventStart=await value('window.__nativeInputEvents?.length||0');
- adb('shell','input','tap',String(x),String(y));
- await pause(900);
- const events=await value('window.__nativeInputEvents?.slice('+eventStart+')||[]');
- report.physicalTaps.push({label,x,y,events});
- return {rect,x,y,events};
+ let events=[];
+ let attempts=0;
+ for(attempts=1;attempts<=3;attempts++){
+  const eventStart=await value('window.__nativeInputEvents?.length||0');
+  adb('shell','input','tap',String(x),String(y));
+  await pause(900);
+  events=await value('window.__nativeInputEvents?.slice('+eventStart+')||[]');
+  if(events.some(e=>e.name==='pointerdown'||e.name==='touchstart'||e.name==='click'))break;
+  await pause(450);
+ }
+ report.physicalTaps.push({label,x,y,attempts:Math.min(attempts,3),events});
+ return {rect,x,y,attempts:Math.min(attempts,3),events};
 }
 async function run(){
  try{

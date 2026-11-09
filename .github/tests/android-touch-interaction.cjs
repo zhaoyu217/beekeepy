@@ -145,7 +145,8 @@ async function run(){
   await tap('Array.from(document.querySelectorAll("#bottomnav .navitem")).find(e=>e.textContent.trim()==="Insights")','Physical tap Insights after scroll');
   await waitUntil('location.hash==="#insights"','Insights after scroll');
   await waitUntil('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Insights"&&document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Insights"','Insights rendered after scroll');
-  check('Bottom navigation remains clickable after scrolling',await value('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()==="Insights");
+   const activeAfterScroll=await value('document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||""');
+   check('Bottom navigation remains clickable after scrolling',activeAfterScroll==="Insights",{activeAfterScroll});
 
   await value('window.go("home")');
   await waitUntil('location.hash==="#home"','return home for primary action test');
@@ -157,7 +158,8 @@ async function run(){
   await tap('Array.from(document.querySelectorAll("#app > .modal.v215-more-modal button")).find(e=>e.textContent.trim()==="Continue")','Physical tap modal Continue');
   await waitUntil('location.hash==='+JSON.stringify('#inspection/'+hiveId),'Inspection page after physical Continue');
   await waitUntil('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Inspection"','Inspection page rendered after physical Continue');
-  check('Physical tap on primary Continue button navigates correctly',await value('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Inspection",{hiveId});
+   const inspectionTitle=await value('document.querySelector("#topbar .pagebar-title")?.textContent.trim()||""');
+   check('Physical tap on primary Continue button navigates correctly',inspectionTitle==="Inspection",{hiveId,inspectionTitle});
   await screenshot('android-touch-inspection.png');
 
   report.finalGeometry=await value('(()=>({height:innerHeight,top:document.querySelector("#topbar")?.getBoundingClientRect().top,bottom:document.querySelector("#bottomnav")?.getBoundingClientRect().bottom,navHeight:document.querySelector("#bottomnav")?.getBoundingClientRect().height}))()');

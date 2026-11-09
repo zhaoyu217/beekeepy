@@ -226,7 +226,7 @@ async function run(){
   // bundled Sherpa model, then deliver its native events into the live UI shim.
   await tap('document.querySelector(".hd-start")','Physical tap native offline ASR Start for speech fixture');
   await waitUntil('document.querySelector(".hd-voice-status span:last-child")?.textContent.includes("Recording")','native ASR fixture capture state',15000);
-  const fixtureResult=await value('(async()=>{const p=window.Capacitor?.Plugins?.OfflineAsr;if(!p||typeof p.testDecodeBundledAudio!=="function")throw new Error("Debug ASR fixture method is missing");return await p.testDecodeBundledAudio()})()');
+  const fixtureResult=await value('(async()=>{const p=window.Capacitor?.Plugins?.OfflineAsr;if(!p||typeof p.testDecodeBundledAudio!=="function")throw new Error("Debug ASR fixture method is missing");return await p.testDecodeBundledAudio({hotwords:window.__HD_NATIVE_OFFLINE_ASR_HOTWORDS__||""})})()');
   report.asrFixtureResult=fixtureResult;
   const fixtureText=String(fixtureResult?.text||'').toLowerCase();
   check('Bundled Sherpa model decodes real speech audio to non-empty text',fixtureText.length>20,fixtureResult);
@@ -250,7 +250,9 @@ async function run(){
     detectedFields['Colony strength']==='6' &&
     detectedFields['Honey stores']==='Medium' &&
     detectedFields['Queen cells']==='None' &&
-    detectedFields['Swarming']==='None';
+    detectedFields['Swarming']==='None' &&
+    detectedFields['Pests']==='None' &&
+    detectedFields['Disease']==='None';
   // Keep the real ASR result as a hard pass/fail, but do not abort the
   // downstream parser / Apply / durable-save tests when ASR is the only failure.
   report.tests.push({
@@ -260,7 +262,7 @@ async function run(){
   });
   report.applyTestSource=asrFieldMappingPass?'actual native ASR transcript':'controlled canonical transcript after preserving the ASR failure';
   if(!asrFieldMappingPass){
-    const canonicalTranscript='Queen seen. Fresh eggs. Larvae present. Brood pattern is good. Colony strength six. Honey stores are medium. No queen cells. No swarm signs.';
+    const canonicalTranscript='Queen seen. Fresh eggs. Larvae present. Brood pattern is good. Colony strength six. Honey stores are medium. No queen cells. No swarm signs. No pests. No disease.';
     report.controlledTranscript=canonicalTranscript;
     await value('(()=>{const a=document.querySelector(".hd-voice-transcript");if(!a)throw new Error("Voice transcript field disappeared");a.value='+JSON.stringify(canonicalTranscript)+';a.dispatchEvent(new Event("input",{bubbles:true}));return true})()');
     const controlledFields=await value('(()=>Object.fromEntries([...document.querySelectorAll(".hd-fields .hd-field")].map(e=>[e.querySelector("span")?.textContent?.trim()||"",e.querySelector("b")?.textContent?.trim()||""])))()');
@@ -273,7 +275,9 @@ async function run(){
       controlledFields['Colony strength']==='6' &&
       controlledFields['Honey stores']==='Medium' &&
       controlledFields['Queen cells']==='None' &&
-      controlledFields['Swarming']==='None',
+      controlledFields['Swarming']==='None' &&
+      controlledFields['Pests']==='None' &&
+      controlledFields['Disease']==='None',
       controlledFields);
   }
   await tap('document.querySelector(".hd-apply")','Physical tap Apply to Inspection');
@@ -290,7 +294,9 @@ async function run(){
     Number(appliedDraft.colonySize)===6 &&
     appliedDraft.honey==='Medium' &&
     appliedDraft.queenCells==='None' &&
-    appliedDraft.swarming==='None',
+    appliedDraft.swarming==='None' &&
+    appliedDraft.pests==='None' &&
+    appliedDraft.disease==='None',
     {appliedDraft,appliedNotesInput});
   await screenshot('android-touch-voice-fill-applied.png');
 
@@ -303,7 +309,7 @@ async function run(){
   await tap('Array.from(document.querySelectorAll("#view .dual button")).find(e=>e.textContent.trim()==="Save Inspection")','Physical tap Save Inspection');
   let savedRouteReached=false;
   try{await waitUntil('location.hash==='+JSON.stringify('#hive/'+hiveId),'saved hive detail page',15000);savedRouteReached=true;}catch(e){report.saveWaitError=String(e);}
-  const saveTapDiagnostics=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),d=(typeof V49_INSPECTION_DRAFT!=="undefined"?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||null,b=[...document.querySelectorAll("#view .dual button")].find(e=>e.textContent.trim()==="Save Inspection");return {hash:location.hash,routeReached:location.hash==='+JSON.stringify('#hive/'+hiveId)+',saveResult:window.__hdLastSaveResult,saveWrapped:window.__hdSaveWrapped,saveFunction:typeof vSaveInspection,saveButtonOnclick:b?.getAttribute("onclick")||null,hiveExists:!!h,inspectionCount:rows.length,latestLog:rows.at(-1)||null,hiveInspection:h?.insp||null,draftExists:!!d,draft:d?{hiveId:d.hiveId,queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming}:null,toast:document.querySelector("#toast")?.textContent||"",errors:window.__jsErrors||[],authRequired:window.HIVEDASH_CONFIG?.REQUIRE_AUTH,authenticated:typeof isAuthenticated==="function"?isAuthenticated():null,modalCount:document.querySelectorAll("#app > .modal").length}})()');
+  const saveTapDiagnostics=await value('(()=>{const s=v45s(),h=hive(s,'+hiveIdLiteral+'),rows=(s.logs?.inspections||[]).filter(x=>String(x.hiveId)==='+hiveIdLiteral+'),d=(typeof V49_INSPECTION_DRAFT!=="undefined"?V49_INSPECTION_DRAFT:null)||window.V49_INSPECTION_DRAFT||null,b=[...document.querySelectorAll("#view .dual button")].find(e=>e.textContent.trim()==="Save Inspection");return {hash:location.hash,routeReached:location.hash==='+JSON.stringify('#hive/'+hiveId)+',saveResult:window.__hdLastSaveResult,saveWrapped:window.__hdSaveWrapped,saveFunction:typeof vSaveInspection,saveButtonOnclick:b?.getAttribute("onclick")||null,hiveExists:!!h,inspectionCount:rows.length,latestLog:rows.at(-1)||null,hiveInspection:h?.insp||null,draftExists:!!d,draft:d?{hiveId:d.hiveId,queenStatus:d.queenStatus,eggs:d.eggs,larvae:d.larvae,brood:d.brood,colonySize:d.colonySize,honey:d.honey,queenCells:d.queenCells,swarming:d.swarming,pests:d.pests,disease:d.disease}:null,toast:document.querySelector("#toast")?.textContent||"",errors:window.__jsErrors||[],authRequired:window.HIVEDASH_CONFIG?.REQUIRE_AUTH,authenticated:typeof isAuthenticated==="function"?isAuthenticated():null,modalCount:document.querySelectorAll("#app > .modal").length}})()');
   report.saveTapDiagnostics=saveTapDiagnostics;
   await screenshot('android-touch-save-inspection-after-tap.png');
   check('Physical Save Inspection tap reaches the saved hive detail page',savedRouteReached,saveTapDiagnostics);
@@ -320,6 +326,8 @@ async function run(){
     savedState.hive?.insp?.honey==='Medium' &&
     savedState.hive?.insp?.queenCells==='None' &&
     savedState.hive?.insp?.swarming==='None' &&
+    savedState.hive?.insp?.pests==='None' &&
+    savedState.hive?.insp?.disease==='None' &&
     String(savedState.hive?.notes||'').toLowerCase().includes('queen') &&
     String(savedState.latestLog?.notes||'').toLowerCase().includes('queen'),
     savedState);

@@ -35,9 +35,10 @@ async function tap(selectorExpression,label){
  check(label+' is visible and enabled',!!rect&&rect.w>0&&rect.h>0&&!rect.disabled,rect);
  const x=Math.round(rect.x*dpr), y=Math.round(rect.y*dpr+topInsetPx);
  check(label+' maps inside physical display',x>=0&&x<screen.width&&y>=0&&y<screen.height,{x,y,screen,topInsetPx,dpr,rect});
+ const eventStart=await value('window.__nativeInputEvents?.length||0');
  adb('shell','input','tap',String(x),String(y));
- await pause(650);
- const events=await value('window.__nativeInputEvents?.slice(-8)||[]');
+ await pause(900);
+ const events=await value('window.__nativeInputEvents?.slice('+eventStart+')||[]');
  report.physicalTaps.push({label,x,y,events});
  return {rect,x,y,events};
 }
@@ -166,13 +167,20 @@ async function run(){
   await value('window.v2p2e5lHomeQuick("inspection")');
   await waitUntil('!!document.querySelector("#app > .modal.v215-more-modal")','Select Hive modal');
   const hiveId=await value('document.querySelector("#v2p2e5l-quick-hive")?.value||""');
+  const hashBeforeContinue=await value('location.hash');
+  const continueButton=await value('(()=>{const e=Array.from(document.querySelectorAll("#app > .modal.v215-more-modal button")).find(e=>e.textContent.trim()==="Continue");return e?{outerHTML:e.outerHTML,onclick:e.getAttribute("onclick"),type:e.type,disabled:e.disabled}:null})()');
+  report.continueBeforeTap={hashBeforeContinue,hiveId,continueButton};
   check('Select Hive modal has a valid selected hive',!!hiveId,hiveId);
+  check('Continue button has an actual enabled button element',!!continueButton&&!continueButton.disabled,continueButton);
   await tap('Array.from(document.querySelectorAll("#app > .modal.v215-more-modal button")).find(e=>e.textContent.trim()==="Continue")','Physical tap modal Continue');
-  await waitUntil('location.hash==='+JSON.stringify('#inspection/'+hiveId),'Inspection page after physical Continue');
-  await waitUntil('document.querySelector("#topbar .pagebar-title")?.textContent.trim()==="Inspection"','Inspection page rendered after physical Continue');
-   const inspectionTitle=await value('document.querySelector("#topbar .pagebar-title")?.textContent.trim()||""');
-   check('Physical tap on primary Continue button navigates correctly',inspectionTitle==="Inspection",{hiveId,inspectionTitle});
-  await screenshot('android-touch-inspection.png');
+  await pause(900);
+  const continueAfterTap=await value('({hash:location.hash,modalVisible:!!document.querySelector("#app > .modal.v215-more-modal"),modalHTML:document.querySelector("#app > .modal.v215-more-modal")?.outerHTML?.slice(0,1800)||"",title:document.querySelector("#topbar .pagebar-title")?.textContent.trim()||document.querySelector("#topbar .brand img")?.alt||"",active:document.querySelector("#bottomnav .navitem.active")?.textContent.trim()||"",viewText:(document.querySelector("#view")?.innerText||"").slice(0,900),jsErrors:window.__jsErrors||[]})');
+  report.continueAfterTap=continueAfterTap;
+  await screenshot('android-touch-inspection-after-continue.png');
+  const expectedHash='#inspection/'+hiveId;
+  const continueWorked=continueAfterTap.hash===expectedHash&&!continueAfterTap.modalVisible;
+  report.tests.push({name:'Physical Continue tap dismisses Select Hive modal and opens inspection',pass:continueWorked,details:{expectedHash,hashBeforeContinue,continueAfterTap,physicalEvents:report.physicalTaps.at(-1)?.events}});
+  if(!continueWorked)report.failure='Physical Continue tap did not dismiss the Select Hive modal and open inspection; see continueAfterTap diagnostics';
 
   report.finalGeometry=await value('(()=>({height:innerHeight,top:document.querySelector("#topbar")?.getBoundingClientRect().top,bottom:document.querySelector("#bottomnav")?.getBoundingClientRect().bottom,navHeight:document.querySelector("#bottomnav")?.getBoundingClientRect().height}))()');
  }catch(e){report.failure=String(e.stack||e);process.exitCode=1}

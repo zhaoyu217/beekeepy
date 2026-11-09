@@ -101,7 +101,7 @@ class OfflineAsrPlugin : Plugin() {
                     activity.runOnUiThread { notifyListeners(event, data, true) }
                 }
                 val result = fixtureEngine.transcribeBundledTestAudio(
-                    "asr-test-inspection.wav",
+                    "sherpa-onnx-streaming-zipformer-en-2023-06-26/asr-test-inspection.wav",
                     hotwords,
                 )
                 activity.runOnUiThread {

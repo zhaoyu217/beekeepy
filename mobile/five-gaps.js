@@ -283,7 +283,7 @@
   }
   function csvCell(v){
     let s=String(v==null?'':v);
-    if(/^[=+\-@]/.test(s))s="'"+s;
+    if(/^[\s\uFEFF]*[=+\-@]/.test(s)||/^[\t\r\n]/.test(s))s="'"+s;
     return `"${s.replace(/"/g,'""')}"`;
   }
   function rowsToCSV(rows){
@@ -302,8 +302,9 @@
   function printableReport(s){
     const hives=Array.isArray(s?.hives)?s.hives:[],logs=s?.logs||{};
     const counts={Inspections:(logs.inspections||[]).length,Feedings:(logs.feedings||[]).length,Treatments:(logs.treatments||[]).length,'Varroa tests':(logs.varroaTests||[]).length,Harvests:(logs.harvests||[]).length};
-    const win=window.open('','_blank','noopener,noreferrer');
+    const win=window.open('','_blank');
     if(!win){toastSafe('Allow pop-ups to open the printable report.');return}
+    win.opener=null;
     const html=`<!doctype html><html><head><meta charset="utf-8"><title>HiveDash Report</title>
     <style>body{font:14px/1.5 Arial,sans-serif;color:#22352a;margin:32px}h1{margin:0 0 6px}h2{margin-top:26px}table{border-collapse:collapse;width:100%;margin-top:10px}th,td{border:1px solid #d8ded7;padding:8px;text-align:left}th{background:#f2f5f0}.meta{color:#657068}.counts{display:flex;gap:12px;flex-wrap:wrap}.count{border:1px solid #d8ded7;padding:10px 12px;border-radius:8px}</style>
     </head><body><h1>HiveDash Apiary Report</h1><div class="meta">Generated ${esc(new Date().toLocaleString())}</div>
@@ -337,7 +338,7 @@
     return [x.city,x.state,x.zip].filter(Boolean).join(', ')||x.location||x.apiaryLocation||'';
   }
   function cacheRead(key,maxAgeMs){
-    try{const v=JSON.parse(localStorage.getItem(key)||'null');if(v&&Date.now()-v.at<maxAgeMs)return v.value}catch(_e){}
+    try{const v=JSON.parse(localStorage.getItem(key)||'null'),age=Date.now()-v?.at;if(v&&Number.isFinite(age)&&age>=0&&age<maxAgeMs)return v.value}catch(_e){}
     return null;
   }
   function cacheWrite(key,value){try{localStorage.setItem(key,JSON.stringify({at:Date.now(),value}))}catch(_e){}}
@@ -389,7 +390,7 @@
       };
       const types=Object.entries(labels)
         .map(([code,displayName])=>({code,displayName,value:current[code]}))
-        .filter(x=>Number.isFinite(Number(x.value)))
+        .filter(x=>x.value!==null&&x.value!==undefined&&typeof x.value==='number'&&Number.isFinite(x.value))
         .map(x=>({...x,value:Number(x.value)}));
       const out=types.length?{available:true,types}:{available:false,reason:'not_available_for_region'};
       cacheWrite(key,out);return out;

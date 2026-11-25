@@ -16,6 +16,7 @@ await fs.mkdir(out, { recursive: true });
 
 async function copyTree(srcDir, rel='') {
   for (const entry of await fs.readdir(srcDir, { withFileTypes: true })) {
+    if (entry.name.startsWith('.')) continue;
     if (!rel && skip.has(entry.name)) continue;
     const src = path.join(srcDir, entry.name);
     const nextRel = path.join(rel, entry.name);
@@ -40,7 +41,7 @@ const rawV45 = await fs.readFile(packagedV45, 'utf8');
 const oldV77Header = 'function vSaveInspection(id){const s=v45s(),h=hive(s,id);';
 const retiredV77Header = 'function v77RetiredSaveInspection(id){const s=v45s(),h=hive(s,id);';
 if (rawV45.split(oldV77Header).length !== 2 ||
-    !rawV45.includes('function vSaveInspection(id){\n  const s=v45s()')) {
+    !/function vSaveInspection\(id\)\{\r?\n  const s=v45s\(\)/.test(rawV45)) {
   throw new Error('Native V77 save collision guard failed; investigate upstream v45.js');
 }
 await fs.writeFile(packagedV45, rawV45.replace(oldV77Header, retiredV77Header), 'utf8');
@@ -50,7 +51,9 @@ await fs.copyFile(path.join(root,'mobile','five-gaps.js'), path.join(out,'mobile
 await fs.copyFile(path.join(root,'mobile','five-gaps.css'), path.join(out,'mobile-five-gaps.css'));
 await fs.copyFile(path.join(root,'mobile','system-safe-area.css'), path.join(out,'mobile-system-safe-area.css'));
 await fs.copyFile(path.join(root,'mobile','native-voice-shim.js'), path.join(out,'mobile-native-voice-shim.js'));
+await fs.copyFile(path.join(root,'mobile','hotwords.txt'), path.join(out,'mobile-hotwords.txt'));
 await fs.copyFile(path.join(root,'mobile','android-runtime-fixes.js'), path.join(out,'mobile-android-runtime-fixes.js'));
+await fs.copyFile(path.join(root,'mobile','native-file-bridge.js'), path.join(out,'mobile-native-file-bridge.js'));
 
 const indexPath = path.join(out,'index.html');
 let html = await fs.readFile(indexPath,'utf8');
@@ -81,6 +84,7 @@ if (!html.includes('mobile-five-gaps.js')) {
 if (!html.includes('mobile-android-runtime-fixes.js')) {
   html = html.replace('</body>', '  <script src="mobile-android-runtime-fixes.js"></script>\n</body>');
 }
+html = html.replace('</body>', '  <script src="mobile-native-file-bridge.js"></script>\n</body>');
 
 // Service workers are unnecessary in a bundled native app and can preserve stale web code.
 html = html.replace(

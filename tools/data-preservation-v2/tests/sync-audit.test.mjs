@@ -1,0 +1,15 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+import {auditSyncSnapshots} from '../sync-audit.mjs';
+const p={userId:'user1',localAccountId:'user1',remoteAccountId:'user1',cryptoProvider:webcrypto};
+const run=x=>auditSyncSnapshots({...p,...x});
+test('unchanged raw copies MATCH without write authorization',async()=>{const x=await run({localRaw:'{"n":null}',remoteRaw:'{"n":null}'});assert.equal(x.status,'MATCH');assert.equal(x.writeAllowed,false)});
+test('missing local raw not equated to empty string',async()=>{const x=await run({localRaw:null,remoteRaw:''});assert.equal(x.status,'BLOCKED');assert.equal(x.reason,'missing_snapshot_is_not_empty')});
+test('missing remote raw blocks',async()=>{assert.equal((await run({localRaw:'0'})).status,'BLOCKED')});
+test('account switch blocks cross-account comparison',async()=>{assert.equal((await run({localAccountId:'user2',localRaw:'a',remoteRaw:'b'})).reason,'account_identity_mismatch')});
+test('conflicting history remains unresolved',async()=>{const x=await run({localRaw:'local',remoteRaw:'remote',baseRaw:'old'});assert.equal(x.status,'CONFLICT');assert.equal(x.writeAllowed,false)});
+test('remote changed requires original CAS mechanism',async()=>{const x=await run({localRaw:'base',remoteRaw:'new',baseRaw:'base'});assert.equal(x.status,'REMOTE_UPDATED');assert.equal(x.writeAllowed,false)});
+test('local changed requires original CAS mechanism',async()=>{const x=await run({localRaw:'new',remoteRaw:'base',baseRaw:'base'});assert.equal(x.status,'LOCAL_UPDATED');assert.equal(x.writeAllowed,false)});
+test('unknown base yields conflict',async()=>{assert.equal((await run({localRaw:'a',remoteRaw:'b'})).reason,'no_proven_common_base')});
+test('raw bytes are not normalized or JSON parsed',async()=>{const x=await run({localRaw:'{"n": 1}',remoteRaw:'{"n":1}'});assert.equal(x.status,'CONFLICT')});

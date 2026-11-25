@@ -35,6 +35,31 @@ import kotlin.concurrent.thread
 )
 class OfflineAsrPlugin : Plugin() {
     private var engine: SherpaInspectionEngine? = null
+    @Volatile private var activeSession: String? = null
+    @Volatile private var activeSource: String? = null
+    @Volatile private var destroyed = false
+    private var fixtureWorker: Thread? = null
+
+    private fun emitSession(session: String, source: String, event: String, data: JSObject) {
+        activity.runOnUiThread {
+            if (!destroyed && activeSession == session && activeSource == source) {
+                data.put("sessionId", session).put("source", source)
+                notifyListeners(event, data, false)
+                if (event == "asrState" && data.optString("state") == "ended") {
+                    activeSession = null
+                    activeSource = null
+                }
+            }
+        }
+    }
+
+    private fun bundledHotwords(call: PluginCall): String {
+        val text = context.assets.open("public/mobile-hotwords.txt").bufferedReader().use { it.readText().replace("\r\n", "\n").trim() }
+        check(text.isNotEmpty()) { "Bundled ASR hotwords are empty" }
+        val supplied = call.getString("hotwords") ?: ""
+        check(supplied.isBlank() || supplied == text) { "ASR hotwords differ from bundled configuration" }
+        return text
+    }
 
     @PluginMethod
     fun isAvailable(call: PluginCall) {
@@ -47,6 +72,10 @@ class OfflineAsrPlugin : Plugin() {
 
     @PluginMethod
     fun start(call: PluginCall) {
+        if (call.getString("source") == "fixture") {
+            startWithPermission(call)
+            return
+        }
         if (getPermissionState("microphone") != PermissionState.GRANTED) {
             requestPermissionForAlias("microphone", call, "microphonePermission")
             return
@@ -64,20 +93,39 @@ class OfflineAsrPlugin : Plugin() {
     }
 
     private fun startWithPermission(call: PluginCall) {
+        val session = call.getString("sessionId")
+        val source = call.getString("source") ?: "microphone"
+        if (destroyed || session.isNullOrBlank() || activeSession != null || fixtureWorker?.isAlive == true ||
+            (source != "microphone" && source != "fixture")) {
+            call.reject("Invalid or overlapping ASR session", "ASR_SESSION_BUSY")
+            return
+        }
+        if (source == "fixture" && (context.applicationInfo.flags and android.content.pm.ApplicationInfo.FLAG_DEBUGGABLE) == 0) {
+            call.reject("Fixture sessions require a debug build", "DEBUG_ONLY")
+            return
+        }
         if (!SherpaInspectionEngine.assetsPresent(context)) {
             call.reject("Offline ASR model is not bundled", "MODEL_MISSING")
             return
         }
-        if (engine == null) {
-            engine = SherpaInspectionEngine(context) { event, data ->
-                activity.runOnUiThread { notifyListeners(event, data, true) }
-            }
-        }
-        val hotwords = call.getString("hotwords") ?: ""
         try {
+            val hotwords = bundledHotwords(call)
+            engine?.release()
+            engine = null
+            activeSession = session
+            activeSource = source
+            if (source == "fixture") {
+                call.resolve()
+                return
+            }
+            engine = SherpaInspectionEngine(context) { event, data -> emitSession(session, source, event, data) }
             engine!!.start(hotwords)
             call.resolve()
         } catch (e: Exception) {
+            activeSession = null
+            activeSource = null
+            engine?.release()
+            engine = null
             call.reject(e.message ?: "Offline ASR could not start", "ASR_START_FAILED", e)
         }
     }
@@ -90,27 +138,30 @@ class OfflineAsrPlugin : Plugin() {
             call.reject("ASR fixture decoding is available only in debug builds", "DEBUG_ONLY")
             return
         }
-        val hotwords = call.getString("hotwords") ?: listOf(
-            "QUEEN", "QUEEN SEEN", "EGGS", "EGGS PRESENT",
-            "LARVAE", "LARVA", "LARVA PRESENT", "BROOD PATTERN",
-            "BROOD PATTERN IS GOOD", "COLONY STRENGTH", "COLONY SIZE",
-            "HONEY STORES", "QUEEN CELLS", "SWARM SIGNS",
-            "NO QUEEN CELLS", "NO SWARM SIGNS", "PESTS", "NO PESTS",
-            "DISEASE", "NO DISEASE"
-        ).joinToString("\n")
-        thread(start = true, name = "HiveAsrFixtureDecode") {
+        val session = call.getString("sessionId")
+        if (session == null || session != activeSession || activeSource != "fixture" || fixtureWorker?.isAlive == true) {
+            call.reject("Start an isolated fixture session first", "ASR_SESSION_MISMATCH")
+            return
+        }
+        val hotwords = try { bundledHotwords(call) } catch (e: Exception) {
+            call.reject(e.message ?: "Invalid bundled hotwords", "HOTWORDS_MISMATCH", e)
+            return
+        }
+        fixtureWorker = thread(start = true, name = "HiveAsrFixtureDecode") {
             var fixtureEngine: SherpaInspectionEngine? = null
             try {
                 fixtureEngine = SherpaInspectionEngine(context) { event, data ->
-                    activity.runOnUiThread { notifyListeners(event, data, true) }
+                    emitSession(session, "fixture", event, data)
                 }
                 val result = fixtureEngine.transcribeBundledTestAudio(
                     "sherpa-onnx-streaming-zipformer-en-2023-06-26/asr-test-inspection.wav",
                     hotwords,
+                    { destroyed || activeSession != session || activeSource != "fixture" },
                 )
+                result.put("sessionId", session).put("source", "fixture")
                 activity.runOnUiThread {
-                    call.resolve(result)
-                    fixtureEngine?.release()
+                    if (!destroyed && activeSession == session) call.resolve(result)
+                    else call.reject("ASR fixture session was cancelled", "ASR_CANCELLED")
                 }
             } catch (e: Exception) {
                 activity.runOnUiThread {
@@ -119,27 +170,42 @@ class OfflineAsrPlugin : Plugin() {
                         "ASR_TEST_DECODE_FAILED",
                         e,
                     )
-                    fixtureEngine?.release()
                 }
+            } finally {
+                fixtureEngine?.release()
             }
         }
     }
 
     @PluginMethod
     fun stop(call: PluginCall) {
+        if (call.getString("sessionId") != activeSession) { call.resolve(); return }
+        if (activeSource == "fixture") {
+            val session = activeSession!!
+            activeSession = null
+            activeSource = null
+            notifyListeners("asrState", JSObject().put("state", "ended").put("sessionId", session).put("source", "fixture"), false)
+        }
         engine?.stop(false)
         call.resolve()
     }
 
     @PluginMethod
     fun abort(call: PluginCall) {
+        if (call.getString("sessionId") != activeSession) { call.resolve(); return }
+        activeSession = null
+        activeSource = null
         engine?.stop(true)
         call.resolve()
     }
 
     override fun handleOnDestroy() {
+        destroyed = true
+        activeSession = null
+        activeSource = null
         engine?.release()
         engine = null
+        fixtureWorker?.join()
         super.handleOnDestroy()
     }
 }
@@ -199,7 +265,7 @@ private class SherpaInspectionEngine(
         recognizer = OnlineRecognizer(assetManager = context.assets, config = config)
     }
 
-    fun transcribeBundledTestAudio(assetName: String, hotwords: String): JSObject {
+    fun transcribeBundledTestAudio(assetName: String, hotwords: String, cancelled: () -> Boolean = { false }): JSObject {
         check(!running.get()) { "The live microphone recognizer is already running" }
         val bytes = context.assets.open(assetName).use { it.readBytes() }
         val buffer = java.nio.ByteBuffer.wrap(bytes).order(java.nio.ByteOrder.LITTLE_ENDIAN)
@@ -250,6 +316,7 @@ private class SherpaInspectionEngine(
         try {
             var cursor = 0
             while (cursor < samples.size) {
+                check(!cancelled()) { "ASR fixture session was cancelled" }
                 val count = minOf(1600, samples.size - cursor)
                 val chunk = FloatArray(count) { samples[cursor + it] }
                 testStream.acceptWaveform(chunk, sampleRate)
@@ -273,6 +340,7 @@ private class SherpaInspectionEngine(
                 cursor += count
             }
 
+            check(!cancelled()) { "ASR fixture session was cancelled" }
             testStream.inputFinished()
             while (recognizer.isReady(testStream)) recognizer.decode(testStream)
             val tail = recognizer.getResult(testStream).text.trim()
@@ -285,6 +353,8 @@ private class SherpaInspectionEngine(
             check(transcript.isNotEmpty()) { "Sherpa-ONNX returned an empty transcript for the speech fixture" }
             return JSObject()
                 .put("text", transcript)
+                .put("audioSha256", java.security.MessageDigest.getInstance("SHA-256").digest(bytes).joinToString("") { "%02x".format(it.toInt() and 0xff) })
+                .put("hotwordsSha256", java.security.MessageDigest.getInstance("SHA-256").digest(hotwords.toByteArray(Charsets.UTF_8)).joinToString("") { "%02x".format(it.toInt() and 0xff) })
                 .put("sampleRate", sampleRate)
                 .put("sampleCount", samples.size)
                 .put("durationSeconds", samples.size.toDouble() / sampleRate)
@@ -294,7 +364,7 @@ private class SherpaInspectionEngine(
     }
 
     fun start(hotwords: String) {
-        if (running.get()) return
+        check(!running.get() && worker?.isAlive != true) { "Previous microphone session is still finishing" }
         check(
             ActivityCompat.checkSelfPermission(context, Manifest.permission.RECORD_AUDIO) ==
                 PackageManager.PERMISSION_GRANTED
@@ -307,9 +377,9 @@ private class SherpaInspectionEngine(
         )
         check(min > 0) { "AudioRecord buffer could not be created" }
 
-        stream?.release()
-        stream = recognizer.createStream(hotwords)
-        recorder = AudioRecord(
+        try {
+          stream = recognizer.createStream(hotwords)
+          recorder = AudioRecord(
             MediaRecorder.AudioSource.VOICE_RECOGNITION,
             SAMPLE_RATE,
             AudioFormat.CHANNEL_IN_MONO,
@@ -326,6 +396,15 @@ private class SherpaInspectionEngine(
 
         worker = thread(start = true, name = "HiveOfflineAsr") {
             decodeLoop(min)
+        }
+        } catch (e: Exception) {
+            running.set(false)
+            try { recorder?.stop() } catch (_: Exception) {}
+            recorder?.release()
+            recorder = null
+            stream?.release()
+            stream = null
+            throw e
         }
     }
 
@@ -387,7 +466,8 @@ private class SherpaInspectionEngine(
 
     fun release() {
         stop(true)
-        try { worker?.join(800) } catch (_: Exception) {}
+        // Never free recognizer/stream while the decoding worker still owns it.
+        worker?.join()
         worker = null
         stream?.release()
         stream = null

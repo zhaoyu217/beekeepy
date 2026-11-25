@@ -1,0 +1,15 @@
+<!doctype html>
+<html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1">
+<meta http-equiv="Content-Security-Policy" content="default-src 'none'; script-src 'self'; style-src 'self'; connect-src 'none'; img-src 'none'; form-action 'none'; base-uri 'none'">
+<title>Beekeepy · 原始数据保全（实验性）</title><link rel="stylesheet" href="workbench.css"></head>
+<body><main><h1>Beekeepy · 数据保全实验工具</h1>
+<p>只读检查当前浏览器 origin 的明确授权存储，不调用养蜂业务保存、同步或删除函数。此工具与原 App 不自动联动。</p>
+<p class="warn">目前仅用于隔离测试，不得作为唯一备份。未覆盖的表、来源变化或任何错误均拒绝生成“完整备份”。不支持向真实账户恢复。</p>
+<form id="capture"><label>明确的当前来源 <output id="origin"></output></label>
+<label>本次设备标识（由你自行填写，非账户密码）<input id="source" required maxlength="100" value="device-local-qa" /></label>
+<label>保全口令（至少12字符，不会保存在服务器）<input id="passphrase" type="password" minlength="12" required autocomplete="new-password" /></label>
+<p>范围固定：localStorage <code>hivedash_v9</code>；IndexedDB <code>hivedash_phase1</code>、<code>beekeepy_sync_v2</code>。不自动扩展到未确认存储。</p>
+<button type="submit">只读采集并下载加密副本</button>
+</form>
+<p role="status" id="status" aria-live="polite">尚未采集。</p>
+<pre id="issues"></pre></main><script type="module" src="workbench.mjs"></script></body></html>

@@ -13,6 +13,7 @@ const pluginSrc = path.join(root,'mobile','native','android','OfflineAsrPlugin.k
 const pluginDst = path.join(app,'src','main','java','app','hivefield','mobile','OfflineAsrPlugin.kt');
 await ensureDir(path.dirname(pluginDst));
 await fs.copyFile(pluginSrc, pluginDst);
+await fs.copyFile(path.join(root,'mobile','native','android','DeviceFilesPlugin.kt'), path.join(path.dirname(pluginDst),'DeviceFilesPlugin.kt'));
 
 const mainPath = path.join(app,'src','main','java','app','hivefield','mobile','MainActivity.java');
 let main = await read(mainPath);
@@ -26,6 +27,7 @@ public class MainActivity extends BridgeActivity {
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         registerPlugin(OfflineAsrPlugin.class);
+        registerPlugin(DeviceFilesPlugin.class);
         super.onCreate(savedInstanceState);
         // Capacitor 8 SystemBars will apply the safe insets in the WebView.
         EdgeToEdge.enable(this);

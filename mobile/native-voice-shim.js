@@ -5,27 +5,20 @@
   if (!window.Capacitor || !window.Capacitor.isNativePlatform || !window.Capacitor.isNativePlatform()) return;
 
   const plugin = window.Capacitor.Plugins && window.Capacitor.Plugins.OfflineAsr;
+  const scopedSessions = window.Capacitor.getPlatform?.() === 'android';
   if (!plugin) {
     console.warn('[OfflineAsr] Native plugin is not registered.');
     return;
   }
 
-  // One canonical vocabulary list is shared by live microphone capture and
-  // the bundled-audio QA decoder. This prevents the test from using stronger
-  // hotword bias than the actual Android app.
-  const HOTWORDS = [
-    'QUEEN','QUEEN SEEN','QUEEN CELLS','QUEEN CELLS NONE','NO QUEEN CELLS',
-    'EGGS','EGGS PRESENT','FRESH EGGS',
-    'LARVAE','LARVA','LARVAE PRESENT','LARVA PRESENT',
-    'BROOD PATTERN','BROOD PATTERN GOOD','BROOD PATTERN IS GOOD',
-    'COLONY STRENGTH','COLONY STRENGTH SIX','COLONY STRENGTH IS SIX',
-    'COLONY SIZE','COLONY SIZE SIX',
-    'HONEY','HONEY IS MEDIUM','HONEY MEDIUM',
-    'HONEY STORES','HONEY STORES MEDIUM','HONEY STORES ARE MEDIUM',
-    'POLLEN STORES','PESTS','NO PESTS','DISEASE','NO DISEASE','SWARM SIGNS','NO SWARM SIGNS','VARROA','TREATMENT'
-  ];
-  const HOTWORDS_TEXT = HOTWORDS.join('\n');
-  window.__HD_NATIVE_OFFLINE_ASR_HOTWORDS__ = HOTWORDS_TEXT;
+  async function bundledHotwords(){
+    const response=await fetch('mobile-hotwords.txt');
+    if(!response.ok)throw new Error('Bundled ASR hotwords are missing');
+    const text=(await response.text()).replace(/\r\n/g,'\n').trim();
+    if(!text)throw new Error('Bundled ASR hotwords are empty');
+    window.__HD_NATIVE_OFFLINE_ASR_HOTWORDS__=text;
+    return text;
+  }
 
   class NativeSpeechRecognition {
     constructor(){
@@ -39,11 +32,16 @@
       this.onend=null;
       this._handles=[];
       this._running=false;
+      this._starting=false;
+      this._epoch=0;
+      this._sessionId=null;
       this._resultIndex=0;
     }
 
-    async _listen(name, fn){
-      const h = await plugin.addListener(name, fn);
+    async _listen(name, fn, epoch){
+      const id=this._sessionId;
+      const h = await plugin.addListener(name, e=>{if(this._epoch===epoch&&(!scopedSessions||e.sessionId===id))fn(e)});
+      if(this._epoch!==epoch){await h.remove();return;}
       this._handles.push(h);
     }
 
@@ -56,53 +54,62 @@
     }
 
     async start(){
-      if(this._running) return;
+      if(this._running||this._starting) return;
+      this._starting=true;
+      const epoch=++this._epoch;
+      const sessionId=globalThis.crypto?.randomUUID?.()||('asr-'+Date.now()+'-'+Math.random());
+      this._sessionId=sessionId;
+      const source=scopedSessions&&window.__HD_NATIVE_OFFLINE_ASR_FIXTURE_MODE__===true?'fixture':'microphone';
       try{
         const available = await plugin.isAvailable();
+        if(this._epoch!==epoch)return;
         if(!available || available.available !== true) throw new Error(available?.reason || 'offline-asr-unavailable');
-
-        await this._listen('asrPartial', e => this._result(e.text, false));
-        await this._listen('asrFinal', e => this._result(e.text, true));
+        await this._listen('asrPartial', e => this._result(e.text, false),epoch);
+        await this._listen('asrFinal', e => this._result(e.text, true),epoch);
         await this._listen('asrError', e => {
           if(typeof this.onerror === 'function') this.onerror({ error:e.code||'native-asr-error', message:e.message||'' });
-        });
-        await this._listen('asrState', e => {
-          if(e.state === 'ended') this._finish();
-        });
-
-        await plugin.start({
-          language: this.lang || 'en-US',
-          hotwords: HOTWORDS_TEXT
-        });
+        },epoch);
+        await this._listen('asrState', e => {if(e.state === 'ended')this._finish();},epoch);
+        const hotwords=await bundledHotwords();
+        if(this._epoch!==epoch)return;
         this._running=true;
+        await plugin.start({language:this.lang||'en-US',hotwords,sessionId,source});
+        if(this._epoch!==epoch){try{await plugin.abort({sessionId});}catch(_){}return;}
+        window.__HD_NATIVE_OFFLINE_ASR_SESSION__=sessionId;
         if(typeof this.onstart === 'function') this.onstart();
       }catch(err){
-        if(typeof this.onerror === 'function') this.onerror({ error:'native-asr-start-failed', message:String(err?.message||err) });
-        this._finish();
-      }
+        if(this._epoch===epoch){
+          try{await plugin.abort({sessionId});}catch(_){}
+          if(typeof this.onerror === 'function') this.onerror({ error:'native-asr-start-failed', message:String(err?.message||err) });
+          await this._finish();
+        }
+      }finally{if(this._epoch===epoch)this._starting=false;}
     }
 
     async stop(){
-      if(!this._running){ this._finish(); return; }
-      try{ await plugin.stop(); }
+      const sessionId=this._sessionId;
+      if(this._starting){await this.abort();return;}
+      if(!this._running){await this._finish();return;}
+      try{await plugin.stop({sessionId});}
       catch(err){
-        if(typeof this.onerror === 'function') this.onerror({ error:'native-asr-stop-failed', message:String(err?.message||err) });
-        this._finish();
+        if(typeof this.onerror === 'function')this.onerror({error:'native-asr-stop-failed',message:String(err?.message||err)});
+        await this._finish();
       }
     }
 
     async abort(){
-      try{ await plugin.abort(); }catch(_){}
-      this._finish();
+      const sessionId=this._sessionId;
+      await this._finish();
+      try{await plugin.abort({sessionId});}catch(_){}
     }
 
     async _finish(){
-      if(!this._running && this._handles.length===0) return;
-      this._running=false;
-      for(const h of this._handles.splice(0)){
-        try{ await h.remove(); }catch(_){}
-      }
-      if(typeof this.onend === 'function') this.onend();
+      const hadSession=this._starting||this._running||this._handles.length>0;
+      ++this._epoch;
+      this._running=false;this._starting=false;this._sessionId=null;
+      const handles=this._handles.splice(0);
+      for(const h of handles){try{await h.remove();}catch(_){}}
+      if(hadSession&&typeof this.onend === 'function')this.onend();
     }
   }
 

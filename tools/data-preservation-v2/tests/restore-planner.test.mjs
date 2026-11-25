@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {webcrypto} from 'node:crypto';
+import {assembleSnapshot} from '../archive.mjs';
+import {planIsolatedReview} from '../restore-planner.mjs';
+const make=()=>assembleSnapshot({origin:'https://origin.example',sourceId:'qa',localRecords:[{surface:'localStorage',location:'localStorage',key:'hivedash_v9',value:'data'}]},webcrypto);
+test('review plan has no production write authorization',async()=>{const s=await make();const p=planIsolatedReview(s,{expectedOrigin:'https://origin.example'});assert.equal(p.blocked,false);assert.equal(p.writeAuthorized,false);assert.equal(p.additions.length,1)});
+test('wrong origin blocks recovery',async()=>{const s=await make();assert.equal(planIsolatedReview(s,{expectedOrigin:'https://other.example'}).reason,'origin_mismatch')});
+test('existing keys are conflicts rather than overwritten',async()=>{const s=await make();const key=JSON.stringify([s.entries[0].surface,s.entries[0].location,s.entries[0].key]);const p=planIsolatedReview(s,{expectedOrigin:'https://origin.example',existingKeys:[key]});assert.equal(p.blocked,true);assert.equal(p.conflicts.length,1)});
+test('incomplete snapshot cannot be used for restore',async()=>{const s=await make();s.coverage.complete=false;assert.equal(planIsolatedReview(s,{expectedOrigin:'https://origin.example'}).blocked,true)});

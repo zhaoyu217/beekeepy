@@ -1,0 +1,13 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import fs from 'node:fs';
+import path from 'node:path';
+const root=path.resolve(import.meta.dirname,'../..');
+const read=p=>fs.readFileSync(path.join(root,p),'utf8');
+const sha=p=>import('node:crypto').then(({createHash})=>createHash('sha256').update(fs.readFileSync(path.join(root,p))).digest('hex'));
+test('real Gradle source scaffold files are present',()=>{for(const n of ['settings.gradle','variables.gradle','build.gradle','app/build.gradle','app/src/main/AndroidManifest.xml','app/src/main/java/app/hivefield/mobile/MainActivity.java'])assert.ok(fs.statSync(path.join(root,'android',n)).size>50,n)});
+test('independent QA package cannot overwrite original app',()=>{const g=read('android/app/build.gradle');assert.match(g,/applicationId 'app\.hivefield\.mobile\.recoveryqa'/);assert.doesNotMatch(g,/applicationId 'app\.hivefield\.mobile'/)});
+test('no debug QA cleartext traffic or automated backup',()=>{const m=read('android/app/src/main/AndroidManifest.xml');assert.match(m,/allowBackup="false"/);assert.match(m,/usesCleartextTraffic="false"/);assert.match(m,/RECORD_AUDIO/)});
+test('two native Kotlin plugins match original ZIP bytes',async()=>{for(const name of ['OfflineAsrPlugin.kt','DeviceFilesPlugin.kt'])assert.equal(await sha('mobile/native/android/'+name),await sha('android/app/src/main/java/app/hivefield/mobile/'+name))});
+test('MainActivity registers both native plugins',()=>{const java=read('android/app/src/main/java/app/hivefield/mobile/MainActivity.java');assert.match(java,/registerPlugin\(OfflineAsrPlugin\.class\)/);assert.match(java,/registerPlugin\(DeviceFilesPlugin\.class\)/)});
+test('pinned model hashes and AAR checks are enforced',()=>{const c=read('android/qa/preflight.mjs');assert.match(c,/SHA256 mismatch/);assert.match(c,/model asset mismatch/);assert.match(c,/gradle-wrapper\.jar/)});

@@ -1,0 +1,4 @@
+pluginManagement { repositories { google(); mavenCentral(); gradlePluginPortal() } }
+include ':app', ':capacitor-android'
+// Capacitor Android source is downloaded with pinned npm packages. Never substitute a shim.
+project(':capacitor-android').projectDir = new File(settingsDir,'../node_modules/@capacitor/android/capacitor')

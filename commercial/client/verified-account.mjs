@@ -9,6 +9,7 @@ export function createVerifiedAccountClient({auth,origin,fetcher=globalThis.fetc
   let base;
   try{base=new URL(origin);}catch{throw Error('commercial_https_origin_required');}
   assert(base.protocol==='https:'&&base.pathname==='/'&&base.search===''&&base.hash==='','commercial_https_origin_required');
+  // In an Android WebView, localhost refers to the phone, not the user's QA PC.
   assert(!(locationOrigin==='https://localhost'&&loopback.test(base.hostname)),'android_loopback_server_unreachable');
   assert(typeof fetcher==='function','fetch_required');
   async function identity(){
@@ -24,6 +25,7 @@ export function createVerifiedAccountClient({auth,origin,fetcher=globalThis.fetc
     const initial=await identity();
     const url=new URL('/api/account'+path,base);
     const headers={'Authorization':`Bearer ${initial.token}`,...(body?{'Content-Type':'application/json'}:{})};
+    // Account switch race: fetch and local identity must refer to the same account.
     const res=await fetcher(url.toString(),{method,headers,credentials:'omit',redirect:'error',cache:'no-store',body:body?JSON.stringify(body):undefined});
     const final=await identity();
     assert(final.id===initial.id&&final.token===initial.token,'account_changed_request_discarded');

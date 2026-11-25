@@ -1,0 +1,24 @@
+{
+  "schema": 1,
+  "asr": {
+    "repository": "csukuangfj/sherpa-onnx-streaming-zipformer-en-2023-06-26",
+    "revision": "672fbf1b30579d6585301139bb363f42a0ad4a24",
+    "files": {
+      "encoder-epoch-99-avg-1-chunk-16-left-128.int8.onnx": {"bytes": 71083163, "sha256": "563fde436d16cf7607cf408cd6b30909819d03162652ef389c2450ced3f45ac1"},
+      "decoder-epoch-99-avg-1-chunk-16-left-128.onnx": {"bytes": 2092621, "sha256": "7bf787f90b194b307e5a4ad6a34fadb4e748304c35f78a8d66358a05b13ee6ef"},
+      "joiner-epoch-99-avg-1-chunk-16-left-128.onnx": {"bytes": 1026405, "sha256": "210591f72b3c56b8364f85f345dca240bc2b4c00632848f4aa923630d5639d3b"},
+      "bpe.model": {"bytes": 244865, "sha256": "c53433de083c4a6ad12d034550ef22de68cec62c4f58932a7b6b8b2f1e743fa5"},
+      "tokens.txt": {"bytes": 5048, "sha256": "49e3c2646595fd907228b3c6787069658f67b17377c60aeb8619c4551b2316fb"}
+    }
+  },
+  "voice": {
+    "repository": "rhasspy/piper-voices",
+    "revision": "375a0fe641dea077c2a47b4e9a056d6da521eed3",
+    "subdirectory": "en/en_US/lessac/medium",
+    "files": {
+      "en_US-lessac-medium.onnx": {"bytes": 63201294, "sha256": "5efe09e69902187827af646e1a6e9d269dee769f9877d17b16b1b46eeaaf019f"},
+      "en_US-lessac-medium.onnx.json": {"bytes": 4885, "sha256": "efe19c417bed055f2d69908248c6ba650fa135bc868b0e6abb3da181dab690a0"}
+    }
+  },
+  "note": "Pinned input identities only. Does not certify ASR accuracy, Android compilation or an APK."
+}

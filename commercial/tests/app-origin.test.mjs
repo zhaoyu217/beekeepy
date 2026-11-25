@@ -1,0 +1,10 @@
+import {test} from 'node:test';
+import assert from 'node:assert/strict';
+import {Readable,Writable} from 'node:stream';
+import {createCommercialApp} from '../server/app.mjs';
+import {openStore} from '../server/db.mjs';
+async function req(handler,method,path,origin){const r=Readable.from([]);r.method=method;r.url=path;r.headers={host:'localhost:8443',origin};r.socket={remoteAddress:'127.0.0.1'};const out=new Writable({write(_c,_e,cb){cb()}});out.setHeader=(k,v)=>{out.headers??={};out.headers[k]=v};out.writeHead=(status,headers={})=>{out.code=status;out.headers={...out.headers,...headers}};out.end=()=>{};await handler(r,out);return out;}
+test('explicit HTTPS app origin gets account API CORS preflight',async()=>{const store=openStore();try{const{handler}=createCommercialApp({store,env:{BEE_APP_ORIGIN:'https://localhost'}});const r=await req(handler,'OPTIONS','/api/account/profile','https://localhost');assert.equal(r.code,204);assert.equal(r.headers['Access-Control-Allow-Origin'],'https://localhost');assert.match(r.headers['Access-Control-Allow-Headers'],/Authorization/)}finally{store.close()}});
+test('untrusted origin cannot invoke account API preflight',async()=>{const store=openStore();try{const{handler}=createCommercialApp({store,env:{BEE_APP_ORIGIN:'https://localhost'}});const r=await req(handler,'OPTIONS','/api/account/profile','https://evil.example');assert.equal(r.code,403);assert.equal(r.headers['Access-Control-Allow-Origin'],undefined)}finally{store.close()}});
+test('default denies CORS to any cross-origin app',async()=>{const store=openStore();try{const{handler}=createCommercialApp({store,env:{}});const r=await req(handler,'OPTIONS','/api/account/profile','https://localhost');assert.equal(r.code,403)}finally{store.close()}});
+test('admin routes never get account CORS headers',async()=>{const store=openStore();try{const{handler}=createCommercialApp({store,env:{BEE_APP_ORIGIN:'https://localhost'}});const r=await req(handler,'GET','/api/admin/summary','https://localhost');assert.equal(r.code,401);assert.equal(r.headers['Access-Control-Allow-Origin'],undefined)}finally{store.close()}});

@@ -15,7 +15,7 @@ jobs:
       - uses: actions/setup-node@v4
         with:
           node-version: '22'
-      - name: Science baseline integrity: reject unknown science at build time
+      - name: Science integrity gate (fail closed)
         run: |
           node --test recovery/science-lock/check.test.mjs
           node recovery/science-lock/check.mjs --strict

@@ -1,0 +1,81 @@
+name: Restore verified authentic science source (2026-11-10 only)
+on:
+  push:
+    branches:
+      - recovery/beekeepy-20261123-qa
+    paths:
+      - 'source-bound.zip'
+permissions:
+  contents: write
+jobs:
+  import-authentic-science:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+      - name: Verify ZIP and all 44 science source files before writing
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          from pathlib import Path
+          import hashlib, json, zipfile
+          root=Path.cwd()
+          lock=json.loads((root/'recovery/science-lock/original-20261110.json').read_text())
+          archive=root/'source-bound.zip'
+          if not archive.is_file():raise SystemExit('BLOCKED - source-bound.zip missing')
+          checksum=hashlib.sha256(archive.read_bytes()).hexdigest()
+          if checksum!=lock['sourceZipSha256']:
+              raise SystemExit('BLOCKED - incorrect source ZIP SHA256')
+          expected=lock['scienceFiles']
+          staged={}
+          with zipfile.ZipFile(archive,'r') as z:
+              for info in z.infolist():
+                  normalized=info.filename.replace('\\','/')
+                  if not normalized.startswith('source-snapshot-bound/'):
+                      continue
+                  rel=normalized[len('source-snapshot-bound/'):]
+                  if rel not in expected: continue
+                  if rel in staged:raise SystemExit('BLOCKED - duplicated '+rel)
+                  data=z.read(info.filename)
+                  if hashlib.sha256(data).hexdigest()!=expected[rel]:
+                      raise SystemExit('BLOCKED - source differs '+rel)
+                  staged[rel]=data
+          missing=set(expected)-set(staged)
+          if missing:raise SystemExit('BLOCKED - missing originals '+','.join(sorted(missing)))
+          if len(staged)!=44:raise SystemExit('BLOCKED - unexpected manifest size')
+          for rel,data in staged.items():
+              dest=root/rel
+              dest.parent.mkdir(parents=True,exist_ok=True)
+              dest.write_bytes(data)
+          print('Recovered exactly',len(staged),'unmodified original science files from approved ZIP')
+          PY
+      - name: Confirm original science logic matches byte-for-byte
+        run: |
+          node --test recovery/science-lock/check.test.mjs
+          node recovery/science-lock/check.mjs --strict
+      - name: Commit science files only to isolated recovery branch
+        shell: bash
+        run: |
+          set -euo pipefail
+          python3 - <<'PY'
+          import json,subprocess
+          with open('recovery/science-lock/original-20261110.json') as f: paths=sorted(json.load(f)['scienceFiles'])
+          subprocess.run(['git','add','--',*paths],check=True)
+          added=subprocess.check_output(['git','diff','--cached','--name-only'],text=True).splitlines()
+          if any(path not in paths for path in added):raise SystemExit('BLOCKED - staged unrelated path')
+          print('Original files to commit:',len(added))
+          PY
+          if git diff --cached --quiet; then
+            echo 'Original science files already match; no change required.'
+            exit 0
+          fi
+          git config user.name 'github-actions[bot]'
+          git config user.email '41898282+github-actions[bot]@users.noreply.github.com'
+          git commit -m 'recovery: restore genuine 2026-11-10 science files unchanged from approved ZIP'
+          git push origin HEAD:refs/heads/recovery/beekeepy-20261123-qa
